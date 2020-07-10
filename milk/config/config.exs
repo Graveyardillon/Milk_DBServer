@@ -28,3 +28,14 @@ config :phoenix, :json_library, Jason
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{Mix.env()}.exs"
+
+config :milk, Milk.UserManager.Guardian,
+  issuer: "milk",
+  secret_key: "ucwM9beYUEgWdkHoZ5kXflOMW8wZSEVwheR3PuUVROQrl3uymZL/qtRbHs+V3BN4",
+  serializer: Milk.UserManager.GuardianSerializer,
+  ttl: {24, :hour}
+
+  config :milk, Milk.UserManager.Pipeline,
+  module: Milk.UserManager.Guardian,
+  error_handler: Milk.UserManager.ErrorHandler
+

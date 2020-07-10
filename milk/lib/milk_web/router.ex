@@ -11,6 +11,7 @@ defmodule MilkWeb.Router do
 
   pipeline :api do
     plug :accepts, ["json"]
+    plug Milk.UserManager.GuardianPipline
   end
 
   scope "/", MilkWeb do
@@ -22,11 +23,13 @@ defmodule MilkWeb.Router do
   scope "/api", MilkWeb do
     pipe_through :api
 
-    resources "/users", UserController, except: [:new, :edit]
+    resources "/users", UserController, except: [:new, :edit, :index, :show]
 
+    post "/users/get_all", UserController, :index
+    post "/users/get", UserController, :show
     post "/users/login", UserController, :login
     post "/users/login_forced", UserController, :login_forced
-    get "users/logout/:id", UserController, :logout
+    post "users/logout/", UserController, :logout
   end
 
   # Other scopes may use custom stacks.

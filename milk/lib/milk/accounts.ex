@@ -64,7 +64,7 @@ defmodule Milk.Accounts do
   end
 
   def user_check(chgst) do
-    if (chgst) do
+    if (chgst.valid?) do
       Repo.insert(chgst)
     else
       {:ok, false}
@@ -72,7 +72,7 @@ defmodule Milk.Accounts do
   end
 
   def auth_check(chgst, user) do
-    if (chgst) do
+    if (chgst.valid?) do
       with {:ok, _} <- Repo.insert(chgst) do
         {:ok, user}
       else
@@ -103,7 +103,6 @@ defmodule Milk.Accounts do
                       |> Auth.changeset_update(attrs)
                       |> Repo.update()
     do
-      IO.inspect "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
       Auth.changeset(user.auth, %{})
       |> Repo.update()
       {:error, nil}
@@ -170,7 +169,6 @@ defmodule Milk.Accounts do
 
   def logout(id) do
     user = Repo.one(from u in User,where: u.id ==  ^id and not u.logout_fl)
-    IO.inspect user
     if(user) do
       user
       |> User.changeset(%{logout_fl: true})

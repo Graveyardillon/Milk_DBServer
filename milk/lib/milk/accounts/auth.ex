@@ -18,7 +18,8 @@ defmodule Milk.Accounts.Auth do
     auth
     |> cast(attrs, [:name, :email, :password])
     |> validate_required([:name, :email, :password])
-    |> check_error()
+    |> unique_constraint(:email)
+    |> put_password_hash()
   end
 
   def changeset_update(auth, attrs) do
@@ -28,15 +29,6 @@ defmodule Milk.Accounts.Auth do
     |> unique_constraint(:email)
     |> put_password_hash()
     
-  end
-
-  def check_error(chgst) do
-    if (chgst.valid?) do
-      unique_constraint(chgst, :email)
-      |> put_password_hash()
-    else
-        false
-    end
   end
 
   defp put_password_hash(%Ecto.Changeset{valid?: true, changes: %{password: password}} = changeset) do

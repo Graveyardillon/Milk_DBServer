@@ -8,7 +8,6 @@ defmodule MilkWeb.FallbackController do
   use MilkWeb, :controller
 
   def call(conn, {:error, %Ecto.Changeset{} = changeset}) do
-    IO.inspect "aaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
     conn
     |> put_status(:unprocessable_entity)
     |> put_view(MilkWeb.ChangesetView)

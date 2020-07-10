@@ -21,14 +21,5 @@ defmodule Milk.Accounts.User do
     |> cast(attrs, [:name, :icon_path, :point, :notification_number, :language, :logout_fl])
     # |> validate_required([:name, :icon_path, :point, :notification_number, :language])
     |> validate_required([:name])
-    |> check_error()
-  end
-
-  def check_error(chgst) do
-    if(chgst.valid?) do
-      chgst
-    else
-        false
-    end
   end
 end

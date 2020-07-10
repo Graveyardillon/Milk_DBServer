@@ -20,7 +20,7 @@ defmodule Milk.MixProject do
   def application do
     [
       mod: {Milk.Application, []},
-      extra_applications: [:logger, :runtime_tools]
+      extra_applications: [:logger, :runtime_tools, :guardian]
     ]
   end
 
@@ -36,6 +36,7 @@ defmodule Milk.MixProject do
       {:phoenix, "~> 1.5.1"},
       {:phoenix_ecto, "~> 4.1"},
       {:ecto_sql, "~> 3.4"},
+      {:ecto, "~> 3.0"},
       {:postgrex, ">= 0.0.0"},
       {:phoenix_html, "~> 2.11"},
       {:phoenix_live_reload, "~> 1.2", only: :dev},
@@ -47,6 +48,7 @@ defmodule Milk.MixProject do
       {:plug_cowboy, "~> 2.0"},
       {:guardian, "~> 2.0"},
       {:calendar, "~> 0.17.4"},
+      {:guardian_phoenix, "~> 2.0"}
       # {:argon2_elixir, "~> 2.0"}
     ]
   end
