@@ -14,13 +14,17 @@ defmodule MilkWeb.UserController do
   end
 
   def create(conn, %{"user" => user_params}) do
-    with {:ok, %User{} = user} <- Accounts.create_user(user_params) do
+    case Accounts.create_user(user_params) do
+      {:ok, %User{} = user} ->
       conn
       # |> put_status(:created)
       # |> put_resp_header("location", Routes.user_path(conn, :show, user))
       |> render("login.json",
       %{user: Map.put(user, :auth, %Auth{email: user_params["email"]})})
-    else
+
+      {:error, error} ->
+        render(conn, "error.json", error: error)
+
       _ ->
         render(conn, "show.json",user: nil)
     end
@@ -32,11 +36,13 @@ defmodule MilkWeb.UserController do
   end
 
   def update(conn, %{"id" => id, "user" => user_params}) do
-    user = Accounts.get_user(id)
 
-    with {:ok, %User{} = user} <- Accounts.update_user(user, user_params) do
-      render(conn, "show.json", user: user)
-    else
+    case  Accounts.get_user(id) |> Accounts.update_user(user_params) do
+      {:ok, %User{} = user} ->
+        render(conn, "show.json", user: user)
+      {:error, error} ->
+        render(conn, "error.json", error: error)
+
       _ -> render(conn, "show.json", user: nil)
     end
   end
@@ -65,6 +71,5 @@ defmodule MilkWeb.UserController do
     
       Guardian.revoke(token)
       json(conn, %{result: result})
-    
   end
 end

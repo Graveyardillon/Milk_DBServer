@@ -8,6 +8,7 @@ defmodule Milk.Accounts do
 
   alias Milk.Accounts.User
   alias Milk.Accounts.Auth
+  alias Ecto.Multi
 
   @doc """
   Returns the list of users.
@@ -50,40 +51,56 @@ defmodule Milk.Accounts do
       {:error, %Ecto.Changeset{}}
 
   """
-  def create_user(attrs \\ %{}) do
-    {:ok, user} = %User{}
-                  |> User.changeset(attrs)
-                  |> user_check()
+  # def create_user(attrs \\ %{}) do
+  #   {:ok, user} = %User{}
+  #                 |> User.changeset(attrs)
+  #                 |> user_check()
     
-    if(user) do
-      user
-        |> Ecto.build_assoc(:auth)
+  #   if(user) do
+  #     user
+  #       |> Ecto.build_assoc(:auth)
+  #       |> Auth.changeset(attrs)
+  #       |> auth_check(user)
+  #   end
+  # end
+
+  # def user_check(chgst) do
+  #   if (chgst.valid?) do
+  #     Repo.insert(chgst)
+  #   else
+  #     {:ok, false}
+  #   end
+  # end
+
+  # def auth_check(chgst, user) do
+  #   if (chgst.valid?) do
+  #     with {:ok, _} <- Repo.insert(chgst) do
+  #       {:ok, user}
+  #     else
+  #       _ -> Repo.delete user
+  #         {:error, nil}
+  #     end
+  #   else 
+  #     Repo.delete user
+  #     {:error, nil}
+  #   end
+  # end
+
+  def create_user(attrs \\ %{}) do
+      case Multi.new
+      |> Multi.insert(:user, User.changeset(%User{}, attrs))
+      |> Multi.insert(:auth, fn(%{user: user}) -> 
+        Ecto.build_assoc(user, :auth)
         |> Auth.changeset(attrs)
-        |> auth_check(user)
-    end
-  end
-
-  def user_check(chgst) do
-    if (chgst.valid?) do
-      Repo.insert(chgst)
-    else
-      {:ok, false}
-    end
-  end
-
-  def auth_check(chgst, user) do
-    if (chgst.valid?) do
-      with {:ok, _} <- Repo.insert(chgst) do
-        {:ok, user}
-      else
-        _ -> Repo.delete user
-          {:error, nil}
+      end)
+      |> Repo.transaction() do
+        {:ok, user} ->
+        {:ok, user.user}
+        
+        {:error, _, error, data} -> {:error, error.errors}
+        _ -> {:ok, nil}
+        end
       end
-    else 
-      Repo.delete user
-      {:error, nil}
-    end
-  end
 
   @doc """
   Updates a user.
@@ -97,20 +114,35 @@ defmodule Milk.Accounts do
       {:error, %Ecto.Changeset{}}
 
   """
-  def update_user(%User{} = user, attrs) do
+  # def update_user(%User{} = user, attrs) do
     
-    with {:error, _} <- user.auth
-                      |> Auth.changeset_update(attrs)
-                      |> Repo.update()
-    do
-      Auth.changeset(user.auth, %{})
-      |> Repo.update()
-      {:error, nil}
-    else
-      _ ->
-        user
-        |> User.changeset(attrs)
-        |> Repo.update()
+  #   with {:error, _} <- user.auth
+  #                     |> Auth.changeset_update(attrs)
+  #                     |> Repo.update()
+  #   do
+  #     Auth.changeset(user.auth, %{})
+  #     |> Repo.update()
+  #     {:error, nil}
+  #   else
+  #     _ ->
+  #       user
+  #       |> User.changeset(attrs)
+  #       |> Repo.update()
+  #   end
+  # end
+
+  def update_user(%User{} = user, attrs) do
+    case Multi.new()
+    |> Multi.update(:user, fn _ ->
+      User.changeset(user, attrs) 
+    end)
+    |> Multi.update(:auth, fn _ ->
+      Auth.changeset_update(user.auth, attrs)
+    end)
+    |> Repo.transaction() do
+      {:ok, user} -> {:ok, user.user}
+      {:error, _, error, data} -> {:error, error.errors}
+      _ -> {:ok, nil}
     end
   end
 

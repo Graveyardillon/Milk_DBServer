@@ -19,24 +19,34 @@ defmodule Milk.UserManager.Guardian do
   end
 
   def after_encode_and_sign(resource, claims, token, _options) do
-    %GuardianTokens{jwt: token, claims: claims}
-    |> GuardianTokens.changeset(claims)
-    |> token_check(token)
-  end
+    # %GuardianTokens{jwt: token, claims: claims}
+    # |> GuardianTokens.changeset(claims)
+    # |> token_check(token)
 
-  defp token_check(chgst, token) do
-    if(chgst.valid?) do
-      with {:ok, _} <- Repo.insert(chgst) do
-        {:ok, token}
-      else
-        error ->
-          Repo.delete(chgst)
-          {:error, error}
-      end
-    else
-      {:error, chgst.errors}
+    case Repo.transaction(fn ->
+      %GuardianTokens{jwt: token, claims: claims}
+      |> GuardianTokens.changeset(claims)
+      |> Repo.insert
+    end) |> IO.inspect() do
+    {:ok, {:ok, _}} -> {:ok, token}
+    {:ok,{:error, error}} -> {:error, error.errors}
+    _ -> {:error, %{errors: [token: "db error"]}}
     end
   end
+
+  # defp token_check(chgst, token) do
+  #   if(chgst.valid?) do
+  #     with {:ok, _} <- Repo.insert(chgst) do
+  #       {:ok, token}
+  #     else
+  #       error ->
+  #         Repo.delete(chgst)
+  #         {:error, error}
+  #     end
+  #   else
+  #     {:error, chgst.errors}
+  #   end
+  # end
 
   def on_verify(claims, token, _options) do
     Repo.exists?(from g in GuardianTokens, where: g.jti == ^claims["jti"] and g.aud == ^claims["aud"])

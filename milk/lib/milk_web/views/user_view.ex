@@ -21,8 +21,14 @@ defmodule MilkWeb.UserView do
 
   def render("login.json", %{user: user}) do
     if user do
-      {:ok, token, _} = Guardian.encode_and_sign(user)
-      %{data: render_one(user, UserView, "user.json"), result: true, token: token}
+      case Guardian.encode_and_sign(user) do
+        {:ok, token, _} ->
+          %{data: render_one(user, UserView, "user.json"), result: true, token: token}
+        {:error, error} ->
+          %{result: false, error: create_message(error), data: nil}
+        _ ->
+          %{result: false, data: nil}
+      end
     else
       %{data: nil, result: false}
     end
@@ -30,11 +36,25 @@ defmodule MilkWeb.UserView do
 
   def render("login_forced.json", %{user: user}) do
     if user do
-      {:ok, token, _} = Guardian.signin_forced(user)
-      %{data: render_one(user, UserView, "user.json"), result: true, token: token}
+      case Guardian.signin_forced(user) do
+        {:ok, token, _} ->
+          %{data: render_one(user, UserView, "user.json"), result: true, token: token}
+        {:error, error} ->
+          %{result: false, error: "can't get token", data: nil}
+        _ ->
+          %{result: false, data: nil}
+      end
     else
       %{data: nil, result: false}
     end
+  end
+
+  def render("error.json", %{error: error}) do
+    %{result: false, error: create_message(error), data: nil}
+  end
+
+  def create_message(error) do
+    Enum.reduce(error, "",fn {key, value}, acc -> to_string(key) <> " "<> elem(value,0) <> ", "<> acc end)
   end
 
   def render("user.json", %{user: user}) do

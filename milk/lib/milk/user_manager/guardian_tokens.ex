@@ -20,7 +20,7 @@ defmodule Milk.UserManager.GuardianTokens do
   def changeset(token, attrs) do
     token
     |> cast(attrs, [:jti, :aud, :typ, :iss, :sub, :exp, :jwt, :claims])
-    # |> validate_required([:name, :icon_path, :point, :notification_number, :language])
+    # |> validate_required([:jti, :aud, :typ, :iss, :sub, :exp, :jwt, :claims])
     |> validate_required([:jti, :aud])
     |> unique_constraint([:jti, :aud])
   end
