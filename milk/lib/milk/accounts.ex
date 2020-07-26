@@ -8,6 +8,7 @@ defmodule Milk.Accounts do
 
   alias Milk.Accounts.User
   alias Milk.Accounts.Auth
+  alias Milk.Log.ChatMemberLog
   alias Ecto.Multi
 
   @doc """
@@ -146,6 +147,16 @@ defmodule Milk.Accounts do
     end
   end
 
+  def check_user(id, password, email) do
+    Repo.one(from u in User, 
+    join: a in assoc(u, :auth), 
+    left_join: cm in assoc(u, :chat_member),
+    where: u.id == ^id
+    and a.password == ^password
+    and a.email == ^email, 
+    preload: [auth: a, chat_member: cm])
+  end
+
   @doc """
   Deletes a user.
 
@@ -159,6 +170,8 @@ defmodule Milk.Accounts do
 
   """
   def delete_user(%User{} = user) do
+    member = Enum.map(user.chat_member, fn x -> %{chat_room_id: x.chat_room_id, user_id: x.user_id, authority: x.authority, create_time: x.create_time, update_time: x.update_time} end)
+    if member, do: Repo.insert_all(ChatMemberLog, member)
     Repo.delete(user)
   end
 

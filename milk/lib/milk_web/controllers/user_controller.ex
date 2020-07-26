@@ -47,11 +47,11 @@ defmodule MilkWeb.UserController do
     end
   end
 
-  def delete(conn, %{"id" => id, "token" => token}) do
-    user = Accounts.get_user(id)
+  def delete(conn, %{"id" => id, "password" => password, "email" => email, "token" => token}) do
+    user = Accounts.check_user(id, password, email) |> IO.inspect
 
     with {:ok, %User{}} <- Accounts.delete_user(user) do
-      Guardian.revoke(token)
+      # Guardian.revoke(token)
       send_resp(conn, :no_content, "")
     end
   end
