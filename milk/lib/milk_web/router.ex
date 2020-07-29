@@ -21,6 +21,14 @@ defmodule MilkWeb.Router do
   end
 
   scope "/api", MilkWeb do
+
+    get "/game/list", GameController, :list
+    post "/game/add", GameController, :add
+    post "/profile/add", ProfileController, :add
+    post "/profile/fav_games", ProfileController, :fav_games
+  end
+
+  scope "/api", MilkWeb do
     pipe_through :api
 
     resources "/user", UserController, except: [:new, :edit, :index, :show]
