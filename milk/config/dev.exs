@@ -4,7 +4,7 @@ use Mix.Config
 config :milk, Milk.Repo,
   username: "postgres",
   password: "mikan2499",
-  database: "postgres",
+  database: "milk_dev",
   hostname: "localhost",
   show_sensitive_data_on_connection_error: true,
   pool_size: 10
