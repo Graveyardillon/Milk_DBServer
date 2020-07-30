@@ -120,4 +120,27 @@ defmodule Milk.Profiles do
       |> Repo.all()
       |> Enum.map(& &1.content_id)
   end
+
+  def delete_game(user_id, game_id) do
+    query = from p in Profile, where: p.user_id == ^user_id and p.content_id == ^game_id and p.content_type == "game"
+
+    if Repo.one(query) == nil do
+      {:not_found}
+    else
+      Repo.delete_all(query)
+      {:found}
+    end
+  end
+
+  def delete_achievement(user_id, achievement_id) do
+    query = from p in Profile, where: p.user_id == ^user_id and p.content_id == ^achievement_id and p.content_type == "achievement"
+
+    if Repo.one(query) == nil do
+      {:not_found}
+    else
+      Repo.delete_all(query)
+      {:found}
+    end
+  end
+
 end

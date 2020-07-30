@@ -21,6 +21,20 @@ defmodule MilkWeb.ProfileController do
 
     render(conn, "list.json", games: games)
   end
+
+  def delete_game(conn, %{"user_id" => user_id, "content_id" => game_id}) do
+    conn |> delete_replay(Profiles.delete_game(user_id, game_id))
+  end
+  def delete_achievement(conn, %{"user_id" => user_id, "content_id" => achievement_id}) do
+    conn |> delete_replay(Profiles.delete_game(user_id, achievement_id))
+  end
+
+  defp delete_replay(conn, {:not_found}) do
+    conn |> json%{msg: "not found"}
+  end
+  defp delete_replay(conn, {:found}) do
+    conn |> json%{msg: "found!"}
+  end
   # def index(conn, _params) do
   #   profiles = Accounts.list_profiles()
   #   render(conn, "index.json", profiles: profiles)

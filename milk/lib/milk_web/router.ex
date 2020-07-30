@@ -26,6 +26,8 @@ defmodule MilkWeb.Router do
     post "/game/add", GameController, :add
     post "/profile/add", ProfileController, :add
     post "/profile/fav_games", ProfileController, :fav_games
+    post "/profile/delete_game", ProfileController, :delete_game
+    post "/profile/delete_achievement". ProfileController, :delete_achievement
   end
 
   scope "/api", MilkWeb do
