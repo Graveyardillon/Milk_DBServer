@@ -8,7 +8,7 @@ defmodule MilkWeb.ProfileController do
 
   action_fallback MilkWeb.FallbackController
 
-  def add(conn, %{"data" => data_params}) do # TODO: 既に追加されている場合の処理
+  def add(conn, %{"data" => data_params}) do
     case Profiles.check_duplication(data_params) do
       {:ok} ->
         with {:ok, %Profile{} = profile} <- Profiles.add(data_params) do
