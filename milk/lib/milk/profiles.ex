@@ -108,6 +108,20 @@ defmodule Milk.Profiles do
     |> Repo.insert()
   end
 
+  def check_duplication(attrs \\ %{}) do
+    user_id = Map.get(attrs, "user_id")
+    content_id = Map.get(attrs, "content_id")
+    content_type = Map.get(attrs, "content_type")
+    
+    query = from p in Profile, where: p.user_id == ^user_id and p.content_id == ^content_id and p.content_type == ^content_type
+    if Repo.one(query) == nil do
+      {:ok}
+    else 
+      {:error}
+    end
+  end
+
+
   def get_id_list_game(user_id) do
     Profile
       |> where([p], p.user_id == ^user_id and p.content_type == "game")

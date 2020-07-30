@@ -9,10 +9,16 @@ defmodule MilkWeb.ProfileController do
   action_fallback MilkWeb.FallbackController
 
   def add(conn, %{"data" => data_params}) do # TODO: 既に追加されている場合の処理
-    with {:ok, %Profile{} = profile} <- Profiles.add(data_params) do
-      conn
-      |> render("show.json", profile: profile)
+    case Profiles.check_duplication(data_params) do
+      {:ok} ->
+        with {:ok, %Profile{} = profile} <- Profiles.add(data_params) do
+          conn
+          |> render("show.json", profile: profile)
+        end
+      {:error} ->
+        conn |> json%{msg: "already added!"}
     end
+
   end
 
   def fav_games(conn, %{"user_id" => user_id}) do
@@ -33,7 +39,7 @@ defmodule MilkWeb.ProfileController do
     conn |> json%{msg: "not found"}
   end
   defp delete_replay(conn, {:found}) do
-    conn |> json%{msg: "found!"}
+    conn |> json%{msg: "deleted!"}
   end
   # def index(conn, _params) do
   #   profiles = Accounts.list_profiles()
