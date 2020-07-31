@@ -157,4 +157,7 @@ defmodule Milk.Profiles do
     end
   end
 
+  # def delete_all_game(user_id) do
+  #   query = from p in Profile, where: p.user_id == ^user_id and p.content_type == "game"
+  # end
 end
