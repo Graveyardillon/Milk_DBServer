@@ -19,6 +19,12 @@ defmodule Milk.Chat.ChatRoom do
   def changeset(chat_room, attrs) do
     chat_room
     |> cast(attrs, [:name, :last_chat, :count])
+    |> validate_required([:name])
+  end
+
+  def changeset_update(chat_room, attrs) do
+    chat_room
+    |> cast(attrs, [:name, :last_chat, :count])
     # |> validate_required([:name])
   end
 end
