@@ -66,9 +66,16 @@ defmodule Milk.Chat do
 
   """
   def create_chat_room(attrs \\ %{}) do
-    %ChatRoom{}
+    case %ChatRoom{}
     |> ChatRoom.changeset(attrs)
-    |> Repo.insert()
+    |> Repo.insert() |> IO.inspect do
+    {:ok, chat} ->
+      {:ok, chat}
+    {:error, error} ->
+      {:error, error.errors}
+    _ ->
+      {:error, nil}
+    end
   end
 
   @doc """
@@ -85,7 +92,7 @@ defmodule Milk.Chat do
   """
   def update_chat_room(%ChatRoom{} = chat_room, attrs) do
     chat_room
-    |> ChatRoom.changeset(attrs)
+    |> ChatRoom.changeset_update(attrs)
     |> Repo.update()
   end
 
@@ -159,7 +166,7 @@ defmodule Milk.Chat do
       ** (Ecto.NoResultsError)
 
   """
-  def get_chat_member!(id), do: Repo.get!(ChatMember, id)
+  def get_chat_member!(id), do: Repo.get(ChatMember, id)
 
   def get_member(chat_room_id, user_id), do: Repo.one(from cm in ChatMember, where: cm.chat_room_id == ^chat_room_id and cm.user_id == ^user_id)
 
@@ -178,11 +185,17 @@ defmodule Milk.Chat do
   def create_chat_member(attrs \\ %{}) do
     if (Repo.exists?(from u in User, join: a in assoc(u, :auth), where: u.id == ^attrs["user_id"]) 
       and Repo.exists?(from c in ChatRoom, where: c.id == ^attrs["chat_room_id"])) do
-      %ChatMember{user_id: attrs["user_id"], chat_room_id: attrs["chat_room_id"]}
+
+      case %ChatMember{user_id: attrs["user_id"], chat_room_id: attrs["chat_room_id"]}
       |> ChatMember.changeset(attrs)
-      |> Repo.insert()
-    else
-      {:error, nil}
+      |> Repo.insert() do
+      {:ok, chat_member} ->
+        {:ok, chat_member}
+      {:error, error} ->
+        {:error, error.errors}
+      _ ->
+        {:error, nil}
+      end
     end
   end
 
@@ -199,9 +212,16 @@ defmodule Milk.Chat do
 
   """
   def update_chat_member(%ChatMember{} = chat_member, attrs) do
-    chat_member
+    case chat_member
     |> ChatMember.changeset(attrs)
-    |> Repo.update()
+    |> Repo.update() do
+    {:ok, chat_member} ->
+      {:ok, chat_member}
+    {:error, error} ->
+      {:error, error.errors}
+    _ ->
+      {:error, nil}
+    end
   end
 
   @doc """
@@ -264,7 +284,7 @@ defmodule Milk.Chat do
       ** (Ecto.NoResultsError)
 
   """
-  def get_chats!(id), do: Repo.get!(Chats, id)
+  def get_chats!(id), do: Repo.get(Chats, id)
 
   def get_chat(chat_room_id, index), do: Repo.one(from c in Chats, where: c.chat_room_id == ^chat_room_id and c.index == ^index)
 
@@ -287,13 +307,8 @@ defmodule Milk.Chat do
 
   """
   def create_chats(attrs \\ %{}) do
-    if (Repo.exists?(from cm in ChatMember, where: cm.user_id == ^attrs["user_id"] and cm.chat_room_id == ^attrs["chat_room_id"])) |> IO.inspect do
-      # cr = Repo.get(ChatRoom, attrs["chat_room_id"])
-      # if cr do
-      #   {:ok, chat} = %Chats{user_id: attrs["user_id"], chat_room_id: attrs["chat_room_id"], index: cr.count + 1}
-      #   |> Chats.changeset(attrs)
-      #   |> Repo.insert()
-      #   |> IO.inspect
+    if (Repo.exists?(from cm in ChatMember, where: cm.user_id == ^attrs["user_id"] and cm.chat_room_id == ^attrs["chat_room_id"])) do
+      
       case Multi.new() 
       |> Multi.run(:chat_room, fn repo, _ -> 
         {:ok, repo.get(ChatRoom, attrs["chat_room_id"])}
@@ -309,6 +324,8 @@ defmodule Milk.Chat do
         |> ChatRoom.changeset(%{last_chat: chat.chat.word, count: chat.chat.index})
         |> Repo.update
         {:ok, chat.chat}
+      {:error, _, error, data} -> 
+        {:error, error.errors}
       _ ->
         {:error, nil}
       end

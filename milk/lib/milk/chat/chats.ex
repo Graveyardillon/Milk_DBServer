@@ -20,6 +20,6 @@ defmodule Milk.Chat.Chats do
     chats
     |> cast(attrs, [:word])
     |> validate_required([:word])
-    |> unique_constraint([:chat_room_id, :index])
+    |> unique_constraint([:index, :chat_room_id])
   end
 end
