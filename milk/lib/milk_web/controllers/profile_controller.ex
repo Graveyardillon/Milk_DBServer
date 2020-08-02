@@ -2,11 +2,24 @@ defmodule MilkWeb.ProfileController do
   use MilkWeb, :controller
 
   alias Milk.Accounts
+  alias Milk.Accounts.User
   alias Milk.Profiles
   alias Milk.Accounts.Profile
   alias Milk.Games
 
   action_fallback MilkWeb.FallbackController
+
+  def update_bio(conn, %{"user_id" => user_id, "bio" => bio_text}) do
+    #TODO: error handling
+    case Accounts.get_user(user_id) |> Accounts.update_bio(bio_text) do
+        {:ok, user} ->
+          json(conn, %{result: "bio updated"})
+        {:error, error} ->
+          json(conn, %{result: error})
+        _ -> 
+          json(conn, %{result: "error"})
+    end
+  end
 
   def add(conn, %{"data" => data_params}) do
     case Profiles.check_duplication(data_params) do

@@ -22,6 +22,9 @@ defmodule MilkWeb.Router do
 
   scope "/api", MilkWeb do
 
+    post "/signup", UserController, :create
+    post "/profile/updatebio", ProfileController, :update_bio
+    # post "/profile/updatebio", UserController, :update
     get "/game/list", GameController, :list
     post "/game/add", GameController, :add
     post "/profile/add", ProfileController, :add
@@ -34,12 +37,13 @@ defmodule MilkWeb.Router do
     pipe_through :api
 
     resources "/user", UserController, except: [:new, :edit, :index, :show]
-  
+    
     post "/user/get_all", UserController, :index
     post "/user/get", UserController, :show
     post "/user/login", UserController, :login
     post "/user/login_forced", UserController, :login_forced
     post "/user/logout/", UserController, :logout
+    post "/user/update_bio", UserController, :update_bio
 
     resources "/chat_room", ChatRoomController, except: [:new, :edit, :index, :show]
 

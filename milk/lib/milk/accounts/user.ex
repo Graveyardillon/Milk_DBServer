@@ -11,6 +11,7 @@ defmodule Milk.Accounts.User do
     field :logout_fl, :boolean, default: false
     field :language, :string
     field :name, :string
+    field :bio, :string, default: nil
     field :notification_number, :integer, default: 0
     field :point, :integer, default: 0
     has_one :auth, Auth
@@ -24,7 +25,7 @@ defmodule Milk.Accounts.User do
   @doc false
   def changeset(user, attrs) do
     user
-    |> cast(attrs, [:name, :icon_path, :point, :notification_number, :language, :logout_fl])
+    |> cast(attrs, [:name, :bio, :icon_path, :point, :notification_number, :language, :logout_fl])
     # |> validate_required([:name, :icon_path, :point, :notification_number, :language])
     # |> validate_required([:name])
   end
