@@ -31,7 +31,7 @@ defmodule Milk do
 
   defp read_line(socket) do
     {:ok, data} = :gen_tcp.recv(socket, 0)
-    Logger.info(data)
+    #Logger.info(data)
     data
   end
 
