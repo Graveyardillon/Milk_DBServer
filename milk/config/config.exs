@@ -14,8 +14,7 @@ config :milk,
 config :milk, MilkWeb.Endpoint,
   url: [host: "localhost"],
   secret_key_base: "coOiaAmMZnvqLHJ5UQWUW4x+YW5jLmKwqTuryKI7f+E9ndhMPrWt3LWZZQpDDUNB",
-  render_errors: [view: MilkWeb.ErrorView, accepts: ~w(html json)],
-  pubsub: [name: Milk.PubSub, adapter: Phoenix.PubSub.PG2]
+  render_errors: [view: MilkWeb.ErrorView, accepts: ~w(html json)]
 
 # Configures Elixir's Logger
 config :logger, :console,

@@ -16,7 +16,7 @@ defmodule Milk do
 
   defp loop_acceptor(socket) do
     {:ok, client} = :gen_tcp.accept(socket)
-    Logger.info("Connected")
+    Logger.info("TCP Client Connected")
     serve(client)
     loop_acceptor(socket)
   end
