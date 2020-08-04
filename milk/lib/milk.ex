@@ -11,6 +11,8 @@ defmodule Milk do
   """
   require Logger
 
+  alias Milk.Accounts
+
   def accept(port) do
     {:ok, socket} = :gen_tcp.listen(port, [:binary, packet: :raw, active: false, reuseaddr: true])
     Logger.info("Accepting connections on port #{port}")
@@ -26,15 +28,15 @@ defmodule Milk do
 
   defp serve(socket) do
     socket
-    |> read_line()
+    |> read()
     |> String.replace(~r/\r|\n/, "")
     |> close_check(socket)
-    #|> write_line(socket)
+    |> process_by_sent_data(socket)
 
     serve(socket)
   end
 
-  defp read_line(socket) do
+  defp read(socket) do
     with {:ok, data} <- :gen_tcp.recv(socket, 0) do
       Logger.info(data)
       data
@@ -51,8 +53,26 @@ defmodule Milk do
   end
   defp close_check(line, _socket), do: line
 
-  # defp write_line(line, socket) do
-  #   Logger.info(line)
-  #   :gen_tcp.send(socket, line)
-  # end
+  defp process_by_sent_data(data, socket) do
+    case data do
+      "user_sync" -> send_user_data(socket)
+      _ -> do_nothing()
+    end
+  end
+
+  # FIXME: 差分は検知しないので、とりあえずuserテーブルのデータを全部返す実装になっちゃってる
+  defp send_user_data(socket) do
+    Accounts.list_users()
+    |> Enum.each(fn user ->
+      id = Integer.to_string(user.id)
+      Logger.info(id)
+      :gen_tcp.send(socket, id)
+      # FIXME: sendの文字列が連結されちゃうからこうしたけど処理方法が絶対適切でない。
+      :timer.sleep(1)
+    end)
+  end
+
+  defp do_nothing() do
+    # do nothing
+  end
 end

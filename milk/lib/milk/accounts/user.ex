@@ -9,6 +9,7 @@ defmodule Milk.Accounts.User do
   schema "users" do
     field :icon_path, :string, default: nil
     field :logout_fl, :boolean, default: false
+    field :id_for_show, :integer
     field :language, :string
     field :name, :string
     field :notification_number, :integer, default: 0
@@ -24,7 +25,7 @@ defmodule Milk.Accounts.User do
   @doc false
   def changeset(user, attrs) do
     user
-    |> cast(attrs, [:name, :icon_path, :point, :notification_number, :language, :logout_fl])
+    |> cast(attrs, [:name, :icon_path, :point, :id_for_show, :notification_number, :language, :logout_fl])
     # |> validate_required([:name, :icon_path, :point, :notification_number, :language])
     # |> validate_required([:name])
   end
