@@ -5,6 +5,7 @@ defmodule Milk.Accounts.User do
   alias Milk.Chat.Chats
   alias Milk.Chat.ChatMember
   alias Milk.Chat.ChatRoom
+  alias Milk.Achievements.Achievement
 
   schema "users" do
     field :icon_path, :string, default: nil
@@ -18,6 +19,7 @@ defmodule Milk.Accounts.User do
     has_many :chat, Chats
     many_to_many :chat_room, ChatRoom, join_through: "chat_member"
     has_many :chat_member, ChatMember
+    has_many :achievements, Achievement
 
     timestamps()
   end
