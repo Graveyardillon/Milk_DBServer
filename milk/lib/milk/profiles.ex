@@ -104,10 +104,10 @@ defmodule Milk.Profiles do
     Profile.changeset(profile, attrs)
   end
 
-  def get_game_list(user_id) do
+  def get_game_list(user) do
 
     ids = Profile
-      |> where([p], p.user_id == ^user_id and p.content_type == "game")
+      |> where([p], p.user_id == ^user.id and p.content_type == "game")
       |> Repo.all()
       |> Enum.map(& &1.content_id)
 

@@ -10,10 +10,10 @@ defmodule MilkWeb.ProfileController do
   action_fallback MilkWeb.FallbackController
 
   def get_profile(conn, %{"user_id" => user_id}) do
-    userInfo = Accounts.get_user(user_id)
-    games = Profiles.get_game_list(user_id)
+    user = Accounts.get_user(user_id)
+    games = Profiles.get_game_list(user)
 
-    render(conn, "profile.json", userInfo: userInfo, games: games)
+    render(conn, "profile.json", user: user, games: games)
   end
 
   def update(conn, %{"profile" => profile_params}) do
