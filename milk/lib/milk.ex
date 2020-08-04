@@ -5,6 +5,9 @@ defmodule Milk do
 
   Contexts are also responsible for managing your data, regardless
   if it comes from the database, an external API or others.
+
+  Program around TCP Server.
+  It only connects Pappap Webserver.
   """
   require Logger
 
@@ -17,25 +20,39 @@ defmodule Milk do
   defp loop_acceptor(socket) do
     {:ok, client} = :gen_tcp.accept(socket)
     Logger.info("TCP Client Connected")
-    serve(client)
+    Task.start(fn -> serve(client) end)
     loop_acceptor(socket)
   end
 
   defp serve(socket) do
     socket
     |> read_line()
-    |> write_line(socket)
+    |> String.replace(~r/\r|\n/, "")
+    |> close_check(socket)
+    #|> write_line(socket)
 
     serve(socket)
   end
 
   defp read_line(socket) do
-    {:ok, data} = :gen_tcp.recv(socket, 0)
-    #Logger.info(data)
-    data
+    with {:ok, data} <- :gen_tcp.recv(socket, 0) do
+      Logger.info(data)
+      data
+    else
+      {:error, reason} -> reason
+      _ -> "unexpected error on read"
+    end
   end
 
-  defp write_line(line, socket) do
-    :ok = :gen_tcp.send(socket, line)
+  defp close_check("close", socket) do
+    :gen_tcp.close(socket)
+    IO.inspect(Kernel.self)
+    Process.exit(Kernel.self(), :kill)
   end
+  defp close_check(line, _socket), do: line
+
+  # defp write_line(line, socket) do
+  #   Logger.info(line)
+  #   :gen_tcp.send(socket, line)
+  # end
 end
