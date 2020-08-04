@@ -33,10 +33,11 @@ defmodule MilkWeb.Router do
   scope "/api", MilkWeb do
     pipe_through :api
 
-    resources "/user", UserController, except: [:new, :edit, :index, :show]
+    resources "/user", UserController, except: [:new, :edit, :index, :show, :create]
   
     post "/user/get_all", UserController, :index
     post "/user/get", UserController, :show
+    post "/user/signup", UserController, :create
     post "/user/login", UserController, :login
     post "/user/login_forced", UserController, :login_forced
     post "/user/logout/", UserController, :logout
