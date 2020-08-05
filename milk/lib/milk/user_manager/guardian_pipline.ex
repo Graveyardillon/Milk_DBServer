@@ -30,7 +30,7 @@ defmodule Milk.UserManager.GuardianPipline do
   end
 
   def call(conn, default) do
-    if(String.contains?(conn.request_path, "login") or String.contains?(conn.request_path, "signup")) do
+    if(String.contains?(conn.request_path, "api/user/login") or String.contains?(conn.request_path, "api/user/signup")) do
       conn
     else
       json(conn, %{result: false, error: "There's not a token"})

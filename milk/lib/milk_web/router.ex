@@ -11,7 +11,7 @@ defmodule MilkWeb.Router do
 
   pipeline :api do
     plug :accepts, ["json"]
-    plug Milk.UserManager.GuardianPipline
+    # plug Milk.UserManager.GuardianPipline
   end
 
   scope "/", MilkWeb do
