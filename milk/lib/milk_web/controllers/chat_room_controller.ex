@@ -29,7 +29,7 @@ defmodule MilkWeb.ChatRoomController do
   end
 
   def show(conn, %{"id" => id}) do
-    chat_room = Chat.get_chat_room!(id)
+    chat_room = Chat.get_chat_room(id)
     if (chat_room) do
       render(conn, "show.json", chat_room: chat_room)
     else
@@ -38,7 +38,7 @@ defmodule MilkWeb.ChatRoomController do
   end
 
   def update(conn, %{"id" => id, "chat_room" => chat_room_params}) do
-    chat_room = Chat.get_chat_room!(id)
+    chat_room = Chat.get_chat_room(id) |> IO.inspect
     if (chat_room) do
       with {:ok, %ChatRoom{} = chat_room} <- Chat.update_chat_room(chat_room, chat_room_params) do
         render(conn, "show.json", chat_room: chat_room)

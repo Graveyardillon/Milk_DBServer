@@ -51,7 +51,7 @@ defmodule Milk.Chat do
       ** (Ecto.NoResultsError)
 
   """
-  def get_chat_room(id), do: Repo.one(from cr in ChatRoom, join: c in assoc(cr, :chat), where: cr.id == ^id, preload: [chat: c])
+  def get_chat_room(id), do: Repo.one(from cr in ChatRoom, where: cr.id == ^id)
 
   @doc """
   Creates a chat_room.
@@ -68,7 +68,7 @@ defmodule Milk.Chat do
   def create_chat_room(attrs \\ %{}) do
     case %ChatRoom{}
     |> ChatRoom.changeset(attrs)
-    |> Repo.insert() |> IO.inspect do
+    |> Repo.insert() do
     {:ok, chat} ->
       {:ok, chat}
     {:error, error} ->
@@ -92,7 +92,9 @@ defmodule Milk.Chat do
   """
   def update_chat_room(%ChatRoom{} = chat_room, attrs) do
     chat_room
-    |> ChatRoom.changeset_update(attrs)
+    |> ChatRoom.changeset_update(
+      Map.put(attrs, "update_time", DateTime.utc_now)
+    )
     |> Repo.update()
   end
 
@@ -111,10 +113,9 @@ defmodule Milk.Chat do
   def delete_chat_room(%ChatRoom{} = chat_room) do
     chat = Enum.map(chat_room.chat, fn x -> %{chat_room_id: x.chat_room_id, word: x.word, user_id: x.user_id, index: x.index, create_time: x.create_time, update_time: x.update_time} end)
     if chat, do: Repo.insert_all(ChatsLog, chat)
-    IO.inspect chat
     member = Enum.map(chat_room.chat_member, fn x -> %{chat_room_id: x.chat_room_id, user_id: x.user_id, authority: x.authority, create_time: x.create_time, update_time: x.update_time} end)
     if member, do: Repo.insert_all(ChatMemberLog, member)
-    ChatRoomLog.changeset(%ChatRoomLog{}, Map.from_struct(chat_room)) |> IO.inspect
+    ChatRoomLog.changeset(%ChatRoomLog{}, Map.from_struct(chat_room))
     |> Repo.insert()
     Repo.delete(chat_room)
   end
@@ -144,7 +145,6 @@ defmodule Milk.Chat do
 
   """
   def list_chat_member(params) do
-    IO.inspect params["chat_room_id"]
     Repo.all(from cm in ChatMember, 
       join: u in assoc(cm, :user), 
       join: cr in assoc(cm, :chat_room), 
@@ -292,7 +292,6 @@ defmodule Milk.Chat do
 
   def sync(date, id) do
     Repo.all(from cr in ChatRoom, left_join: cm in assoc(cr, :chat_member), where: cm.user_id == ^id and cr.update_time >= ^date)
-    |> IO.inspect
   end
   @doc """
   Creates a chats.
@@ -314,14 +313,16 @@ defmodule Milk.Chat do
         {:ok, repo.get(ChatRoom, attrs["chat_room_id"])}
       end)
       |> Multi.insert(:chat, fn %{chat_room: chat_room} ->
-        %Chats{user_id: attrs["user_id"], chat_room_id: attrs["chat_room_id"], index: chat_room.count + 1}
+        %Chats{user_id: attrs["user_id"], chat_room_id: attrs["chat_room_id"], index: chat_room.count + 1, update_time: attrs["datetime"], create_time: attrs["datetime"]}
         |> Chats.changeset(attrs)
       end)
       |> Repo.transaction() do
 
       {:ok, chat} ->
         chat.chat_room
-        |> ChatRoom.changeset(%{last_chat: chat.chat.word, count: chat.chat.index})
+        |> IO.inspect
+        |> ChatRoom.changeset_update(%{last_chat: chat.chat.word, count: chat.chat.index, update_time: attrs["datetime"]})
+        |> IO.inspect
         |> Repo.update
         {:ok, chat.chat}
       {:error, _, error, data} -> 
@@ -348,7 +349,9 @@ defmodule Milk.Chat do
   """
   def update_chats(%Chats{} = chats, attrs) do
     chats
-    |> Chats.changeset(attrs)
+    |> Chats.changeset(
+      Map.put(attrs, "update_time", attrs["datetime"])
+      )
     |> Repo.update()
   end
 
