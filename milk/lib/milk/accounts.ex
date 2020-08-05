@@ -132,12 +132,6 @@ defmodule Milk.Accounts do
   #   end
   # end
 
-  def update_bio(%User{} = user, bio_text) do
-    case Repo.update(Ecto.Changeset.change user, bio: bio_text) do
-      {:ok, user} -> {:ok, user}
-      {:error, _, error} -> {:error, error.errors}
-    end
-  end
 
   def update_user(%User{} = user, attrs) do
     case Multi.new()

@@ -8,6 +8,7 @@ defmodule Milk.Profiles do
   alias Ecto.Multi
 
   alias Milk.Games.Game
+  alias Milk.Achievements.Achievement
   alias Milk.Accounts.Profile
 
   @doc """
@@ -107,25 +108,41 @@ defmodule Milk.Profiles do
   def get_game_list(user) do
 
     ids = Profile
-      |> where([p], p.user_id == ^user.id and p.content_type == "game")
-      |> Repo.all()
-      |> Enum.map(& &1.content_id)
+    |> where([p], p.user_id == ^user.id and p.content_type == "game")
+    |> Repo.all()
+    |> Enum.map(& &1.content_id)
 
     Game
-      |> where([g], g.id in ^ids)
-      |> Repo.all
+    |> where([g], g.id in ^ids)
+    |> Repo.all
   end
 
-  def update_profile(%User{} = user, name, bio, gameList) do
+  def get_achievement_list(user) do
+    ids = Profile
+    |> where([p], p.user_id == ^user.id and p.content_type == "achievement")
+    |> Repo.all()
+    |> Enum.map (& &1.content_id)
+
+    Achievement
+    |> where([a], a.id in ^ids)
+    |> Repo.all
+  end
+
+  def update_profile(%User{} = user, name, bio, gameList, achievementList) do
     Repo.update(Ecto.Changeset.change user, name: name, bio: bio)
 
     Profile
-    |> where([p], p.user_id == ^user.id and p.content_type == "game")
+    |> where([p], p.user_id == ^user.id)
     |> Repo.delete_all()
 
     Enum.each(gameList, fn game ->
       %Profile{}
       |> Profile.changeset(%{user_id: user.id, content_id: game, content_type: "game"})
+      |> Repo.insert()
+    end)
+    Enum.each(achievementList, fn achievement ->
+      %Profile{}
+      |> Profile.changeset(%{user_id: user.id, content_id: achievement, content_type: "achievement"})
       |> Repo.insert()
     end)
   end
