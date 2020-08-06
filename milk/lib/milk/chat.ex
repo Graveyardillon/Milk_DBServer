@@ -183,7 +183,7 @@ defmodule Milk.Chat do
 
   """
   def create_chat_member(attrs \\ %{}) do
-    if (Repo.exists?(from u in User, join: a in assoc(u, :auth), where: u.id == ^attrs["user_id"]) 
+    if (Repo.exists?(from u in User, where: u.id == ^attrs["user_id"]) 
       and Repo.exists?(from c in ChatRoom, where: c.id == ^attrs["chat_room_id"])) do
 
       case %ChatMember{user_id: attrs["user_id"], chat_room_id: attrs["chat_room_id"]}
@@ -384,5 +384,25 @@ defmodule Milk.Chat do
   """
   def change_chats(%Chats{} = chats, attrs \\ %{}) do
     Chats.changeset(chats, attrs)
+  end
+
+  def dialogue(attrs) do
+    if (Repo.exists?(from u in User, where: u.id == ^attrs["user_id"]) 
+      and Repo.exists?(from u in User, where: u.id == ^attrs["partner_id"])) do
+
+      {:ok, chat_room} = %ChatRoom{name: "%user%"}
+      |> Repo.insert() |> IO.inspect
+    
+      %ChatMember{user_id: attrs["user_id"], chat_room_id: chat_room.id, authority: 0}
+      |> Repo.insert()
+      %ChatMember{user_id: attrs["partner_id"], chat_room_id: chat_room.id, authority: 0}
+      |> Repo.insert()
+    
+
+      attrs
+      |> Map.put("chat_room_id", chat_room.id)
+      |> create_chats
+      |> IO.inspect
+    end
   end
 end

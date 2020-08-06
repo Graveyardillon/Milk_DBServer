@@ -58,6 +58,7 @@ defmodule MilkWeb.Router do
     post "chat/latest", ChatsController, :get_latest
     post "chat/sync", ChatsController, :sync
     post "chat/delete", ChatsController, :delete
+    post "chat/create_dialogue", ChatsController, :create_dialogue
   end
 
   # Other scopes may use custom stacks.
