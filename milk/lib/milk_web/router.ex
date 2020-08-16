@@ -22,7 +22,7 @@ defmodule MilkWeb.Router do
 
   scope "/api", MilkWeb do
     post "/signup", UserController, :create
-
+    get "/user/get_all_username", UserController, :all_username
     post "/profile", ProfileController, :get_profile
     post "/profile/update", ProfileController, :update
     get "/game/list", GameController, :list

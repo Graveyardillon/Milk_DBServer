@@ -24,6 +24,12 @@ defmodule Milk.Accounts do
     Repo.all(from u in User, join: a in assoc(u, :auth), order_by: u.create_time, preload: [auth: a])
   end
 
+  def list_usernames do
+    User
+    |> select([u], u.name)
+    |> Repo.all()
+  end
+
   @doc """
   Gets a single user.
 
