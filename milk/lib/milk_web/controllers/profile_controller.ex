@@ -28,4 +28,33 @@ defmodule MilkWeb.ProfileController do
     json(conn, %{result: "success"})
   end
 
+  def update_icon(conn, %{"user_id" => user_id, "image_b64" => image_b64}) do
+
+    user = Accounts.get_user(user_id)
+    IO.puts(user.icon_path)
+
+    if String.starts_with?(image_b64, "data:image/png;base64,") do
+      "data:image/png;base64," <> raw = image_b64
+      uuid = SecureRandom.uuid()
+      File.write!("./static/image/profile_icon/#{uuid}.png", Base.decode64!(raw))
+
+      json(conn, %{local_path: uuid})
+    else
+      raw = image_b64
+      uuid = SecureRandom.uuid()
+      File.write!("./static/image/profile_icon/#{uuid}.png", Base.decode64!(raw))
+
+      Accounts.update_icon_path(user, uuid)
+
+      json(conn, %{local_path: uuid})
+    end
+  end
+
+  def load_icon(conn, %{"path" => path}) do
+    b64 = File.read!("./static/image/profile_icon/#{path}.png")
+          |> Base.encode64()
+
+    json(conn, %{b64: b64})
+  end
+
 end

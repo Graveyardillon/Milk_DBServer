@@ -23,6 +23,7 @@ defmodule MilkWeb.ProfileView do
     %{
       id: user.id,
       name: user.name,
+      icon_path: user.icon_path,
       bio: user.bio,
       gameList: render_many(games, GameView, "game.json"),
       achievementList: render_many(achievements, AchievementView, "achievement.json")

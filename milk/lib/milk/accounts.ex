@@ -138,7 +138,6 @@ defmodule Milk.Accounts do
   #   end
   # end
 
-
   def update_user(%User{} = user, attrs) do
     case Multi.new()
     |> Multi.update(:user, fn _ ->
@@ -152,6 +151,15 @@ defmodule Milk.Accounts do
       {:error, _, error, data} -> {:error, error.errors}
       _ -> {:ok, nil}
     end
+  end
+
+  def update_icon_path(user, icon_path) do
+    old_icon_path = Repo.one(from u in User, where: u.id == ^user.id, select: u.icon_path)
+    if old_icon_path != nil do
+      File.rm("./static/image/profile_icon/#{old_icon_path}.png")
+    end
+
+    Repo.update(Ecto.Changeset.change user, icon_path: icon_path)
   end
 
   def check_user(id, password, email) do
