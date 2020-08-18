@@ -11,9 +11,10 @@ defmodule Milk.Application do
       # Start the Ecto repository
       Milk.Repo,
       # Start the endpoint when the application starts
-      MilkWeb.Endpoint
+      MilkWeb.Endpoint,
+      {Phoenix.PubSub, [name: Milk.PubSub, adapter: Phoenix.PubSub.PG2]},
       # Starts a worker by calling: Milk.Worker.start_link(arg)
-      # {Milk.Worker, arg},
+      {Task, fn -> Milk.accept(4041) end}
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

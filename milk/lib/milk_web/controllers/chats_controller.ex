@@ -8,16 +8,24 @@ defmodule MilkWeb.ChatsController do
 
   def index(conn, %{"chat" => params}) do
     chat = Chat.list_chat(params)
-    render(conn, "index.json", chat: chat)
+    if (chat) do
+      render(conn, "index.json", chat: chat)
+    else
+      render(conn, "error.json", error: nil)
+    end
   end
 
   def create(conn, %{"chat" => chats_params}) do
-    with {:ok, %Chats{} = chats} <- Chat.create_chats(chats_params) do
-      IO.inspect chats
+    case Chat.create_chats(chats_params) do
+    {:ok, %Chats{} = chats} ->
       conn
       # |> put_status(:created)
       # |> put_resp_header("location", Routes.chats_path(conn, :show, chats))
       |> render("show.json", chats: chats)
+    {:error, error} ->
+      render(conn, "error.json", error: error)
+    _ -> 
+      render(conn, "error.json", error: nil)
     end
   end
 
@@ -29,27 +37,41 @@ defmodule MilkWeb.ChatsController do
 
   def get_latest(conn, %{"id" => id}) do
     chats = Chat.get_latest_chat(id)
-    render(conn, "index.json", chat: chats)
+    if(chats) do
+      render(conn, "index.json", chat: chats)
+    else
+      render(conn, "error.json", error: nil)
+    end
   end
 
   def show(conn, %{"id" => id}) do
     chats = Chat.get_chats!(id)
-    render(conn, "show.json", chats: chats)
+    if (chats) do
+      render(conn, "show.json", chats: chats)
+    else
+      render(conn, "error.json", error: nil)
+    end
   end
 
   def update(conn, %{"id" => id, "chat" => chats_params}) do
     chats = Chat.get_chats!(id)
-
-    with {:ok, %Chats{} = chats} <- Chat.update_chats(chats, chats_params) do
-      render(conn, "show.json", chats: chats)
+    if (chats) do
+      with {:ok, %Chats{} = chats} <- Chat.update_chats(chats, chats_params) do
+        render(conn, "show.json", chats: chats)
+      else
+        _ -> render(conn, "error.json", error: nil)
+      end
+    else
+      render(conn, "error.json", error: nil)
     end
   end
 
   def delete(conn, %{"chat_room_id" => chat_room_id, "index" => index}) do
     chats = Chat.get_chat(chat_room_id, index)
-
-    with {:ok, %Chats{}} <- Chat.delete_chats(chats) do
-      send_resp(conn, :no_content, "")
+    if (chats) do
+      with {:ok, %Chats{}} <- Chat.delete_chats(chats) do
+        send_resp(conn, :no_content, "")
+      end
     end
   end
 end

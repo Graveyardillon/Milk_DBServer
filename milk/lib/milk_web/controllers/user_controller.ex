@@ -41,7 +41,6 @@ defmodule MilkWeb.UserController do
   end
 
   def update(conn, %{"id" => id, "user" => user_params}) do
-
     case  Accounts.get_user(id) |> Accounts.update_user(user_params) do
       {:ok, %User{} = user} ->
         render(conn, "show.json", user: user)
