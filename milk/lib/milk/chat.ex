@@ -183,19 +183,44 @@ defmodule Milk.Chat do
 
   """
   def create_chat_member(attrs \\ %{}) do
-    if (Repo.exists?(from u in User, join: a in assoc(u, :auth), where: u.id == ^attrs["user_id"]) 
-      and Repo.exists?(from c in ChatRoom, where: c.id == ^attrs["chat_room_id"])) do
+    if (Repo.exists?(from u in User, where: u.id == ^attrs["user_id"])) do
+      chat_room = Repo.one(from c in ChatRoom, where: c.id == ^attrs["chat_room_id"])
+      # if chat_room do
+      #   case %ChatMember{user_id: attrs["user_id"], chat_room_id: attrs["chat_room_id"]}
+      #   |> ChatMember.changeset(attrs)
+      #   |> Repo.insert() do
+      #   {:ok, chat_member} ->
+      #     Repo.update()
+      #     {:ok, chat_member}
+      #   {:error, error} ->
+      #     {:error, error.errors}
+      #   _ ->
+      #     {:error, nil}
+      #   end
+      # else
+      #   {:error, nil}
+      # end
+      case Multi.new() 
+      |> Multi.run(:chat_room, fn repo, _ -> 
+        {:ok, repo.get(ChatRoom, attrs["chat_room_id"])}
+      end)
+      |> Multi.insert(:chat_member, fn %{chat_room: chat_room} ->
+        ChatMember.changeset(%ChatMember{user_id: attrs["user_id"], chat_room_id: attrs["chat_room_id"]}, attrs)
+      end)
+      |> Multi.update(:update, fn %{chat_room: chat_room} ->
+        ChatRoom.changeset_update(chat_room, %{member_count: chat_room.member_count + 1})
+      end)
+      |> Repo.transaction() do
 
-      case %ChatMember{user_id: attrs["user_id"], chat_room_id: attrs["chat_room_id"]}
-      |> ChatMember.changeset(attrs)
-      |> Repo.insert() do
       {:ok, chat_member} ->
-        {:ok, chat_member}
-      {:error, error} ->
+        {:ok, chat_member.chat_member}
+      {:error, _, error, data} -> 
         {:error, error.errors}
       _ ->
         {:error, nil}
       end
+    else
+      {:error, nil}
     end
   end
 
@@ -384,5 +409,36 @@ defmodule Milk.Chat do
   """
   def change_chats(%Chats{} = chats, attrs \\ %{}) do
     Chats.changeset(chats, attrs)
+  end
+
+  def dialogue(attrs) do
+    if (Repo.exists?(from u in User, where: u.id == ^attrs["user_id"]) 
+      and Repo.exists?(from u in User, where: u.id == ^attrs["partner_id"])) do
+
+    cr = Repo.one(from cr in ChatRoom,join: c1 in ChatMember, join: c2 in ChatMember, where: cr.member_count == 2 
+      and cr.id == c1.chat_room_id 
+      and c1.user_id == ^attrs["user_id"] 
+      and c2.user_id == ^attrs["partner_id"] 
+      and c1.chat_room_id == c2.chat_room_id
+      )
+    if(cr) do
+      attrs
+      |> Map.put("chat_room_id", cr.id)
+      |> create_chats
+    else
+      {:ok, chat_room} = %ChatRoom{name: "%user%", member_count: 2}
+      |> Repo.insert() |> IO.inspect
+    
+      %ChatMember{user_id: attrs["user_id"], chat_room_id: chat_room.id, authority: 0}
+      |> Repo.insert()
+      %ChatMember{user_id: attrs["partner_id"], chat_room_id: chat_room.id, authority: 0}
+      |> Repo.insert()
+    
+      attrs
+      |> Map.put("chat_room_id", chat_room.id)
+      |> create_chats
+      |> IO.inspect
+    end
+    end
   end
 end

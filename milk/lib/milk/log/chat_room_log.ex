@@ -11,6 +11,7 @@ defmodule Milk.Log.ChatRoomLog do
     field :name, :string
     field :create_time, EctoDate
     field :update_time, EctoDate
+    field :member_count, :integer
   end
 
   @doc false

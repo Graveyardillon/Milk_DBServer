@@ -74,4 +74,18 @@ defmodule MilkWeb.ChatsController do
       end
     end
   end
+
+  def create_dialogue(conn, %{"chat" => chats_params}) do
+    case Chat.dialogue(chats_params) do
+    {:ok, %Chats{} = chats} ->
+      conn
+      # |> put_status(:created)
+      # |> put_resp_header("location", Routes.chats_path(conn, :show, chats))
+      |> render("show.json", chats: chats)
+    {:error, error} ->
+      render(conn, "error.json", error: error)
+    _ -> 
+      render(conn, "error.json", error: nil)
+    end
+  end
 end

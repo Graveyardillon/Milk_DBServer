@@ -9,6 +9,7 @@ defmodule Milk.Repo.Migrations.CreateChatRoomLog do
       add :count, :integer
       add :create_time, :timestamptz
       add :update_time, :timestamptz
+      add :member_count, :integer
     end
 
   end
