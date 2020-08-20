@@ -15,19 +15,20 @@ defmodule Milk.Chat.ChatRoom do
     many_to_many :user, User, join_through: "chat_member"
     has_many :chat_member, ChatMember
     field :update_time, EctoDate, default: DateTime.utc_now
+    field :member_count, :integer, default: 0
     timestamps()
   end
 
   @doc false
   def changeset(chat_room, attrs) do
     chat_room
-    |> cast(attrs, [:name, :last_chat, :count])
+    |> cast(attrs, [:name, :last_chat, :count, :member_count])
     |> validate_required([:name])
   end
 
   def changeset_update(chat_room, attrs) do
     chat_room
-    |> cast(attrs, [:name, :last_chat, :count, :update_time])
+    |> cast(attrs, [:name, :last_chat, :count, :update_time, :member_count])
     # |> validate_required([:name])
   end
 end
