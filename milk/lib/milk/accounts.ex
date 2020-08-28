@@ -151,10 +151,11 @@ defmodule Milk.Accounts do
     Repo.one(from u in User, 
     join: a in assoc(u, :auth), 
     left_join: cm in assoc(u, :chat_member),
+    left_join: cr in assoc(u, :chat_room),
     where: u.id == ^id
     and a.password == ^password
     and a.email == ^email, 
-    preload: [auth: a, chat_member: cm])
+    preload: [auth: a, chat_member: cm, chat_room: cr])
   end
 
   @doc """

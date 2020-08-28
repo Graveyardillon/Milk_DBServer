@@ -59,6 +59,22 @@ defmodule MilkWeb.Router do
     post "chat/sync", ChatsController, :sync
     post "chat/delete", ChatsController, :delete
     post "chat/create_dialogue", ChatsController, :create_dialogue
+
+    resources "/tournament", TournamentController, except: [:new, :edit, :index, :show, :delete]
+    post "/tournament/get", TournamentController, :show
+    post "/tournament/get_all", TournamentController, :index
+    post "/tournament/get_game", TournamentController, :get_game
+    post "tournament/delete", TournamentController, :delete
+
+    resources "/entrant", EntrantController, except: [:new, :edit, :index, :show, :delete]
+    post "/entrant/get", EntrantController, :show
+    post "/entrant/get_all", EntrantController, :index
+    post "/entrant/delete", EntrantController, :delete
+
+    resources "/assistant", AssistantController, except: [:new, :edit, :index, :show, :delete]
+    post "/assistant/get", AssistantController, :show
+    post "/assistant/get_all", AssistantController, :index
+    post "/assistant/delete", AssistantController, :delete
   end
 
   # Other scopes may use custom stacks.

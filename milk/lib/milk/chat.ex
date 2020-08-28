@@ -264,6 +264,9 @@ defmodule Milk.Chat do
   def delete_chat_member(%ChatMember{} = chat_member) do
     ChatMemberLog.changeset(%ChatMemberLog{}, Map.from_struct(chat_member))
     |> Repo.insert()
+    chat_room = Repo.get(ChatRoom, chat_member.chat_room_id)
+    ChatRoom.changeset_update(chat_room, %{member_count: chat_room.member_count -1})
+    |> Repo.update()
     Repo.delete(chat_member)
   end
 
