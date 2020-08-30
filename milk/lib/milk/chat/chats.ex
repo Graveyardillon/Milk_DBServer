@@ -11,14 +11,14 @@ defmodule Milk.Chat.Chats do
     # field :user_id, :id
     belongs_to :user, User
     belongs_to :chat_room, ChatRoom
-    field :create_time, EctoDate
-    field :update_time, EctoDate
+
+    timestamps()
   end
 
   @doc false
   def changeset(chats, attrs) do
     chats
-    |> cast(attrs, [:word, :update_time])
+    |> cast(attrs, [:word])
     |> validate_required([:word])
     |> unique_constraint([:index, :chat_room_id])
   end

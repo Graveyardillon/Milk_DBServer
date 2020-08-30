@@ -92,9 +92,7 @@ defmodule Milk.Chat do
   """
   def update_chat_room(%ChatRoom{} = chat_room, attrs) do
     chat_room
-    |> ChatRoom.changeset_update(
-      Map.put(attrs, "update_time", DateTime.utc_now)
-    )
+    |> ChatRoom.changeset_update(attrs)
     |> Repo.update()
   end
 
@@ -269,7 +267,10 @@ defmodule Milk.Chat do
   def delete_chat_member(%ChatMember{} = chat_member) do
     ChatMemberLog.changeset(%ChatMemberLog{}, Map.from_struct(chat_member))
     |> Repo.insert()
-
+    
+    chat_room = Repo.get(ChatRoom, chat_member.chat_room_id)
+    ChatRoom.changeset_update(chat_room, %{member_count: chat_room.member_count -1})
+    |> Repo.update()
     Repo.delete(chat_member)
   end
 
@@ -344,7 +345,7 @@ defmodule Milk.Chat do
         {:ok, repo.get(ChatRoom, attrs["chat_room_id"])}
       end)
       |> Multi.insert(:chat, fn %{chat_room: chat_room} ->
-        %Chats{user_id: attrs["user_id"], chat_room_id: attrs["chat_room_id"], index: chat_room.count + 1, update_time: attrs["datetime"], create_time: attrs["datetime"]}
+        %Chats{user_id: attrs["user_id"], chat_room_id: attrs["chat_room_id"], index: chat_room.count + 1}
         |> Chats.changeset(attrs)
       end)
       |> Repo.transaction() do
@@ -380,9 +381,7 @@ defmodule Milk.Chat do
   """
   def update_chats(%Chats{} = chats, attrs) do
     chats
-    |> Chats.changeset(
-      Map.put(attrs, "update_time", attrs["datetime"])
-      )
+    |> Chats.changeset(attrs)
     |> Repo.update()
   end
 

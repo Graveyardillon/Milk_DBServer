@@ -8,7 +8,7 @@ defmodule Milk.Accounts do
 
   alias Milk.Accounts.User
   alias Milk.Accounts.Auth
-  alias Milk.Log.ChatMemberLog
+  alias Milk.Log.{ChatMemberLog, AssistantLog, EntrantLog}
   alias Ecto.Multi
 
   @doc """
@@ -151,10 +151,12 @@ defmodule Milk.Accounts do
     Repo.one(from u in User, 
     join: a in assoc(u, :auth), 
     left_join: cm in assoc(u, :chat_member),
+    left_join: as in assoc(u, :assistant),
+    left_join: e in assoc(u, :entrant),
     where: u.id == ^id
     and a.password == ^password
     and a.email == ^email, 
-    preload: [auth: a, chat_member: cm])
+    preload: [auth: a, chat_member: cm, entrant: e, assistant: as])
   end
 
   @doc """
@@ -169,10 +171,32 @@ defmodule Milk.Accounts do
       {:error, %Ecto.Changeset{}}
 
   """
+
   def delete_user(%User{} = user) do
     member = Enum.map(user.chat_member, fn x -> %{chat_room_id: x.chat_room_id, user_id: x.user_id, authority: x.authority, create_time: x.create_time, update_time: x.update_time} end)
-    if member, do: Repo.insert_all(ChatMemberLog, member)
+    if member do
+      Repo.insert_all(ChatMemberLog, member)
+      Repo.update_all(from(cr in Milk.Chat.ChatRoom, join: cm in assoc(cr, :chat_member), where: cm.user_id == ^user.id, update: [set: [member_count: cr.member_count - 1]]),[])
+    end
+
+    entrant = Enum.map(user.entrant, fn x -> %{user_id: x.user_id, tournament_id: x.tournament_id, rank: x.rank, create_time: x.create_time, update_time: x.update_time} end)
+    if entrant do
+      Repo.insert_all(EntrantLog, entrant)
+      Repo.update_all(from(t in Milk.Tournaments.Tournament, join: e in assoc(t, :entrant), where: e.user_id == ^user.id, update: [set: [count: t.count - 1]]), [])
+    end
+
+    assistant = Enum.map(user.assistant, fn x -> %{user_id: x.user_id, tournament_id: x.tournament_id, create_time: x.create_time, update_time: x.update_time} end)
+    if assistant do
+      Repo.insert_all(AssistantLog, assistant)
+    end
+
     Repo.delete(user)
+    
+  end
+
+  def tru(id) do
+    IO.inspect id
+    true
   end
 
   @doc """

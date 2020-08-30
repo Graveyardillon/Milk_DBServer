@@ -6,7 +6,7 @@ defmodule MilkWeb.UserController do
   alias Milk.Accounts.User
   alias Milk.UserManager.Guardian
 
-  action_fallback MilkWeb.FallbackController
+  # action_fallback MilkWeb.FallbackController
 
   def index(conn, _params) do
     users = Accounts.list_users()
@@ -47,8 +47,7 @@ defmodule MilkWeb.UserController do
   end
 
   def delete(conn, %{"id" => id, "password" => password, "email" => email, "token" => token}) do
-    user = Accounts.check_user(id, password, email) |> IO.inspect
-
+    user = Accounts.check_user(id, password, email)
     with {:ok, %User{}} <- Accounts.delete_user(user) do
       # Guardian.revoke(token)
       send_resp(conn, :no_content, "")

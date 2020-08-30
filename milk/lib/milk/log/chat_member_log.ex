@@ -1,5 +1,5 @@
 defmodule Milk.Log.ChatMemberLog do
-  use Ecto.Schema
+  use Milk.Schema
   alias Milk.EctoDate
   import Ecto.Changeset
 
