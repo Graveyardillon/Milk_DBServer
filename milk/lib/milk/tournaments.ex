@@ -90,15 +90,19 @@ defmodule Milk.Tournaments do
 
   """
   def update_tournament(%Tournament{} = tournament, attrs) do
-    case tournament
-    |> Tournament.changeset(attrs)
-    |> Repo.update() do
-      {:ok, tournament} ->
-        {:ok, tournament}
-      {:error, error} ->
-        {:error, error.errors}
-      _ ->
-        {:error, nil}
+    if (!attrs["game_id"] or Repo.exists?(from g in Game, where: g.id == ^attrs["game_id"])) do
+      case tournament
+      |> Tournament.changeset(attrs)
+      |> Repo.update() do
+        {:ok, tournament} ->
+          {:ok, tournament}
+        {:error, error} ->
+          {:error, error.errors}
+        _ ->
+          {:error, nil}
+      end
+    else
+      {:error, nil}
     end
   end
 
