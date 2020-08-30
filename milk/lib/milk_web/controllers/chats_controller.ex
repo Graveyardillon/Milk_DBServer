@@ -89,7 +89,7 @@ defmodule MilkWeb.ChatsController do
     end
   end
   
-  def create_dialogue(conn, %{"chat_group" => chat_params}) do
+  def create_dialogue(conn, %{"chat_group" => chats_params}) do
     case Chat.group_dialogue(chats_params) do
       {:ok, %Chats{} = chats} ->
         conn
