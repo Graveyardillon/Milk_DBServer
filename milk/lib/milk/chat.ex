@@ -450,4 +450,8 @@ defmodule Milk.Chat do
       end
     end
   end
+
+  def group_dialogue(attrs) do
+
+  end
 end
