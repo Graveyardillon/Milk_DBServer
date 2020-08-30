@@ -1,12 +1,11 @@
 defmodule Milk.Chat.ChatRoom do
-  use Ecto.Schema
+  use Milk.Schema
   import Ecto.Changeset
   alias Milk.Chat.Chats
   alias Milk.Chat.ChatMember
   alias Milk.Accounts.User
   alias Milk.EctoDate
 
-  @timestamps_opts [type: EctoDate, inserted_at: :create_time, updated_at: false]
   schema "chat_room" do
     field :count, :integer, default: 0
     field :last_chat, :string
@@ -14,7 +13,6 @@ defmodule Milk.Chat.ChatRoom do
     has_many :chat, Chats
     many_to_many :user, User, join_through: "chat_member"
     has_many :chat_member, ChatMember
-    field :update_time, EctoDate, default: DateTime.utc_now
     field :member_count, :integer, default: 0
     timestamps()
   end
@@ -28,7 +26,7 @@ defmodule Milk.Chat.ChatRoom do
 
   def changeset_update(chat_room, attrs) do
     chat_room
-    |> cast(attrs, [:name, :last_chat, :count, :update_time, :member_count])
+    |> cast(attrs, [:name, :last_chat, :count, :member_count])
     # |> validate_required([:name])
   end
 end

@@ -5,6 +5,7 @@ defmodule Milk.Tournaments do
 
   import Ecto.Query, warn: false
   alias Milk.Repo
+  alias Ecto.Multi
 
   alias Milk.Tournaments.Tournament
   alias Milk.Tournaments.Entrant
@@ -61,10 +62,18 @@ defmodule Milk.Tournaments do
   def create_tournament(attrs \\ %{}) do
     if (Repo.exists?(from u in User, where: u.id == ^attrs["master_id"]) 
     and Repo.exists?(from u in Game, where: u.id == ^attrs["game_id"])) do
-      %Tournament{master_id: attrs["master_id"], game_id: attrs["game_id"]}
-      |> IO.inspect
+      case %Tournament{master_id: attrs["master_id"], game_id: attrs["game_id"]}
       |> Tournament.changeset(attrs)
-      |> Repo.insert()
+      |> Repo.insert() do
+        {:ok, tournament} ->
+          {:ok, tournament}
+        {:error, error} ->
+          {:error, error.errors}
+        _ ->
+          {:error, nil}
+      end
+    else
+      {:error, nil}
     end
   end
 
@@ -81,9 +90,16 @@ defmodule Milk.Tournaments do
 
   """
   def update_tournament(%Tournament{} = tournament, attrs) do
-    tournament
+    case tournament
     |> Tournament.changeset(attrs)
-    |> Repo.update()
+    |> Repo.update() do
+      {:ok, tournament} ->
+        {:ok, tournament}
+      {:error, error} ->
+        {:error, error.errors}
+      _ ->
+        {:error, nil}
+    end
   end
 
   @doc """
@@ -173,7 +189,7 @@ defmodule Milk.Tournaments do
   """
   def create_entrant(attrs \\ %{}) do
     if (Repo.exists?(from u in User, where: u.id == ^attrs["user_id"])) do 
-      Multi.new()
+      case Multi.new()
       |> Multi.run(:tournament, fn repo, _ ->
         {:ok, repo.get(Tournament, attrs["tournament_id"])}
       end)
@@ -182,9 +198,20 @@ defmodule Milk.Tournaments do
         |> Entrant.changeset(attrs)
       end)
       |> Multi.update(:update, fn %{tournament: tournament} ->
-        Tournament.changeset(tournament, %{count: tournament.count + 1})
+        IO.inspect tournament.count
+        Tournament.changeset(tournament, %{count: tournament.count + 1}) 
+        |> IO.inspect
       end)
-      |> Repo.transaction()
+      |> Repo.transaction() do
+        {:ok, entrant} ->
+          {:ok, entrant.entrant}
+        {:error, _, error, data} -> 
+          {:error, error.errors}
+        _ ->
+          {:error, nil}
+      end
+    else
+      {:error, nil}
     end
   end
 
@@ -201,9 +228,16 @@ defmodule Milk.Tournaments do
 
   """
   def update_entrant(%Entrant{} = entrant, attrs) do
-    entrant
+    case entrant
     |> Entrant.changeset(attrs)
-    |> Repo.update()
+    |> Repo.update() do
+    {:ok, chat_member} ->
+      {:ok, chat_member}
+    {:error, error} ->
+      {:error, error.errors}
+    _ ->
+      {:error, nil}
+    end
   end
 
   @doc """
@@ -284,8 +318,15 @@ defmodule Milk.Tournaments do
   def create_assistant(attrs \\ %{}) do
     if (Repo.exists?(from u in User, where: u.id == ^attrs["user_id"]) 
     and Repo.exists?(from t in Tournament, where: t.id == ^attrs["tournament_id"])) do
-      %Assistant{user_id: attrs["user_id"], tournament_id: attrs["tournament_id"]}
-      |> Repo.insert()
+      case %Assistant{user_id: attrs["user_id"], tournament_id: attrs["tournament_id"]}
+      |> Repo.insert() do
+      {:ok, assistant} ->
+        {:ok, assistant}
+      {:error, error} ->
+        {:error, error.errors}
+      _ ->
+        {:error, nil}
+      end
     end
   end
 
@@ -302,9 +343,16 @@ defmodule Milk.Tournaments do
 
   """
   def update_assistant(%Assistant{} = assistant, attrs) do
-    assistant
+    case assistant
     |> Assistant.changeset(attrs)
-    |> Repo.update()
+    |> Repo.update() do
+      {:ok, assistant} ->
+        {:ok, assistant}
+      {:error, error} ->
+        {:error, error.errors}
+      _ ->
+        {:error, nil}
+    end
   end
 
   @doc """
