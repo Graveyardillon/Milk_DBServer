@@ -1,0 +1,17 @@
+defmodule Milk.Log.TournamentChatTopicLog do
+  use Ecto.Schema
+  import Ecto.Changeset
+
+  schema "tournament_user_topic_log" do
+    field :topic_name, :string
+
+    timestamps()
+  end
+
+  @doc false
+  def changeset(tournament_chat_topic_log, attrs) do
+    tournament_chat_topic_log
+    |> cast(attrs, [:topic_name])
+    |> validate_required([:topic_name])
+  end
+end
