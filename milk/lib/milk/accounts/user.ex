@@ -10,7 +10,7 @@ defmodule Milk.Accounts.User do
   schema "users" do
     field :icon_path, :string, default: nil
     field :logout_fl, :boolean, default: false
-    # field :id_for_show, :integer
+    field :id_for_show, :integer
     field :language, :string
     field :name, :string
     field :notification_number, :integer, default: 0

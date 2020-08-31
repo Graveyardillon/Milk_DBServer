@@ -249,7 +249,7 @@ defmodule Milk.TournamentsTest do
     end
   end
 
-  describe "tournament_user_topics" do
+  describe "tournament_chat_topics" do
     alias Milk.Tournaments.TournamentChatTopic
 
     @valid_attrs %{topic_name: "some topic_name"}
@@ -265,9 +265,9 @@ defmodule Milk.TournamentsTest do
       tournament_chat_topic
     end
 
-    test "list_tournament_user_topics/0 returns all tournament_user_topics" do
+    test "list_tournament_chat_topics/0 returns all tournament_chat_topics" do
       tournament_chat_topic = tournament_chat_topic_fixture()
-      assert Tournaments.list_tournament_user_topics() == [tournament_chat_topic]
+      assert Tournaments.list_tournament_chat_topics() == [tournament_chat_topic]
     end
 
     test "get_tournament_chat_topic!/1 returns the tournament_chat_topic with given id" do

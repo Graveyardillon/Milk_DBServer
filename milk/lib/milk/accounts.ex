@@ -95,13 +95,11 @@ defmodule Milk.Accounts do
         |> Auth.changeset(attrs)
       end)
       |> Repo.transaction() do
-        {:ok, user} ->
-        {:ok, user.user}
-        
-        {:error, _, error, data} -> {:error, error.errors}
+        {:ok, user} -> {:ok, user.user}
+        {:error, _, error, _data} -> {:error, error.errors}
         _ -> {:ok, nil}
-        end
       end
+    end
 
   @doc """
   Updates a user.

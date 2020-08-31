@@ -61,22 +61,60 @@ defmodule Milk.Tournaments do
 
   """
   def create_tournament(attrs \\ %{}) do
-    if (Repo.exists?(from u in User, where: u.id == ^attrs["master_id"]) 
-    and Repo.exists?(from u in Game, where: u.id == ^attrs["game_id"])) do
-      case %Tournament{master_id: attrs["master_id"], game_id: attrs["game_id"]}
-      |> Tournament.changeset(attrs)
-      |> Repo.insert() do
-        {:ok, tournament} ->
-          {:ok, tournament}
-        {:error, error} ->
-          {:error, error.errors}
-        _ ->
-          {:error, nil}
-      end
+    master_repo = Repo.exists?(from u in User, where: u.id == ^attrs["master_id"])
+    game_repo = Repo.exists?(from u in Game, where: u.id == ^attrs["game_id"])
+
+    if master_repo and game_repo do
+      create_tournament(:notnil, attrs)
     else
-      {:error, nil}
+      create_tournament(:nil, attrs)
     end
   end
+
+  defp create_tournament(:notnil, attrs) do
+    tournament_struct = %Tournament{master_id: attrs["master_id"], game_id: attrs["game_id"]}
+    tournament = Multi.new()
+                 |> Multi.insert(:tournament, Tournament.changeset(tournament_struct, attrs))
+                 |> Multi.insert(:group_topic, fn(%{tournament: tournament}) ->
+                   topic = %{
+                     "tournament_id" => tournament.id,
+                     "topic_name" => "Group"
+                   }
+
+                   Ecto.build_assoc(tournament, :tournament_chat_topics)
+                   |> TournamentChatTopic.changeset(topic)
+                 end)
+                 |> Multi.insert(:notification_topic, fn(%{tournament: tournament}) ->
+                   topic = %{
+                     "tournament_id" => tournament.id,
+                     "topic_name" => "Notification"
+                   }
+
+                   %TournamentChatTopic{}
+                   |> TournamentChatTopic.changeset(topic)
+                 end)
+                 |> Multi.insert(:q_and_a_topic, fn(%{tournament: tournament}) ->
+                   topic = %{
+                     "tournament_id" => tournament.id,
+                     "topic_name" => "Q&A"
+                   }
+
+                   %TournamentChatTopic{}
+                   |> TournamentChatTopic.changeset(topic)
+                 end)
+                 |> Repo.transaction()
+
+    case tournament do
+      {:ok, tournament} ->
+        {:ok, tournament}
+      {:error, error} ->
+        {:error, error.errors}
+      _ ->
+        {:error, nil}
+    end
+  end
+
+  defp create_tournament(:nil, attrs), do: {:error, nil}
 
   @doc """
   Updates a tournament.
@@ -388,15 +426,15 @@ defmodule Milk.Tournaments do
   end
 
   @doc """
-  Returns the list of tournament_user_topics.
+  Returns the list of tournament_chat_topics.
 
   ## Examples
 
-      iex> list_tournament_user_topics()
+      iex> list_tournament_chat_topics()
       [%TournamentChatTopic{}, ...]
 
   """
-  def list_tournament_user_topics do
+  def list_tournament_chat_topics do
     Repo.all(TournamentChatTopic)
   end
 
