@@ -8,12 +8,13 @@ defmodule Milk.Chat.ChatRoom do
 
   schema "chat_room" do
     field :count, :integer, default: 0
-    field :last_chat, :string
+    field :last_chat, :string, default: nil
     field :name, :string
+    field :member_count, :integer, default: 0
     has_many :chat, Chats
     many_to_many :user, User, join_through: "chat_member"
     has_many :chat_member, ChatMember
-    field :member_count, :integer, default: 0
+    
     timestamps()
   end
 

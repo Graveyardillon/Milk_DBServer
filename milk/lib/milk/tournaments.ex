@@ -10,10 +10,12 @@ defmodule Milk.Tournaments do
   alias Milk.Tournaments.Tournament
   alias Milk.Tournaments.Entrant
   alias Milk.Tournaments.Assistant
+  alias Milk.Tournaments.TournamentChatTopic
   alias Milk.Games.Game
+  alias Milk.Chat
+  alias Milk.Chat.ChatRoom
   alias Milk.Accounts.User
   alias Milk.Log.{TournamentLog, EntrantLog, AssistantLog, TournamentChatTopicLog}
-  alias Milk.Tournaments.TournamentChatTopic
 
   @doc """
   Returns the list of tournament.
@@ -106,6 +108,12 @@ defmodule Milk.Tournaments do
 
     case tournament do
       {:ok, tournament} ->
+        room_params = %{
+          name: tournament.tournament.name,
+          member_count: tournament.tournament.count,
+        }
+        Chat.create_chat_room(room_params)
+
         {:ok, tournament.tournament}
       {:error, error} ->
         {:error, error.errors}
