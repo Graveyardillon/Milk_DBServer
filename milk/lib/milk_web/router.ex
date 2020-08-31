@@ -21,9 +21,8 @@ defmodule MilkWeb.Router do
   end
 
   scope "/api", MilkWeb do
-
     get "/game/list", GameController, :list
-    post "/game/add", GameController, :add
+    post "/game/add", GameController, :create
     post "/profile/add", ProfileController, :add
     post "/profile/fav_games", ProfileController, :fav_games
     post "/profile/delete_game", ProfileController, :delete_game
@@ -50,21 +49,21 @@ defmodule MilkWeb.Router do
     resources "/chat_member", ChatMemberController, except: [:new, :edit, :index, :show, :delete]
     post "/chat_member/get", ChatMemberController, :show
     post "/chat_member/get_all", ChatMemberController, :index
-    post "chat_member/delete", ChatMemberController, :delete
+    post "/chat_member/delete", ChatMemberController, :delete
 
     resources "/chat", ChatsController, except: [:new, :edit, :index, :show, :delete]
     # post "/chat/get", ChatMemberController, :show
     post "/chat/get", ChatsController, :index
-    post "chat/latest", ChatsController, :get_latest
-    post "chat/sync", ChatsController, :sync
-    post "chat/delete", ChatsController, :delete
-    post "chat/create_dialogue", ChatsController, :create_dialogue
+    post "/chat/latest", ChatsController, :get_latest
+    post "/chat/sync", ChatsController, :sync
+    post "/chat/delete", ChatsController, :delete
+    post "/chat/create_dialogue", ChatsController, :create_dialogue
 
     resources "/tournament", TournamentController, except: [:new, :edit, :index, :show, :delete]
     post "/tournament/get", TournamentController, :show
     post "/tournament/get_all", TournamentController, :index
     post "/tournament/get_game", TournamentController, :get_game
-    post "tournament/delete", TournamentController, :delete
+    post "/tournament/delete", TournamentController, :delete
 
     resources "/entrant", EntrantController, except: [:new, :edit, :index, :show, :delete]
     post "/entrant/get", EntrantController, :show

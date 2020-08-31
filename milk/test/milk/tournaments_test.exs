@@ -248,4 +248,122 @@ defmodule Milk.TournamentsTest do
       assert %Ecto.Changeset{} = Tournaments.change_tournament(tournament)
     end
   end
+
+  describe "tournament_chat_topics" do
+    alias Milk.Tournaments.TournamentChatTopic
+
+    @valid_attrs %{topic_name: "some topic_name"}
+    @update_attrs %{topic_name: "some updated topic_name"}
+    @invalid_attrs %{topic_name: nil}
+
+    def tournament_chat_topic_fixture(attrs \\ %{}) do
+      {:ok, tournament_chat_topic} =
+        attrs
+        |> Enum.into(@valid_attrs)
+        |> Tournaments.create_tournament_chat_topic()
+
+      tournament_chat_topic
+    end
+
+    test "list_tournament_chat_topics/0 returns all tournament_chat_topics" do
+      tournament_chat_topic = tournament_chat_topic_fixture()
+      assert Tournaments.list_tournament_chat_topics() == [tournament_chat_topic]
+    end
+
+    test "get_tournament_chat_topic!/1 returns the tournament_chat_topic with given id" do
+      tournament_chat_topic = tournament_chat_topic_fixture()
+      assert Tournaments.get_tournament_chat_topic!(tournament_chat_topic.id) == tournament_chat_topic
+    end
+
+    test "create_tournament_chat_topic/1 with valid data creates a tournament_chat_topic" do
+      assert {:ok, %TournamentChatTopic{} = tournament_chat_topic} = Tournaments.create_tournament_chat_topic(@valid_attrs)
+      assert tournament_chat_topic.topic_name == "some topic_name"
+    end
+
+    test "create_tournament_chat_topic/1 with invalid data returns error changeset" do
+      assert {:error, %Ecto.Changeset{}} = Tournaments.create_tournament_chat_topic(@invalid_attrs)
+    end
+
+    test "update_tournament_chat_topic/2 with valid data updates the tournament_chat_topic" do
+      tournament_chat_topic = tournament_chat_topic_fixture()
+      assert {:ok, %TournamentChatTopic{} = tournament_chat_topic} = Tournaments.update_tournament_chat_topic(tournament_chat_topic, @update_attrs)
+      assert tournament_chat_topic.topic_name == "some updated topic_name"
+    end
+
+    test "update_tournament_chat_topic/2 with invalid data returns error changeset" do
+      tournament_chat_topic = tournament_chat_topic_fixture()
+      assert {:error, %Ecto.Changeset{}} = Tournaments.update_tournament_chat_topic(tournament_chat_topic, @invalid_attrs)
+      assert tournament_chat_topic == Tournaments.get_tournament_chat_topic!(tournament_chat_topic.id)
+    end
+
+    test "delete_tournament_chat_topic/1 deletes the tournament_chat_topic" do
+      tournament_chat_topic = tournament_chat_topic_fixture()
+      assert {:ok, %TournamentChatTopic{}} = Tournaments.delete_tournament_chat_topic(tournament_chat_topic)
+      assert_raise Ecto.NoResultsError, fn -> Tournaments.get_tournament_chat_topic!(tournament_chat_topic.id) end
+    end
+
+    test "change_tournament_chat_topic/1 returns a tournament_chat_topic changeset" do
+      tournament_chat_topic = tournament_chat_topic_fixture()
+      assert %Ecto.Changeset{} = Tournaments.change_tournament_chat_topic(tournament_chat_topic)
+    end
+  end
+
+  describe "tournament_user_topic_log" do
+    alias Milk.Tournaments.TournamentChatTopicLog
+
+    @valid_attrs %{topic_name: "some topic_name"}
+    @update_attrs %{topic_name: "some updated topic_name"}
+    @invalid_attrs %{topic_name: nil}
+
+    def tournament_chat_topic_log_fixture(attrs \\ %{}) do
+      {:ok, tournament_chat_topic_log} =
+        attrs
+        |> Enum.into(@valid_attrs)
+        |> Tournaments.create_tournament_chat_topic_log()
+
+      tournament_chat_topic_log
+    end
+
+    test "list_tournament_user_topic_log/0 returns all tournament_user_topic_log" do
+      tournament_chat_topic_log = tournament_chat_topic_log_fixture()
+      assert Tournaments.list_tournament_user_topic_log() == [tournament_chat_topic_log]
+    end
+
+    test "get_tournament_chat_topic_log!/1 returns the tournament_chat_topic_log with given id" do
+      tournament_chat_topic_log = tournament_chat_topic_log_fixture()
+      assert Tournaments.get_tournament_chat_topic_log!(tournament_chat_topic_log.id) == tournament_chat_topic_log
+    end
+
+    test "create_tournament_chat_topic_log/1 with valid data creates a tournament_chat_topic_log" do
+      assert {:ok, %TournamentChatTopicLog{} = tournament_chat_topic_log} = Tournaments.create_tournament_chat_topic_log(@valid_attrs)
+      assert tournament_chat_topic_log.topic_name == "some topic_name"
+    end
+
+    test "create_tournament_chat_topic_log/1 with invalid data returns error changeset" do
+      assert {:error, %Ecto.Changeset{}} = Tournaments.create_tournament_chat_topic_log(@invalid_attrs)
+    end
+
+    test "update_tournament_chat_topic_log/2 with valid data updates the tournament_chat_topic_log" do
+      tournament_chat_topic_log = tournament_chat_topic_log_fixture()
+      assert {:ok, %TournamentChatTopicLog{} = tournament_chat_topic_log} = Tournaments.update_tournament_chat_topic_log(tournament_chat_topic_log, @update_attrs)
+      assert tournament_chat_topic_log.topic_name == "some updated topic_name"
+    end
+
+    test "update_tournament_chat_topic_log/2 with invalid data returns error changeset" do
+      tournament_chat_topic_log = tournament_chat_topic_log_fixture()
+      assert {:error, %Ecto.Changeset{}} = Tournaments.update_tournament_chat_topic_log(tournament_chat_topic_log, @invalid_attrs)
+      assert tournament_chat_topic_log == Tournaments.get_tournament_chat_topic_log!(tournament_chat_topic_log.id)
+    end
+
+    test "delete_tournament_chat_topic_log/1 deletes the tournament_chat_topic_log" do
+      tournament_chat_topic_log = tournament_chat_topic_log_fixture()
+      assert {:ok, %TournamentChatTopicLog{}} = Tournaments.delete_tournament_chat_topic_log(tournament_chat_topic_log)
+      assert_raise Ecto.NoResultsError, fn -> Tournaments.get_tournament_chat_topic_log!(tournament_chat_topic_log.id) end
+    end
+
+    test "change_tournament_chat_topic_log/1 returns a tournament_chat_topic_log changeset" do
+      tournament_chat_topic_log = tournament_chat_topic_log_fixture()
+      assert %Ecto.Changeset{} = Tournaments.change_tournament_chat_topic_log(tournament_chat_topic_log)
+    end
+  end
 end
