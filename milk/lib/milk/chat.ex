@@ -11,6 +11,9 @@ defmodule Milk.Chat do
   alias Milk.Chat.ChatMember
   alias Milk.Accounts.User
   alias Milk.Accounts
+  alias Milk.Tournaments
+  alias Milk.Tournaments.Tournament
+  alias Milk.Tournaments.TournamentChatTopic
   alias Milk.Log.ChatsLog
   alias Milk.Log.ChatMemberLog
   alias Milk.Log.ChatRoomLog
@@ -267,7 +270,7 @@ defmodule Milk.Chat do
   def delete_chat_member(%ChatMember{} = chat_member) do
     ChatMemberLog.changeset(%ChatMemberLog{}, Map.from_struct(chat_member))
     |> Repo.insert()
-    
+
     chat_room = Repo.get(ChatRoom, chat_member.chat_room_id)
     ChatRoom.changeset_update(chat_room, %{member_count: chat_room.member_count -1})
     |> Repo.update()
@@ -421,14 +424,14 @@ defmodule Milk.Chat do
     if (Repo.exists?(from u in User, where: u.id == ^attrs["user_id"]) 
       and Repo.exists?(from u in User, where: u.id == ^attrs["partner_id"])) do
 
-      cr = Repo.one(from cr in ChatRoom,join: c1 in ChatMember, join: c2 in ChatMember, where: cr.member_count == 2 
+      cr = Repo.one(from cr in ChatRoom, join: c1 in ChatMember, join: c2 in ChatMember, where: cr.member_count == 2 
         and cr.id == c1.chat_room_id 
         and c1.user_id == ^attrs["user_id"] 
         and c2.user_id == ^attrs["partner_id"] 
         and c1.chat_room_id == c2.chat_room_id
       )
       
-      if(cr) do
+      if cr do
         attrs
         |> Map.put("chat_room_id", cr.id)
         |> create_chats
@@ -448,9 +451,5 @@ defmodule Milk.Chat do
         |> IO.inspect
       end
     end
-  end
-
-  def group_dialogue(attrs) do
-
   end
 end
