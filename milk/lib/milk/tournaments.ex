@@ -106,7 +106,7 @@ defmodule Milk.Tournaments do
 
     case tournament do
       {:ok, tournament} ->
-        {:ok, tournament}
+        {:ok, tournament.tournament}
       {:error, error} ->
         {:error, error.errors}
       _ ->
