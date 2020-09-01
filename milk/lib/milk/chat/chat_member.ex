@@ -20,5 +20,7 @@ defmodule Milk.Chat.ChatMember do
     |> cast(attrs, [:authority])
     |> validate_required([:authority])
     |> unique_constraint([:user_id, :chat_room_id])
+    |> foreign_key_constraint(:user_id)
+    |> foreign_key_constraint(:chat_room_id)
   end
 end

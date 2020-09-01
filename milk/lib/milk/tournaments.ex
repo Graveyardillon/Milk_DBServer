@@ -14,6 +14,7 @@ defmodule Milk.Tournaments do
   alias Milk.Games.Game
   alias Milk.Chat
   alias Milk.Chat.ChatRoom
+  alias Milk.Chat.ChatMember
   alias Milk.Accounts.User
   alias Milk.Log.{TournamentLog, EntrantLog, AssistantLog, TournamentChatTopicLog}
 
@@ -92,7 +93,7 @@ defmodule Milk.Tournaments do
                      "topic_name" => "Notification"
                    }
 
-                   %TournamentChatTopic{}
+                   Ecto.build_assoc(tournament, :tournament_chat_topics)
                    |> TournamentChatTopic.changeset(topic)
                  end)
                  |> Multi.insert(:q_and_a_topic, fn(%{tournament: tournament}) ->
@@ -101,7 +102,7 @@ defmodule Milk.Tournaments do
                      "topic_name" => "Q&A"
                    }
 
-                   %TournamentChatTopic{}
+                   Ecto.build_assoc(tournament, :tournament_chat_topics)
                    |> TournamentChatTopic.changeset(topic)
                  end)
                  |> Repo.transaction()
@@ -239,30 +240,45 @@ defmodule Milk.Tournaments do
 
   """
   def create_entrant(attrs \\ %{}) do
-    if (Repo.exists?(from u in User, where: u.id == ^attrs["user_id"])) do 
-      case Multi.new()
-      |> Multi.run(:tournament, fn repo, _ ->
-        {:ok, repo.get(Tournament, attrs["tournament_id"])}
-      end)
-      |> Multi.insert(:entrant, fn _ ->
-        %Entrant{user_id: attrs["user_id"], tournament_id: attrs["tournament_id"]}
-        |> Entrant.changeset(attrs)
-      end)
-      |> Multi.update(:update, fn %{tournament: tournament} ->
-        IO.inspect tournament.count
-        Tournament.changeset(tournament, %{count: tournament.count + 1}) 
-        |> IO.inspect
-      end)
-      |> Repo.transaction() do
-        {:ok, entrant} ->
-          {:ok, entrant.entrant}
-        {:error, _, error, data} -> 
-          {:error, error.errors}
-        _ ->
-          {:error, nil}
+    if Repo.exists?(from u in User, where: u.id == ^attrs["user_id"]) do 
+      result =  Multi.new()
+                |> Multi.run(:tournament, fn repo, _ ->
+                  {:ok, repo.get(Tournament, attrs["tournament_id"])}
+                end)
+                |> Multi.insert(:entrant, fn _ ->
+                  %Entrant{user_id: attrs["user_id"], tournament_id: attrs["tournament_id"]}
+                  |> Entrant.changeset(attrs)
+                end)
+                |> Multi.update(:update, fn %{tournament: tournament} ->
+                  Tournament.changeset(tournament, %{count: tournament.count + 1}) 
+                end)
+                |> Repo.transaction()
+
+      case result do
+        {:ok, entrant} -> join_tournament_chat_room(entrant, attrs)
+        {:error, _, error, data} -> {:error, error.errors}
+        _ -> {:error, nil}
       end
     else
       {:error, nil}
+    end
+  end
+
+  defp join_tournament_chat_room(entrant, attrs) do
+    [chat_room | _] = Chat.get_chat_room_by_tournament_id(entrant.tournament.id)
+    IO.inspect(chat_room)
+    join_params = %{
+      "user_id" => attrs["user_id"],
+      "chat_room_id" => chat_room.id,
+      "authority" => 0
+    }
+
+    with {:ok, entrant} <- Chat.create_chat_member(join_params) do
+      IO.inspect("join success")
+      {:ok, entrant.entrant}
+    else
+      {:error, reason} -> {:error, reason}
+      _ -> {:error, nil}
     end
   end
 
