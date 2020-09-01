@@ -2,10 +2,12 @@ defmodule Milk.Games.Game do
 
   use Milk.Schema
   import Ecto.Changeset
+  alias Milk.Tournaments.Tournament
 
   schema "games" do
     field :icon_path, :string
     field :title, :string
+    has_many :tournament, Tournament
 
     timestamps()
   end

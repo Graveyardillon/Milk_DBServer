@@ -193,4 +193,321 @@ defmodule Milk.LogTest do
       assert %Ecto.Changeset{} = Log.change_chats_log(chats_log)
     end
   end
+
+  describe "tournament_log" do
+    alias Milk.Log.Tournament
+
+    @valid_attrs %{capacity: 42, deadline: "2010-04-17T14:00:00Z", description: "some description", event_date: "2010-04-17T14:00:00Z", game_id: 42, master_id: 42, name: "some name", type: 42, url: "some url"}
+    @update_attrs %{capacity: 43, deadline: "2011-05-18T15:01:01Z", description: "some updated description", event_date: "2011-05-18T15:01:01Z", game_id: 43, master_id: 43, name: "some updated name", type: 43, url: "some updated url"}
+    @invalid_attrs %{capacity: nil, deadline: nil, description: nil, event_date: nil, game_id: nil, master_id: nil, name: nil, type: nil, url: nil}
+
+    def tournament_fixture(attrs \\ %{}) do
+      {:ok, tournament} =
+        attrs
+        |> Enum.into(@valid_attrs)
+        |> Log.create_tournament()
+
+      tournament
+    end
+
+    test "list_tournament_log/0 returns all tournament_log" do
+      tournament = tournament_fixture()
+      assert Log.list_tournament_log() == [tournament]
+    end
+
+    test "get_tournament!/1 returns the tournament with given id" do
+      tournament = tournament_fixture()
+      assert Log.get_tournament!(tournament.id) == tournament
+    end
+
+    test "create_tournament/1 with valid data creates a tournament" do
+      assert {:ok, %Tournament{} = tournament} = Log.create_tournament(@valid_attrs)
+      assert tournament.capacity == 42
+      assert tournament.deadline == DateTime.from_naive!(~N[2010-04-17T14:00:00Z], "Etc/UTC")
+      assert tournament.description == "some description"
+      assert tournament.event_date == DateTime.from_naive!(~N[2010-04-17T14:00:00Z], "Etc/UTC")
+      assert tournament.game_id == 42
+      assert tournament.master_id == 42
+      assert tournament.name == "some name"
+      assert tournament.type == 42
+      assert tournament.url == "some url"
+    end
+
+    test "create_tournament/1 with invalid data returns error changeset" do
+      assert {:error, %Ecto.Changeset{}} = Log.create_tournament(@invalid_attrs)
+    end
+
+    test "update_tournament/2 with valid data updates the tournament" do
+      tournament = tournament_fixture()
+      assert {:ok, %Tournament{} = tournament} = Log.update_tournament(tournament, @update_attrs)
+      assert tournament.capacity == 43
+      assert tournament.deadline == DateTime.from_naive!(~N[2011-05-18T15:01:01Z], "Etc/UTC")
+      assert tournament.description == "some updated description"
+      assert tournament.event_date == DateTime.from_naive!(~N[2011-05-18T15:01:01Z], "Etc/UTC")
+      assert tournament.game_id == 43
+      assert tournament.master_id == 43
+      assert tournament.name == "some updated name"
+      assert tournament.type == 43
+      assert tournament.url == "some updated url"
+    end
+
+    test "update_tournament/2 with invalid data returns error changeset" do
+      tournament = tournament_fixture()
+      assert {:error, %Ecto.Changeset{}} = Log.update_tournament(tournament, @invalid_attrs)
+      assert tournament == Log.get_tournament!(tournament.id)
+    end
+
+    test "delete_tournament/1 deletes the tournament" do
+      tournament = tournament_fixture()
+      assert {:ok, %Tournament{}} = Log.delete_tournament(tournament)
+      assert_raise Ecto.NoResultsError, fn -> Log.get_tournament!(tournament.id) end
+    end
+
+    test "change_tournament/1 returns a tournament changeset" do
+      tournament = tournament_fixture()
+      assert %Ecto.Changeset{} = Log.change_tournament(tournament)
+    end
+  end
+
+  describe "entrant_log" do
+    alias Milk.Log.EntrantLog
+
+    @valid_attrs %{rank: 42, tournament_id: 42, user_id: 42}
+    @update_attrs %{rank: 43, tournament_id: 43, user_id: 43}
+    @invalid_attrs %{rank: nil, tournament_id: nil, user_id: nil}
+
+    def entrant_log_fixture(attrs \\ %{}) do
+      {:ok, entrant_log} =
+        attrs
+        |> Enum.into(@valid_attrs)
+        |> Log.create_entrant_log()
+
+      entrant_log
+    end
+
+    test "list_entrant_log/0 returns all entrant_log" do
+      entrant_log = entrant_log_fixture()
+      assert Log.list_entrant_log() == [entrant_log]
+    end
+
+    test "get_entrant_log!/1 returns the entrant_log with given id" do
+      entrant_log = entrant_log_fixture()
+      assert Log.get_entrant_log!(entrant_log.id) == entrant_log
+    end
+
+    test "create_entrant_log/1 with valid data creates a entrant_log" do
+      assert {:ok, %EntrantLog{} = entrant_log} = Log.create_entrant_log(@valid_attrs)
+      assert entrant_log.rank == 42
+      assert entrant_log.tournament_id == 42
+      assert entrant_log.user_id == 42
+    end
+
+    test "create_entrant_log/1 with invalid data returns error changeset" do
+      assert {:error, %Ecto.Changeset{}} = Log.create_entrant_log(@invalid_attrs)
+    end
+
+    test "update_entrant_log/2 with valid data updates the entrant_log" do
+      entrant_log = entrant_log_fixture()
+      assert {:ok, %EntrantLog{} = entrant_log} = Log.update_entrant_log(entrant_log, @update_attrs)
+      assert entrant_log.rank == 43
+      assert entrant_log.tournament_id == 43
+      assert entrant_log.user_id == 43
+    end
+
+    test "update_entrant_log/2 with invalid data returns error changeset" do
+      entrant_log = entrant_log_fixture()
+      assert {:error, %Ecto.Changeset{}} = Log.update_entrant_log(entrant_log, @invalid_attrs)
+      assert entrant_log == Log.get_entrant_log!(entrant_log.id)
+    end
+
+    test "delete_entrant_log/1 deletes the entrant_log" do
+      entrant_log = entrant_log_fixture()
+      assert {:ok, %EntrantLog{}} = Log.delete_entrant_log(entrant_log)
+      assert_raise Ecto.NoResultsError, fn -> Log.get_entrant_log!(entrant_log.id) end
+    end
+
+    test "change_entrant_log/1 returns a entrant_log changeset" do
+      entrant_log = entrant_log_fixture()
+      assert %Ecto.Changeset{} = Log.change_entrant_log(entrant_log)
+    end
+  end
+
+  describe "assistant_log" do
+    alias Milk.Log.AssistantLog
+
+    @valid_attrs %{tournament_id: 42, user_id: 42}
+    @update_attrs %{tournament_id: 43, user_id: 43}
+    @invalid_attrs %{tournament_id: nil, user_id: nil}
+
+    def assistant_log_fixture(attrs \\ %{}) do
+      {:ok, assistant_log} =
+        attrs
+        |> Enum.into(@valid_attrs)
+        |> Log.create_assistant_log()
+
+      assistant_log
+    end
+
+    test "list_assistant_log/0 returns all assistant_log" do
+      assistant_log = assistant_log_fixture()
+      assert Log.list_assistant_log() == [assistant_log]
+    end
+
+    test "get_assistant_log!/1 returns the assistant_log with given id" do
+      assistant_log = assistant_log_fixture()
+      assert Log.get_assistant_log!(assistant_log.id) == assistant_log
+    end
+
+    test "create_assistant_log/1 with valid data creates a assistant_log" do
+      assert {:ok, %AssistantLog{} = assistant_log} = Log.create_assistant_log(@valid_attrs)
+      assert assistant_log.tournament_id == 42
+      assert assistant_log.user_id == 42
+    end
+
+    test "create_assistant_log/1 with invalid data returns error changeset" do
+      assert {:error, %Ecto.Changeset{}} = Log.create_assistant_log(@invalid_attrs)
+    end
+
+    test "update_assistant_log/2 with valid data updates the assistant_log" do
+      assistant_log = assistant_log_fixture()
+      assert {:ok, %AssistantLog{} = assistant_log} = Log.update_assistant_log(assistant_log, @update_attrs)
+      assert assistant_log.tournament_id == 43
+      assert assistant_log.user_id == 43
+    end
+
+    test "update_assistant_log/2 with invalid data returns error changeset" do
+      assistant_log = assistant_log_fixture()
+      assert {:error, %Ecto.Changeset{}} = Log.update_assistant_log(assistant_log, @invalid_attrs)
+      assert assistant_log == Log.get_assistant_log!(assistant_log.id)
+    end
+
+    test "delete_assistant_log/1 deletes the assistant_log" do
+      assistant_log = assistant_log_fixture()
+      assert {:ok, %AssistantLog{}} = Log.delete_assistant_log(assistant_log)
+      assert_raise Ecto.NoResultsError, fn -> Log.get_assistant_log!(assistant_log.id) end
+    end
+
+    test "change_assistant_log/1 returns a assistant_log changeset" do
+      assistant_log = assistant_log_fixture()
+      assert %Ecto.Changeset{} = Log.change_assistant_log(assistant_log)
+    end
+  end
+
+  describe "tournament_log" do
+    alias Milk.Log.TournamentLog
+
+    @valid_attrs %{name: "some name"}
+    @update_attrs %{name: "some updated name"}
+    @invalid_attrs %{name: nil}
+
+    def tournament_log_fixture(attrs \\ %{}) do
+      {:ok, tournament_log} =
+        attrs
+        |> Enum.into(@valid_attrs)
+        |> Log.create_tournament_log()
+
+      tournament_log
+    end
+
+    test "list_tournament_log/0 returns all tournament_log" do
+      tournament_log = tournament_log_fixture()
+      assert Log.list_tournament_log() == [tournament_log]
+    end
+
+    test "get_tournament_log!/1 returns the tournament_log with given id" do
+      tournament_log = tournament_log_fixture()
+      assert Log.get_tournament_log!(tournament_log.id) == tournament_log
+    end
+
+    test "create_tournament_log/1 with valid data creates a tournament_log" do
+      assert {:ok, %TournamentLog{} = tournament_log} = Log.create_tournament_log(@valid_attrs)
+      assert tournament_log.name == "some name"
+    end
+
+    test "create_tournament_log/1 with invalid data returns error changeset" do
+      assert {:error, %Ecto.Changeset{}} = Log.create_tournament_log(@invalid_attrs)
+    end
+
+    test "update_tournament_log/2 with valid data updates the tournament_log" do
+      tournament_log = tournament_log_fixture()
+      assert {:ok, %TournamentLog{} = tournament_log} = Log.update_tournament_log(tournament_log, @update_attrs)
+      assert tournament_log.name == "some updated name"
+    end
+
+    test "update_tournament_log/2 with invalid data returns error changeset" do
+      tournament_log = tournament_log_fixture()
+      assert {:error, %Ecto.Changeset{}} = Log.update_tournament_log(tournament_log, @invalid_attrs)
+      assert tournament_log == Log.get_tournament_log!(tournament_log.id)
+    end
+
+    test "delete_tournament_log/1 deletes the tournament_log" do
+      tournament_log = tournament_log_fixture()
+      assert {:ok, %TournamentLog{}} = Log.delete_tournament_log(tournament_log)
+      assert_raise Ecto.NoResultsError, fn -> Log.get_tournament_log!(tournament_log.id) end
+    end
+
+    test "change_tournament_log/1 returns a tournament_log changeset" do
+      tournament_log = tournament_log_fixture()
+      assert %Ecto.Changeset{} = Log.change_tournament_log(tournament_log)
+    end
+  end
+
+  describe "entrant_log" do
+    alias Milk.Log.EntrantLog
+
+    @valid_attrs %{user_id: 42}
+    @update_attrs %{user_id: 43}
+    @invalid_attrs %{user_id: nil}
+
+    def entrant_log_fixture(attrs \\ %{}) do
+      {:ok, entrant_log} =
+        attrs
+        |> Enum.into(@valid_attrs)
+        |> Log.create_entrant_log()
+
+      entrant_log
+    end
+
+    test "list_entrant_log/0 returns all entrant_log" do
+      entrant_log = entrant_log_fixture()
+      assert Log.list_entrant_log() == [entrant_log]
+    end
+
+    test "get_entrant_log!/1 returns the entrant_log with given id" do
+      entrant_log = entrant_log_fixture()
+      assert Log.get_entrant_log!(entrant_log.id) == entrant_log
+    end
+
+    test "create_entrant_log/1 with valid data creates a entrant_log" do
+      assert {:ok, %EntrantLog{} = entrant_log} = Log.create_entrant_log(@valid_attrs)
+      assert entrant_log.user_id == 42
+    end
+
+    test "create_entrant_log/1 with invalid data returns error changeset" do
+      assert {:error, %Ecto.Changeset{}} = Log.create_entrant_log(@invalid_attrs)
+    end
+
+    test "update_entrant_log/2 with valid data updates the entrant_log" do
+      entrant_log = entrant_log_fixture()
+      assert {:ok, %EntrantLog{} = entrant_log} = Log.update_entrant_log(entrant_log, @update_attrs)
+      assert entrant_log.user_id == 43
+    end
+
+    test "update_entrant_log/2 with invalid data returns error changeset" do
+      entrant_log = entrant_log_fixture()
+      assert {:error, %Ecto.Changeset{}} = Log.update_entrant_log(entrant_log, @invalid_attrs)
+      assert entrant_log == Log.get_entrant_log!(entrant_log.id)
+    end
+
+    test "delete_entrant_log/1 deletes the entrant_log" do
+      entrant_log = entrant_log_fixture()
+      assert {:ok, %EntrantLog{}} = Log.delete_entrant_log(entrant_log)
+      assert_raise Ecto.NoResultsError, fn -> Log.get_entrant_log!(entrant_log.id) end
+    end
+
+    test "change_entrant_log/1 returns a entrant_log changeset" do
+      entrant_log = entrant_log_fixture()
+      assert %Ecto.Changeset{} = Log.change_entrant_log(entrant_log)
+    end
+  end
 end

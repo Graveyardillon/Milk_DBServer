@@ -293,4 +293,293 @@ defmodule Milk.Log do
   def change_chats_log(%ChatsLog{} = chats_log, attrs \\ %{}) do
     ChatsLog.changeset(chats_log, attrs)
   end
+
+  alias Milk.Log.TournamentLog
+
+  @doc """
+  Returns the list of tournament_log.
+
+  ## Examples
+
+      iex> list_tournament_log()
+      [%Tournament{}, ...]
+
+  """
+  def list_tournament_log do
+    Repo.all(TournamentLog)
+  end
+
+  @doc """
+  Gets a single tournament.
+
+  Raises `Ecto.NoResultsError` if the Tournament does not exist.
+
+  ## Examples
+
+      iex> get_tournament!(123)
+      %Tournament{}
+
+      iex> get_tournament!(456)
+      ** (Ecto.NoResultsError)
+
+  """
+  def get_tournament!(id), do: Repo.get!(TournamentLog, id)
+
+  @doc """
+  Creates a tournament.
+
+  ## Examples
+
+      iex> create_tournament(%{field: value})
+      {:ok, %Tournament{}}
+
+      iex> create_tournament(%{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def create_tournament_log(attrs \\ %{}) do
+    %TournamentLog{}
+    |> TournamentLog.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  @doc """
+  Updates a tournament.
+
+  ## Examples
+
+      iex> update_tournament(tournament, %{field: new_value})
+      {:ok, %Tournament{}}
+
+      iex> update_tournament(tournament, %{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def update_tournament_log(%TournamentLog{} = tournament, attrs) do
+    tournament
+    |> TournamentLog.changeset(attrs)
+    |> Repo.update()
+  end
+
+  @doc """
+  Deletes a tournament.
+
+  ## Examples
+
+      iex> delete_tournament(tournament)
+      {:ok, %Tournament{}}
+
+      iex> delete_tournament(tournament)
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def delete_tournament_log(%TournamentLog{} = tournament) do
+    Repo.delete(tournament)
+  end
+
+  @doc """
+  Returns an `%Ecto.Changeset{}` for tracking tournament changes.
+
+  ## Examples
+
+      iex> change_tournament(tournament)
+      %Ecto.Changeset{data: %Tournament{}}
+
+  """
+  def change_tournament_log(%TournamentLog{} = tournament, attrs \\ %{}) do
+    TournamentLog.changeset(tournament, attrs)
+  end
+
+  alias Milk.Log.EntrantLog
+
+  @doc """
+  Returns the list of entrant_log.
+
+  ## Examples
+
+      iex> list_entrant_log()
+      [%EntrantLog{}, ...]
+
+  """
+  def list_entrant_log do
+    Repo.all(EntrantLog)
+  end
+
+  @doc """
+  Gets a single entrant_log.
+
+  Raises `Ecto.NoResultsError` if the Entrant log does not exist.
+
+  ## Examples
+
+      iex> get_entrant_log!(123)
+      %EntrantLog{}
+
+      iex> get_entrant_log!(456)
+      ** (Ecto.NoResultsError)
+
+  """
+  def get_entrant_log!(id), do: Repo.get!(EntrantLog, id)
+
+  @doc """
+  Creates a entrant_log.
+
+  ## Examples
+
+      iex> create_entrant_log(%{field: value})
+      {:ok, %EntrantLog{}}
+
+      iex> create_entrant_log(%{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def create_entrant_log(attrs \\ %{}) do
+    %EntrantLog{}
+    |> EntrantLog.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  @doc """
+  Updates a entrant_log.
+
+  ## Examples
+
+      iex> update_entrant_log(entrant_log, %{field: new_value})
+      {:ok, %EntrantLog{}}
+
+      iex> update_entrant_log(entrant_log, %{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def update_entrant_log(%EntrantLog{} = entrant_log, attrs) do
+    entrant_log
+    |> EntrantLog.changeset(attrs)
+    |> Repo.update()
+  end
+
+  @doc """
+  Deletes a entrant_log.
+
+  ## Examples
+
+      iex> delete_entrant_log(entrant_log)
+      {:ok, %EntrantLog{}}
+
+      iex> delete_entrant_log(entrant_log)
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def delete_entrant_log(%EntrantLog{} = entrant_log) do
+    Repo.delete(entrant_log)
+  end
+
+  @doc """
+  Returns an `%Ecto.Changeset{}` for tracking entrant_log changes.
+
+  ## Examples
+
+      iex> change_entrant_log(entrant_log)
+      %Ecto.Changeset{data: %EntrantLog{}}
+
+  """
+  def change_entrant_log(%EntrantLog{} = entrant_log, attrs \\ %{}) do
+    EntrantLog.changeset(entrant_log, attrs)
+  end
+
+  alias Milk.Log.AssistantLog
+
+  @doc """
+  Returns the list of assistant_log.
+
+  ## Examples
+
+      iex> list_assistant_log()
+      [%AssistantLog{}, ...]
+
+  """
+  def list_assistant_log do
+    Repo.all(AssistantLog)
+  end
+
+  @doc """
+  Gets a single assistant_log.
+
+  Raises `Ecto.NoResultsError` if the Assistant log does not exist.
+
+  ## Examples
+
+      iex> get_assistant_log!(123)
+      %AssistantLog{}
+
+      iex> get_assistant_log!(456)
+      ** (Ecto.NoResultsError)
+
+  """
+  def get_assistant_log!(id), do: Repo.get!(AssistantLog, id)
+
+  @doc """
+  Creates a assistant_log.
+
+  ## Examples
+
+      iex> create_assistant_log(%{field: value})
+      {:ok, %AssistantLog{}}
+
+      iex> create_assistant_log(%{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def create_assistant_log(attrs \\ %{}) do
+    %AssistantLog{}
+    |> AssistantLog.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  @doc """
+  Updates a assistant_log.
+
+  ## Examples
+
+      iex> update_assistant_log(assistant_log, %{field: new_value})
+      {:ok, %AssistantLog{}}
+
+      iex> update_assistant_log(assistant_log, %{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def update_assistant_log(%AssistantLog{} = assistant_log, attrs) do
+    assistant_log
+    |> AssistantLog.changeset(attrs)
+    |> Repo.update()
+  end
+
+  @doc """
+  Deletes a assistant_log.
+
+  ## Examples
+
+      iex> delete_assistant_log(assistant_log)
+      {:ok, %AssistantLog{}}
+
+      iex> delete_assistant_log(assistant_log)
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def delete_assistant_log(%AssistantLog{} = assistant_log) do
+    Repo.delete(assistant_log)
+  end
+
+  @doc """
+  Returns an `%Ecto.Changeset{}` for tracking assistant_log changes.
+
+  ## Examples
+
+      iex> change_assistant_log(assistant_log)
+      %Ecto.Changeset{data: %AssistantLog{}}
+
+  """
+  def change_assistant_log(%AssistantLog{} = assistant_log, attrs \\ %{}) do
+    AssistantLog.changeset(assistant_log, attrs)
+  end
+
 end

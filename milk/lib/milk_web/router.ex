@@ -11,7 +11,7 @@ defmodule MilkWeb.Router do
 
   pipeline :api do
     plug :accepts, ["json"]
-    plug Milk.UserManager.GuardianPipline
+    # plug Milk.UserManager.GuardianPipline
   end
 
   scope "/", MilkWeb do
@@ -31,7 +31,6 @@ defmodule MilkWeb.Router do
     post "/game/add", GameController, :add
     post "/achievement/list", AchievementController, :show
     post "/achievement/add", AchievementController, :add
-
   end
 
   scope "/api", MilkWeb do
@@ -55,14 +54,31 @@ defmodule MilkWeb.Router do
     resources "/chat_member", ChatMemberController, except: [:new, :edit, :index, :show, :delete]
     post "/chat_member/get", ChatMemberController, :show
     post "/chat_member/get_all", ChatMemberController, :index
-    post "chat_member/delete", ChatMemberController, :delete
+    post "/chat_member/delete", ChatMemberController, :delete
 
     resources "/chat", ChatsController, except: [:new, :edit, :index, :show, :delete]
     # post "/chat/get", ChatMemberController, :show
     post "/chat/get", ChatsController, :index
-    post "chat/latest", ChatsController, :get_latest
-    post "chat/sync", ChatsController, :sync
-    post "chat/delete", ChatsController, :delete
+    post "/chat/latest", ChatsController, :get_latest
+    post "/chat/sync", ChatsController, :sync
+    post "/chat/delete", ChatsController, :delete
+    post "/chat/create_dialogue", ChatsController, :create_dialogue
+
+    resources "/tournament", TournamentController, except: [:new, :edit, :index, :show, :delete]
+    post "/tournament/get", TournamentController, :show
+    post "/tournament/get_all", TournamentController, :index
+    post "/tournament/get_game", TournamentController, :get_game
+    post "/tournament/delete", TournamentController, :delete
+
+    resources "/entrant", EntrantController, except: [:new, :edit, :index, :show, :delete]
+    post "/entrant/get", EntrantController, :show
+    post "/entrant/get_all", EntrantController, :index
+    post "/entrant/delete", EntrantController, :delete
+
+    resources "/assistant", AssistantController, except: [:new, :edit, :index, :show, :delete]
+    post "/assistant/get", AssistantController, :show
+    post "/assistant/get_all", AssistantController, :index
+    post "/assistant/delete", AssistantController, :delete
   end
 
   # Other scopes may use custom stacks.
