@@ -50,7 +50,7 @@ defmodule MilkWeb.ProfileController do
     end
   end
 
-  def load_icon(conn, %{"path" => path}) do
+  def get_icon(conn, %{"path" => path}) do
     b64 = File.read!("./static/image/profile_icon/#{path}.png")
           |> Base.encode64()
 
