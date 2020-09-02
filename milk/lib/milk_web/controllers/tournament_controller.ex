@@ -68,4 +68,14 @@ defmodule MilkWeb.TournamentController do
       send_resp(conn, :no_content, "")
     end
   end
+
+  def participating_tournaments(conn, %{"user_id" => user_id}) do
+    tournaments = Tournaments.get_participating_tournaments!(user_id)
+
+    if tournaments do
+      render(conn, "index.json", tournament: tournaments)
+    else
+      render(conn, "error.json", error: nil)
+    end
+  end
 end
