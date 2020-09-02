@@ -18,6 +18,8 @@ defmodule Milk.Tournaments do
   alias Milk.Accounts.User
   alias Milk.Log.{TournamentLog, EntrantLog, AssistantLog, TournamentChatTopicLog}
 
+  require Logger
+
   @doc """
   Returns the list of tournament.
 
@@ -267,7 +269,7 @@ defmodule Milk.Tournaments do
         _ -> {:error, nil}
       end
     else
-      IO.inspect("duplicate entrant")
+      Logger.error("duplicate entrant")
       {:error, nil}
     end
   end
@@ -291,7 +293,6 @@ defmodule Milk.Tournaments do
              end)
     
     with {:ok, _chat_member} <- result do
-      IO.inspect(entrant)
       {:ok, entrant.entrant}
     else
       {:error, reason} -> {:error, reason}

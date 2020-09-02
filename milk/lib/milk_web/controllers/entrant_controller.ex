@@ -9,7 +9,7 @@ defmodule MilkWeb.EntrantController do
 
   def index(conn, _params) do
     entrant = Tournaments.list_entrant()
-    if (entrant) do
+    if entrant do
       render(conn, "index.json", entrant: entrant)
     else
       render(conn, "error.json", error: nil)
@@ -19,8 +19,6 @@ defmodule MilkWeb.EntrantController do
   def create(conn, %{"entrant" => entrant_params}) do
     case Tournaments.create_entrant(entrant_params) do
       {:ok, %Entrant{} = entrant} ->
-        IO.inspect("entrant")
-        IO.inspect(entrant)
         conn
         # |> put_status(:created)
         # |> put_resp_header("location", Routes.entrant_path(conn, :show, entrant))
