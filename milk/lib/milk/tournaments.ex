@@ -78,31 +78,37 @@ defmodule Milk.Tournaments do
     tournament_struct = %Tournament{master_id: attrs["master_id"], game_id: attrs["game_id"]}
     tournament = Multi.new()
                  |> Multi.insert(:tournament, Tournament.changeset(tournament_struct, attrs))
-                 |> Multi.insert(:group_topic, fn(%{tournament: tournament}) ->
-                   topic = %{
-                     "tournament_id" => tournament.id,
-                     "topic_name" => "Group"
+                 |> Multi.insert(:group_topic, fn %{tournament: tournament} ->
+                   room_params = %{
+                     name: tournament.name,
+                     member_count: tournament.count,
                    }
+                   {:ok, chat_room} = Chat.create_chat_room(room_params)
+                   topic = %{"topic_name" => "Group"}
 
-                   Ecto.build_assoc(tournament, :tournament_chat_topics)
+                   %TournamentChatTopic{tournament_id: tournament.id, chat_room_id: chat_room.id}
                    |> TournamentChatTopic.changeset(topic)
                  end)
-                 |> Multi.insert(:notification_topic, fn(%{tournament: tournament}) ->
-                   topic = %{
-                     "tournament_id" => tournament.id,
-                     "topic_name" => "Notification"
+                 |> Multi.insert(:notification_topic, fn %{tournament: tournament} ->
+                   room_params = %{
+                     name: tournament.name,
+                     member_count: tournament.count,
                    }
+                   {:ok, chat_room} = Chat.create_chat_room(room_params)
+                   topic = %{"topic_name" => "Notification"}
 
-                   Ecto.build_assoc(tournament, :tournament_chat_topics)
+                   %TournamentChatTopic{tournament_id: tournament.id, chat_room_id: chat_room.id}
                    |> TournamentChatTopic.changeset(topic)
                  end)
-                 |> Multi.insert(:q_and_a_topic, fn(%{tournament: tournament}) ->
-                   topic = %{
-                     "tournament_id" => tournament.id,
-                     "topic_name" => "Q&A"
+                 |> Multi.insert(:q_and_a_topic, fn %{tournament: tournament} ->
+                   room_params = %{
+                     name: tournament.name,
+                     member_count: tournament.count,
                    }
+                   {:ok, chat_room} = Chat.create_chat_room(room_params)
+                   topic = %{"topic_name" => "Q&A"}
 
-                   Ecto.build_assoc(tournament, :tournament_chat_topics)
+                   %TournamentChatTopic{tournament_id: tournament.id, chat_room_id: chat_room.id}
                    |> TournamentChatTopic.changeset(topic)
                  end)
                  |> Repo.transaction()
@@ -265,17 +271,25 @@ defmodule Milk.Tournaments do
   end
 
   defp join_tournament_chat_room(entrant, attrs) do
-    [chat_room | _] = Chat.get_chat_room_by_tournament_id(entrant.tournament.id)
-    IO.inspect(chat_room)
-    join_params = %{
-      "user_id" => attrs["user_id"],
-      "chat_room_id" => chat_room.id,
-      "authority" => 0
-    }
-
-    with {:ok, entrant} <- Chat.create_chat_member(join_params) do
-      IO.inspect("join success")
-      {:ok, entrant.entrant}
+    result = Chat.get_chat_rooms_by_tournament_id(entrant.tournament.id)
+             |> Enum.reduce({:ok, nil}, fn (chat_room, acc) ->
+               join_params = %{
+                 "user_id" => attrs["user_id"],
+                 "chat_room_id" => chat_room.id,
+                 "authority" => 0
+               }
+               with {:ok, entrant} <- Chat.create_chat_member(join_params) do
+                 acc = {:ok, entrant.entrant}
+               else
+                 {:error, reason} -> 
+                  acc = {:error, reason}
+                 _ -> 
+                  acc = {:error, nil}
+               end
+             end)
+    
+    with {:ok, entrant} <- result do
+      {:ok, entrant}
     else
       {:error, reason} -> {:error, reason}
       _ -> {:error, nil}

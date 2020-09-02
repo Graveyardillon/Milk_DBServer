@@ -142,9 +142,9 @@ defmodule Milk.Chat do
   @doc """
   Get a ChatRoom by tournament id
   """
-  def get_chat_room_by_tournament_id(tournament_id) do
-    ChatRoom
-    |> where([t], t.id in ^[tournament_id])
+  def get_chat_rooms_by_tournament_id(tournament_id) do
+    TournamentChatTopic
+    |> where([t], t.chat_room_id in ^[tournament_id])
     |> Repo.all()
   end
 
@@ -215,7 +215,6 @@ defmodule Milk.Chat do
       # else
       #   {:error, nil}
       # end
-      IO.inspect(attrs)
       case Multi.new() 
       |> Multi.run(:chat_room, fn repo, _ -> 
         {:ok, repo.get(ChatRoom, attrs["chat_room_id"])}
