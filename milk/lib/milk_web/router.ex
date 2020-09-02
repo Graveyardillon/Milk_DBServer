@@ -21,12 +21,16 @@ defmodule MilkWeb.Router do
   end
 
   scope "/api", MilkWeb do
+    post "/signup", UserController, :create
+    get "/user/get_all_username", UserController, :all_username
+    post "/profile", ProfileController, :get_profile
+    post "/profile/update", ProfileController, :update
+    post "/profile/update_icon", ProfileController, :update_icon
+    get "/profile/get_icon", ProfileController, :get_icon
     get "/game/list", GameController, :list
-    post "/game/add", GameController, :create
-    post "/profile/add", ProfileController, :add
-    post "/profile/fav_games", ProfileController, :fav_games
-    post "/profile/delete_game", ProfileController, :delete_game
-    post "/profile/delete_achievement", ProfileController, :delete_achievement
+    post "/game/add", GameController, :add
+    post "/achievement/list", AchievementController, :show
+    post "/achievement/add", AchievementController, :add
   end
 
   scope "/api", MilkWeb do

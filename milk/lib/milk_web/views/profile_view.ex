@@ -2,6 +2,7 @@ defmodule MilkWeb.ProfileView do
   use MilkWeb, :view
   alias MilkWeb.ProfileView
   alias MilkWeb.GameView
+  alias MilkWeb.AchievementView
 
   def render("index.json", %{profiles: profiles}) do
     %{data: render_many(profiles, ProfileView, "profile.json")}
@@ -18,17 +19,14 @@ defmodule MilkWeb.ProfileView do
       content_type: profile.content_type}
   end
 
-  def render("list.json", %{games: games}) do
-    %{data: render_many(games, GameView, "game.json")}
-  end
-
-  def render("show.json", %{game: game}) do
-    %{data: render_one(game, GameView, "game.json")}
-  end
-
-  def render("game.json", %{game: game}) do
-    %{id: game.id,
-      title: game.title,
-      icon_path: game.icon_path}
+  def render("profile.json", %{user: user, games: games, achievements: achievements}) do
+    %{
+      id: user.id,
+      name: user.name,
+      icon_path: user.icon_path,
+      bio: user.bio,
+      gameList: render_many(games, GameView, "game.json"),
+      achievementList: render_many(achievements, AchievementView, "achievement.json")
+    }
   end
 end

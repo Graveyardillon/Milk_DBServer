@@ -102,6 +102,12 @@ defmodule Milk.Games do
     Game.changeset(game, attrs)
   end
 
+  def add_game(game_params) do
+    %Game{}
+      |> Game.changeset(game_params)
+      |> Repo.insert()
+  end
+  
   def get_games_by_id_list(id_list) do
     Game
       |> where([g], g.id in ^id_list)

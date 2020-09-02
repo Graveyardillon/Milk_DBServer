@@ -24,6 +24,12 @@ defmodule Milk.Accounts do
     Repo.all(from u in User, join: a in assoc(u, :auth), order_by: u.create_time, preload: [auth: a])
   end
 
+  def list_usernames do
+    User
+    |> select([u], u.name)
+    |> Repo.all()
+  end
+
   @doc """
   Gets a single user.
 
@@ -143,6 +149,15 @@ defmodule Milk.Accounts do
       {:error, _, error, data} -> {:error, error.errors}
       _ -> {:ok, nil}
     end
+  end
+
+  def update_icon_path(user, icon_path) do
+    old_icon_path = Repo.one(from u in User, where: u.id == ^user.id, select: u.icon_path)
+    if old_icon_path != nil do
+      File.rm("./static/image/profile_icon/#{old_icon_path}.png")
+    end
+
+    Repo.update(Ecto.Changeset.change user, icon_path: icon_path)
   end
 
   def check_user(id, password, email) do
