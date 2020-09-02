@@ -19,6 +19,8 @@ defmodule Milk.Chat do
   alias Milk.Log.ChatRoomLog
   alias Ecto.Multi
 
+  require Logger
+
   @doc """
   Returns the list of chat_room.
 
@@ -139,6 +141,18 @@ defmodule Milk.Chat do
     ChatRoom.changeset(chat_room, attrs)
   end
 
+  @doc """
+  Get a ChatRoom by tournament id
+  """
+  def get_chat_rooms_by_tournament_id(tournament_id) do
+    TournamentChatTopic
+    |> where([t], t.tournament_id in ^[tournament_id])
+    |> Repo.all()
+    |> Enum.map(fn topic ->
+      get_chat_room(topic.chat_room_id)
+    end)
+  end
+
   alias Milk.Chat.ChatMember
 
   @doc """
@@ -210,8 +224,9 @@ defmodule Milk.Chat do
       |> Multi.run(:chat_room, fn repo, _ -> 
         {:ok, repo.get(ChatRoom, attrs["chat_room_id"])}
       end)
-      |> Multi.insert(:chat_member, fn %{chat_room: chat_room} ->
-        ChatMember.changeset(%ChatMember{user_id: attrs["user_id"], chat_room_id: attrs["chat_room_id"]}, attrs)
+      |> Multi.insert(:chat_member, fn %{chat_room: _chat_room} ->
+        %ChatMember{user_id: attrs["user_id"], chat_room_id: attrs["chat_room_id"]}
+        |> ChatMember.changeset(attrs)
       end)
       |> Multi.update(:update, fn %{chat_room: chat_room} ->
         ChatRoom.changeset_update(chat_room, %{member_count: chat_room.member_count + 1})
@@ -226,6 +241,7 @@ defmodule Milk.Chat do
           {:error, nil}
       end
     else
+      Logger.error("User does not exist")
       {:error, nil}
     end
   end
@@ -359,13 +375,13 @@ defmodule Milk.Chat do
           |> ChatRoom.changeset_update(%{last_chat: chat.chat.word, count: chat.chat.index, update_time: attrs["datetime"]})
           |> IO.inspect
           |> Repo.update
+          
           {:ok, chat.chat}
-        {:error, _, error, data} -> 
-          {:error, error.errors}
-        _ ->
-          {:error, nil}
+        {:error, _, error, data} -> {:error, error.errors}
+        _ -> {:error, nil}
       end
     else
+      Logger.error("Chat Member does not exist")
       {:error, nil}
     end
   end
@@ -420,6 +436,7 @@ defmodule Milk.Chat do
     Chats.changeset(chats, attrs)
   end
 
+  # 個人チャット用の関数
   def dialogue(attrs) do
     if (Repo.exists?(from u in User, where: u.id == ^attrs["user_id"]) 
       and Repo.exists?(from u in User, where: u.id == ^attrs["partner_id"])) do
@@ -438,7 +455,6 @@ defmodule Milk.Chat do
       else
         {:ok, chat_room} = %ChatRoom{name: "%user%", member_count: 2}
         |> Repo.insert() 
-        |> IO.inspect
       
         %ChatMember{user_id: attrs["user_id"], chat_room_id: chat_room.id, authority: 0}
         |> Repo.insert()
@@ -448,7 +464,6 @@ defmodule Milk.Chat do
         attrs
         |> Map.put("chat_room_id", chat_room.id)
         |> create_chats
-        |> IO.inspect
       end
     end
   end

@@ -4,6 +4,7 @@ defmodule Milk.Chat.ChatRoom do
   alias Milk.Chat.Chats
   alias Milk.Chat.ChatMember
   alias Milk.Accounts.User
+  alias Milk.Tournaments.TournamentChatTopic
   alias Milk.EctoDate
 
   schema "chat_room" do
@@ -14,6 +15,7 @@ defmodule Milk.Chat.ChatRoom do
     has_many :chat, Chats
     many_to_many :user, User, join_through: "chat_member"
     has_many :chat_member, ChatMember
+    has_many :tournament_chat_topics, TournamentChatTopic
     
     timestamps()
   end

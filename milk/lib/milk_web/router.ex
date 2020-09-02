@@ -43,8 +43,7 @@ defmodule MilkWeb.Router do
     post "/user/signup", UserController, :create
     post "/user/login", UserController, :login
     post "/user/login_forced", UserController, :login_forced
-    post "/user/logout/", UserController, :logout
-    post "/user/update_bio", UserController, :update_bio
+    post "/user/logout", UserController, :logout
 
     resources "/chat_room", ChatRoomController, except: [:new, :edit, :index, :show]
 
