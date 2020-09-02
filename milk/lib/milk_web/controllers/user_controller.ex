@@ -61,6 +61,7 @@ defmodule MilkWeb.UserController do
 
   def login(conn, %{"user" => user_params}) do
     user = Accounts.login(user_params)
+           |> IO.inspect
     render(conn, "login.json", %{user: user})
   end
 
