@@ -283,6 +283,8 @@ defmodule Milk.Tournaments do
                  "authority" => 0
                }
                with {:ok, chat_member} <- Chat.create_chat_member(join_params) do
+                 IO.inspect("join_tournament_chat_room")
+                 IO.inspect(chat_member)
                  acc = {:ok, chat_member}
                else
                  {:error, reason} -> 

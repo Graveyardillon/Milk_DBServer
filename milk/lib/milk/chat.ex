@@ -19,6 +19,8 @@ defmodule Milk.Chat do
   alias Milk.Log.ChatRoomLog
   alias Ecto.Multi
 
+  require Logger
+
   @doc """
   Returns the list of chat_room.
 
@@ -144,8 +146,11 @@ defmodule Milk.Chat do
   """
   def get_chat_rooms_by_tournament_id(tournament_id) do
     TournamentChatTopic
-    |> where([t], t.chat_room_id in ^[tournament_id])
+    |> where([t], t.tournament_id in ^[tournament_id])
     |> Repo.all()
+    |> Enum.map(fn topic ->
+      get_chat_room(topic.chat_room_id)
+    end)
   end
 
   alias Milk.Chat.ChatMember
@@ -236,6 +241,7 @@ defmodule Milk.Chat do
           {:error, nil}
       end
     else
+      Logger.error("User does not exist")
       {:error, nil}
     end
   end
@@ -369,13 +375,13 @@ defmodule Milk.Chat do
           |> ChatRoom.changeset_update(%{last_chat: chat.chat.word, count: chat.chat.index, update_time: attrs["datetime"]})
           |> IO.inspect
           |> Repo.update
+          
           {:ok, chat.chat}
-        {:error, _, error, data} -> 
-          {:error, error.errors}
-        _ ->
-          {:error, nil}
+        {:error, _, error, data} -> {:error, error.errors}
+        _ -> {:error, nil}
       end
     else
+      Logger.error("Chat Member does not exist")
       {:error, nil}
     end
   end
