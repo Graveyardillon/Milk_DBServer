@@ -3,6 +3,7 @@ defmodule MilkWeb.EntrantController do
 
   alias Milk.Tournaments
   alias Milk.Tournaments.Entrant
+  alias Milk.Chat.ChatMember
 
   # action_fallback MilkWeb.FallbackController
 
@@ -18,6 +19,8 @@ defmodule MilkWeb.EntrantController do
   def create(conn, %{"entrant" => entrant_params}) do
     case Tournaments.create_entrant(entrant_params) do
       {:ok, %Entrant{} = entrant} ->
+        IO.inspect("entrant")
+        IO.inspect(entrant)
         conn
         # |> put_status(:created)
         # |> put_resp_header("location", Routes.entrant_path(conn, :show, entrant))

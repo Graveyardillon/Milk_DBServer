@@ -246,7 +246,8 @@ defmodule Milk.Tournaments do
 
   """
   def create_entrant(attrs \\ %{}) do
-    if Repo.exists?(from u in User, where: u.id == ^attrs["user_id"]) do 
+    if Repo.exists?(from u in User, where: u.id == ^attrs["user_id"])
+      and not Repo.exists?(from e in Entrant, where: e.tournament_id == ^attrs["tournament_id"] and e.user_id == ^attrs["user_id"]) do 
       result =  Multi.new()
                 |> Multi.run(:tournament, fn repo, _ ->
                   {:ok, repo.get(Tournament, attrs["tournament_id"])}
@@ -266,6 +267,7 @@ defmodule Milk.Tournaments do
         _ -> {:error, nil}
       end
     else
+      IO.inspect("duplicate entrant")
       {:error, nil}
     end
   end
@@ -278,8 +280,8 @@ defmodule Milk.Tournaments do
                  "chat_room_id" => chat_room.id,
                  "authority" => 0
                }
-               with {:ok, entrant} <- Chat.create_chat_member(join_params) do
-                 acc = {:ok, entrant.entrant}
+               with {:ok, chat_member} <- Chat.create_chat_member(join_params) do
+                 acc = {:ok, chat_member}
                else
                  {:error, reason} -> 
                   acc = {:error, reason}
@@ -288,8 +290,9 @@ defmodule Milk.Tournaments do
                end
              end)
     
-    with {:ok, entrant} <- result do
-      {:ok, entrant}
+    with {:ok, _chat_member} <- result do
+      IO.inspect(entrant)
+      {:ok, entrant.entrant}
     else
       {:error, reason} -> {:error, reason}
       _ -> {:error, nil}
