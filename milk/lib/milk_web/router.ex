@@ -29,7 +29,7 @@ defmodule MilkWeb.Router do
     post "/profile/update_icon", ProfileController, :update_icon
     get "/profile/get_icon", ProfileController, :get_icon
     get "/game/list", GameController, :list
-    post "/game/add", GameController, :add
+    post "/game/add", GameController, :create
     post "/achievement/list", AchievementController, :show
     post "/achievement/add", AchievementController, :add
   end
@@ -69,6 +69,7 @@ defmodule MilkWeb.Router do
     post "/tournament/get_all", TournamentController, :index
     post "/tournament/get_game", TournamentController, :get_game
     post "/tournament/delete", TournamentController, :delete
+    post "/tournament/get_participating_tournaments", TournamentController, :participating_tournaments
 
     resources "/entrant", EntrantController, except: [:new, :edit, :index, :show, :delete]
     post "/entrant/get", EntrantController, :show

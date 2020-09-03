@@ -337,7 +337,6 @@ defmodule Milk.Tournaments do
 
       iex> delete_entrant(entrant)
       {:error, %Ecto.Changeset{}}
-
   """
   def delete_entrant(%Entrant{} = entrant) do
     EntrantLog.changeset(%EntrantLog{}, Map.from_struct(entrant))
@@ -359,6 +358,18 @@ defmodule Milk.Tournaments do
   """
   def change_entrant(%Entrant{} = entrant, attrs \\ %{}) do
     Entrant.changeset(entrant, attrs)
+  end
+
+  @doc """
+  Get tournaments which the user participating in.
+  """
+  def get_participating_tournaments!(user_id) do
+    Entrant
+    |> where([e], e.user_id == ^user_id)
+    |> Repo.all()
+    |> Enum.map(fn entrant ->
+      get_tournament!(entrant.tournament_id)
+    end)
   end
 
   @doc """
