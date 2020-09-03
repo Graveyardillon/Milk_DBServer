@@ -28,7 +28,7 @@ defmodule MilkWeb.Router do
     post "/profile/update_icon", ProfileController, :update_icon
     get "/profile/get_icon", ProfileController, :get_icon
     get "/game/list", GameController, :list
-    post "/game/add", GameController, :add
+    post "/game/add", GameController, :create
     post "/achievement/list", AchievementController, :show
     post "/achievement/add", AchievementController, :add
   end
