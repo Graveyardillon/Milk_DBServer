@@ -437,34 +437,46 @@ defmodule Milk.Chat do
   end
 
   # 個人チャット用の関数
-  def dialogue(attrs) do
-    if (Repo.exists?(from u in User, where: u.id == ^attrs["user_id"]) 
-      and Repo.exists?(from u in User, where: u.id == ^attrs["partner_id"])) do
+  def dialogue(attrs = %{"user_id" => user_id, "partner_id" => partner_id, "word" => word, "datetime" => datetime}) do
+    if Repo.exists?(from u in User, where: u.id == ^user_id) 
+      and Repo.exists?(from u in User, where: u.id == ^partner_id) do
 
       cr = Repo.one(from cr in ChatRoom, join: c1 in ChatMember, join: c2 in ChatMember, where: cr.member_count == 2 
         and cr.id == c1.chat_room_id 
-        and c1.user_id == ^attrs["user_id"] 
-        and c2.user_id == ^attrs["partner_id"] 
+        and c1.user_id == ^user_id
+        and c2.user_id == ^partner_id
         and c1.chat_room_id == c2.chat_room_id
       )
       
       if cr do
         attrs
         |> Map.put("chat_room_id", cr.id)
-        |> create_chats
+        |> create_chats()
       else
         {:ok, chat_room} = %ChatRoom{name: "%user%", member_count: 2}
         |> Repo.insert() 
       
-        %ChatMember{user_id: attrs["user_id"], chat_room_id: chat_room.id, authority: 0}
+        %ChatMember{user_id: user_id, chat_room_id: chat_room.id, authority: 0}
         |> Repo.insert()
-        %ChatMember{user_id: attrs["partner_id"], chat_room_id: chat_room.id, authority: 0}
+        %ChatMember{user_id: partner_id, chat_room_id: chat_room.id, authority: 0}
         |> Repo.insert()
       
         attrs
         |> Map.put("chat_room_id", chat_room.id)
-        |> create_chats
+        |> create_chats()
       end
+    end
+  end
+
+  # グループチャット用の関数
+  def dialogue(attrs = %{"user_id" => user_id, "chat_room_id" => chat_room_id, "word" => word, "datetime" => datetime}) do
+    if Repo.exists?(from u in User, where: u.id == ^user_id)
+      and Repo.exists?(from cr in ChatRoom, where: cr.id == ^chat_room_id) do
+      
+      cr = Repo.one(from cr in ChatRoom, where: cr.id == ^chat_room_id)
+
+      attrs
+      |> create_chats()
     end
   end
 end
