@@ -455,6 +455,7 @@ defmodule Milk.Chat do
         and c1.user_id == ^user_id
         and c2.user_id == ^partner_id
         and c1.chat_room_id == c2.chat_room_id
+        and cr.name == "%user%"
       )
       
       if cr do
