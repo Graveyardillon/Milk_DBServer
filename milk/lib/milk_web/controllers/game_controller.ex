@@ -18,7 +18,7 @@ defmodule MilkWeb.GameController do
     end
   end
 
-  # TODO: muiltiにしたけどいい実装方法なのか微妙だからまた見てもらう
+  # TODO: multiにしたけどいい実装方法なのか微妙だからまた見てもらう
   def create(attrs \\ %{}) do
     case Multi.new
     |> Multi.insert(:game, Game.changeset(%Game{}, attrs))

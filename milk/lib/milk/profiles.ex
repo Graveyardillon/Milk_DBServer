@@ -3,9 +3,12 @@ defmodule Milk.Profiles do
   import Ecto.Query, warn: false
   alias Milk.Repo
 
+  alias Milk.Accounts.User
   alias Milk.Profiles
   alias Ecto.Multi
 
+  alias Milk.Games.Game
+  alias Milk.Achievements.Achievement
   alias Milk.Accounts.Profile
 
   @doc """
@@ -67,11 +70,11 @@ defmodule Milk.Profiles do
       {:error, %Ecto.Changeset{}}
 
   """
-  def update_profile(%Profile{} = profile, attrs) do
-    profile
-    |> Profile.changeset(attrs)
-    |> Repo.update()
-  end
+  # def update_profile(%Profile{} = profile, attrs) do
+  #   profile
+  #   |> Profile.changeset(attrs)
+  #   |> Repo.update()
+  # end
 
   @doc """
   Deletes a profile.
@@ -102,59 +105,45 @@ defmodule Milk.Profiles do
     Profile.changeset(profile, attrs)
   end
 
-  def add(attrs \\ %{}) do
-    %Profile{}
-    |> Profile.changeset(attrs)
-    |> Repo.insert()
+  def get_game_list(user) do
+
+    ids = Profile
+    |> where([p], p.user_id == ^user.id and p.content_type == "game")
+    |> Repo.all()
+    |> Enum.map(& &1.content_id)
+
+    Game
+    |> where([g], g.id in ^ids)
+    |> Repo.all
   end
 
-  def check_duplication(attrs \\ %{}) do
-    user_id = Map.get(attrs, "user_id")
-    content_id = Map.get(attrs, "content_id")
-    content_type = Map.get(attrs, "content_type")
-    
-    query = from p in Profile, where: p.user_id == ^user_id and p.content_id == ^content_id and p.content_type == ^content_type
-    if Repo.one(query) == nil do
-      {:ok}
-    else 
-      {:error}
-    end
+  def get_achievement_list(user) do
+    ids = Profile
+    |> where([p], p.user_id == ^user.id and p.content_type == "achievement")
+    |> Repo.all()
+    |> Enum.map (& &1.content_id)
+
+    Achievement
+    |> where([a], a.id in ^ids)
+    |> Repo.all
   end
 
+  def update_profile(%User{} = user, name, bio, gameList, achievementList) do
+    Repo.update(Ecto.Changeset.change user, name: name, bio: bio)
 
-  def get_id_list_game(user_id) do
     Profile
-      |> where([p], p.user_id == ^user_id and p.content_type == "game")
-      |> Repo.all()
-      |> Enum.map(& &1.content_id)
+    |> where([p], p.user_id == ^user.id)
+    |> Repo.delete_all()
+
+    Enum.each(gameList, fn game ->
+      %Profile{}
+      |> Profile.changeset(%{user_id: user.id, content_id: game, content_type: "game"})
+      |> Repo.insert()
+    end)
+    Enum.each(achievementList, fn achievement ->
+      %Profile{}
+      |> Profile.changeset(%{user_id: user.id, content_id: achievement, content_type: "achievement"})
+      |> Repo.insert()
+    end)
   end
-  def get_id_list_achievement(user_id) do
-    Profile
-      |> where([p], p.user_id == ^user_id and p.content_type == "achievement")
-      |> Repo.all()
-      |> Enum.map(& &1.content_id)
-  end
-
-  def delete_game(user_id, game_id) do
-    query = from p in Profile, where: p.user_id == ^user_id and p.content_id == ^game_id and p.content_type == "game"
-
-    if Repo.one(query) == nil do
-      {:not_found}
-    else
-      Repo.delete_all(query)
-      {:found}
-    end
-  end
-
-  def delete_achievement(user_id, achievement_id) do
-    query = from p in Profile, where: p.user_id == ^user_id and p.content_id == ^achievement_id and p.content_type == "achievement"
-
-    if Repo.one(query) == nil do
-      {:not_found}
-    else
-      Repo.delete_all(query)
-      {:found}
-    end
-  end
-
 end

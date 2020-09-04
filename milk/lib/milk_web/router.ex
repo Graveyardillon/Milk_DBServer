@@ -21,12 +21,16 @@ defmodule MilkWeb.Router do
   end
 
   scope "/api", MilkWeb do
+    post "/signup", UserController, :create
+    get "/user/get_all_username", UserController, :all_username
+    post "/profile", ProfileController, :get_profile
+    post "/profile/update", ProfileController, :update
+    post "/profile/update_icon", ProfileController, :update_icon
+    get "/profile/get_icon", ProfileController, :get_icon
     get "/game/list", GameController, :list
     post "/game/add", GameController, :create
-    post "/profile/add", ProfileController, :add
-    post "/profile/fav_games", ProfileController, :fav_games
-    post "/profile/delete_game", ProfileController, :delete_game
-    post "/profile/delete_achievement", ProfileController, :delete_achievement
+    post "/achievement/list", AchievementController, :show
+    post "/achievement/add", AchievementController, :add
   end
 
   scope "/api", MilkWeb do
@@ -39,7 +43,7 @@ defmodule MilkWeb.Router do
     post "/user/signup", UserController, :create
     post "/user/login", UserController, :login
     post "/user/login_forced", UserController, :login_forced
-    post "/user/logout/", UserController, :logout
+    post "/user/logout", UserController, :logout
 
     resources "/chat_room", ChatRoomController, except: [:new, :edit, :index, :show]
 
@@ -64,6 +68,7 @@ defmodule MilkWeb.Router do
     post "/tournament/get_all", TournamentController, :index
     post "/tournament/get_game", TournamentController, :get_game
     post "/tournament/delete", TournamentController, :delete
+    post "/tournament/get_participating_tournaments", TournamentController, :participating_tournaments
 
     resources "/entrant", EntrantController, except: [:new, :edit, :index, :show, :delete]
     post "/entrant/get", EntrantController, :show

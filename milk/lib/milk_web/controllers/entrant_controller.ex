@@ -3,12 +3,13 @@ defmodule MilkWeb.EntrantController do
 
   alias Milk.Tournaments
   alias Milk.Tournaments.Entrant
+  alias Milk.Chat.ChatMember
 
   # action_fallback MilkWeb.FallbackController
 
   def index(conn, _params) do
     entrant = Tournaments.list_entrant()
-    if (entrant) do
+    if entrant do
       render(conn, "index.json", entrant: entrant)
     else
       render(conn, "error.json", error: nil)

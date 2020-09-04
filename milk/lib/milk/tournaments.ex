@@ -14,8 +14,11 @@ defmodule Milk.Tournaments do
   alias Milk.Games.Game
   alias Milk.Chat
   alias Milk.Chat.ChatRoom
+  alias Milk.Chat.ChatMember
   alias Milk.Accounts.User
   alias Milk.Log.{TournamentLog, EntrantLog, AssistantLog, TournamentChatTopicLog}
+
+  require Logger
 
   @doc """
   Returns the list of tournament.
@@ -77,43 +80,43 @@ defmodule Milk.Tournaments do
     tournament_struct = %Tournament{master_id: attrs["master_id"], game_id: attrs["game_id"]}
     tournament = Multi.new()
                  |> Multi.insert(:tournament, Tournament.changeset(tournament_struct, attrs))
-                 |> Multi.insert(:group_topic, fn(%{tournament: tournament}) ->
-                   topic = %{
-                     "tournament_id" => tournament.id,
-                     "topic_name" => "Group"
+                 |> Multi.insert(:group_topic, fn %{tournament: tournament} ->
+                   room_params = %{
+                     name: tournament.name <> "-" <> "Group",
+                     member_count: tournament.count,
                    }
+                   {:ok, chat_room} = Chat.create_chat_room(room_params)
+                   topic = %{"topic_name" => "Group"}
 
-                   Ecto.build_assoc(tournament, :tournament_chat_topics)
+                   %TournamentChatTopic{tournament_id: tournament.id, chat_room_id: chat_room.id}
                    |> TournamentChatTopic.changeset(topic)
                  end)
-                 |> Multi.insert(:notification_topic, fn(%{tournament: tournament}) ->
-                   topic = %{
-                     "tournament_id" => tournament.id,
-                     "topic_name" => "Notification"
+                 |> Multi.insert(:notification_topic, fn %{tournament: tournament} ->
+                   room_params = %{
+                     name: tournament.name <> "-" <> "Notification",
+                     member_count: tournament.count,
                    }
+                   {:ok, chat_room} = Chat.create_chat_room(room_params)
+                   topic = %{"topic_name" => "Notification"}
 
-                   %TournamentChatTopic{}
+                   %TournamentChatTopic{tournament_id: tournament.id, chat_room_id: chat_room.id}
                    |> TournamentChatTopic.changeset(topic)
                  end)
-                 |> Multi.insert(:q_and_a_topic, fn(%{tournament: tournament}) ->
-                   topic = %{
-                     "tournament_id" => tournament.id,
-                     "topic_name" => "Q&A"
+                 |> Multi.insert(:q_and_a_topic, fn %{tournament: tournament} ->
+                   room_params = %{
+                     name: tournament.name <> "-" <> "Q&A",
+                     member_count: tournament.count,
                    }
+                   {:ok, chat_room} = Chat.create_chat_room(room_params)
+                   topic = %{"topic_name" => "Q&A"}
 
-                   %TournamentChatTopic{}
+                   %TournamentChatTopic{tournament_id: tournament.id, chat_room_id: chat_room.id}
                    |> TournamentChatTopic.changeset(topic)
                  end)
                  |> Repo.transaction()
 
     case tournament do
       {:ok, tournament} ->
-        room_params = %{
-          name: tournament.tournament.name,
-          member_count: tournament.tournament.count,
-        }
-        Chat.create_chat_room(room_params)
-
         {:ok, tournament.tournament}
       {:error, error} ->
         {:error, error.errors}
@@ -239,30 +242,57 @@ defmodule Milk.Tournaments do
 
   """
   def create_entrant(attrs \\ %{}) do
-    if (Repo.exists?(from u in User, where: u.id == ^attrs["user_id"])) do 
-      case Multi.new()
-      |> Multi.run(:tournament, fn repo, _ ->
-        {:ok, repo.get(Tournament, attrs["tournament_id"])}
-      end)
-      |> Multi.insert(:entrant, fn _ ->
-        %Entrant{user_id: attrs["user_id"], tournament_id: attrs["tournament_id"]}
-        |> Entrant.changeset(attrs)
-      end)
-      |> Multi.update(:update, fn %{tournament: tournament} ->
-        IO.inspect tournament.count
-        Tournament.changeset(tournament, %{count: tournament.count + 1}) 
-        |> IO.inspect
-      end)
-      |> Repo.transaction() do
-        {:ok, entrant} ->
-          {:ok, entrant.entrant}
-        {:error, _, error, data} -> 
-          {:error, error.errors}
-        _ ->
-          {:error, nil}
+    if Repo.exists?(from u in User, where: u.id == ^attrs["user_id"])
+      and not Repo.exists?(from e in Entrant, where: e.tournament_id == ^attrs["tournament_id"] and e.user_id == ^attrs["user_id"]) do 
+      result =  Multi.new()
+                |> Multi.run(:tournament, fn repo, _ ->
+                  {:ok, repo.get(Tournament, attrs["tournament_id"])}
+                end)
+                |> Multi.insert(:entrant, fn _ ->
+                  %Entrant{user_id: attrs["user_id"], tournament_id: attrs["tournament_id"]}
+                  |> Entrant.changeset(attrs)
+                end)
+                |> Multi.update(:update, fn %{tournament: tournament} ->
+                  Tournament.changeset(tournament, %{count: tournament.count + 1}) 
+                end)
+                |> Repo.transaction()
+
+      case result do
+        {:ok, entrant} -> join_tournament_chat_room(entrant, attrs)
+        {:error, _, error, data} -> {:error, error.errors}
+        _ -> {:error, nil}
       end
     else
+      Logger.error("duplicate entrant")
       {:error, nil}
+    end
+  end
+
+  defp join_tournament_chat_room(entrant, attrs) do
+    result = Chat.get_chat_rooms_by_tournament_id(entrant.tournament.id)
+             |> Enum.reduce({:ok, nil}, fn (chat_room, acc) ->
+               join_params = %{
+                 "user_id" => attrs["user_id"],
+                 "chat_room_id" => chat_room.id,
+                 "authority" => 0
+               }
+               with {:ok, chat_member} <- Chat.create_chat_member(join_params) do
+                 IO.inspect("join_tournament_chat_room")
+                 IO.inspect(chat_member)
+                 acc = {:ok, chat_member}
+               else
+                 {:error, reason} -> 
+                  acc = {:error, reason}
+                 _ -> 
+                  acc = {:error, nil}
+               end
+             end)
+    
+    with {:ok, _chat_member} <- result do
+      {:ok, entrant.entrant}
+    else
+      {:error, reason} -> {:error, reason}
+      _ -> {:error, nil}
     end
   end
 
@@ -301,7 +331,6 @@ defmodule Milk.Tournaments do
 
       iex> delete_entrant(entrant)
       {:error, %Ecto.Changeset{}}
-
   """
   def delete_entrant(%Entrant{} = entrant) do
     EntrantLog.changeset(%EntrantLog{}, Map.from_struct(entrant))
@@ -323,6 +352,18 @@ defmodule Milk.Tournaments do
   """
   def change_entrant(%Entrant{} = entrant, attrs \\ %{}) do
     Entrant.changeset(entrant, attrs)
+  end
+
+  @doc """
+  Get tournaments which the user participating in.
+  """
+  def get_participating_tournaments!(user_id) do
+    Entrant
+    |> where([e], e.user_id == ^user_id)
+    |> Repo.all()
+    |> Enum.map(fn entrant ->
+      get_tournament!(entrant.tournament_id)
+    end)
   end
 
   @doc """
