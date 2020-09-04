@@ -82,7 +82,7 @@ defmodule Milk.Tournaments do
                  |> Multi.insert(:tournament, Tournament.changeset(tournament_struct, attrs))
                  |> Multi.insert(:group_topic, fn %{tournament: tournament} ->
                    room_params = %{
-                     name: tournament.name,
+                     name: tournament.name <> "-" <> "Group",
                      member_count: tournament.count,
                    }
                    {:ok, chat_room} = Chat.create_chat_room(room_params)
@@ -93,7 +93,7 @@ defmodule Milk.Tournaments do
                  end)
                  |> Multi.insert(:notification_topic, fn %{tournament: tournament} ->
                    room_params = %{
-                     name: tournament.name,
+                     name: tournament.name <> "-" <> "Notification",
                      member_count: tournament.count,
                    }
                    {:ok, chat_room} = Chat.create_chat_room(room_params)
@@ -104,7 +104,7 @@ defmodule Milk.Tournaments do
                  end)
                  |> Multi.insert(:q_and_a_topic, fn %{tournament: tournament} ->
                    room_params = %{
-                     name: tournament.name,
+                     name: tournament.name <> "-" <> "Q&A",
                      member_count: tournament.count,
                    }
                    {:ok, chat_room} = Chat.create_chat_room(room_params)
@@ -117,12 +117,6 @@ defmodule Milk.Tournaments do
 
     case tournament do
       {:ok, tournament} ->
-        room_params = %{
-          name: tournament.tournament.name,
-          member_count: tournament.tournament.count,
-        }
-        Chat.create_chat_room(room_params)
-
         {:ok, tournament.tournament}
       {:error, error} ->
         {:error, error.errors}
