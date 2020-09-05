@@ -90,12 +90,15 @@ defmodule MilkWeb.ChatsController do
   end
   
   def create_dialogue(conn, %{"chat_group" => chats_params}) do
-    case Chat.group_dialogue(chats_params) do
+    case Chat.dialogue(chats_params) do
       {:ok, %Chats{} = chats} ->
+        members = Chat.get_chat_members_of_room(chats.chat_room_id)
+                  |> Enum.map(fn member ->
+                    member.id
+                  end)
+
         conn
-        # |> put_status(:created)
-        # |> put_resp_header("location", Routes.chats_path(conn, :show, chats))
-        |> render("show.json", chats: chats)
+        |> render("show.json", chats: chats, members: members)
       {:error, error} ->
         render(conn, "error.json", error: error)
       _ -> 

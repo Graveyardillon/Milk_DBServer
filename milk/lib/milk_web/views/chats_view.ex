@@ -6,15 +6,27 @@ defmodule MilkWeb.ChatsView do
     %{data: render_many(chat, ChatsView, "chats.json"), result: true}
   end
 
+  def render("show.json", %{chats: chats, members: members}) do
+    IO.inspect("called show.json with members")
+    %{
+      data: render_one(chats, ChatsView, "chats.json"), 
+      members: members,
+      result: true
+    }
+  end
+
   def render("show.json", %{chats: chats}) do
+    IO.inspect("called show.json")
     %{data: render_one(chats, ChatsView, "chats.json"), result: true}
   end
 
   def render("chats.json", %{chats: chats}) do
-    IO.inspect chats
-    %{id: chats.id,
+    #IO.inspect chats
+    %{
+      id: chats.id,
       word: chats.word,
-      index: chats.index}
+      index: chats.index
+    }
   end
 
   def render("error.json", %{error: error}) do

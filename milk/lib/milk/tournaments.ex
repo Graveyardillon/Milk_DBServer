@@ -67,13 +67,22 @@ defmodule Milk.Tournaments do
   """
   def create_tournament(attrs \\ %{}) do
     master_repo = Repo.exists?(from u in User, where: u.id == ^attrs["master_id"])
-    game_repo = Repo.exists?(from u in Game, where: u.id == ^attrs["game_id"])
 
-    if master_repo and game_repo do
+    if master_repo do
       create_tournament(:notnil, attrs)
     else
       create_tournament(:nil, attrs)
     end
+
+    # gameをチェックしない
+
+    # game_repo = Repo.exists?(from u in Game, where: u.id == ^attrs["game_id"])
+    
+    # if master_repo and game_repo do
+    #   create_tournament(:notnil, attrs)
+    # else
+    #   create_tournament(:nil, attrs)
+    # end
   end
 
   defp create_tournament(:notnil, attrs) do

@@ -21,7 +21,8 @@ defmodule MilkWeb.Router do
   end
 
   scope "/api", MilkWeb do
-    post "/signup", UserController, :create
+    # post "/signup", UserController, :create
+    # post "/signin", UserController, :login
     get "/user/get_all_username", UserController, :all_username
     post "/profile", ProfileController, :get_profile
     post "/profile/update", ProfileController, :update
