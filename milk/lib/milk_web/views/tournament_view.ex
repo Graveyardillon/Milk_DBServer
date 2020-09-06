@@ -29,14 +29,18 @@ defmodule MilkWeb.TournamentView do
   end
 
   def render("tournament_topics.json", %{topics: topics}) do
-    Enum.map(topics, fn topic ->
-      %{
-        id: topic.id,
-        chat_room_id: topic.chat_room_id,
-        topic_name: topic.topic_name,
-        tournament_id: topic.tournament_id
-      }
-    end)
+    map = Enum.map(topics, fn topic ->
+            %{
+              id: topic.id,
+              chat_room_id: topic.chat_room_id,
+              topic_name: topic.topic_name,
+              tournament_id: topic.tournament_id
+            }
+          end)
+
+    %{
+      data: map
+    }
   end
 
   def render("error.json", %{error: error}) do
