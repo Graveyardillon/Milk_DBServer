@@ -111,6 +111,6 @@ defmodule Milk.Games do
   def get_games_by_id_list(id_list) do
     Game
       |> where([g], g.id in ^id_list)
-      |> Repo.all
+      |> Repo.all()
   end
 end

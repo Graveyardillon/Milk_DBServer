@@ -294,6 +294,15 @@ defmodule Milk.Chat do
   end
 
   @doc """
+  Get chat member list of chat room.
+  """
+  def get_chat_members_of_room(chat_room_id) do
+    ChatMember
+    |> where([cm], cm.chat_room_id == ^chat_room_id)
+    |> Repo.all()
+  end
+
+  @doc """
   Returns an `%Ecto.Changeset{}` for tracking chat_member changes.
 
   ## Examples
@@ -446,6 +455,7 @@ defmodule Milk.Chat do
         and c1.user_id == ^user_id
         and c2.user_id == ^partner_id
         and c1.chat_room_id == c2.chat_room_id
+        and cr.name == "%user%"
       )
       
       if cr do
@@ -469,6 +479,7 @@ defmodule Milk.Chat do
   end
 
   # グループチャット用の関数
+  # TODO: チャットメンバーのユーザーのidをすべて返すようにする
   def dialogue(attrs = %{"user_id" => user_id, "chat_room_id" => chat_room_id, "word" => word, "datetime" => datetime}) do
     if Repo.exists?(from u in User, where: u.id == ^user_id)
       and Repo.exists?(from cr in ChatRoom, where: cr.id == ^chat_room_id) do
