@@ -28,6 +28,17 @@ defmodule MilkWeb.TournamentView do
       url: tournament.url}
   end
 
+  def render("tournament_topics.json", %{topics: topics}) do
+    Enum.map(topics, fn topic ->
+      %{
+        id: topic.id,
+        chat_room_id: topic.chat_room_id,
+        topic_name: topic.topic_name,
+        tournament_id: topic.tournament_id
+      }
+    end)
+  end
+
   def render("error.json", %{error: error}) do
     if(error) do
       %{result: false, error: create_message(error), data: nil}
