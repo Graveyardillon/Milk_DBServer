@@ -520,6 +520,15 @@ defmodule Milk.Tournaments do
   def get_tournament_chat_topic!(id), do: Repo.get!(TournamentChatTopic, id)
 
   @doc """
+  Get group chat tabs in a tournament.
+  """
+  def get_tabs_by_tournament_id(tournament_id) do
+    TournamentChatTopic
+    |> where([t], t.tournament_id == ^tournament_id)
+    |> Repo.all()
+  end
+
+  @doc """
   Creates a tournament_chat_topic.
 
   ## Examples

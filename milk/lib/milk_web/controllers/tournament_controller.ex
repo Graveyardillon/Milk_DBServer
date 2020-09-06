@@ -88,4 +88,12 @@ defmodule MilkWeb.TournamentController do
       render(conn, "error.json", error: nil)
     end
   end
+
+  def tournament_tabs(conn, %{"tournament_id" => tournament_id}) do
+    tabs = Tournaments.get_tabs_by_tournament_id(tournament_id)
+           |> IO.inspect()
+
+    # TODO: tournament_topics.jsonのrenderを直接呼び出すのではなくshow.jsonからrender_manyをする方がよさそう
+    render(conn, "tournament_topics.json", topics: tabs)
+  end
 end
