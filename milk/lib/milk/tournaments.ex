@@ -86,7 +86,10 @@ defmodule Milk.Tournaments do
   end
 
   defp create_tournament(:notnil, attrs) do
-    tournament_struct = %Tournament{master_id: attrs["master_id"], game_id: attrs["game_id"]}
+
+    master_id = String.to_integer(attrs["master_id"])
+
+    tournament_struct = %Tournament{master_id: master_id, game_id: attrs["game_id"]}
     tournament = Multi.new()
                  |> Multi.insert(:tournament, Tournament.changeset(tournament_struct, attrs))
                  |> Multi.insert(:group_topic, fn %{tournament: tournament} ->
