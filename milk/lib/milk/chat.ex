@@ -191,6 +191,15 @@ defmodule Milk.Chat do
   def get_member(chat_room_id, user_id), do: Repo.one(from cm in ChatMember, where: cm.chat_room_id == ^chat_room_id and cm.user_id == ^user_id)
 
   @doc """
+  Gets all chatmember data by user_id.
+  """
+  def get_chat_member_by_user_id(user_id) do
+    ChatMember
+    |> where([cm], cm.user_id == ^user_id)
+    |> Repo.all()
+  end
+
+  @doc """
   Creates a chat_member.
 
   ## Examples
@@ -489,5 +498,12 @@ defmodule Milk.Chat do
       attrs
       |> create_chats()
     end
+  end
+
+  # user_idに関連するチャットを全て取り出す
+  def sync_chat(user_id) do
+    # まずはメンバーから取り出す
+    members = get_chat_member_by_user_id(user_id)
+              |> IO.inspect()
   end
 end

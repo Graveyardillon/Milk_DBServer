@@ -81,6 +81,8 @@ defmodule MilkWeb.Router do
     post "/assistant/get", AssistantController, :show
     post "/assistant/get_all", AssistantController, :index
     post "/assistant/delete", AssistantController, :delete
+
+    post "/sync", SyncController, :sync
   end
 
   # Other scopes may use custom stacks.
