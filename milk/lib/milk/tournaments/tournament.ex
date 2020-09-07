@@ -14,7 +14,7 @@ defmodule Milk.Tournaments.Tournament do
     field :type, :integer
     field :url, :string
     field :thumbnail_path, :string
-    field :password, :integer
+    field :password, :string
     field :live, :boolean
     field :join, :boolean
     field :count, :integer, default: 0

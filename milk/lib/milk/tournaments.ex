@@ -86,7 +86,10 @@ defmodule Milk.Tournaments do
   end
 
   defp create_tournament(:notnil, attrs) do
-    tournament_struct = %Tournament{master_id: attrs["master_id"], game_id: attrs["game_id"]}
+
+    master_id = String.to_integer(attrs["master_id"])
+
+    tournament_struct = %Tournament{master_id: master_id, game_id: attrs["game_id"]}
     tournament = Multi.new()
                  |> Multi.insert(:tournament, Tournament.changeset(tournament_struct, attrs))
                  |> Multi.insert(:group_topic, fn %{tournament: tournament} ->
@@ -515,6 +518,15 @@ defmodule Milk.Tournaments do
 
   """
   def get_tournament_chat_topic!(id), do: Repo.get!(TournamentChatTopic, id)
+
+  @doc """
+  Get group chat tabs in a tournament.
+  """
+  def get_tabs_by_tournament_id(tournament_id) do
+    TournamentChatTopic
+    |> where([t], t.tournament_id == ^tournament_id)
+    |> Repo.all()
+  end
 
   @doc """
   Creates a tournament_chat_topic.
