@@ -5,7 +5,6 @@ defmodule MilkWeb.SyncView do
 
   def render("chat.json", %{chat_data: chat_data}) do
     map = Enum.map(chat_data, fn chat -> 
-      IO.inspect(chat["data"])
       %{
         room_id: chat["room_id"],
         chat_data: Enum.map(chat["data"], fn chat_content ->
