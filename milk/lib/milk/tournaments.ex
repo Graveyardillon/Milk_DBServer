@@ -86,12 +86,13 @@ defmodule Milk.Tournaments do
   end
 
   defp create_tournament(:notnil, attrs) do
+    master_id = nil
 
     if is_binary(attrs["master_id"]) do
       master_id = String.to_integer(attrs["master_id"])
     end
 
-    tournament_struct = %Tournament{master_id: attrs["master_id"], game_id: attrs["game_id"]}
+    tournament_struct = %Tournament{master_id: master_id, game_id: attrs["game_id"]}
     tournament = Multi.new()
                  |> Multi.insert(:tournament, Tournament.changeset(tournament_struct, attrs))
                  |> Multi.insert(:group_topic, fn %{tournament: tournament} ->
