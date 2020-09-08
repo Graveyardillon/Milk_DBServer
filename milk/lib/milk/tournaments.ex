@@ -86,7 +86,7 @@ defmodule Milk.Tournaments do
   end
 
   defp create_tournament(:notnil, attrs) do
-    master_id = nil
+    master_id = attrs["master_id"]
 
     if is_binary(attrs["master_id"]) do
       master_id = String.to_integer(attrs["master_id"])
