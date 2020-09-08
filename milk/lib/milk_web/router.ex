@@ -70,6 +70,7 @@ defmodule MilkWeb.Router do
     post "/tournament/get_game", TournamentController, :get_game
     post "/tournament/delete", TournamentController, :delete
     post "/tournament/get_participating_tournaments", TournamentController, :participating_tournaments
+    post "/tournament/get_tabs", TournamentController, :tournament_tabs
 
     resources "/entrant", EntrantController, except: [:new, :edit, :index, :show, :delete]
     post "/entrant/get", EntrantController, :show
@@ -80,6 +81,8 @@ defmodule MilkWeb.Router do
     post "/assistant/get", AssistantController, :show
     post "/assistant/get_all", AssistantController, :index
     post "/assistant/delete", AssistantController, :delete
+
+    post "/sync", SyncController, :sync
   end
 
   # Other scopes may use custom stacks.

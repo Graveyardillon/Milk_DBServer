@@ -127,6 +127,7 @@ defmodule Milk.Tournaments do
                  end)
                  |> Repo.transaction()
 
+
     case tournament do
       {:ok, tournament} ->
         {:ok, tournament.tournament}
@@ -254,30 +255,74 @@ defmodule Milk.Tournaments do
 
   """
   def create_entrant(attrs \\ %{}) do
-    if Repo.exists?(from u in User, where: u.id == ^attrs["user_id"])
-      and not Repo.exists?(from e in Entrant, where: e.tournament_id == ^attrs["tournament_id"] and e.user_id == ^attrs["user_id"]) do 
-      result =  Multi.new()
-                |> Multi.run(:tournament, fn repo, _ ->
-                  {:ok, repo.get(Tournament, attrs["tournament_id"])}
-                end)
-                |> Multi.insert(:entrant, fn _ ->
-                  %Entrant{user_id: attrs["user_id"], tournament_id: attrs["tournament_id"]}
-                  |> Entrant.changeset(attrs)
-                end)
-                |> Multi.update(:update, fn %{tournament: tournament} ->
-                  Tournament.changeset(tournament, %{count: tournament.count + 1}) 
-                end)
-                |> Repo.transaction()
-
-      case result do
+    attrs
+    |>user_exist_check
+    |>tournament_exist_check
+    |>not_entrant_check
+    |>insert
+    |>case do
         {:ok, entrant} -> join_tournament_chat_room(entrant, attrs)
-        {:error, _, error, data} -> {:error, error.errors}
+        {:error,_, error, data} when is_bitstring(error) -> {:error, error}
+        {:error, _, error, data} -> {:multierror, error.errors}
+        {:error,error} -> {:error,error}
         _ -> {:error, nil}
-      end
-    else
-      Logger.error("duplicate entrant")
-      {:error, nil}
     end
+  end
+
+  defp user_exist_check(attrs)do
+    if Repo.exists?(from u in User, where: u.id == ^attrs["user_id"]) do
+      {:ok,attrs}
+    else
+      {:error,"undefined user"}
+    end
+  end
+
+  defp not_entrant_check({:ok,attrs})do
+    unless Repo.exists?(from e in Entrant, where: e.tournament_id == ^attrs["tournament_id"] and e.user_id == ^attrs["user_id"]) do
+      {:ok,attrs}
+    else
+      {:error,"Already joined"}
+    end
+  end
+
+  defp not_entrant_check({:error,error})do
+    {:error,error}
+  end
+
+  defp tournament_exist_check({:ok,attrs}) do
+
+    if Repo.exists?(from t in Tournament, where: t.id == ^attrs["tournament_id"]) do
+      {:ok,attrs}
+    else
+      {:error,"undefined tournament"}
+    end
+  end
+
+  defp tournament_exist_check({:error,error})do
+    {:error,error}
+  end
+
+  defp insert({:ok,attrs}) do
+    Multi.new()
+    |> Multi.run(:tournament, fn repo, _ ->
+      case repo.one(from t in Tournament, where: t.id == ^attrs["tournament_id"] and t.capacity > t.count) do
+      (%Tournament{} = t) -> {:ok, t}
+      nil -> {:error, "capacity over"}
+      _ -> {:error, ""}
+      end
+    end)
+    |> Multi.insert(:entrant, fn _ ->
+      %Entrant{user_id: attrs["user_id"], tournament_id: attrs["tournament_id"]}
+      |> Entrant.changeset(attrs)
+    end)
+    |> Multi.update(:update, fn %{tournament: tournament} ->
+      Tournament.changeset(tournament, %{count: tournament.count + 1}) 
+    end)
+    |> Repo.transaction()
+  end
+
+  defp insert({:error,error})do
+    {:error,error}
   end
 
   defp join_tournament_chat_room(entrant, attrs) do
@@ -299,7 +344,6 @@ defmodule Milk.Tournaments do
                   acc = {:error, nil}
                end
              end)
-    
     with {:ok, _chat_member} <- result do
       {:ok, entrant.entrant}
     else
@@ -518,6 +562,15 @@ defmodule Milk.Tournaments do
 
   """
   def get_tournament_chat_topic!(id), do: Repo.get!(TournamentChatTopic, id)
+
+  @doc """
+  Get group chat tabs in a tournament.
+  """
+  def get_tabs_by_tournament_id(tournament_id) do
+    TournamentChatTopic
+    |> where([t], t.tournament_id == ^tournament_id)
+    |> Repo.all()
+  end
 
   @doc """
   Creates a tournament_chat_topic.
