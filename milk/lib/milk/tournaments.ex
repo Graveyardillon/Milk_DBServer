@@ -86,12 +86,10 @@ defmodule Milk.Tournaments do
   end
 
   defp create_tournament(:notnil, attrs) do
-    master_id = attrs["master_id"]
-
-    master_id = attrs["master_id"]
-
-    if is_binary(attrs["master_id"]) do
-      master_id = String.to_integer(attrs["master_id"])
+    master_id = if is_binary(attrs["master_id"]) do
+      String.to_integer(attrs["master_id"])
+    else
+      attrs["master_id"]
     end
 
     tournament_struct = %Tournament{master_id: master_id, game_id: attrs["game_id"]}
