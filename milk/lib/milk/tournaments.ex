@@ -65,13 +65,13 @@ defmodule Milk.Tournaments do
       {:error, %Ecto.Changeset{}}
 
   """
-  def create_tournament(attrs \\ %{}) do
+  def create_tournament(attrs, thumbnail_path \\ %{}) do
     master_repo = Repo.exists?(from u in User, where: u.id == ^attrs["master_id"])
 
     if master_repo do
-      create_tournament(:notnil, attrs)
+      create_tournament(:notnil, attrs, thumbnail_path)
     else
-      create_tournament(:nil, attrs)
+      create_tournament(:nil, attrs, thumbnail_path)
     end
 
     # gameをチェックしない
@@ -85,14 +85,14 @@ defmodule Milk.Tournaments do
     # end
   end
 
-  defp create_tournament(:notnil, attrs) do
+  defp create_tournament(:notnil, attrs, thumbnail_path) do
     master_id = if is_binary(attrs["master_id"]) do
       String.to_integer(attrs["master_id"])
     else
       attrs["master_id"]
     end
 
-    tournament_struct = %Tournament{master_id: master_id, game_id: attrs["game_id"]}
+    tournament_struct = %Tournament{master_id: master_id, game_id: attrs["game_id"], thumbnail_path: thumbnail_path}
     tournament = Multi.new()
                  |> Multi.insert(:tournament, Tournament.changeset(tournament_struct, attrs))
                  |> Multi.insert(:group_topic, fn %{tournament: tournament} ->
@@ -141,7 +141,7 @@ defmodule Milk.Tournaments do
     end
   end
 
-  defp create_tournament(:nil, attrs), do: {:error, nil}
+  defp create_tournament(:nil, attrs, thumbnail_path), do: {:error, nil}
 
   @doc """
   Updates a tournament.
