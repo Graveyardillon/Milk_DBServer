@@ -38,9 +38,7 @@ defmodule MilkWeb.TournamentView do
             }
           end)
 
-    %{
-      data: map
-    }
+    %{data: map}
   end
 
   def render("error.json", %{error: error}) do
