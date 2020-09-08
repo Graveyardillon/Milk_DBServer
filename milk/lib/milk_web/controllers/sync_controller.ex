@@ -5,12 +5,9 @@ defmodule MilkWeb.SyncController do
 
   # user_idに関連する情報を全て取り出して送信する
   def sync(conn, %{"user_id" => user_id}) do
-    chat_list = obtain_chat(user_id)
+    chat_list = Chat.sync(user_id)
+                |> IO.inspect()
 
-    json(conn, %{"msg" => "ok"})
-  end
-
-  defp obtain_chat(user_id) do
-    
+    render(conn, "chat.json", chat_data: chat_list)
   end
 end

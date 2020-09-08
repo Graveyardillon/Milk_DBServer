@@ -142,7 +142,7 @@ defmodule Milk.Chat do
   end
 
   @doc """
-  Get a ChatRoom by tournament id
+  Get ChatRooms by tournament id
   """
   def get_chat_rooms_by_tournament_id(tournament_id) do
     TournamentChatTopic
@@ -151,6 +151,15 @@ defmodule Milk.Chat do
     |> Enum.map(fn topic ->
       get_chat_room(topic.chat_room_id)
     end)
+  end
+
+  @doc """
+  Get a ChatRoom by chat member id
+  """
+  def get_chat_room_by_chat_member_id(chat_member_id) do
+    ChatRoom
+    |> where([cr], cr.id == ^chat_member_id)
+    |> Repo.one()
   end
 
   alias Milk.Chat.ChatMember
@@ -359,6 +368,12 @@ defmodule Milk.Chat do
 
   def get_latest_chat(id), do: Repo.all(from c in Chats, where: c.chat_room_id == ^id, order_by: [desc: c.index], limit: 20)
 
+  def get_all_chat_by_room_id(room_id) do
+    Chats
+    |> where([c], c.chat_room_id == ^room_id)
+    |> Repo.all()
+  end
+
   def sync(date, id) do
     Repo.all(from cr in ChatRoom, left_join: cm in assoc(cr, :chat_member), where: cm.user_id == ^id and cr.update_time >= ^date)
   end
@@ -501,9 +516,25 @@ defmodule Milk.Chat do
   end
 
   # user_idに関連するチャットを全て取り出す
-  def sync_chat(user_id) do
-    # まずはメンバーから取り出す
-    members = get_chat_member_by_user_id(user_id)
-              |> IO.inspect()
+  def sync(user_id) do
+    """ 
+    まずはuserをchat_memberから取り出す
+    次にメンバーとして参加しているルームを全て取り出す
+    最後に、取得したルームのチャット内容を全て取り出す
+    """
+    user_id
+    |> get_chat_member_by_user_id()
+    |> Enum.map(fn member ->
+      get_chat_room_by_chat_member_id(member.id)
+    end)
+    |> Enum.filter(fn room ->
+      room != nil
+    end)
+    |> Enum.map(fn room ->
+      %{
+        "room_id" => room.id,
+        "data" => get_all_chat_by_room_id(room.id)
+      }
+    end)
   end
 end
