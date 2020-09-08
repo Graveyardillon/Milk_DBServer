@@ -43,12 +43,12 @@ defmodule MilkWeb.ProfileController do
   end
 
   def get_icon(conn, %{"path" => path}) do
-    b64 = File.read!("./static/image/profile_icon/#{path}.png")
-          |> Base.encode64()
-    if b64 do
-      json(conn, %{b64: b64})
-    else 
-      json(conn, %{error: "image not found"})
+    case File.read("./static/image/profile_icon/#{path}.png") do
+      {:ok, file} -> 
+        b64 = Base.encode64(file)
+        json(conn, %{b64: b64})
+      {:error, _} -> 
+        json(conn, %{error: "image not fonud"})
     end
   end
 
