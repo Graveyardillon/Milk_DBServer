@@ -86,6 +86,7 @@ defmodule Milk.Tournaments do
   end
 
   defp create_tournament(:notnil, attrs) do
+    master_id = attrs["master_id"]
 
     master_id = attrs["master_id"]
 
