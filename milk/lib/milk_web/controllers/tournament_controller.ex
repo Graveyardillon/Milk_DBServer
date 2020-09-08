@@ -35,7 +35,6 @@ defmodule MilkWeb.TournamentController do
       File.cp(thumbnail_image.path, ".static/image/tournament_thumbnail/#{uuid}.png")
     # end
 
-
     case Tournaments.create_tournament(tournament_params) do
     {:ok, %Tournament{} = tournament} ->
       conn
