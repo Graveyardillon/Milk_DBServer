@@ -28,33 +28,28 @@ defmodule MilkWeb.ProfileController do
     json(conn, %{result: "success"})
   end
 
-  def update_icon(conn, %{"user_id" => user_id, "image_b64" => image_b64}) do
+  def update_icon(conn, %{"user_id" => user_id, "image" => image}) do
+      user = Accounts.get_user(user_id)
+      if user do 
+        uuid = SecureRandom.uuid()
 
-    user = Accounts.get_user(user_id)
-    IO.puts(user.icon_path)
+        File.cp(image.path, "./static/image/profile_icon/#{uuid}.png")
 
-    if String.starts_with?(image_b64, "data:image/png;base64,") do
-      "data:image/png;base64," <> raw = image_b64
-      uuid = SecureRandom.uuid()
-      File.write!("./static/image/profile_icon/#{uuid}.png", Base.decode64!(raw))
-
-      json(conn, %{local_path: uuid})
-    else
-      raw = image_b64
-      uuid = SecureRandom.uuid()
-      File.write!("./static/image/profile_icon/#{uuid}.png", Base.decode64!(raw))
-
-      Accounts.update_icon_path(user, uuid)
-
-      json(conn, %{local_path: uuid})
-    end
+        Accounts.update_icon_path(user, uuid)
+        json(conn, %{local_path: uuid})
+      else 
+        json(conn, %{error: "user not found"})
+      end
   end
 
   def get_icon(conn, %{"path" => path}) do
-    b64 = File.read!("./static/image/profile_icon/#{path}.png")
-          |> Base.encode64()
-
-    json(conn, %{b64: b64})
+    case File.read("./static/image/profile_icon/#{path}.png") do
+      {:ok, file} -> 
+        b64 = Base.encode64(file)
+        json(conn, %{b64: b64})
+      {:error, _} -> 
+        json(conn, %{error: "image not fonud"})
+    end
   end
 
 end

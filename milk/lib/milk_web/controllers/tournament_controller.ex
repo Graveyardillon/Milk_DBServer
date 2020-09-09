@@ -24,18 +24,16 @@ defmodule MilkWeb.TournamentController do
     end
   end
 
-  def create(conn, %{"tournament" => tournament_params}) do
-    IO.inspect(tournament_params)
-    b64 = tournament_params["thumbnail_path"]
-    IO.inspect(b64)
-    if b64 != "" do
-      IO.puts("isn't nil")
+  def create(conn, %{"tournament" => tournament_params, "image" => image}) do
+    thumbnail_path = if image != "" do
       uuid = SecureRandom.uuid()
-      File.write!(".static/image/tournament_thumbnail/#{uuid}.png", Base.decode64!(b64))
+      File.cp(image.path, "./static/image/tournament_thumbnail/#{uuid}.jpg")
+      uuid
+    else 
+      nil
     end
 
-
-    case Tournaments.create_tournament(tournament_params) do
+    case Tournaments.create_tournament(tournament_params, thumbnail_path) do
     {:ok, %Tournament{} = tournament} ->
       conn
       # |> put_status(:created)
