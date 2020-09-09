@@ -18,6 +18,7 @@ defmodule Milk.Tournaments do
   alias Milk.Accounts.User
   alias Milk.Log.{TournamentLog, EntrantLog, AssistantLog, TournamentChatTopicLog}
 
+  require Integer
   require Logger
 
   @doc """
@@ -245,6 +246,12 @@ defmodule Milk.Tournaments do
   """
   def get_entrant!(id), do: Repo.get!(Entrant, id)
 
+  def get_entrants(id) do
+    Entrant
+    |> where([e], e.tournament_id == ^id)
+    |> Repo.all()
+  end
+
   @doc """
   Creates a entrant.
 
@@ -422,6 +429,31 @@ defmodule Milk.Tournaments do
     |> Repo.all()
     |> Enum.map(fn entrant ->
       get_tournament!(entrant.tournament_id)
+    end)
+  end
+
+  @doc """
+  Generate a match list of entrants.
+  """
+  def generate_match_list(tournament_id) do
+    entrants = get_entrants(tournament_id)
+    # 一番近い2^nを取得
+    get_multiplier_of_nearest_power_of_two(length(entrants))
+  end
+
+  defp get_multiplier_of_nearest_power_of_two(n) do
+    IO.inspect(n)
+    calc_multiplier_of_power(n, 0)
+  end
+  defp calc_multiplier_of_power(1.0, count), do: count
+  defp calc_multiplier_of_power(n, count) when n < 1, do: 0
+  defp calc_multiplier_of_power(n, count) do
+    n
+    |> Integer.is_odd()
+    |> (if do
+      calc_multiplier_of_power((n+1)/2, count+1)
+    else
+      calc_multiplier_of_power(n/2, count+1)
     end)
   end
 

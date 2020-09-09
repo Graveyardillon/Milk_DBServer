@@ -65,6 +65,7 @@ defmodule MilkWeb.Router do
     post "/chat/create_dialogue", ChatsController, :create_dialogue
 
     resources "/tournament", TournamentController, except: [:new, :edit, :index, :show, :delete]
+    post "/tournament/start", TournamentController, :start
     post "/tournament/get", TournamentController, :show
     post "/tournament/get_all", TournamentController, :index
     post "/tournament/get_game", TournamentController, :get_game

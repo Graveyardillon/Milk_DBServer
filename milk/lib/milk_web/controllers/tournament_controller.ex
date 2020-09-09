@@ -94,4 +94,12 @@ defmodule MilkWeb.TournamentController do
     # TODO: tournament_topics.jsonのrenderを直接呼び出すのではなくshow.jsonからrender_manyをする方がよさそう
     render(conn, "tournament_topics.json", topics: tabs)
   end
+
+  def start(conn, %{"tournament" => %{"master_id" => master_id, "tournament_id" => tournament_id}}) do
+    # マッチングリストを生成
+    match_list = Tournaments.generate_match_list(tournament_id)
+                 |> IO.inspect()
+    
+    json(conn, %{msg: "worked"})
+  end
 end
