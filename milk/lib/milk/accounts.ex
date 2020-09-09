@@ -227,14 +227,23 @@ defmodule Milk.Accounts do
 
   def login(user) do
     password = Auth.create_pass(user["password"])
-
-    user = Repo.one(from u in User, join: a in assoc(u, :auth), where: a.email == ^user["email"] and a.password == ^password and u.logout_fl, preload: [auth: a])
-    if(user) do
-      user
-      |> User.changeset(%{logout_fl: false})
-      |> Repo.update
+    #usernameかemailか
+    if String.match?(user["email_or_username"],~r/^[[:word:]\-._]+@[[:word:]\-_.]+\.[[:alpha:]]+$/) do
+      case Repo.one(from u in User, join: a in assoc(u, :auth), where: a.email == ^user["email_or_username"] and a.password == ^password and u.logout_fl, preload: [auth: a]) do
+        nil -> Repo.one(from u in User, join: a in assoc(u, :auth), where: a.name == ^user["email_or_username"] and a.password == ^password and u.logout_fl, preload: [auth: a])
+        %User{} = userinfo -> userinfo
+      end
+    else
+      Repo.one(from u in User, join: a in assoc(u, :auth), where: a.name == ^user["email_or_username"] and a.password == ^password and u.logout_fl, preload: [auth: a])
     end
-    user
+    |>case do
+      %User{} = user ->
+        user
+        |> User.changeset(%{logout_fl: false})
+        |> Repo.update
+        user
+      _ -> nil
+    end
   end
 
   def login_forced(user) do
