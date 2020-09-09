@@ -96,7 +96,7 @@ defmodule Milk.Accounts do
   def create_user(attrs \\ %{}) do
       case Multi.new
       |> Multi.insert(:user, User.changeset(%User{}, attrs))
-      |> Multi.insert(:auth, fn(%{user: user}) -> 
+      |> Multi.insert(:auth, fn(%{user: user}) ->
         Ecto.build_assoc(user, :auth)
         |> Auth.changeset(attrs)
       end)
