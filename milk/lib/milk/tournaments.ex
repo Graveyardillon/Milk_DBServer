@@ -504,26 +504,28 @@ defmodule Milk.Tournaments do
 
   """
   def create_assistant(attrs \\ %{}) do
-
-    anyNil = attrs["user_id"] 
-      |> Enum.map(fn id ->
-        if is_binary(id) do
-          String.to_integer(id)
-        else
-          id
-        end
-      end)
-      |> Enum.filter(fn id ->
-        if Repo.exists?(from u in User, where: u.id == ^id) do
-          %Assistant{user_id: id, tournament_id: attrs["tournament_id"]}
-          |> Repo.insert()
-
-          false
-        else
-          true
-        end
-      end)
-      {:ok, anyNil}
+    if Repo.exists?(from t in Tournament, where: t.id == ^attrs["tournament_id"]) do
+      anyNil = attrs["user_id"] 
+        |> Enum.map(fn id ->
+          if is_binary(id) do
+            String.to_integer(id)
+          else
+            id
+          end
+        end)
+        |> Enum.filter(fn id ->
+          if Repo.exists?(from u in User, where: u.id == ^id) do
+            %Assistant{user_id: id, tournament_id: attrs["tournament_id"]}
+            |> Repo.insert()
+            false
+          else
+            true
+          end
+        end)
+        {:ok, anyNil}
+    else
+      {:error, :tournament_not_found}
+    end
   end
 
   @doc """
