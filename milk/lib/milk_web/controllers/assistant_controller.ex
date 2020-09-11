@@ -17,15 +17,12 @@ defmodule MilkWeb.AssistantController do
 
   def create(conn, %{"assistant" => assistant_params}) do
     case Tournaments.create_assistant(assistant_params) do
-    {:ok, %Assistant{} = assistant} ->
-      conn
-      # |> put_status(:created)
-      # |> put_resp_header("location", Routes.assistant_path(conn, :show, assistant))
-      |> render("show.json", assistant: assistant)
-    {:error, error} ->
-      render(conn, "error.json", error: error)
-    _ ->
-      render(conn, "error.json", error: nil)
+      {:ok, anyNil} ->
+      IO.inspect(anyNil)
+      assistant = Tournaments.get_assistants(assistant_params["tournament_id"])
+      render(conn, "index.json", assistant: assistant)
+
+      {:error, :tournament_not_found} -> render(conn, "error_string.json", error: "tournament not found")
     end
   end
 

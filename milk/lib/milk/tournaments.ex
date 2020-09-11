@@ -486,6 +486,11 @@ defmodule Milk.Tournaments do
   """
   def get_assistant!(id), do: Repo.get!(Assistant, id)
 
+  def get_assistants(id) do
+    Assistant
+    |> where([a], a.tournament_id == ^id)
+    |> Repo.all()
+  end
   @doc """
   Creates a assistant.
 
@@ -499,18 +504,26 @@ defmodule Milk.Tournaments do
 
   """
   def create_assistant(attrs \\ %{}) do
-    if (Repo.exists?(from u in User, where: u.id == ^attrs["user_id"]) 
-    and Repo.exists?(from t in Tournament, where: t.id == ^attrs["tournament_id"])) do
-      case %Assistant{user_id: attrs["user_id"], tournament_id: attrs["tournament_id"]}
-      |> Repo.insert() do
-      {:ok, assistant} ->
-        {:ok, assistant}
-      {:error, error} ->
-        {:error, error.errors}
-      _ ->
-        {:error, nil}
-      end
-    end
+
+    anyNil = attrs["user_id"] 
+      |> Enum.map(fn id ->
+        if is_binary(id) do
+          String.to_integer(id)
+        else
+          id
+        end
+      end)
+      |> Enum.filter(fn id ->
+        if Repo.exists?(from u in User, where: u.id == ^id) do
+          %Assistant{user_id: id, tournament_id: attrs["tournament_id"]}
+          |> Repo.insert()
+
+          false
+        else
+          true
+        end
+      end)
+      {:ok, anyNil}
   end
 
   @doc """
