@@ -505,7 +505,7 @@ defmodule Milk.Tournaments do
   """
   def create_assistant(attrs \\ %{}) do
     if Repo.exists?(from t in Tournament, where: t.id == ^attrs["tournament_id"]) do
-      anyNil = attrs["user_id"] 
+      not_found_users = attrs["user_id"] 
         |> Enum.map(fn id ->
           if is_binary(id) do
             String.to_integer(id)
@@ -522,7 +522,12 @@ defmodule Milk.Tournaments do
             true
           end
         end)
-        {:ok, anyNil}
+
+        if Enum.empty?(not_found_users) do
+          :ok
+        else 
+          {:ok, not_found_users}
+        end
     else
       {:error, :tournament_not_found}
     end
