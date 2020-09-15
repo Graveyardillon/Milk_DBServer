@@ -38,6 +38,10 @@ defmodule Milk.Tournaments do
     Repo.all(from t in Tournament, where: t.game_id == ^attrs["game_id"])
   end
 
+  def get_tournament_by_master_id(user_id) do
+    Repo.all(from t in Tournament, where: t.master_id == ^user_id)
+  end
+
   @doc """
   Gets a single tournament.
 
