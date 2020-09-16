@@ -18,6 +18,12 @@ defmodule MilkWeb.UserController do
     json(conn, %{names: names})
   end
 
+  def get_users_in_touch(conn, %{"user_id" => id}) do
+    users = Accounts.get_all_users_in_touch(id)
+
+    render(conn, "index.json", users: users)
+  end
+
   def create(conn, %{"user" => user_params}) do
     case Accounts.create_user(user_params) do
       {:ok, %User{} = user} ->
