@@ -29,7 +29,7 @@ defmodule MilkWeb.TournamentController do
       uuid = SecureRandom.uuid()
       File.cp(image.path, "./static/image/tournament_thumbnail/#{uuid}.jpg")
       uuid
-    else 
+    else
       nil
     end
 
@@ -95,11 +95,21 @@ defmodule MilkWeb.TournamentController do
     render(conn, "tournament_topics.json", topics: tabs)
   end
 
-  def start(conn, %{"tournament" => %{"master_id" => master_id, "tournament_id" => tournament_id}}) do
+  def start(conn, %{"tournament" => %{"master_id" => _master_id, "tournament_id" => tournament_id}}) do
     # マッチングリストを生成
-    match_list = Tournaments.generate_match_list(tournament_id)
-                 |> IO.inspect()
-    
-    json(conn, %{msg: "worked"})
+    match_list =
+      Tournaments.get_entrants(tournament_id)
+      |>IO.inspect(label: :user)
+      |>Enum.map(fn x -> x.id|>IO.inspect(label: :id) end)
+      |>IO.inspect(label: :list)
+      |>Tournaments.generate_matchlist()
+      |> IO.inspect()
+    render(conn, "match.json", list: match_list)
+  end
+  def delete_loser(conn, %{"tournament" => %{"match_list" => match_list, "loser_list" => loser_list}}) do
+    updated_match_list =
+      match_list
+      |>Tournaments.delete_loser(loser_list)
+    render(conn,"loser.json", list: updated_match_list)
   end
 end
