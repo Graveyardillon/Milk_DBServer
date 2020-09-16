@@ -7,6 +7,7 @@ defmodule Milk.Repo.Migrations.CreateChatRoom do
       add :last_chat, :text, default: nil
       add :count, :integer, default: 0
       add :member_count, :integer, default: 0
+      add :is_private, :boolean, default: false
       timestamps()
     end
 
