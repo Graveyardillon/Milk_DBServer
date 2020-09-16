@@ -99,11 +99,8 @@ defmodule MilkWeb.TournamentController do
     # マッチングリストを生成
     match_list =
       Tournaments.get_entrants(tournament_id)
-      |>IO.inspect(label: :user)
-      |>Enum.map(fn x -> x.id|>IO.inspect(label: :id) end)
-      |>IO.inspect(label: :list)
+      |>Enum.map(fn x -> x.id end)
       |>Tournaments.generate_matchlist()
-      |> IO.inspect()
     render(conn, "match.json", list: match_list)
   end
   def delete_loser(conn, %{"tournament" => %{"match_list" => match_list, "loser_list" => loser_list}}) do
