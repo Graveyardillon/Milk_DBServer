@@ -162,7 +162,19 @@ defmodule Milk.Chat do
     |> Repo.one()
   end
 
-  alias Milk.Chat.ChatMember
+  @doc """
+  Get ChatRooms by user id
+  """
+  def get_chat_rooms_by_user_id(user_id) do
+    ChatMember
+    |> where([cm], cm.user_id == ^user_id)
+    |> Repo.all()
+    |> Enum.map(fn member -> 
+      ChatRoom
+      |> where([cr], cr.id == ^member.chat_room_id)
+      |> Repo.one()
+    end)
+  end
 
   @doc """
   Returns the list of chat_member.
@@ -487,7 +499,7 @@ defmodule Milk.Chat do
         |> Map.put("chat_room_id", cr.id)
         |> create_chats()
       else
-        {:ok, chat_room} = %ChatRoom{name: "%user%", member_count: 2}
+        {:ok, chat_room} = %ChatRoom{name: "%user%", member_count: 2, is_private: true}
         |> Repo.insert() 
       
         %ChatMember{user_id: user_id, chat_room_id: chat_room.id, authority: 0}

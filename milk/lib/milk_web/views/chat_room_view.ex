@@ -11,10 +11,13 @@ defmodule MilkWeb.ChatRoomView do
   end
 
   def render("chat_room.json", %{chat_room: chat_room}) do
-    %{id: chat_room.id,
+    %{
+      id: chat_room.id,
       name: chat_room.name,
       last_chat: chat_room.last_chat,
-      count: chat_room.count}
+      count: chat_room.count,
+      is_private: chat_room.is_private
+    }
   end
 
   def render("error.json", %{error: error}) do

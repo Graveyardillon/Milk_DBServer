@@ -50,6 +50,7 @@ defmodule MilkWeb.Router do
 
     post "/chat_room/get_all", ChatRoomController, :index
     post "/chat_room/get", ChatRoomController, :show
+    post "/chat_room/get_mine", ChatRoomController, :my_rooms
 
     resources "/chat_member", ChatMemberController, except: [:new, :edit, :index, :show, :delete]
     post "/chat_member/get", ChatMemberController, :show
