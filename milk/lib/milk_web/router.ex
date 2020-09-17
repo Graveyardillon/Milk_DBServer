@@ -41,6 +41,7 @@ defmodule MilkWeb.Router do
   
     post "/user/get_all", UserController, :index
     post "/user/get", UserController, :show
+    post "/user/in_touch", UserController, :get_users_in_touch
     post "/user/signup", UserController, :create
     post "/user/login", UserController, :login
     post "/user/login_forced", UserController, :login_forced
@@ -50,6 +51,7 @@ defmodule MilkWeb.Router do
 
     post "/chat_room/get_all", ChatRoomController, :index
     post "/chat_room/get", ChatRoomController, :show
+    post "/chat_room/get_mine", ChatRoomController, :my_rooms
 
     resources "/chat_member", ChatMemberController, except: [:new, :edit, :index, :show, :delete]
     post "/chat_member/get", ChatMemberController, :show
@@ -66,6 +68,7 @@ defmodule MilkWeb.Router do
 
     resources "/tournament", TournamentController, except: [:new, :edit, :index, :show, :delete]
     post "/tournament/start", TournamentController, :start
+    post "/tournament/deleteloser", TournamentController, :delete_loser
     post "/tournament/get", TournamentController, :show
     post "/tournament/get_all", TournamentController, :index
     post "/tournament/get_by_master_id", TournamentController, :get_tournament_by_master_id

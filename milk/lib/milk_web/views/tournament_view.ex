@@ -28,6 +28,13 @@ defmodule MilkWeb.TournamentView do
       url: tournament.url}
   end
 
+  def render("match.json",%{list: list}) do
+    %{matchlist: list}
+  end
+  def render("loser.json",%{list: list}) do
+    %{updated_match_list: list}
+  end
+
   def render("tournament_topics.json", %{topics: topics}) do
     map = Enum.map(topics, fn topic ->
             %{

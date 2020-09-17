@@ -439,26 +439,38 @@ defmodule Milk.Tournaments do
   @doc """
   Generate a match list of entrants.
   """
-  def generate_match_list(tournament_id) do
-    entrants = get_entrants(tournament_id)
-    # 一番近い2^nを取得
-    get_multiplier_of_nearest_power_of_two(length(entrants))
-  end
-
-  defp get_multiplier_of_nearest_power_of_two(n) do
-    IO.inspect(n)
-    calc_multiplier_of_power(n, 0)
-  end
-  defp calc_multiplier_of_power(1.0, count), do: count
-  defp calc_multiplier_of_power(n, count) when n < 1, do: 0
-  defp calc_multiplier_of_power(n, count) do
-    n
-    |> Integer.is_odd()
-    |> (if do
-      calc_multiplier_of_power((n+1)/2, count+1)
-    else
-      calc_multiplier_of_power(n/2, count+1)
+  def delete_loser(list,loser) do
+    list
+    |>Enum.map(fn x ->
+      case x do
+        [[_a,_b],[_c,_d]] -> Milk.Tournaments.delete_loser(x,loser)
+        [_a,[_b,_c]] -> Milk.Tournaments.delete_loser(x,loser)
+        [[_a,_b],_c] -> Milk.Tournaments.delete_loser(x,loser)
+        a when is_integer(a) -> a
+        _ ->
+          case x -- loser ++ [nil] do
+            [a,b] -> [a,b]
+            [a] -> a
+            [] -> nil
+          end
+      end
     end)
+  end
+  def generate_matchlist(list) do
+    shuffled = list|>Enum.shuffle
+    case(length(shuffled)) do
+    1 ->
+      shuffled|>hd
+    2 -> shuffled
+    _ ->
+      b = Enum.slice(shuffled, 0..trunc(length(shuffled)/2 -1))
+      |> generate_matchlist
+
+      c = Enum.slice(shuffled, trunc(length(shuffled)/2)..length(shuffled)-1)
+      |> generate_matchlist
+
+      [b,c]
+    end
   end
 
   @doc """

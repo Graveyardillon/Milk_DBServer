@@ -17,6 +17,7 @@ defmodule Milk.Accounts.User do
     field :bio, :string, default: nil
     field :notification_number, :integer, default: 0
     field :point, :integer, default: 0
+
     has_one :auth, Auth
     has_many :chat, Chats
     many_to_many :chat_room, ChatRoom, join_through: "chat_member"

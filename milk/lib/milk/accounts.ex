@@ -9,7 +9,10 @@ defmodule Milk.Accounts do
   alias Milk.Accounts.User
   alias Milk.Accounts.Auth
   alias Milk.Log.{ChatMemberLog, AssistantLog, EntrantLog}
+  alias Milk.Chat.{ChatRoom, ChatMember}
   alias Ecto.Multi
+  
+  require Logger
 
   @doc """
   Returns the list of users.
@@ -45,6 +48,37 @@ defmodule Milk.Accounts do
 
   """
   def get_user(id), do: Repo.one(from u in User, join: a in assoc(u, :auth), where: u.id == ^id, preload: [auth: a])
+
+  @doc """
+  Get all users in touch
+  """
+  def get_all_users_in_touch(id) do
+    ChatMember
+    |> where([cm], cm.id == ^id)
+    |> Repo.all()
+    |> Enum.map(fn member -> 
+      ChatRoom
+      |> where([cr], cr.is_private and cr.id == ^member.chat_room_id)
+      |> Repo.one()
+    end)
+    |> Enum.map(fn room -> 
+      users = 
+        ChatMember
+        |> where([cm], cm.chat_room_id == ^room.id and cm.id != ^id)
+        |> Repo.all()
+      
+      unless length(users) == 1, do: Logger.warn("get_all_users_in_touch/1 gets too big list")
+      hd(users)
+    end)
+    |> Enum.map(fn member -> 
+      Repo.one(
+        from u in User, 
+        join: a in assoc(u, :auth),
+        where: u.id == ^member.user_id,
+        preload: [auth: a]
+      )
+    end)
+  end
 
   @doc """
   Creates a user.
