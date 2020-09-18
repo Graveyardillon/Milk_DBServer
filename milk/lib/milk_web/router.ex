@@ -76,6 +76,7 @@ defmodule MilkWeb.Router do
     post "/tournament/delete", TournamentController, :delete
     post "/tournament/get_participating_tournaments", TournamentController, :participating_tournaments
     post "/tournament/get_tabs", TournamentController, :tournament_tabs
+    post "/tournament/get_thumbnail", TournamentController, :get_thumbnail_image
 
     resources "/entrant", EntrantController, except: [:new, :edit, :index, :show, :delete]
     post "/entrant/get", EntrantController, :show

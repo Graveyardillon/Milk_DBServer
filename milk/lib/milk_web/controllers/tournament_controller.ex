@@ -114,4 +114,14 @@ defmodule MilkWeb.TournamentController do
       |>Tournaments.delete_loser(loser_list)
     render(conn,"loser.json", list: updated_match_list)
   end
+
+  def get_thumbnail_image(conn, %{"thumbnail_path" => path}) do
+    case File.read("./static/image/tournament_thumbnail/#{path}.jpg") do
+      {:ok, file} -> 
+        b64 = Base.encode64(file)
+        json(conn, %{b64: b64})
+      {:error, _} -> 
+        json(conn, %{error: "image not fonud"})
+    end
+  end
 end
