@@ -398,5 +398,4 @@ defmodule Milk.Accounts do
   def change_auth(%Auth{} = auth) do
     Auth.changeset(auth, %{})
   end
-
 end
