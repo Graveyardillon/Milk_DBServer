@@ -13,11 +13,11 @@ services:
     hostname: db
     restart: always
     user: root
-  elixir:
+  milk_app:
     build: .
     ports:
       - 4040:4000
-    container_name: elixir
+    container_name: milk_app
     volumes:
       - .:/app
     depends_on:
