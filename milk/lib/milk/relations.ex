@@ -1,98 +1,119 @@
 defmodule Milk.Relations do
-    alias Milk.Accounts.Relation
-    alias Milk.Repo
+  alias Milk.Accounts.Relation
+  alias Milk.Repo
 
-    @doc """
-    Returns the list of relations.
+  import Ecto.Query, warn: false
 
-    ## Examples
+  require Logger
 
-        iex> list_relations()
-        [%Relation{}, ...]
+  @doc """
+  Returns the list of relations.
 
-    """
-    def list_relations do
-        Repo.all(Relation)
-    end
+  ## Examples
 
-    @doc """
-    Gets a single relation.
+      iex> list_relations()
+      [%Relation{}, ...]
 
-    Raises `Ecto.NoResultsError` if the Relation does not exist.
+  """
+  def list_relations do
+      Repo.all(Relation)
+  end
 
-    ## Examples
+  @doc """
+  Gets a single relation.
 
-        iex> get_relation!(123)
-        %Relation{}
+  Raises `Ecto.NoResultsError` if the Relation does not exist.
 
-        iex> get_relation!(456)
-        ** (Ecto.NoResultsError)
+  ## Examples
 
-    """
-    def get_relation!(id), do: Repo.get!(Relation, id)
+      iex> get_relation!(123)
+      %Relation{}
 
-    @doc """
-    Creates a relation.
+      iex> get_relation!(456)
+      ** (Ecto.NoResultsError)
 
-    ## Examples
+  """
+  def get_relation!(id), do: Repo.get!(Relation, id)
 
-        iex> create_relation(%{field: value})
-        {:ok, %Relation{}}
+  @doc """
+  Gets relation by followee_id and follower_id.
+  """
+  # TODO: Need to use Multi
+  def get_relation_ids(follower_id, followee_id) do
+    Relation
+    |> where([r], r.follower_id == ^follower_id)
+    |> where([r], r.followee_id == ^followee_id)
+    |> Repo.one()
+  end
 
-        iex> create_relation(%{field: bad_value})
-        {:error, %Ecto.Changeset{}}
+  @doc """
+  Creates a relation.
 
-    """
-    def create_relation(attrs \\ %{}) do
-        %Relation{}
+  ## Examples
+
+      iex> create_relation(%{field: value})
+      {:ok, %Relation{}}
+
+      iex> create_relation(%{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  # TODO: エラーハンドリング
+  def create_relation(attrs \\ %{}) do
+      unless get_relation_ids(attrs["follower_id"], attrs["followee_id"]) do
+        %Relation{follower_id: attrs["follower_id"], followee_id: attrs["followee_id"]}
         |> Relation.changeset(attrs)
         |> Repo.insert()
-    end
+      else
+        Logger.error("Bulk insertion error")
+        {:error , "Bulk inserion error"}
+      end
+  end
 
-    @doc """
-    Updates a relation.
+  @doc """
+  Updates a relation.
 
-    ## Examples
+  ## Examples
 
-        iex> update_relation(relation, %{field: new_value})
-        {:ok, %Relation{}}
+      iex> update_relation(relation, %{field: new_value})
+      {:ok, %Relation{}}
 
-        iex> update_relation(relation, %{field: bad_value})
-        {:error, %Ecto.Changeset{}}
+      iex> update_relation(relation, %{field: bad_value})
+      {:error, %Ecto.Changeset{}}
 
-    """
-    def update_relation(%Relation{} = relation, attrs) do
-        relation
-        |> Relation.changeset(attrs)
-        |> Repo.update()
-    end
+  """
+  def update_relation(%Relation{} = relation, attrs) do
+      relation
+      |> Relation.changeset(attrs)
+      |> Repo.update()
+  end
 
-    @doc """
-    Deletes a relation.
+  @doc """
+  Deletes a relation.
 
-    ## Examples
+  ## Examples
 
-        iex> delete_relation(relation)
-        {:ok, %Relation{}}
+      iex> delete_relation(relation)
+      {:ok, %Relation{}}
 
-        iex> delete_relation(relation)
-        {:error, %Ecto.Changeset{}}
+      iex> delete_relation(relation)
+      {:error, %Ecto.Changeset{}}
 
-    """
-    def delete_relation(%Relation{} = relation) do
-        Repo.delete(relation)
-    end
+  """
+  def delete_relation(%Relation{} = relation) do
+      Repo.delete(relation)
+  end
 
-    @doc """
-    Returns an `%Ecto.Changeset{}` for tracking relation changes.
+  @doc """
+  Returns an `%Ecto.Changeset{}` for tracking relation changes.
 
-    ## Examples
+  ## Examples
 
-        iex> change_relation(relation)
-        %Ecto.Changeset{data: %Relation{}}
+      iex> change_relation(relation)
+      %Ecto.Changeset{data: %Relation{}}
 
-    """
-    def change_relation(%Relation{} = relation, attrs \\ %{}) do
-        Relation.changeset(relation, attrs)
-    end
+  """
+  def change_relation(%Relation{} = relation, attrs \\ %{}) do
+      Relation.changeset(relation, attrs)
+  end
 end

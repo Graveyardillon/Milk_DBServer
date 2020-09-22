@@ -47,6 +47,8 @@ defmodule MilkWeb.Router do
     post "/user/login_forced", UserController, :login_forced
     post "/user/logout", UserController, :logout
 
+    resources "/relation", RelationController, except: [:new, :edit, :index, :show, :delete]
+
     resources "/chat_room", ChatRoomController, except: [:new, :edit, :index, :show]
 
     post "/chat_room/get_all", ChatRoomController, :index
@@ -86,7 +88,6 @@ defmodule MilkWeb.Router do
     post "/assistant/get_all", AssistantController, :index
     post "/assistant/delete", AssistantController, :delete
 
-    resources "/relation", RelationController, except: [:new, :edit, :index, :show, :delete]
     post "/sync", SyncController, :sync
   end
 
