@@ -88,6 +88,7 @@ defmodule MilkWeb.Router do
     post "/assistant/get_all", AssistantController, :index
     post "/assistant/delete", AssistantController, :delete
 
+    resources "/relation", RelationController, except: [:new, :edit, :index, :show, :delete]
     post "/sync", SyncController, :sync
   end
 

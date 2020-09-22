@@ -1,0 +1,28 @@
+version: '3'
+
+services:
+  db:
+    image: postgres
+    container_name: db
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8"
+    hostname: db
+    restart: always
+    user: root
+  milk_app:
+    build: .
+    ports:
+      - 4040:4000
+    container_name: milk_app
+    volumes:
+      - .:/app
+    depends_on:
+      - db
+    command: bash -c "mix ecto.create && mix ecto.migrate && mix phx.server"
+    tty: true
+    stdin_open: true
+

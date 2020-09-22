@@ -197,4 +197,61 @@ defmodule Milk.AccountsTest do
       assert %Ecto.Changeset{} = Accounts.change_profile(profile)
     end
   end
+
+  describe "relations" do
+    alias Milk.Accounts.Relation
+
+    @valid_attrs %{}
+    @update_attrs %{}
+    @invalid_attrs %{}
+
+    def relation_fixture(attrs \\ %{}) do
+      {:ok, relation} =
+        attrs
+        |> Enum.into(@valid_attrs)
+        |> Accounts.create_relation()
+
+      relation
+    end
+
+    test "list_relations/0 returns all relations" do
+      relation = relation_fixture()
+      assert Accounts.list_relations() == [relation]
+    end
+
+    test "get_relation!/1 returns the relation with given id" do
+      relation = relation_fixture()
+      assert Accounts.get_relation!(relation.id) == relation
+    end
+
+    test "create_relation/1 with valid data creates a relation" do
+      assert {:ok, %Relation{} = relation} = Accounts.create_relation(@valid_attrs)
+    end
+
+    test "create_relation/1 with invalid data returns error changeset" do
+      assert {:error, %Ecto.Changeset{}} = Accounts.create_relation(@invalid_attrs)
+    end
+
+    test "update_relation/2 with valid data updates the relation" do
+      relation = relation_fixture()
+      assert {:ok, %Relation{} = relation} = Accounts.update_relation(relation, @update_attrs)
+    end
+
+    test "update_relation/2 with invalid data returns error changeset" do
+      relation = relation_fixture()
+      assert {:error, %Ecto.Changeset{}} = Accounts.update_relation(relation, @invalid_attrs)
+      assert relation == Accounts.get_relation!(relation.id)
+    end
+
+    test "delete_relation/1 deletes the relation" do
+      relation = relation_fixture()
+      assert {:ok, %Relation{}} = Accounts.delete_relation(relation)
+      assert_raise Ecto.NoResultsError, fn -> Accounts.get_relation!(relation.id) end
+    end
+
+    test "change_relation/1 returns a relation changeset" do
+      relation = relation_fixture()
+      assert %Ecto.Changeset{} = Accounts.change_relation(relation)
+    end
+  end
 end
