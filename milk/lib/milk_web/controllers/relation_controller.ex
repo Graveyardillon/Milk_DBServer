@@ -13,7 +13,9 @@ defmodule MilkWeb.RelationController do
 
   # unfollow
   def delete(conn, %{"relation" => params}) do
-    
+    {:ok, relation} = Relations.delete_relation_by_ids(params["follower_id"], params["followee_id"])
+
+    render(conn, "show.json", relation: relation)
   end
 
   def following_list(conn, %{"user_id" => user_id}) do

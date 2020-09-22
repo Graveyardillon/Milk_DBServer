@@ -38,8 +38,7 @@ defmodule Milk.Relations do
   @doc """
   Gets relation by followee_id and follower_id.
   """
-  # TODO: Need to use Multi
-  def get_relation_ids(follower_id, followee_id) do
+  def get_relation_by_ids(follower_id, followee_id) do
     Relation
     |> where([r], r.follower_id == ^follower_id)
     |> where([r], r.followee_id == ^followee_id)
@@ -69,7 +68,7 @@ defmodule Milk.Relations do
   """
   # TODO: エラーハンドリング
   def create_relation(attrs \\ %{}) do
-      unless get_relation_ids(attrs["follower_id"], attrs["followee_id"]) do
+      unless get_relation_by_ids(attrs["follower_id"], attrs["followee_id"]) do
         %Relation{follower_id: attrs["follower_id"], followee_id: attrs["followee_id"]}
         |> Relation.changeset(attrs)
         |> Repo.insert()
@@ -111,6 +110,15 @@ defmodule Milk.Relations do
   """
   def delete_relation(%Relation{} = relation) do
       Repo.delete(relation)
+  end
+
+  @doc """
+  Deletes a relation by follower id and followee id.
+  """
+  def delete_relation_by_ids(follower_id, followee_id) do
+    get_relation_by_ids(follower_id, followee_id)
+    |> IO.inspect()
+    |> delete_relation()
   end
 
   @doc """

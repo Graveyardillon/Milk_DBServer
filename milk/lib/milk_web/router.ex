@@ -50,6 +50,7 @@ defmodule MilkWeb.Router do
     resources "/relation", RelationController, except: [:new, :edit, :index, :show, :delete]
 
     post "/relation/following_list", RelationController, :following_list
+    post "/relation/unfollow", RelationController, :delete
 
     resources "/chat_room", ChatRoomController, except: [:new, :edit, :index, :show]
 
