@@ -50,14 +50,24 @@ defmodule Milk.Relations do
   Get relation list of a specific user.
   """
   def get_following_list(user_id) do
+    id = if is_binary(user_id) do
+      String.to_integer(user_id)
+    else
+      user_id
+    end
+
     Relation
-    |> where([r], r.follower_id == ^user_id)
+    |> where([r], r.follower_id == ^id)
     |> Repo.all()
     |> Enum.map(fn relation -> 
-      User
-      |> where([u], u.id == ^relation.followee_id)
-      |> Repo.one()
+      Repo.one(
+        from u in User,
+        join: a in assoc(u, :auth),
+        where: u.id == ^relation.follower_id,
+        preload: [auth: a]
+      )
     end)
+    |> IO.inspect()
   end
 
   @doc """
@@ -75,14 +85,14 @@ defmodule Milk.Relations do
   # TODO: エラーハンドリング
   # TODO: Multiを使ったほうがいいかもしれない
   def create_relation(attrs \\ %{}) do
-      unless get_relation_by_ids(attrs["follower_id"], attrs["followee_id"]) do
-        %Relation{follower_id: attrs["follower_id"], followee_id: attrs["followee_id"]}
-        |> Relation.changeset(attrs)
-        |> Repo.insert()
-      else
-        Logger.error("Bulk insertion error")
-        {:error , "Bulk inserion error"}
-      end
+    unless get_relation_by_ids(attrs["follower_id"], attrs["followee_id"]) do
+      %Relation{follower_id: attrs["follower_id"], followee_id: attrs["followee_id"]}
+      |> Relation.changeset(attrs)
+      |> Repo.insert()
+    else
+      Logger.error("Bulk insertion error")
+      {:error , "Bulk inserion error"}
+    end
   end
 
   @doc """
@@ -90,17 +100,17 @@ defmodule Milk.Relations do
 
   ## Examples
 
-      iex> update_relation(relation, %{field: new_value})
-      {:ok, %Relation{}}
+    iex> update_relation(relation, %{field: new_value})
+    {:ok, %Relation{}}
 
-      iex> update_relation(relation, %{field: bad_value})
-      {:error, %Ecto.Changeset{}}
+    iex> update_relation(relation, %{field: bad_value})
+    {:error, %Ecto.Changeset{}}
 
   """
   def update_relation(%Relation{} = relation, attrs) do
-      relation
-      |> Relation.changeset(attrs)
-      |> Repo.update()
+    relation
+    |> Relation.changeset(attrs)
+    |> Repo.update()
   end
 
   @doc """
@@ -108,11 +118,11 @@ defmodule Milk.Relations do
 
   ## Examples
 
-      iex> delete_relation(relation)
-      {:ok, %Relation{}}
+    iex> delete_relation(relation)
+    {:ok, %Relation{}}
 
-      iex> delete_relation(relation)
-      {:error, %Ecto.Changeset{}}
+    iex> delete_relation(relation)
+    {:error, %Ecto.Changeset{}}
 
   """
   def delete_relation(%Relation{} = relation) do
@@ -133,11 +143,11 @@ defmodule Milk.Relations do
 
   ## Examples
 
-      iex> change_relation(relation)
-      %Ecto.Changeset{data: %Relation{}}
+    iex> change_relation(relation)
+    %Ecto.Changeset{data: %Relation{}}
 
   """
   def change_relation(%Relation{} = relation, attrs \\ %{}) do
-      Relation.changeset(relation, attrs)
+    Relation.changeset(relation, attrs)
   end
 end

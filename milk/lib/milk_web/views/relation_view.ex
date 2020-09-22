@@ -21,18 +21,22 @@ defmodule MilkWeb.RelationView do
   end
 
   def render("users.json", %{users: users}) do
-    users
-    |> IO.inspect(label: "before map")
-    |> Enum.map(fn user -> 
-      %{
-        id: user.id,
-        icon_path: user.icon_path,
-        id_for_show: user.id_for_show,
-        language: user.language,
-        name: user.name,
-        bio: user.bio
-      }
-    end)
-    |> IO.inspect(label: "after map")
+    m = 
+      users
+      |> IO.inspect(label: "before map")
+      |> Enum.map(fn user -> 
+        %{
+          id: user.id,
+          icon_path: user.icon_path,
+          id_for_show: user.id_for_show,
+          language: user.language,
+          name: user.name,
+          bio: user.bio,
+          email: user.auth.email
+        }
+      end)
+      |> IO.inspect(label: "after map")
+
+    %{data: m}
   end
 end
