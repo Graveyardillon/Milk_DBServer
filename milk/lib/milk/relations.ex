@@ -1,5 +1,6 @@
 defmodule Milk.Relations do
   alias Milk.Accounts.Relation
+  alias Milk.Accounts.User
   alias Milk.Repo
 
   import Ecto.Query, warn: false
@@ -51,7 +52,12 @@ defmodule Milk.Relations do
   def get_following_list(user_id) do
     Relation
     |> where([r], r.follower_id == ^user_id)
-    |> Repo.all
+    |> Repo.all()
+    |> Enum.map(fn relation -> 
+      User
+      |> where([u], u.id == ^relation.followee_id)
+      |> Repo.one()
+    end)
   end
 
   @doc """

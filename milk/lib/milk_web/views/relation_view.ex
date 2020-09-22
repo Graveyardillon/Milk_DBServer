@@ -2,6 +2,7 @@ defmodule MilkWeb.RelationView do
   use MilkWeb, :view
   alias MilkWeb.RelationView
   alias Milk.Accounts.Relation
+  alias Milk.Accounts.User
 
   def render("index.json", %{relations: relations}) do
     %{data: render_many(relations, RelationView, "relation.json")}
@@ -12,11 +13,26 @@ defmodule MilkWeb.RelationView do
   end
 
   def render("relation.json", %{relation: relation}) do
-    IO.inspect(relation)
     %{
       id: relation.id,
       followee_id: relation.followee_id,
       follower_id: relation.follower_id
     }
+  end
+
+  def render("users.json", %{users: users}) do
+    users
+    |> IO.inspect(label: "before map")
+    |> Enum.map(fn user -> 
+      %{
+        id: user.id,
+        icon_path: user.icon_path,
+        id_for_show: user.id_for_show,
+        language: user.language,
+        name: user.name,
+        bio: user.bio
+      }
+    end)
+    |> IO.inspect(label: "after map")
   end
 end

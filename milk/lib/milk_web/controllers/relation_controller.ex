@@ -19,8 +19,8 @@ defmodule MilkWeb.RelationController do
   end
 
   def following_list(conn, %{"user_id" => user_id}) do
-    relations = Relations.get_following_list(user_id)
+    users = Relations.get_following_list(user_id)
 
-    render(conn, "index.json", relations: relations)
+    render(conn, "users.json", users: users)
   end
 end
