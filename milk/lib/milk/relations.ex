@@ -67,6 +67,7 @@ defmodule Milk.Relations do
 
   """
   # TODO: エラーハンドリング
+  # TODO: Multiを使ったほうがいいかもしれない
   def create_relation(attrs \\ %{}) do
       unless get_relation_by_ids(attrs["follower_id"], attrs["followee_id"]) do
         %Relation{follower_id: attrs["follower_id"], followee_id: attrs["followee_id"]}
