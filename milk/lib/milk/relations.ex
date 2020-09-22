@@ -47,6 +47,15 @@ defmodule Milk.Relations do
   end
 
   @doc """
+  Get relation list of a specific user.
+  """
+  def get_following_list(user_id) do
+    Relation
+    |> where([r], r.follower_id == ^user_id)
+    |> Repo.all
+  end
+
+  @doc """
   Creates a relation.
 
   ## Examples
