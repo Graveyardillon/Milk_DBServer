@@ -25,6 +25,7 @@ defmodule MilkWeb.TournamentController do
   end
 
   def create(conn, %{"tournament" => tournament_params, "image" => image}) do
+    IO.inspect(image)
     thumbnail_path = if image != "" do
       uuid = SecureRandom.uuid()
       File.cp(image.path, "./static/image/tournament_thumbnail/#{uuid}.jpg")
@@ -34,15 +35,15 @@ defmodule MilkWeb.TournamentController do
     end
 
     case Tournaments.create_tournament(tournament_params, thumbnail_path) do
-    {:ok, %Tournament{} = tournament} ->
-      conn
-      # |> put_status(:created)
-      # |> put_resp_header("location", Routes.tournament_path(conn, :show, tournament))
-      |> render("show.json", tournament: tournament)
-    {:error, error} ->
-      render(conn, "error.json", error: error)
-    _ ->
-      render(conn, "error.json", error: nil)
+      {:ok, %Tournament{} = tournament} ->
+        conn
+        # |> put_status(:created)
+        # |> put_resp_header("location", Routes.tournament_path(conn, :show, tournament))
+        |> render("show.json", tournament: tournament)
+      {:error, error} ->
+        render(conn, "error.json", error: error)
+      _ ->
+        render(conn, "error.json", error: nil)
     end
   end
 
@@ -104,7 +105,6 @@ defmodule MilkWeb.TournamentController do
 
   def tournament_tabs(conn, %{"tournament_id" => tournament_id}) do
     tabs = Tournaments.get_tabs_by_tournament_id(tournament_id)
-           |> IO.inspect()
 
     # TODO: tournament_topics.jsonのrenderを直接呼び出すのではなくshow.jsonからrender_manyをする方がよさそう
     render(conn, "tournament_topics.json", topics: tabs)
