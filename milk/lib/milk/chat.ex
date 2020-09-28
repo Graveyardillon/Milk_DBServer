@@ -121,10 +121,15 @@ defmodule Milk.Chat do
     end)
     
     if chat, do: Repo.insert_all(ChatsLog, chat)
-    member = Enum.map(chat_room.chat_member, fn x -> %{chat_room_id: x.chat_room_id, user_id: x.user_id, authority: x.authority, create_time: x.create_time, update_time: x.update_time} end)
+    member = Enum.map(chat_room.chat_member, fn x -> 
+      %{chat_room_id: x.chat_room_id, user_id: x.user_id, authority: x.authority, create_time: x.create_time, update_time: x.update_time} end
+    )
+
     if member, do: Repo.insert_all(ChatMemberLog, member)
+
     ChatRoomLog.changeset(%ChatRoomLog{}, Map.from_struct(chat_room))
     |> Repo.insert()
+    
     Repo.delete(chat_room)
   end
 
