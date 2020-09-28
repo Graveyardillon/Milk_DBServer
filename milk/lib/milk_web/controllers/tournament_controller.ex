@@ -30,6 +30,7 @@ defmodule MilkWeb.TournamentController do
   end
 
   def create(conn, %{"tournament" => tournament_params, "image" => image}) do
+    IO.inspect(image)
     thumbnail_path = if image != "" do
       uuid = SecureRandom.uuid()
       File.cp(image.path, "./static/image/tournament_thumbnail/#{uuid}.jpg")
@@ -39,15 +40,15 @@ defmodule MilkWeb.TournamentController do
     end
 
     case Tournaments.create_tournament(tournament_params, thumbnail_path) do
-    {:ok, %Tournament{} = tournament} ->
-      conn
-      # |> put_status(:created)
-      # |> put_resp_header("location", Routes.tournament_path(conn, :show, tournament))
-      |> render("show.json", tournament: tournament)
-    {:error, error} ->
-      render(conn, "error.json", error: error)
-    _ ->
-      render(conn, "error.json", error: nil)
+      {:ok, %Tournament{} = tournament} ->
+        conn
+        # |> put_status(:created)
+        # |> put_resp_header("location", Routes.tournament_path(conn, :show, tournament))
+        |> render("show.json", tournament: tournament)
+      {:error, error} ->
+        render(conn, "error.json", error: error)
+      _ ->
+        render(conn, "error.json", error: nil)
     end
   end
 
@@ -82,6 +83,21 @@ defmodule MilkWeb.TournamentController do
     end
   end
 
+  # Gets tournament info list for home screen.
+  def home(conn, %{"user_id" => user_id}) do
+    id = if is_binary(user_id) do
+      String.to_integer(user_id)
+    else
+      user_id
+    end
+
+    holding_tournaments = Tournaments.get_holding_tournaments(id)
+    participating_tournaments = Tournaments.get_participating_tournaments!(id)
+
+    tournaments = holding_tournaments ++ participating_tournaments
+    render(conn, "index.json", tournament: tournaments)
+  end
+
   def participating_tournaments(conn, %{"user_id" => user_id}) do
     tournaments = Tournaments.get_participating_tournaments!(user_id)
 
@@ -94,7 +110,6 @@ defmodule MilkWeb.TournamentController do
 
   def tournament_tabs(conn, %{"tournament_id" => tournament_id}) do
     tabs = Tournaments.get_tabs_by_tournament_id(tournament_id)
-           |> IO.inspect()
 
     # TODO: tournament_topics.jsonのrenderを直接呼び出すのではなくshow.jsonからrender_manyをする方がよさそう
     render(conn, "tournament_topics.json", topics: tabs)
@@ -108,6 +123,7 @@ defmodule MilkWeb.TournamentController do
       |>Tournaments.generate_matchlist()
     render(conn, "match.json", list: match_list)
   end
+
   def delete_loser(conn, %{"tournament" => %{"match_list" => match_list, "loser_list" => loser_list}}) do
     updated_match_list =
       match_list

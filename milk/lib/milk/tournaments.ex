@@ -59,6 +59,27 @@ defmodule Milk.Tournaments do
   def get_tournament!(id), do: Repo.get!(Tournament, id)
 
   @doc """
+  Get tournaments which the user is holding.
+  """
+  def get_holding_tournaments(user_id) do
+    Tournament
+    |> where([t], t.master_id == ^user_id)
+    |> Repo.all()
+  end
+
+  @doc """
+  Get tournaments which the user participating in.
+  """
+  def get_participating_tournaments!(user_id) do
+    Entrant
+    |> where([e], e.user_id == ^user_id)
+    |> Repo.all()
+    |> Enum.map(fn entrant ->
+      get_tournament!(entrant.tournament_id)
+    end)
+  end
+
+  @doc """
   Creates a tournament.
 
   ## Examples
@@ -70,7 +91,8 @@ defmodule Milk.Tournaments do
       {:error, %Ecto.Changeset{}}
 
   """
-  def create_tournament(attrs, thumbnail_path \\ %{}) do
+  def create_tournament(params, thumbnail_path \\ %{}) do
+    attrs = Poison.decode!(params)
     master_repo = Repo.exists?(from u in User, where: u.id == ^attrs["master_id"])
 
     if master_repo do
@@ -422,18 +444,6 @@ defmodule Milk.Tournaments do
   """
   def change_entrant(%Entrant{} = entrant, attrs \\ %{}) do
     Entrant.changeset(entrant, attrs)
-  end
-
-  @doc """
-  Get tournaments which the user participating in.
-  """
-  def get_participating_tournaments!(user_id) do
-    Entrant
-    |> where([e], e.user_id == ^user_id)
-    |> Repo.all()
-    |> Enum.map(fn entrant ->
-      get_tournament!(entrant.tournament_id)
-    end)
   end
 
   @doc """

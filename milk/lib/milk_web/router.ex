@@ -47,6 +47,11 @@ defmodule MilkWeb.Router do
     post "/user/login_forced", UserController, :login_forced
     post "/user/logout", UserController, :logout
 
+    resources "/relation", RelationController, except: [:new, :edit, :index, :show, :delete]
+
+    post "/relation/following_list", RelationController, :following_list
+    post "/relation/unfollow", RelationController, :delete
+
     resources "/chat_room", ChatRoomController, except: [:new, :edit, :index, :show]
 
     post "/chat_room/get_all", ChatRoomController, :index
@@ -77,6 +82,7 @@ defmodule MilkWeb.Router do
     post "/tournament/get_participating_tournaments", TournamentController, :participating_tournaments
     post "/tournament/get_tabs", TournamentController, :tournament_tabs
     post "/tournament/get_thumbnail", TournamentController, :get_thumbnail_image
+    post "/tournament/home", TournamentController, :home
 
     resources "/entrant", EntrantController, except: [:new, :edit, :index, :show, :delete]
     post "/entrant/get", EntrantController, :show
@@ -88,7 +94,6 @@ defmodule MilkWeb.Router do
     post "/assistant/get_all", AssistantController, :index
     post "/assistant/delete", AssistantController, :delete
 
-    resources "/relation", RelationController, except: [:new, :edit, :index, :show, :delete]
     post "/sync", SyncController, :sync
   end
 
