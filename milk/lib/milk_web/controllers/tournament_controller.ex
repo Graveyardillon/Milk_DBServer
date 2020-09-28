@@ -83,6 +83,14 @@ defmodule MilkWeb.TournamentController do
     end
   end
 
+  def image(conn, %{"filename" => filename}) do
+    path = "./static/image/tournament_thumbnail/#{filename}.jpg"
+
+    conn
+    |> put_resp_content_type("image/jpeg")
+    |> send_file(200, path)
+  end
+
   # Gets tournament info list for home screen.
   def home(conn, %{"user_id" => user_id}) do
     id = if is_binary(user_id) do
