@@ -82,7 +82,7 @@ defmodule MilkWeb.Router do
     post "/tournament/get_participating_tournaments", TournamentController, :participating_tournaments
     post "/tournament/get_tabs", TournamentController, :tournament_tabs
     post "/tournament/get_thumbnail", TournamentController, :get_thumbnail_image
-    post "/tournament/home", TournamentController, :home
+    get "/tournament/home", TournamentController, :home
     post "/tournament/image", TournamentController, :image
 
     resources "/entrant", EntrantController, except: [:new, :edit, :index, :show, :delete]

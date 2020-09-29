@@ -92,17 +92,8 @@ defmodule MilkWeb.TournamentController do
   end
 
   # Gets tournament info list for home screen.
-  def home(conn, %{"user_id" => user_id}) do
-    id = if is_binary(user_id) do
-      String.to_integer(user_id)
-    else
-      user_id
-    end
-
-    holding_tournaments = Tournaments.get_holding_tournaments(id)
-    participating_tournaments = Tournaments.get_participating_tournaments!(id)
-
-    tournaments = holding_tournaments ++ participating_tournaments
+  def home(conn, _params) do
+    tournaments = Tournaments.list_tournament()
     render(conn, "index.json", tournament: tournaments)
   end
 
