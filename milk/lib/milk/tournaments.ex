@@ -4,6 +4,9 @@ defmodule Milk.Tournaments do
   """
 
   import Ecto.Query, warn: false
+
+  use Timex
+
   alias Milk.Repo
   alias Ecto.Multi
 
@@ -32,6 +35,15 @@ defmodule Milk.Tournaments do
   """
   def list_tournament do
     Repo.all(Tournament)
+  end
+
+  def home_tournament do
+  now = Timex.now
+  IO.inspect(now)
+
+    Tournament
+    |> where([e], ^now < e.deadline)
+    |> Repo.all()
   end
 
   def game_tournament(attrs) do

@@ -93,7 +93,7 @@ defmodule MilkWeb.TournamentController do
 
   # Gets tournament info list for home screen.
   def home(conn, _params) do
-    tournaments = Tournaments.list_tournament()
+    tournaments = Tournaments.home_tournament()
     render(conn, "index.json", tournament: tournaments)
   end
 
