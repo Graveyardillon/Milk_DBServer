@@ -38,11 +38,9 @@ defmodule Milk.Tournaments do
   end
 
   def home_tournament do
-  now = Timex.now
-  IO.inspect(now)
 
     Tournament
-    |> where([e], ^now < e.deadline)
+    |> where([e], e.deadline > ^Timex.now)
     |> Repo.all()
   end
 
