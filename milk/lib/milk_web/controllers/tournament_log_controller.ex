@@ -11,11 +11,10 @@ defmodule MilkWeb.TournamentLogController do
     render(conn, "index.json", tournament_log: tournament_log)
   end
 
-  def create(conn, %{"tournament_log" => tournament_log_params}) do
+  def create(conn, %{"data" => tournament_log_params}) do
+  IO.inspect(tournament_log_params, label: :log)
     with {:ok, %TournamentLog{} = tournament_log} <- Log.create_tournament_log(tournament_log_params) do
       conn
-      |> put_status(:created)
-      |> put_resp_header("location", Routes.tournament_log_path(conn, :show, tournament_log))
       |> render("show.json", tournament_log: tournament_log)
     end
   end

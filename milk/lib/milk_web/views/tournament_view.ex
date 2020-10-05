@@ -7,6 +7,7 @@ defmodule MilkWeb.TournamentView do
   end
 
   def render("show.json", %{tournament: tournament}) do
+    IO.inspect(tournament, label: :viewing)
     %{data: render_one(tournament, TournamentView, "tournament.json")}
   end
 
@@ -25,7 +26,10 @@ defmodule MilkWeb.TournamentView do
       join: tournament.join,
       description: tournament.description,
       master_id: tournament.master_id,
-      url: tournament.url}
+      url: tournament.url,
+      create_time: tournament.create_time,
+      update_time: tournament.update_time
+      }
   end
 
   def render("match.json",%{list: list}) do
