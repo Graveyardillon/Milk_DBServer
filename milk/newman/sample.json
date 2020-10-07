@@ -1,0 +1,93 @@
+{
+  "info": 
+  {
+    "name": "Sample Newman Collection for Milk DBServer"
+  },
+  "item": [
+    {
+      "name": "Signup post request",
+      "request": {
+        "url": "http://localhost:4000/api/user/signup",
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"user\":{\"email\":\"pap1@gmail.com\",\"password\":\"Password123\",\"name\":\"Papillon1\"}}"
+        }
+      }
+    },
+    {
+      "name": "Signup post request",
+      "request": {
+        "url": "http://localhost:4000/api/user/signup",
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"user\":{\"email\":\"pap2@gmail.com\",\"password\":\"Password123\",\"name\":\"Papillon2\"}}"
+        }
+      }
+    },
+    {
+      "name": "Signup post request",
+      "request": {
+        "url": "http://localhost:4000/api/user/signup",
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"user\":{\"email\":\"pap3@gmail.com\",\"password\":\"Password123\",\"name\":\"Papillon3\"}}"
+        }
+      }
+    },
+    {
+      "name": "Signup post request",
+      "request": {
+        "url": "http://localhost:4000/api/user/signup",
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"user\":{\"email\":\"pap4@gmail.com\",\"password\":\"Password123\",\"name\":\"Papillon4\"}}"
+        }
+      }
+    },
+    {
+      "name": "Signup post request",
+      "request": {
+        "url": "http://localhost:4000/api/user/signup",
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"user\":{\"email\":\"pap5@gmail.com\",\"password\":\"Password123\",\"name\":\"Papillon5\"}}"
+        }
+      }
+    }
+  ]
+}
