@@ -88,6 +88,36 @@
           "raw": "{\"user\":{\"email\":\"pap5@gmail.com\",\"password\":\"Password123\",\"name\":\"Papillon5\"}}"
         }
       }
+    },
+    {
+      "name": "Tournament create request",
+      "request": {
+        "url": "http://localhost:4000/api/tournament",
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "multipart/form-data"          
+          }
+        ],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+             {
+               "key": "image",
+               "type": "file",
+               "enabled": true,
+               "src": "sample.jpg"
+             },
+             {
+               "key": "tournament",
+               "type": "text",
+               "enabled": true,
+               "value": "{\"name\": \"MY TOURNEY10\",\"game_name\": \"call of duty\",\"event_date\": \"2010-04-17T14:00:00Z\",\"deadline\": \"2010-04-17T14:00:00Z\",\"type\": 0,\"capacity\": 50,\"password\": \"1234\",\"live\": \"false\",\"join\": \"true\",\"description\": \"My Awesome Tournament\",\"url\": \"http://myurl.com\",\"master_id\": 1}"
+             }
+          ]
+        }
+      }
     }
   ]
 }
