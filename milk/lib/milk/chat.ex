@@ -409,8 +409,8 @@ defmodule Milk.Chat do
   def create_chats(attrs \\ %{}) do
     if (Repo.exists?(from cm in ChatMember, where: cm.user_id == ^attrs["user_id"] and cm.chat_room_id == ^attrs["chat_room_id"])) do
       
-      case Multi.new() 
-      |> Multi.run(:chat_room, fn repo, _ -> 
+      case Multi.new()
+      |> Multi.run(:chat_room, fn repo, _ ->
         {:ok, repo.get(ChatRoom, attrs["chat_room_id"])}
       end)
       |> Multi.insert(:chat, fn %{chat_room: chat_room} ->

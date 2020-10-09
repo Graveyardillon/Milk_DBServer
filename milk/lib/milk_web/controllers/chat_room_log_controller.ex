@@ -11,11 +11,10 @@ defmodule MilkWeb.ChatRoomLogController do
     render(conn, "index.json", chat_room_log: chat_room_log)
   end
 
-  def create(conn, %{"chat_room_log" => chat_room_log_params}) do
+  def create(conn, %{"data" => chat_room_log_params}) do
     with {:ok, %ChatRoomLog{} = chat_room_log} <- Log.create_chat_room_log(chat_room_log_params) do
       conn
       |> put_status(:created)
-      |> put_resp_header("location", Routes.chat_room_log_path(conn, :show, chat_room_log))
       |> render("show.json", chat_room_log: chat_room_log)
     end
   end

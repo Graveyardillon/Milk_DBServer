@@ -52,7 +52,7 @@ defmodule MilkWeb.TournamentController do
     end
   end
 
-  def show(conn, %{"id" => id}) do
+  def show(conn, %{"tournament_id" => id}) do
     tournament = Tournaments.get_tournament!(id)
     if(tournament) do
       render(conn, "show.json", tournament: tournament)
@@ -61,7 +61,7 @@ defmodule MilkWeb.TournamentController do
     end
   end
 
-  def update(conn, %{"id" => id, "tournament" => tournament_params}) do
+  def update(conn, %{"tournament_id" => id, "tournament" => tournament_params}) do
     tournament = Tournaments.get_tournament!(id)
     if(tournament) do
       case Tournaments.update_tournament(tournament, tournament_params) do
@@ -77,7 +77,7 @@ defmodule MilkWeb.TournamentController do
     end
   end
 
-  def delete(conn, %{"id" => id}) do
+  def delete(conn, %{"tournament_id" => id}) do
     with {:ok, %Tournament{}} <- Tournaments.delete_tournament(id) do
       send_resp(conn, :no_content, "")
     end
