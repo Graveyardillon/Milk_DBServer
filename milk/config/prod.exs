@@ -12,7 +12,7 @@ use Mix.Config
 config :milk, MilkWeb.Endpoint,
   http: [port: {:system, "PORT"}],
   url: [host: "localhost", port: {:system, "PORT"}],
-  cache_static_manifest: "priv/static/cache_manifest.json",
+  #cache_static_manifest: "priv/static/cache_manifest.json",
   server: true,
   root: ".",
   version: Application.spec(:milk, :vsn)
