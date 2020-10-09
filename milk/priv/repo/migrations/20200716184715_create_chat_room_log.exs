@@ -10,6 +10,7 @@ defmodule Milk.Repo.Migrations.CreateChatRoomLog do
       add :create_time, :timestamptz
       add :update_time, :timestamptz
       add :member_count, :integer
+      add :is_private, :boolean
     end
 
   end
