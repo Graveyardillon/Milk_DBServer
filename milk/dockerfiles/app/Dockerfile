@@ -16,7 +16,10 @@ RUN mix do deps.get, deps.compile
 COPY priv priv
 COPY lib lib
 COPY rel rel
-RUN mix do compile, release
+RUN mix compile
+RUN mix ecto.create
+RUN mix ecto.migrate
+RUN mix release
 
 FROM alpine:3.9 AS app
 RUN apk add --no-cache openssl ncurses-libs
