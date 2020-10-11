@@ -28,7 +28,7 @@ services:
       - DB_PASSWORD=postgres
       - DB_NAME=5432
       - DB_HOST=db
-      - DATABASE_URL=ecto://postgres:postgres@db:postgres/milk
+      - DATABASE_URL=ecto://postgres:postgres@db:5432/milk
       - SECRET_KEY_BASE=KL6jdYa8VzDIg1TjqQcGZsaGSnd43grQYWrl95dYjn/SJB7KABj7N4BWgaCxSF81
     ports:
       - "4000:4000"
