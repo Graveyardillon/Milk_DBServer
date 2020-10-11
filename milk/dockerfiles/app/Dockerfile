@@ -34,5 +34,5 @@ COPY --from=build --chown=nobody:nobody /app/_build/prod/rel/milk ./
 
 ENV HOME=/app
 
-CMD ["bin/my_app", "start"]
+CMD ["bin/milk", "start"]
 
