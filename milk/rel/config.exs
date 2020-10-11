@@ -30,14 +30,14 @@ environment :dev do
   # the --env flag to Distillery explicitly if you want to use
   # dev mode.
   set dev_mode: true
-  set include_erts: false
-  set cookie: :":LAib__*h;3g<q9T>vE(Vnj3S6{;%>a}3na5/:U|=Q.Mk]>KS/m=I^H_|VQM2JPs"
+  set include_erts: true
+  set cookie: :"IP}(B{(qTP|7N@P}CYWH*yvW4@b^V|?M<_kOS}7MjpGc97p^mxYm(v8Gy0R$1Tl*"
 end
 
 environment :prod do
   set include_erts: true
   set include_src: false
-  set cookie: :"0(1{xeRwA}BkVhNS;@!SRcZKZ&$c!)WWCF%kpUPwhP`DSmW.MkpK~0GykZ.?|H)z"
+  set cookie: :"`OrYV36rMBmwP_Qucdz~&E/~RtYTm)!!p%~5M=_uz9k~;eK@ls_BcI3t9ck?p25="
   set vm_args: "rel/vm.args"
 end
 

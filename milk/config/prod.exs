@@ -11,7 +11,7 @@ use Mix.Config
 # before starting your production server.
 config :milk, MilkWeb.Endpoint,
   http: [port: {:system, "PORT"}],
-  url: [host: "localhost", port: {:system, "PORT"}],
+  url: [host: "localhost", port: 4000],
   #cache_static_manifest: "priv/static/cache_manifest.json",
   server: true,
   root: ".",
@@ -56,4 +56,4 @@ config :logger, level: :info
 
 # Finally import the config/prod.secret.exs which loads secrets
 # and configuration from environment variables.
-import_config "prod.secret.exs"
+# import_config "prod.secret.exs"
