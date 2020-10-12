@@ -1,6 +1,7 @@
 defmodule MilkWeb.TournamentController do
   use MilkWeb, :controller
 
+  alias Milk.Ets
   alias Milk.Tournaments
   alias Milk.Tournaments.Tournament
 
@@ -120,6 +121,8 @@ defmodule MilkWeb.TournamentController do
       Tournaments.get_entrants(tournament_id)
       |>Enum.map(fn x -> x.id end)
       |>Tournaments.generate_matchlist()
+
+    Ets.insert_match_list(tournament_id, match_list)
     render(conn, "match.json", list: match_list)
   end
 
