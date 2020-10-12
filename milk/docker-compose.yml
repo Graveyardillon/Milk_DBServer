@@ -8,13 +8,14 @@ services:
   db:
     build: ./dockerfiles/db
     volumes:
-      - ./volumes/db/data:/var/lib/postgresql/data
+      - ./volumes/db/data:/var/lib/postgresql/0.1.0
     ports:
-      - "5432:5432"
+      - 5432:5432
     environment:
-      - POSTGRES_DB=postgres
+      - POSTGRES_DB=milk
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
+    restart: always
     networks:
       - backend
 
@@ -24,15 +25,10 @@ services:
       context: .
     command: "bin/milk start"
     environment:
-      - DB_USER=postgres
-      - DB_PASSWORD=postgres
-      - DB_NAME=5432
-      - DB_HOST=db
-      - DATABASE_URL=ecto://postgres:postgres@db:5432/milk
+      - DATABASE_URL=ecto://postgres:postgres@db/milk
       - SECRET_KEY_BASE=KL6jdYa8VzDIg1TjqQcGZsaGSnd43grQYWrl95dYjn/SJB7KABj7N4BWgaCxSF81
     ports:
-      - "4000:4000"
+      - 4000:4000
+    tty: true
     networks:
       - backend
-    depends_on:
-      - db

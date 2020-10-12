@@ -17,8 +17,8 @@ COPY priv priv
 COPY lib lib
 COPY rel rel
 RUN mix compile
-RUN mix ecto.create
-RUN mix ecto.migrate
+#RUN mix ecto.create
+#RUN mix ecto.migrate
 RUN mix release
 
 FROM alpine:3.9 AS app
@@ -34,5 +34,8 @@ COPY --from=build --chown=nobody:nobody /app/_build/prod/rel/milk ./
 
 ENV HOME=/app
 
-CMD ["bin/milk", "start"]
+COPY ./entrypoint.sh .
+RUN ls
+
+ENTRYPOINT ["./entrypoint.sh"]
 
