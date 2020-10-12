@@ -24,7 +24,7 @@ defmodule MilkWeb.ChatsController do
       |> render("show.json", chats: chats)
     {:error, error} ->
       render(conn, "error.json", error: error)
-    _ -> 
+    _ ->
       render(conn, "error.json", error: nil)
     end
   end

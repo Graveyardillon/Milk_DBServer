@@ -11,11 +11,9 @@ defmodule MilkWeb.ChatsLogController do
     render(conn, "index.json", chat_log: chat_log)
   end
 
-  def create(conn, %{"chats_log" => chats_log_params}) do
+  def create(conn, chats_log_params) do
     with {:ok, %ChatsLog{} = chats_log} <- Log.create_chats_log(chats_log_params) do
       conn
-      |> put_status(:created)
-      |> put_resp_header("location", Routes.chats_log_path(conn, :show, chats_log))
       |> render("show.json", chats_log: chats_log)
     end
   end
