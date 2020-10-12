@@ -15,6 +15,11 @@ defmodule MilkWeb.TournamentController do
     end
   end
 
+  def get_tournament_by_master_id(conn, %{"user_id" => user_id}) do
+    tournaments = Tournaments.get_tournament_by_master_id(user_id)
+    render(conn, "index.json", tournament: tournaments)
+  end
+
   def get_game(conn, %{"tournament" => params}) do
     tournament = Tournaments.game_tournament(params)
     if(tournament) do
@@ -87,17 +92,8 @@ defmodule MilkWeb.TournamentController do
   end
 
   # Gets tournament info list for home screen.
-  def home(conn, %{"user_id" => user_id}) do
-    id = if is_binary(user_id) do
-      String.to_integer(user_id)
-    else
-      user_id
-    end
-
-    holding_tournaments = Tournaments.get_holding_tournaments(id)
-    participating_tournaments = Tournaments.get_participating_tournaments!(id)
-
-    tournaments = holding_tournaments ++ participating_tournaments
+  def home(conn, _params) do
+    tournaments = Tournaments.home_tournament()
     render(conn, "index.json", tournament: tournaments)
   end
 
@@ -132,5 +128,15 @@ defmodule MilkWeb.TournamentController do
       match_list
       |>Tournaments.delete_loser(loser_list)
     render(conn,"loser.json", list: updated_match_list)
+  end
+
+  def get_thumbnail_image(conn, %{"thumbnail_path" => path}) do
+    case File.read("./static/image/tournament_thumbnail/#{path}.jpg") do
+      {:ok, file} -> 
+        b64 = Base.encode64(file)
+        json(conn, %{b64: b64})
+      {:error, _} -> 
+        json(conn, %{error: "image not fonud"})
+    end
   end
 end

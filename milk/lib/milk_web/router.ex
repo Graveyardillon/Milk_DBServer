@@ -78,11 +78,13 @@ defmodule MilkWeb.Router do
     post "/tournament/deleteloser", TournamentController, :delete_loser
     post "/tournament/get", TournamentController, :show
     post "/tournament/get_all", TournamentController, :index
+    post "/tournament/get_by_master_id", TournamentController, :get_tournament_by_master_id
     post "/tournament/get_game", TournamentController, :get_game
     post "/tournament/delete", TournamentController, :delete
     post "/tournament/get_participating_tournaments", TournamentController, :participating_tournaments
     post "/tournament/get_tabs", TournamentController, :tournament_tabs
-    post "/tournament/home", TournamentController, :home
+    post "/tournament/get_thumbnail", TournamentController, :get_thumbnail_image
+    get "/tournament/home", TournamentController, :home
     post "/tournament/image", TournamentController, :image
 
     post "/tournament_log/add", TournamentLogController, :create

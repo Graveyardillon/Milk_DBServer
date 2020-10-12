@@ -11,7 +11,7 @@ defmodule MilkWeb.AssistantView do
   end
 
   def render("assistant.json", %{assistant: assistant}) do
-    %{id: assistant.id}
+    %{user_id: assistant.user_id}
   end
 
   def render("error.json", %{error: error}) do
@@ -19,6 +19,14 @@ defmodule MilkWeb.AssistantView do
       %{result: false, error: create_message(error), data: nil}
     else
       %{result: false, error: nil, data: nil}
+    end
+  end
+
+  def render("error_string.json", %{data: data, error: error}) do
+    if data do
+      %{result: true, error: error, data: render_many(data, AssistantView, "assistant.json")}
+    else
+      %{result: false, error: error, data: nil}
     end
   end
 

@@ -4,6 +4,9 @@ defmodule Milk.Tournaments do
   """
 
   import Ecto.Query, warn: false
+
+  use Timex
+
   alias Milk.Repo
   alias Ecto.Multi
 
@@ -34,8 +37,20 @@ defmodule Milk.Tournaments do
     Repo.all(Tournament)
   end
 
+  def home_tournament do
+
+    Tournament
+    |> where([e], e.deadline > ^Timex.now)
+    |> order_by([e], asc: :event_date)
+    |> Repo.all()
+  end
+
   def game_tournament(attrs) do
     Repo.all(from t in Tournament, where: t.game_id == ^attrs["game_id"])
+  end
+
+  def get_tournament_by_master_id(user_id) do
+    Repo.all(from t in Tournament, where: t.master_id == ^user_id)
   end
 
   @doc """
@@ -88,7 +103,8 @@ defmodule Milk.Tournaments do
 
   """
   def create_tournament(params, thumbnail_path \\ %{}) do
-    attrs = Poison.decode!(params)
+    # attrs = Poison.decode!(params)
+    attrs = params
     master_repo = Repo.exists?(from u in User, where: u.id == ^attrs["master_id"])
 
     if master_repo do
@@ -508,6 +524,11 @@ defmodule Milk.Tournaments do
   """
   def get_assistant!(id), do: Repo.get!(Assistant, id)
 
+  def get_assistants(id) do
+    Assistant
+    |> where([a], a.tournament_id == ^id)
+    |> Repo.all()
+  end
   @doc """
   Creates a assistant.
 
@@ -521,17 +542,38 @@ defmodule Milk.Tournaments do
 
   """
   def create_assistant(attrs \\ %{}) do
-    if (Repo.exists?(from u in User, where: u.id == ^attrs["user_id"]) 
-    and Repo.exists?(from t in Tournament, where: t.id == ^attrs["tournament_id"])) do
-      case %Assistant{user_id: attrs["user_id"], tournament_id: attrs["tournament_id"]}
-      |> Repo.insert() do
-      {:ok, assistant} ->
-        {:ok, assistant}
-      {:error, error} ->
-        {:error, error.errors}
-      _ ->
-        {:error, nil}
-      end
+    tournament_id = if is_binary(attrs["tournament_id"]) do
+      String.to_integer(attrs["tournament_id"])
+    else
+      attrs["tournament_id"]
+    end
+
+    if Repo.exists?(from t in Tournament, where: t.id == ^tournament_id) do
+      not_found_users = attrs["user_id"] 
+        |> Enum.map(fn id ->
+          if is_binary(id) do
+            String.to_integer(id)
+          else
+            id
+          end
+        end)
+        |> Enum.filter(fn id ->
+          if Repo.exists?(from u in User, where: u.id == ^id) do
+            %Assistant{user_id: id, tournament_id: tournament_id}
+            |> Repo.insert()
+            false
+          else
+            true
+          end
+        end)
+
+        if Enum.empty?(not_found_users) do
+          :ok
+        else 
+          {:ok, not_found_users}
+        end
+    else
+      {:error, :tournament_not_found}
     end
   end
 

@@ -1,28 +1,34 @@
 version: '3'
 
+networks:
+  backend:
+    driver: bridge
+
 services:
   db:
-    image: postgres
-    container_name: db
+    build: ./dockerfiles/db
+    volumes:
+      - ./volumes/db/data:/var/lib/postgresql/0.1.0
     ports:
       - 5432:5432
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_INITDB_ARGS: "--encoding=UTF-8"
-    hostname: db
+      - POSTGRES_DB=milk
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
     restart: always
-    user: root
-  milk_app:
-    build: .
-    ports:
-      - 4040:4000
-    container_name: milk_app
-    volumes:
-      - .:/app
-    depends_on:
-      - db
-    command: bash -c "mix ecto.create && mix ecto.migrate && mix phx.server"
-    tty: true
-    stdin_open: true
+    networks:
+      - backend
 
+  app:
+    build:
+      dockerfile: ./dockerfiles/app/Dockerfile
+      context: .
+    command: "bin/milk start"
+    environment:
+      - DATABASE_URL=ecto://postgres:postgres@db/milk
+      - SECRET_KEY_BASE=KL6jdYa8VzDIg1TjqQcGZsaGSnd43grQYWrl95dYjn/SJB7KABj7N4BWgaCxSF81
+    ports:
+      - 4000:4000
+    tty: true
+    networks:
+      - backend
