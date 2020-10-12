@@ -10,7 +10,7 @@ defmodule MilkWeb.ChatMemberController do
     chat_member = Chat.list_chat_member(params)
     if (chat_member) do
       render(conn, "index.json", chat_member: chat_member)
-    else 
+    else
       render(conn, "error.json", error: nil)
     end
   end
