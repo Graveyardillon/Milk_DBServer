@@ -7,9 +7,7 @@ defmodule Milk.Repo.Migrations.CreateChat do
       add :index, :integer
       add :chat_room_id, references(:chat_room, on_delete: :delete_all)
       add :user_id, references(:users, on_delete: :nothing)
-      
       timestamps()
-      
     end
 
     create index(:chat, [:chat_room_id])

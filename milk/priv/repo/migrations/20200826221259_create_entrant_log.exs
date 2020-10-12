@@ -6,6 +6,7 @@ defmodule Milk.Repo.Migrations.CreateEntrantLog do
       add :tournament_id, :integer
       add :user_id, :integer
       add :rank, :integer
+      add :is_deleted, :boolean, default: false
 
       timestamps()
     end
