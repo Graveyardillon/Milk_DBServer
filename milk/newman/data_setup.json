@@ -1,0 +1,217 @@
+{
+  "info": 
+  {
+    "name": "Sample Newman Collection for Milk DBServer"
+  },
+  "item": [
+    {
+      "name": "Signup post request",
+      "request": {
+        "url": "http://localhost:4000/api/user/signup",
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"user\":{\"email\":\"pap1@gmail.com\",\"password\":\"Password123\",\"name\":\"Papillon1\"}}"
+        }
+      }
+    },
+    {
+      "name": "Signup post request",
+      "request": {
+        "url": "http://localhost:4000/api/user/signup",
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"user\":{\"email\":\"pap2@gmail.com\",\"password\":\"Password123\",\"name\":\"Papillon2\"}}"
+        }
+      }
+    },
+    {
+      "name": "Signup post request",
+      "request": {
+        "url": "http://localhost:4000/api/user/signup",
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"user\":{\"email\":\"pap3@gmail.com\",\"password\":\"Password123\",\"name\":\"Papillon3\"}}"
+        }
+      }
+    },
+    {
+      "name": "Signup post request",
+      "request": {
+        "url": "http://localhost:4000/api/user/signup",
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"user\":{\"email\":\"pap4@gmail.com\",\"password\":\"Password123\",\"name\":\"Papillon4\"}}"
+        }
+      }
+    },
+    {
+      "name": "Signup post request",
+      "request": {
+        "url": "http://localhost:4000/api/user/signup",
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"user\":{\"email\":\"pap5@gmail.com\",\"password\":\"Password123\",\"name\":\"Papillon5\"}}"
+        }
+      }
+    },
+    {
+      "name": "Tournament create request",
+      "request": {
+        "url": "http://localhost:4000/api/tournament",
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "multipart/form-data"          
+          }
+        ],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+             {
+               "key": "image",
+               "type": "file",
+               "enabled": true,
+               "src": "img/am.jpg"
+             },
+             {
+               "key": "tournament",
+               "type": "text",
+               "enabled": true,
+               "value": "{\"name\": \"MY TOURNEY10\",\"game_name\": \"call of duty\",\"event_date\": \"2010-04-17T14:00:00Z\",\"deadline\": \"2010-04-17T14:00:00Z\",\"type\": 0,\"capacity\": 50,\"password\": \"1234\",\"live\": \"false\",\"join\": \"true\",\"description\": \"My Awesome Tournament\",\"url\": \"http://myurl.com\",\"master_id\": 1}"
+             }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Tournament create request",
+      "request": {
+        "url": "http://localhost:4000/api/tournament",
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "multipart/form-data"
+          }
+        ],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+             {
+               "key": "image",
+               "type": "file",
+               "enabled": true,
+               "src": "img/rogerwaters.jpg"
+             },
+             {
+               "key": "tournament",
+               "type": "text",
+               "enabled": true,
+               "value": "{\"name\": \"MY TOURNEY20\",\"game_name\": \"Rocket League\",\"event_date\": \"2010-04-17T14:00:00Z\",\"deadline\": \"2010-04-17T14:00:00Z\",\"type\": 0,\"capacity\": 50,\"password\": \"1234\",\"live\": \"false\",\"join\": \"true\",\"description\": \"My Awesome Tournament\",\"url\": \"http://myurl.com\",\"master_id\": 1}"
+             }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Tournament create request",
+      "request": {
+        "url": "http://localhost:4000/api/tournament",
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "multipart/form-data"
+          }
+        ],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+             {
+               "key": "image",
+               "type": "file",
+               "enabled": true,
+               "src": "img/strokes.jpg"
+             },
+             {
+               "key": "tournament",
+               "type": "text",
+               "enabled": true,
+               "value": "{\"name\": \"MY TOURNEY10\",\"game_name\": \"call of duty\",\"event_date\": \"2010-04-17T14:00:00Z\",\"deadline\": \"2010-04-17T14:00:00Z\",\"type\": 0,\"capacity\": 50,\"password\": \"1234\",\"live\": \"false\",\"join\": \"true\",\"description\": \"My Awesome Tournament\",\"url\": \"http://myurl.com\",\"master_id\": 1}"
+             }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Enter tournament request",
+      "request": {
+        "url": "http://localhost:4000/api/entrant",
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"entrant\":{\"user_id\":2,\"tournament_id\":1}}"
+        }
+      }
+    },
+    {
+      "name": "Send chat request",
+      "request": {
+        "url": "http://localhost:4000/api/chat",
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"chat\":{\"word\":\"Hi\",\"user_id\":2,\"chat_room_id\":1}}"
+        } 
+      }
+    }
+  ]
+}

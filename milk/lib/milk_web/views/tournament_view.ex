@@ -7,20 +7,49 @@ defmodule MilkWeb.TournamentView do
   end
 
   def render("show.json", %{tournament: tournament}) do
+    IO.inspect(tournament, label: :viewing)
     %{data: render_one(tournament, TournamentView, "tournament.json")}
   end
 
   def render("tournament.json", %{tournament: tournament}) do
     %{id: tournament.id,
       name: tournament.name,
+      thumbnail_path: tournament.thumbnail_path,
       game_id: tournament.game_id,
+      game_name: tournament.game_name,
       event_date: tournament.event_date,
-      capacity: tournament.capacity,
-      description: tournament.description,
-      master_id: tournament.master_id,
       deadline: tournament.deadline,
       type: tournament.type,
-      url: tournament.url}
+      capacity: tournament.capacity,
+      password: tournament.password,
+      live: tournament.live,
+      join: tournament.join,
+      description: tournament.description,
+      master_id: tournament.master_id,
+      url: tournament.url,
+      create_time: tournament.create_time,
+      update_time: tournament.update_time
+      }
+  end
+
+  def render("match.json",%{list: list}) do
+    %{matchlist: list}
+  end
+  def render("loser.json",%{list: list}) do
+    %{updated_match_list: list}
+  end
+
+  def render("tournament_topics.json", %{topics: topics}) do
+    map = Enum.map(topics, fn topic ->
+            %{
+              id: topic.id,
+              chat_room_id: topic.chat_room_id,
+              topic_name: topic.topic_name,
+              tournament_id: topic.tournament_id
+            }
+          end)
+
+    %{data: map}
   end
 
   def render("error.json", %{error: error}) do

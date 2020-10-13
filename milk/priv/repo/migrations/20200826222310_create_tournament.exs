@@ -11,8 +11,13 @@ defmodule Milk.Repo.Migrations.CreateTournament do
       add :type, :integer
       add :url, :string
       add :count, :integer
-      add :game_id, references(:games, on_delete: :nothing)
+      add :game_id, references(:games, on_delete: :nothing), null: true
+      add :game_name, :text
       add :master_id, references(:users, on_delete: :nothing)
+      add :thumbnail_path, :text
+      add :password, :text
+      add :live, :boolean
+      add :join, :boolean
 
       timestamps()
     end

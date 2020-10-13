@@ -48,7 +48,10 @@ defmodule Milk.MixProject do
       {:plug_cowboy, "~> 2.0"},
       {:guardian, "~> 2.0"},
       {:calendar, "~> 0.17.4"},
-      {:guardian_phoenix, "~> 2.0"}
+      {:guardian_phoenix, "~> 2.0"},
+      {:secure_random, "~> 0.5"},
+      {:poison, "~> 3.1"},
+      {:timex, "~> 3.5"}
       # {:argon2_elixir, "~> 2.0"}
     ]
   end

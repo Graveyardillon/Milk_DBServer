@@ -10,11 +10,25 @@ use Mix.Config
 # which you should run after static files are built and
 # before starting your production server.
 config :milk, MilkWeb.Endpoint,
-  url: [host: "example.com", port: 80],
-  cache_static_manifest: "priv/static/cache_manifest.json"
+  http: [port: {:system, "PORT"}],
+  url: [host: "localhost", port: 4000],
+  #cache_static_manifest: "priv/static/cache_manifest.json",
+  server: true,
+  root: ".",
+  version: Application.spec(:milk, :vsn)
 
 # Do not print debug messages in production
 config :logger, level: :info
+
+config :milk, Milk.Repo,
+  username: "postgres",
+  password: "postgres",
+  database: "milk",
+  hostname: "db",
+  show_sensitive_data_on_connection_error: true,
+  pool_size: 10
+
+config :milk, Milk.Repo, migration_timestamps: [type: :timestamptz, inserted_at: :create_time, updated_at: :update_time]
 
 # ## SSL Support
 #
@@ -52,4 +66,4 @@ config :logger, level: :info
 
 # Finally import the config/prod.secret.exs which loads secrets
 # and configuration from environment variables.
-import_config "prod.secret.exs"
+# import_config "prod.secret.exs"

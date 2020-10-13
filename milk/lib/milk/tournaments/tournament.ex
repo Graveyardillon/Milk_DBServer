@@ -3,7 +3,7 @@ defmodule Milk.Tournaments.Tournament do
   import Ecto.Changeset
   alias Milk.Games.Game
   alias Milk.Accounts.User
-  alias Milk.Tournaments.{Entrant, Assistant}
+  alias Milk.Tournaments.{Entrant, Assistant, TournamentChatTopic}
 
   schema "tournament" do
     field :capacity, :integer
@@ -13,13 +13,19 @@ defmodule Milk.Tournaments.Tournament do
     field :name, :string
     field :type, :integer
     field :url, :string
+    field :thumbnail_path, :string
+    field :password, :string
+    field :live, :boolean
+    field :join, :boolean
     field :count, :integer, default: 0
+    field :game_name, :string
     # field :game_id, :id
     belongs_to :game, Game
     # field :master_id, :id
     belongs_to :master, User
     has_many :entrant, Entrant
     has_many :assistant, Assistant
+    has_many :tournament_chat_topics, TournamentChatTopic
 
     timestamps()
   end
@@ -27,7 +33,7 @@ defmodule Milk.Tournaments.Tournament do
   @doc false
   def changeset(tournament, attrs) do
     tournament
-    |> cast(attrs, [:name, :event_date, :capacity, :description, :deadline, :type, :url, :count])
+    |> cast(attrs, [:name, :event_date, :capacity, :description, :deadline, :game_name, :thumbnail_path, :password, :live, :join, :type, :url, :count])
     # |> validate_required([:name, :event_date, :capacity, :description, :deadline, :type, :url])
   end
 end

@@ -59,4 +59,13 @@ defmodule MilkWeb.ChatRoomController do
       end
     end
   end
+
+  def my_rooms(conn, %{"user_id" => id}) do
+    chat_rooms = Chat.get_chat_rooms_by_user_id(id)
+    if chat_rooms do
+      render(conn, "index.json", chat_room: chat_rooms)
+    else
+      render(conn, "error.json", error: nil)
+    end
+  end
 end

@@ -17,10 +17,14 @@ defmodule MilkWeb.EntrantView do
 
   def render("error.json", %{error: error}) do
     if(error) do
-      %{result: false, error: create_message(error), data: nil}
+      %{result: false, error: error, data: nil}
     else
       %{result: false, error: nil, data: nil}
     end
+  end
+
+  def render("multierror.json", %{error: error}) do
+    %{result: false, error: create_message(error), data: nil}
   end
 
   def create_message(error) do

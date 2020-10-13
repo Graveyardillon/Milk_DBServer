@@ -4,32 +4,31 @@ defmodule Milk.EctoDate do
   def type, do: :utc_datetime_usec
 
   def cast(%DateTime{} = date) do
-      {:ok, date}
+    {:ok, date}
   end
 
   def cast(date) when is_bitstring(date) do
     {:ok, date}
-end
+  end
 
   def cast(_) do
-      :error
+    :error
   end
 
   def load (%DateTime{} = date) do
-      #Calendar.DateTime.shift_zone(date, "Asia/Tokyo")
-      {:ok, date}
+    Calendar.DateTime.shift_zone(date, "Asia/Tokyo")
   end
 
   def load (_) do
-      :error
+    :error
   end
 
   def dump (%DateTime{} = date) do
-      if(!String.contains?(date.time_zone, "UTC")) do
-          Calendar.DateTime.shift_zone(date, "Etc/UTC")
-      else
-          {:ok, date}
-      end
+    if(!String.contains?(date.time_zone, "UTC")) do
+      Calendar.DateTime.shift_zone(date, "Etc/UTC")
+    else
+      {:ok, date}
+    end
   end
 
   def dump (date) do
@@ -37,8 +36,8 @@ end
       with {:ok, time, _} <- DateTime.from_iso8601(date) do
         {:ok, time}
       else
-      _ ->
-        {:ok, DateTime.utc_now}
+        _ ->
+          {:ok, DateTime.utc_now}
       end
 
     else
@@ -47,10 +46,10 @@ end
   end
 
   def dump (_) do
-      :error
+    :error
   end
 
   def from_unix!(time, atom) do
-      DateTime.from_unix!(time, atom)
+    DateTime.from_unix!(time, atom)
   end
 end

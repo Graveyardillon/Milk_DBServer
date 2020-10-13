@@ -11,10 +11,21 @@ defmodule MilkWeb.GameController do
     render(conn, "list.json", games: games)
   end
 
-  def add(conn, %{"game" => game_params}) do 
-    with {:ok, %Game{} = game} <- Games.add_game(game_params) do
+  def create(conn, %{"game" => game_params}) do 
+    with {:ok, %Game{} = game} <- Games.create_game(game_params) do
       conn
-        |> render("show.json", game: game)
+      |> render("show.json", game: game)
+    end
+  end
+
+  # TODO: multiにしたけどいい実装方法なのか微妙だからまた見てもらう
+  def create(attrs \\ %{}) do
+    case Multi.new
+    |> Multi.insert(:game, Game.changeset(%Game{}, attrs))
+    |> Repo.transaction() do
+      {:ok, game} -> {:ok, game.game}
+      {:error, _, error, _data} -> {:error, error.errors}
+      _ -> {:ok, nil}
     end
   end
 

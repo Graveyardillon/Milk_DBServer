@@ -9,7 +9,10 @@ defmodule Milk.Accounts do
   alias Milk.Accounts.User
   alias Milk.Accounts.Auth
   alias Milk.Log.{ChatMemberLog, AssistantLog, EntrantLog}
+  alias Milk.Chat.{ChatRoom, ChatMember}
   alias Ecto.Multi
+  
+  require Logger
 
   @doc """
   Returns the list of users.
@@ -22,6 +25,12 @@ defmodule Milk.Accounts do
   """
   def list_users do
     Repo.all(from u in User, join: a in assoc(u, :auth), order_by: u.create_time, preload: [auth: a])
+  end
+
+  def list_usernames do
+    User
+    |> select([u], u.name)
+    |> Repo.all()
   end
 
   @doc """
@@ -39,6 +48,37 @@ defmodule Milk.Accounts do
 
   """
   def get_user(id), do: Repo.one(from u in User, join: a in assoc(u, :auth), where: u.id == ^id, preload: [auth: a])
+
+  @doc """
+  Get all users in touch
+  """
+  def get_all_users_in_touch(id) do
+    ChatMember
+    |> where([cm], cm.id == ^id)
+    |> Repo.all()
+    |> Enum.map(fn member -> 
+      ChatRoom
+      |> where([cr], cr.is_private and cr.id == ^member.chat_room_id)
+      |> Repo.one()
+    end)
+    |> Enum.map(fn room -> 
+      users = 
+        ChatMember
+        |> where([cm], cm.chat_room_id == ^room.id and cm.id != ^id)
+        |> Repo.all()
+      
+      unless length(users) == 1, do: Logger.warn("get_all_users_in_touch/1 gets too big list")
+      hd(users)
+    end)
+    |> Enum.map(fn member -> 
+      Repo.one(
+        from u in User, 
+        join: a in assoc(u, :auth),
+        where: u.id == ^member.user_id,
+        preload: [auth: a]
+      )
+    end)
+  end
 
   @doc """
   Creates a user.
@@ -90,18 +130,16 @@ defmodule Milk.Accounts do
   def create_user(attrs \\ %{}) do
       case Multi.new
       |> Multi.insert(:user, User.changeset(%User{}, attrs))
-      |> Multi.insert(:auth, fn(%{user: user}) -> 
+      |> Multi.insert(:auth, fn(%{user: user}) ->
         Ecto.build_assoc(user, :auth)
         |> Auth.changeset(attrs)
       end)
       |> Repo.transaction() do
-        {:ok, user} ->
-        {:ok, user.user}
-        
-        {:error, _, error, data} -> {:error, error.errors}
+        {:ok, user} -> {:ok, user.user}
+        {:error, _, error, _data} -> {:error, error.errors}
         _ -> {:ok, nil}
-        end
       end
+    end
 
   @doc """
   Updates a user.
@@ -145,6 +183,15 @@ defmodule Milk.Accounts do
       {:error, _, error, data} -> {:error, error.errors}
       _ -> {:ok, nil}
     end
+  end
+
+  def update_icon_path(user, icon_path) do
+    old_icon_path = Repo.one(from u in User, where: u.id == ^user.id, select: u.icon_path)
+    if old_icon_path != nil do
+      File.rm("./static/image/profile_icon/#{old_icon_path}.png")
+    end
+
+    Repo.update(Ecto.Changeset.change user, icon_path: icon_path)
   end
 
   def check_user(id, password, email) do
@@ -214,14 +261,23 @@ defmodule Milk.Accounts do
 
   def login(user) do
     password = Auth.create_pass(user["password"])
-
-    user = Repo.one(from u in User, join: a in assoc(u, :auth), where: a.email == ^user["email"] and a.password == ^password and u.logout_fl, preload: [auth: a])
-    if(user) do
-      user
-      |> User.changeset(%{logout_fl: false})
-      |> Repo.update
+    #usernameかemailか
+    if String.match?(user["email_or_username"],~r/^[[:word:]\-._]+@[[:word:]\-_.]+\.[[:alpha:]]+$/) do
+      case Repo.one(from u in User, join: a in assoc(u, :auth), where: a.email == ^user["email_or_username"] and a.password == ^password and u.logout_fl, preload: [auth: a]) do
+        nil -> Repo.one(from u in User, join: a in assoc(u, :auth), where: a.name == ^user["email_or_username"] and a.password == ^password and u.logout_fl, preload: [auth: a])
+        %User{} = userinfo -> userinfo
+      end
+    else
+      Repo.one(from u in User, join: a in assoc(u, :auth), where: a.name == ^user["email_or_username"] and a.password == ^password and u.logout_fl, preload: [auth: a])
     end
-    user
+    |>case do
+      %User{} = user ->
+        user
+        |> User.changeset(%{logout_fl: false})
+        |> Repo.update
+        user
+      _ -> nil
+    end
   end
 
   def login_forced(user) do
@@ -342,5 +398,4 @@ defmodule Milk.Accounts do
   def change_auth(%Auth{} = auth) do
     Auth.changeset(auth, %{})
   end
-
 end

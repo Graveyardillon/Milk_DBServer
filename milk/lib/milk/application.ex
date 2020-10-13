@@ -14,11 +14,12 @@ defmodule Milk.Application do
       MilkWeb.Endpoint,
       {Phoenix.PubSub, [name: Milk.PubSub, adapter: Phoenix.PubSub.PG2]},
       # Starts a worker by calling: Milk.Worker.start_link(arg)
-      {Task, fn -> Milk.accept(4041) end}
+      #{Task, fn -> Milk.accept(4041) end}
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
     # for other strategies and supported options
+    Milk.Ets.create_match_list_table()
     opts = [strategy: :one_for_one, name: Milk.Supervisor]
     Supervisor.start_link(children, opts)
   end

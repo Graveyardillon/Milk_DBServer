@@ -3,9 +3,10 @@ use Mix.Config
 # Configure your database
 config :milk, Milk.Repo,
   username: "postgres",
-  password: "mikan2499",
+  password: "postgres",
   database: "milk_dev",
   hostname: "localhost",
+  #hostname: "db",
   show_sensitive_data_on_connection_error: true,
   pool_size: 10
 
