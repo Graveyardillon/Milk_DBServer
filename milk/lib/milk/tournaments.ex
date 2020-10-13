@@ -478,11 +478,12 @@ defmodule Milk.Tournaments do
       end
     end)
   end
+
   def generate_matchlist(list) do
-    shuffled = list|>Enum.shuffle
+    shuffled = list |> Enum.shuffle()
     case(length(shuffled)) do
     1 ->
-      shuffled|>hd
+      shuffled |> hd()
     2 -> shuffled
     _ ->
       b = Enum.slice(shuffled, 0..trunc(length(shuffled)/2 -1))

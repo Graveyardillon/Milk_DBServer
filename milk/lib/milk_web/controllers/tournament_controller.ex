@@ -139,7 +139,15 @@ defmodule MilkWeb.TournamentController do
         b64 = Base.encode64(file)
         json(conn, %{b64: b64})
       {:error, _} -> 
-        json(conn, %{error: "image not fonud"})
+        json(conn, %{error: "image not found"})
     end
+  end
+
+  def get_match_list(conn, %{"tournament_id" => tournament_id}) do
+    {_, match_list} = 
+      Ets.get_match_list(tournament_id) 
+      |> hd()
+
+    json(conn, %{match_list: match_list})
   end
 end

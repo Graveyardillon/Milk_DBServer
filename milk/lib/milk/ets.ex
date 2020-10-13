@@ -6,4 +6,8 @@ defmodule Milk.Ets do
   def insert_match_list(tournament_id, match_list) do
     :ets.insert_new(:match_list, {tournament_id, match_list})
   end
+
+  def get_match_list(tournament_id) do
+    :ets.lookup(:match_list, tournament_id)
+  end
 end
