@@ -1,7 +1,7 @@
 defmodule Milk.Schema do
 
   defmacro __using__(opts) do
-    opts = Keyword.merge([default_sort: :inserted_at], opts)
+    _opts = Keyword.merge([default_sort: :inserted_at], opts)
 
     quote do
       use Ecto.Schema

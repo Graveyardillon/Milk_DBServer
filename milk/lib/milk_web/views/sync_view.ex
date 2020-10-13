@@ -1,7 +1,5 @@
 defmodule MilkWeb.SyncView do
   use MilkWeb, :view
-  alias MilkWeb.SyncView
-  alias MilkWeb.Chats
 
   def render("chat.json", %{chat_data: chat_data}) do
     map = Enum.map(chat_data, fn chat -> 

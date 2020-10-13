@@ -5,7 +5,6 @@ defmodule Milk.Chat.ChatRoom do
   alias Milk.Chat.ChatMember
   alias Milk.Accounts.User
   alias Milk.Tournaments.TournamentChatTopic
-  alias Milk.EctoDate
 
   schema "chat_room" do
     field :count, :integer, default: 0

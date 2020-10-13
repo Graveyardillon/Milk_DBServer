@@ -3,11 +3,10 @@ defmodule Milk.UserManager.GuardianPipline do
   import Plug.Conn
 
   alias Milk.UserManager.Guardian
-  
 
   def init(default), do: default
 
-  def call(%Plug.Conn{params: %{"token" => token}} = conn, default) do
+  def call(%Plug.Conn{params: %{"token" => token}} = conn, _default) do
     case Guardian.decode_and_verify(token) do
       {:ok, _} ->
         conn
@@ -29,7 +28,7 @@ defmodule Milk.UserManager.GuardianPipline do
     end
   end
 
-  def call(conn, default) do
+  def call(conn, _default) do
     if(String.contains?(conn.request_path, "api/user/login") or String.contains?(conn.request_path, "api/user/signup")) do
       conn
     else

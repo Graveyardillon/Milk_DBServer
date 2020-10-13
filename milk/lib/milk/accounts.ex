@@ -180,7 +180,7 @@ defmodule Milk.Accounts do
     end)
     |> Repo.transaction() do
       {:ok, user} -> {:ok, user.user}
-      {:error, _, error, data} -> {:error, error.errors}
+      {:error, _, error, _data} -> {:error, error.errors}
       _ -> {:ok, nil}
     end
   end

@@ -2,7 +2,6 @@ defmodule MilkWeb.RelationController do
   use MilkWeb, :controller
 
   alias Milk.Relations
-  alias Milk.Accounts.Relation
 
   # follow
   def create(conn, %{"relation" => params}) do

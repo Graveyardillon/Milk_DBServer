@@ -1,5 +1,5 @@
 defmodule Milk.UserManager.GuardianSerializer do
-  @behaviour Guardian.Serializer
+  #@behaviour Guardian.Serializer
 
   alias Milk.Repo
   alias Milk.Accounts.User

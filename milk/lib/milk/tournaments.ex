@@ -16,8 +16,6 @@ defmodule Milk.Tournaments do
   alias Milk.Tournaments.TournamentChatTopic
   alias Milk.Games.Game
   alias Milk.Chat
-  alias Milk.Chat.ChatRoom
-  alias Milk.Chat.ChatMember
   alias Milk.Accounts.User
   alias Milk.Log.{TournamentLog, EntrantLog, AssistantLog, TournamentChatTopicLog}
 
@@ -180,7 +178,7 @@ defmodule Milk.Tournaments do
     end
   end
 
-  defp create_tournament(:nil, attrs, thumbnail_path), do: {:error, nil}
+  defp create_tournament(:nil, _attrs, _thumbnail_path), do: {:error, nil}
 
   @doc """
   Updates a tournament.
@@ -310,8 +308,8 @@ defmodule Milk.Tournaments do
     |>insert
     |>case do
         {:ok, entrant} -> join_tournament_chat_room(entrant, attrs)
-        {:error,_, error, data} when is_bitstring(error) -> {:error, error}
-        {:error, _, error, data} -> {:multierror, error.errors}
+        {:error,_, error, _data} when is_bitstring(error) -> {:error, error}
+        {:error, _, error, _data} -> {:multierror, error.errors}
         {:error,error} -> {:error,error}
         _ -> {:error, nil}
     end
@@ -373,23 +371,22 @@ defmodule Milk.Tournaments do
     {:error,error}
   end
 
+  # TODO: リファクタリングできそう
   defp join_tournament_chat_room(entrant, attrs) do
     result = Chat.get_chat_rooms_by_tournament_id(entrant.tournament.id)
-             |> Enum.reduce({:ok, nil}, fn (chat_room, acc) ->
+             |> Enum.reduce({:ok, nil}, fn (chat_room, _acc) ->
                join_params = %{
                  "user_id" => attrs["user_id"],
                  "chat_room_id" => chat_room.id,
                  "authority" => 0
                }
                with {:ok, chat_member} <- Chat.create_chat_member(join_params) do
-                 IO.inspect("join_tournament_chat_room")
-                 IO.inspect(chat_member)
-                 acc = {:ok, chat_member}
+                 {:ok, chat_member}
                else
                  {:error, reason} -> 
-                  acc = {:error, reason}
+                  {:error, reason}
                  _ -> 
-                  acc = {:error, nil}
+                  {:error, nil}
                end
              end)
     with {:ok, _chat_member} <- result do

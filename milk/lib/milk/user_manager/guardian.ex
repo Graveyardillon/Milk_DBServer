@@ -18,7 +18,7 @@ defmodule Milk.UserManager.Guardian do
     Ecto.NoResultsError -> {:error, :resource_not_found}
   end
 
-  def after_encode_and_sign(resource, claims, token, _options) do
+  def after_encode_and_sign(_resource, claims, token, _options) do
     # %GuardianTokens{jwt: token, claims: claims}
     # |> GuardianTokens.changeset(claims)
     # |> token_check(token)
@@ -48,7 +48,7 @@ defmodule Milk.UserManager.Guardian do
   #   end
   # end
 
-  def on_verify(claims, token, _options) do
+  def on_verify(claims, _token, _options) do
     Repo.exists?(from g in GuardianTokens, where: g.jti == ^claims["jti"] and g.aud == ^claims["aud"])
     |> if do
       {:ok, claims}
@@ -61,7 +61,7 @@ defmodule Milk.UserManager.Guardian do
     {:ok, {old_token, old_claims}, {new_token, new_claims}}
   end
 
-  def on_revoke(claims, token, _options) do
+  def on_revoke(claims, _token, _options) do
     Repo.delete_all(from g in GuardianTokens, where: (g.jti == ^claims["jti"] and g.aud == ^claims["aud"]) or g.exp <= ^DateTime.to_unix(DateTime.utc_now))
     {:ok, claims}
   end

@@ -10,9 +10,7 @@ defmodule Milk.Chat do
   alias Milk.Chat.Chats
   alias Milk.Chat.ChatMember
   alias Milk.Accounts.User
-  alias Milk.Accounts
-  alias Milk.Tournaments
-  alias Milk.Tournaments.Tournament
+  # alias Milk.Accounts
   alias Milk.Tournaments.TournamentChatTopic
   alias Milk.Log.ChatsLog
   alias Milk.Log.ChatMemberLog
@@ -239,7 +237,7 @@ defmodule Milk.Chat do
   """
   def create_chat_member(attrs \\ %{}) do
     if (Repo.exists?(from u in User, where: u.id == ^attrs["user_id"])) do
-      chat_room = Repo.one(from c in ChatRoom, where: c.id == ^attrs["chat_room_id"])
+      #chat_room = Repo.one(from c in ChatRoom, where: c.id == ^attrs["chat_room_id"])
       # if chat_room do
       #   case %ChatMember{user_id: attrs["user_id"], chat_room_id: attrs["chat_room_id"]}
       #   |> ChatMember.changeset(attrs)
@@ -270,7 +268,7 @@ defmodule Milk.Chat do
 
         {:ok, chat_member} ->
           {:ok, chat_member.chat_member}
-        {:error, _, error, data} -> 
+        {:error, _, error, _data} -> 
           {:error, error.errors}
         _ ->
           {:error, nil}
@@ -379,6 +377,9 @@ defmodule Milk.Chat do
       ** (Ecto.NoResultsError)
 
   """
+  def get_chats!(id) do
+    Repo.get!(Chats, id)
+  end
 
   def get_chat(chat_room_id, index), do: Repo.one(from c in Chats, where: c.chat_room_id == ^chat_room_id and c.index == ^index)
 
@@ -426,7 +427,7 @@ defmodule Milk.Chat do
           |> Repo.update
           
           {:ok, chat.chat}
-        {:error, _, error, data} -> {:error, error.errors}
+        {:error, _, error, _data} -> {:error, error.errors}
         _ -> {:error, nil}
       end
     else
@@ -486,7 +487,7 @@ defmodule Milk.Chat do
   end
 
   # 個人チャット用の関数
-  def dialogue(attrs = %{"user_id" => user_id, "partner_id" => partner_id, "word" => word, "datetime" => datetime}) do
+  def dialogue(attrs = %{"user_id" => user_id, "partner_id" => partner_id, "word" => _word, "datetime" => _datetime}) do
     if Repo.exists?(from u in User, where: u.id == ^user_id) 
       and Repo.exists?(from u in User, where: u.id == ^partner_id) do
 
@@ -520,11 +521,11 @@ defmodule Milk.Chat do
 
   # グループチャット用の関数
   # TODO: チャットメンバーのユーザーのidをすべて返すようにする
-  def dialogue(attrs = %{"user_id" => user_id, "chat_room_id" => chat_room_id, "word" => word, "datetime" => datetime}) do
+  def dialogue(attrs = %{"user_id" => user_id, "chat_room_id" => chat_room_id, "word" => _word, "datetime" => _datetime}) do
     if Repo.exists?(from u in User, where: u.id == ^user_id)
       and Repo.exists?(from cr in ChatRoom, where: cr.id == ^chat_room_id) do
       
-      cr = Repo.one(from cr in ChatRoom, where: cr.id == ^chat_room_id)
+      _ = Repo.one(from cr in ChatRoom, where: cr.id == ^chat_room_id)
 
       attrs
       |> create_chats()
@@ -533,11 +534,6 @@ defmodule Milk.Chat do
 
   # user_idに関連するチャットを全て取り出す
   def sync(user_id) do
-    """ 
-    まずはuserをchat_memberから取り出す
-    次にメンバーとして参加しているルームを全て取り出す
-    最後に、取得したルームのチャット内容を全て取り出す
-    """
     user_id
     |> get_chat_member_by_user_id()
     |> Enum.map(fn member ->

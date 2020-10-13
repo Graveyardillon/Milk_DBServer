@@ -1,7 +1,6 @@
 defmodule Milk.UserManager.GuardianTokens do
   use Milk.Schema
   import Ecto.Changeset
-  alias Milk.Accounts.Auth
 
   @primary_key false
   schema "guardian_tokens" do

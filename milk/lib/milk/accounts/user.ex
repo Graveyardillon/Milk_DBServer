@@ -24,7 +24,7 @@ defmodule Milk.Accounts.User do
     many_to_many :chat_room, ChatRoom, join_through: "chat_member"
     has_many :chat_member, ChatMember
     has_many :achievements, Achievement
-    has_many :tournament, Tournament
+    has_many :tournament, Tournament, foreign_key: :master_id
     has_many :entrant, Entrant
     has_many :assistant, Assistant
 

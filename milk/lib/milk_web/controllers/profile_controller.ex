@@ -2,10 +2,7 @@ defmodule MilkWeb.ProfileController do
   use MilkWeb, :controller
 
   alias Milk.Accounts
-  alias Milk.Accounts.User
   alias Milk.Profiles
-  alias Milk.Accounts.Profile
-  alias Milk.Games
 
   action_fallback MilkWeb.FallbackController
 
