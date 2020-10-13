@@ -92,7 +92,7 @@ defmodule Milk.Chat do
   """
   def update_chat_room(%ChatRoom{} = chat_room, attrs) do
     chat_room
-    |> ChatRoom.changeset_update(attrs)
+    |> ChatRoom.changeset(attrs)
     |> Repo.update()
   end
 
@@ -109,10 +109,16 @@ defmodule Milk.Chat do
 
   """
   def delete_chat_room(%ChatRoom{} = chat_room) do
-    chat = Enum.map(chat_room.chat, fn x -> %{chat_room_id: x.chat_room_id, word: x.word, user_id: x.user_id, index: x.index, create_time: x.create_time, update_time: x.update_time} end)
-    if chat, do: Repo.insert_all(ChatsLog, chat)
+    if is_list(chat_room.chat) do
+      chat = Enum.map(chat_room.chat, fn x -> %{chat_room_id: x.chat_room_id, word: x.word, user_id: x.user_id, index: x.index, create_time: x.create_time, update_time: x.update_time} end)
+      Repo.insert_all(ChatsLog, chat)
+    end
+
+    if is_list(chat_room.chat_member) do
     member = Enum.map(chat_room.chat_member, fn x -> %{chat_room_id: x.chat_room_id, user_id: x.user_id, authority: x.authority, create_time: x.create_time, update_time: x.update_time} end)
-    if member, do: Repo.insert_all(ChatMemberLog, member)
+    Repo.insert_all(ChatMemberLog, member)
+    end 
+
     ChatRoomLog.changeset(%ChatRoomLog{}, Map.from_struct(chat_room))
     |> Repo.insert()
     Repo.delete(chat_room)
@@ -206,7 +212,7 @@ defmodule Milk.Chat do
         ChatMember.changeset(%ChatMember{user_id: attrs["user_id"], chat_room_id: attrs["chat_room_id"]}, attrs)
       end)
       |> Multi.update(:update, fn %{chat_room: chat_room} ->
-        ChatRoom.changeset_update(chat_room, %{member_count: chat_room.member_count + 1})
+        ChatRoom.changeset(chat_room, %{member_count: chat_room.member_count + 1})
       end)
       |> Repo.transaction() do
 
@@ -263,7 +269,7 @@ defmodule Milk.Chat do
     ChatMemberLog.changeset(%ChatMemberLog{}, Map.from_struct(chat_member))
     |> Repo.insert()
     chat_room = Repo.get(ChatRoom, chat_member.chat_room_id)
-    ChatRoom.changeset_update(chat_room, %{member_count: chat_room.member_count -1})
+    ChatRoom.changeset(chat_room, %{member_count: chat_room.member_count - 1})
     |> Repo.update()
     Repo.delete(chat_member)
   end
@@ -310,7 +316,6 @@ defmodule Milk.Chat do
       ** (Ecto.NoResultsError)
 
   """
-  def get_chats!(id), do: Repo.get(Chats, id)
 
   def get_chat(chat_room_id, index), do: Repo.one(from c in Chats, where: c.chat_room_id == ^chat_room_id and c.index == ^index)
 
@@ -347,7 +352,7 @@ defmodule Milk.Chat do
       {:ok, chat} ->
         chat.chat_room
         |> IO.inspect
-        |> ChatRoom.changeset_update(%{last_chat: chat.chat.word, count: chat.chat.index})
+        |> ChatRoom.changeset(%{last_chat: chat.chat.word, count: chat.chat.index})
         |> IO.inspect
         |> Repo.update
         {:ok, chat.chat}

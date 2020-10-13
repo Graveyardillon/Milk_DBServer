@@ -16,7 +16,8 @@ end
   end
 
   def load (%DateTime{} = date) do
-      Calendar.DateTime.shift_zone(date, "Asia/Tokyo")
+      #Calendar.DateTime.shift_zone(date, "Asia/Tokyo")
+      {:ok, date}
   end
 
   def load (_) do

@@ -8,10 +8,10 @@ defmodule Milk.Accounts.User do
   alias Milk.Tournaments.{Tournament, Entrant, Assistant}
 
   schema "users" do
-    field :icon_path, :string, default: nil
+    field :icon_path, :string, default: "null"
     field :logout_fl, :boolean, default: false
-    # field :id_for_show, :integer
-    field :language, :string
+    field :id_for_show, :integer
+    field :language, :string, default: "japan"
     field :name, :string
     field :notification_number, :integer, default: 0
     field :point, :integer, default: 0
@@ -30,7 +30,8 @@ defmodule Milk.Accounts.User do
   def changeset(user, attrs) do
     user
     |> cast(attrs, [:name, :icon_path, :point, :id_for_show, :notification_number, :language, :logout_fl])
-    # |> validate_required([:name, :icon_path, :point, :notification_number, :language])
+    |> unique_constraint(:id_for_show)
+    |> validate_required([:name, :icon_path, :point, :notification_number, :language])
     # |> validate_required([:name])
   end
 end
