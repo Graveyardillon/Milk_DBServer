@@ -2,6 +2,8 @@ defmodule Milk.AccountsTest do
   use Milk.DataCase
 
   alias Milk.Accounts
+  alias Milk.Profiles
+  alias Milk.Relations
 
   describe "users" do
     alias Milk.Accounts.User
@@ -74,63 +76,63 @@ defmodule Milk.AccountsTest do
   describe "profiles" do
     alias Milk.Accounts.Profile
 
-    @valid_attrs %{content_id: 42, content_type: 42, user_id: 42}
-    @update_attrs %{content_id: 43, content_type: 43, user_id: 43}
+    @valid_attrs %{content_id: 42, content_type: "42", user_id: 42}
+    @update_attrs %{content_id: 43, content_type: "43", user_id: 42}
     @invalid_attrs %{content_id: nil, content_type: nil, user_id: nil}
 
     def profile_fixture(attrs \\ %{}) do
       {:ok, profile} =
         attrs
         |> Enum.into(@valid_attrs)
-        |> Accounts.create_profile()
+        |> Profiles.create_profile()
 
       profile
     end
 
     test "list_profiles/0 returns all profiles" do
       profile = profile_fixture()
-      assert Accounts.list_profiles() == [profile]
+      assert Profiles.list_profiles() == [profile]
     end
 
     test "get_profile!/1 returns the profile with given id" do
       profile = profile_fixture()
-      assert Accounts.get_profile!(profile.id) == profile
+      assert Profiles.get_profile!(profile.id) == profile
     end
 
     test "create_profile/1 with valid data creates a profile" do
-      assert {:ok, %Profile{} = profile} = Accounts.create_profile(@valid_attrs)
+      assert {:ok, %Profile{} = profile} = Profiles.create_profile(@valid_attrs)
       assert profile.content_id == 42
-      assert profile.content_type == 42
+      assert profile.content_type == "42"
       assert profile.user_id == 42
     end
 
     test "create_profile/1 with invalid data returns error changeset" do
-      assert {:error, %Ecto.Changeset{}} = Accounts.create_profile(@invalid_attrs)
+      assert {:error, %Ecto.Changeset{}} = Profiles.create_profile(@invalid_attrs)
     end
 
     test "update_profile/2 with valid data updates the profile" do
       profile = profile_fixture()
-      assert {:ok, %Profile{} = profile} = Accounts.update_profile(profile, @update_attrs)
+      assert {:ok, %Profile{} = profile} = Profiles.update_profile(profile, @update_attrs)
       assert profile.content_id == 43
-      assert profile.content_type == 43
-      assert profile.user_id == 43
+      assert profile.content_type == "43"
+      assert profile.user_id == 42
     end
 
     test "update_profile/2 with invalid data returns error changeset" do
       profile = profile_fixture()
-      assert {:error, %Ecto.Changeset{}} = Accounts.update_profile(profile, @invalid_attrs)
-      assert profile == Accounts.get_profile!(profile.id)
+      assert {:error, %Ecto.Changeset{}} = Profiles.update_profile(profile, @invalid_attrs)
+      assert profile == Profiles.get_profile!(profile.id)
     end
 
     test "delete_profile/1 deletes the profile" do
       profile = profile_fixture()
-      assert {:ok, %Profile{}} = Accounts.delete_profile(profile)
-      assert_raise Ecto.NoResultsError, fn -> Accounts.get_profile!(profile.id) end
+      assert {:ok, %Profile{}} = Profiles.delete_profile(profile)
+      assert_raise Ecto.NoResultsError, fn -> Profiles.get_profile!(profile.id) end
     end
 
     test "change_profile/1 returns a profile changeset" do
       profile = profile_fixture()
-      assert %Ecto.Changeset{} = Accounts.change_profile(profile)
+      assert %Ecto.Changeset{} = Profiles.change_profile(profile)
     end
   end
 
@@ -145,49 +147,49 @@ defmodule Milk.AccountsTest do
       {:ok, relation} =
         attrs
         |> Enum.into(@valid_attrs)
-        |> Accounts.create_relation()
+        |> Relations.create_relation()
 
       relation
     end
 
     test "list_relations/0 returns all relations" do
       relation = relation_fixture()
-      assert Accounts.list_relations() == [relation]
+      assert Relations.list_relations() == [relation]
     end
 
     test "get_relation!/1 returns the relation with given id" do
       relation = relation_fixture()
-      assert Accounts.get_relation!(relation.id) == relation
+      assert Relations.get_relation!(relation.id) == relation
     end
 
     test "create_relation/1 with valid data creates a relation" do
-      assert {:ok, %Relation{} = relation} = Accounts.create_relation(@valid_attrs)
+      assert {:ok, %Relation{} = relation} = Relations.create_relation(@valid_attrs)
     end
 
     test "create_relation/1 with invalid data returns error changeset" do
-      assert {:error, %Ecto.Changeset{}} = Accounts.create_relation(@invalid_attrs)
+      assert {:error, %Ecto.Changeset{}} = Relations.create_relation(@invalid_attrs)
     end
 
     test "update_relation/2 with valid data updates the relation" do
       relation = relation_fixture()
-      assert {:ok, %Relation{} = relation} = Accounts.update_relation(relation, @update_attrs)
+      assert {:ok, %Relation{} = relation} = Relations.update_relation(relation, @update_attrs)
     end
 
     test "update_relation/2 with invalid data returns error changeset" do
       relation = relation_fixture()
-      assert {:error, %Ecto.Changeset{}} = Accounts.update_relation(relation, @invalid_attrs)
-      assert relation == Accounts.get_relation!(relation.id)
+      assert {:error, %Ecto.Changeset{}} = Relations.update_relation(relation, @invalid_attrs)
+      assert relation == Relations.get_relation!(relation.id)
     end
 
     test "delete_relation/1 deletes the relation" do
       relation = relation_fixture()
-      assert {:ok, %Relation{}} = Accounts.delete_relation(relation)
-      assert_raise Ecto.NoResultsError, fn -> Accounts.get_relation!(relation.id) end
+      assert {:ok, %Relation{}} = Relations.delete_relation(relation)
+      assert_raise Ecto.NoResultsError, fn -> Relations.get_relation!(relation.id) end
     end
 
     test "change_relation/1 returns a relation changeset" do
       relation = relation_fixture()
-      assert %Ecto.Changeset{} = Accounts.change_relation(relation)
+      assert %Ecto.Changeset{} = Relations.change_relation(relation)
     end
   end
 end
