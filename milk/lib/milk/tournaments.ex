@@ -116,7 +116,7 @@ defmodule Milk.Tournaments do
     # gameをチェックしない
 
     # game_repo = Repo.exists?(from u in Game, where: u.id == ^attrs["game_id"])
-    
+
     # if master_repo and game_repo do
     #   create_tournament(:notnil, attrs)
     # else
@@ -549,7 +549,7 @@ defmodule Milk.Tournaments do
     end
 
     if Repo.exists?(from t in Tournament, where: t.id == ^tournament_id) do
-      not_found_users = attrs["user_id"] 
+      not_found_users = attrs["user_id"]
         |> Enum.map(fn id ->
           if is_binary(id) do
             String.to_integer(id)
