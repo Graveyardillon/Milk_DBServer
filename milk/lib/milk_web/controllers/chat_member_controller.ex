@@ -17,20 +17,20 @@ defmodule MilkWeb.ChatMemberController do
 
   def create(conn, %{"chat_member" => params}) do
     case Chat.create_chat_member(params) do
-    {:ok, %ChatMember{} = chat_member} ->
-      conn
-      # |> put_status(:created)
-      # |> put_resp_header("location", Routes.chat_member_path(conn, :show, chat_member))
-      |> render("show.json", chat_member: chat_member)
-    {:error, error} ->
-      render(conn, "error.json", error: error)
-    _ ->
-      render(conn, "error.json", error: nil)
+      {:ok, %ChatMember{} = chat_member} ->
+        conn
+        # |> put_status(:created)
+        # |> put_resp_header("location", Routes.chat_member_path(conn, :show, chat_member))
+        |> render("show.json", chat_member: chat_member)
+      {:error, error} ->
+        render(conn, "error.json", error: error)
+      _ ->
+        render(conn, "error.json", error: nil)
     end
   end
 
   def show(conn, %{"id" => id}) do
-    chat_member = Chat.get_chat_member(id)
+    chat_member = Chat.get_chat_member!(id)
     if(chat_member) do
       render(conn, "show.json", chat_member: chat_member)
     else

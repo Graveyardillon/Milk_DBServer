@@ -323,7 +323,7 @@ defmodule Milk.Log do
       ** (Ecto.NoResultsError)
 
   """
-  def get_tournament!(id), do: Repo.get!(TournamentLog, id)
+  def get_tournament_log!(id), do: Repo.get!(TournamentLog, id)
 
   @doc """
   Creates a tournament.

@@ -5,7 +5,6 @@ defmodule Milk.Chat.ChatRoom do
   alias Milk.Chat.ChatMember
   alias Milk.Accounts.User
   alias Milk.Tournaments.TournamentChatTopic
-  alias Milk.EctoDate
 
   schema "chat_room" do
     field :count, :integer, default: 0
@@ -26,12 +25,12 @@ defmodule Milk.Chat.ChatRoom do
   def changeset(chat_room, attrs) do
     chat_room
     |> cast(attrs, [:name, :last_chat, :count, :member_count])
-    |> validate_required([:name])
+    |> validate_required([:name, :last_chat, :count, :member_count])
   end
 
   def changeset_update(chat_room, attrs) do
     chat_room
     |> cast(attrs, [:name, :last_chat, :count, :member_count])
-    # |> validate_required([:name])
+    |> validate_required([:name])
   end
 end

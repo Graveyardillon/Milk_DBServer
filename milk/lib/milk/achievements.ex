@@ -36,7 +36,7 @@ defmodule Milk.Achievements do
       ** (Ecto.NoResultsError)
 
   """
-  # def get_achievement!(id), do: Repo.get!(Achievement, id)
+  def get_achievement!(id), do: Repo.get!(Achievement, id)
 
   @doc """
   Creates a achievement.

@@ -1,8 +1,6 @@
 defmodule MilkWeb.RelationView do
   use MilkWeb, :view
   alias MilkWeb.RelationView
-  alias Milk.Accounts.Relation
-  alias Milk.Accounts.User
 
   def render("index.json", %{relations: relations}) do
     %{data: render_many(relations, RelationView, "relation.json")}

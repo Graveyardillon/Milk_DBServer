@@ -14,8 +14,8 @@ defmodule MilkWeb.EntrantLogController do
   def create(conn, %{"entrant_log" => entrant_log_params}) do
     with {:ok, %EntrantLog{} = entrant_log} <- Log.create_entrant_log(entrant_log_params) do
       conn
-      |> put_status(:created)
-      |> put_resp_header("location", Routes.entrant_log_path(conn, :show, entrant_log))
+      # |> put_status(:created)
+      # |> put_resp_header("location", Routes.entrant_log_path(conn, :show, entrant_log))
       |> render("show.json", entrant_log: entrant_log)
     end
   end

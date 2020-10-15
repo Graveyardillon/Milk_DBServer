@@ -45,10 +45,6 @@ defmodule Milk.EctoDate do
     end
   end
 
-  def dump (_) do
-    :error
-  end
-
   def from_unix!(time, atom) do
     DateTime.from_unix!(time, atom)
   end

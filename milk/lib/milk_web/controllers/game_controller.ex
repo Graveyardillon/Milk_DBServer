@@ -3,6 +3,8 @@ defmodule MilkWeb.GameController do
 
   alias Milk.Games
   alias Milk.Games.Game
+  alias Ecto.Multi
+  alias Milk.Repo
 
   action_fallback MilkWeb.FallbackController
 
@@ -19,6 +21,7 @@ defmodule MilkWeb.GameController do
   end
 
   # TODO: multiにしたけどいい実装方法なのか微妙だからまた見てもらう
+  # てかControllerでRepo操作するのだめやん
   def create(attrs \\ %{}) do
     case Multi.new
     |> Multi.insert(:game, Game.changeset(%Game{}, attrs))
