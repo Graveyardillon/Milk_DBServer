@@ -4,7 +4,6 @@ defmodule MilkWeb.FallbackController do
 
   See `Phoenix.Controller.action_fallback/1` for more details.
   """
-  import Ecto.Changeset
   use MilkWeb, :controller
 
   def call(conn, {:error, %Ecto.Changeset{} = changeset}) do
@@ -21,12 +20,10 @@ defmodule MilkWeb.FallbackController do
     |> render(:"404")
   end
 
-  def call(conn, {:error, changeset}) do
+  def call(conn, {:error, _changeset}) do
     conn
     |> put_status(:not_found)
     |> put_view(MilkWeb.ErrorView)
     |> render(:"404")
   end
-
-
 end

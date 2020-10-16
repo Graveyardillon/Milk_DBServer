@@ -7,13 +7,12 @@
 # General application configuration
 use Mix.Config
 
-config :milk,
-  ecto_repos: [Milk.Repo]
+config :milk, ecto_repos: [Milk.Repo]
 
 # Configures the endpoint
 config :milk, MilkWeb.Endpoint,
   url: [host: "localhost"],
-  secret_key_base: "coOiaAmMZnvqLHJ5UQWUW4x+YW5jLmKwqTuryKI7f+E9ndhMPrWt3LWZZQpDDUNB",
+  secret_key_base: "EBeu358sy8Bi+OLxOAee44nMrRCj/iwRKq5NUls46hBMwnqVhNOhl7qcw0d1REjZ",
   render_errors: [view: MilkWeb.ErrorView, accepts: ~w(html json)]
 
 # Configures Elixir's Logger

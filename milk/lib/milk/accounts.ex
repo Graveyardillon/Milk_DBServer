@@ -173,14 +173,14 @@ defmodule Milk.Accounts do
   def update_user(%User{} = user, attrs) do
     case Multi.new()
     |> Multi.update(:user, fn _ ->
-      User.changeset(user, attrs) 
+      User.changeset(user, attrs)
     end)
     |> Multi.update(:auth, fn _ ->
       Auth.changeset_update(user.auth, attrs)
     end)
     |> Repo.transaction() do
       {:ok, user} -> {:ok, user.user}
-      {:error, _, error, data} -> {:error, error.errors}
+      {:error, _, error, _data} -> {:error, error.errors}
       _ -> {:ok, nil}
     end
   end
@@ -220,20 +220,20 @@ defmodule Milk.Accounts do
   """
 
   def delete_user(%User{} = user) do
-    member = Enum.map(user.chat_member, fn x -> %{chat_room_id: x.chat_room_id, user_id: x.user_id, authority: x.authority, create_time: x.create_time, update_time: x.update_time} end)
-    if member do
+    if is_list(user.chat_member) do
+      member = Enum.map(user.chat_member, fn x -> %{chat_room_id: x.chat_room_id, user_id: x.user_id, authority: x.authority, create_time: x.create_time, update_time: x.update_time} end)
       Repo.insert_all(ChatMemberLog, member)
       Repo.update_all(from(cr in Milk.Chat.ChatRoom, join: cm in assoc(cr, :chat_member), where: cm.user_id == ^user.id, update: [set: [member_count: cr.member_count - 1]]),[])
     end
 
-    entrant = Enum.map(user.entrant, fn x -> %{user_id: x.user_id, tournament_id: x.tournament_id, rank: x.rank, create_time: x.create_time, update_time: x.update_time} end)
-    if entrant do
+    if is_list(user.entrant) do
+      entrant = Enum.map(user.entrant, fn x -> %{user_id: x.user_id, tournament_id: x.tournament_id, rank: x.rank, create_time: x.create_time, update_time: x.update_time} end)
       Repo.insert_all(EntrantLog, entrant)
       Repo.update_all(from(t in Milk.Tournaments.Tournament, join: e in assoc(t, :entrant), where: e.user_id == ^user.id, update: [set: [count: t.count - 1]]), [])
     end
 
-    assistant = Enum.map(user.assistant, fn x -> %{user_id: x.user_id, tournament_id: x.tournament_id, create_time: x.create_time, update_time: x.update_time} end)
-    if assistant do
+    if is_list(user.chat_member) do
+      assistant = Enum.map(user.assistant, fn x -> %{user_id: x.user_id, tournament_id: x.tournament_id, create_time: x.create_time, update_time: x.update_time} end)
       Repo.insert_all(AssistantLog, assistant)
     end
 

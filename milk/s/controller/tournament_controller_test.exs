@@ -1,8 +1,8 @@
 defmodule MilkWeb.TournamentControllerTest do
   use MilkWeb.ConnCase
 
-  alias Milk.Log
-  alias Milk.Log.Tournament
+  alias Milk.Tournaments
+  alias Milk.Tournaments.Tournament
 
   @create_attrs %{
     capacity: 42,

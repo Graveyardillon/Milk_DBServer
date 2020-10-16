@@ -39,7 +39,7 @@ defmodule MilkWeb.UserView do
       case Guardian.signin_forced(user) do
         {:ok, token, _} ->
           %{data: render_one(user, UserView, "user.json"), result: true, token: token}
-        {:error, error} ->
+        {:error, _error} ->
           %{result: false, error: "can't get token", data: nil}
         _ ->
           %{result: false, data: nil}

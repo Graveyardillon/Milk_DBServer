@@ -4,8 +4,6 @@ defmodule Milk.Profiles do
   alias Milk.Repo
 
   alias Milk.Accounts.User
-  alias Milk.Profiles
-  alias Ecto.Multi
 
   alias Milk.Games.Game
   alias Milk.Achievements.Achievement
@@ -70,11 +68,11 @@ defmodule Milk.Profiles do
       {:error, %Ecto.Changeset{}}
 
   """
-  # def update_profile(%Profile{} = profile, attrs) do
-  #   profile
-  #   |> Profile.changeset(attrs)
-  #   |> Repo.update()
-  # end
+  def update_profile(%Profile{} = profile, attrs) do
+    profile
+    |> Profile.changeset(attrs)
+    |> Repo.update()
+  end
 
   @doc """
   Deletes a profile.
@@ -106,7 +104,6 @@ defmodule Milk.Profiles do
   end
 
   def get_game_list(user) do
-
     ids = Profile
     |> where([p], p.user_id == ^user.id and p.content_type == "game")
     |> Repo.all()
@@ -121,7 +118,7 @@ defmodule Milk.Profiles do
     ids = Profile
     |> where([p], p.user_id == ^user.id and p.content_type == "achievement")
     |> Repo.all()
-    |> Enum.map (& &1.content_id)
+    |> Enum.map(& &1.content_id)
 
     Achievement
     |> where([a], a.id in ^ids)

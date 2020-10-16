@@ -3,7 +3,6 @@ defmodule MilkWeb.EntrantController do
 
   alias Milk.Tournaments
   alias Milk.Tournaments.Entrant
-  alias Milk.Chat.ChatMember
 
   # action_fallback MilkWeb.FallbackController
 

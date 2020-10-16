@@ -9,6 +9,7 @@ defmodule Milk.Repo.Migrations.CreateChatLog do
       add :index, :integer
       add :create_time, :timestamptz
       add :update_time, :timestamptz
+      add :is_deleted, :boolean, default: false
     end
 
     create unique_index(:chat_log, [:index, :chat_room_id])
