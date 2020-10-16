@@ -139,8 +139,8 @@ defmodule Milk.AccountsTest do
   describe "relations" do
     alias Milk.Accounts.Relation
 
-    @valid_attrs %{}
-    @update_attrs %{}
+    @valid_attrs %{id: 1, followee_id: 1, follower_id: 2}
+    @update_attrs %{id: 1, followee_id: 1, follower_id: 3}
     @invalid_attrs %{}
 
     def relation_fixture(attrs \\ %{}) do

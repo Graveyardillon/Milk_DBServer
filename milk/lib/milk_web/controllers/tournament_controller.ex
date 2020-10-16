@@ -16,7 +16,7 @@ defmodule MilkWeb.TournamentController do
     end
   end
 
-  def get_tournament_by_master_id(conn, %{"user_id" => user_id}) do
+  def get_tournaments_by_master_id(conn, %{"user_id" => user_id}) do
     tournaments = Tournaments.get_tournament_by_master_id(user_id)
     render(conn, "index.json", tournament: tournaments)
   end
