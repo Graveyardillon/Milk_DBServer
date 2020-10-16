@@ -1,6 +1,8 @@
 defmodule MilkWeb.TournamentView do
   use MilkWeb, :view
   alias MilkWeb.TournamentView
+  alias MilkWeb.UserView
+  alias Milk.Accounts
 
   def render("index.json", %{tournament: tournament}) do
     %{data: render_many(tournament, TournamentView, "tournament.json")}
@@ -28,7 +30,8 @@ defmodule MilkWeb.TournamentView do
       master_id: tournament.master_id,
       url: tournament.url,
       create_time: tournament.create_time,
-      update_time: tournament.update_time
+      update_time: tournament.update_time,
+      master_data: render_one(Accounts.get_user(tournament.master_id), UserView, "show.json")
       }
   end
 
