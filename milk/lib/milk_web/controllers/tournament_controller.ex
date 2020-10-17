@@ -2,6 +2,7 @@ defmodule MilkWeb.TournamentController do
   use MilkWeb, :controller
 
   alias Milk.Ets
+  alias Milk.Accounts
   alias Milk.Tournaments
   alias Milk.Tournaments.Tournament
 
@@ -56,7 +57,11 @@ defmodule MilkWeb.TournamentController do
   # 現在参加中のユーザーもカウントする
   def show(conn, %{"tournament_id" => id}) do
     tournament = Tournaments.get_tournament!(id)
-    entrants = Tournaments.get_entrants(tournament.id)
+    entrants = 
+      Tournaments.get_entrants(tournament.id)
+      |> Enum.map(fn entrant -> 
+        Accounts.get_user(entrant.user_id)
+      end)
 
     if(tournament) do
       render(conn, "tournament_info.json", tournament: tournament, entrants: entrants)
