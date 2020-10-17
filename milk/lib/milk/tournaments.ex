@@ -36,7 +36,6 @@ defmodule Milk.Tournaments do
   end
 
   def home_tournament do
-
     Tournament
     |> where([e], e.deadline > ^Timex.now)
     |> order_by([e], asc: :event_date)

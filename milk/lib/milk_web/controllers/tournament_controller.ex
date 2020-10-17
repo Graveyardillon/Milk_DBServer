@@ -53,10 +53,13 @@ defmodule MilkWeb.TournamentController do
     end
   end
 
+  # 現在参加中のユーザーもカウントする
   def show(conn, %{"tournament_id" => id}) do
     tournament = Tournaments.get_tournament!(id)
+    entrants = Tournaments.get_entrants(tournament.id)
+
     if(tournament) do
-      render(conn, "show.json", tournament: tournament)
+      render(conn, "tournament_info.json", tournament: tournament, entrants: entrants)
     else
       render(conn, "error.json", error: nil)
     end
