@@ -547,7 +547,8 @@ defmodule Milk.Tournaments do
     end
 
     if Repo.exists?(from t in Tournament, where: t.id == ^tournament_id) do
-      not_found_users = attrs["user_id"]
+      not_found_users =
+        attrs["user_id"]
         |> Enum.map(fn id ->
           if is_binary(id) do
             String.to_integer(id)
@@ -567,7 +568,7 @@ defmodule Milk.Tournaments do
 
         if Enum.empty?(not_found_users) do
           :ok
-        else 
+        else
           {:ok, not_found_users}
         end
     else

@@ -11,7 +11,7 @@ defmodule MilkWeb.AssistantLogController do
     render(conn, "index.json", assistant_log: assistant_log)
   end
 
-  def create(conn, %{"assistant_log" => assistant_log_params}) do
+  def create(conn, %{"data" => assistant_log_params}) do
     with {:ok, %AssistantLog{} = assistant_log} <- Log.create_assistant_log(assistant_log_params) do
       conn
       # |> put_status(:created)

@@ -99,6 +99,7 @@ defmodule MilkWeb.Router do
     post "/entrant/get", EntrantController, :show
     post "/entrant/get_all", EntrantController, :index
     post "/entrant/delete", EntrantController, :delete
+    resources "/entrant_log", EntrantLogController
 
     resources "/assistant", AssistantController, except: [:new, :edit, :index, :show, :delete]
     post "/assistant/get", AssistantController, :show

@@ -1,8 +1,8 @@
-defmodule Milk.Repo.Migrations.CreateTournamentUserTopicLog do
+defmodule Milk.Repo.Migrations.CreateTournamentChatTopicLog do
   use Ecto.Migration
 
   def change do
-    create table(:tournament_user_topic_log) do
+    create table(:tournament_chat_topic_log) do
       add :topic_name, :string
       add :tournament_id, references(:tournament, on_delete: :delete_all)
       add :chat_room_id, references(:chat_room, on_delete: :delete_all)

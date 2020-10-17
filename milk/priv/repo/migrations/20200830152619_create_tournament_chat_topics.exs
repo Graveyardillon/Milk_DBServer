@@ -1,4 +1,4 @@
-defmodule Milk.Repo.Migrations.CreateTournamentUserTopics do
+defmodule Milk.Repo.Migrations.CreateTournamentChatTopics do
   use Ecto.Migration
 
   def change do
