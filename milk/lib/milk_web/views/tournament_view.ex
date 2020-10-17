@@ -51,10 +51,16 @@ defmodule MilkWeb.TournamentView do
       url: tournament.url,
       create_time: tournament.create_time,
       update_time: tournament.update_time,
-      entrants: Enum.map(entrants, fn entrant -> 
+      entrants: Enum.map(entrants, fn user -> 
         %{
-          id: entrant.id,
-          rank: entrant.rank
+          id: user.id,
+          name: user.name,
+          icon_path: user.icon_path,
+          point: user.point,
+          notification_number: user.notification_number,
+          language: user.language,
+          email: user.auth.email,
+          bio: user.bio
         }
       end)
     }
