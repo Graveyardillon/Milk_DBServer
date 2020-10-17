@@ -9,12 +9,12 @@ defmodule MilkWeb.TournamentView do
   end
 
   def render("show.json", %{tournament: tournament}) do
-    IO.inspect(tournament, label: :viewing)
     %{data: render_one(tournament, TournamentView, "tournament.json")}
   end
 
   def render("tournament.json", %{tournament: tournament}) do
-    %{id: tournament.id,
+    %{
+      id: tournament.id,
       name: tournament.name,
       thumbnail_path: tournament.thumbnail_path,
       game_id: tournament.game_id,
@@ -32,7 +32,35 @@ defmodule MilkWeb.TournamentView do
       create_time: tournament.create_time,
       update_time: tournament.update_time,
       master_data: render_one(Accounts.get_user(tournament.master_id), UserView, "show.json")
-      }
+    }
+  end
+
+  def render("tournament_info.json", %{tournament: tournament, entrants: entrants}) do
+    %{
+      id: tournament.id,
+      name: tournament.name,
+      thumbnail_path: tournament.thumbnail_path,
+      game_id: tournament.game_id,
+      game_name: tournament.game_name,
+      event_date: tournament.event_date,
+      deadline: tournament.deadline,
+      type: tournament.type,
+      capacity: tournament.capacity,
+      password: tournament.password,
+      live: tournament.live,
+      join: tournament.join,
+      description: tournament.description,
+      master_id: tournament.master_id,
+      url: tournament.url,
+      create_time: tournament.create_time,
+      update_time: tournament.update_time,
+      entrants: Enum.map(entrants, fn entrant -> 
+        %{
+          id: entrant.id,
+          rank: entrant.rank
+        }
+      end)
+    }
   end
 
   def render("match.json",%{list: list}) do

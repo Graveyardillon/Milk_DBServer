@@ -82,7 +82,7 @@ defmodule MilkWeb.Router do
     post "/tournament/deleteloser", TournamentController, :delete_loser
     post "/tournament/get", TournamentController, :show
     post "/tournament/get_all", TournamentController, :index
-    post "/tournament/get_by_master_id", TournamentController, :get_tournament_by_master_id
+    post "/tournament/get_by_master_id", TournamentController, :get_tournaments_by_master_id
     post "/tournament/get_game", TournamentController, :get_game
     post "/tournament/delete", TournamentController, :delete
     post "/tournament/get_participating_tournaments", TournamentController, :participating_tournaments
@@ -91,7 +91,6 @@ defmodule MilkWeb.Router do
     post "/tournament/get_match_list", TournamentController, :get_match_list
     get "/tournament/home", TournamentController, :home
     post "/tournament/image", TournamentController, :image
-
     post "/tournament_log/add", TournamentLogController, :create
 
     resources "/entrant", EntrantController, except: [:new, :edit, :index, :show, :delete]

@@ -36,7 +36,6 @@ defmodule Milk.Tournaments do
   end
 
   def home_tournament do
-
     Tournament
     |> where([e], e.deadline > ^Timex.now)
     |> order_by([e], asc: :event_date)
@@ -101,8 +100,8 @@ defmodule Milk.Tournaments do
 
   """
   def create_tournament(params, thumbnail_path \\ %{}) do
-    # attrs = Poison.decode!(params)
-    attrs = params
+    attrs = Poison.decode!(params)
+    # attrs = params
     master_repo = Repo.exists?(from u in User, where: u.id == ^attrs["master_id"])
 
     if master_repo do

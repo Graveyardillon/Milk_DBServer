@@ -16,7 +16,7 @@ defmodule MilkWeb.TournamentController do
     end
   end
 
-  def get_tournament_by_master_id(conn, %{"user_id" => user_id}) do
+  def get_tournaments_by_master_id(conn, %{"user_id" => user_id}) do
     tournaments = Tournaments.get_tournament_by_master_id(user_id)
     render(conn, "index.json", tournament: tournaments)
   end
@@ -53,10 +53,13 @@ defmodule MilkWeb.TournamentController do
     end
   end
 
+  # 現在参加中のユーザーもカウントする
   def show(conn, %{"tournament_id" => id}) do
     tournament = Tournaments.get_tournament!(id)
+    entrants = Tournaments.get_entrants(tournament.id)
+
     if(tournament) do
-      render(conn, "show.json", tournament: tournament)
+      render(conn, "tournament_info.json", tournament: tournament, entrants: entrants)
     else
       render(conn, "error.json", error: nil)
     end
