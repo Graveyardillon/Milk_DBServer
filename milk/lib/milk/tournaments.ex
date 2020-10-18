@@ -17,6 +17,7 @@ defmodule Milk.Tournaments do
   alias Milk.Games.Game
   alias Milk.Chat
   alias Milk.Accounts.User
+  alias Milk.Accounts.Relation
   alias Milk.Log.{TournamentLog, EntrantLog, AssistantLog, TournamentChatTopicLog}
 
   require Integer
