@@ -71,7 +71,27 @@ defmodule MilkWeb.TournamentController do
   end
 
   # Gets tournament info list for home screen.
-  def home(conn, _params) do
+  def home(conn, %{"filter" => "fav", "user_id" => user_id}) do
+    tournaments = 
+    Tournaments.home_tournament_fav(user_id)
+    |> Enum.map(fn tournament -> 
+      entrants = 
+        Tournaments.get_entrants(tournament.id)
+        |> Enum.map(fn entrant -> 
+          Accounts.get_user(entrant.user_id)
+        end)
+      
+      %{
+        tournament: tournament,
+        entrants: entrants
+      }
+    end)
+
+    render(conn, "home.json", tournaments_info: tournaments)
+  end
+  
+  def home(conn, params) do
+    IO.inspect(params)
     tournaments = 
     Tournaments.home_tournament()
     |> Enum.map(fn tournament -> 

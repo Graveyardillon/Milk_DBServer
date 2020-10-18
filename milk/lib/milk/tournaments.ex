@@ -35,8 +35,24 @@ defmodule Milk.Tournaments do
     Repo.all(Tournament)
   end
 
-  def home_tournament do
+  def home_tournament() do
     Tournament
+    |> where([e], e.deadline > ^Timex.now)
+    |> order_by([e], asc: :event_date)
+    |> Repo.all()
+  end
+
+  def home_tournament_fav(user_id) do
+    users = 
+      Relation
+      |> where([r], r.follower_id == ^user_id)
+      |> Repo.all()
+      |> Enum.map(fn relation -> 
+        relation.followee_id
+      end)
+
+    Tournament
+    |> where([t], t.id in ^users)
     |> where([e], e.deadline > ^Timex.now)
     |> order_by([e], asc: :event_date)
     |> Repo.all()
@@ -480,7 +496,6 @@ defmodule Milk.Tournaments do
       Tournament
       |> where([t], t.master_id == ^master_id and t.id == ^tournament_id)
       |> Repo.one()
-      |> IO.inspect()
     
     unless tournament.is_started do
       tournament
@@ -544,6 +559,7 @@ defmodule Milk.Tournaments do
     |> where([a], a.tournament_id == ^id)
     |> Repo.all()
   end
+
   @doc """
   Creates a assistant.
 
@@ -564,7 +580,8 @@ defmodule Milk.Tournaments do
     end
 
     if Repo.exists?(from t in Tournament, where: t.id == ^tournament_id) do
-      not_found_users = attrs["user_id"] 
+      not_found_users = 
+        attrs["user_id"] 
         |> Enum.map(fn id ->
           if is_binary(id) do
             String.to_integer(id)
