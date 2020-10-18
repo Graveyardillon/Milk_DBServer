@@ -53,7 +53,15 @@ defmodule Milk.Tournaments do
       end)
 
     Tournament
-    |> where([t], t.id in ^users)
+    |> where([t], t.master_id in ^users)
+    |> where([e], e.deadline > ^Timex.now)
+    |> order_by([e], asc: :event_date)
+    |> Repo.all()
+  end
+
+  def home_tournament_plan(user_id) do
+    Tournament
+    |> where([t], t.master_id == ^user_id)
     |> where([e], e.deadline > ^Timex.now)
     |> order_by([e], asc: :event_date)
     |> Repo.all()
