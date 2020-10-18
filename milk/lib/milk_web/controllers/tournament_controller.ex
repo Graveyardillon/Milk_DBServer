@@ -70,6 +70,26 @@ defmodule MilkWeb.TournamentController do
     end
   end
 
+  # Gets tournament info list for home screen.
+  def home(conn, _params) do
+    tournaments = 
+    Tournaments.home_tournament()
+    |> Enum.map(fn tournament -> 
+      entrants = 
+        Tournaments.get_entrants(tournament.id)
+        |> Enum.map(fn entrant -> 
+          Accounts.get_user(entrant.user_id)
+        end)
+      
+      %{
+        tournament: tournament,
+        entrants: entrants
+      }
+    end)
+
+    render(conn, "home.json", tournaments_info: tournaments)
+  end
+
   def update(conn, %{"tournament_id" => id, "tournament" => tournament_params}) do
     tournament = Tournaments.get_tournament!(id)
     if(tournament) do
@@ -98,12 +118,6 @@ defmodule MilkWeb.TournamentController do
     conn
     |> put_resp_content_type("image/jpeg")
     |> send_file(200, path)
-  end
-
-  # Gets tournament info list for home screen.
-  def home(conn, _params) do
-    tournaments = Tournaments.home_tournament()
-    render(conn, "index.json", tournament: tournaments)
   end
 
   def participating_tournaments(conn, %{"user_id" => user_id}) do

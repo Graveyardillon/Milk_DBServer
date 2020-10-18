@@ -71,6 +71,44 @@ defmodule MilkWeb.TournamentView do
     }
   end
 
+  def render("home.json", %{tournaments_info: tournaments_info}) do
+    %{
+      data: Enum.map(tournaments_info, fn info -> 
+        %{
+          id: info.tournament.id,
+          name: info.tournament.name,
+          thumbnail_path: info.tournament.thumbnail_path,
+          game_id: info.tournament.game_id,
+          game_name: info.tournament.game_name,
+          event_date: info.tournament.event_date,
+          deadline: info.tournament.deadline,
+          type: info.tournament.type,
+          capacity: info.tournament.capacity,
+          password: info.tournament.password,
+          live: info.tournament.live,
+          join: info.tournament.join,
+          description: info.tournament.description,
+          master_id: info.tournament.master_id,
+          url: info.tournament.url,
+          create_time: info.tournament.create_time,
+          update_time: info.tournament.update_time,
+          entrants: Enum.map(info.entrants, fn user -> 
+            %{
+              id: user.id,
+              name: user.name,
+              icon_path: user.icon_path,
+              point: user.point,
+              notification_number: user.notification_number,
+              language: user.language,
+              email: user.auth.email,
+              bio: user.bio
+            }
+          end)
+        }
+      end)
+    }
+  end
+
   def render("match.json",%{list: list}) do
     %{matchlist: list}
   end
