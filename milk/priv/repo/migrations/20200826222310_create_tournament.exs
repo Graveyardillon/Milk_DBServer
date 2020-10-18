@@ -18,6 +18,7 @@ defmodule Milk.Repo.Migrations.CreateTournament do
       add :password, :text
       add :live, :boolean
       add :join, :boolean
+      add :is_started, :boolean, default: false
 
       timestamps()
     end

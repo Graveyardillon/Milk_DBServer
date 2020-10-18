@@ -137,15 +137,19 @@ defmodule MilkWeb.TournamentController do
     render(conn, "tournament_topics.json", topics: tabs)
   end
 
-  def start(conn, %{"tournament" => %{"master_id" => _master_id, "tournament_id" => tournament_id}}) do
-    # マッチングリストを生成
-    match_list =
-      Tournaments.get_entrants(tournament_id)
-      |>Enum.map(fn x -> x.id end)
-      |>Tournaments.generate_matchlist()
+  def start(conn, %{"tournament" => %{"master_id" => master_id, "tournament_id" => tournament_id}}) do
+    with {:ok, _} <- Tournaments.start(master_id, tournament_id) do
+      # マッチングリストを生成
+      match_list =
+        Tournaments.get_entrants(tournament_id)
+        |> Enum.map(fn x -> x.id end)
+        |> Tournaments.generate_matchlist()
 
-    Ets.insert_match_list(tournament_id, match_list)
-    render(conn, "match.json", list: match_list)
+      Ets.insert_match_list(tournament_id, match_list)
+      render(conn, "match.json", list: match_list)
+    else
+      _ -> json(conn, %{error: "error"})
+    end
   end
 
   def delete_loser(conn, %{"tournament" => %{"match_list" => match_list, "loser_list" => loser_list}}) do

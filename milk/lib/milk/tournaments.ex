@@ -475,6 +475,24 @@ defmodule Milk.Tournaments do
     end)
   end
 
+  def start(master_id, tournament_id) do
+    tournament = 
+      Tournament
+      |> where([t], t.master_id == ^master_id and t.id == ^tournament_id)
+      |> Repo.one()
+      |> IO.inspect()
+    
+    unless tournament.is_started do
+      tournament
+      |> Tournament.changeset(%{is_started: true})
+      |> Repo.update()
+    else
+      {:error, nil}
+    end
+  end
+  @doc """
+  Generate matchlist.
+  """
   def generate_matchlist(list) do
     shuffled = list |> Enum.shuffle()
     case(length(shuffled)) do
