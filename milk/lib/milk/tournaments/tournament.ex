@@ -3,6 +3,7 @@ defmodule Milk.Tournaments.Tournament do
   import Ecto.Changeset
   alias Milk.Games.Game
   alias Milk.Accounts.User
+  alias Milk.Lives.Live
   alias Milk.Tournaments.{Entrant, Assistant, TournamentChatTopic}
 
   schema "tournament" do
@@ -24,6 +25,7 @@ defmodule Milk.Tournaments.Tournament do
     belongs_to :game, Game
     # field :master_id, :id
     belongs_to :master, User
+    has_many :lives, Live
     has_many :entrant, Entrant
     has_many :assistant, Assistant
     has_many :tournament_chat_topics, TournamentChatTopic

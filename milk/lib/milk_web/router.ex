@@ -63,7 +63,6 @@ defmodule MilkWeb.Router do
     resources "/chat_log", ChatsLogController, except: [:new, :edit, :index, :show]
     resources "/chat_member_log", ChatMemberLogController, except: [:new, :edit, :index, :show]
 
-
     resources "/chat_member", ChatMemberController, except: [:new, :edit, :index, :show, :delete]
     post "/chat_member/get", ChatMemberController, :show
     post "/chat_member/get_all", ChatMemberController, :index
@@ -102,6 +101,8 @@ defmodule MilkWeb.Router do
     post "/assistant/get", AssistantController, :show
     post "/assistant/get_all", AssistantController, :index
     post "/assistant/delete", AssistantController, :delete
+
+    post "/live", LiveController, :create
 
     post "/sync", SyncController, :sync
   end
