@@ -4,6 +4,90 @@
     "name": "Additional Newman Collection for Milk DBServer"
   },
   "item": [
-
+    {
+      "name": "Follow request",
+      "request": {
+        "url": "http://localhost:4000/api/relation",
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"relation\":{\"follower_id\":1,\"followee_id\":2}}"
+        }
+      }
+    },
+    {
+      "name": "Follow request",
+      "request": {
+        "url": "http://localhost:4000/api/relation",
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"relation\":{\"follower_id\":1,\"followee_id\":3}}"
+        }
+      }
+    },
+    {
+      "name": "Follow request",
+      "request": {
+        "url": "http://localhost:4000/api/relation",
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"relation\":{\"follower_id\":1,\"followee_id\":4}}"
+        }
+      }
+    },
+    {
+      "name": "Follow request",
+      "request": {
+        "url": "http://localhost:4000/api/relation",
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"relation\":{\"follower_id\":1,\"followee_id\":5}}"
+        }
+      }
+    },
+    {
+      "name": "Follow request",
+      "request": {
+        "url": "http://localhost:4000/api/relation",
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"relation\":{\"follower_id\":2,\"followee_id\":1}}"
+        }
+      }
+    }
   ]
 }
