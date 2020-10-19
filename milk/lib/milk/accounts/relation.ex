@@ -1,6 +1,7 @@
 defmodule Milk.Accounts.Relation do
   use Milk.Schema
   import Ecto.Changeset
+  
   alias Milk.Accounts.User
 
   schema "relations" do
