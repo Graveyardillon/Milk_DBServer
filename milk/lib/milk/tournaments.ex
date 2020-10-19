@@ -545,6 +545,10 @@ defmodule Milk.Tournaments do
       attrs["tournament_id"]
     end
 
+    Assistant
+      |> where([a], a.tournament_id == ^tournament_id)
+      |> Repo.delete_all()
+
     if Repo.exists?(from t in Tournament, where: t.id == ^tournament_id) do
       not_found_users = attrs["user_id"] 
         |> Enum.map(fn id ->
@@ -554,6 +558,7 @@ defmodule Milk.Tournaments do
             id
           end
         end)
+        |> Enum.uniq()
         |> Enum.filter(fn id ->
           if Repo.exists?(from u in User, where: u.id == ^id) do
             %Assistant{user_id: id, tournament_id: tournament_id}
