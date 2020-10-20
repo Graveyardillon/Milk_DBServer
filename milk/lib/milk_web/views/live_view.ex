@@ -15,7 +15,8 @@ defmodule MilkWeb.LiveView do
       id: live.id,
       name: live.name,
       number_of_viewers: live.number_of_viewers,
-      streamer_id: live.streamer_id
+      streamer_id: live.streamer_id,
+      tournament_id: live.tournament_id
     }
   end
 
