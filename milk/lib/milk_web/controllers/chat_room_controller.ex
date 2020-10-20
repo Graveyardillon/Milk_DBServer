@@ -70,9 +70,16 @@ defmodule MilkWeb.ChatRoomController do
   end
 
   def private_rooms(conn, %{"user_id" => id}) do
-    chat_with_user = Chat.get_private_chat_rooms(id)
+    user_id =
+    if is_binary(id) do
+      String.to_integer(id)
+    else
+      id
+    end
+
+    chat_with_user = Chat.get_private_chat_rooms(user_id)
           |> Enum.map(fn room ->
-            user = Chat.get_user_in_private_room(room.id, id)
+            user = Chat.get_user_in_private_room(room.id, user_id)
             %{
               id: user.id,
               room_id: room.id,
