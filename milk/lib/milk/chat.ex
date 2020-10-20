@@ -188,9 +188,12 @@ defmodule Milk.Chat do
     end)
   end
 
-  def get_user_in_private_room(room_id) do
+  def get_user_in_private_room(room_id, user_id) do
     room_id
     |> get_chat_members_of_room()
+    |> Enum.filter(fn member -> 
+      user_id != member.user_id
+    end)
     |> Enum.map(fn member -> 
       Accounts.get_user(member.user_id)
     end)
