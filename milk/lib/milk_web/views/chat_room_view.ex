@@ -20,6 +20,22 @@ defmodule MilkWeb.ChatRoomView do
     }
   end
 
+  def render("chat_room_with_user.json", %{info: info}) do
+    %{
+      data: Enum.map(info, fn i -> 
+        %{
+          id: i.id,
+          room_id: i.room_id,
+          name: i.name,
+          email: i.email,
+          last_chat: i.last_chat,
+          count: i.count,
+          is_private: i.is_private
+        }
+      end)
+    }
+  end
+
   def render("error.json", %{error: error}) do
     if(error) do
       %{result: false, error: create_message(error), data: nil}
