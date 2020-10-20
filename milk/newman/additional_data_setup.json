@@ -88,6 +88,74 @@
           "raw": "{\"relation\":{\"follower_id\":2,\"followee_id\":1}}"
         }
       }
+    },
+    {
+      "name": "Send Private Chat",
+      "request": {
+        "url": "http://localhost:4000/api/chat/create_dialogue",
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"chat\":{\"user_id\":1,\"partner_id\":2,\"word\":\"Hello\",\"datetime\":\"2020-08-05T16:04:15.546000Z\"}}"
+        }
+      }
+    },
+    {
+      "name": "Send Private Chat",
+      "request": {
+        "url": "http://localhost:4000/api/chat/create_dialogue",
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"chat\":{\"user_id\":1,\"partner_id\":3,\"word\":\"Hello\",\"datetime\":\"2020-08-05T16:04:15.546000Z\"}}"
+        }
+      }
+    },
+    {
+      "name": "Send Private Chat",
+      "request": {
+        "url": "http://localhost:4000/api/chat/create_dialogue",
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"chat\":{\"user_id\":2,\"partner_id\":1,\"word\":\"Hello\",\"datetime\":\"2020-08-05T16:04:15.546000Z\"}}"
+        }
+      }
+    },
+    {
+      "name": "Send Private Chat",
+      "request": {
+        "url": "http://localhost:4000/api/chat/create_dialogue",
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"chat\":{\"user_id\":1,\"partner_id\":5,\"word\":\"Hello\",\"datetime\":\"2020-08-05T16:04:15.546000Z\"}}"
+        }
+      }
     }
   ]
 }
