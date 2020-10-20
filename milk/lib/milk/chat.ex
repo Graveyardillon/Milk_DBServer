@@ -6,6 +6,7 @@ defmodule Milk.Chat do
   import Ecto.Query, warn: false
   alias Milk.Repo
 
+  alias Milk.Accounts
   alias Milk.Chat.ChatRoom
   alias Milk.Chat.Chats
   alias Milk.Chat.ChatMember
@@ -177,6 +178,26 @@ defmodule Milk.Chat do
       |> where([cr], cr.id == ^member.chat_room_id)
       |> Repo.one()
     end)
+  end
+
+  def get_private_chat_rooms(user_id) do
+    user_id
+    |> get_chat_rooms_by_user_id()
+    |> Enum.filter(fn room -> 
+      room.is_private
+    end)
+  end
+
+  def get_user_in_private_room(room_id, user_id) do
+    room_id
+    |> get_chat_members_of_room()
+    |> Enum.filter(fn member -> 
+      user_id != member.user_id
+    end)
+    |> Enum.map(fn member -> 
+      Accounts.get_user(member.user_id)
+    end)
+    |> hd()
   end
 
   @doc """
