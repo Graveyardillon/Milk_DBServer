@@ -58,6 +58,7 @@ defmodule MilkWeb.Router do
     post "/chat_room/get_all", ChatRoomController, :index
     post "/chat_room/get", ChatRoomController, :show
     post "/chat_room/get_mine", ChatRoomController, :my_rooms
+    post "/chat_room/private_rooms", ChatRoomController, :private_rooms
 
     resources "/chat_room_log", ChatRoomLogController, except: [:new, :edit, :index, :show]
     resources "/chat_log", ChatsLogController, except: [:new, :edit, :index, :show]

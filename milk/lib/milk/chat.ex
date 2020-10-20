@@ -179,6 +179,14 @@ defmodule Milk.Chat do
     end)
   end
 
+  def get_private_chat_rooms(user_id) do
+    user_id
+    |> get_chat_rooms_by_user_id()
+    |> Enum.filter(fn room -> 
+      room.is_private
+    end)
+  end
+
   @doc """
   Returns the list of chat_member.
 
