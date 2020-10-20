@@ -104,6 +104,7 @@ defmodule MilkWeb.Router do
     post "/assistant/delete", AssistantController, :delete
 
     post "/live", LiveController, :create
+    post "/live/home", LiveController, :home
 
     post "/sync", SyncController, :sync
   end

@@ -2,7 +2,7 @@ defmodule MilkWeb.LiveView do
   use MilkWeb, :view
   alias MilkWeb.LiveView
 
-  def render("list.json", %{lives: lives}) do
+  def render("index.json", %{lives: lives}) do
     %{data: render_many(lives, LiveView, "live.json")}
   end
   

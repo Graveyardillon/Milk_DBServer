@@ -7,6 +7,7 @@ defmodule Milk.Lives do
   alias Milk.Repo
 
   alias Milk.Lives.Live
+  alias Milk.Relations
 
   @doc """
   Returns the list of lives.
@@ -102,5 +103,18 @@ defmodule Milk.Lives do
   """
   def change_live(%Live{} = live, attrs \\ %{}) do
     Live.changeset(live, attrs)
+  end
+
+  @doc """
+  Returns live home data.
+  """
+  def home(user_id) do
+    user_id
+    |> Relations.get_following_list()
+    |> Enum.map(fn user -> 
+      Live
+      |> where([l], l.streamer_id == ^user.id)
+      |> Repo.all()
+    end)
   end
 end

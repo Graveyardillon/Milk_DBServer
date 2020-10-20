@@ -8,7 +8,7 @@ defmodule MilkWeb.ChatsController do
 
   def index(conn, %{"chat" => params}) do
     chat = Chat.list_chat(params)
-    if (chat) do
+    if chat do
       render(conn, "index.json", chat: chat)
     else
       render(conn, "error.json", error: nil)

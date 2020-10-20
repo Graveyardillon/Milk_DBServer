@@ -156,6 +156,74 @@
           "raw": "{\"chat\":{\"user_id\":1,\"partner_id\":5,\"word\":\"On a plain\",\"datetime\":\"2020-08-05T16:04:15.546000Z\"}}"
         }
       }
+    },
+    {
+      "name": "Create Live",
+      "request": {
+        "url": "http://localhost:4000/api/live",
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"live\":{\"name\":\"MY STREAM1\",\"streamer_id\":1,\"tournament_id\":1}}"
+        }
+      }
+    },
+    {
+      "name": "Create Live",
+      "request": {
+        "url": "http://localhost:4000/api/live",
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"live\":{\"name\":\"MY STREAM2\",\"streamer_id\":1,\"tournament_id\":1}}"
+        }
+      }
+    },
+    {
+      "name": "Create Live",
+      "request": {
+        "url": "http://localhost:4000/api/live",
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"live\":{\"name\":\"MY STREAM3\",\"streamer_id\":1,\"tournament_id\":1}}"
+        }
+      }
+    },
+    {
+      "name": "Create Live",
+      "request": {
+        "url": "http://localhost:4000/api/live",
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"live\":{\"name\":\"MY STREAM4\",\"streamer_id\":1,\"tournament_id\":1}}"
+        }
+      }
     }
   ]
 }

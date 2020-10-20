@@ -67,7 +67,6 @@ defmodule Milk.Relations do
         preload: [auth: a]
       )
     end)
-    |> IO.inspect()
   end
 
   @doc """
