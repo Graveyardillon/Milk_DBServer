@@ -68,4 +68,32 @@ defmodule MilkWeb.ChatRoomController do
       render(conn, "error.json", error: nil)
     end
   end
+
+  def private_rooms(conn, %{"user_id" => id}) do
+    user_id =
+    if is_binary(id) do
+      String.to_integer(id)
+    else
+      id
+    end
+
+    chat_with_user = Chat.get_private_chat_rooms(user_id)
+          |> Enum.map(fn room ->
+            user = Chat.get_user_in_private_room(room.id, user_id)
+            %{
+              id: user.id,
+              room_id: room.id,
+              name: user.name,
+              email: user.auth.email,
+              last_chat: room.last_chat,
+              count: room.count,
+              is_private: room.is_private
+            }
+          end)
+    if chat_with_user do
+      render(conn, "chat_room_with_user.json", info: chat_with_user)
+    else
+      render(conn, "error.json", error: nil)
+    end
+  end
 end

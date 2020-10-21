@@ -2,6 +2,7 @@ defmodule MilkWeb.TournamentController do
   use MilkWeb, :controller
 
   alias Milk.Ets
+  alias Milk.Accounts
   alias Milk.Tournaments
   alias Milk.Tournaments.Tournament
 
@@ -31,7 +32,6 @@ defmodule MilkWeb.TournamentController do
   end
 
   def create(conn, %{"tournament" => tournament_params, "image" => image}) do
-    IO.inspect(image)
     thumbnail_path = if image != "" do
       uuid = SecureRandom.uuid()
       File.cp(image.path, "./static/image/tournament_thumbnail/#{uuid}.jpg")
@@ -56,13 +56,76 @@ defmodule MilkWeb.TournamentController do
   # 現在参加中のユーザーもカウントする
   def show(conn, %{"tournament_id" => id}) do
     tournament = Tournaments.get_tournament!(id)
-    entrants = Tournaments.get_entrants(tournament.id)
+    entrants = 
+      Tournaments.get_entrants(tournament.id)
+      |> Enum.map(fn entrant -> 
+        Accounts.get_user(entrant.user_id)
+      end)
 
     if(tournament) do
       render(conn, "tournament_info.json", tournament: tournament, entrants: entrants)
     else
       render(conn, "error.json", error: nil)
     end
+  end
+
+  # Gets tournament info list for home screen.
+  def home(conn, %{"filter" => "fav", "user_id" => user_id}) do
+    tournaments = 
+    Tournaments.home_tournament_fav(user_id)
+    |> Enum.map(fn tournament -> 
+      entrants = 
+        Tournaments.get_entrants(tournament.id)
+        |> Enum.map(fn entrant -> 
+          Accounts.get_user(entrant.user_id)
+        end)
+      
+      %{
+        tournament: tournament,
+        entrants: entrants
+      }
+    end)
+
+    render(conn, "home.json", tournaments_info: tournaments)
+  end
+
+  def home(conn, %{"filter" => "plan", "user_id" => user_id}) do
+    tournaments = 
+    Tournaments.home_tournament_plan(user_id)
+    |> Enum.map(fn tournament -> 
+      entrants = 
+        Tournaments.get_entrants(tournament.id)
+        |> Enum.map(fn entrant -> 
+          Accounts.get_user(entrant.user_id)
+        end)
+      
+      %{
+        tournament: tournament,
+        entrants: entrants
+      }
+    end)
+
+    render(conn, "home.json", tournaments_info: tournaments)
+  end
+  
+  def home(conn, params) do
+    IO.inspect(params)
+    tournaments = 
+    Tournaments.home_tournament()
+    |> Enum.map(fn tournament -> 
+      entrants = 
+        Tournaments.get_entrants(tournament.id)
+        |> Enum.map(fn entrant -> 
+          Accounts.get_user(entrant.user_id)
+        end)
+      
+      %{
+        tournament: tournament,
+        entrants: entrants
+      }
+    end)
+
+    render(conn, "home.json", tournaments_info: tournaments)
   end
 
   def update(conn, %{"tournament_id" => id, "tournament" => tournament_params}) do
@@ -95,12 +158,6 @@ defmodule MilkWeb.TournamentController do
     |> send_file(200, path)
   end
 
-  # Gets tournament info list for home screen.
-  def home(conn, _params) do
-    tournaments = Tournaments.home_tournament()
-    render(conn, "index.json", tournament: tournaments)
-  end
-
   def participating_tournaments(conn, %{"user_id" => user_id}) do
     tournaments = Tournaments.get_participating_tournaments!(user_id)
 
@@ -118,15 +175,19 @@ defmodule MilkWeb.TournamentController do
     render(conn, "tournament_topics.json", topics: tabs)
   end
 
-  def start(conn, %{"tournament" => %{"master_id" => _master_id, "tournament_id" => tournament_id}}) do
-    # マッチングリストを生成
-    match_list =
-      Tournaments.get_entrants(tournament_id)
-      |>Enum.map(fn x -> x.id end)
-      |>Tournaments.generate_matchlist()
+  def start(conn, %{"tournament" => %{"master_id" => master_id, "tournament_id" => tournament_id}}) do
+    with {:ok, _} <- Tournaments.start(master_id, tournament_id) do
+      # マッチングリストを生成
+      match_list =
+        Tournaments.get_entrants(tournament_id)
+        |> Enum.map(fn x -> x.id end)
+        |> Tournaments.generate_matchlist()
 
-    Ets.insert_match_list(tournament_id, match_list)
-    render(conn, "match.json", list: match_list)
+      Ets.insert_match_list(tournament_id, match_list)
+      render(conn, "match.json", list: match_list)
+    else
+      _ -> json(conn, %{error: "error"})
+    end
   end
 
   def delete_loser(conn, %{"tournament" => %{"match_list" => match_list, "loser_list" => loser_list}}) do

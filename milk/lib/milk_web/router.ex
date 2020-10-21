@@ -58,12 +58,12 @@ defmodule MilkWeb.Router do
     post "/chat_room/get_all", ChatRoomController, :index
     post "/chat_room/get", ChatRoomController, :show
     post "/chat_room/get_mine", ChatRoomController, :my_rooms
+    post "/chat_room/private_rooms", ChatRoomController, :private_rooms
 
     resources "/chat_room_log", ChatRoomLogController, except: [:new, :edit, :index, :show]
     resources "/chat_log", ChatsLogController, except: [:new, :edit, :index, :show]
     resources "/chat_member_log", ChatMemberLogController, except: [:new, :edit, :index, :show]
     resources "/assistant_log", AssistantLogController, except: [:new, :edit, :index, :show]
-
 
     resources "/chat_member", ChatMemberController, except: [:new, :edit, :index, :show, :delete]
     post "/chat_member/get", ChatMemberController, :show
@@ -90,7 +90,7 @@ defmodule MilkWeb.Router do
     post "/tournament/get_tabs", TournamentController, :tournament_tabs
     post "/tournament/get_thumbnail", TournamentController, :get_thumbnail_image
     post "/tournament/get_match_list", TournamentController, :get_match_list
-    get "/tournament/home", TournamentController, :home
+    post "/tournament/home", TournamentController, :home
     post "/tournament/image", TournamentController, :image
     post "/tournament_log/add", TournamentLogController, :create
 
@@ -104,6 +104,9 @@ defmodule MilkWeb.Router do
     post "/assistant/get", AssistantController, :show
     post "/assistant/get_all", AssistantController, :index
     post "/assistant/delete", AssistantController, :delete
+
+    post "/live", LiveController, :create
+    post "/live/home", LiveController, :home
 
     post "/sync", SyncController, :sync
   end

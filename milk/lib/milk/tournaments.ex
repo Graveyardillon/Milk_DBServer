@@ -17,6 +17,7 @@ defmodule Milk.Tournaments do
   alias Milk.Games.Game
   alias Milk.Chat
   alias Milk.Accounts.User
+  alias Milk.Accounts.Relation
   alias Milk.Log.{TournamentLog, EntrantLog, AssistantLog, TournamentChatTopicLog}
 
   require Integer
@@ -35,8 +36,32 @@ defmodule Milk.Tournaments do
     Repo.all(Tournament)
   end
 
-  def home_tournament do
+  def home_tournament() do
     Tournament
+    |> where([e], e.deadline > ^Timex.now)
+    |> order_by([e], asc: :event_date)
+    |> Repo.all()
+  end
+
+  def home_tournament_fav(user_id) do
+    users = 
+      Relation
+      |> where([r], r.follower_id == ^user_id)
+      |> Repo.all()
+      |> Enum.map(fn relation -> 
+        relation.followee_id
+      end)
+
+    Tournament
+    |> where([t], t.master_id in ^users)
+    |> where([e], e.deadline > ^Timex.now)
+    |> order_by([e], asc: :event_date)
+    |> Repo.all()
+  end
+
+  def home_tournament_plan(user_id) do
+    Tournament
+    |> where([t], t.master_id == ^user_id)
     |> where([e], e.deadline > ^Timex.now)
     |> order_by([e], asc: :event_date)
     |> Repo.all()
@@ -475,6 +500,23 @@ defmodule Milk.Tournaments do
     end)
   end
 
+  def start(master_id, tournament_id) do
+    tournament = 
+      Tournament
+      |> where([t], t.master_id == ^master_id and t.id == ^tournament_id)
+      |> Repo.one()
+    
+    unless tournament.is_started do
+      tournament
+      |> Tournament.changeset(%{is_started: true})
+      |> Repo.update()
+    else
+      {:error, nil}
+    end
+  end
+  @doc """
+  Generate matchlist.
+  """
   def generate_matchlist(list) do
     shuffled = list |> Enum.shuffle()
     case(length(shuffled)) do
@@ -526,6 +568,7 @@ defmodule Milk.Tournaments do
     |> where([a], a.tournament_id == ^id)
     |> Repo.all()
   end
+
   @doc """
   Creates a assistant.
 
@@ -545,6 +588,10 @@ defmodule Milk.Tournaments do
       attrs["tournament_id"]
     end
 
+    Assistant
+      |> where([a], a.tournament_id == ^tournament_id)
+      |> Repo.delete_all()
+
     if Repo.exists?(from t in Tournament, where: t.id == ^tournament_id) do
       not_found_users =
         attrs["user_id"]
@@ -555,6 +602,7 @@ defmodule Milk.Tournaments do
             id
           end
         end)
+        |> Enum.uniq()
         |> Enum.filter(fn id ->
           if Repo.exists?(from u in User, where: u.id == ^id) do
             %Assistant{user_id: id, tournament_id: tournament_id}

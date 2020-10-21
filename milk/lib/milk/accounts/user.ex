@@ -5,6 +5,7 @@ defmodule Milk.Accounts.User do
   alias Milk.Chat.Chats
   alias Milk.Chat.ChatMember
   alias Milk.Chat.ChatRoom
+  alias Milk.Lives.Live
   alias Milk.Achievements.Achievement
   alias Milk.Tournaments.{Tournament, Entrant, Assistant}
 
@@ -27,6 +28,7 @@ defmodule Milk.Accounts.User do
     has_many :tournament, Tournament, foreign_key: :master_id
     has_many :entrant, Entrant
     has_many :assistant, Assistant
+    has_many :lives, Live, foreign_key: :streamer_id
 
     timestamps()
   end
