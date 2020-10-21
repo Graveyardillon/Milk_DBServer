@@ -127,19 +127,34 @@ defmodule Milk.Accounts do
   #   end
   # end
 
-  def create_user(attrs \\ %{}) do
-      case Multi.new
-      |> Multi.insert(:user, User.changeset(%User{}, attrs))
-      |> Multi.insert(:auth, fn(%{user: user}) ->
-        Ecto.build_assoc(user, :auth)
-        |> Auth.changeset(attrs)
-      end)
-      |> Repo.transaction() do
-        {:ok, user} -> {:ok, user.user}
-        {:error, _, error, _data} -> {:error, error.errors}
-        _ -> {:ok, nil}
-      end
+  def gen_rnd_id() do
+    Enum.random(0..999999)
+    |>gen_rnd_id()
+  end
+  def gen_rnd_id(tmp_id) when tmp_id > 999999 do
+    gen_rnd_id(0)
+  end
+  def gen_rnd_id(tmp_id) do
+    case Repo.one(from u in User, where: u.id_for_show == ^tmp_id) do
+      nil -> tmp_id
+      %User{} -> gen_rnd_id(tmp_id + 1)
     end
+  end
+
+  def create_user(non_id_attrs \\ %{}) do
+    attrs = Map.put(non_id_attrs, "id_for_show", gen_rnd_id())
+    case Multi.new
+    |> Multi.insert(:user, User.changeset(%User{}, attrs))
+    |> Multi.insert(:auth, fn(%{user: user}) ->
+      Ecto.build_assoc(user, :auth)
+      |> Auth.changeset(attrs)
+    end)
+    |> Repo.transaction() do
+      {:ok, user} -> {:ok, user.user}
+      {:error, _, error, _data} -> {:error, error.errors}
+      _ -> {:ok, nil}
+    end
+  end
 
   @doc """
   Updates a user.
