@@ -8,6 +8,7 @@ defmodule Milk.Repo.Migrations.CreateLives do
       add :tournament_id, references(:tournament, on_delete: :delete_all)
       add :streamer_id, references(:users, on_delete: :delete_all)
       add :thumbnail_path, :string
+      add :url, :string
 
       timestamps()
     end

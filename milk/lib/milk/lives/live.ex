@@ -9,6 +9,7 @@ defmodule Milk.Lives.Live do
     field :name, :string
     field :number_of_viewers, :integer, default: 0
     field :thumbnail_path, :string
+    field :url, :string
     belongs_to :tournament, Tournament
     belongs_to :streamer, User
 
