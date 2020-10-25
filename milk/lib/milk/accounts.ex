@@ -2,7 +2,7 @@ defmodule Milk.Accounts do
   @moduledoc """
   The Accounts context.
   """
-  
+
   import Ecto.Query, warn: false
   alias Milk.Repo
 
@@ -11,7 +11,7 @@ defmodule Milk.Accounts do
   alias Milk.Log.{ChatMemberLog, AssistantLog, EntrantLog}
   alias Milk.Chat.{ChatRoom, ChatMember}
   alias Ecto.Multi
-  
+
   require Logger
 
   @doc """
@@ -56,23 +56,23 @@ defmodule Milk.Accounts do
     ChatMember
     |> where([cm], cm.id == ^id)
     |> Repo.all()
-    |> Enum.map(fn member -> 
+    |> Enum.map(fn member ->
       ChatRoom
       |> where([cr], cr.is_private and cr.id == ^member.chat_room_id)
       |> Repo.one()
     end)
-    |> Enum.map(fn room -> 
-      users = 
+    |> Enum.map(fn room ->
+      users =
         ChatMember
         |> where([cm], cm.chat_room_id == ^room.id and cm.id != ^id)
         |> Repo.all()
-      
+
       unless length(users) == 1, do: Logger.warn("get_all_users_in_touch/1 gets too big list")
       hd(users)
     end)
-    |> Enum.map(fn member -> 
+    |> Enum.map(fn member ->
       Repo.one(
-        from u in User, 
+        from u in User,
         join: a in assoc(u, :auth),
         where: u.id == ^member.user_id,
         preload: [auth: a]
@@ -96,7 +96,7 @@ defmodule Milk.Accounts do
   #   {:ok, user} = %User{}
   #                 |> User.changeset(attrs)
   #                 |> user_check()
-    
+
   #   if(user) do
   #     user
   #       |> Ecto.build_assoc(:auth)
@@ -121,7 +121,7 @@ defmodule Milk.Accounts do
   #       _ -> Repo.delete user
   #         {:error, nil}
   #     end
-  #   else 
+  #   else
   #     Repo.delete user
   #     {:error, nil}
   #   end
@@ -169,7 +169,7 @@ defmodule Milk.Accounts do
 
   """
   # def update_user(%User{} = user, attrs) do
-    
+
   #   with {:error, _} <- user.auth
   #                     |> Auth.changeset_update(attrs)
   #                     |> Repo.update()
@@ -210,14 +210,14 @@ defmodule Milk.Accounts do
   end
 
   def check_user(id, password, email) do
-    Repo.one(from u in User, 
-    join: a in assoc(u, :auth), 
+    Repo.one(from u in User,
+    join: a in assoc(u, :auth),
     left_join: cm in assoc(u, :chat_member),
     left_join: as in assoc(u, :assistant),
     left_join: e in assoc(u, :entrant),
     where: u.id == ^id
     and a.password == ^password
-    and a.email == ^email, 
+    and a.email == ^email,
     preload: [auth: a, chat_member: cm, entrant: e, assistant: as])
   end
 
@@ -253,7 +253,7 @@ defmodule Milk.Accounts do
     end
 
     Repo.delete(user)
-    
+
   end
 
   def tru(id) do

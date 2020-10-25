@@ -530,9 +530,14 @@ defmodule Milk.Log do
 
   """
   def create_assistant_log(attrs \\ %{}) do
-    %AssistantLog{}
-    |> AssistantLog.changeset(attrs)
-    |> Repo.insert()
+  Enum.filter(attrs,fn x ->
+    !Repo.exists?(from al in AssistantLog,where: al.tournament_id == ^x["tournament_id"] and al.user_id == ^x["user_id"])
+    end)
+    |>Enum.each(fn x ->
+      %AssistantLog{}
+      |> AssistantLog.changeset(x)
+      |> Repo.insert()
+    end)
   end
 
   @doc """

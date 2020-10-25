@@ -4,7 +4,7 @@ defmodule MilkWeb.AssistantLogController do
   alias Milk.Log
   alias Milk.Log.AssistantLog
 
-  action_fallback MilkWeb.FallbackController
+  #action_fallback MilkWeb.FallbackController
 
   def index(conn, _params) do
     assistant_log = Log.list_assistant_log()
@@ -12,11 +12,13 @@ defmodule MilkWeb.AssistantLogController do
   end
 
   def create(conn, %{"data" => assistant_log_params}) do
+    
     with {:ok, %AssistantLog{} = assistant_log} <- Log.create_assistant_log(assistant_log_params) do
-      conn
+      IO.inspect("ignite")
       # |> put_status(:created)
       # |> put_resp_header("location", Routes.assistant_log_path(conn, :show, assistant_log))
-      |> render("show.json", assistant_log: assistant_log)
+      json(conn, assistant_log)
+      #render(conn, "show.json", assistant_log: assistant_log)
     end
   end
 

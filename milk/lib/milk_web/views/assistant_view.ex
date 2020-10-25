@@ -11,7 +11,10 @@ defmodule MilkWeb.AssistantView do
   end
 
   def render("assistant.json", %{assistant: assistant}) do
-    %{user_id: assistant.user_id}
+    %{user_id: assistant.user_id,
+    tournament_id: assistant.tournament_id,
+    create_time: assistant.create_time,
+    update_time: assistant.update_time}
   end
 
   def render("error.json", %{error: error}) do
