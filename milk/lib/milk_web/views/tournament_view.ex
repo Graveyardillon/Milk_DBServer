@@ -9,7 +9,8 @@ defmodule MilkWeb.TournamentView do
   end
 
   def render("show.json", %{tournament: tournament}) do
-    %{data: render_one(tournament, TournamentView, "tournament.json")}
+    %{data: render_one(tournament, TournamentView, "tournament.json",
+    msg: "Tournament was created!")}
   end
 
   def render("tournament.json", %{tournament: tournament}) do
@@ -129,7 +130,7 @@ defmodule MilkWeb.TournamentView do
     %{data: map}
   end
 
-  def render("error.json", %{error: error}) do
+  def render("error.json", %{error: error,msg: "Creating tournament failed"}) do
     if(error) do
       %{result: false, error: create_message(error), data: nil}
     else
