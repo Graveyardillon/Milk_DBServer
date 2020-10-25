@@ -154,43 +154,43 @@ defmodule Milk.Tournaments do
     end
 
     tournament_struct = %Tournament{master_id: master_id, game_id: attrs["game_id"], thumbnail_path: thumbnail_path}
-    tournament = Multi.new()
-                 |> Multi.insert(:tournament, Tournament.changeset(tournament_struct, attrs))
-                 |> Multi.insert(:group_topic, fn %{tournament: tournament} ->
-                   room_params = %{
-                     name: tournament.name <> "-" <> "Group",
-                     member_count: tournament.count,
-                   }
-                   {:ok, chat_room} = Chat.create_chat_room(room_params)
-                   topic = %{"topic_name" => "Group"}
+    tournament = 
+      Multi.new()
+      |> Multi.insert(:tournament, Tournament.changeset(tournament_struct, attrs))
+      |> Multi.insert(:group_topic, fn %{tournament: tournament} ->
+        room_params = %{
+          name: tournament.name <> "-" <> "Group",
+          member_count: tournament.count,
+        }
+        {:ok, chat_room} = Chat.create_chat_room(room_params)
+        topic = %{"topic_name" => "Group"}
 
-                   %TournamentChatTopic{tournament_id: tournament.id, chat_room_id: chat_room.id}
-                   |> TournamentChatTopic.changeset(topic)
-                 end)
-                 |> Multi.insert(:notification_topic, fn %{tournament: tournament} ->
-                   room_params = %{
-                     name: tournament.name <> "-" <> "Notification",
-                     member_count: tournament.count,
-                   }
-                   {:ok, chat_room} = Chat.create_chat_room(room_params)
-                   topic = %{"topic_name" => "Notification"}
+        %TournamentChatTopic{tournament_id: tournament.id, chat_room_id: chat_room.id}
+        |> TournamentChatTopic.changeset(topic)
+      end)
+      |> Multi.insert(:notification_topic, fn %{tournament: tournament} ->
+        room_params = %{
+          name: tournament.name <> "-" <> "Notification",
+          member_count: tournament.count,
+        }
+        {:ok, chat_room} = Chat.create_chat_room(room_params)
+        topic = %{"topic_name" => "Notification"}
 
-                   %TournamentChatTopic{tournament_id: tournament.id, chat_room_id: chat_room.id}
-                   |> TournamentChatTopic.changeset(topic)
-                 end)
-                 |> Multi.insert(:q_and_a_topic, fn %{tournament: tournament} ->
-                   room_params = %{
-                     name: tournament.name <> "-" <> "Q&A",
-                     member_count: tournament.count,
-                   }
-                   {:ok, chat_room} = Chat.create_chat_room(room_params)
-                   topic = %{"topic_name" => "Q&A"}
+        %TournamentChatTopic{tournament_id: tournament.id, chat_room_id: chat_room.id}
+        |> TournamentChatTopic.changeset(topic)
+      end)
+      |> Multi.insert(:q_and_a_topic, fn %{tournament: tournament} ->
+        room_params = %{
+          name: tournament.name <> "-" <> "Q&A",
+          member_count: tournament.count,
+        }
+        {:ok, chat_room} = Chat.create_chat_room(room_params)
+        topic = %{"topic_name" => "Q&A"}
 
-                   %TournamentChatTopic{tournament_id: tournament.id, chat_room_id: chat_room.id}
-                   |> TournamentChatTopic.changeset(topic)
-                 end)
-                 |> Repo.transaction()
-
+        %TournamentChatTopic{tournament_id: tournament.id, chat_room_id: chat_room.id}
+        |> TournamentChatTopic.changeset(topic)
+      end)
+      |> Repo.transaction()
 
     case tournament do
       {:ok, tournament} ->

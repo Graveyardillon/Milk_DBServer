@@ -2,6 +2,7 @@ defmodule Milk.Relations do
   alias Milk.Accounts.Relation
   alias Milk.Accounts.User
   alias Milk.Repo
+  alias Milk.Accounts
 
   import Ecto.Query, warn: false
 
@@ -125,7 +126,7 @@ defmodule Milk.Relations do
 
   """
   def delete_relation(%Relation{} = relation) do
-      Repo.delete(relation)
+    Repo.delete(relation)
   end
 
   @doc """
@@ -148,5 +149,18 @@ defmodule Milk.Relations do
   """
   def change_relation(%Relation{} = relation, attrs \\ %{}) do
     Relation.changeset(relation, attrs)
+  end
+
+  @doc """
+  Get followers
+  """
+  def get_followers(user_id) do
+    Relation
+    |> where([r], r.followee_id == ^user_id)
+    |> Repo.all()
+    |> Enum.map(fn relation -> 
+      Accounts.get_user(relation.follower_id)
+    end)
+    |> IO.inspect()
   end
 end

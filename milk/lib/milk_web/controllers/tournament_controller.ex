@@ -3,6 +3,7 @@ defmodule MilkWeb.TournamentController do
 
   alias Milk.Ets
   alias Milk.Accounts
+  alias Milk.Relations
   alias Milk.Tournaments
   alias Milk.Tournaments.Tournament
 
@@ -31,6 +32,9 @@ defmodule MilkWeb.TournamentController do
     end
   end
 
+  def create(conn, %{"tournament" => tournament_params, "file" => file}) do
+    create(conn, %{"tournament" => tournament_params, "image" => file})
+  end
   def create(conn, %{"tournament" => tournament_params, "image" => image}) do
     thumbnail_path = if image != "" do
       uuid = SecureRandom.uuid()
@@ -42,10 +46,14 @@ defmodule MilkWeb.TournamentController do
 
     case Tournaments.create_tournament(tournament_params, thumbnail_path) do
       {:ok, %Tournament{} = tournament} ->
+        t =
+          tournament
+          |> Map.put(:followers, Relations.get_followers(tournament.master_id))
+          
         conn
         # |> put_status(:created)
         # |> put_resp_header("location", Routes.tournament_path(conn, :show, tournament))
-        |> render("show.json", tournament: tournament)
+        |> render("create.json", tournament: t)
       {:error, error} ->
         render(conn, "error.json", error: error)
       _ ->
