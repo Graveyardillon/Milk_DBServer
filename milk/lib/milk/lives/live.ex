@@ -8,6 +8,8 @@ defmodule Milk.Lives.Live do
   schema "lives" do
     field :name, :string
     field :number_of_viewers, :integer, default: 0
+    field :thumbnail_path, :string
+    field :url, :string
     belongs_to :tournament, Tournament
     belongs_to :streamer, User
 
@@ -17,7 +19,7 @@ defmodule Milk.Lives.Live do
   @doc false
   def changeset(live, attrs) do
     live
-    |> cast(attrs, [:name, :number_of_viewers])
+    |> cast(attrs, [:name, :number_of_viewers, :thumbnail_path])
     |> foreign_key_constraint(:tournament_id)
     |> foreign_key_constraint(:streamer_id)
   end
