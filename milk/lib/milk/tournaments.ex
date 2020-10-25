@@ -125,7 +125,11 @@ defmodule Milk.Tournaments do
 
   """
   def create_tournament(params, thumbnail_path \\ %{}) do
-    attrs = Poison.decode!(params)
+    attrs = if is_binary(params) do
+      Poison.decode!(params)
+    else
+      params
+    end 
     # attrs = params
     master_repo = Repo.exists?(from u in User, where: u.id == ^attrs["master_id"])
 

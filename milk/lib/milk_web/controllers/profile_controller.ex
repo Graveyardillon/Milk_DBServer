@@ -26,17 +26,17 @@ defmodule MilkWeb.ProfileController do
   end
 
   def update_icon(conn, %{"user_id" => user_id, "image" => image}) do
-      user = Accounts.get_user(user_id)
-      if user do 
-        uuid = SecureRandom.uuid()
+    user = Accounts.get_user(user_id)
+    if user do 
+      uuid = SecureRandom.uuid()
 
-        File.cp(image.path, "./static/image/profile_icon/#{uuid}.png")
+      File.cp(image.path, "./static/image/profile_icon/#{uuid}.png")
 
-        Accounts.update_icon_path(user, uuid)
-        json(conn, %{local_path: uuid})
-      else 
-        json(conn, %{error: "user not found"})
-      end
+      Accounts.update_icon_path(user, uuid)
+      json(conn, %{local_path: uuid})
+    else 
+      json(conn, %{error: "user not found"})
+    end
   end
 
   def get_icon(conn, %{"path" => path}) do
@@ -48,5 +48,4 @@ defmodule MilkWeb.ProfileController do
         json(conn, %{error: "image not fonud"})
     end
   end
-
 end
