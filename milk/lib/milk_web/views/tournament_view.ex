@@ -132,7 +132,10 @@ defmodule MilkWeb.TournamentView do
         update_time: tournament.update_time,
         master_data: render_one(Accounts.get_user(tournament.master_id), UserView, "show.json"),
         followers: Enum.map(tournament.followers, fn follower -> 
-          follower.id
+          %{
+            id: follower.id,
+            name: follower.name
+          }
         end)
       }
     }
