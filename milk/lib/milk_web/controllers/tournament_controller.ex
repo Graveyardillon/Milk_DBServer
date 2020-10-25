@@ -202,7 +202,7 @@ defmodule MilkWeb.TournamentController do
       {:ok, file} -> 
         b64 = Base.encode64(file)
         json(conn, %{b64: b64})
-      {:error, _} -> 
+      {:error, _} ->
         json(conn, %{error: "image not found"})
     end
   end
