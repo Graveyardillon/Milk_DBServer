@@ -18,6 +18,7 @@ defmodule Milk.Tournaments do
   alias Milk.Chat
   alias Milk.Accounts.User
   alias Milk.Accounts.Relation
+  alias Milk.Platforms.Platform
   alias Milk.Log.{TournamentLog, EntrantLog, AssistantLog, TournamentChatTopicLog}
 
   require Integer
@@ -157,7 +158,13 @@ defmodule Milk.Tournaments do
       attrs["master_id"]
     end
 
-    tournament_struct = %Tournament{master_id: master_id, game_id: attrs["game_id"], thumbnail_path: thumbnail_path}
+    tournament_struct = %Tournament{
+      master_id: master_id, 
+      game_id: attrs["game_id"], 
+      thumbnail_path: thumbnail_path,
+      platform_id: attrs["platform"]
+    }
+
     tournament =
       Multi.new()
       |> Multi.insert(:tournament, Tournament.changeset(tournament_struct, attrs))
@@ -330,11 +337,11 @@ defmodule Milk.Tournaments do
   """
   def create_entrant(attrs \\ %{}) do
     attrs
-    |>user_exist_check
-    |>tournament_exist_check
-    |>not_entrant_check
-    |>insert
-    |>case do
+    |> user_exist_check()
+    |> tournament_exist_check()
+    |> not_entrant_check()
+    |> insert()
+    |> case do
         {:ok, entrant} -> join_tournament_chat_room(entrant, attrs)
         {:error,_, error, _data} when is_bitstring(error) -> {:error, error}
         {:error, _, error, _data} -> {:multierror, error.errors}
@@ -351,24 +358,24 @@ defmodule Milk.Tournaments do
     end
   end
 
-  defp not_entrant_check({:ok,attrs})do
+  defp not_entrant_check({:ok, attrs})do
     unless Repo.exists?(from e in Entrant, where: e.tournament_id == ^attrs["tournament_id"] and e.user_id == ^attrs["user_id"]) do
-      {:ok,attrs}
+      {:ok, attrs}
     else
       {:error,"Already joined"}
     end
   end
 
-  defp not_entrant_check({:error,error})do
+  defp not_entrant_check({:error, error})do
     {:error,error}
   end
 
-  defp tournament_exist_check({:ok,attrs}) do
+  defp tournament_exist_check({:ok, attrs}) do
 
     if Repo.exists?(from t in Tournament, where: t.id == ^attrs["tournament_id"]) do
-      {:ok,attrs}
+      {:ok, attrs}
     else
-      {:error,"undefined tournament"}
+      {:error, "undefined tournament"}
     end
   end
 

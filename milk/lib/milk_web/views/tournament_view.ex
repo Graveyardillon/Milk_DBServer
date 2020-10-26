@@ -111,6 +111,8 @@ defmodule MilkWeb.TournamentView do
   end
 
   def render("create.json", %{tournament: tournament}) do
+    IO.inspect(tournament, label: :platform)
+
     %{
       data: %{
         id: tournament.id,
@@ -161,7 +163,8 @@ defmodule MilkWeb.TournamentView do
     %{data: map}
   end
 
-  def render("error.json", %{error: error,msg: "Creating tournament failed"}) do
+  #def render("error.json", %{error: error, msg: "Creating tournament failed"}) do
+  def render("error.json", %{error: error}) do
     if(error) do
       %{result: false, error: create_message(error), data: nil}
     else
