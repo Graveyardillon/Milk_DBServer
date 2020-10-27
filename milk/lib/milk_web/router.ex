@@ -110,6 +110,9 @@ defmodule MilkWeb.Router do
     post "/live/home", LiveController, :home
 
     post "/sync", SyncController, :sync
+
+    post "/send_email", ConfNumController, :send_email
+    post "conf_email", ConfNumController, :conf_email
   end
 
   # Other scopes may use custom stacks.

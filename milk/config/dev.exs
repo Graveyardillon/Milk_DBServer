@@ -3,7 +3,7 @@ use Mix.Config
 # Configure your database
 config :milk, Milk.Repo,
   username: "postgres",
-  password: "postgres",
+  password: "mikan2499",
   database: "milk_dev",
   hostname: "localhost",
   #hostname: "db",

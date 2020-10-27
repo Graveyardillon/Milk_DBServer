@@ -16,6 +16,7 @@ defmodule Milk.Application do
       # Starts a worker by calling: Milk.Worker.start_link(arg)
       #{Task, fn -> Milk.accept(4041) end}
       {Task, fn -> Milk.setup_platform() end},
+      Milk.ConfNum,
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
