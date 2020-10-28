@@ -10,7 +10,7 @@ defmodule Milk.Repo.Migrations.CreateUsers do
       add :notification_number, :integer
       add :logout_fl, :boolean, default: false, null: false
       add :language, :string
-
+      add :bio, :string, null: true
       timestamps()
     end
 
