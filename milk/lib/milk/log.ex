@@ -587,4 +587,100 @@ defmodule Milk.Log do
     AssistantLog.changeset(assistant_log, attrs)
   end
 
+
+  alias Milk.Log.NotificationLog
+
+  @doc """
+  Returns the list of notification_log.
+
+  ## Examples
+
+      iex> list_notification_log()
+      [%NotificationLog{}, ...]
+
+  """
+  def list_notification_log do
+    Repo.all(NotificationLog)
+  end
+
+  @doc """
+  Gets a single notification_log.
+
+  Raises `Ecto.NoResultsError` if the Notification log does not exist.
+
+  ## Examples
+
+      iex> get_notification_log!(123)
+      %NotificationLog{}
+
+      iex> get_notification_log!(456)
+      ** (Ecto.NoResultsError)
+
+  """
+  def get_notification_log!(id), do: Repo.get!(NotificationLog, id)
+
+  @doc """
+  Creates a notification_log.
+
+  ## Examples
+
+      iex> create_notification_log(%{field: value})
+      {:ok, %NotificationLog{}}
+
+      iex> create_notification_log(%{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def create_notification_log(attrs \\ %{}) do
+    %NotificationLog{}
+    |> NotificationLog.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  @doc """
+  Updates a notification_log.
+
+  ## Examples
+
+      iex> update_notification_log(notification_log, %{field: new_value})
+      {:ok, %NotificationLog{}}
+
+      iex> update_notification_log(notification_log, %{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def update_notification_log(%NotificationLog{} = notification_log, attrs) do
+    notification_log
+    |> NotificationLog.changeset(attrs)
+    |> Repo.update()
+  end
+
+  @doc """
+  Deletes a notification_log.
+
+  ## Examples
+
+      iex> delete_notification_log(notification_log)
+      {:ok, %NotificationLog{}}
+
+      iex> delete_notification_log(notification_log)
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def delete_notification_log(%NotificationLog{} = notification_log) do
+    Repo.delete(notification_log)
+  end
+
+  @doc """
+  Returns an `%Ecto.Changeset{}` for tracking notification_log changes.
+
+  ## Examples
+
+      iex> change_notification_log(notification_log)
+      %Ecto.Changeset{data: %NotificationLog{}}
+
+  """
+  def change_notification_log(%NotificationLog{} = notification_log, attrs \\ %{}) do
+    NotificationLog.changeset(notification_log, attrs)
+  end
 end
