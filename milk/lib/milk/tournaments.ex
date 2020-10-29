@@ -158,11 +158,17 @@ defmodule Milk.Tournaments do
       attrs["master_id"]
     end
 
+    platform_id = if is_binary(attrs["platform"]) do
+      String.to_integer(attrs["platform"])
+    else
+      attrs["platform"]
+    end
+
     tournament_struct = %Tournament{
       master_id: master_id, 
       game_id: attrs["game_id"], 
       thumbnail_path: thumbnail_path,
-      platform_id: attrs["platform"]
+      platform_id: platform_id
     }
 
     tournament =
