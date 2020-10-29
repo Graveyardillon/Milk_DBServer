@@ -4,7 +4,7 @@ use Mix.Config
 config :milk, Milk.Repo,
   username: "postgres",
   password: "postgres",
-  database: "milk_dev",
+  database: "milk_test",
   hostname: "localhost",
   show_sensitive_data_on_connection_error: true,
   pool_size: 10,
@@ -19,4 +19,4 @@ config :milk, MilkWeb.Endpoint,
 # Print only warnings and errors during test
 config :logger, level: :warn
 
-
+config :milk, Milk.Repo, migration_timestamps: [type: :timestamptz, inserted_at: :create_time, updated_at: :update_time]
