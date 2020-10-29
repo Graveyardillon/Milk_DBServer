@@ -20,6 +20,7 @@ defmodule Milk.Lives.Live do
   def changeset(live, attrs) do
     live
     |> cast(attrs, [:name, :number_of_viewers, :thumbnail_path])
+    |> validate_required([:name])
     |> foreign_key_constraint(:tournament_id)
     |> foreign_key_constraint(:streamer_id)
   end
