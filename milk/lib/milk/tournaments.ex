@@ -390,16 +390,27 @@ defmodule Milk.Tournaments do
   end
 
   defp insert({:ok,attrs}) do
+    user_id = if is_binary(attrs["user_id"]) do
+      String.to_integer(attrs["user_id"])
+    else 
+      attrs["user_id"]
+    end
+    tournament_id = if is_binary(attrs["tournament_id"]) do
+      String.to_integer(attrs["tournament_id"])
+    else 
+      attrs["tournament_id"]
+    end
+
     Multi.new()
     |> Multi.run(:tournament, fn repo, _ ->
-      case repo.one(from t in Tournament, where: t.id == ^attrs["tournament_id"] and t.capacity > t.count) do
+      case repo.one(from t in Tournament, where: t.id == ^tournament_id and t.capacity > t.count) do
       (%Tournament{} = t) -> {:ok, t}
       nil -> {:error, "capacity over"}
       _ -> {:error, ""}
       end
     end)
     |> Multi.insert(:entrant, fn _ ->
-      %Entrant{user_id: attrs["user_id"], tournament_id: attrs["tournament_id"]}
+      %Entrant{user_id: user_id, tournament_id: tournament_id}
       |> Entrant.changeset(attrs)
     end)
     |> Multi.update(:update, fn %{tournament: tournament} ->
@@ -414,10 +425,16 @@ defmodule Milk.Tournaments do
 
   # TODO: リファクタリングできそう
   defp join_tournament_chat_room(entrant, attrs) do
+    user_id = if is_binary(attrs["user_id"]) do
+      String.to_integer(attrs["user_id"])
+    else 
+      attrs["user_id"]
+    end
+
     result = Chat.get_chat_rooms_by_tournament_id(entrant.tournament.id)
              |> Enum.reduce({:ok, nil}, fn (chat_room, _acc) ->
                join_params = %{
-                 "user_id" => attrs["user_id"],
+                 "user_id" => user_id,
                  "chat_room_id" => chat_room.id,
                  "authority" => 0
                }
