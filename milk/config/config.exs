@@ -12,7 +12,7 @@ config :milk, ecto_repos: [Milk.Repo]
 # Configures the endpoint
 config :milk, MilkWeb.Endpoint,
   url: [host: "localhost"],
-  secret_key_base: "EBeu358sy8Bi+OLxOAee44nMrRCj/iwRKq5NUls46hBMwnqVhNOhl7qcw0d1REjZ",
+  secret_key_base: "LqoR7+lZoQ0d7SFXzx2GJhzn8QrhoOn2tM43fL6i+2S0d//IjQ4+y+gOcSxsK+2f",
   render_errors: [view: MilkWeb.ErrorView, accepts: ~w(html json)]
 
 # Configures Elixir's Logger
@@ -29,7 +29,7 @@ import_config "#{Mix.env()}.exs"
 
 config :milk, Milk.UserManager.Guardian,
   issuer: "milk",
-  secret_key: "ucwM9beYUEgWdkHoZ5kXflOMW8wZSEVwheR3PuUVROQrl3uymZL/qtRbHs+V3BN4",
+  secret_key: "LqoR7+lZoQ0d7SFXzx2GJhzn8QrhoOn2tM43fL6i+2S0d//IjQ4+y+gOcSxsK+2f",
   serializer: Milk.UserManager.GuardianSerializer,
   ttl: {24, :hour}
 

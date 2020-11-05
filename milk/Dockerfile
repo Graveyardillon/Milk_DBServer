@@ -1,22 +1,36 @@
-FROM erlang:23
+FROM elixir:alpine
+ARG app_name=milk
+ARG phoenix_subdir=.
+ARG build_env=prod
+ENV MIX_ENV=${build_env} TERM=xterm
 
-# elixir expects utf8.
-ENV ELIXIR_VERSION="v1.10.4" \
-	LANG=C.UTF-8
+WORKDIR /opt/app
+RUN apk update \
+  && apk --no-cache --update add nodejs nodejs-npm \
+  && mix local.rebar --force \
+  && mix local.hex --force
 
-RUN set -xe \
-	&& ELIXIR_DOWNLOAD_URL="https://github.com/elixir-lang/elixir/archive/${ELIXIR_VERSION}.tar.gz" \
-	&& ELIXIR_DOWNLOAD_SHA256="8518c78f43fe36315dbe0d623823c2c1b7a025c114f3f4adbb48e04ef63f1d9f" \
-	&& curl -fSL -o elixir-src.tar.gz $ELIXIR_DOWNLOAD_URL \
-	&& echo "$ELIXIR_DOWNLOAD_SHA256  elixir-src.tar.gz" | sha256sum -c - \
-	&& mkdir -p /usr/local/src/elixir \
-	&& tar -xzC /usr/local/src/elixir --strip-components=1 -f elixir-src.tar.gz \
-	&& rm elixir-src.tar.gz \
-	&& cd /usr/local/src/elixir \
-	&& make install clean
+COPY . .
+RUN mix do deps.get, compile
+RUN mix release ${app_name} \
+  && mv _build/${build_env}/rel/${app_name} /opt/release \
+  && mv /opt/release/bin/${app_name} /opt/release/bin/start_server
 
-WORKDIR /app
+FROM alpine:latest
+ARG project_id
+RUN apk update \
+  && apk --no-cache --update add bash ca-certificates openssl-dev \
+  && mkdir -p /usr/local/bin \
+  && wget https://dl.google.com/cloudsql/cloud_sql_proxy.linux.amd64 \
+  -O /usr/local/bin/cloud_sql_proxy \
+  && chmod +x /usr/local/bin/cloud_sql_proxy \
+  && mkdir -p /tmp/cloudsql
 
-RUN apt-get -y update &&\
-    mix local.hex --force && \
-    mix archive.install hex phx_new --force
+ENV PORT=8080 GCLOUD_PROJECT_ID=${project_id} REPLACE_OS_VARS=true
+EXPOSE ${PORT}
+WORKDIR /opt/app
+COPY --from=0 /opt/release .
+CMD (/usr/local/bin/cloud_sql_proxy \
+  -projects=${GCLOUD_PROJECT_ID} -dir=/tmp/cloudsql &); \
+  exec /opt/app/bin/start_server start
+
