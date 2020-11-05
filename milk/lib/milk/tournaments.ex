@@ -90,6 +90,7 @@ defmodule Milk.Tournaments do
       ** (Ecto.NoResultsError)
 
   """
+  def get_tournament(id), do: Repo.get(Tournament, id)
   def get_tournament!(id), do: Repo.get!(Tournament, id)
 
   @doc """
