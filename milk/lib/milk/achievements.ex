@@ -51,8 +51,10 @@ defmodule Milk.Achievements do
 
   """
   def create_achievement(attrs \\ %{}) do
+    IO.inspect(attrs,label: :debug2_1)
     %Achievement{}
     |> Achievement.changeset(attrs)
+    |>IO.inspect(label: :debug2_2)
     |> Repo.insert()
   end
 

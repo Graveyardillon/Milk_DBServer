@@ -18,7 +18,8 @@ defmodule Milk.Achievements.Achievement do
     achievement
     # |> cast(attrs, [:user_id, :title, :icon_path])
     # |> validate_required([:user_id, :title, :icon_path])
-    |> cast(attrs, [:title, :icon_path])
+    |> cast(attrs, [:user_id, :title, :icon_path])
     |> validate_required([:user_id, :title, :icon_path])
+    |> foreign_key_constraint(:user_id)
   end
 end
