@@ -113,6 +113,10 @@ defmodule MilkWeb.Router do
 
     post "/send_email", ConfNumController, :send_email
     post "conf_email", ConfNumController, :conf_email
+
+    post "notif/get_list", NotifController, :get_list
+    post "notif/create", NotifController, :create
+    delete "notif/:id", NotifController, :delete
   end
 
   # Other scopes may use custom stacks.

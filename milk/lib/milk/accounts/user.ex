@@ -8,6 +8,7 @@ defmodule Milk.Accounts.User do
   alias Milk.Lives.Live
   alias Milk.Achievements.Achievement
   alias Milk.Tournaments.{Tournament, Entrant, Assistant}
+  alias Milk.Notif.Notification
 
   schema "users" do
     field :icon_path, :string, default: "null"
@@ -29,6 +30,7 @@ defmodule Milk.Accounts.User do
     has_many :entrant, Entrant
     has_many :assistant, Assistant
     has_many :lives, Live, foreign_key: :streamer_id
+    has_many :notif, Notification
 
     timestamps()
   end
