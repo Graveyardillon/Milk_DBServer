@@ -30,7 +30,9 @@ defmodule Milk.Chat do
 
   """
   def list_chat_room do
-    Repo.all(ChatRoom)
+    Repo.all(from cr in ChatRoom,
+    left_join: c in assoc(cr, :chat),
+    preload: [:chat])
   end
 
   def get_all_chat(id) do
@@ -55,7 +57,7 @@ defmodule Milk.Chat do
       ** (Ecto.NoResultsError)
 
   """
-  def get_chat_room(id), do: Repo.one(from cr in ChatRoom, where: cr.id == ^id)
+  def get_chat_room(id), do: Repo.one(from cr in ChatRoom, where: cr.id == ^id, preload: [:chat])
 
   @doc """
   Creates a chat_room.
@@ -113,16 +115,25 @@ defmodule Milk.Chat do
 
   """
   def delete_chat_room(%ChatRoom{} = chat_room) do
-    chat = Enum.map(
-      chat_room.chat, 
-      fn x -> 
-        %{chat_room_id: x.chat_room_id, word: x.word, user_id: x.user_id, index: x.index, create_time: x.create_time, update_time: x.update_time} 
-    end)
-    
+    chat =
+      if is_list(chat_room.chat) do
+        Enum.map(
+          chat_room.chat,
+          fn x ->
+            %{chat_room_id: x.chat_room_id, word: x.word, user_id: x.user_id, index: x.index, create_time: x.create_time, update_time: x.update_time} 
+        end)
+      else
+        nil
+      end
     if chat, do: Repo.insert_all(ChatsLog, chat)
-    member = Enum.map(chat_room.chat_member, fn x -> 
-      %{chat_room_id: x.chat_room_id, user_id: x.user_id, authority: x.authority, create_time: x.create_time, update_time: x.update_time} end
-    )
+    member =
+      if is_list(chat_room.chat_member) do
+        Enum.map(chat_room.chat_member, fn x ->
+          %{chat_room_id: x.chat_room_id, user_id: x.user_id, authority: x.authority, create_time: x.create_time, update_time: x.update_time} end
+        )
+      else
+        nil
+      end
 
     if member, do: Repo.insert_all(ChatMemberLog, member)
 
@@ -381,7 +392,7 @@ defmodule Milk.Chat do
 
   """
   def list_chat(params) do
-    Repo.all(from c in Chats, where: c.chat_room_id == ^params["chat_room_id"] and c.index < ^params["max"] and c.index > ^params["min"])
+    Repo.all(from c in Chats, where: c.chat_room_id == ^params.chat_room_id and c.index < ^params.max and c.index > ^params.min)
   end
 
   @doc """

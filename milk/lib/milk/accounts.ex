@@ -142,7 +142,7 @@ defmodule Milk.Accounts do
   end
 
   def create_user(non_id_attrs \\ %{}) do
-    attrs = Map.put(non_id_attrs, "id_for_show", gen_rnd_id())
+    attrs = Map.put(non_id_attrs, :id_for_show, gen_rnd_id())
 
     case Multi.new
     |> Multi.insert(:user, User.changeset(%User{}, attrs))

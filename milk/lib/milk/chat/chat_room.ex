@@ -17,7 +17,7 @@ defmodule Milk.Chat.ChatRoom do
     many_to_many :user, User, join_through: "chat_member"
     has_many :chat_member, ChatMember
     has_many :tournament_chat_topics, TournamentChatTopic
-    
+
     timestamps()
   end
 
@@ -26,7 +26,7 @@ defmodule Milk.Chat.ChatRoom do
     chat_room
     |> cast(attrs, [:name, :last_chat, :count, :member_count])
     #|> validate_required([:name, :last_chat, :count, :member_count])
-    |> validate_required([:name])
+    |> validate_required([:name, :count])
   end
 
   def changeset_update(chat_room, attrs) do
