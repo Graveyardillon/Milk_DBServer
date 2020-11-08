@@ -37,6 +37,7 @@ defmodule MilkWeb.UserController do
         case error|>IO.inspect(label: :hmm) do
         [email: {"has already been taken", _ }] -> render(conn, "error.json", error_code: 101)
         [password: {"should be at least %{count} character(s)", _ }] -> render(conn, "error.json", error_code: 102)
+        [password: {"has invalid format", _ }] -> render(conn, "error.json", error_code: 103)
         _ -> render(conn, "error.json", error: error)
       end
       _ ->
