@@ -79,7 +79,18 @@ defmodule MilkWeb.UserControllerTest do
       assert json_response(conn, 200)["errors"] != %{}
     end
   end
-
+  describe "login user" do
+    test "renders error when invalid email", %{conn: conn} do
+      {:ok, user} = Accounts.create_user(%{"name" => "name", "email" => "e@mail.com", "password" => "Password123", "logout_fl" => true})
+      conn = post(conn, Routes.user_path(conn, :login), user: %{"email_or_username" => "ew@mail.com", "password" => "Password123"})
+      assert assert json_response(conn, 200)["error_code"] == 104
+    end
+    test "renders error when invalid password", %{conn: conn} do
+      {:ok, user} = Accounts.create_user(%{"name" => "name", "email" => "e@mail.com", "password" => "Password123", "logout_fl" => true})
+      conn = post(conn, Routes.user_path(conn, :login), user: %{"email_or_username" => "e@mail.com", "password" => "Password1234z"})
+      assert assert json_response(conn, 200)["error_code"] == 104
+    end
+  end
   # describe "update user" do
   #   setup [:create_user]
 

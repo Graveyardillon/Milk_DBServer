@@ -8,8 +8,8 @@ defmodule Milk.AccountsTest do
   describe "users" do
     alias Milk.Accounts.User
 
-    @valid_attrs %{"icon_path" => "some icon_path", "language" => "some language", "name" => "some name", "notification_number" => 42, "point" => 42, "email" => "some email", "logout_fl" => true, "password" => "some password"}
-    @update_attrs %{icon_path: "some updated icon_path", language: "some updated language", name: "some updated name", notification_number: 43, point: 43,  email: "some updated email", logout_fl: false, password: "some updated password"}
+    @valid_attrs %{"icon_path" => "some icon_path", "language" => "some language", "name" => "some name", "notification_number" => 42, "point" => 42, "email" => "some email", "logout_fl" => true, "password" => "S1ome password"}
+    @update_attrs %{icon_path: "some updated icon_path", language: "some updated language", name: "some updated name", notification_number: 43, point: 43,  email: "some updated email", logout_fl: false, password: "S1ome updated password"}
     @invalid_attrs %{"icon_path" => nil, "language" => nil, "name" => nil, "notification_number" => nil, "point" => nil, "email" => nil, "password" => nil}
 
 
@@ -145,8 +145,8 @@ defmodule Milk.AccountsTest do
     @invalid_attrs %{id: nil, followee_id: 0999999999999, follower_id: 999999999}
 
     def relation_fixture(attrs \\ %{}) do
-      {:ok, user1} = Accounts.create_user(%{"name" => "name", "email" => "e@mail.com", "password" => "password123"})
-      {:ok, user2} = Accounts.create_user(%{"name" => "name", "email" => "ew@mail.com", "password" => "password123"})
+      {:ok, user1} = Accounts.create_user(%{"name" => "name", "email" => "e@mail.com", "password" => "Password123"})
+      {:ok, user2} = Accounts.create_user(%{"name" => "name", "email" => "ew@mail.com", "password" => "Password123"})
       {:ok, relation} =
         attrs
         |> Enum.into(@valid_attrs)
@@ -168,8 +168,8 @@ defmodule Milk.AccountsTest do
     # end
 
     test "create_relation/1 with valid data creates a relation" do
-      {:ok, user1} = Accounts.create_user(%{"name" => "name", "email" => "e@mail.com", "password" => "password123"})
-      {:ok, user2} = Accounts.create_user(%{"name" => "name", "email" => "ew@mail.com", "password" => "password123"})
+      {:ok, user1} = Accounts.create_user(%{"name" => "name", "email" => "e@mail.com", "password" => "Password123"})
+      {:ok, user2} = Accounts.create_user(%{"name" => "name", "email" => "ew@mail.com", "password" => "Password123"})
       assert {:ok, %Relation{} = relation} =
         @valid_attrs
         |> Map.put(:followee_id, user1.id)

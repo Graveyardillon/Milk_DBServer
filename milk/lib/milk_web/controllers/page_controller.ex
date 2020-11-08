@@ -6,7 +6,6 @@ defmodule MilkWeb.PageController do
     # jwd end)
     # |> Enum.uniq
     # |> length
-    # |> IO.inspect
     # json(conn, %{a: true})
     render(conn, "index.html")
   end

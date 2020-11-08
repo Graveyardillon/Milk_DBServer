@@ -117,16 +117,15 @@ defmodule MilkWeb.TournamentController do
   end
   
   def home(conn, params) do
-    IO.inspect(params)
-    tournaments = 
+    tournaments =
     Tournaments.home_tournament()
-    |> Enum.map(fn tournament -> 
-      entrants = 
+    |> Enum.map(fn tournament ->
+      entrants =
         Tournaments.get_entrants(tournament.id)
-        |> Enum.map(fn entrant -> 
+        |> Enum.map(fn entrant ->
           Accounts.get_user(entrant.user_id)
         end)
-      
+
       %{
         tournament: tournament,
         entrants: entrants

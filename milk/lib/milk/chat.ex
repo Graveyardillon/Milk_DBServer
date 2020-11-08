@@ -453,11 +453,9 @@ defmodule Milk.Chat do
 
         {:ok, chat} ->
           chat.chat_room
-          |> IO.inspect
           |> ChatRoom.changeset_update(%{last_chat: chat.chat.word, count: chat.chat.index, update_time: attrs["datetime"]})
-          |> IO.inspect
           |> Repo.update
-          
+
           {:ok, chat.chat}
         {:error, _, error, _data} -> {:error, error.errors}
         _ -> {:error, nil}

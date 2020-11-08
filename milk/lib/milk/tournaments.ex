@@ -135,7 +135,7 @@ defmodule Milk.Tournaments do
     # attrs = params
     unless attrs[:master_id]|>is_nil() do
       if Repo.exists?(from u in User, where: u.id == ^attrs[:master_id]) do
-        create_tournament(:notnil, attrs, thumbnail_path)|>IO.inspect(label: :tournament_debug2_1_1)
+        create_tournament(:notnil, attrs, thumbnail_path)
       else
         create_tournament(:nil, attrs, thumbnail_path)
       end
@@ -168,8 +168,8 @@ defmodule Milk.Tournaments do
     end
 
     tournament_struct = %Tournament{
-      master_id: master_id, 
-      game_id: attrs["game_id"], 
+      master_id: master_id,
+      game_id: attrs["game_id"],
       thumbnail_path: thumbnail_path,
       platform_id: platform_id
     }
@@ -177,7 +177,6 @@ defmodule Milk.Tournaments do
     tournament =
       Multi.new()
       |> Multi.insert(:tournament, Tournament.changeset(tournament_struct, attrs))
-      |>IO.inspect(label: :tournament_debug2_1)
       |> Multi.insert(:group_topic, fn %{tournament: tournament} ->
         room_params = %{
           name: tournament.name <> "-" <> "Group",
@@ -189,7 +188,6 @@ defmodule Milk.Tournaments do
         %TournamentChatTopic{tournament_id: tournament.id, chat_room_id: chat_room.id}
         |> TournamentChatTopic.changeset(topic)
       end)
-      |>IO.inspect(label: :tournament_debug2_2)
       |> Multi.insert(:notification_topic, fn %{tournament: tournament} ->
         room_params = %{
           name: tournament.name <> "-" <> "Notification",
@@ -201,7 +199,6 @@ defmodule Milk.Tournaments do
         %TournamentChatTopic{tournament_id: tournament.id, chat_room_id: chat_room.id}
         |> TournamentChatTopic.changeset(topic)
       end)
-      |>IO.inspect(label: :tournament_debug2_3)
       |> Multi.insert(:q_and_a_topic, fn %{tournament: tournament} ->
         room_params = %{
           name: tournament.name <> "-" <> "Q&A",
@@ -213,9 +210,8 @@ defmodule Milk.Tournaments do
         %TournamentChatTopic{tournament_id: tournament.id, chat_room_id: chat_room.id}
         |> TournamentChatTopic.changeset(topic)
       end)
-      |>IO.inspect(label: :tournament_debug2_4)
       |> Repo.transaction()
-      |>IO.inspect(label: :tournament_debug2_5)
+
 
     case tournament do
       {:ok, tournament} ->
@@ -285,7 +281,6 @@ defmodule Milk.Tournaments do
 
     TournamentLog.changeset(%TournamentLog{}, Map.from_struct(tournament))
     |> Repo.insert
-    |> IO.inspect
     Repo.delete(tournament)
   end
 

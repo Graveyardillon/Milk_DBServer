@@ -16,7 +16,6 @@ defmodule MilkWeb.LiveController do
   def create(conn, %{"live" => live_params}) do
     case Lives.create_live(live_params) do
       {:ok, %Live{} = live} ->
-        IO.inspect live
         conn
         |> render("show.json", live: live)
       

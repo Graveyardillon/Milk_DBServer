@@ -27,7 +27,7 @@ defmodule Milk.UserManager.Guardian do
       %GuardianTokens{jwt: token, claims: claims}
       |> GuardianTokens.changeset(claims)
       |> Repo.insert
-    end) |> IO.inspect() do
+    end) do
     {:ok, {:ok, _}} -> {:ok, token}
     {:ok,{:error, error}} -> {:error, error.errors}
     _ -> {:error, %{errors: [token: "db error"]}}

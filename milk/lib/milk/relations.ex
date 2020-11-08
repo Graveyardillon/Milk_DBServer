@@ -41,16 +41,11 @@ defmodule Milk.Relations do
   Gets relation by followee_id and follower_id.
   """
   def get_relation_by_ids(follower_id, followee_id) do
-    IO.inspect(followee_id,label: :balla)
-    IO.inspect(!is_nil(followee_id),label: :balla)
     if !is_nil(followee_id) and !is_nil(follower_id) do
       Relation
       |> where([r], r.follower_id == ^follower_id)
-      |>IO.inspect(label: :balla)
       |> where([r], r.followee_id == ^followee_id)
-      |>IO.inspect(label: :balla)
       |> Repo.one()
-      |>IO.inspect(label: :balla)
     else
       false
     end
@@ -94,7 +89,6 @@ defmodule Milk.Relations do
   # TODO: エラーハンドリング
   # TODO: Multiを使ったほうがいいかもしれない
   def create_relation(attrs \\ %{}) do
-    IO.inspect(attrs,label: :boo)
     if get_relation_by_ids(attrs.follower_id, attrs.followee_id)|>is_nil() do
       %Relation{follower_id: attrs.follower_id, followee_id: attrs.followee_id}
       |> Relation.changeset(attrs)
@@ -120,7 +114,6 @@ defmodule Milk.Relations do
   def update_relation(%Relation{} = relation, attrs) do
     relation
     |> Relation.changeset(attrs)
-    |>IO.inspect
     |> Repo.update()
   end
 
@@ -145,7 +138,6 @@ defmodule Milk.Relations do
   """
   def delete_relation_by_ids(follower_id, followee_id) do
     get_relation_by_ids(follower_id, followee_id)
-    |> IO.inspect()
     |> delete_relation()
   end
 
@@ -172,6 +164,5 @@ defmodule Milk.Relations do
     |> Enum.map(fn relation -> 
       Accounts.get_user(relation.follower_id)
     end)
-    |> IO.inspect()
   end
 end

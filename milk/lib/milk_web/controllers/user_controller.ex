@@ -34,12 +34,12 @@ defmodule MilkWeb.UserController do
       %{user: user})
 
       {:error, error} ->
-        case error|>IO.inspect(label: :hmm) do
-        [email: {"has already been taken", _ }] -> render(conn, "error.json", error_code: 101)
-        [password: {"should be at least %{count} character(s)", _ }] -> render(conn, "error.json", error_code: 102)
-        [password: {"has invalid format", _ }] -> render(conn, "error.json", error_code: 103)
-        _ -> render(conn, "error.json", error: error)
-      end
+        case error do
+          [email: {"has already been taken", _ }] -> render(conn, "error.json", error_code: 101)
+          [password: {"should be at least %{count} character(s)", _ }] -> render(conn, "error.json", error_code: 102)
+          [password: {"has invalid format", _ }] -> render(conn, "error.json", error_code: 103)
+          _ -> render(conn, "error.json", error: error)
+        end
       _ ->
         render(conn, "show.json",user: nil)
     end
@@ -71,8 +71,10 @@ defmodule MilkWeb.UserController do
 
   def login(conn, %{"user" => user_params}) do
     user = Accounts.login(user_params)
-           |> IO.inspect
-    render(conn, "login.json", %{user: user})
+    case user do
+      nil -> render(conn, "error.json", error_code: 104)
+      _ -> render(conn, "login.json", %{user: user})
+     end
   end
 
   def login_forced(conn, %{"user" => user_params}) do

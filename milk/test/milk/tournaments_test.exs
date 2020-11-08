@@ -41,11 +41,8 @@ defmodule Milk.TournamentsTest do
       tournament =
         attrs
         |> Enum.into(@valid_attrs)
-        |>IO.inspect(label: :tournament_debug1)
         |> Map.put(:master_id, user.id)
-        |>IO.inspect(label: :tournament_debug2)
         |> Tournaments.create_tournament()
-        |>IO.inspect(label: :tournament_debug3)
 
       tournament
     end

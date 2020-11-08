@@ -114,7 +114,6 @@ defmodule MilkWeb.TournamentView do
   end
 
   def render("create.json", %{tournament: tournament}) do
-    IO.inspect(tournament, label: :platform)
 
     %{
       data: %{

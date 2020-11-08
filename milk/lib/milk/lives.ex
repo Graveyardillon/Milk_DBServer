@@ -52,9 +52,7 @@ defmodule Milk.Lives do
   """
   def create_live(attrs \\ %{}) do
     %Live{streamer_id: attrs["streamer_id"], tournament_id: attrs["tournament_id"]}
-    |> IO.inspect
     |> Live.changeset(attrs)
-    |> IO.inspect
     |> Repo.insert()
   end
 

@@ -12,7 +12,6 @@ defmodule MilkWeb.TournamentLogController do
   end
 
   def create(conn, %{"data" => tournament_log_params}) do
-  IO.inspect(tournament_log_params, label: :log)
     with {:ok, %TournamentLog{} = tournament_log} <- Log.create_tournament_log(tournament_log_params) do
       conn
       |> render("show.json", tournament_log: tournament_log)
