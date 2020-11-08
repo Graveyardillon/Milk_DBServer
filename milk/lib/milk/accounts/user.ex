@@ -41,6 +41,6 @@ defmodule Milk.Accounts.User do
     |> cast(attrs, [:name, :icon_path, :point, :id_for_show, :notification_number, :language, :logout_fl])
     |> unique_constraint(:id_for_show)
     |> validate_required([:name, :icon_path, :point, :notification_number, :language])
-    # |> validate_required([:name])
+
   end
 end

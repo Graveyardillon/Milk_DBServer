@@ -56,10 +56,16 @@ defmodule MilkWeb.UserControllerTest do
     end
 
     test "renders errors when email has already been taken", %{conn: conn} do
-      {:ok, user} = Accounts.create_user(%{"name" => "name", "email" => "e@mail.com", "password" => "password123"})
+      {:ok, user} = Accounts.create_user(%{"name" => "name", "email" => "e@mail.com", "password" => "Password123"})
       attrs = %{@create_attrs | "email" => user.auth.email}
       conn = post(conn, Routes.user_path(conn, :create), user: attrs)
       assert json_response(conn, 200)["error_code"] == 101
+    end
+
+    test "renders errors when password is too short", %{conn: conn} do
+      attrs = %{@create_attrs | "password" => "Ab123"}
+      conn = post(conn, Routes.user_path(conn, :create), user: attrs)
+      assert json_response(conn, 200)["error_code"] == 102
     end
 
     test "renders errors when data is invalid", %{conn: conn} do

@@ -11,9 +11,11 @@ defmodule Milk.NotifTest do
     @invalid_attrs %{content: nil}
 
     def notification_fixture(attrs \\ %{}) do
+      {:ok, user} = Accounts.create_user(%{"name" => "name", "email" => "e@mail.com", "password" => "Password123"})
       {:ok, notification} =
         attrs
         |> Enum.into(@valid_attrs)
+        |> Map.put("user_id", user.id)
         |> Notif.create_notification()
 
       notification

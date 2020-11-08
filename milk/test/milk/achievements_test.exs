@@ -13,7 +13,7 @@ defmodule Milk.AchievementsTest do
     @invalid_attrs %{icon_path: nil, title: nil, user_id: nil}
 
     def achievement_fixture(attrs \\ %{}) do
-      {:ok, user} = Accounts.create_user(%{"name" => "name", "email" => "e@mail.com", "password" => "password123"})
+      {:ok, user} = Accounts.create_user(%{"name" => "name", "email" => "e@mail.com", "password" => "Password123"})
       {:ok, achievement} =
         attrs
         |> Enum.into(@valid_attrs|>Map.put(:user_id, user.id))

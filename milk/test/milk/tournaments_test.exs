@@ -37,7 +37,7 @@ defmodule Milk.TournamentsTest do
     }
 
     def tournament_fixture(attrs \\ %{}) do
-      {:ok, user} = Accounts.create_user(%{"name" => "name", "email" => "e@mail.com", "password" => "password123"})
+      {:ok, user} = Accounts.create_user(%{"name" => "name", "email" => "e@mail.com", "password" => "Password123"})
       tournament =
         attrs
         |> Enum.into(@valid_attrs)

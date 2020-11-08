@@ -18,6 +18,8 @@ defmodule Milk.Accounts.Auth do
     auth
     |> cast(attrs, [:name, :email, :password])
     |> validate_required([:name, :email, :password])
+    |> validate_length(:password, min: 8) #パスワードは８桁以上
+    |> validate_format(:password, ~r/\A(?=.*?[a-z])(?=.*?[A-Z])(?=.*?\d)[a-zA-Z\d]/) #パスワードは半角英数大文字小文字をそれぞれ一文字以上含む
     |> unique_constraint(:email)
     |> put_password_hash()
   end
@@ -27,6 +29,8 @@ defmodule Milk.Accounts.Auth do
     |> cast(attrs, [:name, :email, :password])
     # |> validate_required([:name, :email, :password])
     |> unique_constraint(:email)
+    |> validate_length(:password, min: 8) #パスワードは８桁以上
+    |> validate_format(:password, ~r/\A(?=.*?[a-z])(?=.*?[A-Z])(?=.*?\d)[a-zA-Z\d]/) #パスワードは半角英数大文字小文字をそれぞれ一文字以上含む
     |> put_password_hash()
   end
 
