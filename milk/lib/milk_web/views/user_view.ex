@@ -53,6 +53,9 @@ defmodule MilkWeb.UserView do
     %{result: false, error: create_message(error), data: nil}
   end
 
+  def render("error.json", %{error_code: num}) do
+    %{result: false, error_code: num, data: nil}
+  end
   def create_message(error) do
     Enum.reduce(error, "",fn {key, value}, acc -> to_string(key) <> " "<> elem(value,0) <> ", "<> acc end)
   end
