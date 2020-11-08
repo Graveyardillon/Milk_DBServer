@@ -31,11 +31,13 @@ defmodule MilkWeb.UserController do
       # |> put_status(:created)
       # |> put_resp_header("location", Routes.user_path(conn, :show, user))
       |> render("login.json",
-      %{user: Map.put(user, :auth, %Auth{email: user_params["email"]})})
+      %{user: user})
 
       {:error, error} ->
-        render(conn, "error.json", error: error)
-
+        case error|>IO.inspect(label: :hmm) do
+        [email: {"has already been taken", _ }] -> render(conn, "error.json", error_code: 101)
+        _ -> render(conn, "error.json", error: error)
+      end
       _ ->
         render(conn, "show.json",user: nil)
     end
