@@ -118,9 +118,4 @@ defmodule MilkWeb.Router do
     post "notif/create", NotifController, :create
     delete "notif/:id", NotifController, :delete
   end
-
-  # Other scopes may use custom stacks.
-  # scope "/api", MilkWeb do
-  #   pipe_through :api
-  # end
 end

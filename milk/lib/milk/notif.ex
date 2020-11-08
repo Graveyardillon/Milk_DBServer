@@ -20,7 +20,12 @@ defmodule Milk.Notif do
 
   """
   def list_notification(user_id) do
-    Repo.all(from n in Notification, join: u in assoc(n, :user), where: u.id == ^user_id)
+    Repo.all(
+      from n in Notification, 
+      join: u in assoc(n, :user), 
+      where: u.id == ^user_id, 
+      preload: [user: u]
+    )
   end
 
   @doc """
