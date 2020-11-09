@@ -33,7 +33,7 @@ defmodule MilkWeb.TournamentView do
       url: tournament.url,
       create_time: tournament.create_time,
       update_time: tournament.update_time,
-      master_data: render_one(Accounts.get_user(tournament.master_id), UserView, "show.json")
+      is_started: tournament.is_started
     }
   end
 
@@ -58,6 +58,7 @@ defmodule MilkWeb.TournamentView do
         url: tournament.url,
         create_time: tournament.create_time,
         update_time: tournament.update_time,
+        is_started: tournament.is_started,
         entrants: Enum.map(entrants, fn user -> 
           %{
             id: user.id,
@@ -96,6 +97,7 @@ defmodule MilkWeb.TournamentView do
           url: info.tournament.url,
           create_time: info.tournament.create_time,
           update_time: info.tournament.update_time,
+          is_started: info.tournament.is_started,
           entrants: Enum.map(info.entrants, fn user -> 
             %{
               id: user.id,
@@ -135,7 +137,6 @@ defmodule MilkWeb.TournamentView do
         url: tournament.url,
         create_time: tournament.create_time,
         update_time: tournament.update_time,
-        master_data: render_one(Accounts.get_user(tournament.master_id), UserView, "show.json"),
         followers: Enum.map(tournament.followers, fn follower -> 
           %{
             id: follower.id,
