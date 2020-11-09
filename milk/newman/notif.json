@@ -1,0 +1,93 @@
+{
+  "info":
+  {
+    "name": "Notification Collection for Milk DBServer"
+  },
+  "item": [
+    {
+      "name": "Notification post request",
+      "request": {
+        "url": "http://localhost:4000/api/notif/create",
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"notif\":{\"user_id\":1, \"content\":\"Papillon1\",\"process_code\":1,\"data\":\"something\"}}"
+        }
+      }
+    },
+    {
+      "name": "Notification post request",
+      "request": {
+        "url": "http://localhost:4000/api/notif/create",
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"notif\":{\"user_id\":1, \"content\":\"Papillon1\",\"process_code\":2,\"data\":\"something\"}}"
+        }
+      }
+    },
+    {
+      "name": "Notification post request",
+      "request": {
+        "url": "http://localhost:4000/api/notif/create",
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"notif\":{\"user_id\":1, \"content\":\"Papillon1\",\"process_code\":3,\"data\":\"something\"}}"
+        }
+      }
+    },
+    {
+      "name": "Notification post request",
+      "request": {
+        "url": "http://localhost:4000/api/notif/create",
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"notif\":{\"user_id\":1, \"content\":\"Papillon1\",\"process_code\":4,\"data\":\"something\"}}"
+        }
+      }
+    },
+    {
+      "name": "Notification post request",
+      "request": {
+        "url": "http://localhost:4000/api/notif/create",
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"notif\":{\"user_id\":1, \"content\":\"Papillon1\",\"process_code\":5,\"data\":\"something\"}}"
+        }
+      }
+    }
+  ]
+}

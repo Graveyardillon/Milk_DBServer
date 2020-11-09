@@ -61,6 +61,10 @@ defmodule Milk.Notif do
     |> Ecto.build_assoc(:notif)
     |> Notification.changeset(attrs)
     |> Repo.insert()
+    |> (case do
+      {:ok, notif} -> {:ok, Map.put(notif, :user, Accounts.get_user(attrs["user_id"]))}
+      {:error, error} -> {:error, error}
+    end)
   end
 
   @doc """
