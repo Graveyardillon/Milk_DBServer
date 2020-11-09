@@ -197,7 +197,6 @@ defmodule Milk.Chat do
     |> Enum.filter(fn room -> 
       room.is_private
     end)
-    |> IO.inspect()
     |> Enum.map(fn room -> 
       room.id
       |> get_chat_members_of_room()
@@ -209,9 +208,13 @@ defmodule Milk.Chat do
       list != []
     end)
     |> Enum.map(fn member ->
-      get_chat_room_by_chat_member_id(hd(member).id)
+      m = hd(member)
+      ChatRoom
+      |> where([cr], cr.id == ^m.chat_room_id)
+      |> Repo.one()
     end)
     |> hd()
+    |> IO.inspect
   end
 
   def get_private_chat_rooms(user_id) do

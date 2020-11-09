@@ -89,7 +89,8 @@ defmodule MilkWeb.ChatRoomController do
           email: user.auth.email,
           last_chat: room.last_chat,
           count: room.count,
-          is_private: room.is_private
+          is_private: room.is_private,
+          icon_path: user.icon_path
         }
       end)
 
@@ -125,7 +126,8 @@ defmodule MilkWeb.ChatRoomController do
       email: user.auth.email,
       last_chat: room.last_chat,
       count: room.count,
-      is_private: room.is_private
+      is_private: room.is_private,
+      icon_path: user.icon_path
     }
 
     render(conn, "chat_room_with_user.json", %{info: info})
