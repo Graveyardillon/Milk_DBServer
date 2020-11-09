@@ -34,7 +34,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\"notif\":{\"user_id\":1, \"content\":\"Papillon1\",\"process_code\":2,\"data\":\"something\"}}"
+          "raw": "{\"notif\":{\"user_id\":1, \"content\":\"Papillon1\",\"process_code\":3,\"data\":\"something\"}}"
         }
       }
     },
@@ -68,7 +68,24 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\"notif\":{\"user_id\":1, \"content\":\"Papillon1\",\"process_code\":4,\"data\":\"something\"}}"
+          "raw": "{\"notif\":{\"user_id\":1, \"content\":\"Papillon1\",\"process_code\":4,\"data\":\"2\"}}"
+        }
+      }
+    },
+    {
+      "name": "Notification post request",
+      "request": {
+        "url": "http://localhost:4000/api/notif/create",
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"notif\":{\"user_id\":1, \"content\":\"Papillon1\",\"process_code\":4,\"data\":\"2\"}}"
         }
       }
     },
