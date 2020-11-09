@@ -227,4 +227,24 @@ defmodule MilkWeb.TournamentController do
 
     json(conn, %{url: "http://localhost:4000/tournament/"<>url})
   end
+
+  def get_match_members(conn, %{"tournament_id" => tournament_id}) do
+    tournament = Tournaments.get_tournament(tournament_id)
+  
+    if(tournament) do
+      master = Accounts.get_user(tournament.id)
+      assistants = Tournaments.get_assistants(tournament.id)
+      |> Enum.map(fn assistant ->
+        Accounts.get_user(assistant.user_id)
+      end)
+      entrants = Tournaments.get_entrants(tournament.id)
+      |> Enum.map(fn entrant -> 
+        Accounts.get_user(entrant.user_id)
+      end)
+
+      render(conn, "tournament_members.json", master: master, assistants: assistants, entrants: entrants)
+    else
+      render(conn, "error.json", error: nil)
+    end
+  end
 end

@@ -75,6 +75,16 @@ defmodule MilkWeb.TournamentView do
     }
   end
 
+  def render("tournament_members.json", %{master: master, assistants: assistants, entrants: entrants}) do
+    %{
+      data: %{
+        master: render_one(master, UserView, "show.json"),
+        assistants: render_many(assistants, UserView, "user.json"),
+        entrants: render_many(entrants, UserView, "user.json"),
+      }
+    }
+  end
+
   def render("home.json", %{tournaments_info: tournaments_info}) do
     %{
       data: Enum.map(tournaments_info, fn info -> 
