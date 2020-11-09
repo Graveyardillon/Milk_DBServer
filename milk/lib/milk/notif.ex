@@ -115,4 +115,13 @@ defmodule Milk.Notif do
   def change_notification(%Notification{} = notification, attrs \\ %{}) do
     Notification.changeset(notification, attrs)
   end
+
+   @doc """
+  Creates a notification log.
+  """
+  def create_notification_log(attrs \\ %{}) do
+    %NotificationLog{}
+    |> NotificationLog.changeset(attrs)
+    |> Repo.insert()
+  end
 end
