@@ -34,7 +34,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\"notif\":{\"user_id\":1, \"content\":\"Papillon1\",\"process_code\":3,\"data\":\"something\"}}"
+          "raw": "{\"notif\":{\"user_id\":1, \"content\":\"Papillon1\",\"process_code\":1,\"data\":\"something\"}}"
         }
       }
     },
@@ -51,7 +51,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\"notif\":{\"user_id\":1, \"content\":\"Papillon1\",\"process_code\":3,\"data\":\"something\"}}"
+          "raw": "{\"notif\":{\"user_id\":1, \"content\":\"Papillon1\",\"process_code\":1,\"data\":\"something\"}}"
         }
       }
     },

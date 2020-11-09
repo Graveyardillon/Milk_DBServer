@@ -4,6 +4,7 @@ defmodule MilkWeb.UserController do
   alias Milk.Accounts
   alias Milk.Accounts.Auth
   alias Milk.Accounts.User
+  alias Milk.Chat
   alias Milk.UserManager.Guardian
 
   # action_fallback MilkWeb.FallbackController
@@ -27,11 +28,7 @@ defmodule MilkWeb.UserController do
   def create(conn, %{"user" => user_params}) do
     case Accounts.create_user(user_params) do
       {:ok, %User{} = user} ->
-      conn
-      # |> put_status(:created)
-      # |> put_resp_header("location", Routes.user_path(conn, :show, user))
-      |> render("login.json",
-      %{user: user})
+        render(conn, "login.json", %{user: user})
 
       {:error, error} ->
         case error do
@@ -40,6 +37,7 @@ defmodule MilkWeb.UserController do
           [password: {"has invalid format", _ }] -> render(conn, "error.json", error_code: 103)
           _ -> render(conn, "error.json", error: error)
         end
+
       _ ->
         render(conn, "show.json",user: nil)
     end
