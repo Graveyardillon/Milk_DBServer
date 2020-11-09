@@ -89,8 +89,8 @@ defmodule Milk.Relations do
   # TODO: エラーハンドリング
   # TODO: Multiを使ったほうがいいかもしれない
   def create_relation(attrs \\ %{}) do
-    if get_relation_by_ids(attrs.follower_id, attrs.followee_id)|>is_nil() do
-      %Relation{follower_id: attrs.follower_id, followee_id: attrs.followee_id}
+    if get_relation_by_ids(attrs["follower_id"], attrs["followee_id"]) |> is_nil() do
+      %Relation{follower_id: attrs["follower_id"], followee_id: attrs["followee_id"]}
       |> Relation.changeset(attrs)
       |> Repo.insert()
     else

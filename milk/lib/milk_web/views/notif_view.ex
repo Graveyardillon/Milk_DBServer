@@ -15,6 +15,8 @@ defmodule MilkWeb.NotifView do
       id: notif.id,
       content: notif.content,
       user_id: notif.user_id,
+      data: notif.data,
+      process_code: notif.process_code,
       datetime: notif.update_time,
       username: notif.user.name,
       icon_path: notif.user.icon_path

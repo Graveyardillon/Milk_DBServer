@@ -15,6 +15,7 @@ defmodule MilkWeb.NotifLogView do
       id: notif.id,
       content: notif.content,
       user_id: notif.user_id,
+      process_code: notif.process_code,
       datetime: notif.update_time
     }
   end
