@@ -232,7 +232,7 @@ defmodule MilkWeb.TournamentController do
     tournament = Tournaments.get_tournament(tournament_id)
   
     if(tournament) do
-      master = Accounts.get_user(tournament.id)
+      master = Accounts.get_user(tournament.master_id)
       assistants = Tournaments.get_assistants(tournament.id)
       |> Enum.map(fn assistant ->
         Accounts.get_user(assistant.user_id)
