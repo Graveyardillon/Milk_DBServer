@@ -41,7 +41,7 @@ defmodule Milk.Accounts.Auth do
   defp put_password_hash(changeset), do: changeset
 
   def create_pass(password) do
-    # Argon2.hash_pwd_salt(password)
-    password
+    Argon2.hash_pwd_salt(password)
+    #password
   end
 end

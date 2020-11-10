@@ -275,18 +275,45 @@ defmodule Milk.Accounts do
   end
 
   # logout_flのないバージョン
+  # FIXME: 可読性の向上
   def login(user) do
-    password = Auth.create_pass(user["password"])
-    #usernameかemailか
+    password = user["password"]
+    |> IO.inspect()
+    Argon2.verify_pass("ss", "$argon2id$v=19$m=131072,t=8,p=4$ofzhop1UTx/tq1ltnGustA$x+LXkY48n+NMO8aP2D4N5d1DjZ84yCwHb7fqJ/5YoEg")
+    |> IO.inspect()
+    
+    # usernameかemailか
     if String.match?(user["email_or_username"], ~r/^[[:word:]\-._]+@[[:word:]\-_.]+\.[[:alpha:]]+$/) do
-      case Repo.one(from u in User, join: a in assoc(u, :auth), where: a.email == ^user["email_or_username"] and a.password == ^password, preload: [auth: a]) do
-        nil -> Repo.one(from u in User, join: a in assoc(u, :auth), where: a.name == ^user["email_or_username"] and a.password == ^password, preload: [auth: a])
-        %User{} = userinfo -> userinfo
+      case Repo.one(from u in User, join: a in assoc(u, :auth), where: a.email == ^user["email_or_username"], preload: [auth: a]) do
+        %User{} = userinfo -> 
+          if Argon2.verify_pass(password, userinfo.auth.password) do
+            userinfo
+          else
+            nil
+          end
+        nil -> 
+          case Repo.one(from u in User, join: a in assoc(u, :auth), where: a.name == ^user["email_or_username"], preload: [auth: a]) do
+            %User{} = userinfo -> 
+              if Argon2.verify_pass(password, userinfo.auth.password) do
+                userinfo
+              else
+                nil
+              end
+            nil -> nil
+          end
       end
     else
-      Repo.one(from u in User, join: a in assoc(u, :auth), where: a.name == ^user["email_or_username"] and a.password == ^password and u.logout_fl, preload: [auth: a])
+      case Repo.one(from u in User, join: a in assoc(u, :auth), where: a.name == ^user["email_or_username"], preload: [auth: a]) do
+        %User{} = userinfo -> 
+          if Argon2.verify_pass(password, userinfo.auth.password) do
+            userinfo
+          else
+            nil
+          end
+        nil -> nil
+      end
     end
-    |>case do
+    |> case do
       %User{} = user ->
         user
         |> User.changeset(%{logout_fl: false})
