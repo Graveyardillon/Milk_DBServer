@@ -73,14 +73,14 @@ defmodule Milk.Chat do
   """
   def create_chat_room(attrs \\ %{}) do
     case %ChatRoom{}
-    |> ChatRoom.changeset(attrs)
-    |> Repo.insert() do
-    {:ok, chat} ->
-      {:ok, chat}
-    {:error, error} ->
-      {:error, error.errors}
-    _ ->
-      {:error, nil}
+      |> ChatRoom.changeset(attrs)
+      |> Repo.insert() do
+        {:ok, chat} ->
+          {:ok, chat}
+        {:error, error} ->
+          {:error, error.errors}
+        _ ->
+          {:error, nil}
     end
   end
 

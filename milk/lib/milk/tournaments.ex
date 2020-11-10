@@ -213,9 +213,12 @@ defmodule Milk.Tournaments do
         |> TournamentChatTopic.changeset(topic)
       end)
       |> Repo.transaction()
+      |> IO.inspect(label: :transaction)
 
     case tournament do
       {:ok, tournament} ->
+        IO.inspect(tournament, label: :macro)
+        IO.inspect(tournament.tournament, label: :micro)
         {:ok, tournament.tournament}
       {:error, error} ->
         {:error, error.errors}

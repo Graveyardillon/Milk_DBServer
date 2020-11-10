@@ -44,6 +44,8 @@ defmodule MilkWeb.TournamentController do
       nil
     end
 
+    IO.inspect(tournament_params)
+
     case Tournaments.create_tournament(tournament_params, thumbnail_path) do
       {:ok, %Tournament{} = tournament} ->
         t =
