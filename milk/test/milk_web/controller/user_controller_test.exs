@@ -73,7 +73,11 @@ defmodule MilkWeb.UserControllerTest do
       conn = post(conn, Routes.user_path(conn, :create), user: attrs)
       assert json_response(conn, 200)["error_code"] == 103
     end
-
+    test "renders errors when password includes space", %{conn: conn} do
+      attrs = %{@create_attrs | "password" => "Password 123"}
+      conn = post(conn, Routes.user_path(conn, :create), user: attrs)
+      assert json_response(conn, 200) == 103
+    end
     test "renders errors when data is invalid", %{conn: conn} do
       conn = post(conn, Routes.user_path(conn, :create), user: @invalid_attrs)
       assert json_response(conn, 200)["errors"] != %{}
