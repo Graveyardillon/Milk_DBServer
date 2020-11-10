@@ -127,14 +127,16 @@ defmodule Milk.Tournaments do
 
   """
   def create_tournament(params, thumbnail_path \\ "") do
+    #IO.inspect(params)
     attrs = if is_binary(params) do
       Poison.decode!(params)
+      |> IO.inspect
     else
       params
     end
     # attrs = params
-    unless attrs[:master_id]|>is_nil() do
-      if Repo.exists?(from u in User, where: u.id == ^attrs[:master_id]) do
+    unless attrs["master_id"] |> is_nil() do
+      if Repo.exists?(from u in User, where: u.id == ^attrs["master_id"]) do
         create_tournament(:notnil, attrs, thumbnail_path)
       else
         create_tournament(:nil, attrs, thumbnail_path)

@@ -59,6 +59,7 @@ defmodule MilkWeb.Router do
     post "/chat_room/get", ChatRoomController, :show
     post "/chat_room/get_mine", ChatRoomController, :my_rooms
     post "/chat_room/private_rooms", ChatRoomController, :private_rooms
+    post "/chat_room/private_room", ChatRoomController, :private_room
 
     resources "/chat_room_log", ChatRoomLogController, except: [:new, :edit, :index, :show]
     resources "/chat_log", ChatsLogController, except: [:new, :edit, :index, :show]
@@ -93,6 +94,7 @@ defmodule MilkWeb.Router do
     post "/tournament/home", TournamentController, :home
     post "/tournament/image", TournamentController, :image
     post "/tournament/publish_url", TournamentController, :publish_url
+    post "/tournament/members", TournamentController, :get_match_members
     post "/tournament_log/add", TournamentLogController, :create
 
     resources "/entrant", EntrantController, except: [:new, :edit, :index, :show, :delete]
@@ -112,15 +114,11 @@ defmodule MilkWeb.Router do
     post "/sync", SyncController, :sync
 
     post "/send_email", ConfNumController, :send_email
-    post "conf_email", ConfNumController, :conf_email
+    post "/conf_email", ConfNumController, :conf_email
 
-    post "notif/get_list", NotifController, :get_list
-    post "notif/create", NotifController, :create
-    delete "notif/:id", NotifController, :delete
+    post "/notif/get_list", NotifController, :get_list
+    post "/notif/create", NotifController, :create
+    post "/notif_log/create", NotifLogController, :create
+    delete "/notif/:id", NotifController, :delete
   end
-
-  # Other scopes may use custom stacks.
-  # scope "/api", MilkWeb do
-  #   pipe_through :api
-  # end
 end

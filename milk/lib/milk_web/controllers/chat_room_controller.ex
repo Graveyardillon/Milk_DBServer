@@ -3,6 +3,7 @@ defmodule MilkWeb.ChatRoomController do
 
   alias Milk.Chat
   alias Milk.Chat.ChatRoom
+  alias Milk.Accounts
 
   # action_fallback MilkWeb.FallbackController
 
@@ -71,29 +72,64 @@ defmodule MilkWeb.ChatRoomController do
 
   def private_rooms(conn, %{"user_id" => id}) do
     user_id =
-    if is_binary(id) do
-      String.to_integer(id)
-    else
-      id
-    end
+      if is_binary(id) do
+        String.to_integer(id)
+      else
+        id
+      end
 
-    chat_with_user = Chat.get_private_chat_rooms(user_id)
-          |> Enum.map(fn room ->
-            user = Chat.get_user_in_private_room(room.id, user_id)
-            %{
-              id: user.id,
-              room_id: room.id,
-              name: user.name,
-              email: user.auth.email,
-              last_chat: room.last_chat,
-              count: room.count,
-              is_private: room.is_private
-            }
-          end)
+    chat_with_user = 
+      Chat.get_private_chat_rooms(user_id)
+      |> Enum.map(fn room ->
+        user = Chat.get_user_in_private_room(room.id, user_id)
+        %{
+          id: user.id,
+          room_id: room.id,
+          name: user.name,
+          email: user.auth.email,
+          last_chat: room.last_chat,
+          count: room.count,
+          is_private: room.is_private,
+          icon_path: user.icon_path
+        }
+      end)
+
     if chat_with_user do
-      render(conn, "chat_room_with_user.json", info: chat_with_user)
+      render(conn, "chat_rooms_with_user.json", info: chat_with_user)
     else
       render(conn, "error.json", error: nil)
     end
+  end
+
+  def private_room(conn, %{"my_id" => my_id, "partner_id" => partner_id}) do
+    my_id =
+      if is_binary(my_id) do
+        String.to_integer(my_id)
+      else
+        my_id
+      end
+
+    partner_id =
+      if is_binary(partner_id) do
+        String.to_integer(partner_id)
+      else
+        partner_id
+      end
+
+    room = Chat.get_private_chat_room(my_id, partner_id)
+    user = Accounts.get_user(partner_id)
+
+    info = %{
+      id: user.id,
+      room_id: room.id,
+      name: user.name,
+      email: user.auth.email,
+      last_chat: room.last_chat,
+      count: room.count,
+      is_private: room.is_private,
+      icon_path: user.icon_path
+    }
+
+    render(conn, "chat_room_with_user.json", %{info: info})
   end
 end

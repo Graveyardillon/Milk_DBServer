@@ -191,6 +191,32 @@ defmodule Milk.Chat do
     end)
   end
 
+  def get_private_chat_room(my_id, partner_id) do
+    my_id
+    |> get_chat_rooms_by_user_id()
+    |> Enum.filter(fn room -> 
+      room.is_private
+    end)
+    |> Enum.map(fn room -> 
+      room.id
+      |> get_chat_members_of_room()
+      |> Enum.filter(fn member -> 
+        member.user_id == partner_id
+      end)
+    end)
+    |> Enum.filter(fn list -> 
+      list != []
+    end)
+    |> Enum.map(fn member ->
+      m = hd(member)
+      ChatRoom
+      |> where([cr], cr.id == ^m.chat_room_id)
+      |> Repo.one()
+    end)
+    |> hd()
+    |> IO.inspect
+  end
+
   def get_private_chat_rooms(user_id) do
     user_id
     |> get_chat_rooms_by_user_id()
