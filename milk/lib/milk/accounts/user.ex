@@ -11,7 +11,7 @@ defmodule Milk.Accounts.User do
   alias Milk.Notif.Notification
 
   schema "users" do
-    field :icon_path, :string, default: "null"
+    field :icon_path, :string, default: "./static/image/default/default_icon.png"
     field :logout_fl, :boolean, default: false
     field :id_for_show, :integer
     field :language, :string, default: "japan"

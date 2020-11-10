@@ -215,11 +215,11 @@ defmodule MilkWeb.TournamentController do
   end
 
   def get_match_list(conn, %{"tournament_id" => tournament_id}) do
-    {_, match_list} = 
       Ets.get_match_list(tournament_id) 
-      |> hd()
-
-    json(conn, %{match_list: match_list})
+      |> case do
+        {_, match_list} -> json(conn, %{match_list: match_list, result: true})
+        _ -> json(conn, %{match_list: nil, result: false})
+      end
   end
 
   def publish_url(conn, _params) do
