@@ -214,7 +214,6 @@ defmodule Milk.Tournaments do
       end)
       |> Repo.transaction()
 
-
     case tournament do
       {:ok, tournament} ->
         {:ok, tournament.tournament}
