@@ -171,9 +171,9 @@ defmodule Milk.Chat do
   @doc """
   Get a ChatRoom by chat member id
   """
-  def get_chat_room_by_chat_member_id(chat_member_id) do
+  def get_chat_room_by_chat_member_id(chat_member) do
     ChatRoom
-    |> where([cr], cr.id == ^chat_member_id)
+    |> where([cr], cr.id == ^chat_member.chat_room_id)
     |> Repo.one()
   end
 
@@ -593,7 +593,7 @@ defmodule Milk.Chat do
     user_id
     |> get_chat_member_by_user_id()
     |> Enum.map(fn member ->
-      get_chat_room_by_chat_member_id(member.id)
+      get_chat_room_by_chat_member_id(member)
     end)
     |> Enum.filter(fn room ->
       room != nil
