@@ -249,4 +249,9 @@ defmodule MilkWeb.TournamentController do
       render(conn, "error.json", error: nil)
     end
   end
+
+  # DEBUG
+  def debug_match_list(conn, %{"tournament_id" => tournament_id}) do
+    json(conn, %{match_list: [[1, 2], [[3, 4], [5, 6]]]})
+  end
 end

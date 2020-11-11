@@ -97,6 +97,9 @@ defmodule MilkWeb.Router do
     post "/tournament/members", TournamentController, :get_match_members
     post "/tournament_log/add", TournamentLogController, :create
 
+    # DEBUG
+    post "/tournament/debug_match_list", TournamentController, :debug_match_list
+
     resources "/entrant", EntrantController, except: [:new, :edit, :index, :show, :delete]
     post "/entrant/get", EntrantController, :show
     post "/entrant/get_all", EntrantController, :index
