@@ -189,7 +189,7 @@ defmodule MilkWeb.TournamentController do
       # マッチングリストを生成
       match_list =
         Tournaments.get_entrants(tournament_id)
-        |> Enum.map(fn x -> x.id end)
+        |> Enum.map(fn x -> x.user_id end)
         |> Tournaments.generate_matchlist()
 
       Ets.insert_match_list(tournament_id, match_list)
