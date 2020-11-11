@@ -90,6 +90,23 @@
       }
     },
     {
+      "name": "Signup post request",
+      "request": {
+        "url": "http://localhost:4000/api/user/signup",
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"user\":{\"email\":\"pap6@gmail.com\",\"password\":\"Password123\",\"name\":\"Papillon6\"}}"
+        }
+      }
+    },
+    {
       "name": "Tournament create request",
       "request": {
         "url": "http://localhost:4000/api/tournament",

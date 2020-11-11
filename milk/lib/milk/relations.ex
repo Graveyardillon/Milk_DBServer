@@ -68,7 +68,7 @@ defmodule Milk.Relations do
       Repo.one(
         from u in User,
         join: a in assoc(u, :auth),
-        where: u.id == ^relation.follower_id,
+        where: u.id == ^relation.followee_id,
         preload: [auth: a]
       )
     end)
