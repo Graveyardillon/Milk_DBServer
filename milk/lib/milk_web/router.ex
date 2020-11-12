@@ -85,6 +85,7 @@ defmodule MilkWeb.Router do
     post "/tournament/get", TournamentController, :show
     post "/tournament/get_all", TournamentController, :index
     post "/tournament/get_by_master_id", TournamentController, :get_tournaments_by_master_id
+    post "/tournament/get_planned", TournamentController, :get_going_tournaments_by_master_id
     post "/tournament/get_game", TournamentController, :get_game
     post "/tournament/delete", TournamentController, :delete
     post "/tournament/get_participating_tournaments", TournamentController, :participating_tournaments

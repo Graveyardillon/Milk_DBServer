@@ -72,8 +72,28 @@ defmodule Milk.Tournaments do
     Repo.all(from t in Tournament, where: t.game_id == ^attrs["game_id"])
   end
 
-  def get_tournament_by_master_id(user_id) do
+  def get_tournaments_by_master_id(user_id) do
     Repo.all(from t in Tournament, where: t.master_id == ^user_id)
+  end
+
+  def get_going_tournaments_by_master_id(user_id) do
+    now = 
+      DateTime.utc_now()
+      |> DateTime.to_unix()
+
+    Repo.all(from t in Tournament, where: t.master_id == ^user_id)
+    |> Enum.filter(fn tournament -> 
+      date = 
+        tournament.event_date
+        |> IO.inspect
+        |> DateTime.to_unix()
+
+      now = 
+        DateTime.utc_now()
+        |> DateTime.to_unix()
+
+      now < date
+    end)
   end
 
   @doc """

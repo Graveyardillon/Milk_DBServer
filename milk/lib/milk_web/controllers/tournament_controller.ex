@@ -19,7 +19,12 @@ defmodule MilkWeb.TournamentController do
   end
 
   def get_tournaments_by_master_id(conn, %{"user_id" => user_id}) do
-    tournaments = Tournaments.get_tournament_by_master_id(user_id)
+    tournaments = Tournaments.get_tournaments_by_master_id(user_id)
+    render(conn, "index.json", tournament: tournaments)
+  end
+
+  def get_going_tournaments_by_master_id(conn, %{"user_id" => user_id}) do
+    tournaments = Tournaments.get_going_tournaments_by_master_id(user_id)
     render(conn, "index.json", tournament: tournaments)
   end
 
@@ -43,8 +48,6 @@ defmodule MilkWeb.TournamentController do
     else
       nil
     end
-
-    IO.inspect(tournament_params)
 
     case Tournaments.create_tournament(tournament_params, thumbnail_path) do
       {:ok, %Tournament{} = tournament} ->

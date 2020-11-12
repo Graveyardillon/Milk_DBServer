@@ -20,6 +20,7 @@ defmodule Milk.Accounts.User do
     field :bio, :string, default: nil
     field :notification_number, :integer, default: 0
     field :point, :integer, default: 0
+    field :win_count, :integer, default: 0
 
     has_one :auth, Auth
     has_many :chat, Chats
