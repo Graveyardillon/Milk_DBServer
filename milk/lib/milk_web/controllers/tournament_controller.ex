@@ -56,8 +56,6 @@ defmodule MilkWeb.TournamentController do
           |> Map.put(:followers, Relations.get_followers(tournament.master_id))
           
         conn
-        # |> put_status(:created)
-        # |> put_resp_header("location", Routes.tournament_path(conn, :show, tournament))
         |> render("create.json", tournament: t)
       {:error, error} ->
         render(conn, "error.json", error: error)
