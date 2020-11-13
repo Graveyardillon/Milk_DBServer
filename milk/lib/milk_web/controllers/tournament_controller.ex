@@ -218,13 +218,22 @@ defmodule MilkWeb.TournamentController do
   end
 
   def get_match_list(conn, %{"tournament_id" => tournament_id}) do
-      Ets.get_match_list(tournament_id) 
-      |> hd()
-      |> IO.inspect
-      |> case do
-        {_, match_list} -> json(conn, %{match_list: match_list, result: true})
-        _ -> json(conn, %{match_list: nil, result: false})
-      end
+    tournament_id = if is_binary(tournament_id) do
+      String.to_integer(tournament_id)
+    else
+      tournament_id
+    end
+    list = Ets.get_match_list(tournament_id) 
+    list = unless list == [] do
+      hd(list)
+    end        
+
+    case list do
+      {_, match_list} -> 
+        IO.inspect(match_list, label: :match_list)
+        json(conn, %{match_list: match_list, result: true})
+      _ -> json(conn, %{match_list: nil, result: false})
+    end
   end
 
   def publish_url(conn, _params) do
