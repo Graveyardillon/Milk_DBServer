@@ -236,6 +236,12 @@ defmodule MilkWeb.TournamentController do
     end
   end
 
+  def start_match(conn, %{"user_id" => user_id, "tournament_id" => tournament_id}) do
+    Ets.insert_match_pending_list_table(tournament_id, user_id)
+
+    json(conn, %{result: true})
+  end
+
   def publish_url(conn, _params) do
     url = SecureRandom.urlsafe_base64()
 

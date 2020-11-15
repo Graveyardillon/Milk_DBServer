@@ -1,5 +1,6 @@
 defmodule MilkWeb.Router do
   use MilkWeb, :router
+  # FIXME: ルーティングの整理
 
   pipeline :browser do
     plug :accepts, ["html"]
@@ -97,6 +98,7 @@ defmodule MilkWeb.Router do
     post "/tournament/publish_url", TournamentController, :publish_url
     post "/tournament/members", TournamentController, :get_match_members
     post "/tournament_log/add", TournamentLogController, :create
+    post "/tournament/start_match", TournamentController, :start_match
 
     # DEBUG
     post "/tournament/debug_match_list", TournamentController, :debug_match_list
