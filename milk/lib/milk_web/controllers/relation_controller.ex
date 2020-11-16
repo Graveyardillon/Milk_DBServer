@@ -5,21 +5,31 @@ defmodule MilkWeb.RelationController do
 
   # follow
   def create(conn, %{"relation" => params}) do
-      {:ok, relation} = Relations.create_relation(params)
-
-      render(conn, "show.json", relation: relation)
+    case Relations.create_relation(params) do
+      {:ok, _} ->
+        json(conn, %{result: true})
+      {:error, error} ->
+        json(conn, %{result: false, error: error})
+    end
   end
 
   # unfollow
   def delete(conn, %{"relation" => params}) do
-    {:ok, relation} = Relations.delete_relation_by_ids(params["follower_id"], params["followee_id"])
-
-    render(conn, "show.json", relation: relation)
+    case Relations.delete_relation_by_ids(params) do
+    {:ok, _} ->
+      json(conn, %{result: true})
+    {:error, error} -> 
+      json(conn, %{result: false, error: error})
+    end
   end
 
   def following_list(conn, %{"user_id" => user_id}) do
     users = Relations.get_following_list(user_id)
-
     render(conn, "users.json", users: users)
   end
+  def following_id_list(conn, %{"user_id" => user_id}) do
+    users = Relations.get_following_id_list(user_id)
+    render(conn, "id_list.json", list: users)
+  end
+
 end

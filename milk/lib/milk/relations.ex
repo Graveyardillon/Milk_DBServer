@@ -54,7 +54,7 @@ defmodule Milk.Relations do
   @doc """
   Get relation list of a specific user.
   """
-  def get_following_list(user_id) do
+  def get_following_list(user_id) do 
     id = if is_binary(user_id) do
       String.to_integer(user_id)
     else
@@ -74,6 +74,29 @@ defmodule Milk.Relations do
     end)
   end
 
+
+ # NOTE: ユーザーの詳細な情報は必要ないのでフォローしているIDリストを返す
+  def get_following_id_list(user_id) do 
+    id = if is_binary(user_id) do
+      String.to_integer(user_id)
+    else
+      user_id
+    end
+
+    Relation
+    |> where([r], r.follower_id == ^id)
+    |> select([r], r.followee_id)
+    |> Repo.all()
+    # |> Enum.map(fn relation -> 
+    #   Repo.one(
+    #     from u in User,
+    #     join: a in assoc(u, :auth),
+    #     where: u.id == ^relation.followee_id,
+    #     preload: [auth: a]
+    #   )
+    # end)
+  end
+
   @doc """
   Creates a relation.
 
@@ -89,8 +112,20 @@ defmodule Milk.Relations do
   # TODO: エラーハンドリング
   # TODO: Multiを使ったほうがいいかもしれない
   def create_relation(attrs \\ %{}) do
-    if get_relation_by_ids(attrs["follower_id"], attrs["followee_id"]) |> is_nil() do
-      %Relation{follower_id: attrs["follower_id"], followee_id: attrs["followee_id"]}
+    follower_id = if is_binary(attrs["follower_id"]) do
+      String.to_integer(attrs["follower_id"])
+    else
+      attrs["follower_id"]
+    end
+
+    followee_id = if is_binary(attrs["followee_id"]) do
+      String.to_integer(attrs["followee_id"])
+    else
+      attrs["followee_id"]
+    end
+
+    if get_relation_by_ids(follower_id, followee_id) |> is_nil() do
+      %Relation{follower_id: follower_id, followee_id: followee_id}
       |> Relation.changeset(attrs)
       |> Repo.insert()
     else
@@ -136,9 +171,26 @@ defmodule Milk.Relations do
   @doc """
   Deletes a relation by follower id and followee id.
   """
-  def delete_relation_by_ids(follower_id, followee_id) do
-    get_relation_by_ids(follower_id, followee_id)
-    |> delete_relation()
+  def delete_relation_by_ids(attrs) do
+    follower_id = if is_binary(attrs["follower_id"]) do
+      String.to_integer(attrs["follower_id"])
+    else
+      attrs["follower_id"]
+    end
+
+    followee_id = if is_binary(attrs["followee_id"]) do
+      String.to_integer(attrs["followee_id"])
+    else
+      attrs["followee_id"]
+    end
+
+    relation = get_relation_by_ids(follower_id, followee_id)
+    if relation != nil do
+      delete_relation(relation)
+    else
+      Logger.error("Bulk insertion error")
+      {:error, "Bulk inserion error"}
+    end
   end
 
   @doc """

@@ -18,6 +18,10 @@ defmodule MilkWeb.RelationView do
     }
   end
 
+  def render("id_list.json", %{list: list}) do
+    %{following: list, result: true}
+  end
+
   def render("users.json", %{users: users}) do
     m =
       users
