@@ -242,6 +242,14 @@ defmodule MilkWeb.TournamentController do
     json(conn, %{result: true})
   end
 
+  def claim_win(conn, %{"user_id" => user_id, "tournament_id" => tournament_id}) do
+    json(conn, %{validated: :ok})
+  end
+
+  def claim_lose(conn, %{"user_id" => user_id, "tournament_id" => tournament_id}) do
+    json(conn, %{validated: :ok})
+  end
+
   def publish_url(conn, _params) do
     url = SecureRandom.urlsafe_base64()
 
