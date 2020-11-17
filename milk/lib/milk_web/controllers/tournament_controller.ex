@@ -251,24 +251,35 @@ defmodule MilkWeb.TournamentController do
     case Ets.get_fight_result(opponent_id) do
       [] ->
         Ets.insert_fight_result_table(user_id, true)
-        json(conn, %{validated: true})
+        json(conn, %{validated: true, completed: false})
       result_list ->
-        {_, is_win} =
-          result_list
-          |> hd()
+        {_, is_win} = hd(result_list)
 
         if is_win do
           Chat.notify_game_masters(tournament_id)
-          json(conn, %{validated: false})
+          json(conn, %{validated: false, completed: false})
         else
           # マッチングが正常に終了している
-          json(conn, %{validated: true})
+          json(conn, %{validated: true, completed: true})
         end
     end
   end
 
   def claim_lose(conn, %{"opponent_id" => opponent_id, "user_id" => user_id, "tournament_id" => tournament_id}) do
-    json(conn, %{validated: :ok})
+    case Ets.get_fight_result(opponent_id) do
+      [] ->
+        Ets.insert_fight_result_table(user_id, false)
+        json(conn, %{validated: true, completed: false})
+      result_list ->
+        {_, is_win} = hd(result_list)
+
+        unless is_win do
+          Chat.notify_game_masters(tournament_id)
+          json(conn, %{validated: false, completed: false})
+        else
+          json(conn, %{validated: true, completed: true})
+        end
+    end
   end
 
   def publish_url(conn, _params) do
