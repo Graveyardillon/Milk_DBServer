@@ -101,6 +101,7 @@ defmodule MilkWeb.Router do
     post "/tournament/start_match", TournamentController, :start_match
     post "/tournament/claim_win", TournamentController, :claim_win
     post "/tournament/claim_lose", TournamentController, :claim_lose
+    post "/tournament/masters", TournamentController, :get_game_masters
 
     # DEBUG
     post "/tournament/debug_match_list", TournamentController, :debug_match_list

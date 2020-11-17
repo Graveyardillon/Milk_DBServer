@@ -3,6 +3,7 @@ defmodule MilkWeb.TournamentController do
 
   alias Milk.Ets
   alias Milk.Accounts
+  alias Milk.Chat
   alias Milk.Relations
   alias Milk.Tournaments
   alias Milk.Tournaments.Tournament
@@ -250,16 +251,18 @@ defmodule MilkWeb.TournamentController do
     case Ets.get_fight_result(opponent_id) do
       [] ->
         Ets.insert_fight_result_table(user_id, true)
-        json(conn, %{validated: :ok})
+        json(conn, %{validated: true})
       result_list ->
         {_, is_win} =
           result_list
           |> hd()
 
         if is_win do
-          json(conn, %{validated: :error})
+          Chat.notify_game_masters(tournament_id)
+          json(conn, %{validated: false})
         else
-          json(conn, %{validated: :mul})
+          # マッチングが正常に終了している
+          json(conn, %{validated: true})
         end
     end
   end
@@ -292,6 +295,23 @@ defmodule MilkWeb.TournamentController do
     else
       render(conn, "error.json", error: nil)
     end
+  end
+
+  def get_game_masters(conn, %{"tournament_id" => tournament_id}) do
+    master = 
+      Tournaments.get_masters(tournament_id)
+
+    assistants =
+      Tournaments.get_assistants(tournament_id)
+      |> Enum.map(fn assistant -> 
+        Tournaments.get_user_info_of_assistant(assistant)
+      end)
+
+    masters = master ++ assistants
+    |> IO.inspect()
+
+    #json(conn, %{msg: true})
+    render(conn, "masters.json", masters: masters)
   end
 
   # DEBUG

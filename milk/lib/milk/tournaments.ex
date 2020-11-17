@@ -134,6 +134,14 @@ defmodule Milk.Tournaments do
     end)
   end
 
+  def get_masters(tournament_id) do
+    tournament = get_tournament!(tournament_id)
+
+    User
+    |> where([u], u.id == ^tournament.master_id)
+    |> Repo.all()
+  end
+
   @doc """
   Creates a tournament.
 
@@ -627,6 +635,12 @@ defmodule Milk.Tournaments do
     Assistant
     |> where([a], a.tournament_id == ^id)
     |> Repo.all()
+  end
+
+  def get_user_info_of_assistant(%Assistant{} = assistant) do
+    User
+    |> where([u], u.id == ^assistant.user_id)
+    |> Repo.one()
   end
 
   @doc """
