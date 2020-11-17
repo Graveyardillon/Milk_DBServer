@@ -518,11 +518,37 @@ defmodule Milk.Tournaments do
       iex> delete_entrant(entrant)
       {:error, %Ecto.Changeset{}}
   """
+
+  def delete_entrant(tournament_id, user_id) do
+    tournament_id = if is_binary(tournament_id) do
+      String.to_integer(tournament_id)
+    else 
+      tournament_id
+    end
+    user_id = if is_binary(user_id) do
+      String.to_integer(user_id)
+    else 
+      user_id
+    end
+
+    unless Repo.exists?(from e in Entrant, where: e.tournament_id == ^tournament_id and e.user_id == ^user_id) do
+      {:error, "entrant not found"}
+    else
+      entrant = 
+        Entrant
+        |> where([e], e.tournament_id == ^tournament_id and e.user_id == ^user_id)
+        |> Repo.one
+        IO.inspect(entrant)
+        delete_entrant(entrant)
+      {:ok, entrant}
+    end
+  end
+
   def delete_entrant(%Entrant{} = entrant) do
     EntrantLog.changeset(%EntrantLog{}, Map.from_struct(entrant))
     |> Repo.insert()
     tournament = Repo.get(Tournament, entrant.tournament_id)
-    Tournament.changeset(tournament, %{count: tournament.count -1})
+    Tournament.changeset(tournament, %{count: tournament.count - 1})
     |> Repo.update()
     Repo.delete(entrant)
   end

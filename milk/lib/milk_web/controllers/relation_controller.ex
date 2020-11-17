@@ -6,7 +6,7 @@ defmodule MilkWeb.RelationController do
   # follow
   def create(conn, %{"relation" => params}) do
     case Relations.create_relation(params) do
-      {:ok, _} ->
+      {:ok, _relation} ->
         json(conn, %{result: true})
       {:error, error} ->
         json(conn, %{result: false, error: error})
@@ -16,7 +16,7 @@ defmodule MilkWeb.RelationController do
   # unfollow
   def delete(conn, %{"relation" => params}) do
     case Relations.delete_relation_by_ids(params) do
-    {:ok, _} ->
+    {:ok, _relation} ->
       json(conn, %{result: true})
     {:error, error} -> 
       json(conn, %{result: false, error: error})

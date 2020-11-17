@@ -56,11 +56,13 @@ defmodule MilkWeb.EntrantController do
     end
   end
 
-  def delete(conn, %{"id" => id}) do
-    entrant = Tournaments.get_entrant!(id)
-
-    with {:ok, %Entrant{}} <- Tournaments.delete_entrant(entrant) do
-      send_resp(conn, :no_content, "")
+  def delete(conn, %{"tournament_id" => tournament_id, "user_id" => user_id}) do
+    case Tournaments.delete_entrant(tournament_id, user_id) do
+      {:ok, entrant} ->
+        render(conn, "show.json", entrant: entrant)
+      {:error, error} ->
+        json(conn, %{error: error, result: false})
     end
   end
+
 end
