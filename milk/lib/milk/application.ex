@@ -23,6 +23,7 @@ defmodule Milk.Application do
     # for other strategies and supported options
     Milk.Ets.create_match_list_table()
     Milk.Ets.create_match_pending_list_table()
+    Milk.Ets.create_fight_result_table()
     opts = [strategy: :one_for_one, name: Milk.Supervisor]
     Supervisor.start_link(children, opts)
   end

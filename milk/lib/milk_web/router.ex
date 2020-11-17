@@ -99,6 +99,8 @@ defmodule MilkWeb.Router do
     post "/tournament/members", TournamentController, :get_match_members
     post "/tournament_log/add", TournamentLogController, :create
     post "/tournament/start_match", TournamentController, :start_match
+    post "/tournament/claim_win", TournamentController, :claim_win
+    post "/tournament/claim_lose", TournamentController, :claim_lose
 
     # DEBUG
     post "/tournament/debug_match_list", TournamentController, :debug_match_list

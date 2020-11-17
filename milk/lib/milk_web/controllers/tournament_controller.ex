@@ -237,16 +237,34 @@ defmodule MilkWeb.TournamentController do
   end
 
   def start_match(conn, %{"user_id" => user_id, "tournament_id" => tournament_id}) do
-    Ets.insert_match_pending_list_table(tournament_id, user_id)
-
-    json(conn, %{result: true})
+    case Ets.get_match_pending_list(user_id) do
+      [] -> 
+        Ets.insert_match_pending_list_table(tournament_id, user_id)
+        json(conn, %{result: true})
+      _ -> 
+        json(conn, %{result: false})
+    end
   end
 
-  def claim_win(conn, %{"user_id" => user_id, "tournament_id" => tournament_id}) do
-    json(conn, %{validated: :ok})
+  def claim_win(conn, %{"opponent_id" => opponent_id, "user_id" => user_id, "tournament_id" => tournament_id}) do
+    case Ets.get_fight_result(opponent_id) do
+      [] ->
+        Ets.insert_fight_result_table(user_id, true)
+        json(conn, %{validated: :ok})
+      result_list ->
+        {_, is_win} =
+          result_list
+          |> hd()
+
+        if is_win do
+          json(conn, %{validated: :error})
+        else
+          json(conn, %{validated: :mul})
+        end
+    end
   end
 
-  def claim_lose(conn, %{"user_id" => user_id, "tournament_id" => tournament_id}) do
+  def claim_lose(conn, %{"opponent_id" => opponent_id, "user_id" => user_id, "tournament_id" => tournament_id}) do
     json(conn, %{validated: :ok})
   end
 
