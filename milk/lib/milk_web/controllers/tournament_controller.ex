@@ -319,9 +319,7 @@ defmodule MilkWeb.TournamentController do
       end)
 
     masters = master ++ assistants
-    |> IO.inspect()
 
-    #json(conn, %{msg: true})
     render(conn, "masters.json", masters: masters)
   end
 

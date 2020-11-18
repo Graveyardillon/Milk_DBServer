@@ -7,6 +7,7 @@ ENV MIX_ENV=${build_env} TERM=xterm
 WORKDIR /opt/app
 RUN apk update \
   && apk --no-cache --update add nodejs nodejs-npm \
+  && apk add alpine-sdk \
   && mix local.rebar --force \
   && mix local.hex --force
 
