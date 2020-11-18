@@ -202,14 +202,12 @@ defmodule MilkWeb.TournamentController do
   end
 
   def delete_loser(conn, %{"tournament" => %{"tournament_id" => tournament_id, "loser_list" => loser_list}}) do
-      {_, match_list} = hd(Ets.get_match_list(tournament_id))
-      match_list = unless match_list == [] do
-        hd(match_list)
-      end
-
-      updated_match_list =
-        match_list
-        |> Tournaments.delete_loser(loser_list)
+    {_, match_list} = hd(Ets.get_match_list(tournament_id))
+    # FIXME: ここのエラー処理どうやってやろうかな
+    # match_list = unless match_list == [] do
+    #   hd(match_list)
+    # end
+    updated_match_list = Tournaments.delete_loser(match_list, loser_list)
       
     render(conn, "loser.json", list: updated_match_list)
   end
