@@ -1,5 +1,6 @@
 defmodule MilkWeb.TournamentView do
   use MilkWeb, :view
+  
   alias MilkWeb.TournamentView
   alias MilkWeb.UserView
   alias Milk.Accounts
@@ -175,6 +176,22 @@ defmodule MilkWeb.TournamentView do
           end)
 
     %{data: map}
+  end
+
+  # FIXME: Authは読み込んでないのでemailを返すようにしていない
+  def render("masters.json", %{masters: masters}) do
+    %{
+      data: Enum.map(masters, fn master -> 
+        %{
+          id: master.id,
+          name: master.name,
+          icon_path: master.icon_path,
+          point: master.point,
+          language: master.language,
+          bio: master.bio
+        }
+      end)
+    }
   end
 
   #def render("error.json", %{error: error, msg: "Creating tournament failed"}) do

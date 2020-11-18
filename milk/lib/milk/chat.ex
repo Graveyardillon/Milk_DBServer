@@ -588,6 +588,10 @@ defmodule Milk.Chat do
     end
   end
 
+  def notify_game_masters(tournament_id) do
+    
+  end
+
   # user_idに関連するチャットを全て取り出す
   def sync(user_id) do
     user_id

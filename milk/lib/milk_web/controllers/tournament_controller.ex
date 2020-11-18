@@ -3,6 +3,7 @@ defmodule MilkWeb.TournamentController do
 
   alias Milk.Ets
   alias Milk.Accounts
+  alias Milk.Chat
   alias Milk.Relations
   alias Milk.Tournaments
   alias Milk.Tournaments.Tournament
@@ -236,6 +237,40 @@ defmodule MilkWeb.TournamentController do
     end
   end
 
+  def start_match(conn, %{"user_id" => user_id, "tournament_id" => tournament_id}) do
+    case Ets.get_match_pending_list(user_id) do
+      [] -> 
+        Ets.insert_match_pending_list_table(tournament_id, user_id)
+        json(conn, %{result: true})
+      _ -> 
+        json(conn, %{result: false})
+    end
+  end
+
+  def claim_win(conn, %{"opponent_id" => opponent_id, "user_id" => user_id, "tournament_id" => tournament_id}) do
+    case Ets.get_fight_result(opponent_id) do
+      [] ->
+        Ets.insert_fight_result_table(user_id, true)
+        json(conn, %{validated: true})
+      result_list ->
+        {_, is_win} =
+          result_list
+          |> hd()
+
+        if is_win do
+          Chat.notify_game_masters(tournament_id)
+          json(conn, %{validated: false})
+        else
+          # マッチングが正常に終了している
+          json(conn, %{validated: true})
+        end
+    end
+  end
+
+  def claim_lose(conn, %{"opponent_id" => opponent_id, "user_id" => user_id, "tournament_id" => tournament_id}) do
+    json(conn, %{validated: :ok})
+  end
+
   def publish_url(conn, _params) do
     url = SecureRandom.urlsafe_base64()
 
@@ -260,6 +295,23 @@ defmodule MilkWeb.TournamentController do
     else
       render(conn, "error.json", error: nil)
     end
+  end
+
+  def get_game_masters(conn, %{"tournament_id" => tournament_id}) do
+    master = 
+      Tournaments.get_masters(tournament_id)
+
+    assistants =
+      Tournaments.get_assistants(tournament_id)
+      |> Enum.map(fn assistant -> 
+        Tournaments.get_user_info_of_assistant(assistant)
+      end)
+
+    masters = master ++ assistants
+    |> IO.inspect()
+
+    #json(conn, %{msg: true})
+    render(conn, "masters.json", masters: masters)
   end
 
   # DEBUG
