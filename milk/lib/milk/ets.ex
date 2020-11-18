@@ -34,4 +34,8 @@ defmodule Milk.Ets do
   def get_fight_result(user_id) do
     :ets.lookup(:fight_result, user_id)
   end
+
+  def delete_fight_result(user_id) do
+    :ets.delete(:fight_result, user_id)
+  end
 end
