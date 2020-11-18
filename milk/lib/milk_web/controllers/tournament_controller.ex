@@ -201,11 +201,17 @@ defmodule MilkWeb.TournamentController do
     end
   end
 
-  def delete_loser(conn, %{"tournament" => %{"match_list" => match_list, "loser_list" => loser_list}}) do
-    updated_match_list =
-      match_list
-      |>Tournaments.delete_loser(loser_list)
-    render(conn,"loser.json", list: updated_match_list)
+  def delete_loser(conn, %{"tournament" => %{"tournament_id" => tournament_id, "loser_list" => loser_list}}) do
+      {_, match_list} = hd(Ets.get_match_list(tournament_id))
+      match_list = unless match_list == [] do
+        hd(match_list)
+      end
+
+      updated_match_list =
+        match_list
+        |> Tournaments.delete_loser(loser_list)
+      
+    render(conn, "loser.json", list: updated_match_list)
   end
 
   def get_thumbnail_image(conn, %{"thumbnail_path" => path}) do
@@ -230,9 +236,7 @@ defmodule MilkWeb.TournamentController do
     end        
 
     case list do
-      {_, match_list} -> 
-        IO.inspect(match_list, label: :match_list)
-        json(conn, %{match_list: match_list, result: true})
+      {_, match_list} -> json(conn, %{match_list: match_list, result: true})
       _ -> json(conn, %{match_list: nil, result: false})
     end
   end

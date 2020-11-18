@@ -17,6 +17,11 @@ RUN mix release ${app_name} \
   && mv _build/${build_env}/rel/${app_name} /opt/release \
   && mv /opt/release/bin/${app_name} /opt/release/bin/start_server
 
+RUN mkdir /opt/release/static
+COPY ./static /opt/release/static
+RUN chmod 777 /opt/release/static
+RUN ls /opt/release
+
 FROM alpine:latest
 ARG project_id
 RUN apk update \
@@ -31,6 +36,8 @@ ENV PORT=8080 GCLOUD_PROJECT_ID=${project_id} REPLACE_OS_VARS=true
 EXPOSE ${PORT}
 WORKDIR /opt/app
 COPY --from=0 /opt/release .
+RUN ls -l
+RUN ls -l static
 CMD (/usr/local/bin/cloud_sql_proxy \
   -projects=${GCLOUD_PROJECT_ID} -dir=/tmp/cloudsql &); \
   exec /opt/app/bin/start_server start
