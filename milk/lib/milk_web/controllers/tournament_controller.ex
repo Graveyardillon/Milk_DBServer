@@ -218,6 +218,8 @@ defmodule MilkWeb.TournamentController do
     end)
     
     updated_match_list = Tournaments.delete_loser(match_list, loser_list)
+    Ets.delete_match_list(tournament_id)
+    Ets.insert_match_list(tournament_id, updated_match_list)
 
     render(conn, "loser.json", list: updated_match_list)
   end
