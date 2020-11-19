@@ -35,6 +35,10 @@ defmodule Milk.Ets do
     :ets.lookup(:fight_result, user_id)
   end
 
+  def delete_match_pending_list(user_id) do
+    :ets.delete(:match_pending_list, user_id)
+  end
+
   def delete_fight_result(user_id) do
     :ets.delete(:fight_result, user_id)
   end

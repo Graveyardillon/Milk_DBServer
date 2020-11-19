@@ -201,14 +201,24 @@ defmodule MilkWeb.TournamentController do
     end
   end
 
+  # FIXME: loserをリストじゃなくて整数で入力できるようにしたほうが良さそう
   def delete_loser(conn, %{"tournament" => %{"tournament_id" => tournament_id, "loser_list" => loser_list}}) do
     {_, match_list} = hd(Ets.get_match_list(tournament_id))
-    # FIXME: ここのエラー処理どうやってやろうかな
+    # FIXME: ここのリストが空だったときのエラー処理どうやってやろうかな
     # match_list = unless match_list == [] do
     #   hd(match_list)
     # end
+
+    # 不要な行を削除しておく
+    match_list
+    |> Tournaments.find_match(hd(loser_list))
+    |> Enum.each(fn user_id -> 
+      Ets.delete_match_pending_list(user_id)
+      Ets.delete_fight_result(user_id)
+    end)
+    
     updated_match_list = Tournaments.delete_loser(match_list, loser_list)
-      
+
     render(conn, "loser.json", list: updated_match_list)
   end
 
@@ -231,7 +241,7 @@ defmodule MilkWeb.TournamentController do
     list = Ets.get_match_list(tournament_id) 
     list = unless list == [] do
       hd(list)
-    end        
+    end
 
     case list do
       {_, match_list} -> json(conn, %{match_list: match_list, result: true})
@@ -254,6 +264,7 @@ defmodule MilkWeb.TournamentController do
       [] ->
         Ets.insert_fight_result_table(user_id, true)
         json(conn, %{validated: true, completed: false})
+
       result_list ->
         {_, is_win} = hd(result_list)
 
@@ -279,6 +290,8 @@ defmodule MilkWeb.TournamentController do
           Chat.notify_game_masters(tournament_id)
           json(conn, %{validated: false, completed: false})
         else
+
+          # マッチングが正常に終了している
           json(conn, %{validated: true, completed: true})
         end
     end
