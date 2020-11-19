@@ -14,13 +14,8 @@ defmodule MilkWeb.UserController do
     render(conn,"index.json", users: users)
   end
 
-  def all_username(conn, _params) do
-    names =  Accounts.list_usernames()
-    json(conn, %{names: names})
-  end
-
   def get_users_in_touch(conn, %{"user_id" => id}) do
-    users = Accounts.get_all_users_in_touch(id)
+    users = Accounts.get_users_in_touch(id)
 
     render(conn, "index.json", users: users)
   end
@@ -60,8 +55,7 @@ defmodule MilkWeb.UserController do
   end
 
   def delete(conn, %{"id" => id, "password" => password, "email" => email, "token" => _token}) do
-    user = Accounts.check_user(id, password, email)
-    with {:ok, %User{}} <- Accounts.delete_user(user) do
+    with {:ok, %User{}} <- Accounts.delete_user(id, password, email) do
       # Guardian.revoke(token)
       send_resp(conn, :no_content, "")
     end
