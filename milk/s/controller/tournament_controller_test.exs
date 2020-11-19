@@ -66,7 +66,7 @@ defmodule MilkWeb.TournamentControllerTest do
     end
 
     test "renders errors when data is invalid", %{conn: conn} do
-      conn = post(conn, Routes.tournament_path(conn, :create), tournament: @invalid_attrs)
+      conn = post(conn, Routes.tournament_path(conn, :create), tournament: @invalid_attrs, image: "")
       assert json_response(conn, 422)["errors"] != %{}
     end
   end

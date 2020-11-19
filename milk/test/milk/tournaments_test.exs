@@ -9,13 +9,13 @@ defmodule Milk.TournamentsTest do
     alias Milk.Tournaments.Tournament
     # 外部キーが二つ以上の場合は %{"capacity" => 42} のようにしなければいけない
     @valid_attrs %{
-      capacity: 42, 
-      deadline: "2010-04-17T14:00:00Z", 
-      description: "some description", 
-      event_date: "2010-04-17T14:00:00Z", 
-      name: "some name", 
-      type: 0, 
-      url: "some url"
+      "capacity" => 42, 
+      "deadline" => "2010-04-17T14:00:00Z", 
+      "description" => "some description", 
+      "event_date" => "2010-04-17T14:00:00Z", 
+      "name" => "some name", 
+      "type" => 0, 
+      "url" => "some url"
     }
     @update_attrs %{
       capacity: 43, 
@@ -41,7 +41,7 @@ defmodule Milk.TournamentsTest do
       tournament =
         attrs
         |> Enum.into(@valid_attrs)
-        |> Map.put(:master_id, user.id)
+        |> Map.put("master_id", user.id)
         |> Tournaments.create_tournament()
 
       tournament
