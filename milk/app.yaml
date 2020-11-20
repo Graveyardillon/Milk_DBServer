@@ -1,0 +1,7 @@
+env: flex
+runtime: custom
+runtime_config:
+  release_app: milk
+
+beta_settings:
+  cloud_sql_instances: e-players-293208:asia-northeast1:milkdb

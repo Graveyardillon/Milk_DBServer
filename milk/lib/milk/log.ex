@@ -531,7 +531,7 @@ defmodule Milk.Log do
   """
   def create_assistant_log(attrs \\ %{}) do
   Enum.filter(attrs,fn x ->
-    !Repo.exists?(from al in AssistantLog,where: al.tournament_id == ^x["tournament_id"] and al.user_id == ^x["user_id"])
+    !Repo.exists?(from al in AssistantLog, where: al.tournament_id == ^x.tournament_id and al.user_id == ^x.user_id)
     end)
     |>Enum.each(fn x ->
       %AssistantLog{}

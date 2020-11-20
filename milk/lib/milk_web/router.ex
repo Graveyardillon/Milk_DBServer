@@ -24,7 +24,6 @@ defmodule MilkWeb.Router do
   scope "/api", MilkWeb do
     # post "/signup", UserController, :create
     # post "/signin", UserController, :login
-    get "/user/get_all_username", UserController, :all_username
     post "/profile", ProfileController, :get_profile
     post "/profile/update", ProfileController, :update
     post "/profile/update_icon", ProfileController, :update_icon
@@ -104,6 +103,7 @@ defmodule MilkWeb.Router do
     post "/tournament/claim_win", TournamentController, :claim_win
     post "/tournament/claim_lose", TournamentController, :claim_lose
     post "/tournament/masters", TournamentController, :get_game_masters
+    post "/tournament/finish", TournamentController, :finish
 
     # DEBUG
     post "/tournament/debug_match_list", TournamentController, :debug_match_list

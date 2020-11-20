@@ -6,8 +6,7 @@ defmodule Milk.Accounts do
   import Ecto.Query, warn: false
   alias Milk.Repo
 
-  alias Milk.Accounts.User
-  alias Milk.Accounts.Auth
+  alias Milk.Accounts.{User, Auth}
   alias Milk.Log.{ChatMemberLog, AssistantLog, EntrantLog}
   alias Milk.Chat.{ChatRoom, ChatMember}
   alias Ecto.Multi
@@ -27,12 +26,6 @@ defmodule Milk.Accounts do
     Repo.all(from u in User, join: a in assoc(u, :auth), order_by: u.create_time, preload: [auth: a])
   end
 
-  def list_usernames do
-    User
-    |> select([u], u.name)
-    |> Repo.all()
-  end
-
   @doc """
   Gets a single user.
 
@@ -50,27 +43,39 @@ defmodule Milk.Accounts do
   def get_user(id), do: Repo.one(from u in User, join: a in assoc(u, :auth), where: u.id == ^id, preload: [auth: a])
 
   @doc """
-  Get all users in touch
+  Get all users in touch.
   """
-  def get_all_users_in_touch(id) do
+  def get_users_in_touch(id) do
     ChatMember
-    |> where([cm], cm.id == ^id)
+    |> where([cm], cm.user_id == ^id)
     |> Repo.all()
-    |> Enum.map(fn member ->
+    |> get_private_rooms()
+    |> get_members_in_private_rooms(id)
+    |> get_users_by_member_id()
+  end
+
+  defp get_private_rooms(members) do
+    Enum.map(members, fn member ->
       ChatRoom
       |> where([cr], cr.is_private and cr.id == ^member.chat_room_id)
       |> Repo.one()
     end)
-    |> Enum.map(fn room ->
+  end
+
+  defp get_members_in_private_rooms(rooms, my_id) do
+    Enum.map(rooms, fn room ->
       users =
         ChatMember
-        |> where([cm], cm.chat_room_id == ^room.id and cm.id != ^id)
+        |> where([cm], cm.chat_room_id == ^room.id and cm.user_id != ^my_id)
         |> Repo.all()
 
       unless length(users) == 1, do: Logger.warn("get_all_users_in_touch/1 gets too big list")
       hd(users)
     end)
-    |> Enum.map(fn member ->
+  end
+
+  defp get_users_by_member_id(members) do
+    Enum.map(members, fn member ->
       Repo.one(
         from u in User,
         join: a in assoc(u, :auth),
@@ -81,79 +86,40 @@ defmodule Milk.Accounts do
   end
 
   @doc """
-  Creates a user.
-
-  ## Examples
-
-      iex> create_user(%{field: value})
-      {:ok, %User{}}
-
-      iex> create_user(%{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
+  Gets id_for_show.
   """
-  # def create_user(attrs \\ %{}) do
-  #   {:ok, user} = %User{}
-  #                 |> User.changeset(attrs)
-  #                 |> user_check()
-
-  #   if(user) do
-  #     user
-  #       |> Ecto.build_assoc(:auth)
-  #       |> Auth.changeset(attrs)
-  #       |> auth_check(user)
-  #   end
-  # end
-
-  # def user_check(chgst) do
-  #   if (chgst.valid?) do
-  #     Repo.insert(chgst)
-  #   else
-  #     {:ok, false}
-  #   end
-  # end
-
-  # def auth_check(chgst, user) do
-  #   if (chgst.valid?) do
-  #     with {:ok, _} <- Repo.insert(chgst) do
-  #       {:ok, user}
-  #     else
-  #       _ -> Repo.delete user
-  #         {:error, nil}
-  #     end
-  #   else
-  #     Repo.delete user
-  #     {:error, nil}
-  #   end
-  # end
-
-  def gen_rnd_id() do
+  defp generate_random_id() do
     Enum.random(0..999999)
-    |>gen_rnd_id()
+    |> generate_random_id()
   end
-  def gen_rnd_id(tmp_id) when tmp_id > 999999 do
-    gen_rnd_id(0)
+  defp generate_random_id(tmp_id) when tmp_id > 999999 do
+    generate_random_id(0)
   end
-  def gen_rnd_id(tmp_id) do
-    case Repo.one(from u in User, where: u.id_for_show == ^tmp_id) do
-      nil -> tmp_id
-      %User{} -> gen_rnd_id(tmp_id + 1)
+  defp generate_random_id(tmp_id) do
+    unless Repo.exists?(from u in User, where: u.id_for_show == ^tmp_id) do
+      tmp_id
+    else
+      generate_random_id(tmp_id + 1)
     end
   end
 
-  def create_user(non_id_attrs \\ %{}) do
-    attrs = Map.put(non_id_attrs, "id_for_show", gen_rnd_id())
+  @doc """
+  Creates a user.
+  """
+  def create_user(without_id_attrs \\ %{}) do
+    attrs = Map.put(without_id_attrs, "id_for_show", generate_random_id())
 
-    case Multi.new
+    Multi.new
     |> Multi.insert(:user, User.changeset(%User{}, attrs))
     |> Multi.insert(:auth, fn(%{user: user}) ->
       Ecto.build_assoc(user, :auth)
       |> Auth.changeset(attrs)
     end)
-    |> Repo.transaction() do
+    |> Repo.transaction()
+    |> case do
       {:ok, user} -> {:ok, Map.put(user.user, :auth, %Auth{email: user.auth.email})}
       {:error, _, error, _data} -> {:error, error.errors}
-      _ -> {:ok, nil}
+      _ -> {:error, nil}
     end
   end
 
@@ -166,60 +132,34 @@ defmodule Milk.Accounts do
       {:ok, %User{}}
 
       iex> update_user(user, %{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
+      {:error, error}
   """
-  # def update_user(%User{} = user, attrs) do
-
-  #   with {:error, _} <- user.auth
-  #                     |> Auth.changeset_update(attrs)
-  #                     |> Repo.update()
-  #   do
-  #     Auth.changeset(user.auth, %{})
-  #     |> Repo.update()
-  #     {:error, nil}
-  #   else
-  #     _ ->
-  #       user
-  #       |> User.changeset(attrs)
-  #       |> Repo.update()
-  #   end
-  # end
-
   def update_user(%User{} = user, attrs) do
-    case Multi.new()
+    Multi.new()
     |> Multi.update(:user, fn _ ->
       User.changeset(user, attrs)
     end)
     |> Multi.update(:auth, fn _ ->
       Auth.changeset_update(user.auth, attrs)
     end)
-    |> Repo.transaction() do
+    |> Repo.transaction()
+    |> case do
       {:ok, user} -> {:ok, user.user}
       {:error, _, error, _data} -> {:error, error.errors}
-      _ -> {:ok, nil}
+      _ -> {:error, nil}
     end
   end
 
+  @doc """
+  Updates an icon.
+  """
   def update_icon_path(user, icon_path) do
     old_icon_path = Repo.one(from u in User, where: u.id == ^user.id, select: u.icon_path)
-    if old_icon_path != nil do
+    unless is_nil(old_icon_path) do
       File.rm("./static/image/profile_icon/#{old_icon_path}.png")
     end
 
     Repo.update(Ecto.Changeset.change user, icon_path: icon_path)
-  end
-
-  def check_user(id, password, email) do
-    Repo.one(from u in User,
-    join: a in assoc(u, :auth),
-    left_join: cm in assoc(u, :chat_member),
-    left_join: as in assoc(u, :assistant),
-    left_join: e in assoc(u, :entrant),
-    where: u.id == ^id
-    and a.password == ^password
-    and a.email == ^email,
-    preload: [auth: a, chat_member: cm, entrant: e, assistant: as])
   end
 
   @doc """
@@ -234,8 +174,8 @@ defmodule Milk.Accounts do
       {:error, %Ecto.Changeset{}}
 
   """
-
-  def delete_user(%User{} = user) do
+  def delete_user(id, password, email) do
+    user = get_authorized_user(id, password, email)
     if is_list(user.chat_member) do
       member = Enum.map(user.chat_member, fn x -> %{chat_room_id: x.chat_room_id, user_id: x.user_id, authority: x.authority, create_time: x.create_time, update_time: x.update_time} end)
       Repo.insert_all(ChatMemberLog, member)
@@ -254,11 +194,20 @@ defmodule Milk.Accounts do
     end
 
     Repo.delete(user)
-
   end
 
-  def tru(id) do
-    true
+  defp get_authorized_user(id, password, email) do
+    Repo.one(
+      from u in User,
+      join: a in assoc(u, :auth),
+      left_join: cm in assoc(u, :chat_member),
+      left_join: as in assoc(u, :assistant),
+      left_join: e in assoc(u, :entrant),
+      where: u.id == ^id
+        and a.password == ^password
+        and a.email == ^email,
+      preload: [auth: a, chat_member: cm, entrant: e, assistant: as]
+    )
   end
 
   @doc """
@@ -278,22 +227,21 @@ defmodule Milk.Accounts do
   # FIXME: 可読性の向上
   def login(user) do
     password = user["password"]
-    |> IO.inspect()
     Argon2.verify_pass("ss", "$argon2id$v=19$m=131072,t=8,p=4$ofzhop1UTx/tq1ltnGustA$x+LXkY48n+NMO8aP2D4N5d1DjZ84yCwHb7fqJ/5YoEg")
     |> IO.inspect()
     
     # usernameかemailか
     if String.match?(user["email_or_username"], ~r/^[[:word:]\-._]+@[[:word:]\-_.]+\.[[:alpha:]]+$/) do
       case Repo.one(from u in User, join: a in assoc(u, :auth), where: a.email == ^user["email_or_username"], preload: [auth: a]) do
-        %User{} = userinfo -> 
+        %User{} = userinfo ->
           if Argon2.verify_pass(password, userinfo.auth.password) do
             userinfo
           else
             nil
           end
-        nil -> 
+        nil ->
           case Repo.one(from u in User, join: a in assoc(u, :auth), where: a.name == ^user["email_or_username"], preload: [auth: a]) do
-            %User{} = userinfo -> 
+            %User{} = userinfo ->
               if Argon2.verify_pass(password, userinfo.auth.password) do
                 userinfo
               else
