@@ -10,16 +10,13 @@ defmodule Milk.Tournaments do
   alias Milk.Repo
   alias Ecto.Multi
 
-  alias Milk.Tournaments.Tournament
-  alias Milk.Tournaments.Entrant
-  alias Milk.Tournaments.Assistant
-  alias Milk.Tournaments.TournamentChatTopic
+  alias Milk.Accounts.{User, Relation}
+  alias Milk.Tournaments.{Tournament, Entrant, Assistant, TournamentChatTopic}
+  alias Milk.Log.{TournamentLog, EntrantLog, AssistantLog, TournamentChatTopicLog}
   alias Milk.Games.Game
   alias Milk.Chat
-  alias Milk.Accounts.User
-  alias Milk.Accounts.Relation
+  alias Milk.Log
   alias Milk.Platforms.Platform
-  alias Milk.Log.{TournamentLog, EntrantLog, AssistantLog, TournamentChatTopicLog}
 
   require Integer
   require Logger
@@ -298,6 +295,14 @@ defmodule Milk.Tournaments do
       {:error, %Ecto.Changeset{}}
 
   """
+  def delete_tournament(%Tournament{} = tournament) do
+    delete_tournament(tournament.id)
+  end
+
+  def delete_tournament(tournament) when is_map(tournament) do
+    delete_tournament(tournament["id"])
+  end
+
   def delete_tournament(id) do
     tournament = Repo.one(from t in Tournament, left_join: a in assoc(t, :assistant),
     left_join: e in assoc(t, :entrant), where: t.id == ^id,
@@ -312,8 +317,10 @@ defmodule Milk.Tournaments do
     if assistant, do: Repo.insert_all(AssistantLog, assistant)
 
     TournamentLog.changeset(%TournamentLog{}, Map.from_struct(tournament))
-    |> Repo.insert
-    Repo.delete(tournament)
+    |> Repo.insert()
+
+    {:ok, tournament} = Repo.delete(tournament)
+    tournament
   end
 
   @doc """
@@ -602,6 +609,40 @@ defmodule Milk.Tournaments do
       {:error, nil}
     end
   end
+
+  @doc """
+  Finish a tournament.
+  トーナメントを終了させ、終了したトーナメントをログの方に移行して削除する
+  """
+  def finish(tournament_id, winner_user_id) do
+    # FIXME: user_idを使って認証する処理を書いてない
+
+    tournament_id
+    |> get_tournament!()
+    |> delete_tournament()
+    |> atom_tournament_map_to_string_map(winner_user_id)
+    |> Log.create_tournament_log()
+    |> case do
+      {:ok, _tournament_log} -> true
+      {:error, _} -> false
+    end
+  end
+
+  defp atom_tournament_map_to_string_map(%Tournament{} = tournament, winner_id) do
+    %{
+      "id" => tournament.id,
+      "name" => tournament.name,
+      "type" => tournament.type,
+      "deadline" => tournament.deadline,
+      "url" => tournament.url,
+      "description" => tournament.description,
+      "event_date" => tournament.event_date,
+      "game_id" => tournament.game_id,
+      "winner_id" => winner_id,
+      "capacity" => tournament.capacity
+    }
+  end
+  
 
   @doc """
   Generate matchlist.

@@ -340,6 +340,12 @@ defmodule MilkWeb.TournamentController do
     render(conn, "masters.json", masters: masters)
   end
 
+  def finish(conn, %{"tournament_id" => tournament_id, "user_id" => user_id}) do
+    result =  Tournaments.finish(tournament_id, user_id)
+
+    json(conn, %{result: result})
+  end
+
   # DEBUG
   def debug_match_list(conn, %{"tournament_id" => tournament_id}) do
     json(conn, %{match_list: [[1, 2], [[3, 4], [5, 6]]], result: true})
