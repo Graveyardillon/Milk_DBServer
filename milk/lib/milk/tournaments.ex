@@ -595,6 +595,16 @@ defmodule Milk.Tournaments do
     end)
   end
 
+  def find_match(list, id, result \\ []) do
+    Enum.reduce(list, result, fn x, acc -> 
+      case x do
+        x when is_list(x) -> find_match(x, id, acc)
+        x when is_integer(x) and x == id -> acc ++ list
+        x when is_integer(x) -> acc
+      end
+    end)
+  end
+
   def start(master_id, tournament_id) do
     tournament =
       Tournament

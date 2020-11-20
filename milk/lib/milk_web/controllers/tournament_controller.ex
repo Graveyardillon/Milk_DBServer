@@ -201,11 +201,25 @@ defmodule MilkWeb.TournamentController do
     end
   end
 
-  def delete_loser(conn, %{"tournament" => %{"match_list" => match_list, "loser_list" => loser_list}}) do
-    updated_match_list =
-      match_list
-      |>Tournaments.delete_loser(loser_list)
-    render(conn,"loser.json", list: updated_match_list)
+  # FIXME: loserをリストじゃなくて整数で入力できるようにしたほうが良さそう
+  def delete_loser(conn, %{"tournament" => %{"tournament_id" => tournament_id, "loser_list" => loser_list}}) do
+    {_, match_list} = hd(Ets.get_match_list(tournament_id))
+    # FIXME: ここのリストが空だったときのエラー処理どうやってやろうかな
+    # match_list = unless match_list == [] do
+    #   hd(match_list)
+    # end
+
+    # 不要な行を削除しておく
+    match_list
+    |> Tournaments.find_match(hd(loser_list))
+    |> Enum.each(fn user_id -> 
+      Ets.delete_match_pending_list(user_id)
+      Ets.delete_fight_result(user_id)
+    end)
+    
+    updated_match_list = Tournaments.delete_loser(match_list, loser_list)
+
+    render(conn, "loser.json", list: updated_match_list)
   end
 
   def get_thumbnail_image(conn, %{"thumbnail_path" => path}) do
@@ -227,12 +241,10 @@ defmodule MilkWeb.TournamentController do
     list = Ets.get_match_list(tournament_id) 
     list = unless list == [] do
       hd(list)
-    end        
+    end
 
     case list do
-      {_, match_list} -> 
-        IO.inspect(match_list, label: :match_list)
-        json(conn, %{match_list: match_list, result: true})
+      {_, match_list} -> json(conn, %{match_list: match_list, result: true})
       _ -> json(conn, %{match_list: nil, result: false})
     end
   end
@@ -251,24 +263,38 @@ defmodule MilkWeb.TournamentController do
     case Ets.get_fight_result(opponent_id) do
       [] ->
         Ets.insert_fight_result_table(user_id, true)
-        json(conn, %{validated: true})
+        json(conn, %{validated: true, completed: false})
+
       result_list ->
-        {_, is_win} =
-          result_list
-          |> hd()
+        {_, is_win} = hd(result_list)
 
         if is_win do
           Chat.notify_game_masters(tournament_id)
-          json(conn, %{validated: false})
+          json(conn, %{validated: false, completed: false})
         else
           # マッチングが正常に終了している
-          json(conn, %{validated: true})
+          json(conn, %{validated: true, completed: true})
         end
     end
   end
 
   def claim_lose(conn, %{"opponent_id" => opponent_id, "user_id" => user_id, "tournament_id" => tournament_id}) do
-    json(conn, %{validated: :ok})
+    case Ets.get_fight_result(opponent_id) do
+      [] ->
+        Ets.insert_fight_result_table(user_id, false)
+        json(conn, %{validated: true, completed: false})
+      result_list ->
+        {_, is_win} = hd(result_list)
+
+        unless is_win do
+          Chat.notify_game_masters(tournament_id)
+          json(conn, %{validated: false, completed: false})
+        else
+
+          # マッチングが正常に終了している
+          json(conn, %{validated: true, completed: true})
+        end
+    end
   end
 
   def publish_url(conn, _params) do
@@ -308,9 +334,7 @@ defmodule MilkWeb.TournamentController do
       end)
 
     masters = master ++ assistants
-    |> IO.inspect()
 
-    #json(conn, %{msg: true})
     render(conn, "masters.json", masters: masters)
   end
 
