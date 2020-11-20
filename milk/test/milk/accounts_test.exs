@@ -47,7 +47,7 @@ defmodule Milk.AccountsTest do
 
     test "delete_user/1 deletes the user" do
       user = user_fixture()
-      assert {:ok, _} = Accounts.delete_user(user)
+      assert {:ok, _} = Accounts.delete_user(user.auth.id,user.auth.password, user.auth.email)
       assert !Accounts.get_user(user.id)
     end
   end
