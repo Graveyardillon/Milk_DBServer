@@ -142,7 +142,7 @@ defmodule Milk.Accounts do
     |> Multi.update(:auth, fn _ ->
       Auth.changeset_update(user.auth, attrs)
     end)
-    |> Repo.transaction() 
+    |> Repo.transaction()
     |> case do
       {:ok, user} -> {:ok, user.user}
       {:error, _, error, _data} -> {:error, error.errors}
@@ -227,22 +227,21 @@ defmodule Milk.Accounts do
   # FIXME: 可読性の向上
   def login(user) do
     password = user["password"]
-    |> IO.inspect()
     Argon2.verify_pass("ss", "$argon2id$v=19$m=131072,t=8,p=4$ofzhop1UTx/tq1ltnGustA$x+LXkY48n+NMO8aP2D4N5d1DjZ84yCwHb7fqJ/5YoEg")
     |> IO.inspect()
     
     # usernameかemailか
     if String.match?(user["email_or_username"], ~r/^[[:word:]\-._]+@[[:word:]\-_.]+\.[[:alpha:]]+$/) do
       case Repo.one(from u in User, join: a in assoc(u, :auth), where: a.email == ^user["email_or_username"], preload: [auth: a]) do
-        %User{} = userinfo -> 
+        %User{} = userinfo ->
           if Argon2.verify_pass(password, userinfo.auth.password) do
             userinfo
           else
             nil
           end
-        nil -> 
+        nil ->
           case Repo.one(from u in User, join: a in assoc(u, :auth), where: a.name == ^user["email_or_username"], preload: [auth: a]) do
-            %User{} = userinfo -> 
+            %User{} = userinfo ->
               if Argon2.verify_pass(password, userinfo.auth.password) do
                 userinfo
               else
