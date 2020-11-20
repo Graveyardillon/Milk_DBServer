@@ -1,5 +1,6 @@
 defmodule MilkWeb.Router do
   use MilkWeb, :router
+  # FIXME: ルーティングの整理
 
   pipeline :browser do
     plug :accepts, ["html"]
@@ -23,7 +24,6 @@ defmodule MilkWeb.Router do
   scope "/api", MilkWeb do
     # post "/signup", UserController, :create
     # post "/signin", UserController, :login
-    get "/user/get_all_username", UserController, :all_username
     post "/profile", ProfileController, :get_profile
     post "/profile/update", ProfileController, :update
     post "/profile/update_icon", ProfileController, :update_icon
@@ -85,6 +85,7 @@ defmodule MilkWeb.Router do
     post "/tournament/get", TournamentController, :show
     post "/tournament/get_all", TournamentController, :index
     post "/tournament/get_by_master_id", TournamentController, :get_tournaments_by_master_id
+    post "/tournament/get_planned", TournamentController, :get_going_tournaments_by_master_id
     post "/tournament/get_game", TournamentController, :get_game
     post "/tournament/delete", TournamentController, :delete
     post "/tournament/get_participating_tournaments", TournamentController, :participating_tournaments
@@ -96,6 +97,13 @@ defmodule MilkWeb.Router do
     post "/tournament/publish_url", TournamentController, :publish_url
     post "/tournament/members", TournamentController, :get_match_members
     post "/tournament_log/add", TournamentLogController, :create
+    post "/tournament/start_match", TournamentController, :start_match
+    post "/tournament/claim_win", TournamentController, :claim_win
+    post "/tournament/claim_lose", TournamentController, :claim_lose
+    post "/tournament/masters", TournamentController, :get_game_masters
+
+    # DEBUG
+    post "/tournament/debug_match_list", TournamentController, :debug_match_list
 
     resources "/entrant", EntrantController, except: [:new, :edit, :index, :show, :delete]
     post "/entrant/get", EntrantController, :show

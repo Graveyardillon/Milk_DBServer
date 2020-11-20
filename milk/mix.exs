@@ -4,7 +4,7 @@ defmodule Milk.MixProject do
   def project do
     [
       app: :milk,
-      version: "0.1.0",
+      version: "0.1.1",
       elixir: "~> 1.5",
       elixirc_paths: elixirc_paths(Mix.env()),
       compilers: [:phoenix, :gettext] ++ Mix.compilers(),
@@ -64,8 +64,8 @@ defmodule Milk.MixProject do
       {:timex, "~> 3.5"},
       {:distillery, "~> 2.0"},
       {:bamboo, "~> 1.6"},
-      {:bamboo_smtp, "~>3.0.0"}
-      # {:argon2_elixir, "~> 2.0"}
+      {:bamboo_smtp, "~>3.0.0"},
+      {:argon2_elixir, "~> 2.3.0"}
     ]
   end
 

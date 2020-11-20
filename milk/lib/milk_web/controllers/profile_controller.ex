@@ -32,7 +32,7 @@ defmodule MilkWeb.ProfileController do
 
       File.cp(image.path, "./static/image/profile_icon/#{uuid}.png")
 
-      Accounts.update_icon_path(user, uuid)
+      Accounts.update_icon_path(user, "./static/image/profile_icon/#{uuid}.png")
       json(conn, %{local_path: uuid})
     else 
       json(conn, %{error: "user not found"})
@@ -40,12 +40,23 @@ defmodule MilkWeb.ProfileController do
   end
 
   def get_icon(conn, %{"path" => path}) do
-    case File.read("./static/image/profile_icon/#{path}.png") do
-      {:ok, file} -> 
-        b64 = Base.encode64(file)
-        json(conn, %{b64: b64})
-      {:error, _} -> 
-        json(conn, %{error: "image not fonud"})
+    if path == "./static/image/default/default_icon.png" do
+      case File.read(path) do
+        {:ok, file} ->
+          b64 = Base.encode64(file)
+          json(conn, %{b64: b64})
+        {:error, _} ->
+          json(conn, %{error: "image not found"})
+      end
+    else
+      #case File.read("./static/image/profile_icon/#{path}.png") do
+      case File.read(path) do
+        {:ok, file} -> 
+          b64 = Base.encode64(file)
+          json(conn, %{b64: b64})
+        {:error, _} -> 
+          json(conn, %{error: "image not found"})
+      end
     end
   end
 end

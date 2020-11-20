@@ -72,8 +72,28 @@ defmodule Milk.Tournaments do
     Repo.all(from t in Tournament, where: t.game_id == ^attrs["game_id"])
   end
 
-  def get_tournament_by_master_id(user_id) do
+  def get_tournaments_by_master_id(user_id) do
     Repo.all(from t in Tournament, where: t.master_id == ^user_id)
+  end
+
+  def get_going_tournaments_by_master_id(user_id) do
+    now = 
+      DateTime.utc_now()
+      |> DateTime.to_unix()
+
+    Repo.all(from t in Tournament, where: t.master_id == ^user_id)
+    |> Enum.filter(fn tournament -> 
+      date = 
+        tournament.event_date
+        |> IO.inspect
+        |> DateTime.to_unix()
+
+      now = 
+        DateTime.utc_now()
+        |> DateTime.to_unix()
+
+      now < date
+    end)
   end
 
   @doc """
@@ -112,6 +132,14 @@ defmodule Milk.Tournaments do
     |> Enum.map(fn entrant ->
       get_tournament!(entrant.tournament_id)
     end)
+  end
+
+  def get_masters(tournament_id) do
+    tournament = get_tournament!(tournament_id)
+
+    User
+    |> where([u], u.id == ^tournament.master_id)
+    |> Repo.all()
   end
 
   @doc """
@@ -213,10 +241,12 @@ defmodule Milk.Tournaments do
         |> TournamentChatTopic.changeset(topic)
       end)
       |> Repo.transaction()
-
+      |> IO.inspect(label: :transaction)
 
     case tournament do
       {:ok, tournament} ->
+        IO.inspect(tournament, label: :macro)
+        IO.inspect(tournament.tournament, label: :micro)
         {:ok, tournament.tournament}
       {:error, error} ->
         {:error, error.errors}
@@ -539,6 +569,16 @@ defmodule Milk.Tournaments do
     end)
   end
 
+  def find_match(list, id, result \\ []) do
+    Enum.reduce(list, result, fn x, acc -> 
+      case x do
+        x when is_list(x) -> find_match(x, id, acc)
+        x when is_integer(x) and x == id -> acc ++ list
+        x when is_integer(x) -> acc
+      end
+    end)
+  end
+
   def start(master_id, tournament_id) do
     tournament =
       Tournament
@@ -605,6 +645,12 @@ defmodule Milk.Tournaments do
     Assistant
     |> where([a], a.tournament_id == ^id)
     |> Repo.all()
+  end
+
+  def get_user_info_of_assistant(%Assistant{} = assistant) do
+    User
+    |> where([u], u.id == ^assistant.user_id)
+    |> Repo.one()
   end
 
   @doc """

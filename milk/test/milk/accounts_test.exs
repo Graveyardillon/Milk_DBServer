@@ -22,16 +22,6 @@ defmodule Milk.AccountsTest do
       Accounts.get_user(user.id)
     end
 
-    # test "list_users/0 returns all users" do
-    #   user = user_fixture()
-    #   assert Accounts.list_users() == [user]
-    # end
-
-    # test "get_user!/1 returns the user with given id" do
-    #   user = user_fixture()
-    #   assert Accounts.get_user(user.id) == user
-    # end
-
     test "create_user/1 with valid data creates a user" do
       assert {:ok, %User{} = user} = Accounts.create_user(@valid_attrs)
       assert user.icon_path == "some icon_path"
@@ -55,22 +45,11 @@ defmodule Milk.AccountsTest do
       assert user.point == 43
     end
 
-    # test "update_user/2 with invalid data returns error changeset" do
-    #   user = user_fixture()
-    #   assert {:error, error} = Accounts.update_user(user, @invalid_attrs)
-    #   assert user == Accounts.get_user(user.id)
-    # end
-
     test "delete_user/1 deletes the user" do
       user = user_fixture()
       assert {:ok, _} = Accounts.delete_user(user)
       assert !Accounts.get_user(user.id)
     end
-
-    # test "change_user/1 returns a user changeset" do
-    #   user = user_fixture()
-    #   assert %Ecto.Changeset{} = Accounts.change_user(user)
-    # end
   end
 
   describe "profiles" do
@@ -88,7 +67,7 @@ defmodule Milk.AccountsTest do
 
       profile
     end
-#fix me
+# FIXME:
     # test "list_profiles/0 returns all profiles" do
     #   profile = profile_fixture()
     #   assert Profiles.list_profiles() == [profile]
@@ -121,7 +100,7 @@ defmodule Milk.AccountsTest do
     test "update_profile/2 with invalid data returns error changeset" do
       profile = profile_fixture()
       assert {:error, %Ecto.Changeset{}} = Profiles.update_profile(profile, @invalid_attrs)
-      #fix me
+      # FIXME: 
       # assert profile == Profiles.get_profile!(profile.id)
     end
 
@@ -161,7 +140,7 @@ defmodule Milk.AccountsTest do
     #   relation = relation_fixture()
     #   assert Relations.list_relations() == [relation]
     # end
-    # fix me
+    # FIXME:
     # test "get_relation!/1 returns the relation with given id" do
     #   relation = relation_fixture()
     #   assert Relations.get_relation!(relation.id) == relation
@@ -203,4 +182,9 @@ defmodule Milk.AccountsTest do
       assert %Ecto.Changeset{} = Relations.change_relation(relation)
     end
   end
+
+  # FIXME: あとでやります
+  # describe "chat" do
+  #   test "get_users_in_touch/1 returns "
+  # end
 end

@@ -73,14 +73,14 @@ defmodule Milk.Chat do
   """
   def create_chat_room(attrs \\ %{}) do
     case %ChatRoom{}
-    |> ChatRoom.changeset(attrs)
-    |> Repo.insert() do
-    {:ok, chat} ->
-      {:ok, chat}
-    {:error, error} ->
-      {:error, error.errors}
-    _ ->
-      {:error, nil}
+      |> ChatRoom.changeset(attrs)
+      |> Repo.insert() do
+        {:ok, chat} ->
+          {:ok, chat}
+        {:error, error} ->
+          {:error, error.errors}
+        _ ->
+          {:error, nil}
     end
   end
 
@@ -171,9 +171,9 @@ defmodule Milk.Chat do
   @doc """
   Get a ChatRoom by chat member id
   """
-  def get_chat_room_by_chat_member_id(chat_member_id) do
+  def get_chat_room_by_chat_member_id(chat_member) do
     ChatRoom
-    |> where([cr], cr.id == ^chat_member_id)
+    |> where([cr], cr.id == ^chat_member.chat_room_id)
     |> Repo.one()
   end
 
@@ -588,12 +588,16 @@ defmodule Milk.Chat do
     end
   end
 
+  def notify_game_masters(tournament_id) do
+    
+  end
+
   # user_idに関連するチャットを全て取り出す
   def sync(user_id) do
     user_id
     |> get_chat_member_by_user_id()
     |> Enum.map(fn member ->
-      get_chat_room_by_chat_member_id(member.id)
+      get_chat_room_by_chat_member_id(member)
     end)
     |> Enum.filter(fn room ->
       room != nil
