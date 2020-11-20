@@ -47,7 +47,7 @@ defmodule Milk.AccountsTest do
 
     test "delete_user/1 deletes the user" do
       user = user_fixture()
-      assert {:ok, _} = Accounts.delete_user(user)
+      assert {:ok, _} = Accounts.delete_user(user.auth.id,user.auth.password, user.auth.email)
       assert !Accounts.get_user(user.id)
     end
   end
@@ -119,7 +119,7 @@ defmodule Milk.AccountsTest do
   describe "relations" do
     alias Milk.Accounts.Relation
 
-    @valid_attrs %{id: 1}
+    @valid_attrs %{"id" => 1}
     @update_attrs %{id: 1, followee_id: 1, follower_id: 3}
     @invalid_attrs %{id: nil, followee_id: 0999999999999, follower_id: 999999999}
 
@@ -129,8 +129,8 @@ defmodule Milk.AccountsTest do
       {:ok, relation} =
         attrs
         |> Enum.into(@valid_attrs)
-        |> Map.put(:followee_id, user1.id)
-        |> Map.put(:follower_id, user2.id)
+        |> Map.put("followee_id", user1.id)
+        |> Map.put("follower_id", user2.id)
         |> Relations.create_relation()
 
       relation
@@ -151,8 +151,8 @@ defmodule Milk.AccountsTest do
       {:ok, user2} = Accounts.create_user(%{"name" => "name", "email" => "ew@mail.com", "password" => "Password123"})
       assert {:ok, %Relation{} = relation} =
         @valid_attrs
-        |> Map.put(:followee_id, user1.id)
-        |> Map.put(:follower_id, user2.id)
+        |> Map.put("followee_id", user1.id)
+        |> Map.put("follower_id", user2.id)
         |>Relations.create_relation()
     end
 
