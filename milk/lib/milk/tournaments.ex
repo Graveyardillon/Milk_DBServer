@@ -551,6 +551,10 @@ defmodule Milk.Tournaments do
   @doc """
   Generate a match list of entrants.
   """
+  def delete_loser([a, b], loser) when is_integer(a) and is_integer(b) do
+    [a, b] -- loser
+  end
+
   def delete_loser(list,loser) do
     list
     |>Enum.map(fn x ->
@@ -569,6 +573,9 @@ defmodule Milk.Tournaments do
     end)
   end
 
+  @doc """
+  Finds a 1v1 match of given id and match list.
+  """
   def find_match(list, id, result \\ []) do
     Enum.reduce(list, result, fn x, acc -> 
       case x do
@@ -579,6 +586,9 @@ defmodule Milk.Tournaments do
     end)
   end
 
+  @doc """
+  Starts a tournament.
+  """
   def start(master_id, tournament_id) do
     tournament =
       Tournament
@@ -592,6 +602,7 @@ defmodule Milk.Tournaments do
       {:error, nil}
     end
   end
+
   @doc """
   Generate matchlist.
   """
