@@ -10,14 +10,13 @@ defmodule Milk.Repo.Migrations.CreateTournamentLog do
       add :deadline, :timestamptz
       add :type, :integer
       add :url, :string
-      add :count, :integer
       add :game_id, :integer
       add :master_id, :integer
+      add :winner_id, :integer
       add :is_deleted, :boolean, default: false
       add :is_started, :boolean, default: false
 
       timestamps()
     end
-
   end
 end

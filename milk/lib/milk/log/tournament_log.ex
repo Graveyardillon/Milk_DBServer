@@ -2,6 +2,7 @@ defmodule Milk.Log.TournamentLog do
   use Milk.Schema
   import Ecto.Changeset
 
+  # FIXME: master_idとかは外部キーにしないほうがいいかしっかり検証する
   schema "tournament_log" do
     field :capacity, :integer
     field :deadline, EctoDate
@@ -9,18 +10,18 @@ defmodule Milk.Log.TournamentLog do
     field :event_date, EctoDate
     field :game_id, :integer
     field :master_id, :integer
+    field :winner_id, :integer
     field :name, :string
     field :type, :integer
     field :url, :string
 
-    field :create_time, EctoDate
-    field :update_time, EctoDate
+    timestamps()
   end
 
   @doc false
   def changeset(tournament, attrs) do
     tournament
-    |> cast(attrs, [:name, :game_id, :event_date, :capacity, :description, :master_id, :deadline, :type, :url, :create_time, :update_time])
+    |> cast(attrs, [:name, :game_id, :event_date, :capacity, :description, :master_id, :winner_id, :deadline, :type, :url])
     # |> validate_required([:name, :game_id, :event_date, :capacity, :description, :master_id, :deadline, :type, :url])
   end
 end
