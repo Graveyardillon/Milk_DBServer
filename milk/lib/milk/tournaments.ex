@@ -620,6 +620,13 @@ defmodule Milk.Tournaments do
   end
 
   @doc """
+  Judges whether the user have to wait.
+  """
+  def is_alone(match) do
+    Enum.filter(match, &(is_list(&1))) != []
+  end
+
+  @doc """
   Starts a tournament.
   """
   def start(master_id, tournament_id) do
