@@ -230,9 +230,9 @@ defmodule Milk.Accounts do
 
     # usernameかemailか
     if String.match?(user["email_or_username"], ~r/^[[:word:]\-._]+@[[:word:]\-_.]+\.[[:alpha:]]+$/) do
-      try_login(user, password, :email)
+      get_valid_user(user, password, :email)
     else
-      try_login(user, password, :username)
+      get_valid_user(user, password, :username)
     end
     |> case do
       %User{} = user ->
@@ -250,7 +250,7 @@ defmodule Milk.Accounts do
   defp where_mode(query, :username, user) do
     where(query, [u,a], a.name == ^user["email_or_username"])
   end
-  defp try_login(user, password, mode) do
+  defp get_valid_user(user, password, mode) do
     User
     |> join(:inner, [u], a in assoc(u, :auth))
     |> where_mode(mode, user)
@@ -261,7 +261,7 @@ defmodule Milk.Accounts do
         if Argon2.verify_pass(password, userinfo.auth.password), do: userinfo
       nil ->
         case mode do
-          :email -> try_login(user, password, :username)
+          :email -> get_valid_user(user, password, :username)
           _ -> nil
         end
     end
