@@ -229,6 +229,9 @@ defmodule MilkWeb.TournamentController do
   end
 
   def find_match(conn, %{"tournament_id" => tournament_id, "user_id" => user_id}) do
+    tournament_id = Tools.to_integer_as_needed(tournament_id)
+    user_id = Tools.to_integer_as_needed(user_id)
+
     {_, match_list} = hd(Ets.get_match_list(tournament_id))
 
     match = Tournaments.find_match(match_list, user_id)
