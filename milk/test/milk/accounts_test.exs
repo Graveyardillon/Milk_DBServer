@@ -210,7 +210,7 @@ defmodule Milk.AccountsTest do
     end
 
     test "login/1 can't login user by invalid username" do
-      user = user_fixture()
+      user_fixture()
       login_params = %{
           "password" => @user_valid_attrs["password"],
           "email_or_username" => "invalid"
@@ -219,7 +219,7 @@ defmodule Milk.AccountsTest do
     end
 
     test "login/1 can't login user by invalid email" do
-      user = user_fixture()
+      user_fixture()
       login_params = %{
           "password" => @user_valid_attrs["password"],
           "email_or_username" => "invalid@a.com"
