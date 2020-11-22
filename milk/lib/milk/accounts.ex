@@ -227,17 +227,6 @@ defmodule Milk.Accounts do
   # logout_flのないバージョン
   # FIXME: 可読性の向上
   def login(user) do
-    # user =
-    #   case Guardian.decode_and_verify(user["token"]) do
-    #     {:ok, data} -> Repo.one(from u in User, where: u.id == ^data["sub"], preload: [auth: a])
-    #     {:error, :token_expired} ->
-    #       if Guardian.signout(user["token"]) do
-    #         "That token is out of time"
-    #       else
-    #         "That token is not exist"
-    #     {:error, :not_exist} -> "That token can't use"
-    #     _ -> "That token is not exist"
-    #   end
     password = user["password"]
     # usernameかemailか
     if String.match?(user["email_or_username"], ~r/^[[:word:]\-._]+@[[:word:]\-_.]+\.[[:alpha:]]+$/) do
