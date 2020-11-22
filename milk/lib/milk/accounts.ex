@@ -239,7 +239,7 @@ defmodule Milk.Accounts do
           user
           |> User.changeset(%{logout_fl: false})
           |> Repo.update()
-        {:ok, token, full_claims} =
+        {:ok, token, _} =
           Guardian.encode_and_sign(userinfo, %{}, token_type: "refresh", ttl: {4, :weeks})
         %{user: userinfo, token: token}
       _ -> nil
