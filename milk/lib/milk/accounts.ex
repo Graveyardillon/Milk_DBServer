@@ -225,7 +225,6 @@ defmodule Milk.Accounts do
   end
 
   # logout_flのないバージョン
-  # FIXME: 可読性の向上
   def login(user) do
     password = user["password"]
     # usernameかemailか
