@@ -52,6 +52,8 @@ defmodule MilkWeb.Router do
 
     post "/relation/following_list", RelationController, :following_list
     post "/relation/following_id_list", RelationController, :following_id_list
+    post "/relation/followers_list", RelationController, :followers_list
+    post "/relation/followers_id_list", RelationController, :followers_id_list
     post "/relation/follow", RelationController, :create
     post "/relation/unfollow", RelationController, :delete
 
