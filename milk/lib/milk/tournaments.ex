@@ -10,6 +10,7 @@ defmodule Milk.Tournaments do
   alias Milk.Repo
   alias Ecto.Multi
 
+  alias Milk.Accounts
   alias Milk.Accounts.{User, Relation}
   alias Milk.Tournaments.{Tournament, Entrant, Assistant, TournamentChatTopic}
   alias Milk.Log.{TournamentLog, EntrantLog, AssistantLog, TournamentChatTopicLog}
@@ -586,7 +587,7 @@ defmodule Milk.Tournaments do
 
   def delete_loser(list,loser) do
     list
-    |>Enum.map(fn x ->
+    |> Enum.map(fn x ->
       case x do
         [[_a,_b],[_c,_d]] -> Milk.Tournaments.delete_loser(x,loser)
         [_a,[_b,_c]] -> Milk.Tournaments.delete_loser(x,loser)
@@ -613,6 +614,26 @@ defmodule Milk.Tournaments do
         x when is_integer(x) -> acc
       end
     end)
+  end
+
+  @doc """
+  Get an opponent of tournament match.
+  """
+  def get_opponent(match, user_id, tournament_id) do
+    match
+    |> Enum.filter(&(&1 != user_id))
+    |> hd()
+    |> Accounts.get_user()
+    |> atom_user_map_to_string_map()
+  end
+
+  defp atom_user_map_to_string_map(%User{} = user) do
+    %{
+      "id" => user.id,
+      "icon_path" => user.icon_path,
+      "id_for_show" => user.id_for_show,
+      "name" => user.name,
+    }
   end
 
   @doc """
@@ -672,7 +693,6 @@ defmodule Milk.Tournaments do
     }
   end
   
-
   @doc """
   Generate matchlist.
   """
