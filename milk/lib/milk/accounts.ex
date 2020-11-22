@@ -174,8 +174,8 @@ defmodule Milk.Accounts do
       {:error, %Ecto.Changeset{}}
 
   """
-  def delete_user(id, password, email) do
-    user = get_authorized_user(id, password, email)
+  def delete_user(id, password, email, token) do
+    user = get_authorized_user(id, password, email, token)
     if is_list(user.chat_member) do
       member = Enum.map(user.chat_member, fn x -> %{chat_room_id: x.chat_room_id, user_id: x.user_id, authority: x.authority, create_time: x.create_time, update_time: x.update_time} end)
       Repo.insert_all(ChatMemberLog, member)
@@ -196,19 +196,34 @@ defmodule Milk.Accounts do
     Repo.delete(user)
   end
 
-  defp get_authorized_user(id, password, email) do
-    Repo.one(
-      from u in User,
-      join: a in assoc(u, :auth),
-      left_join: cm in assoc(u, :chat_member),
-      left_join: as in assoc(u, :assistant),
-      left_join: e in assoc(u, :entrant),
-      where:
-        u.id == ^id
-        and a.password == ^password
-        and a.email == ^email,
-      preload: [auth: a, chat_member: cm, entrant: e, assistant: as]
-    )
+  defp get_authorized_user(id, password, email, token) do
+    case Guardian.decode_and_verify(token) do
+      {:ok, _} ->
+        Repo.one(
+          from u in User,
+          join: a in assoc(u, :auth),
+          left_join: cm in assoc(u, :chat_member),
+          left_join: as in assoc(u, :assistant),
+          left_join: e in assoc(u, :entrant),
+          where:
+            u.id == ^id
+            and a.password == ^password
+            and a.email == ^email,
+          preload: [auth: a, chat_member: cm, entrant: e, assistant: as]
+        )
+      #FIXME: エラーハンドリングが適当すぎる
+      {:error, :token_expired} ->
+        Guardian.signout(token)
+        |> if do
+          "That token is out of time"
+        else
+          "That token is not exist"
+        end
+      {:error, :not_exist} ->
+        "That token can't use"
+      _ ->
+        "That token is not exist"
+      end
   end
 
   @doc """
