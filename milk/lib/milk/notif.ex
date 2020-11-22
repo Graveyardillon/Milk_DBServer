@@ -9,6 +9,7 @@ defmodule Milk.Notif do
   alias Milk.Notif.Notification
   alias Milk.Accounts
   alias Milk.Log.NotificationLog
+  alias Milk.Accounts.User
 
   @doc """
   Returns the list of notification.
@@ -21,9 +22,9 @@ defmodule Milk.Notif do
   """
   def list_notification(user_id) do
     Repo.all(
-      from n in Notification, 
-      join: u in assoc(n, :user), 
-      where: u.id == ^user_id, 
+      from n in Notification,
+      join: u in assoc(n, :user),
+      where: u.id == ^user_id,
       preload: [user: u]
     )
   end
@@ -57,14 +58,17 @@ defmodule Milk.Notif do
 
   """
   def create_notification(attrs \\ %{}) do
-    Accounts.get_user(attrs["user_id"])
-    |> Ecto.build_assoc(:notif)
-    |> Notification.changeset(attrs)
-    |> Repo.insert()
-    |> (case do
-      {:ok, notif} -> {:ok, Map.put(notif, :user, Accounts.get_user(attrs["user_id"]))}
-      {:error, error} -> {:error, error}
-    end)
+    case Accounts.get_user(attrs["user_id"]) do
+      %User{} = user ->
+        Ecto.build_assoc(user, :notif)
+        |> Notification.changeset(attrs)
+        |> Repo.insert()
+        |> case do
+          {:ok, notif} -> {:ok, Map.put(notif, :user, Accounts.get_user(attrs["user_id"]))}
+          {:error, error} -> {:error, error}
+        end
+      _ -> {:error, %Ecto.Changeset{}}
+    end
   end
 
   @doc """

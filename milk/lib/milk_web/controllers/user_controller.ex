@@ -2,9 +2,7 @@ defmodule MilkWeb.UserController do
   use MilkWeb, :controller
 
   alias Milk.Accounts
-  alias Milk.Accounts.Auth
   alias Milk.Accounts.User
-  alias Milk.Chat
   alias Milk.UserManager.Guardian
 
   # action_fallback MilkWeb.FallbackController
@@ -54,9 +52,9 @@ defmodule MilkWeb.UserController do
     end
   end
 
-  def delete(conn, %{"id" => id, "password" => password, "email" => email, "token" => _token}) do
-    with {:ok, %User{}} <- Accounts.delete_user(id, password, email) do
-      # Guardian.revoke(token)
+  def delete(conn, %{"id" => id, "password" => password, "email" => email, "token" => token}) do
+    with {:ok, %User{}} <- Accounts.delete_user(id, password, email, token) do
+      Guardian.revoke(token)
       send_resp(conn, :no_content, "")
     end
   end
