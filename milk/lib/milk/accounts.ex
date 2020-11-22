@@ -227,7 +227,6 @@ defmodule Milk.Accounts do
   # FIXME: 可読性の向上
   def login(user) do
     password = user["password"]
-
     # usernameかemailか
     if String.match?(user["email_or_username"], ~r/^[[:word:]\-._]+@[[:word:]\-_.]+\.[[:alpha:]]+$/) do
       get_valid_user(user, password, :email)
