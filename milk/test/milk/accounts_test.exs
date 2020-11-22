@@ -47,7 +47,7 @@ defmodule Milk.AccountsTest do
 
     test "delete_user/1 deletes the user" do
       user = user_fixture()
-      assert {:ok, _} = Accounts.delete_user(user.auth.id,user.auth.password, user.auth.email)
+      assert {:ok, _} = Accounts.delete_user(user.id, user.auth.password, user.auth.email)
       assert !Accounts.get_user(user.id)
     end
   end
@@ -196,7 +196,7 @@ defmodule Milk.AccountsTest do
           "password" => @user_valid_attrs["password"],
           "email_or_username" => user.auth.email
         }
-      assert %User{} = Accounts.login(login_params)
+      assert %{user: %User{}, token: token} = Accounts.login(login_params)
     end
 
 
@@ -206,7 +206,7 @@ defmodule Milk.AccountsTest do
           "password" => @user_valid_attrs["password"],
           "email_or_username" => user.auth.name
         }
-      assert %User{} = Accounts.login(login_params)
+      assert %{user: %User{}, token: token} = Accounts.login(login_params)
     end
 
     test "login/1 can't login user by invalid username" do

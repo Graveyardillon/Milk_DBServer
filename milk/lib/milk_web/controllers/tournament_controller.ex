@@ -121,7 +121,7 @@ defmodule MilkWeb.TournamentController do
     render(conn, "home.json", tournaments_info: tournaments)
   end
   
-  def home(conn, params) do
+  def home(conn, _params) do
     tournaments =
     Tournaments.home_tournament()
     |> Enum.map(fn tournament ->
@@ -360,7 +360,7 @@ defmodule MilkWeb.TournamentController do
   end
 
   # DEBUG
-  def debug_match_list(conn, %{"tournament_id" => tournament_id}) do
+  def debug_match_list(conn, %{"tournament_id" => _tournament_id}) do
     json(conn, %{match_list: [[1, 2], [[3, 4], [5, 6]]], result: true})
   end
 end

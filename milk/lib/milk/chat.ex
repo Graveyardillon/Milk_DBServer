@@ -588,7 +588,7 @@ defmodule Milk.Chat do
     end
   end
 
-  def notify_game_masters(tournament_id) do
+  def notify_game_masters(_tournament_id) do
     
   end
 

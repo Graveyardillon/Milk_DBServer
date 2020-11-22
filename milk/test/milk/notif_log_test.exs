@@ -1,4 +1,4 @@
-defmodule Milk.LogTest do
+defmodule Milk.NotifLogTest do
   use Milk.DataCase
 
   alias Milk.Log

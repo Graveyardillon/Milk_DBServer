@@ -11,6 +11,8 @@ defmodule Milk.Accounts do
   alias Milk.Chat.{ChatRoom, ChatMember}
   alias Ecto.Multi
 
+  alias Milk.UserManager.Guardian
+
   require Logger
 
   @doc """
@@ -85,9 +87,7 @@ defmodule Milk.Accounts do
     end)
   end
 
-    @doc """
-    Gets id_for_show.
-    """
+  # Gets id_for_show.
   defp generate_random_id() do
     Enum.random(0..999999)
     |> generate_random_id()
@@ -203,7 +203,8 @@ defmodule Milk.Accounts do
       left_join: cm in assoc(u, :chat_member),
       left_join: as in assoc(u, :assistant),
       left_join: e in assoc(u, :entrant),
-      where: u.id == ^id
+      where:
+        u.id == ^id
         and a.password == ^password
         and a.email == ^email,
       preload: [auth: a, chat_member: cm, entrant: e, assistant: as]
@@ -226,6 +227,17 @@ defmodule Milk.Accounts do
   # logout_flのないバージョン
   # FIXME: 可読性の向上
   def login(user) do
+    # user =
+    #   case Guardian.decode_and_verify(user["token"]) do
+    #     {:ok, data} -> Repo.one(from u in User, where: u.id == ^data["sub"], preload: [auth: a])
+    #     {:error, :token_expired} ->
+    #       if Guardian.signout(user["token"]) do
+    #         "That token is out of time"
+    #       else
+    #         "That token is not exist"
+    #     {:error, :not_exist} -> "That token can't use"
+    #     _ -> "That token is not exist"
+    #   end
     password = user["password"]
     # usernameかemailか
     if String.match?(user["email_or_username"], ~r/^[[:word:]\-._]+@[[:word:]\-_.]+\.[[:alpha:]]+$/) do
@@ -235,11 +247,15 @@ defmodule Milk.Accounts do
     end
     |> case do
       %User{} = user ->
-        user
-        |> User.changeset(%{logout_fl: false})
-        |> Repo.update()
-        user
+        {:ok, userinfo} =
+          user
+          |> User.changeset(%{logout_fl: false})
+          |> Repo.update()
+        {:ok, token, full_claims} =
+          Guardian.encode_and_sign(userinfo, %{}, token_type: "refresh", ttl: {4, :weeks})
+        %{user: userinfo, token: token}
       _ -> nil
+
     end
   end
 

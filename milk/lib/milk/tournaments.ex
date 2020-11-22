@@ -16,7 +16,6 @@ defmodule Milk.Tournaments do
   alias Milk.Games.Game
   alias Milk.Chat
   alias Milk.Log
-  alias Milk.Platforms.Platform
 
   require Integer
   require Logger
@@ -74,18 +73,15 @@ defmodule Milk.Tournaments do
   end
 
   def get_going_tournaments_by_master_id(user_id) do
-    now = 
-      DateTime.utc_now()
-      |> DateTime.to_unix()
-
+  
     Repo.all(from t in Tournament, where: t.master_id == ^user_id)
-    |> Enum.filter(fn tournament -> 
-      date = 
+    |> Enum.filter(fn tournament ->
+      date =
         tournament.event_date
         |> IO.inspect
         |> DateTime.to_unix()
 
-      now = 
+      now =
         DateTime.utc_now()
         |> DateTime.to_unix()
 

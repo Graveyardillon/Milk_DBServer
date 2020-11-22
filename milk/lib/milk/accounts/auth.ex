@@ -47,8 +47,8 @@ defmodule Milk.Accounts.Auth do
   end
 
   def not_space(changeset) do
-    password = get_field(changeset, :password)|>IO.inspect(label: :pass)
-    unless String.match?(password, ~r/\A^(?=.\s).*$/)|>IO.inspect(label: :dame) do
+    password = get_field(changeset, :password)
+    unless String.match?(password, ~r/\A^(?=.\s).*$/) do
       changeset
     else
       add_error(changeset, :password, "Don't include space")

@@ -2,7 +2,7 @@ defmodule Milk.ConfNum do
 
   use GenServer
 
-  def init(state) do 
+  def init(_state) do 
     {:ok, %{}}
   end
 
