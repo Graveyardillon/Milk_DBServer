@@ -85,9 +85,9 @@ defmodule Milk.Accounts do
     end)
   end
 
-  @doc """
-  Gets id_for_show.
-  """
+    @doc """
+    Gets id_for_show.
+    """
   defp generate_random_id() do
     Enum.random(0..999999)
     |> generate_random_id()
@@ -227,50 +227,44 @@ defmodule Milk.Accounts do
   # FIXME: 可読性の向上
   def login(user) do
     password = user["password"]
-    Argon2.verify_pass("ss", "$argon2id$v=19$m=131072,t=8,p=4$ofzhop1UTx/tq1ltnGustA$x+LXkY48n+NMO8aP2D4N5d1DjZ84yCwHb7fqJ/5YoEg")
-    |> IO.inspect()
-    
     # usernameかemailか
     if String.match?(user["email_or_username"], ~r/^[[:word:]\-._]+@[[:word:]\-_.]+\.[[:alpha:]]+$/) do
-      case Repo.one(from u in User, join: a in assoc(u, :auth), where: a.email == ^user["email_or_username"], preload: [auth: a]) do
-        %User{} = userinfo ->
-          if Argon2.verify_pass(password, userinfo.auth.password) do
-            userinfo
-          else
-            nil
-          end
-        nil ->
-          case Repo.one(from u in User, join: a in assoc(u, :auth), where: a.name == ^user["email_or_username"], preload: [auth: a]) do
-            %User{} = userinfo ->
-              if Argon2.verify_pass(password, userinfo.auth.password) do
-                userinfo
-              else
-                nil
-              end
-            nil -> nil
-          end
-      end
+      get_valid_user(user, password, :email)
     else
-      case Repo.one(from u in User, join: a in assoc(u, :auth), where: a.name == ^user["email_or_username"], preload: [auth: a]) do
-        %User{} = userinfo -> 
-          if Argon2.verify_pass(password, userinfo.auth.password) do
-            userinfo
-          else
-            nil
-          end
-        nil -> nil
-      end
+      get_valid_user(user, password, :username)
     end
     |> case do
       %User{} = user ->
         user
         |> User.changeset(%{logout_fl: false})
-        |> Repo.update
+        |> Repo.update()
         user
       _ -> nil
     end
   end
 
+  defp where_mode(query, :email, user) do
+    where(query, [u,a], a.email == ^user["email_or_username"])
+  end
+  defp where_mode(query, :username, user) do
+    where(query, [u,a], a.name == ^user["email_or_username"])
+  end
+  defp get_valid_user(user, password, mode) do
+    User
+    |> join(:inner, [u], a in assoc(u, :auth))
+    |> where_mode(mode, user)
+    |> preload([u,a], [auth: a])
+    |> Repo.one()
+    |> case do
+      %User{} = userinfo ->
+        if Argon2.verify_pass(password, userinfo.auth.password), do: userinfo
+      nil ->
+        case mode do
+          :email -> get_valid_user(user, password, :username)
+          _ -> nil
+        end
+    end
+  end
   # def login(user) do
   #   password = Auth.create_pass(user["password"])
   #   #usernameかemailか
