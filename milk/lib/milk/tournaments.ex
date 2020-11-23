@@ -74,7 +74,6 @@ defmodule Milk.Tournaments do
   end
 
   def get_going_tournaments_by_master_id(user_id) do
-  
     Repo.all(from t in Tournament, where: t.master_id == ^user_id)
     |> Enum.filter(fn tournament ->
       date =
@@ -149,28 +148,15 @@ defmodule Milk.Tournaments do
 
   """
   def create_tournament(params, thumbnail_path \\ "") do
-    attrs = check_params(params)
-    if Repo.exists?(from u in User, where: u.id == ^attrs["master_id"]) do
-      create(attrs, thumbnail_path)
+    id = Tools.to_integer_as_needed(params["master_id"])
+
+    if Repo.exists?(from u in User, where: u.id == ^id) do
+      create(params, thumbnail_path)
     else
       {:error, nil}
     end
-
-    # gameをチェックしない
-
-    # game_repo = Repo.exists?(from u in Game, where: u.id == ^attrs["game_id"])
-
-    # if master_repo and game_repo do
-    #   create_tournament(:notnil, attrs)
-    # else
-    #   create_tournament(:nil, attrs)
-    # end
   end
 
-  defp check_params(params) when is_binary(params), do: Poison.decode!(params)|> check_params(params["master_id"])
-  defp check_params(params), do: check_params(params, params["master_id"])
-  defp check_params(params, nil), do: Map.put(params, "master_id", -1)
-  defp check_params(params, _id), do: params
   defp create_topic(tournament, topic) do
     {:ok, chat_room} =
       %{
@@ -181,6 +167,7 @@ defmodule Milk.Tournaments do
     %TournamentChatTopic{tournament_id: tournament.id, chat_room_id: chat_room.id}
     |> TournamentChatTopic.changeset(%{"topic_name" => topic})
   end
+
   defp create(attrs, thumbnail_path) do
     master_id = Tools.to_integer_as_needed(attrs["master_id"])
     platform_id = Tools.to_integer_as_needed(attrs["platform"])
@@ -208,6 +195,7 @@ defmodule Milk.Tournaments do
         {:error, nil}
     end
   end
+
   @doc """
   Updates a tournament.
 

@@ -14,7 +14,9 @@ defmodule Milk.TournamentsTest do
       "event_date" => "2010-04-17T14:00:00Z",
       "name" => "some name",
       "type" => 0,
-      "url" => "some url"
+      "url" => "some url",
+      "master_id" => 1,
+      "platform" => 1
     }
     @update_attrs %{
       capacity: 43,
@@ -26,13 +28,15 @@ defmodule Milk.TournamentsTest do
       url: "some updated url"
     }
     @invalid_attrs %{
-      capacity: nil, 
-      deadline: nil, 
-      description: nil, 
-      event_date: nil, 
-      name: nil, 
-      type: nil, 
-      url: nil
+      "capacity" => nil, 
+      "deadline" => nil, 
+      "description" => nil, 
+      "event_date" => nil, 
+      "name" => nil, 
+      "type" => nil, 
+      "url" => nil,
+      "master_id" => 1,
+      "platform" => 1
     }
 
     def tournament_fixture(attrs \\ %{}) do
@@ -81,7 +85,7 @@ defmodule Milk.TournamentsTest do
     test "update_tournament/2 with invalid data returns error changeset" do
       {:ok, tournament} = tournament_fixture()
       assert {:error, _} = Tournaments.update_tournament(tournament, @invalid_attrs)
-      # fix me
+      # FIXME:
       # assert tournament == Tournaments.get_tournament!(tournament.id)
     end
   end
