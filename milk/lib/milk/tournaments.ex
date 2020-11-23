@@ -148,22 +148,11 @@ defmodule Milk.Tournaments do
 
   """
   def create_tournament(params, thumbnail_path \\ "") do
-    #IO.inspect(params)
-    attrs = if is_binary(params) do
-      Poison.decode!(params)
-      |> IO.inspect
+    attrs = check_params(params)
+    if Repo.exists?(from u in User, where: u.id == ^attrs["master_id"]) do
+      create(attrs, thumbnail_path)
     else
-      params
-    end
-    # attrs = params
-    unless attrs["master_id"] |> is_nil() do
-      if Repo.exists?(from u in User, where: u.id == ^attrs["master_id"]) do
-        create_tournament(:notnil, attrs, thumbnail_path)
-      else
-        create_tournament(:nil, attrs, thumbnail_path)
-      end
-    else
-      create_tournament(:nil, attrs, thumbnail_path)
+      {:error, nil}
     end
 
     # gameをチェックしない
@@ -177,69 +166,42 @@ defmodule Milk.Tournaments do
     # end
   end
 
-  defp create_tournament(:notnil, attrs, thumbnail_path) do
-    master_id = if is_binary(attrs["master_id"]) do
-      String.to_integer(attrs["master_id"])
-    else
-      attrs["master_id"]
-    end
+  defp check_params(params) when is_binary(params), do: Poison.decode!(params)|> check_params(params["master_id"])
+  defp check_params(params), do: check_params(params, params["master_id"])
+  defp check_params(params, nil), do: Map.put(params, "master_id", -1)
+  defp check_params(params, id), do: params
+  defp check_integer(element) when is_binary(element), do: String.to_integer(element)
+  defp check_integer(element), do: element
+  defp create_topics(tournament, theme) do
+    {:ok, chat_room} =
+      %{
+        name: tournament.name <> "-" <> theme,
+        member_count: tournament.count
+      }
+      |> Chat.create_chat_room()
+    %TournamentChatTopic{tournament_id: tournament.id, chat_room_id: chat_room.id}
+    |> TournamentChatTopic.changeset(%{"topic_name" => theme})
+  end
+  defp create(attrs, thumbnail_path) do
+    master_id = check_integer(attrs["master_id"])
+    platform_id = check_integer(attrs["platform"])
 
-    platform_id = if is_binary(attrs["platform"]) do
-      String.to_integer(attrs["platform"])
-    else
-      attrs["platform"]
-    end
-
-    tournament_struct = %Tournament{
-      master_id: master_id,
-      game_id: attrs["game_id"],
-      thumbnail_path: thumbnail_path,
-      platform_id: platform_id
-    }
-
-    tournament =
-      Multi.new()
-      |> Multi.insert(:tournament, Tournament.changeset(tournament_struct, attrs))
-      |> Multi.insert(:group_topic, fn %{tournament: tournament} ->
-        room_params = %{
-          name: tournament.name <> "-" <> "Group",
-          member_count: tournament.count,
-        }
-        {:ok, chat_room} = Chat.create_chat_room(room_params)
-        topic = %{"topic_name" => "Group"}
-
-        %TournamentChatTopic{tournament_id: tournament.id, chat_room_id: chat_room.id}
-        |> TournamentChatTopic.changeset(topic)
-      end)
-      |> Multi.insert(:notification_topic, fn %{tournament: tournament} ->
-        room_params = %{
-          name: tournament.name <> "-" <> "Notification",
-          member_count: tournament.count,
-        }
-        {:ok, chat_room} = Chat.create_chat_room(room_params)
-        topic = %{"topic_name" => "Notification"}
-
-        %TournamentChatTopic{tournament_id: tournament.id, chat_room_id: chat_room.id}
-        |> TournamentChatTopic.changeset(topic)
-      end)
-      |> Multi.insert(:q_and_a_topic, fn %{tournament: tournament} ->
-        room_params = %{
-          name: tournament.name <> "-" <> "Q&A",
-          member_count: tournament.count,
-        }
-        {:ok, chat_room} = Chat.create_chat_room(room_params)
-        topic = %{"topic_name" => "Q&A"}
-
-        %TournamentChatTopic{tournament_id: tournament.id, chat_room_id: chat_room.id}
-        |> TournamentChatTopic.changeset(topic)
-      end)
-      |> Repo.transaction()
-      |> IO.inspect(label: :transaction)
-
-    case tournament do
+    Multi.new()
+    |> Multi.insert(:tournament,
+      %Tournament{
+        master_id: master_id,
+        game_id: attrs["game_id"],
+        thumbnail_path: thumbnail_path,
+        platform_id: platform_id
+      }
+      |> Tournament.changeset(attrs)
+    )
+    |> Multi.insert(:group_topic, fn %{tournament: tournament} -> create_topics(tournament, "Group") end)
+    |> Multi.insert(:notification_topic, fn %{tournament: tournament} -> create_topics(tournament, "Notification") end)
+    |> Multi.insert(:q_and_a_topic, fn %{tournament: tournament} -> create_topics(tournament, "Q&A") end)
+    |> Repo.transaction()
+    |> case do
       {:ok, tournament} ->
-        IO.inspect(tournament, label: :macro)
-        IO.inspect(tournament.tournament, label: :micro)
         {:ok, tournament.tournament}
       {:error, error} ->
         {:error, error.errors}
@@ -247,9 +209,6 @@ defmodule Milk.Tournaments do
         {:error, nil}
     end
   end
-
-  defp create_tournament(:nil, _attrs, _thumbnail_path), do: {:error, nil}
-
   @doc """
   Updates a tournament.
 
