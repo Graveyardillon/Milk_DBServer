@@ -31,7 +31,11 @@ defmodule MilkWeb.Router do
     get "/game/list", GameController, :list
     post "/game/add", GameController, :create
     post "/achievement/list", AchievementController, :show
-    post "/achievement/add", AchievementController, :add
+    post "/achievement", AchievementController, :create
+    post "achievement/update", AchievementController, :update
+    get "achievement/index", AchievementController, :index
+    delete "achievement/delete", AchievementController, :delete
+    post "achievement/show_one", AchievementController, :show_one
   end
 
   scope "/api", MilkWeb do
