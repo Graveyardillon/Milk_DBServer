@@ -54,6 +54,7 @@ defmodule MilkWeb.AchievementController do
   end
 
   def delete(conn, params) do
-    render(conn, "list.json", achievements: params)
+    {:ok, deleted} = Achievements.delete_achievement(params)
+    render(conn, "delete.json", achievement: deleted)
   end
 end

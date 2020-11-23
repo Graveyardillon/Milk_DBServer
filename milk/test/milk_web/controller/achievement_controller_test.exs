@@ -85,11 +85,14 @@ defmodule MilkWeb.AchievementControllerTest do
 
     test "deletes chosen achievement", %{conn: conn, achievement: achievement} do
       conn = delete(conn, Routes.achievement_path(conn, :delete), achievement)
-      assert response(conn, 204)
-
-      assert_error_sent 404, fn ->
-        get(conn, Routes.achievement_path(conn, :show, achievement))
-      end
+      assert response(conn, 200)
+      |> Poison.decode!()
+      |> Map.get("data") ==
+        %{
+          "title" => achievement.title,
+          "id" => achievement.id,
+          "user_id" => achievement.user_id
+        }
     end
   end
 

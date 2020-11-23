@@ -8,21 +8,21 @@ defmodule Milk.TournamentsTest do
     alias Milk.Tournaments.Tournament
     # 外部キーが二つ以上の場合は %{"capacity" => 42} のようにしなければいけない
     @valid_attrs %{
-      "capacity" => 42, 
-      "deadline" => "2010-04-17T14:00:00Z", 
-      "description" => "some description", 
-      "event_date" => "2010-04-17T14:00:00Z", 
-      "name" => "some name", 
-      "type" => 0, 
+      "capacity" => 42,
+      "deadline" => "2010-04-17T14:00:00Z",
+      "description" => "some description",
+      "event_date" => "2010-04-17T14:00:00Z",
+      "name" => "some name",
+      "type" => 0,
       "url" => "some url"
     }
     @update_attrs %{
-      capacity: 43, 
-      deadline: "2011-05-18T15:01:01Z", 
-      description: "some updated description", 
-      event_date: "2011-05-18T15:01:01Z", 
-      name: "some updated name", 
-      type: 43, 
+      capacity: 43,
+      deadline: "2011-05-18T15:01:01Z",
+      description: "some updated description",
+      event_date: "2011-05-18T15:01:01Z",
+      name: "some updated name",
+      type: 43,
       url: "some updated url"
     }
     @invalid_attrs %{
