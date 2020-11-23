@@ -16,7 +16,7 @@ defmodule Milk.Tournaments do
   alias Milk.Games.Game
   alias Milk.Chat
   alias Milk.Log
-
+  alias Common.Tools
   require Integer
   require Logger
 
@@ -169,22 +169,20 @@ defmodule Milk.Tournaments do
   defp check_params(params) when is_binary(params), do: Poison.decode!(params)|> check_params(params["master_id"])
   defp check_params(params), do: check_params(params, params["master_id"])
   defp check_params(params, nil), do: Map.put(params, "master_id", -1)
-  defp check_params(params, id), do: params
-  defp check_integer(element) when is_binary(element), do: String.to_integer(element)
-  defp check_integer(element), do: element
-  defp create_topics(tournament, theme) do
+  defp check_params(params, _id), do: params
+  defp create_topic(tournament, topic) do
     {:ok, chat_room} =
       %{
-        name: tournament.name <> "-" <> theme,
+        name: tournament.name <> "-" <> topic,
         member_count: tournament.count
       }
       |> Chat.create_chat_room()
     %TournamentChatTopic{tournament_id: tournament.id, chat_room_id: chat_room.id}
-    |> TournamentChatTopic.changeset(%{"topic_name" => theme})
+    |> TournamentChatTopic.changeset(%{"topic_name" => topic})
   end
   defp create(attrs, thumbnail_path) do
-    master_id = check_integer(attrs["master_id"])
-    platform_id = check_integer(attrs["platform"])
+    master_id = Tools.to_integer_as_needed(attrs["master_id"])
+    platform_id = Tools.to_integer_as_needed(attrs["platform"])
 
     Multi.new()
     |> Multi.insert(:tournament,
@@ -196,9 +194,9 @@ defmodule Milk.Tournaments do
       }
       |> Tournament.changeset(attrs)
     )
-    |> Multi.insert(:group_topic, fn %{tournament: tournament} -> create_topics(tournament, "Group") end)
-    |> Multi.insert(:notification_topic, fn %{tournament: tournament} -> create_topics(tournament, "Notification") end)
-    |> Multi.insert(:q_and_a_topic, fn %{tournament: tournament} -> create_topics(tournament, "Q&A") end)
+    |> Multi.insert(:group_topic, fn %{tournament: tournament} -> create_topic(tournament, "Group") end)
+    |> Multi.insert(:notification_topic, fn %{tournament: tournament} -> create_topic(tournament, "Notification") end)
+    |> Multi.insert(:q_and_a_topic, fn %{tournament: tournament} -> create_topic(tournament, "Q&A") end)
     |> Repo.transaction()
     |> case do
       {:ok, tournament} ->

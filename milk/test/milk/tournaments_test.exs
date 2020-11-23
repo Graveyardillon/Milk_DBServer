@@ -3,7 +3,6 @@ defmodule Milk.TournamentsTest do
 
   alias Milk.Tournaments
   alias Milk.Accounts
-  alias Milk.Accounts.User
 
   describe "tournament" do
     alias Milk.Tournaments.Tournament
