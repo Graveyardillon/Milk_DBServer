@@ -16,4 +16,22 @@ defmodule MilkWeb.AchievementView do
       title: achievement.title,
       icon_path: achievement.icon_path}
   end
+
+  def render("error.json", %{list: list}) do
+    %{data: render_many(list, AchievementView, "errors.json")}
+  end
+
+  def render("errors.json", error) do
+    %{error: error}
+  end
+
+  def render("delete.json", achievement) do
+    %{data:
+      %{
+        title: achievement.achievement.title,
+        id: achievement.achievement.id,
+        user_id: achievement.achievement.user_id
+      }
+    }
+  end
 end

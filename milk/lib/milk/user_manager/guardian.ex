@@ -8,7 +8,15 @@ defmodule Milk.UserManager.Guardian do
   alias Milk.UserManager.Guardian
 
   def subject_for_token(user, _claims) do
-    {:ok, to_string(user.id)}
+    id =
+      case Map.get(user, :user) do
+        nil ->
+          user.id
+        userinfo ->
+          user.user.id
+      end
+      |> to_string
+    {:ok, id}
   end
 
   def resource_from_claims(%{"sub" => id}) do

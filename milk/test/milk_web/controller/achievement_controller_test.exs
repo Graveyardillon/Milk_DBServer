@@ -2,6 +2,7 @@ defmodule MilkWeb.AchievementControllerTest do
   use MilkWeb.ConnCase
 
   alias Milk.Achievements
+  alias Milk.Accounts
   alias Milk.Achievements.Achievement
 
   @create_attrs %{
@@ -16,8 +17,10 @@ defmodule MilkWeb.AchievementControllerTest do
   }
   @invalid_attrs %{icon_path: nil, title: nil, user_id: nil}
 
+  @user_valid_attrs %{"icon_path" => "some icon_path", "language" => "some language", "name" => "some name", "notification_number" => 42, "point" => 42, "email" => "some@email.com", "logout_fl" => true, "password" => "S1ome password"}
   def fixture(:achievement) do
-    {:ok, achievement} = Achievements.create_achievement(@create_attrs)
+    {:ok, user} = Accounts.create_user(@user_valid_attrs)
+    {:ok, achievement} = Achievements.create_achievement(%{@create_attrs| user_id: user.id})
     achievement
   end
 
@@ -34,22 +37,23 @@ defmodule MilkWeb.AchievementControllerTest do
 
   describe "create achievement" do
     test "renders achievement when data is valid", %{conn: conn} do
-      conn = post(conn, Routes.achievement_path(conn, :create), achievement: @create_attrs)
-      assert %{"id" => id} = json_response(conn, 201)["data"]
+      {:ok, user} = Accounts.create_user(@user_valid_attrs)
+      conn = post(conn, Routes.achievement_path(conn, :create), achievement: %{@create_attrs|user_id: user.id})
+      assert %{"id" => id} = json_response(conn, 200)["data"]
 
-      conn = get(conn, Routes.achievement_path(conn, :show, id))
-
+      conn = post(conn, Routes.achievement_path(conn, :show_one), id: id)
+      user_id = user.id
       assert %{
                "id" => id,
                "icon_path" => "some icon_path",
                "title" => "some title",
-               "user_id" => "some user_id"
+               "user_id" => user_id
              } = json_response(conn, 200)["data"]
     end
 
     test "renders errors when data is invalid", %{conn: conn} do
       conn = post(conn, Routes.achievement_path(conn, :create), achievement: @invalid_attrs)
-      assert json_response(conn, 422)["errors"] != %{}
+      assert json_response(conn, 200)["errors"] != %{}
     end
   end
 
@@ -57,22 +61,22 @@ defmodule MilkWeb.AchievementControllerTest do
     setup [:create_achievement]
 
     test "renders achievement when data is valid", %{conn: conn, achievement: %Achievement{id: id} = achievement} do
-      conn = put(conn, Routes.achievement_path(conn, :update, achievement), achievement: @update_attrs)
+      conn = post(conn, Routes.achievement_path(conn, :update), id: achievement.id, attrs: %{@update_attrs|user_id: achievement.user_id})
       assert %{"id" => ^id} = json_response(conn, 200)["data"]
 
-      conn = get(conn, Routes.achievement_path(conn, :show, id))
-
+      conn = post(conn, Routes.achievement_path(conn, :show_one), id: id)
+      user_id = achievement.user_id
       assert %{
                "id" => id,
                "icon_path" => "some updated icon_path",
                "title" => "some updated title",
-               "user_id" => "some updated user_id"
+               "user_id" => user_id
              } = json_response(conn, 200)["data"]
     end
 
     test "renders errors when data is invalid", %{conn: conn, achievement: achievement} do
-      conn = put(conn, Routes.achievement_path(conn, :update, achievement), achievement: @invalid_attrs)
-      assert json_response(conn, 422)["errors"] != %{}
+      conn = post(conn, Routes.achievement_path(conn, :update), id: achievement.id, attrs: @invalid_attrs)
+      assert json_response(conn, 200)["errors"] != %{}
     end
   end
 
@@ -80,12 +84,15 @@ defmodule MilkWeb.AchievementControllerTest do
     setup [:create_achievement]
 
     test "deletes chosen achievement", %{conn: conn, achievement: achievement} do
-      conn = delete(conn, Routes.achievement_path(conn, :delete, achievement))
-      assert response(conn, 204)
-
-      assert_error_sent 404, fn ->
-        get(conn, Routes.achievement_path(conn, :show, achievement))
-      end
+      conn = delete(conn, Routes.achievement_path(conn, :delete), achievement)
+      assert response(conn, 200)
+      |> Poison.decode!()
+      |> Map.get("data") ==
+        %{
+          "title" => achievement.title,
+          "id" => achievement.id,
+          "user_id" => achievement.user_id
+        }
     end
   end
 

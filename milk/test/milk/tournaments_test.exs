@@ -3,37 +3,40 @@ defmodule Milk.TournamentsTest do
 
   alias Milk.Tournaments
   alias Milk.Accounts
-  alias Milk.Accounts.User
 
   describe "tournament" do
     alias Milk.Tournaments.Tournament
     # 外部キーが二つ以上の場合は %{"capacity" => 42} のようにしなければいけない
     @valid_attrs %{
-      "capacity" => 42, 
-      "deadline" => "2010-04-17T14:00:00Z", 
-      "description" => "some description", 
-      "event_date" => "2010-04-17T14:00:00Z", 
-      "name" => "some name", 
-      "type" => 0, 
-      "url" => "some url"
+      "capacity" => 42,
+      "deadline" => "2010-04-17T14:00:00Z",
+      "description" => "some description",
+      "event_date" => "2010-04-17T14:00:00Z",
+      "name" => "some name",
+      "type" => 0,
+      "url" => "some url",
+      "master_id" => 1,
+      "platform" => 1
     }
     @update_attrs %{
-      capacity: 43, 
-      deadline: "2011-05-18T15:01:01Z", 
-      description: "some updated description", 
-      event_date: "2011-05-18T15:01:01Z", 
-      name: "some updated name", 
-      type: 43, 
+      capacity: 43,
+      deadline: "2011-05-18T15:01:01Z",
+      description: "some updated description",
+      event_date: "2011-05-18T15:01:01Z",
+      name: "some updated name",
+      type: 43,
       url: "some updated url"
     }
     @invalid_attrs %{
-      capacity: nil, 
-      deadline: nil, 
-      description: nil, 
-      event_date: nil, 
-      name: nil, 
-      type: nil, 
-      url: nil
+      "capacity" => nil, 
+      "deadline" => nil, 
+      "description" => nil, 
+      "event_date" => nil, 
+      "name" => nil, 
+      "type" => nil, 
+      "url" => nil,
+      "master_id" => 1,
+      "platform" => 1
     }
 
     def tournament_fixture(attrs \\ %{}) do
@@ -43,8 +46,6 @@ defmodule Milk.TournamentsTest do
         |> Enum.into(@valid_attrs)
         |> Map.put("master_id", user.id)
         |> Tournaments.create_tournament()
-
-      tournament
     end
     #fix me
     # test "list_tournament/0 returns all tournament" do
@@ -82,7 +83,7 @@ defmodule Milk.TournamentsTest do
     test "update_tournament/2 with invalid data returns error changeset" do
       {:ok, tournament} = tournament_fixture()
       assert {:error, _} = Tournaments.update_tournament(tournament, @invalid_attrs)
-      # fix me
+      # FIXME:
       # assert tournament == Tournaments.get_tournament!(tournament.id)
     end
   end

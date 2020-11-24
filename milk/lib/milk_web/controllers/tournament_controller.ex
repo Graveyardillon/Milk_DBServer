@@ -51,6 +51,8 @@ defmodule MilkWeb.TournamentController do
       nil
     end
 
+    tournament_params = if is_binary(tournament_params), do: Poison.decode!(tournament_params)
+
     case Tournaments.create_tournament(tournament_params, thumbnail_path) do
       {:ok, %Tournament{} = tournament} ->
 
@@ -235,6 +237,9 @@ defmodule MilkWeb.TournamentController do
   end
 
   def find_match(conn, %{"tournament_id" => tournament_id, "user_id" => user_id}) do
+    tournament_id = Tools.to_integer_as_needed(tournament_id)
+    user_id = Tools.to_integer_as_needed(user_id)
+
     {_, match_list} = hd(Ets.get_match_list(tournament_id))
 
     match = Tournaments.find_match(match_list, user_id)
@@ -278,6 +283,17 @@ defmodule MilkWeb.TournamentController do
       _ -> 
         json(conn, %{result: false})
     end
+  end
+
+  def get_opponent(conn, %{"tournament_id" => tournament_id, "user_id" => user_id}) do
+    tournament_id = Tools.to_integer_as_needed(tournament_id)
+    user_id = Tools.to_integer_as_needed(user_id)
+
+    {_, match_list} = hd(Ets.get_match_list(tournament_id))
+    match = Tournaments.find_match(match_list, user_id)
+    opponent = Tournaments.get_opponent(match, user_id, tournament_id)
+
+    json(conn, %{result: true, opponent: opponent})
   end
 
   def claim_win(conn, %{"opponent_id" => opponent_id, "user_id" => user_id, "tournament_id" => tournament_id}) do

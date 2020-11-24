@@ -31,14 +31,18 @@ defmodule MilkWeb.Router do
     get "/game/list", GameController, :list
     post "/game/add", GameController, :create
     post "/achievement/list", AchievementController, :show
-    post "/achievement/add", AchievementController, :add
+    post "/achievement", AchievementController, :create
+    post "achievement/update", AchievementController, :update
+    get "achievement/index", AchievementController, :index
+    delete "achievement/delete", AchievementController, :delete
+    post "achievement/show_one", AchievementController, :show_one
   end
 
   scope "/api", MilkWeb do
     pipe_through :api
 
     resources "/user", UserController, except: [:new, :edit, :index, :show, :create, :update]
-  
+
     post "/user/update", UserController, :update
     post "/user/get_all", UserController, :index
     post "/user/get", UserController, :show
@@ -91,6 +95,7 @@ defmodule MilkWeb.Router do
     post "/tournament/get_by_master_id", TournamentController, :get_tournaments_by_master_id
     post "/tournament/get_planned", TournamentController, :get_going_tournaments_by_master_id
     post "/tournament/get_game", TournamentController, :get_game
+    post "/tournament/get_opponent", TournamentController, :get_opponent
     post "/tournament/delete", TournamentController, :delete
     post "/tournament/get_participating_tournaments", TournamentController, :participating_tournaments
     post "/tournament/get_tabs", TournamentController, :tournament_tabs
