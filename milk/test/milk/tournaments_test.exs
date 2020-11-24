@@ -46,8 +46,6 @@ defmodule Milk.TournamentsTest do
         |> Enum.into(@valid_attrs)
         |> Map.put("master_id", user.id)
         |> Tournaments.create_tournament()
-
-      tournament
     end
     #fix me
     # test "list_tournament/0 returns all tournament" do

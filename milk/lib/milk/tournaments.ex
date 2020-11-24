@@ -712,11 +712,7 @@ defmodule Milk.Tournaments do
 
   """
   def create_assistant(attrs \\ %{}) do
-    tournament_id = if is_binary(attrs["tournament_id"]) do
-      String.to_integer(attrs["tournament_id"])
-    else
-      attrs["tournament_id"]
-    end
+    tournament_id = Tools.to_integer_as_needed(attrs["tournament_id"])
 
     Assistant
     |> where([a], a.tournament_id == ^tournament_id)
