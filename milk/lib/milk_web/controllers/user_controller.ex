@@ -63,7 +63,7 @@ defmodule MilkWeb.UserController do
     user = Accounts.login(user_params)
     case user do
       nil -> render(conn, "error.json", error_code: 104)
-      _ -> render(conn, "login.json", %{user: user})
+      _ -> render(conn, "login.json", %{user: user.user})
      end
   end
 
