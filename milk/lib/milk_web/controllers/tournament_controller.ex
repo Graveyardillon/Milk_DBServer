@@ -53,6 +53,12 @@ defmodule MilkWeb.TournamentController do
 
     case Tournaments.create_tournament(tournament_params, thumbnail_path) do
       {:ok, %Tournament{} = tournament} ->
+
+        if tournament_params["join"] == "true" do
+          params = %{"user_id" => tournament.master_id, "tournament_id" => tournament.id}
+          Tournaments.create_entrant(params)
+        end
+
         t =
           tournament
           |> Map.put(:followers, Relations.get_followers(tournament.master_id))
