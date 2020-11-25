@@ -21,8 +21,22 @@ defmodule MilkWeb.TournamentController do
   end
 
   def get_tournaments_by_master_id(conn, %{"user_id" => user_id}) do
-    tournaments = Tournaments.get_tournaments_by_master_id(user_id)
-    render(conn, "index.json", tournament: tournaments)
+    tournaments =
+    Tournaments.get_tournaments_by_master_id(user_id)
+    |> Enum.map(fn tournament ->
+      entrants =
+        Tournaments.get_entrants(tournament.id)
+        |> Enum.map(fn entrant ->
+          Accounts.get_user(entrant.user_id)
+        end)
+
+      %{
+        tournament: tournament,
+        entrants: entrants
+      }
+    end)
+
+    render(conn, "home.json", tournaments_info: tournaments)
   end
 
   def get_going_tournaments_by_master_id(conn, %{"user_id" => user_id}) do
@@ -179,10 +193,23 @@ defmodule MilkWeb.TournamentController do
   end
 
   def participating_tournaments(conn, %{"user_id" => user_id}) do
-    tournaments = Tournaments.get_participating_tournaments!(user_id)
+    tournaments =
+    Tournaments.get_participating_tournaments!(user_id)
+    |> Enum.map(fn tournament ->
+      entrants =
+        Tournaments.get_entrants(tournament.id)
+        |> Enum.map(fn entrant ->
+          Accounts.get_user(entrant.user_id)
+        end)
+
+      %{
+        tournament: tournament,
+        entrants: entrants
+      }
+    end)
 
     if tournaments do
-      render(conn, "index.json", tournament: tournaments)
+      render(conn, "home.json", tournaments_info: tournaments)
     else
       render(conn, "error.json", error: nil)
     end
