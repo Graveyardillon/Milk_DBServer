@@ -149,7 +149,7 @@ defmodule Milk.Tournaments do
   """
   def create_tournament(params, thumbnail_path \\ "") do
     id = Tools.to_integer_as_needed(params["master_id"])
-
+    
     if Repo.exists?(from u in User, where: u.id == ^id) do
       create(params, thumbnail_path)
     else

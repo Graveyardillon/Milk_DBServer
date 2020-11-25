@@ -51,7 +51,7 @@ defmodule MilkWeb.TournamentController do
       nil
     end
 
-    tournament_params = if is_binary(tournament_params), do: Poison.decode!(tournament_params)
+    tournament_params = if is_binary(tournament_params), do: Poison.decode!(tournament_params), else: tournament_params
 
     case Tournaments.create_tournament(tournament_params, thumbnail_path) do
       {:ok, %Tournament{} = tournament} ->
