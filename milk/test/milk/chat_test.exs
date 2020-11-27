@@ -124,7 +124,7 @@ defmodule Milk.ChatTest do
 
     test "delete_chat_member/1 deletes the chat_member" do
       chat_member = chat_member_fixture()
-      assert {:ok, %ChatMember{}} = chat_member |> Chat.delete_chat_member()
+      assert {:ok, %ChatMember{}} = Chat.delete_chat_member(chat_member.chat_room_id,chat_member.user_id)
       # assert_raise Ecto.NoResultsError, fn -> Chat.get_chat_member!(chat_member.id) end
     end
 
