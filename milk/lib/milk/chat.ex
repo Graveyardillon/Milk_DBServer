@@ -375,7 +375,7 @@ defmodule Milk.Chat do
 
   """
   def delete_chat_member(chat_room_id, user_id) do
-    Chat.get_member(chat_room_id, user_id)
+    get_member(chat_room_id, user_id)
     |> case do
       nil -> {:error, nil}
       chat_member ->
