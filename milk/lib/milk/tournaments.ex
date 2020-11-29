@@ -341,10 +341,11 @@ defmodule Milk.Tournaments do
   end
 
   defp user_exist_check(attrs)do
-    if Repo.exists?(from u in User, where: u.id == ^attrs["user_id"]) do
+    with :false <- is_nil(attrs["user_id"]),
+    :true <- Repo.exists?(from u in User, where: u.id == ^attrs["user_id"]) do
       {:ok,attrs}
     else
-      {:error,"undefined user"}
+      _ -> {:error,"undefined user"}
     end
   end
 
@@ -520,6 +521,14 @@ defmodule Milk.Tournaments do
     Entrant.changeset(entrant, attrs)
   end
 
+  def get_rank(tournament_id, user_id) do
+    with entrant <- Repo.one(from e in Entrant, where: e.tournament_id == ^tournament_id and e.user_id == ^user_id),
+    :false <- is_nil(entrant) do
+      Map.get(entrant, :rank)
+    else
+      :true -> {:error, "entrant is not found"}
+    end
+  end
   @doc """
   Generate a match list of entrants.
   """
@@ -544,6 +553,7 @@ defmodule Milk.Tournaments do
       end
     end)
   end
+
 
   @doc """
   Finds a 1v1 match of given id and match list.
