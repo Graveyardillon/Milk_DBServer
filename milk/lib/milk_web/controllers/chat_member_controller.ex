@@ -55,13 +55,10 @@ defmodule MilkWeb.ChatMemberController do
   end
 
   def delete(conn, %{"chat_room_id" => chat_room_id, "user_id" => user_id}) do
-    chat_member = Chat.get_member(chat_room_id, user_id)
-    if (chat_member) do
-      with {:ok, %ChatMember{}} <- Chat.delete_chat_member(chat_member) do
-        send_resp(conn, :no_content, "")
-      end
+    with {:ok, %ChatMember{}} <- Chat.delete_chat_member(chat_room_id, user_id) do
+      send_resp(conn, :no_content, "")
+    end
     # else
     #   render(conn, "error.json", error: nil)
-    end
   end
 end

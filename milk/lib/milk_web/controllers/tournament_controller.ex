@@ -303,6 +303,9 @@ defmodule MilkWeb.TournamentController do
   end
 
   def start_match(conn, %{"user_id" => user_id, "tournament_id" => tournament_id}) do
+    user_id = Tools.to_integer_as_needed(user_id)
+    tournament_id = Tools.to_integer_as_needed(tournament_id)
+
     case Ets.get_match_pending_list(user_id) do
       [] -> 
         Ets.insert_match_pending_list_table(tournament_id, user_id)
@@ -324,6 +327,10 @@ defmodule MilkWeb.TournamentController do
   end
 
   def claim_win(conn, %{"opponent_id" => opponent_id, "user_id" => user_id, "tournament_id" => tournament_id}) do
+    opponent_id = Tools.to_integer_as_needed(opponent_id)
+    user_id = Tools.to_integer_as_needed(user_id)
+    tournament_id = Tools.to_integer_as_needed(tournament_id)
+
     case Ets.get_fight_result(opponent_id) do
       [] ->
         Ets.insert_fight_result_table(user_id, true)
@@ -343,6 +350,10 @@ defmodule MilkWeb.TournamentController do
   end
 
   def claim_lose(conn, %{"opponent_id" => opponent_id, "user_id" => user_id, "tournament_id" => tournament_id}) do
+    opponent_id = Tools.to_integer_as_needed(opponent_id)
+    user_id = Tools.to_integer_as_needed(user_id)
+    tournament_id = Tools.to_integer_as_needed(tournament_id)
+
     case Ets.get_fight_result(opponent_id) do
       [] ->
         Ets.insert_fight_result_table(user_id, false)

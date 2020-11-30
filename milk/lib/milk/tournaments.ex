@@ -341,10 +341,11 @@ defmodule Milk.Tournaments do
   end
 
   defp user_exist_check(attrs)do
-    if Repo.exists?(from u in User, where: u.id == ^attrs["user_id"]) do
+    with :false <- is_nil(attrs["user_id"]),
+    :true <- Repo.exists?(from u in User, where: u.id == ^attrs["user_id"]) do
       {:ok,attrs}
     else
-      {:error,"undefined user"}
+      _ -> {:error,"undefined user"}
     end
   end
 
@@ -477,26 +478,23 @@ defmodule Milk.Tournaments do
   """
 
   def delete_entrant(tournament_id, user_id) do
-    tournament_id = if is_binary(tournament_id) do
-      String.to_integer(tournament_id)
-    else 
-      tournament_id
-    end
-    user_id = if is_binary(user_id) do
-      String.to_integer(user_id)
-    else 
-      user_id
-    end
+    tournament_id = Tools.to_integer_as_needed(tournament_id)
+    user_id = Tools.to_integer_as_needed(user_id)
 
     unless Repo.exists?(from e in Entrant, where: e.tournament_id == ^tournament_id and e.user_id == ^user_id) do
       {:error, "entrant not found"}
     else
-      entrant = 
+      entrant =
         Entrant
         |> where([e], e.tournament_id == ^tournament_id and e.user_id == ^user_id)
         |> Repo.one
         IO.inspect(entrant)
         delete_entrant(entrant)
+      get_tabs_by_tournament_id(tournament_id)
+      |> Enum.each(fn x ->
+        x.chat_room_id
+        |> Chat.delete_chat_member(user_id)
+      end)
       {:ok, entrant}
     end
   end
@@ -523,6 +521,14 @@ defmodule Milk.Tournaments do
     Entrant.changeset(entrant, attrs)
   end
 
+  def get_rank(tournament_id, user_id) do
+    with entrant <- Repo.one(from e in Entrant, where: e.tournament_id == ^tournament_id and e.user_id == ^user_id),
+    :false <- is_nil(entrant) do
+      Map.get(entrant, :rank)
+    else
+      :true -> {:error, "entrant is not found"}
+    end
+  end
   @doc """
   Generate a match list of entrants.
   """
@@ -547,6 +553,7 @@ defmodule Milk.Tournaments do
       end
     end)
   end
+
 
   @doc """
   Finds a 1v1 match of given id and match list.
