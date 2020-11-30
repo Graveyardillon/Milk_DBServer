@@ -58,13 +58,6 @@ defmodule Milk.AccountsTest do
       assert !Accounts.get_user(user.id)
     end
 
-    # FIXME: シギルとDatetimeを統一したい本当は
-    test "get_user/1 gets the user" do
-      assert {:ok, %User{} = user} = Accounts.create_user(@user_valid_attrs)
-      assert user.id == Accounts.get_user(user.id).id
-      assert user == Accounts.get_user(user.id)
-    end
-
     test "get_users_in_touch/1 gets users in touch" do
       {:ok, %User{} = user1} = Accounts.create_user(@user_valid_attrs)
       {:ok, %User{} = user2} = Accounts.create_user(@user2_valid_attrs)
