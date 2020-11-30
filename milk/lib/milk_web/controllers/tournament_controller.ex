@@ -21,8 +21,22 @@ defmodule MilkWeb.TournamentController do
   end
 
   def get_tournaments_by_master_id(conn, %{"user_id" => user_id}) do
-    tournaments = Tournaments.get_tournaments_by_master_id(user_id)
-    render(conn, "index.json", tournament: tournaments)
+    tournaments =
+    Tournaments.get_tournaments_by_master_id(user_id)
+    |> Enum.map(fn tournament ->
+      entrants =
+        Tournaments.get_entrants(tournament.id)
+        |> Enum.map(fn entrant ->
+          Accounts.get_user(entrant.user_id)
+        end)
+
+      %{
+        tournament: tournament,
+        entrants: entrants
+      }
+    end)
+
+    render(conn, "home.json", tournaments_info: tournaments)
   end
 
   def get_going_tournaments_by_master_id(conn, %{"user_id" => user_id}) do
@@ -51,10 +65,16 @@ defmodule MilkWeb.TournamentController do
       nil
     end
 
-    tournament_params = if is_binary(tournament_params), do: Poison.decode!(tournament_params)
+    tournament_params = if is_binary(tournament_params), do: Poison.decode!(tournament_params), else: tournament_params
 
     case Tournaments.create_tournament(tournament_params, thumbnail_path) do
       {:ok, %Tournament{} = tournament} ->
+
+        if tournament_params["join"] == "true" do
+          params = %{"user_id" => tournament.master_id, "tournament_id" => tournament.id}
+          Tournaments.create_entrant(params)
+        end
+
         t =
           tournament
           |> Map.put(:followers, Relations.get_followers(tournament.master_id))
@@ -173,10 +193,23 @@ defmodule MilkWeb.TournamentController do
   end
 
   def participating_tournaments(conn, %{"user_id" => user_id}) do
-    tournaments = Tournaments.get_participating_tournaments!(user_id)
+    tournaments =
+    Tournaments.get_participating_tournaments!(user_id)
+    |> Enum.map(fn tournament ->
+      entrants =
+        Tournaments.get_entrants(tournament.id)
+        |> Enum.map(fn entrant ->
+          Accounts.get_user(entrant.user_id)
+        end)
+
+      %{
+        tournament: tournament,
+        entrants: entrants
+      }
+    end)
 
     if tournaments do
-      render(conn, "index.json", tournament: tournaments)
+      render(conn, "home.json", tournaments_info: tournaments)
     else
       render(conn, "error.json", error: nil)
     end

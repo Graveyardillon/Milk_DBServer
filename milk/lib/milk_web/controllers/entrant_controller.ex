@@ -65,4 +65,11 @@ defmodule MilkWeb.EntrantController do
     end
   end
 
+  def show_rank(conn, %{"tournament_id" => tournament_id, "user_id" => user_id}) do
+    case Tournaments.get_rank(tournament_id, user_id) do
+      {:error, msg} -> render(conn, "error.json", error: msg)
+      rank -> render(conn, "rank.json", rank: rank)
+    end
+  end
+
 end

@@ -87,14 +87,39 @@ defmodule Milk.Relations do
     |> where([r], r.follower_id == ^id)
     |> select([r], r.followee_id)
     |> Repo.all()
-    # |> Enum.map(fn relation -> 
-    #   Repo.one(
-    #     from u in User,
-    #     join: a in assoc(u, :auth),
-    #     where: u.id == ^relation.followee_id,
-    #     preload: [auth: a]
-    #   )
-    # end)
+  end
+
+  def get_followers_list(user_id) do 
+    id = if is_binary(user_id) do
+      String.to_integer(user_id)
+    else
+      user_id
+    end
+
+    Relation
+    |> where([r], r.followee_id == ^id)
+    |> Repo.all()
+    |> Enum.map(fn relation -> 
+      Repo.one(
+        from u in User,
+        join: a in assoc(u, :auth),
+        where: u.id == ^relation.follower_id,
+        preload: [auth: a]
+      )
+    end)
+  end
+  
+  def get_followers_id_list(user_id) do 
+    id = if is_binary(user_id) do
+      String.to_integer(user_id)
+    else
+      user_id
+    end
+
+    Relation
+    |> where([r], r.followee_id == ^id)
+    |> select([r], r.follower_id)
+    |> Repo.all()
   end
 
   @doc """

@@ -32,6 +32,14 @@ defmodule MilkWeb.EntrantView do
     %{result: false, error: create_message(error), data: nil}
   end
 
+  def render("rank.json", %{rank: rank}) do
+    %{data: 
+      %{
+        rank: rank
+      }
+    }
+  end
+
   def create_message(error) do
     Enum.reduce(error, "",fn {key, value}, acc -> to_string(key) <> " "<> elem(value,0) <> ", "<> acc end)
   end

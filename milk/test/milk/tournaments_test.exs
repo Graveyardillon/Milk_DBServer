@@ -39,22 +39,38 @@ defmodule Milk.TournamentsTest do
       "platform" => 1
     }
 
-    def tournament_fixture(attrs \\ %{}) do
+    @entrant_create_attrs %{
+    "rank" => 42,
+    "user_id" => -1,
+    "tournament_id" => -1
+  }
+
+    defp fixture(:tournament) do
       {:ok, user} = Accounts.create_user(%{"name" => "name", "email" => "e@mail.com", "password" => "Password123"})
-      tournament =
-        attrs
+      {:ok, tournament} =
+        %{}
         |> Enum.into(@valid_attrs)
         |> Map.put("master_id", user.id)
         |> Tournaments.create_tournament()
+      tournament
     end
+    defp fixture(:entrant) do
+      tournament = fixture(:tournament)
+
+      {:ok, entrant} =
+        %{@entrant_create_attrs | "tournament_id" => tournament.id, "user_id" => tournament.master_id}
+        |> Tournaments.create_entrant()
+      entrant
+    end
+
     #fix me
     # test "list_tournament/0 returns all tournament" do
-    #   {:ok,tournament} = tournament_fixture()
+    #   {:ok,tournament} = fixture(:tournament)
     #   assert Tournaments.list_tournament() == [tournament]
     # end
 
     test "create_tournament/1 with valid data creates a tournament" do
-      {:ok, tournament} = tournament_fixture()
+      tournament = fixture(:tournament)
       assert tournament.capacity == 42
       assert tournament.deadline == "2010-04-17T14:00:00Z"
       assert tournament.description == "some description"
@@ -69,7 +85,7 @@ defmodule Milk.TournamentsTest do
     end
 
     test "update_tournament/2 with valid data updates the tournament" do
-      {:ok, tournament} = tournament_fixture()
+      tournament = fixture(:tournament)
       assert {:ok, %Tournament{} = tournament} = Tournaments.update_tournament(tournament, @update_attrs)
       assert tournament.capacity == 43
       assert tournament.deadline == "2011-05-18T15:01:01Z"
@@ -81,10 +97,31 @@ defmodule Milk.TournamentsTest do
     end
 
     test "update_tournament/2 with invalid data returns error changeset" do
-      {:ok, tournament} = tournament_fixture()
+      tournament = fixture(:tournament)
       assert {:error, _} = Tournaments.update_tournament(tournament, @invalid_attrs)
       # FIXME:
       # assert tournament == Tournaments.get_tournament!(tournament.id)
+    end
+  end
+
+  describe "entrant" do
+    test "get_rank/2 returns entrant's rank when data is valid" do
+      entrant = fixture(:entrant)
+      assert Tournaments.get_rank(entrant.tournament_id, entrant.user_id) == entrant.rank
+    end
+
+    test "get_rank/2 returns error with invalid tournament_id" do
+      entrant = fixture(:entrant)
+      assert Tournaments.get_rank(-1, entrant.user_id) == {:error, "entrant is not found"}
+    end
+
+    test "get_rank/2 returns error with invalid user_id" do
+      entrant = fixture(:entrant)
+      assert Tournaments.get_rank(entrant.tournament_id, -1) == {:error, "entrant is not found"}
+    end
+
+    test "get_rank/2 returns error with invalid params" do
+      assert Tournaments.get_rank(-1, -1) == {:error, "entrant is not found"}
     end
   end
 end

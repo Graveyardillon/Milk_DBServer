@@ -32,4 +32,12 @@ defmodule MilkWeb.RelationController do
     render(conn, "id_list.json", list: users)
   end
 
+  def followers_list(conn, %{"user_id" => user_id}) do
+    users = Relations.get_followers_list(user_id)
+    render(conn, "user.json", users: users)
+  end
+  def followers_id_list(conn, %{"user_id" => user_id}) do
+    users = Relations.get_followers_id_list(user_id)
+    render(conn, "id_list.json", list: users)
+  end
 end

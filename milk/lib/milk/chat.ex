@@ -374,14 +374,19 @@ defmodule Milk.Chat do
       {:error, %Ecto.Changeset{}}
 
   """
-  def delete_chat_member(%ChatMember{} = chat_member) do
-    ChatMemberLog.changeset(%ChatMemberLog{}, Map.from_struct(chat_member))
-    |> Repo.insert()
+  def delete_chat_member(chat_room_id, user_id) do
+    get_member(chat_room_id, user_id)
+    |> case do
+      nil -> {:error, nil}
+      chat_member ->
+        ChatMemberLog.changeset(%ChatMemberLog{}, Map.from_struct(chat_member))
+        |> Repo.insert()
 
-    chat_room = Repo.get(ChatRoom, chat_member.chat_room_id)
-    ChatRoom.changeset(chat_room, %{member_count: chat_room.member_count - 1})
-    |> Repo.update()
-    Repo.delete(chat_member)
+        chat_room = Repo.get(ChatRoom, chat_member.chat_room_id)
+        ChatRoom.changeset(chat_room, %{member_count: chat_room.member_count - 1})
+        |> Repo.update()
+        Repo.delete(chat_member)
+    end
   end
 
   @doc """
