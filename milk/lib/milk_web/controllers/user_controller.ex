@@ -7,9 +7,10 @@ defmodule MilkWeb.UserController do
 
   # action_fallback MilkWeb.FallbackController
 
+  # FIXME: エラー消しただけ
   def index(conn, _params) do
-    users = Accounts.list_users()
-    render(conn,"index.json", users: users)
+    #users = Accounts.list_users()
+    render(conn,"index.json", users: [])
   end
 
   def get_users_in_touch(conn, %{"user_id" => id}) do

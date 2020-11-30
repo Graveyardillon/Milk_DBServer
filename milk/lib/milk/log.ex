@@ -323,7 +323,25 @@ defmodule Milk.Log do
       ** (Ecto.NoResultsError)
 
   """
-  def get_tournament_log!(id), do: Repo.get!(TournamentLog, id)
+  def get_tournament_log!(id), do: Repo.one(TournamentLog, id)
+
+  @doc """
+  Gets a single tournament.
+  """
+  def get_tournament_log(id) do
+    TournamentLog
+    |> where([t], t.id == ^id)
+    |> Repo.one()
+  end
+
+  @doc """
+  Gets a single tournament by tournament_id.
+  """
+  def get_tournament_log_by_tournament_id(id) do
+    TournamentLog
+    |> where([t], t.tournament_id == ^id)
+    |> Repo.one()
+  end
 
   @doc """
   Creates a tournament.

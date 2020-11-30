@@ -9,6 +9,7 @@ defmodule Milk.Log.TournamentLog do
     field :description, :string
     field :event_date, EctoDate
     field :game_id, :integer
+    field :tournament_id, :integer
     field :master_id, :integer
     field :winner_id, :integer
     field :name, :string
@@ -22,6 +23,5 @@ defmodule Milk.Log.TournamentLog do
   def changeset(tournament, attrs) do
     tournament
     |> cast(attrs, [:name, :game_id, :event_date, :capacity, :description, :master_id, :winner_id, :deadline, :type, :url])
-    # |> validate_required([:name, :game_id, :event_date, :capacity, :description, :master_id, :deadline, :type, :url])
   end
 end

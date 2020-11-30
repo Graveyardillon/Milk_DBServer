@@ -33,9 +33,9 @@ defmodule MilkWeb.Router do
     post "/achievement/list", AchievementController, :show
     post "/achievement", AchievementController, :create
     post "achievement/update", AchievementController, :update
-    get "achievement/index", AchievementController, :index
-    delete "achievement/delete", AchievementController, :delete
-    post "achievement/show_one", AchievementController, :show_one
+    get "/achievement/index", AchievementController, :index
+    delete "/achievement/delete", AchievementController, :delete
+    post "/achievement/show_one", AchievementController, :show_one
   end
 
   scope "/api", MilkWeb do

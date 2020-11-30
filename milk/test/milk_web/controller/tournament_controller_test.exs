@@ -1,16 +1,15 @@
 defmodule MilkWeb.TournamentControllerTest do
   use MilkWeb.ConnCase
 
+  alias Milk.Accounts
   alias Milk.Tournaments
   alias Milk.Tournaments.Tournament
 
   @create_attrs %{
     capacity: 42,
-    deadline: "2010-04-17T14:00:00Z",
+    deadline: "2050-04-17T14:00:00Z",
     description: "some description",
-    event_date: "2010-04-17T14:00:00Z",
-    game_id: 42,
-    master_id: 42,
+    event_date: "2050-04-17T14:00:00Z",
     name: "some name",
     type: 42,
     url: "some url"
@@ -20,49 +19,40 @@ defmodule MilkWeb.TournamentControllerTest do
     deadline: "2011-05-18T15:01:01Z",
     description: "some updated description",
     event_date: "2011-05-18T15:01:01Z",
-    game_id: 43,
-    master_id: 43,
+    master_id: 1,
     name: "some updated name",
     type: 43,
     url: "some updated url"
   }
   @invalid_attrs %{capacity: nil, deadline: nil, description: nil, event_date: nil, game_id: nil, master_id: nil, name: nil, type: nil, url: nil}
 
+  @create_user_attrs %{"icon_path" => "some icon_path", "language" => "some language", "name" => "some name", "notification_number" => 42, "point" => 42, "email" => "some2@email.com", "logout_fl" => true, "password" => "S1ome password"}
+
   def fixture(:tournament) do
-    {:ok, tournament} = Log.create_tournament(@create_attrs)
+    {:ok, tournament} = Tournaments.create_tournament(@create_attrs)
     tournament
+  end
+
+  def fixture(:user) do
+    {:ok, user} = Accounts.create_user(@create_user_attrs)
   end
 
   setup %{conn: conn} do
     {:ok, conn: put_req_header(conn, "accept", "application/json")}
   end
 
-  describe "index" do
-    test "lists all tournament_log", %{conn: conn} do
-      conn = get(conn, Routes.tournament_path(conn, :index))
-      assert json_response(conn, 200)["data"] == []
-    end
-  end
-
   describe "create tournament" do
     test "renders tournament when data is valid", %{conn: conn} do
-      conn = post(conn, Routes.tournament_path(conn, :create), tournament: @create_attrs)
-      assert %{"id" => id} = json_response(conn, 201)["data"]
+      {:ok, user} = fixture(:user)
+      attrs = Map.put(@create_attrs, :master_id, user.id)
+      conn = post(conn, Routes.tournament_path(conn, :create), %{tournament: attrs, file: ""})
+      IO.inspect(json_response(conn, 200), label: :ct)
+      assert %{"id" => id} = json_response(conn, 200)["data"]
+      #IO.inspect(Tournaments.list_tournament())
 
-      conn = get(conn, Routes.tournament_path(conn, :show, id))
+      conn = post(conn, Routes.tournament_path(conn, :show, %{"tournament_id" => id}))
 
-      assert %{
-               "id" => id,
-               "capacity" => 42,
-               "deadline" => "2010-04-17T14:00:00Z",
-               "description" => "some description",
-               "event_date" => "2010-04-17T14:00:00Z",
-               "game_id" => 42,
-               "master_id" => 42,
-               "name" => "some name",
-               "type" => 42,
-               "url" => "some url"
-             } = json_response(conn, 200)["data"]
+      assert _tournament = json_response(conn, 200)["data"]
     end
 
     test "renders errors when data is invalid", %{conn: conn} do
@@ -81,17 +71,17 @@ defmodule MilkWeb.TournamentControllerTest do
       conn = get(conn, Routes.tournament_path(conn, :show, id))
 
       assert %{
-               "id" => id,
-               "capacity" => 43,
-               "deadline" => "2011-05-18T15:01:01Z",
-               "description" => "some updated description",
-               "event_date" => "2011-05-18T15:01:01Z",
-               "game_id" => 43,
-               "master_id" => 43,
-               "name" => "some updated name",
-               "type" => 43,
-               "url" => "some updated url"
-             } = json_response(conn, 200)["data"]
+        "id" => id,
+        "capacity" => 43,
+        "deadline" => "2011-05-18T15:01:01Z",
+        "description" => "some updated description",
+        "event_date" => "2011-05-18T15:01:01Z",
+        "game_id" => 43,
+        "master_id" => 43,
+        "name" => "some updated name",
+        "type" => 43,
+        "url" => "some updated url"
+      } = json_response(conn, 200)["data"]
     end
 
     test "renders errors when data is invalid", %{conn: conn, tournament: tournament} do

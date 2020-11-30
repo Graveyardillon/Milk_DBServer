@@ -4,6 +4,7 @@ defmodule MilkWeb.TournamentController do
   alias Milk.Ets
   alias Milk.Accounts
   alias Milk.Chat
+  alias Milk.Log
   alias Milk.Relations
   alias Milk.Tournaments
   alias Milk.Tournaments.Tournament
@@ -88,9 +89,14 @@ defmodule MilkWeb.TournamentController do
     end
   end
 
-  # 現在参加中のユーザーもカウントする
+  @doc """
+  Show tournament information.
+  """
   def show(conn, %{"tournament_id" => id}) do
+    id = Tools.to_integer_as_needed(id)
+
     tournament = Tournaments.get_tournament!(id)
+    tournament_log = Log.get_tournament_log_by_tournament_id(id)
 
     if tournament do
       entrants = Tournaments.get_entrants(tournament.id)
@@ -100,12 +106,18 @@ defmodule MilkWeb.TournamentController do
 
       render(conn, "tournament_info.json", tournament: tournament, entrants: entrants)
     else
-      render(conn, "error.json", error: nil)
+      if tournament_log do
+        render(conn, "tournament_log.json", tournament_log: tournament_log)
+      else
+        render(conn, "error.json", error: nil)
+      end
     end
   end
 
   # FIXME: フィルタの仕方変えたほうがよさそう
-  # Gets tournament info list for home screen.
+  @doc """
+  Gets tournament info list for home screen.
+  """
   def home(conn, %{"filter" => "fav", "user_id" => user_id}) do
     tournaments = 
     Tournaments.home_tournament_fav(user_id)
@@ -116,10 +128,7 @@ defmodule MilkWeb.TournamentController do
           Accounts.get_user(entrant.user_id)
         end)
       
-      %{
-        tournament: tournament,
-        entrants: entrants
-      }
+      %{tournament: tournament, entrants: entrants}
     end)
 
     render(conn, "home.json", tournaments_info: tournaments)
@@ -135,10 +144,7 @@ defmodule MilkWeb.TournamentController do
           Accounts.get_user(entrant.user_id)
         end)
       
-      %{
-        tournament: tournament,
-        entrants: entrants
-      }
+      %{tournament: tournament, entrants: entrants}
     end)
 
     render(conn, "home.json", tournaments_info: tournaments)

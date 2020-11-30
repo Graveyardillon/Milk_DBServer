@@ -10,6 +10,7 @@ defmodule Milk.Repo.Migrations.CreateTournamentLog do
       add :deadline, :timestamptz
       add :type, :integer
       add :url, :string
+      add :tournament_id, :integer
       add :game_id, :integer
       add :master_id, :integer
       add :winner_id, :integer

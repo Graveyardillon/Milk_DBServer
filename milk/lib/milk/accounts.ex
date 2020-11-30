@@ -41,7 +41,6 @@ defmodule Milk.Accounts do
   @doc """
   Get all users in touch.
   """
-  @spec get_users_in_touch(integer) :: []
   def get_users_in_touch(id) do
     ChatMember
     |> where([cm], cm.user_id == ^id)

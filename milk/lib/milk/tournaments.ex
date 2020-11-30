@@ -476,7 +476,6 @@ defmodule Milk.Tournaments do
       iex> delete_entrant(entrant)
       {:error, %Ecto.Changeset{}}
   """
-
   def delete_entrant(tournament_id, user_id) do
     tournament_id = Tools.to_integer_as_needed(tournament_id)
     user_id = Tools.to_integer_as_needed(user_id)
@@ -529,6 +528,7 @@ defmodule Milk.Tournaments do
       :true -> {:error, "entrant is not found"}
     end
   end
+
   @doc """
   Generate a match list of entrants.
   """

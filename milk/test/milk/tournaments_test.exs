@@ -40,10 +40,10 @@ defmodule Milk.TournamentsTest do
     }
 
     @entrant_create_attrs %{
-    "rank" => 42,
-    "user_id" => -1,
-    "tournament_id" => -1
-  }
+      "rank" => 42,
+      "user_id" => -1,
+      "tournament_id" => -1
+    }
 
     defp fixture(:tournament) do
       {:ok, user} = Accounts.create_user(%{"name" => "name", "email" => "e@mail.com", "password" => "Password123"})
@@ -54,6 +54,7 @@ defmodule Milk.TournamentsTest do
         |> Tournaments.create_tournament()
       tournament
     end
+
     defp fixture(:entrant) do
       tournament = fixture(:tournament)
 
@@ -62,12 +63,6 @@ defmodule Milk.TournamentsTest do
         |> Tournaments.create_entrant()
       entrant
     end
-
-    #fix me
-    # test "list_tournament/0 returns all tournament" do
-    #   {:ok,tournament} = fixture(:tournament)
-    #   assert Tournaments.list_tournament() == [tournament]
-    # end
 
     test "create_tournament/1 with valid data creates a tournament" do
       tournament = fixture(:tournament)
@@ -99,8 +94,6 @@ defmodule Milk.TournamentsTest do
     test "update_tournament/2 with invalid data returns error changeset" do
       tournament = fixture(:tournament)
       assert {:error, _} = Tournaments.update_tournament(tournament, @invalid_attrs)
-      # FIXME:
-      # assert tournament == Tournaments.get_tournament!(tournament.id)
     end
   end
 
