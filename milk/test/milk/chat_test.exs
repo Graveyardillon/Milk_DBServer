@@ -20,11 +20,6 @@ defmodule Milk.ChatTest do
       Chat.get_chat_room(chat_room.id)
     end
 
-    test "list_chat_room/0 returns all chat_room" do
-      chat_room = chat_room_fixture()
-      assert Chat.list_chat_room() == [chat_room]
-    end
-
     test "get_chat_room/1 returns the chat_room with given id" do
       chat_room = chat_room_fixture()
       assert Chat.get_chat_room(chat_room.id) == chat_room

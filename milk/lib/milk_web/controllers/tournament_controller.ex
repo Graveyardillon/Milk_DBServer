@@ -11,7 +11,7 @@ defmodule MilkWeb.TournamentController do
 
   # action_fallback MilkWeb.FallbackController
 
-  def index(conn, _params) do
+  def index(conn,  _params) do
     tournament = Tournaments.list_tournament()
     if(tournament) do
       render(conn, "index.json", tournament: tournament)
@@ -92,11 +92,11 @@ defmodule MilkWeb.TournamentController do
   def show(conn, %{"tournament_id" => id}) do
     tournament = Tournaments.get_tournament!(id)
 
-    if(tournament) do
+    if tournament do
       entrants = Tournaments.get_entrants(tournament.id)
-      |> Enum.map(fn entrant -> 
-        Accounts.get_user(entrant.user_id)
-      end)
+        |> Enum.map(fn entrant -> 
+          Accounts.get_user(entrant.user_id)
+        end)
 
       render(conn, "tournament_info.json", tournament: tournament, entrants: entrants)
     else
@@ -104,6 +104,7 @@ defmodule MilkWeb.TournamentController do
     end
   end
 
+  # FIXME: フィルタの仕方変えたほうがよさそう
   # Gets tournament info list for home screen.
   def home(conn, %{"filter" => "fav", "user_id" => user_id}) do
     tournaments = 

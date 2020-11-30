@@ -4,14 +4,11 @@ defmodule Milk.Chat do
   """
 
   import Ecto.Query, warn: false
-  alias Milk.Repo
 
+  alias Milk.Repo
   alias Milk.Accounts
-  alias Milk.Chat.ChatRoom
-  alias Milk.Chat.Chats
-  alias Milk.Chat.ChatMember
+  alias Milk.Chat.{ChatRoom, Chats, ChatMember}
   alias Milk.Accounts.User
-  # alias Milk.Accounts
   alias Milk.Tournaments.TournamentChatTopic
   alias Milk.Log.ChatsLog
   alias Milk.Log.ChatMemberLog
