@@ -543,7 +543,7 @@ defmodule Milk.Chat do
   end
 
   # 個人チャット用の関数
-  def dialogue(attrs = %{"user_id" => user_id, "partner_id" => partner_id, "word" => _word, "datetime" => _datetime}) do
+  def dialogue(attrs = %{"user_id" => user_id, "partner_id" => partner_id, "word" => _word}) do
     if Repo.exists?(from u in User, where: u.id == ^user_id) 
       and Repo.exists?(from u in User, where: u.id == ^partner_id) do
 

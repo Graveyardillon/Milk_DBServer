@@ -4,29 +4,22 @@ defmodule Milk.Accounts do
   """
 
   import Ecto.Query, warn: false
-  alias Milk.Repo
-
-  alias Milk.Accounts.{User, Auth}
-  alias Milk.Log.{ChatMemberLog, AssistantLog, EntrantLog}
-  alias Milk.Chat.{ChatRoom, ChatMember}
-  alias Ecto.Multi
-
-  alias Milk.UserManager.Guardian
 
   require Logger
 
-  @doc """
-  Returns the list of users.
+  alias Milk.Repo
+  alias Ecto.Multi
+  alias Milk.UserManager.Guardian
+  alias Milk.Accounts.{User, Auth}
+  alias Milk.Chat.{ChatRoom, ChatMember}
+  alias Milk.Log.{ChatMemberLog, AssistantLog, EntrantLog}
 
-  ## Examples
+  @typedoc """
+  User changeset structure.
 
-      iex> list_users()
-      [%User{}, ...]
-
+  The types %User{} and Accounts are equivalent.
   """
-  def list_users do
-    Repo.all(from u in User, join: a in assoc(u, :auth), order_by: u.create_time, preload: [auth: a])
-  end
+  @type t :: %User{}
 
   @doc """
   Gets a single user.
@@ -42,11 +35,13 @@ defmodule Milk.Accounts do
       ** (Ecto.NoResultsError)
 
   """
+  @spec get_user(integer) :: Accounts.t
   def get_user(id), do: Repo.one(from u in User, join: a in assoc(u, :auth), where: u.id == ^id, preload: [auth: a])
 
   @doc """
   Get all users in touch.
   """
+  @spec get_users_in_touch(integer) :: []
   def get_users_in_touch(id) do
     ChatMember
     |> where([cm], cm.user_id == ^id)
@@ -56,6 +51,7 @@ defmodule Milk.Accounts do
     |> get_users_by_member_id()
   end
 
+  # FIXME: Chatの方に移した方がいいかもしれない
   defp get_private_rooms(members) do
     Enum.map(members, fn member ->
       ChatRoom
@@ -240,6 +236,9 @@ defmodule Milk.Accounts do
   end
 
   # logout_flのないバージョン
+  @doc """
+  Login function.
+  """
   def login(user) do
     password = user["password"]
     # usernameかemailか
@@ -258,7 +257,6 @@ defmodule Milk.Accounts do
           Guardian.encode_and_sign(userinfo, %{}, token_type: "refresh", ttl: {4, :weeks})
         %{user: userinfo, token: token}
       _ -> nil
-
     end
   end
 
@@ -317,6 +315,9 @@ defmodule Milk.Accounts do
     user
   end
 
+  @doc """
+  Logout function
+  """
   def logout(id) do
     user = Repo.one(from u in User,where: u.id ==  ^id and not u.logout_fl)
     if(user) do
@@ -329,35 +330,6 @@ defmodule Milk.Accounts do
       false
     end
   end
-
-  @doc """
-  Returns the list of auth.
-
-  ## Examples
-
-      iex> list_auth()
-      [%Auth{}, ...]
-
-  """
-  def list_auth do
-    Repo.all(Auth)
-  end
-
-  @doc """
-  Gets a single auth.
-
-  Raises `Ecto.NoResultsError` if the Auth does not exist.
-
-  ## Examples
-
-      iex> get_auth!(123)
-      %Auth{}
-
-      iex> get_auth!(456)
-      ** (Ecto.NoResultsError)
-
-  """
-  def get_auth(id), do: Repo.get(Auth, id)
 
   @doc """
   Creates a auth.
