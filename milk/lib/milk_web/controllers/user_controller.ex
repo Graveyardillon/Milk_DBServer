@@ -4,13 +4,9 @@ defmodule MilkWeb.UserController do
   alias Milk.Accounts
   alias Milk.Accounts.User
   alias Milk.UserManager.Guardian
+  alias Milk.Relations
 
   # action_fallback MilkWeb.FallbackController
-
-  def index(conn, _params) do
-    users = Accounts.list_users()
-    render(conn,"index.json", users: users)
-  end
 
   def get_users_in_touch(conn, %{"user_id" => id}) do
     users = Accounts.get_users_in_touch(id)
