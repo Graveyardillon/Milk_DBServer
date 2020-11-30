@@ -11,7 +11,7 @@ defmodule Milk.Accounts.User do
   alias Milk.Notif.Notification
 
   schema "users" do
-    field :icon_path, :string, default: "./static/image/default/default_icon.png"
+    field :icon_path, :string
     field :logout_fl, :boolean, default: false
     field :id_for_show, :integer
     field :language, :string, default: "japan"
@@ -41,7 +41,7 @@ defmodule Milk.Accounts.User do
     user
     |> cast(attrs, [:name, :icon_path, :point, :id_for_show, :notification_number, :language, :logout_fl])
     |> unique_constraint(:id_for_show)
-    |> validate_required([:name, :icon_path, :point, :notification_number, :language])
+    |> validate_required([:name, :point, :notification_number, :language])
 
   end
 end
