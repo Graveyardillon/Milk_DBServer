@@ -16,8 +16,6 @@ defmodule Milk.Repo.Migrations.CreateTournament do
       add :master_id, references(:users, on_delete: :nothing)
       add :thumbnail_path, :text
       add :password, :text
-      add :live, :boolean
-      add :join, :boolean
       add :is_started, :boolean, default: false
       add :start_recruiting, :timestamptz
       add :platform_id, references(:platforms, on_delete: :nothing)

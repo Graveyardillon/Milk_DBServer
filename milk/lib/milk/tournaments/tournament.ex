@@ -17,8 +17,6 @@ defmodule Milk.Tournaments.Tournament do
     field :url, :string
     field :thumbnail_path, :string
     field :password, :string
-    field :live, :boolean
-    field :join, :boolean
     field :count, :integer, default: 0
     field :game_name, :string
     field :is_started, :boolean, default: false
@@ -38,7 +36,7 @@ defmodule Milk.Tournaments.Tournament do
   @doc false
   def changeset(tournament, attrs) do
     tournament
-    |> cast(attrs, [:name, :event_date, :capacity, :description, :deadline, :game_name, :thumbnail_path, :password, :live, :join, :type, :url, :count, :is_started, :start_recruiting])
+    |> cast(attrs, [:name, :event_date, :capacity, :description, :deadline, :game_name, :thumbnail_path, :password, :type, :url, :count, :is_started, :start_recruiting])
     |> validate_required([:name, :event_date, :capacity, :deadline])
   end
 end
