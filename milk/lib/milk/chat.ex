@@ -14,6 +14,7 @@ defmodule Milk.Chat do
   alias Milk.Log.ChatMemberLog
   alias Milk.Log.ChatRoomLog
   alias Ecto.Multi
+  alias Common.Tools
 
   require Logger
 
@@ -546,6 +547,9 @@ defmodule Milk.Chat do
 
   # 個人チャット用の関数
   def dialogue(attrs = %{"user_id" => user_id, "partner_id" => partner_id, "word" => _word}) do
+    user_id = Tools.to_integer_as_needed(user_id)
+    partner_id = Tools.to_integer_as_needed(partner_id)
+
     if Repo.exists?(from u in User, where: u.id == ^user_id) 
       and Repo.exists?(from u in User, where: u.id == ^partner_id) do
 
@@ -580,6 +584,9 @@ defmodule Milk.Chat do
   # グループチャット用の関数
   # TODO: チャットメンバーのユーザーのidをすべて返すようにする
   def dialogue(attrs = %{"user_id" => user_id, "chat_room_id" => chat_room_id, "word" => _word, "datetime" => _datetime}) do
+    user_id = Tools.to_integer_as_needed(user_id)
+    chat_room_id = Tools.to_integer_as_needed(chat_room_id)
+    
     if Repo.exists?(from u in User, where: u.id == ^user_id)
       and Repo.exists?(from cr in ChatRoom, where: cr.id == ^chat_room_id) do
       
