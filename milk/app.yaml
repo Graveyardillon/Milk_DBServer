@@ -4,4 +4,4 @@ runtime_config:
   release_app: milk
 
 beta_settings:
-  cloud_sql_instances: e-players-293208:asia-northeast1:milkdb
+  cloud_sql_instances: e-players-296316:asia-northeast1:milkdb
