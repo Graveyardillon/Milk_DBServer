@@ -6,9 +6,7 @@ defmodule Milk.Tournaments.Entrant do
 
   schema "entrant" do
     field :rank, :integer, default: 0
-    # field :tournament_id, :id
     belongs_to :tournament, Tournament
-    # field :user_id, :id
     belongs_to :user, User
 
     timestamps()

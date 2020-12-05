@@ -7,10 +7,10 @@ defmodule Milk.Tournaments do
 
   use Timex
 
+  alias Milk.Ets
   alias Milk.Repo
   alias Ecto.Multi
 
-  alias Milk.Accounts
   alias Milk.Accounts.{User, Relation}
   alias Milk.Tournaments.{Tournament, Entrant, Assistant, TournamentChatTopic}
   alias Milk.Log.{TournamentLog, EntrantLog, AssistantLog, TournamentChatTopicLog}
@@ -78,7 +78,6 @@ defmodule Milk.Tournaments do
     |> Enum.filter(fn tournament ->
       date =
         tournament.event_date
-        |> IO.inspect
         |> DateTime.to_unix()
 
       now =
@@ -307,6 +306,10 @@ defmodule Milk.Tournaments do
   """
   def get_entrant!(id), do: Repo.get!(Entrant, id)
 
+  defp get_entrant_by_tournament_and_user_id(tournament_id, user_id) do
+    Repo.one(from e in Entrant, where: ^tournament_id == e.tournament_id and ^user_id == e.user_id)
+  end
+
   def get_entrants(id) do
     Entrant
     |> where([e], e.tournament_id == ^id)
@@ -340,7 +343,7 @@ defmodule Milk.Tournaments do
     end
   end
 
-  defp user_exist_check(attrs)do
+  defp user_exist_check(attrs) do
     with :false <- is_nil(attrs["user_id"]),
     :true <- Repo.exists?(from u in User, where: u.id == ^attrs["user_id"]) do
       {:ok,attrs}
@@ -487,7 +490,6 @@ defmodule Milk.Tournaments do
         Entrant
         |> where([e], e.tournament_id == ^tournament_id and e.user_id == ^user_id)
         |> Repo.one
-        IO.inspect(entrant)
         delete_entrant(entrant)
       get_tabs_by_tournament_id(tournament_id)
       |> Enum.each(fn x ->
@@ -571,22 +573,24 @@ defmodule Milk.Tournaments do
   @doc """
   Get an opponent of tournament match.
   """
-  def get_opponent(match, user_id, tournament_id) do
+  def get_opponent(match, user_id) do
     match
     |> Enum.filter(&(&1 != user_id))
     |> hd()
-    |> Accounts.get_user()
-    |> atom_user_map_to_string_map()
+    # 下の部分がなくてエラーがあれば修正(未確認)
+    # |> Map.get(:user_id)
+    # |> Accounts.get_user()
+    # |> atom_user_map_to_string_map()
   end
 
-  defp atom_user_map_to_string_map(%User{} = user) do
-    %{
-      "id" => user.id,
-      "icon_path" => user.icon_path,
-      "id_for_show" => user.id_for_show,
-      "name" => user.name,
-    }
-  end
+  # defp atom_user_map_to_string_map(%User{} = user) do
+  #   %{
+  #     "id" => user.id,
+  #     "icon_path" => user.icon_path,
+  #     "id_for_show" => user.id_for_show,
+  #     "name" => user.name,
+  #   }
+  # end
 
   @doc """
   Judges whether the user have to wait.
@@ -1007,5 +1011,91 @@ defmodule Milk.Tournaments do
   """
   def change_tournament_chat_topic_log(%TournamentChatTopicLog{} = tournament_chat_topic_log, attrs \\ %{}) do
     TournamentChatTopicLog.changeset(tournament_chat_topic_log, attrs)
+  end
+
+  def promote_rank(attrs \\ %{}) do
+    attrs
+    |> user_exist_check()
+    |> tournament_exist_check()
+    |> tournament_start_check()
+    |> case do
+      {:ok, attrs} ->
+        entrant =
+          attrs["tournament_id"]
+          |> get_entrant_by_tournament_and_user_id(attrs["user_id"])
+        {_num, match} =
+          attrs["tournament_id"]
+          |> Ets.get_match_list()
+          |> hd()
+        {bool, rank} =
+          match
+          |> get_opponent(attrs["user_id"])
+          |> hd()
+          |> hd()
+          |> Map.get(:rank)
+          |> check_exponentiation_of_two()
+        updated =
+          bool
+          |> if do
+            div(rank, 2)
+          else
+            rank
+            |> find_num_closest_exponentiation_of_two()
+          end
+        entrant
+        |> update_entrant(%{rank: updated})
+      {:error, error} -> {:error, error}
+    end
+  end
+
+  defp find_num_closest_exponentiation_of_two(num) do
+    if num > 4 do
+      find_num_closest_exponentiation_of_two(num, 8)
+    else
+      2
+    end
+  end
+
+  defp find_num_closest_exponentiation_of_two(num, acc) do
+    if num > acc do
+      find_num_closest_exponentiation_of_two(num, acc * 2)
+    else
+      div(acc, 2)
+    end
+  end
+
+  defp check_exponentiation_of_two(num, base) when num == 1 do
+    {true, base}
+  end
+
+  defp check_exponentiation_of_two(num, base) do
+    case rem(num, 2) do
+      0 ->
+        div(num, 2)
+        |> check_exponentiation_of_two(base)
+      _ ->
+        {false, base}
+    end
+  end
+
+  defp check_exponentiation_of_two(num) do
+    case rem(num, 2) do
+      0 ->
+        div(num, 2)
+        |> check_exponentiation_of_two(num)
+      _ ->
+        {false, num}
+    end
+  end
+
+  defp tournament_start_check({:ok, attrs}) do
+    if Repo.exists?(from t in Tournament, where: t.id == ^attrs["tournament_id"] and t.is_started) do
+      {:ok, attrs}
+    else
+      {:error, "tournament is not started"}
+    end
+  end
+  defp tournament_start_check({:error, error}) do
+    {:error, error}
   end
 end

@@ -321,10 +321,10 @@ defmodule MilkWeb.TournamentController do
     tournament_id = Tools.to_integer_as_needed(tournament_id)
 
     case Ets.get_match_pending_list(user_id) do
-      [] -> 
+      [] ->
         Ets.insert_match_pending_list_table(tournament_id, user_id)
         json(conn, %{result: true})
-      _ -> 
+      _ ->
         json(conn, %{result: false})
     end
   end
@@ -335,7 +335,7 @@ defmodule MilkWeb.TournamentController do
 
     {_, match_list} = hd(Ets.get_match_list(tournament_id))
     match = Tournaments.find_match(match_list, user_id)
-    opponent = Tournaments.get_opponent(match, user_id, tournament_id)
+    opponent = Tournaments.get_opponent(match, user_id)
 
     json(conn, %{result: true, opponent: opponent})
   end
