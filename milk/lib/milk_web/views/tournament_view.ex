@@ -5,6 +5,15 @@ defmodule MilkWeb.TournamentView do
   alias MilkWeb.UserView
   alias Milk.Accounts
 
+
+  def render("users.json", %{users: users}) do
+    if users != [] do
+      %{data: render_many(users, UserView, "user.json"), result: true}
+    else
+      %{data: nil, result: false}
+    end
+  end
+
   def render("index.json", %{tournament: tournament}) do
     %{data: render_many(tournament, TournamentView, "tournament.json")}
   end
