@@ -1,8 +1,7 @@
 defmodule Milk.TournamentsTest do
   use Milk.DataCase
 
-  alias Milk.Tournaments
-  alias Milk.Accounts
+  alias Milk.{Tournaments, Accounts, Ets}
 
   describe "tournament" do
     alias Milk.Tournaments.Tournament
@@ -16,7 +15,8 @@ defmodule Milk.TournamentsTest do
       "type" => 0,
       "url" => "some url",
       "master_id" => 1,
-      "platform" => 1
+      "platform" => 1,
+      "is_started" => true
     }
     @update_attrs %{
       capacity: 43,
@@ -28,12 +28,12 @@ defmodule Milk.TournamentsTest do
       url: "some updated url"
     }
     @invalid_attrs %{
-      "capacity" => nil, 
-      "deadline" => nil, 
-      "description" => nil, 
-      "event_date" => nil, 
-      "name" => nil, 
-      "type" => nil, 
+      "capacity" => nil,
+      "deadline" => nil,
+      "description" => nil,
+      "event_date" => nil,
+      "name" => nil,
+      "type" => nil,
       "url" => nil,
       "master_id" => 1,
       "platform" => 1
@@ -105,23 +105,59 @@ defmodule Milk.TournamentsTest do
   end
 
   describe "entrant" do
-    test "get_rank/2 returns entrant's rank when data is valid" do
-      entrant = fixture(:entrant)
+    setup [:create_entrant]
+
+    test "get_rank/2 returns entrant's rank when data is valid", %{entrant: entrant} do
       assert Tournaments.get_rank(entrant.tournament_id, entrant.user_id) == entrant.rank
     end
 
-    test "get_rank/2 returns error with invalid tournament_id" do
-      entrant = fixture(:entrant)
+    test "get_rank/2 returns error with invalid tournament_id", %{entrant: entrant} do
       assert Tournaments.get_rank(-1, entrant.user_id) == {:error, "entrant is not found"}
     end
 
-    test "get_rank/2 returns error with invalid user_id" do
-      entrant = fixture(:entrant)
+    test "get_rank/2 returns error with invalid user_id", %{entrant: entrant} do
       assert Tournaments.get_rank(entrant.tournament_id, -1) == {:error, "entrant is not found"}
     end
 
     test "get_rank/2 returns error with invalid params" do
       assert Tournaments.get_rank(-1, -1) == {:error, "entrant is not found"}
     end
+
+    test "promote_rank/1 returns promoted rank with valid attrs", %{entrant: entrant} do
+      attrs =
+        %{
+          "tournament_id" => entrant.tournament_id,
+          "user_id" => entrant.user_id
+        }
+      num = 7
+      create_entrants(num, entrant.tournament_id)
+      |> Enum.map(fn x -> %{x | rank: num + 1} end)
+      |> Kernel.++([%{entrant | rank: num + 1}])
+      |> Tournaments.generate_matchlist()
+      |> Ets.insert_match_list(entrant.tournament_id)
+      assert {:ok, promoted} = Tournaments.promote_rank(attrs)
+      assert promoted.user_id  == entrant.user_id
+      assert promoted.rank == 4
+    end
+  end
+
+  defp create_entrants(num, tournament_id, result \\ []), do: create_entrants(num, tournament_id, result, num)
+  defp create_entrants(_num, _tournament_id, result, 0) do
+    result
+  end
+
+  defp create_entrants(num, tournament_id, result, current) do
+    {:ok, user} =
+      %{"name" => "name", "email" => "e" <> to_string(current) <> "@mail.com", "password" => "Password123"}
+
+      |> Accounts.create_user()
+    {:ok, entrant} =
+      %{@entrant_create_attrs | "tournament_id" => tournament_id, "user_id" => user.id, "rank" => num}
+      |> Tournaments.create_entrant()
+    create_entrants(num, tournament_id, (result ++ [entrant]), current - 1)
+  end
+  defp create_entrant(_) do
+    entrant = fixture(:entrant)
+    %{entrant: entrant}
   end
 end
