@@ -277,7 +277,7 @@ defmodule MilkWeb.TournamentController do
 
   def get_thumbnail_image(conn, %{"thumbnail_path" => path}) do
     case File.read("./static/image/tournament_thumbnail/#{path}.jpg") do
-      {:ok, file} -> 
+      {:ok, file} ->
         b64 = Base.encode64(file)
         json(conn, %{b64: b64})
       {:error, _} ->
@@ -291,7 +291,7 @@ defmodule MilkWeb.TournamentController do
     else
       tournament_id
     end
-    list = Ets.get_match_list(tournament_id) 
+    list = Ets.get_match_list(tournament_id)
     list = unless list == [] do
       hd(list)
     end
@@ -369,7 +369,7 @@ defmodule MilkWeb.TournamentController do
 
   def get_match_members(conn, %{"tournament_id" => tournament_id}) do
     tournament = Tournaments.get_tournament(tournament_id)
-  
+
     if(tournament) do
       master = Accounts.get_user(tournament.master_id)
       assistants = Tournaments.get_assistants(tournament.id)
@@ -377,7 +377,7 @@ defmodule MilkWeb.TournamentController do
         Accounts.get_user(assistant.user_id)
       end)
       entrants = Tournaments.get_entrants(tournament.id)
-      |> Enum.map(fn entrant -> 
+      |> Enum.map(fn entrant ->
         Accounts.get_user(entrant.user_id)
       end)
 
@@ -388,12 +388,12 @@ defmodule MilkWeb.TournamentController do
   end
 
   def get_game_masters(conn, %{"tournament_id" => tournament_id}) do
-    master = 
+    master =
       Tournaments.get_masters(tournament_id)
 
     assistants =
       Tournaments.get_assistants(tournament_id)
-      |> Enum.map(fn assistant -> 
+      |> Enum.map(fn assistant ->
         Tournaments.get_user_info_of_assistant(assistant)
       end)
 

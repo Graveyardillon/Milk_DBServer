@@ -120,6 +120,7 @@ defmodule MilkWeb.Router do
     delete "/entrant/delete", EntrantController, :delete
     get "/entrant/rank/:tournament_id/:user_id", EntrantController, :show_rank
     resources "/entrant_log", EntrantLogController
+    post "/entrant/rank/promote", EntrantController, :promote
 
     resources "/assistant", AssistantController, except: [:new, :edit, :index, :show, :delete]
     post "/assistant/get", AssistantController, :show

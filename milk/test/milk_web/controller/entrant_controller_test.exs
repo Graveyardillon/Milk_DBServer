@@ -1,9 +1,14 @@
 defmodule MilkWeb.EntrantControllerTest do
   use MilkWeb.ConnCase
 
-  alias Milk.{Tournaments, Accounts}
+  alias Milk.{Tournaments, Accounts,Ets}
   alias Milk.Tournaments.Entrant
 
+  @entrant_create_attrs %{
+    "rank" => 42,
+    "user_id" => -1,
+    "tournament_id" => -1
+  }
   @create_attrs %{
     "rank" => 42,
     "user_id" => -1,
@@ -23,7 +28,8 @@ defmodule MilkWeb.EntrantControllerTest do
     "type" => 0,
     "url" => "some url",
     "master_id" => 1,
-    "platform" => 1
+    "platform" => 1,
+    "is_started" => true
   }
 
   def fixture(:entrant) do
@@ -36,11 +42,10 @@ defmodule MilkWeb.EntrantControllerTest do
   end
   def fixture(:tournament) do
       {:ok, user} = Accounts.create_user(%{"name" => "name", "email" => "e@mail.com", "password" => "Password123"})
-      tournament =
-        %{}
-        |> Enum.into(@tournament_valid_attrs)
-        |> Map.put("master_id", user.id)
-        |> Tournaments.create_tournament()
+      %{}
+      |> Enum.into(@tournament_valid_attrs)
+      |> Map.put("master_id", user.id)
+      |> Tournaments.create_tournament()
     end
 
   setup %{conn: conn} do
@@ -77,7 +82,7 @@ defmodule MilkWeb.EntrantControllerTest do
   describe "update entrant" do
     setup [:create_entrant]
 
-    test "renders entrant when data is valid", %{conn: conn, entrant: %Entrant{id: id} = entrant} do
+    test "renders entrant when data is valid", %{conn: conn, entrant: %Entrant{id: id} = _entrant} do
       conn = put(conn, Routes.entrant_path(conn, :update, id), entrant: @update_attrs)
       assert %{"id" => ^id} = json_response(conn, 200)["data"]
 
@@ -132,6 +137,78 @@ defmodule MilkWeb.EntrantControllerTest do
     end
   end
 
+  describe "promote entrant's rank" do
+    setup [:create_entrant]
+
+    test "renders entrant's promoted rank with valid data", %{conn: conn, entrant: entrant} do
+      # numは生成する参加者の数で後に一人追加するので8 - 1 = 7
+      num = 7
+      # 参加者作成，マッチリストを生成してEtsに登録
+      create_entrants(num, entrant.tournament_id)
+      |> Enum.map(fn x -> %{x | rank: num + 1} end)
+      |> Kernel.++([%{entrant | rank: num + 1}])
+      |> Tournaments.generate_matchlist()
+      |> Ets.insert_match_list(entrant.tournament_id)
+      conn = post(conn, Routes.entrant_path(conn, :promote), tournament_id: entrant.tournament_id, user_id: entrant.user_id)
+      assert json_response(conn, 200)["data"]["rank"] == 4
+    end
+
+    test "renders error with invalid data(tournament_id)", %{conn: conn, entrant: entrant} do
+      # numは生成する参加者の数で後に一人追加するので8 - 1 = 7
+      num = 7
+      # 参加者作成，マッチリストを生成してEtsに登録
+      create_entrants(num, entrant.tournament_id)
+      |> Enum.map(fn x -> %{x | rank: num + 1} end)
+      |> Kernel.++([%{entrant | rank: num + 1}])
+      |> Tournaments.generate_matchlist()
+      |> Ets.insert_match_list(entrant.tournament_id)
+      conn = post(conn, Routes.entrant_path(conn, :promote), tournament_id: -1, user_id: entrant.user_id)
+      assert json_response(conn, 200)["error"] == "undefined tournament"
+    end
+
+    test "renders error with invalid data(user_id)", %{conn: conn, entrant: entrant} do
+      # numは生成する参加者の数で後に一人追加するので8 - 1 = 7
+      num = 7
+      # 参加者作成，マッチリストを生成してEtsに登録
+      create_entrants(num, entrant.tournament_id)
+      |> Enum.map(fn x -> %{x | rank: num + 1} end)
+      |> Kernel.++([%{entrant | rank: num + 1}])
+      |> Tournaments.generate_matchlist()
+      |> Ets.insert_match_list(entrant.tournament_id)
+      conn = post(conn, Routes.entrant_path(conn, :promote), tournament_id: entrant.tournament_id, user_id: -1)
+      assert json_response(conn, 200)["error"] == "undefined user"
+    end
+
+    test "renders error with invalid data(all)", %{conn: conn, entrant: entrant} do
+      # numは生成する参加者の数で後に一人追加するので8 - 1 = 7
+      num = 7
+      # 参加者作成，マッチリストを生成してEtsに登録
+      create_entrants(num, entrant.tournament_id)
+      |> Enum.map(fn x -> %{x | rank: num + 1} end)
+      |> Kernel.++([%{entrant | rank: num + 1}])
+      |> Tournaments.generate_matchlist()
+      |> Ets.insert_match_list(entrant.tournament_id)
+      assert conn = post(conn, Routes.entrant_path(conn, :promote), tournament_id: -1, user_id: -1)
+      assert json_response(conn, 200)["error"] == "undefined user"
+    end
+  end
+
+  # 複数の参加者作成用関数
+  defp create_entrants(num, tournament_id, result \\ []), do: create_entrants(num, tournament_id, result, num)
+  defp create_entrants(_num, _tournament_id, result, 0) do
+    result
+  end
+
+  defp create_entrants(num, tournament_id, result, current) do
+    {:ok, user} =
+      %{"name" => "name", "email" => "e" <> to_string(current) <> "@mail.com", "password" => "Password123"}
+
+      |> Accounts.create_user()
+    {:ok, entrant} =
+      %{@entrant_create_attrs | "tournament_id" => tournament_id, "user_id" => user.id, "rank" => num}
+      |> Tournaments.create_entrant()
+    create_entrants(num, tournament_id, (result ++ [entrant]), current - 1)
+  end
   defp create_entrant(_) do
     entrant = fixture(:entrant)
     %{entrant: entrant}
