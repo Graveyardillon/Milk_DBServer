@@ -15,14 +15,20 @@ defmodule MilkWeb.ProfileController do
   end
 
   def update(conn, %{"profile" => profile_params}) do
-    user_id = Map.get(profile_params, "user_id")
-    name = Map.get(profile_params, "name")
-    bio = Map.get(profile_params, "bio")
-    gameList = Map.get(profile_params, "gameList")
-    achievementList = Map.get(profile_params, "achievementList")
 
-    Profiles.update_profile(Accounts.get_user(user_id), name, bio, gameList, achievementList)
-    json(conn, %{result: "success"})
+    user = Map.get(profile_params, "user_id") |> Accounts.get_user()
+
+    if user do
+      name = Map.get(profile_params, "name")
+      bio = Map.get(profile_params, "bio")
+      gameList = Map.get(profile_params, "gameList")
+      achievementList = Map.get(profile_params, "achievementList")
+      
+      Profiles.update_profile(user, name, bio, gameList, achievementList)
+      json(conn, %{result: true})
+    else
+      json(conn, %{result: false, error: "user not found"})
+    end
   end
 
   def update_icon(conn, %{"user_id" => user_id, "image" => image}) do
