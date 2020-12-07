@@ -172,7 +172,8 @@ defmodule Milk.Accounts do
   def delete_user(id, password, email, token) do
     user = get_authorized_user(id, password, email, token)
 
-    if user do
+    # FIXME: get_authorized_userのエラー出力を活かせていないのと、ifの条件式もっとよく書けそう
+    if user && !is_binary(user) do
       if is_list(user.chat_member) do
         member = Enum.map(user.chat_member, fn x -> %{chat_room_id: x.chat_room_id, user_id: x.user_id, authority: x.authority, create_time: x.create_time, update_time: x.update_time} end)
         Repo.insert_all(ChatMemberLog, member)
@@ -196,7 +197,7 @@ defmodule Milk.Accounts do
     end
   end
 
-  defp get_authorized_user(id, password, email, token) do
+  defp get_authorized_user(id, _password, email, token) do
     case Guardian.decode_and_verify(token) do
       {:ok, _} ->
         Repo.one(
