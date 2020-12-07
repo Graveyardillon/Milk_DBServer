@@ -43,7 +43,7 @@ defmodule MilkWeb.Router do
 
     resources "/user", UserController, except: [:new, :edit, :index, :show, :create, :update]
     post "/user/update", UserController, :update
-    post "/user/get", UserController, :show
+    get "/user/get", UserController, :show
     post "/user/in_touch", UserController, :get_users_in_touch
     post "/user/signup", UserController, :create
     post "/user/login", UserController, :login
@@ -51,7 +51,6 @@ defmodule MilkWeb.Router do
     post "/user/logout", UserController, :logout
 
     resources "/relation", RelationController, except: [:new, :edit, :index, :show, :delete]
-
     post "/relation/following_list", RelationController, :following_list
     post "/relation/following_id_list", RelationController, :following_id_list
     post "/relation/followers_list", RelationController, :followers_list
