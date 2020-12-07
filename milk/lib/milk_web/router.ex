@@ -52,15 +52,14 @@ defmodule MilkWeb.Router do
     post "/user/logout", UserController, :logout
 
     resources "/relation", RelationController, except: [:new, :edit, :index, :show, :delete]
-    post "/relation/following_list", RelationController, :following_list
-    post "/relation/following_id_list", RelationController, :following_id_list
-    post "/relation/followers_list", RelationController, :followers_list
-    post "/relation/followers_id_list", RelationController, :followers_id_list
+    get  "/relation/following_list", RelationController, :following_list
+    get  "/relation/following_id_list", RelationController, :following_id_list
+    get  "/relation/followers_list", RelationController, :followers_list
+    get  "/relation/followers_id_list", RelationController, :followers_id_list
     post "/relation/follow", RelationController, :create
     post "/relation/unfollow", RelationController, :delete
 
     resources "/chat_room", ChatRoomController, except: [:new, :edit, :index, :show]
-
     post "/chat_room/get_all", ChatRoomController, :index
     post "/chat_room/get", ChatRoomController, :show
     post "/chat_room/get_mine", ChatRoomController, :my_rooms
@@ -117,7 +116,7 @@ defmodule MilkWeb.Router do
 
     resources "/entrant", EntrantController, except: [:new, :edit, :delete]
     delete "/entrant/delete", EntrantController, :delete
-    get "/entrant/rank/:tournament_id/:user_id", EntrantController, :show_rank
+    get  "/entrant/rank/:tournament_id/:user_id", EntrantController, :show_rank
     resources "/entrant_log", EntrantLogController
 
     resources "/assistant", AssistantController, except: [:new, :edit, :index, :show, :delete]

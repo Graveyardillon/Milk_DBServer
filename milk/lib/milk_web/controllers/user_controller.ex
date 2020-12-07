@@ -12,14 +12,13 @@ defmodule MilkWeb.UserController do
   end
 
   @doc """
-  Creates a user
+  Creates a user.
   """
   def create(conn, %{"user" => user_params}) do
     case Accounts.create_user(user_params) do
       {:ok, %User{} = user} ->
         render(conn, "login.json", %{user: user})
       {:error, error} ->
-      IO.inspect(error)
         case error do
           [email: {"has already been taken", _ }] -> render(conn, "error.json", error_code: 101)
           [password: {"should be at least %{count} character(s)", _ }] -> render(conn, "error.json", error_code: 102)
