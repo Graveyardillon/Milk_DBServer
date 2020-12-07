@@ -32,7 +32,7 @@ defmodule MilkWeb.Router do
     post "/game/add", GameController, :create
     post "/achievement/list", AchievementController, :show
     post "/achievement", AchievementController, :create
-    post "achievement/update", AchievementController, :update
+    post "/achievement/update", AchievementController, :update
     get "/achievement/index", AchievementController, :index
     delete "/achievement/delete", AchievementController, :delete
     post "/achievement/show_one", AchievementController, :show_one
@@ -42,16 +42,16 @@ defmodule MilkWeb.Router do
     pipe_through :api
 
     resources "/user", UserController, except: [:new, :edit, :index, :show, :create, :update]
+    get  "/user/get_all_username", UserController, :all_username
+    get  "/user/get", UserController, :show
+    get  "/user/in_touch", UserController, :users_in_touch
     post "/user/update", UserController, :update
-    post "/user/get", UserController, :show
-    post "/user/in_touch", UserController, :get_users_in_touch
     post "/user/signup", UserController, :create
     post "/user/login", UserController, :login
     post "/user/login_forced", UserController, :login_forced
     post "/user/logout", UserController, :logout
 
     resources "/relation", RelationController, except: [:new, :edit, :index, :show, :delete]
-
     post "/relation/following_list", RelationController, :following_list
     post "/relation/following_id_list", RelationController, :following_id_list
     post "/relation/followers_list", RelationController, :followers_list
@@ -97,7 +97,7 @@ defmodule MilkWeb.Router do
     post "/tournament/get_opponent", TournamentController, :get_opponent
     post "/tournament/delete", TournamentController, :delete
     post "/tournament/get_participating_tournaments", TournamentController, :participating_tournaments
-    post "/tournament/get_tabs", TournamentController, :tournament_tabs
+    post "/tournament/get_tabs", TournamentController, :tournament_topics
     post "/tournament/get_thumbnail", TournamentController, :get_thumbnail_image
     post "/tournament/get_match_list", TournamentController, :get_match_list
     post "/tournament/home", TournamentController, :home

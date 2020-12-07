@@ -10,8 +10,9 @@ defmodule MilkWeb.TournamentController do
   alias Milk.Tournaments.Tournament
   alias Common.Tools
 
-  # action_fallback MilkWeb.FallbackController
-
+  @doc """
+  Get tournament list.
+  """
   def index(conn,  _params) do
     tournament = Tournaments.list_tournament()
     if(tournament) do
@@ -21,6 +22,9 @@ defmodule MilkWeb.TournamentController do
     end
   end
 
+  @doc """
+  Get users for assistant.
+  """
   def get_users_for_add_assistant(conn, %{"user_id" => user_id}) do
     following_users = Relations.get_following_list(user_id)
     follower_users = Relations.get_followers_list(user_id)
@@ -28,6 +32,9 @@ defmodule MilkWeb.TournamentController do
     render(conn,"users.json", users: users)
   end
 
+  @doc """
+  Get tournaments of a specific user.
+  """
   def get_tournaments_by_master_id(conn, %{"user_id" => user_id}) do
     tournaments =
     Tournaments.get_tournaments_by_master_id(user_id)
@@ -47,11 +54,17 @@ defmodule MilkWeb.TournamentController do
     render(conn, "home.json", tournaments_info: tournaments)
   end
 
+  @doc """
+  Get ongoing tournaments of a specific user.
+  """
   def get_going_tournaments_by_master_id(conn, %{"user_id" => user_id}) do
     tournaments = Tournaments.get_going_tournaments_by_master_id(user_id)
     render(conn, "index.json", tournament: tournaments)
   end
 
+  @doc """
+  Get a game of a specific tournament.
+  """
   def get_game(conn, %{"tournament" => params}) do
     tournament = Tournaments.game_tournament(params)
     if(tournament) do
@@ -61,6 +74,9 @@ defmodule MilkWeb.TournamentController do
     end
   end
 
+  @doc """
+  Create a tournament.
+  """
   def create(conn, %{"tournament" => tournament_params, "file" => file}) do
     create(conn, %{"tournament" => tournament_params, "image" => file})
   end
@@ -176,6 +192,9 @@ defmodule MilkWeb.TournamentController do
     render(conn, "home.json", tournaments_info: tournaments)
   end
 
+  @doc """
+  Update a tournament.
+  """
   def update(conn, %{"tournament_id" => id, "tournament" => tournament_params}) do
     tournament = Tournaments.get_tournament!(id)
     if(tournament) do
@@ -192,12 +211,18 @@ defmodule MilkWeb.TournamentController do
     end
   end
 
+  @doc """
+  Deletes a tournament.
+  """
   def delete(conn, %{"tournament_id" => id}) do
     with {:ok, %Tournament{}} <- Tournaments.delete_tournament(id) do
       send_resp(conn, :no_content, "")
     end
   end
 
+  @doc """
+  Send a image as a response.
+  """
   def image(conn, %{"filename" => filename}) do
     path = "./static/image/tournament_thumbnail/#{filename}.jpg"
 
@@ -206,6 +231,9 @@ defmodule MilkWeb.TournamentController do
     |> send_file(200, path)
   end
 
+  @doc """
+  Get tournaments which a user is participating in.
+  """
   def participating_tournaments(conn, %{"user_id" => user_id}) do
     tournaments =
     Tournaments.get_participating_tournaments!(user_id)
@@ -229,13 +257,19 @@ defmodule MilkWeb.TournamentController do
     end
   end
 
-  def tournament_tabs(conn, %{"tournament_id" => tournament_id}) do
+  @doc """
+  Get tournament topics.
+  """
+  def tournament_topics(conn, %{"tournament_id" => tournament_id}) do
     tabs = Tournaments.get_tabs_by_tournament_id(tournament_id)
 
     # TODO: tournament_topics.jsonのrenderを直接呼び出すのではなくshow.jsonからrender_manyをする方がよさそう
     render(conn, "tournament_topics.json", topics: tabs)
   end
 
+  @doc """
+  Start a tournament.
+  """
   def start(conn, %{"tournament" => %{"master_id" => master_id, "tournament_id" => tournament_id}}) do
     master_id = Tools.to_integer_as_needed(master_id)
     tournament_id = Tools.to_integer_as_needed(tournament_id)
@@ -254,6 +288,9 @@ defmodule MilkWeb.TournamentController do
     end
   end
 
+  @doc """
+  Delete losers of a loser list.
+  """
   # FIXME: loserをリストじゃなくて整数で入力できるようにしたほうが良さそう
   def delete_loser(conn, %{"tournament" => %{"tournament_id" => tournament_id, "loser_list" => loser_list}}) do
     {_, match_list} = hd(Ets.get_match_list(tournament_id))
@@ -277,6 +314,9 @@ defmodule MilkWeb.TournamentController do
     render(conn, "loser.json", list: updated_match_list)
   end
 
+  @doc """
+  Find a match of a specific tournament.
+  """
   def find_match(conn, %{"tournament_id" => tournament_id, "user_id" => user_id}) do
     tournament_id = Tools.to_integer_as_needed(tournament_id)
     user_id = Tools.to_integer_as_needed(user_id)
@@ -289,6 +329,9 @@ defmodule MilkWeb.TournamentController do
     json(conn, %{result: result, match: match})
   end
 
+  @doc """
+  Get a thumbnail image of a tournament.
+  """
   def get_thumbnail_image(conn, %{"thumbnail_path" => path}) do
     case File.read("./static/image/tournament_thumbnail/#{path}.jpg") do
       {:ok, file} -> 
@@ -299,6 +342,9 @@ defmodule MilkWeb.TournamentController do
     end
   end
 
+  @doc """
+  Get a match list of a tournament.
+  """
   def get_match_list(conn, %{"tournament_id" => tournament_id}) do
     tournament_id = if is_binary(tournament_id) do
       String.to_integer(tournament_id)
@@ -316,6 +362,9 @@ defmodule MilkWeb.TournamentController do
     end
   end
 
+  @doc """
+  Start a single match in the tournament.
+  """
   def start_match(conn, %{"user_id" => user_id, "tournament_id" => tournament_id}) do
     user_id = Tools.to_integer_as_needed(user_id)
     tournament_id = Tools.to_integer_as_needed(tournament_id)
@@ -329,6 +378,7 @@ defmodule MilkWeb.TournamentController do
     end
   end
 
+  
   def get_opponent(conn, %{"tournament_id" => tournament_id, "user_id" => user_id}) do
     tournament_id = Tools.to_integer_as_needed(tournament_id)
     user_id = Tools.to_integer_as_needed(user_id)
