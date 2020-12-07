@@ -171,24 +171,29 @@ defmodule Milk.Accounts do
   """
   def delete_user(id, password, email, token) do
     user = get_authorized_user(id, password, email, token)
-    if is_list(user.chat_member) do
-      member = Enum.map(user.chat_member, fn x -> %{chat_room_id: x.chat_room_id, user_id: x.user_id, authority: x.authority, create_time: x.create_time, update_time: x.update_time} end)
-      Repo.insert_all(ChatMemberLog, member)
-      Repo.update_all(from(cr in Milk.Chat.ChatRoom, join: cm in assoc(cr, :chat_member), where: cm.user_id == ^user.id, update: [set: [member_count: cr.member_count - 1]]),[])
-    end
 
-    if is_list(user.entrant) do
-      entrant = Enum.map(user.entrant, fn x -> %{user_id: x.user_id, tournament_id: x.tournament_id, rank: x.rank, create_time: x.create_time, update_time: x.update_time} end)
-      Repo.insert_all(EntrantLog, entrant)
-      Repo.update_all(from(t in Milk.Tournaments.Tournament, join: e in assoc(t, :entrant), where: e.user_id == ^user.id, update: [set: [count: t.count - 1]]), [])
-    end
+    if user do
+      if is_list(user.chat_member) do
+        member = Enum.map(user.chat_member, fn x -> %{chat_room_id: x.chat_room_id, user_id: x.user_id, authority: x.authority, create_time: x.create_time, update_time: x.update_time} end)
+        Repo.insert_all(ChatMemberLog, member)
+        Repo.update_all(from(cr in Milk.Chat.ChatRoom, join: cm in assoc(cr, :chat_member), where: cm.user_id == ^user.id, update: [set: [member_count: cr.member_count - 1]]),[])
+      end
 
-    if is_list(user.chat_member) do
-      assistant = Enum.map(user.assistant, fn x -> %{user_id: x.user_id, tournament_id: x.tournament_id, create_time: x.create_time, update_time: x.update_time} end)
-      Repo.insert_all(AssistantLog, assistant)
-    end
+      if is_list(user.entrant) do
+        entrant = Enum.map(user.entrant, fn x -> %{user_id: x.user_id, tournament_id: x.tournament_id, rank: x.rank, create_time: x.create_time, update_time: x.update_time} end)
+        Repo.insert_all(EntrantLog, entrant)
+        Repo.update_all(from(t in Milk.Tournaments.Tournament, join: e in assoc(t, :entrant), where: e.user_id == ^user.id, update: [set: [count: t.count - 1]]), [])
+      end
 
-    Repo.delete(user)
+      if is_list(user.chat_member) do
+        assistant = Enum.map(user.assistant, fn x -> %{user_id: x.user_id, tournament_id: x.tournament_id, create_time: x.create_time, update_time: x.update_time} end)
+        Repo.insert_all(AssistantLog, assistant)
+      end
+
+      Repo.delete(user)
+    else
+      {:error, nil}
+    end
   end
 
   defp get_authorized_user(id, password, email, token) do
@@ -202,11 +207,9 @@ defmodule Milk.Accounts do
           left_join: e in assoc(u, :entrant),
           where:
             u.id == ^id
-            and a.password == ^password
             and a.email == ^email,
           preload: [auth: a, chat_member: cm, entrant: e, assistant: as]
         )
-      #FIXME: エラーハンドリングが適当すぎる
       {:error, :token_expired} ->
         Guardian.signout(token)
         |> if do
@@ -218,7 +221,7 @@ defmodule Milk.Accounts do
         "That token can't use"
       _ ->
         "That token is not exist"
-      end
+    end
   end
 
   @doc """
@@ -322,7 +325,7 @@ defmodule Milk.Accounts do
     if(user) do
       user
       |> User.changeset(%{logout_fl: true})
-      |> Repo.update
+      |> Repo.update()
 
       true
     else

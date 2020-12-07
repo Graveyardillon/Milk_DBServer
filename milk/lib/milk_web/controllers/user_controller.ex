@@ -4,7 +4,6 @@ defmodule MilkWeb.UserController do
   alias Milk.Accounts
   alias Milk.Accounts.User
   alias Milk.UserManager.Guardian
-  alias Milk.Relations
 
   # action_fallback MilkWeb.FallbackController
 
@@ -18,7 +17,6 @@ defmodule MilkWeb.UserController do
     case Accounts.create_user(user_params) do
       {:ok, %User{} = user} ->
         render(conn, "login.json", %{user: user})
-        IO.inspect(user)
       {:error, error} ->
       IO.inspect(error)
         case error do
@@ -50,9 +48,13 @@ defmodule MilkWeb.UserController do
   end
 
   def delete(conn, %{"id" => id, "password" => password, "email" => email, "token" => token}) do
-    with {:ok, %User{}} <- Accounts.delete_user(id, password, email, token) do
-      Guardian.revoke(token)
-      send_resp(conn, :no_content, "")
+    case Accounts.delete_user(id, password, email, token) |> IO.inspect do
+      {:ok, _} ->
+        Guardian.revoke(token)
+        #send_resp(conn, :no_content, "")
+        json(conn, %{result: true})
+      _ -> 
+        json(conn, %{result: false})
     end
   end
 
@@ -72,7 +74,7 @@ defmodule MilkWeb.UserController do
   def logout(conn, %{"id" => id, "token" => token}) do
     result = Accounts.logout id
     
-      Guardian.revoke(token)
-      json(conn, %{result: result})
+    Guardian.revoke(token)
+    json(conn, %{result: result})
   end
 end
