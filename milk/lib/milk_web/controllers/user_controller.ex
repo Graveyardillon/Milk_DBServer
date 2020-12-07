@@ -5,6 +5,12 @@ defmodule MilkWeb.UserController do
   alias Milk.Accounts.User
   alias Milk.UserManager.Guardian
 
+  # FIXME: フロントとの兼ね合わせで直しておいた
+  def all_username(conn, _params) do
+    names = Accounts.list_usernames()
+    json(conn, %{names: names})
+  end
+
   @doc """
   Creates a user
   """

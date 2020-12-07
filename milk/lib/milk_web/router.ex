@@ -42,6 +42,7 @@ defmodule MilkWeb.Router do
     pipe_through :api
 
     resources "/user", UserController, except: [:new, :edit, :index, :show, :create, :update]
+    get  "/user/get_all_username", UserController, :all_username
     get  "/user/get", UserController, :show
     get  "/user/in_touch", UserController, :users_in_touch
     post "/user/update", UserController, :update
@@ -96,7 +97,7 @@ defmodule MilkWeb.Router do
     post "/tournament/get_opponent", TournamentController, :get_opponent
     post "/tournament/delete", TournamentController, :delete
     post "/tournament/get_participating_tournaments", TournamentController, :participating_tournaments
-    post "/tournament/get_tabs", TournamentController, :tournament_tabs
+    post "/tournament/get_tabs", TournamentController, :tournament_topics
     post "/tournament/get_thumbnail", TournamentController, :get_thumbnail_image
     post "/tournament/get_match_list", TournamentController, :get_match_list
     post "/tournament/home", TournamentController, :home

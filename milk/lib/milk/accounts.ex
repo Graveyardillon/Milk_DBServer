@@ -38,6 +38,13 @@ defmodule Milk.Accounts do
   @spec get_user(integer) :: Accounts.t
   def get_user(id), do: Repo.one(from u in User, join: a in assoc(u, :auth), where: u.id == ^id, preload: [auth: a])
 
+  # FIXME: フロントの兼ね合わせで直しておいた
+  def list_usernames do
+    User
+    |> select([u], u.name)
+    |> Repo.all()
+  end
+
   @doc """
   Get all users in touch.
   """
