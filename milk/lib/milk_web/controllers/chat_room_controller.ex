@@ -5,17 +5,9 @@ defmodule MilkWeb.ChatRoomController do
   alias Milk.Chat.ChatRoom
   alias Milk.Accounts
 
-  # action_fallback MilkWeb.FallbackController
-
-  def index(conn, _params) do
-    chat_room = Chat.list_chat_room()
-    if (chat_room) do
-      render(conn, "index.json", chat_room: chat_room)
-    else
-      render(conn, "error.json", error: nil)
-    end
-  end
-
+  @doc """
+  Make a new chat room.
+  """
   def create(conn, %{"chat_room" => chat_room_params}) do
     case Chat.create_chat_room(chat_room_params) do
     {:ok, %ChatRoom{} = chat_room} ->
@@ -29,6 +21,9 @@ defmodule MilkWeb.ChatRoomController do
     end
   end
 
+  @doc """
+  Get a new chat room information.
+  """
   def show(conn, %{"id" => id}) do
     chat_room = Chat.get_chat_room(id)
     if (chat_room) do
@@ -38,6 +33,9 @@ defmodule MilkWeb.ChatRoomController do
     end
   end
 
+  @doc """
+  Update a chat room.
+  """
   def update(conn, %{"id" => id, "chat_room" => chat_room_params}) do
     chat_room = Chat.get_chat_room(id)
     if (chat_room) do
@@ -52,6 +50,9 @@ defmodule MilkWeb.ChatRoomController do
     end
   end
 
+  @doc """
+  Delete a chat room.
+  """
   def delete(conn, %{"id" => id}) do
     chat_room = Chat.get_all_chat(id)
     if (chat_room) do
@@ -61,15 +62,9 @@ defmodule MilkWeb.ChatRoomController do
     end
   end
 
-  def my_rooms(conn, %{"user_id" => id}) do
-    chat_rooms = Chat.get_chat_rooms_by_user_id(id)
-    if chat_rooms do
-      render(conn, "index.json", chat_room: chat_rooms)
-    else
-      render(conn, "error.json", error: nil)
-    end
-  end
-
+  @doc """
+  Get private rooms of a specific user.
+  """
   def private_rooms(conn, %{"user_id" => id}) do
     user_id =
       if is_binary(id) do

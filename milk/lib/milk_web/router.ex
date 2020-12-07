@@ -59,12 +59,15 @@ defmodule MilkWeb.Router do
     post "/relation/follow", RelationController, :create
     post "/relation/unfollow", RelationController, :delete
 
+    resources "/chat", ChatsController, except: [:new, :edit, :index, :show, :delete]
+    post "/chat/create_dialogue", ChatsController, :create_dialogue
+
     resources "/chat_room", ChatRoomController, except: [:new, :edit, :index, :show]
-    post "/chat_room/get_all", ChatRoomController, :index
-    post "/chat_room/get", ChatRoomController, :show
-    post "/chat_room/get_mine", ChatRoomController, :my_rooms
-    post "/chat_room/private_rooms", ChatRoomController, :private_rooms
-    post "/chat_room/private_room", ChatRoomController, :private_room
+    get  "/chat_room/private_rooms", ChatRoomController, :private_rooms
+
+## ↑ここまで整理した
+
+    get  "/chat_room/private_room", ChatRoomController, :private_room
 
     resources "/chat_room_log", ChatRoomLogController, except: [:new, :edit, :index, :show]
     resources "/chat_log", ChatsLogController, except: [:new, :edit, :index, :show]
@@ -75,14 +78,6 @@ defmodule MilkWeb.Router do
     post "/chat_member/get", ChatMemberController, :show
     post "/chat_member/get_all", ChatMemberController, :index
     post "/chat_member/delete", ChatMemberController, :delete
-
-    resources "/chat", ChatsController, except: [:new, :edit, :index, :show, :delete]
-    # post "/chat/get", ChatMemberController, :show
-    post "/chat/get", ChatsController, :index
-    post "/chat/latest", ChatsController, :get_latest
-    post "/chat/sync", ChatsController, :sync
-    post "/chat/delete", ChatsController, :delete
-    post "/chat/create_dialogue", ChatsController, :create_dialogue
 
     resources "/tournament", TournamentController, except: [:new, :edit, :index, :show, :delete]
     post "/tournament/get_users_for_add_assistant", TournamentController, :get_users_for_add_assistant
