@@ -5,10 +5,14 @@ defmodule MilkWeb.UserController do
   alias Milk.Accounts.User
   alias Milk.UserManager.Guardian
 
-  # FIXME: フロントとの兼ね合わせで直しておいた
-  def all_username(conn, _params) do
-    names = Accounts.list_usernames()
-    json(conn, %{names: names})
+  def check_username_duplication(conn, %{"name" => name}) do
+    case Accounts.check_duplication(name) do
+      true ->
+        json(conn, %{isUnique: false})
+      false ->
+        json(conn, %{isUnique: true})
+    end
+    
   end
 
   @doc """

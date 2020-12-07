@@ -42,7 +42,7 @@ defmodule MilkWeb.Router do
     pipe_through :api
 
     resources "/user", UserController, except: [:new, :edit, :index, :show, :create, :update]
-    get  "/user/get_all_username", UserController, :all_username
+    post  "/user/check_username_duplication", UserController, :check_username_duplication
     get  "/user/get", UserController, :show
     get  "/user/in_touch", UserController, :users_in_touch
     post "/user/update", UserController, :update
