@@ -83,23 +83,21 @@ defmodule MilkWeb.Router do
     post "/tournament/finish", TournamentController, :finish
 
     resources "/entrant", EntrantController, except: [:new, :edit, :delete]
-    delete "/entrant/delete", EntrantController, :delete
     get  "/entrant/rank/:tournament_id/:user_id", EntrantController, :show_rank
+    delete "/entrant/delete", EntrantController, :delete
 
     resources "/assistant", AssistantController, except: [:new, :edit, :index, :show, :delete]
-    post "/assistant/get", AssistantController, :show
-    post "/assistant/get_all", AssistantController, :index
     post "/assistant/delete", AssistantController, :delete
 
+    get  "/live/home", LiveController, :home
     post "/live", LiveController, :create
-    post "/live/home", LiveController, :home
 
     post "/sync", SyncController, :sync
 
     post "/send_email", ConfNumController, :send_email
     post "/conf_email", ConfNumController, :conf_email
 
-    post "/notif/get_list", NotifController, :get_list
+    get  "/notif/get_list", NotifController, :get_list
     post "/notif/create", NotifController, :create
     post "/notif_log/create", NotifLogController, :create
     delete "/notif/:id", NotifController, :delete
@@ -129,5 +127,7 @@ defmodule MilkWeb.Router do
     post "/tournament/debug_match_list", TournamentController, :debug_match_list
     post "/chat_member/delete", ChatMemberController, :delete
     post "/chat_member/get_all", ChatMemberController, :index
+    post "/assistant/get", AssistantController, :show
+    post "/assistant/get_all", AssistantController, :index
   end
 end
