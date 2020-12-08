@@ -221,7 +221,7 @@ defmodule MilkWeb.TournamentController do
   end
 
   @doc """
-  Send a image as a response.
+  Send an image as a response.
   """
   def image(conn, %{"filename" => filename}) do
     path = "./static/image/tournament_thumbnail/#{filename}.jpg"

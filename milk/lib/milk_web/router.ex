@@ -22,23 +22,6 @@ defmodule MilkWeb.Router do
   end
 
   scope "/api", MilkWeb do
-    # post "/signup", UserController, :create
-    # post "/signin", UserController, :login
-    post "/profile", ProfileController, :get_profile
-    post "/profile/update", ProfileController, :update
-    post "/profile/update_icon", ProfileController, :update_icon
-    get "/profile/get_icon", ProfileController, :get_icon
-    get "/game/list", GameController, :list
-    post "/game/add", GameController, :create
-    post "/achievement/list", AchievementController, :show
-    post "/achievement", AchievementController, :create
-    post "/achievement/update", AchievementController, :update
-    get "/achievement/index", AchievementController, :index
-    delete "/achievement/delete", AchievementController, :delete
-    post "/achievement/show_one", AchievementController, :show_one
-  end
-
-  scope "/api", MilkWeb do
     pipe_through :api
 
     resources "/user", UserController, except: [:new, :edit, :index, :show, :create, :update]
@@ -70,45 +53,38 @@ defmodule MilkWeb.Router do
     resources "/chat_log", ChatsLogController, except: [:new, :edit, :index, :show]
     resources "/chat_member_log", ChatMemberLogController, except: [:new, :edit, :index, :show]
     resources "/assistant_log", AssistantLogController, except: [:new, :edit, :index, :show]
+    resources "/entrant_log", EntrantLogController
 
     resources "/chat_member", ChatMemberController, except: [:new, :edit, :index, :show, :delete]
-    #post "/chat_member/delete", ChatMemberController, :delete
-    #post "/chat_member/get_all", ChatMemberController, :index
 
     resources "/tournament", TournamentController, except: [:new, :edit, :index, :show, :delete]
-    post "/tournament/get_users_for_add_assistant", TournamentController, :get_users_for_add_assistant
+    get  "/tournament/users_for_add_assistant", TournamentController, :get_users_for_add_assistant
+    get  "/tournament/get", TournamentController, :show
+    get  "/tournament/get_by_master_id", TournamentController, :get_tournaments_by_master_id
+    get  "/tournament/get_planned", TournamentController, :get_going_tournaments_by_master_id
+    get  "/tournament/get_game", TournamentController, :get_game
+    get  "/tournament/get_opponent", TournamentController, :get_opponent
+    get  "/tournament/get_participating_tournaments", TournamentController, :participating_tournaments
+    get  "/tournament/get_tabs", TournamentController, :tournament_topics
+    get  "/tournament/get_thumbnail", TournamentController, :get_thumbnail_image
+    get  "/tournament/get_match_list", TournamentController, :get_match_list
+    get  "/tournament/home", TournamentController, :home
+    get  "/tournament/masters", TournamentController, :get_game_masters
+    get  "/tournament/members", TournamentController, :get_match_members
+    get  "/tournament/find_match", TournamentController, :find_match
     post "/tournament/start", TournamentController, :start
     post "/tournament/deleteloser", TournamentController, :delete_loser
-    post "/tournament/get", TournamentController, :show
-    post "/tournament/get_all", TournamentController, :index
-    post "/tournament/get_by_master_id", TournamentController, :get_tournaments_by_master_id
-    post "/tournament/get_planned", TournamentController, :get_going_tournaments_by_master_id
-    post "/tournament/get_game", TournamentController, :get_game
-    post "/tournament/get_opponent", TournamentController, :get_opponent
     post "/tournament/delete", TournamentController, :delete
-    post "/tournament/get_participating_tournaments", TournamentController, :participating_tournaments
-    post "/tournament/get_tabs", TournamentController, :tournament_topics
-    post "/tournament/get_thumbnail", TournamentController, :get_thumbnail_image
-    post "/tournament/get_match_list", TournamentController, :get_match_list
-    post "/tournament/home", TournamentController, :home
-    post "/tournament/image", TournamentController, :image
     post "/tournament/publish_url", TournamentController, :publish_url
-    post "/tournament/members", TournamentController, :get_match_members
     post "/tournament_log/add", TournamentLogController, :create
     post "/tournament/start_match", TournamentController, :start_match
     post "/tournament/claim_win", TournamentController, :claim_win
     post "/tournament/claim_lose", TournamentController, :claim_lose
-    post "/tournament/find_match", TournamentController, :find_match
-    post "/tournament/masters", TournamentController, :get_game_masters
     post "/tournament/finish", TournamentController, :finish
-
-    # DEBUG
-    post "/tournament/debug_match_list", TournamentController, :debug_match_list
 
     resources "/entrant", EntrantController, except: [:new, :edit, :delete]
     delete "/entrant/delete", EntrantController, :delete
     get  "/entrant/rank/:tournament_id/:user_id", EntrantController, :show_rank
-    resources "/entrant_log", EntrantLogController
 
     resources "/assistant", AssistantController, except: [:new, :edit, :index, :show, :delete]
     post "/assistant/get", AssistantController, :show
@@ -127,5 +103,31 @@ defmodule MilkWeb.Router do
     post "/notif/create", NotifController, :create
     post "/notif_log/create", NotifLogController, :create
     delete "/notif/:id", NotifController, :delete
+  end
+
+  scope "/api", MilkWeb do
+    # post "/signup", UserController, :create
+    # post "/signin", UserController, :login
+    post "/profile", ProfileController, :get_profile
+    post "/profile/update", ProfileController, :update
+    post "/profile/update_icon", ProfileController, :update_icon
+    get "/profile/get_icon", ProfileController, :get_icon
+    get "/game/list", GameController, :list
+    post "/game/add", GameController, :create
+    post "/achievement/list", AchievementController, :show
+    post "/achievement", AchievementController, :create
+    post "/achievement/update", AchievementController, :update
+    get "/achievement/index", AchievementController, :index
+    delete "/achievement/delete", AchievementController, :delete
+    post "/achievement/show_one", AchievementController, :show_one
+  end
+
+  scope "/debug", MilkWeb do
+    # FIXME: 見た感じ使われてなさそうだったけど、一応残しておいた
+    get  "/tournament/image", TournamentController, :image
+    post "/tournament/get_all", TournamentController, :index
+    post "/tournament/debug_match_list", TournamentController, :debug_match_list
+    post "/chat_member/delete", ChatMemberController, :delete
+    post "/chat_member/get_all", ChatMemberController, :index
   end
 end
