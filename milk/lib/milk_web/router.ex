@@ -64,9 +64,6 @@ defmodule MilkWeb.Router do
 
     resources "/chat_room", ChatRoomController, except: [:new, :edit, :index, :show]
     get  "/chat_room/private_rooms", ChatRoomController, :private_rooms
-
-## ↑ここまで整理した
-
     get  "/chat_room/private_room", ChatRoomController, :private_room
 
     resources "/chat_room_log", ChatRoomLogController, except: [:new, :edit, :index, :show]
@@ -75,9 +72,8 @@ defmodule MilkWeb.Router do
     resources "/assistant_log", AssistantLogController, except: [:new, :edit, :index, :show]
 
     resources "/chat_member", ChatMemberController, except: [:new, :edit, :index, :show, :delete]
-    post "/chat_member/get", ChatMemberController, :show
-    post "/chat_member/get_all", ChatMemberController, :index
-    post "/chat_member/delete", ChatMemberController, :delete
+    #post "/chat_member/delete", ChatMemberController, :delete
+    #post "/chat_member/get_all", ChatMemberController, :index
 
     resources "/tournament", TournamentController, except: [:new, :edit, :index, :show, :delete]
     post "/tournament/get_users_for_add_assistant", TournamentController, :get_users_for_add_assistant
