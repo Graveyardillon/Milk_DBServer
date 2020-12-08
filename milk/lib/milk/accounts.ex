@@ -111,6 +111,9 @@ defmodule Milk.Accounts do
   def create_user(without_id_attrs \\ %{}) do
     attrs = Map.put(without_id_attrs, "id_for_show", generate_random_id())
 
+    User.changeset(%User{}, attrs)
+    |> IO.inspect()
+
     Multi.new
     |> Multi.insert(:user, User.changeset(%User{}, attrs))
     |> Multi.insert(:auth, fn(%{user: user}) ->

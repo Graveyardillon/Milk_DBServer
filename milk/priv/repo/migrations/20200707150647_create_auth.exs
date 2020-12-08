@@ -3,7 +3,6 @@ defmodule Milk.Repo.Migrations.CreateAuth do
 
   def change do
     create table(:auth) do
-      add :name, :string, null: false
       add :email, :string, null: false
       add :password, :string, null: false
       add :user_id, references(:users, on_delete: :delete_all)
