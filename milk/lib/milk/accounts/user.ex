@@ -40,8 +40,7 @@ defmodule Milk.Accounts.User do
   def changeset(user, attrs) do
     user
     |> cast(attrs, [:name, :icon_path, :point, :id_for_show, :notification_number, :language, :logout_fl])
-    |> unique_constraint(:id_for_show)
-    |> validate_required([:name, :point, :notification_number, :language])
-
+    |> validate_required([:name])
+    |> unique_constraint([:id_for_show, :name])
   end
 end

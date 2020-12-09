@@ -4,8 +4,9 @@ defmodule MilkWeb.ChatsController do
   alias Milk.Chat
   alias Milk.Chat.Chats
 
-  # action_fallback MilkWeb.FallbackController
-
+  @doc """
+  Get a list of chat.
+  """
   def index(conn, %{"chat" => params}) do
     chat = Chat.list_chat(params)
     if chat do
@@ -15,6 +16,9 @@ defmodule MilkWeb.ChatsController do
     end
   end
 
+  @doc """
+  Create a new chat.
+  """
   def create(conn, %{"chat" => chats_params}) do
     case Chat.create_chats(chats_params) do
       {:ok, %Chats{} = chats} ->
@@ -26,22 +30,10 @@ defmodule MilkWeb.ChatsController do
         render(conn, "error.json", error: nil)
     end
   end
-
-  def sync(conn, %{"user_id" => user_id, "year" => year, "month" => month, "day" => day, "hour" => hour, "minute" => minute, "second" => second}) do
-    %DateTime{year: year, month: month, day: day, hour: hour, minute: minute, second: second, time_zone: "Asia/Tokyo", utc_offset: 32400, zone_abbr: "JST", std_offset: 0}
-    |> Chat.sync(user_id)
-    json(conn, %{result: true})
-  end
-
-  def get_latest(conn, %{"id" => id}) do
-    chats = Chat.get_latest_chat(id)
-    if(chats) do
-      render(conn, "index.json", chat: chats)
-    else
-      render(conn, "error.json", error: nil)
-    end
-  end
-
+  
+  @doc """
+  Get an information of a chat.
+  """
   def show(conn, %{"id" => id}) do
     chats = Chat.get_chats!(id)
     if (chats) do
@@ -51,6 +43,9 @@ defmodule MilkWeb.ChatsController do
     end
   end
 
+  @doc """
+  Update a chat information.
+  """
   def update(conn, %{"id" => id, "chat" => chats_params}) do
     chats = Chat.get_chats!(id)
     if (chats) do
@@ -64,6 +59,9 @@ defmodule MilkWeb.ChatsController do
     end
   end
 
+  @doc """
+  Delete a chat.
+  """
   def delete(conn, %{"chat_room_id" => chat_room_id, "index" => index}) do
     chats = Chat.get_chat(chat_room_id, index)
     if (chats) do
@@ -73,6 +71,13 @@ defmodule MilkWeb.ChatsController do
     end
   end
 
+  @doc """
+  Utility function.
+  If the user does not have any rooms for partner user,
+  it creates a new room and then send a chat.
+  If the user already have a room for him,
+  it doesn't create a room but just send a chat.
+  """
   def create_dialogue(conn, %{"chat" => chats_params}) do
     case Chat.dialogue(chats_params) do
       {:ok, %Chats{} = chats} ->
