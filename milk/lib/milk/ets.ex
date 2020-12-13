@@ -10,7 +10,7 @@ defmodule Milk.Ets do
   def create_fight_result_table() do
     :ets.new(:fight_result, [:set, :public, :named_table])
   end
-
+# FIXME:引数の順番をこの関数に合わせる
   def insert_match_list(match_list,tournament_id) do
     :ets.insert_new(:match_list, {tournament_id, match_list})
   end

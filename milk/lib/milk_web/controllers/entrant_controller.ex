@@ -72,4 +72,10 @@ defmodule MilkWeb.EntrantController do
     end
   end
 
+  def promote(conn, attrs) do
+    case Tournaments.promote_rank(attrs) do
+      {:ok, entrant} -> render(conn, "rank.json", rank: entrant.rank)
+      {:error, error} -> render(conn, "error.json", error: error)
+    end
+  end
 end
