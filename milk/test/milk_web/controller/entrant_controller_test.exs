@@ -198,7 +198,6 @@ defmodule MilkWeb.EntrantControllerTest do
   defp create_entrants(_num, _tournament_id, result, 0) do
     result
   end
-
   defp create_entrants(num, tournament_id, result, current) do
     {:ok, user} =
       %{"name" => "name", "email" => "e" <> to_string(current) <> "@mail.com", "password" => "Password123"}
@@ -209,6 +208,7 @@ defmodule MilkWeb.EntrantControllerTest do
       |> Tournaments.create_entrant()
     create_entrants(num, tournament_id, (result ++ [entrant]), current - 1)
   end
+
   defp create_entrant(_) do
     entrant = fixture(:entrant)
     %{entrant: entrant}

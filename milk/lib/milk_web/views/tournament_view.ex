@@ -3,7 +3,7 @@ defmodule MilkWeb.TournamentView do
   
   alias MilkWeb.TournamentView
   alias MilkWeb.UserView
-  alias Milk.Accounts
+  alias Milk.{Accounts, Tournaments}
 
   def render("index.json", %{tournament: tournament}) do
     %{data: render_many(tournament, TournamentView, "tournament.json")}
@@ -159,7 +159,7 @@ defmodule MilkWeb.TournamentView do
   end
 
   def render("match.json",%{list: list}) do
-    %{matchlist: list}
+    %{data: %{match_list: list}}
   end
   def render("loser.json",%{list: list}) do
     %{updated_match_list: list}
@@ -197,7 +197,7 @@ defmodule MilkWeb.TournamentView do
   #def render("error.json", %{error: error, msg: "Creating tournament failed"}) do
   def render("error.json", %{error: error}) do
     if(error) do
-      %{result: false, error: create_message(error), data: nil}
+      %{result: false, error: error, data: nil}
     else
       %{result: false, error: nil, data: nil}
     end

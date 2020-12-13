@@ -1,19 +1,23 @@
 defmodule MilkWeb.TournamentControllerTest do
   use MilkWeb.ConnCase
 
-  alias Milk.Tournaments
+  alias Milk.{Accounts, Tournaments, Log}
   alias Milk.Tournaments.Tournament
 
+  @entrant_create_attrs %{
+    "rank" => 42,
+    "user_id" => -1,
+    "tournament_id" => -1
+  }
   @create_attrs %{
-    capacity: 42,
-    deadline: "2010-04-17T14:00:00Z",
-    description: "some description",
-    event_date: "2010-04-17T14:00:00Z",
-    game_id: 42,
-    master_id: 42,
-    name: "some name",
-    type: 42,
-    url: "some url"
+    "capacity" => 42,
+    "deadline" => "2010-04-17T14:00:00Z",
+    "description" => "some description",
+    "event_date" => "2010-04-17T14:00:00Z",
+    "master_id" => 42,
+    "name" => "some name",
+    "type" => 42,
+    "url" => "some url"
   }
   @update_attrs %{
     capacity: 43,
@@ -29,7 +33,10 @@ defmodule MilkWeb.TournamentControllerTest do
   @invalid_attrs %{capacity: nil, deadline: nil, description: nil, event_date: nil, game_id: nil, master_id: nil, name: nil, type: nil, url: nil}
 
   def fixture(:tournament) do
-    {:ok, tournament} = Log.create_tournament(@create_attrs)
+    {:ok, user} =
+      %{"name" => "name", "email" => "e@mail.com", "password" => "Password123"}
+      |> Accounts.create_user()
+    {:ok, tournament} = Tournaments.create_tournament(%{@create_attrs|"master_id" => user.id})
     tournament
   end
 
@@ -112,9 +119,36 @@ defmodule MilkWeb.TournamentControllerTest do
       end
     end
   end
+  describe "start tournament" do
+    setup [:create_tournament]
+    test "start tournament with valid data", %{conn: conn, tournament: tournament} do
+      entrants = create_entrants(12, tournament.id)
+      conn = post(conn, Routes.tournament_path(conn, :start), tournament: %{"master_id" => tournament.master_id, "tournament_id" => tournament.id})
+      assert json_response(conn, 200)["data"]["match_list"]|> IO.inspect |> is_list()
+      assert Tournaments.get_entrants(tournament.id)
+          |> Enum.map(fn x -> x.rank end)
+          |> Enum.filter(fn x -> x == 8 end)
+          |> length()
+          |> Kernel.==(4)
+    end
 
+  end
   defp create_tournament(_) do
     tournament = fixture(:tournament)
     %{tournament: tournament}
   end
+
+    # 複数の参加者作成用関数
+  defp create_entrants(num, tournament_id) do
+    Enum.map(1 .. num, fn x ->
+      {:ok, user} =
+        %{"name" => "name", "email" => "e" <> to_string(x) <> "@mail.com", "password" => "Password123"}
+        |> Accounts.create_user()
+      {:ok, entrant} =
+        %{@entrant_create_attrs | "tournament_id" => tournament_id, "user_id" => user.id}
+        |> Tournaments.create_entrant()
+      entrant
+    end)
+  end
+
 end

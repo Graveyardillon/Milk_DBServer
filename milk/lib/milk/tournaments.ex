@@ -146,13 +146,13 @@ defmodule Milk.Tournaments do
       {:error, %Ecto.Changeset{}}
 
   """
-  def create_tournament(params, thumbnail_path \\ "") do
-    id = Tools.to_integer_as_needed(params["master_id"])
+  def create_tournament(%{"master_id" => master_id} = params, thumbnail_path \\ "") do
+    id = Tools.to_integer_as_needed(master_id)
     
     if Repo.exists?(from u in User, where: u.id == ^id) do
       create(params, thumbnail_path)
     else
-      {:error, nil}
+      {:error, "Undefined User"}
     end
   end
 
@@ -306,7 +306,7 @@ defmodule Milk.Tournaments do
   """
   def get_entrant!(id), do: Repo.get!(Entrant, id)
 
-  defp get_entrant_by_tournament_and_user_id(tournament_id, user_id) do
+  defp get_entrant_by_user_id_and_tournament_id(user_id, tournament_id) do
     Repo.one(from e in Entrant, where: ^tournament_id == e.tournament_id and ^user_id == e.user_id)
   end
 
@@ -365,7 +365,6 @@ defmodule Milk.Tournaments do
   end
 
   defp tournament_exist_check({:ok, attrs}) do
-
     if Repo.exists?(from t in Tournament, where: t.id == ^attrs["tournament_id"]) do
       {:ok, attrs}
     else
@@ -542,9 +541,9 @@ defmodule Milk.Tournaments do
     list
     |> Enum.map(fn x ->
       case x do
-        [[_a,_b],[_c,_d]] -> Milk.Tournaments.delete_loser(x,loser)
-        [_a,[_b,_c]] -> Milk.Tournaments.delete_loser(x,loser)
-        [[_a,_b],_c] -> Milk.Tournaments.delete_loser(x,loser)
+        [[_a,_b],[_c,_d]] -> Milk.Tournaments.delete_loser(x, loser)
+        [_a,[_b,_c]] -> Milk.Tournaments.delete_loser(x, loser)
+        [[_a,_b],_c] -> Milk.Tournaments.delete_loser(x, loser)
         a when is_integer(a) -> a
         _ ->
           case x -- loser ++ [nil] do
@@ -561,7 +560,7 @@ defmodule Milk.Tournaments do
   Finds a 1v1 match of given id and match list.
   """
   def find_match(list, id, result \\ []) do
-    Enum.reduce(list, result, fn x, acc -> 
+    Enum.reduce(list, result, fn x, acc ->
       case x do
         x when is_list(x) -> find_match(x, id, acc)
         x when is_integer(x) and x == id -> acc ++ list
@@ -603,16 +602,18 @@ defmodule Milk.Tournaments do
   Starts a tournament.
   """
   def start(master_id, tournament_id) do
-    tournament =
+    with tournament <-
       Tournament
       |> where([t], t.master_id == ^master_id and t.id == ^tournament_id)
-      |> Repo.one()
-    unless tournament.is_started do
-      tournament
-      |> Tournament.changeset(%{is_started: true})
-      |> Repo.update()
-    else
-      {:error, nil}
+      |> Repo.one(),
+      :false <- is_nil(tournament) do
+      unless tournament.is_started do
+        tournament
+        |> Tournament.changeset(%{is_started: true})
+        |> Repo.update()
+      else
+        {:error, nil}
+      end
     end
   end
 
@@ -652,7 +653,7 @@ defmodule Milk.Tournaments do
   @doc """
   Generate matchlist.
   """
-  def generate_matchlist(list) do
+  defp priv_generate_matchlist(list) when list != [] do
     shuffled = list |> Enum.shuffle()
     case(length(shuffled)) do
     1 ->
@@ -660,12 +661,21 @@ defmodule Milk.Tournaments do
     2 -> shuffled
     _ ->
       b = Enum.slice(shuffled, 0..trunc(length(shuffled)/2 -1))
-      |> generate_matchlist
+      |> priv_generate_matchlist()
 
       c = Enum.slice(shuffled, trunc(length(shuffled)/2)..length(shuffled)-1)
-      |> generate_matchlist
+      |> priv_generate_matchlist()
 
       [b,c]
+    end
+  end
+  defp priv_generate_matchlist([]), do: {:error, "参加者がいません"}
+  def generate_matchlist(list) do
+    list
+    |> priv_generate_matchlist
+    |>case do
+      list when is_list(list) -> {:ok, list}
+      tuple -> tuple
     end
   end
 
@@ -1021,17 +1031,34 @@ defmodule Milk.Tournaments do
     |> case do
       {:ok, attrs} ->
         entrant =
-          attrs["tournament_id"]
-          |> get_entrant_by_tournament_and_user_id(attrs["user_id"])
-        {_num, match} =
+          attrs["user_id"]
+          |> get_entrant_by_user_id_and_tournament_id(attrs["tournament_id"])
+        {_num, match_list} =
           attrs["tournament_id"]
           |> Ets.get_match_list()
           |> hd()
-        {bool, rank} =
-          match
+        # 対戦相手
+        opponent =
+          match_list
+          |> find_match(attrs["user_id"])
           |> get_opponent(attrs["user_id"])
-          |> hd()
-          |> hd()
+          |> get_entrant_by_user_id_and_tournament_id(attrs["tournament_id"])
+        opponents_rank = Map.get(opponent, :rank)
+
+        user =
+          attrs["user_id"]
+          |> get_entrant_by_user_id_and_tournament_id(attrs["tournament_id"])
+
+          user
+          |> Map.get(:rank)
+          |> case do
+            rank when rank > opponents_rank -> update_entrant(opponent, %{rank: rank})
+            rank when rank < opponents_rank -> update_entrant(user, %{rank: opponents_rank})
+            _ ->
+          end
+        {bool, rank} =
+          opponent
+          |> IO.inspect(label: :fnei)
           |> Map.get(:rank)
           |> check_exponentiation_of_two()
         updated =
@@ -1097,5 +1124,15 @@ defmodule Milk.Tournaments do
   end
   defp tournament_start_check({:error, error}) do
     {:error, error}
+  end
+
+  def initialize_rank(match_list, number_of_entrant, tournament_id, count \\ 1)
+  def initialize_rank(match_list, number_of_entrant, tournament_id, count) when is_integer(match_list) do
+    final = if number_of_entrant < count, do: number_of_entrant, else: count
+    get_entrant_by_user_id_and_tournament_id(match_list, tournament_id)
+    |> update_entrant(%{rank: final})
+  end
+  def initialize_rank(match_list, number_of_entrant, tournament_id, count) do
+    Enum.map(match_list, fn x -> initialize_rank(x, number_of_entrant, tournament_id, count *2) end)
   end
 end

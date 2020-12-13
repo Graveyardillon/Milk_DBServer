@@ -228,14 +228,23 @@ defmodule MilkWeb.TournamentController do
 
     with {:ok, _} <- Tournaments.start(master_id, tournament_id) do
       # マッチングリストを生成
-      match_list =
+      with {:ok, match_list} <-
         Tournaments.get_entrants(tournament_id)
         |> Enum.map(fn x -> x.user_id end)
-        |> Tournaments.generate_matchlist()
-
-      Ets.insert_match_list(tournament_id, match_list)
-      render(conn, "match.json", list: match_list)
-    else
+        |> Tournaments.generate_matchlist() do
+          count =
+            Tournaments.get_tournament(tournament_id)
+            |> Map.get(:count)
+          match_list
+          |> Tournaments.initialize_rank(count, tournament_id)
+          match_list
+          |> Ets.insert_match_list(tournament_id)
+          Ets.get_match_list(tournament_id|> IO.inspect(label: :fenfwjk))
+          render(conn, "match.json", list: match_list)
+      else
+        {:error, error} -> render(conn, "error.json", error: error)
+      end
+      else
       _ -> json(conn, %{error: "error"})
     end
   end
