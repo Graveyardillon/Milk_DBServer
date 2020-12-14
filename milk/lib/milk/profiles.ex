@@ -127,10 +127,9 @@ defmodule Milk.Profiles do
 
   def update_profile(%User{} = user, name, bio, gameList, achievementList) do
     Repo.update(Ecto.Changeset.change user, name: name, bio: bio)
-
-    Profile
-    |> where([p], p.user_id == ^user.id)
-    |> Repo.delete_all()
+    # Profile
+    # |> where([p], p.user_id == ^user.id)
+    # |> Repo.delete_all()
 
     Enum.each(gameList, fn game ->
       %Profile{}

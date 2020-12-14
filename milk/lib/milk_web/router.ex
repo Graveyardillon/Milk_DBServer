@@ -25,10 +25,13 @@ defmodule MilkWeb.Router do
     pipe_through :api
 
     resources "/user", UserController, except: [:new, :edit, :index, :show, :create, :update]
-    get  "/user/get_all_username", UserController, :all_username
+    post  "/user/check_username_duplication", UserController, :check_username_duplication
     get  "/user/get", UserController, :show
     get  "/user/in_touch", UserController, :users_in_touch
     post "/user/update", UserController, :update
+    get "/user/get_all", UserController, :index
+    post "/user/get", UserController, :show
+    post "/user/in_touch", UserController, :get_users_in_touch
     post "/user/signup", UserController, :create
     post "/user/login", UserController, :login
     post "/user/login_forced", UserController, :login_forced
@@ -74,6 +77,12 @@ defmodule MilkWeb.Router do
     get  "/tournament/find_match", TournamentController, :find_match
     post "/tournament/start", TournamentController, :start
     post "/tournament/deleteloser", TournamentController, :delete_loser
+    post "/tournament/get", TournamentController, :show
+    get "/tournament/get_all", TournamentController, :index
+    post "/tournament/get_by_master_id", TournamentController, :get_tournaments_by_master_id
+    post "/tournament/get_planned", TournamentController, :get_going_tournaments_by_master_id
+    post "/tournament/get_game", TournamentController, :get_game
+    post "/tournament/get_opponent", TournamentController, :get_opponent
     post "/tournament/delete", TournamentController, :delete
     post "/tournament/publish_url", TournamentController, :publish_url
     post "/tournament_log/add", TournamentLogController, :create
@@ -85,6 +94,9 @@ defmodule MilkWeb.Router do
     resources "/entrant", EntrantController, except: [:new, :edit, :delete]
     get  "/entrant/rank/:tournament_id/:user_id", EntrantController, :show_rank
     delete "/entrant/delete", EntrantController, :delete
+    get "/entrant/rank/:tournament_id/:user_id", EntrantController, :show_rank
+    resources "/entrant_log", EntrantLogController
+    post "/entrant/rank/promote", EntrantController, :promote
 
     resources "/assistant", AssistantController, except: [:new, :edit, :index, :show, :delete]
     post "/assistant/delete", AssistantController, :delete
