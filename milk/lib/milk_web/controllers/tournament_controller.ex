@@ -281,7 +281,7 @@ defmodule MilkWeb.TournamentController do
         |> Enum.map(fn x -> x.user_id end)
         |> Tournaments.generate_matchlist()
 
-      Ets.insert_match_list(tournament_id, match_list)
+      Ets.insert_match_list(match_list, tournament_id)
       render(conn, "match.json", list: match_list)
     else
       _ -> json(conn, %{error: "error"})
@@ -346,12 +346,9 @@ defmodule MilkWeb.TournamentController do
   Get a match list of a tournament.
   """
   def get_match_list(conn, %{"tournament_id" => tournament_id}) do
-    tournament_id = if is_binary(tournament_id) do
-      String.to_integer(tournament_id)
-    else
-      tournament_id
-    end
-    list = Ets.get_match_list(tournament_id) 
+    tournament_id = Tools.to_integer_as_needed(tournament_id)
+
+    list = Ets.get_match_list(tournament_id)
     list = unless list == [] do
       hd(list)
     end
@@ -378,7 +375,9 @@ defmodule MilkWeb.TournamentController do
     end
   end
 
-  
+  @doc """
+  Get an opponent of a tournament match.
+  """
   def get_opponent(conn, %{"tournament_id" => tournament_id, "user_id" => user_id}) do
     tournament_id = Tools.to_integer_as_needed(tournament_id)
     user_id = Tools.to_integer_as_needed(user_id)
