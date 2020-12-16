@@ -99,6 +99,17 @@ defmodule Milk.TournamentsTest do
       assert length(Tournaments.home_tournament_fav(tournament.master_id)) == 0
     end
 
+    test "home_tournament_plan/1 returns user's tournaments" do
+      tournament = fixture(:tournament)
+      {:ok, _} = Tournaments.update_tournament(tournament, @home_attrs)
+      refute length(Tournaments.home_tournament_plan(tournament.master_id)) == 0
+    end
+
+    test "home_tournament_plan/1 fails to return user's tournaments" do
+      tournament = fixture(:tournament)
+      assert length(Tournaments.home_tournament_plan(tournament.master_id)) == 0
+    end
+
     test "create_tournament/1 with valid data creates a tournament" do
       tournament = fixture(:tournament)
       assert tournament.capacity == 42
