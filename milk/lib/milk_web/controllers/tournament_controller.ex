@@ -102,7 +102,7 @@ defmodule MilkWeb.TournamentController do
         t =
           tournament
           |> Map.put(:followers, Relations.get_followers(tournament.master_id))
-          
+
         conn
         |> render("create.json", tournament: t)
       {:error, error} ->
@@ -123,7 +123,7 @@ defmodule MilkWeb.TournamentController do
 
     if tournament do
       entrants = Tournaments.get_entrants(tournament.id)
-        |> Enum.map(fn entrant -> 
+        |> Enum.map(fn entrant ->
           Accounts.get_user(entrant.user_id)
         end)
 
@@ -142,15 +142,15 @@ defmodule MilkWeb.TournamentController do
   Gets tournament info list for home screen.
   """
   def home(conn, %{"filter" => "fav", "user_id" => user_id}) do
-    tournaments = 
+    tournaments =
     Tournaments.home_tournament_fav(user_id)
-    |> Enum.map(fn tournament -> 
-      entrants = 
+    |> Enum.map(fn tournament ->
+      entrants =
         Tournaments.get_entrants(tournament.id)
-        |> Enum.map(fn entrant -> 
+        |> Enum.map(fn entrant ->
           Accounts.get_user(entrant.user_id)
         end)
-      
+
       %{tournament: tournament, entrants: entrants}
     end)
 
@@ -158,21 +158,21 @@ defmodule MilkWeb.TournamentController do
   end
 
   def home(conn, %{"filter" => "plan", "user_id" => user_id}) do
-    tournaments = 
+    tournaments =
     Tournaments.home_tournament_plan(user_id)
-    |> Enum.map(fn tournament -> 
-      entrants = 
+    |> Enum.map(fn tournament ->
+      entrants =
         Tournaments.get_entrants(tournament.id)
-        |> Enum.map(fn entrant -> 
+        |> Enum.map(fn entrant ->
           Accounts.get_user(entrant.user_id)
         end)
-      
+
       %{tournament: tournament, entrants: entrants}
     end)
 
     render(conn, "home.json", tournaments_info: tournaments)
   end
-  
+
   def home(conn, _params) do
     tournaments =
     Tournaments.home_tournament()
@@ -311,11 +311,11 @@ defmodule MilkWeb.TournamentController do
     # 不要な行を削除しておく
     match_list
     |> Tournaments.find_match(hd(loser_list))
-    |> Enum.each(fn user_id -> 
+    |> Enum.each(fn user_id ->
       Ets.delete_match_pending_list(user_id)
       Ets.delete_fight_result(user_id)
     end)
-    
+
     updated_match_list = Tournaments.delete_loser(match_list, loser_list)
     Ets.delete_match_list(tournament_id)
     Ets.insert_match_list(tournament_id, updated_match_list)
