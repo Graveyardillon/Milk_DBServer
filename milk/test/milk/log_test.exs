@@ -268,7 +268,6 @@ defmodule Milk.LogTest do
       {:ok, assistant_log} =
         attrs
         |> Enum.into(@valid_attrs)
-        |>IO.inspect(label: :baka)
         |> Log.create_assistant_log()
 
       assistant_log

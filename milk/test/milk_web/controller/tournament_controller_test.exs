@@ -54,9 +54,7 @@ defmodule MilkWeb.TournamentControllerTest do
       {:ok, user} = fixture(:user)
       attrs = Map.put(@create_attrs, :master_id, user.id)
       conn = post(conn, Routes.tournament_path(conn, :create), %{tournament: attrs, file: ""})
-      IO.inspect(json_response(conn, 200), label: :ct)
       assert %{"id" => id} = json_response(conn, 200)["data"]
-      #IO.inspect(Tournaments.list_tournament())
 
       conn = post(conn, Routes.tournament_path(conn, :show, %{"tournament_id" => id}))
 
@@ -115,7 +113,7 @@ defmodule MilkWeb.TournamentControllerTest do
     test "start tournament with valid data", %{conn: conn, tournament: tournament} do
       entrants = create_entrants(12, tournament.id)
       conn = post(conn, Routes.tournament_path(conn, :start), tournament: %{"master_id" => tournament.master_id, "tournament_id" => tournament.id})
-      assert json_response(conn, 200)["data"]["match_list"]|> IO.inspect |> is_list()
+      assert json_response(conn, 200)["data"]["match_list"] |> is_list()
       assert Tournaments.get_entrants(tournament.id)
           |> Enum.map(fn x -> x.rank end)
           |> Enum.filter(fn x -> x == 8 end)

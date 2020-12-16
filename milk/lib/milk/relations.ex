@@ -54,7 +54,7 @@ defmodule Milk.Relations do
   @doc """
   Get relation list of a specific user.
   """
-  def get_following_list(user_id) do 
+  def get_following_list(user_id) do
     id = if is_binary(user_id) do
       String.to_integer(user_id)
     else
@@ -64,7 +64,7 @@ defmodule Milk.Relations do
     Relation
     |> where([r], r.follower_id == ^id)
     |> Repo.all()
-    |> Enum.map(fn relation -> 
+    |> Enum.map(fn relation ->
       Repo.one(
         from u in User,
         join: a in assoc(u, :auth),
@@ -76,7 +76,7 @@ defmodule Milk.Relations do
 
 
  # NOTE: ユーザーの詳細な情報は必要ないのでフォローしているIDリストを返す
-  def get_following_id_list(user_id) do 
+  def get_following_id_list(user_id) do
     id = if is_binary(user_id) do
       String.to_integer(user_id)
     else
@@ -89,7 +89,7 @@ defmodule Milk.Relations do
     |> Repo.all()
   end
 
-  def get_followers_list(user_id) do 
+  def get_followers_list(user_id) do
     id = if is_binary(user_id) do
       String.to_integer(user_id)
     else
@@ -99,7 +99,7 @@ defmodule Milk.Relations do
     Relation
     |> where([r], r.followee_id == ^id)
     |> Repo.all()
-    |> Enum.map(fn relation -> 
+    |> Enum.map(fn relation ->
       Repo.one(
         from u in User,
         join: a in assoc(u, :auth),
@@ -108,8 +108,8 @@ defmodule Milk.Relations do
       )
     end)
   end
-  
-  def get_followers_id_list(user_id) do 
+
+  def get_followers_id_list(user_id) do
     id = if is_binary(user_id) do
       String.to_integer(user_id)
     else
@@ -238,7 +238,7 @@ defmodule Milk.Relations do
     Relation
     |> where([r], r.followee_id == ^user_id)
     |> Repo.all()
-    |> Enum.map(fn relation -> 
+    |> Enum.map(fn relation ->
       Accounts.get_user(relation.follower_id)
     end)
   end

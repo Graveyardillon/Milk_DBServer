@@ -64,7 +64,7 @@ defmodule MilkWeb.Router do
     get  "/tournament/users_for_add_assistant", TournamentController, :get_users_for_add_assistant
     get  "/tournament/get", TournamentController, :show
     get  "/tournament/get_by_master_id", TournamentController, :get_tournaments_by_master_id
-    get  "/tournament/get_planned", TournamentController, :get_going_tournaments_by_master_id
+    get  "/tournament/get_planned", TournamentController, :get_ongoing_tournaments_by_master_id
     get  "/tournament/get_game", TournamentController, :get_game
     get  "/tournament/get_opponent", TournamentController, :get_opponent
     get  "/tournament/get_participating_tournaments", TournamentController, :participating_tournaments
@@ -80,7 +80,7 @@ defmodule MilkWeb.Router do
     post "/tournament/get", TournamentController, :show
     get "/tournament/get_all", TournamentController, :index
     post "/tournament/get_by_master_id", TournamentController, :get_tournaments_by_master_id
-    post "/tournament/get_planned", TournamentController, :get_going_tournaments_by_master_id
+    post "/tournament/get_planned", TournamentController, :get_ongoing_tournaments_by_master_id
     post "/tournament/get_game", TournamentController, :get_game
     post "/tournament/get_opponent", TournamentController, :get_opponent
     post "/tournament/delete", TournamentController, :delete

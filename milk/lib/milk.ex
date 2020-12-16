@@ -52,7 +52,6 @@ defmodule Milk do
 
   # defp close_check("close", socket) do
   #   :gen_tcp.close(socket)
-  #   IO.inspect(Kernel.self)
   #   Process.exit(Kernel.self(), :kill)
   # end
   # defp close_check(line, _socket), do: line
