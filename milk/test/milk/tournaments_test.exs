@@ -1,7 +1,7 @@
 defmodule Milk.TournamentsTest do
   use Milk.DataCase
 
-  alias Milk.{Tournaments, Accounts, Ets}
+  alias Milk.{Tournaments, Accounts, Ets, Relations}
 
   describe "tournament" do
     alias Milk.Tournaments.Tournament
@@ -44,6 +44,10 @@ defmodule Milk.TournamentsTest do
       "user_id" => -1,
       "tournament_id" => -1
     }
+    @home_attrs %{
+      deadline: "2031-05-18T15:01:01Z",
+      event_date: "2031-05-18T15:01:01Z"
+    }
 
     defp fixture(:tournament) do
       {:ok, user} = Accounts.create_user(%{"name" => "name", "email" => "e@mail.com", "password" => "Password123"})
@@ -55,6 +59,11 @@ defmodule Milk.TournamentsTest do
       tournament
     end
 
+    defp fixture(:user) do
+      {:ok, user} = Accounts.create_user(%{"name" => "name1", "email" => "e1@mail.com", "password" => "Password123"})
+      user
+    end
+
     defp fixture(:entrant) do
       tournament = fixture(:tournament)
 
@@ -62,6 +71,32 @@ defmodule Milk.TournamentsTest do
         %{@entrant_create_attrs | "tournament_id" => tournament.id, "user_id" => tournament.master_id}
         |> Tournaments.create_entrant()
       entrant
+    end
+
+    test "list_tournament/0 returns all tournament" do
+      _ = fixture(:tournament)
+      refute length(Tournaments.list_tournament()) == 0
+    end
+
+    test "home_tournament()/0 returns tournaments for home screen" do
+      tournament = fixture(:tournament)
+      {:ok, _} = Tournaments.update_tournament(tournament, @home_attrs)
+      refute length(Tournaments.home_tournament()) == 0
+    end
+
+    test "home_tournament_fav/1 returns tournaments which is filtered by favorite users for home screen" do
+      user1 = fixture(:user)
+      tournament = fixture(:tournament)
+      {:ok, _} = Tournaments.update_tournament(tournament, @home_attrs)
+      Relations.create_relation(%{"follower_id" => user1.id, "followee_id" => tournament.master_id})
+
+      refute length(Tournaments.home_tournament_fav(user1.id)) == 0
+    end
+
+    test "home_tournament_fav/1 fails to return tournaments which is filtered by favorite users for home screen" do
+      tournament = fixture(:tournament)
+      {:ok, _} = Tournaments.update_tournament(tournament, @home_attrs)
+      assert length(Tournaments.home_tournament_fav(tournament.master_id)) == 0
     end
 
     test "create_tournament/1 with valid data creates a tournament" do
