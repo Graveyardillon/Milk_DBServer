@@ -8,10 +8,14 @@ defmodule MilkWeb.ProfileController do
 
   def get_profile(conn, %{"user_id" => user_id}) do
     user = Accounts.get_user(user_id)
-    games = Profiles.get_game_list(user)
-    achievements = Profiles.get_achievement_list(user)
+    if user do
+      games = Profiles.get_game_list(user)
+      achievements = Profiles.get_achievement_list(user)
 
-    render(conn, "profile.json", user: user, games: games, achievements: achievements)
+      render(conn, "profile.json", user: user, games: games, achievements: achievements)
+    else
+      json(conn, %{result: false, error: "user not found"})
+    end
   end
 
   def update(conn, %{"profile" => profile_params}) do
