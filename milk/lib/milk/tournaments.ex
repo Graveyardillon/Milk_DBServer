@@ -75,15 +75,24 @@ defmodule Milk.Tournaments do
     |> Repo.all()
   end
 
+  @doc """
+  Returns the list of tournament specified with a game id.
+  """
   def game_tournament(attrs) do
     Repo.all(from t in Tournament, where: t.game_id == ^attrs["game_id"])
   end
 
+  @doc """
+  Returns tournaments of certain user.
+  """
   def get_tournaments_by_master_id(user_id) do
     Repo.all(from t in Tournament, where: t.master_id == ^user_id)
   end
 
-  def get_going_tournaments_by_master_id(user_id) do
+  @doc """
+  Returns ongoing tournaments of certain user.
+  """
+  def get_ongoing_tournaments_by_master_id(user_id) do
     Repo.all(from t in Tournament, where: t.master_id == ^user_id)
     |> Enum.filter(fn tournament ->
       date =
@@ -136,6 +145,9 @@ defmodule Milk.Tournaments do
     end)
   end
 
+  @doc """
+  Get a list of master users' information of a tournament
+  """
   def get_masters(tournament_id) do
     tournament = get_tournament!(tournament_id)
 

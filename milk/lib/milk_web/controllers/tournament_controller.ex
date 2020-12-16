@@ -57,8 +57,8 @@ defmodule MilkWeb.TournamentController do
   @doc """
   Get ongoing tournaments of a specific user.
   """
-  def get_going_tournaments_by_master_id(conn, %{"user_id" => user_id}) do
-    tournaments = Tournaments.get_going_tournaments_by_master_id(user_id)
+  def get_ongoing_tournaments_by_master_id(conn, %{"user_id" => user_id}) do
+    tournaments = Tournaments.get_ongoing_tournaments_by_master_id(user_id)
     render(conn, "index.json", tournament: tournaments)
   end
 
