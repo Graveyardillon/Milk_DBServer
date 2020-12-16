@@ -129,8 +129,6 @@ defmodule Milk.TournamentsTest do
           "user_id" => entrant.user_id
         }
 
-      IO.inspect(attrs, label: :attrs)
-
       # numは生成する参加者の数で後に一人追加するので8 - 1 = 7
       num = 7
       # 参加者作成，マッチリストを生成してEtsに登録
@@ -139,7 +137,6 @@ defmodule Milk.TournamentsTest do
         |> Enum.map(fn x -> %{x | rank: num + 1} end)
         |> Kernel.++([%{entrant | rank: num + 1}])
         |> Tournaments.generate_matchlist()
-        |> IO.inspect(label: :matchlist)
 
       Ets.insert_match_list(match_list, entrant.tournament_id)
       # assertフェーズ

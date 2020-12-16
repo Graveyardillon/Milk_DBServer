@@ -287,7 +287,7 @@ defmodule MilkWeb.TournamentController do
           |> Tournaments.initialize_rank(count, tournament_id)
           match_list
           |> Ets.insert_match_list(tournament_id)
-          Ets.get_match_list(tournament_id|> IO.inspect(label: :fenfwjk))
+          Ets.get_match_list(tournament_id)
           render(conn, "match.json", list: match_list)
       else
         {:error, error} -> render(conn, "error.json", error: error)

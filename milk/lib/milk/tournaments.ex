@@ -35,6 +35,9 @@ defmodule Milk.Tournaments do
     Repo.all(Tournament)
   end
 
+  @doc """
+  Returns the list of tournament for home screen.
+  """
   def home_tournament() do
     Tournament
     |> where([e], e.deadline > ^Timex.now)
@@ -42,6 +45,9 @@ defmodule Milk.Tournaments do
     |> Repo.all()
   end
 
+  @doc """
+  Returns the list of tournament which is filtered by "fav" for home screen.
+  """
   def home_tournament_fav(user_id) do
     users =
       Relation
@@ -58,6 +64,9 @@ defmodule Milk.Tournaments do
     |> Repo.all()
   end
 
+  @doc """
+  Returns the list of tournament which is filtered by "plan" for home screen.
+  """
   def home_tournament_plan(user_id) do
     Tournament
     |> where([t], t.master_id == ^user_id)
@@ -562,7 +571,6 @@ defmodule Milk.Tournaments do
   Finds a 1v1 match of given id and match list.
   """
   def find_match(list, id, result \\ []) do
-    IO.inspect(list, label: :list)
     Enum.reduce(list, result, fn x, acc ->
       y = process_entrant(x)
 
@@ -576,7 +584,7 @@ defmodule Milk.Tournaments do
 
   # FIXME: 名前が微妙
   defp process_entrant(%Entrant{} = map) do
-    IO.inspect(map, label: :xvalue)
+    inspect(map)
     map.user_id
   end
 
@@ -599,11 +607,11 @@ defmodule Milk.Tournaments do
     a =
       match
       |> Enum.filter(fn x ->
-        IO.inspect(x)
+        inspect(x, printable_limit: 0)
         x.user_id != user_id
       end)
       |> hd()
-    IO.inspect(a, label: :avalue)
+    inspect(a, printable_limit: 0)
 
     a.user_id
     |> Accounts.get_user()
@@ -1069,9 +1077,7 @@ defmodule Milk.Tournaments do
         opponent =
           match_list
           |> find_match(attrs["user_id"])
-          |> IO.inspect(label: :findmatch)
           |> get_opponent(attrs["user_id"], :promote)
-          |> IO.inspect(label: :getopponent)
           |> Map.get("id")
           |> get_entrant_by_user_id_and_tournament_id(attrs["tournament_id"])
         opponents_rank = Map.get(opponent, :rank)
@@ -1089,7 +1095,6 @@ defmodule Milk.Tournaments do
           end
         {bool, rank} =
           opponent
-          |> IO.inspect(label: :fnei)
           |> Map.get(:rank)
           |> check_exponentiation_of_two()
         updated =

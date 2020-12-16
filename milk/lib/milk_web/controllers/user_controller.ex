@@ -12,7 +12,7 @@ defmodule MilkWeb.UserController do
       false ->
         json(conn, %{isUnique: true})
     end
-    
+
   end
 
   @doc """
@@ -79,12 +79,12 @@ defmodule MilkWeb.UserController do
   Deletes a user.
   """
   def delete(conn, %{"id" => id, "password" => password, "email" => email, "token" => token}) do
-    case Accounts.delete_user(id, password, email, token) |> IO.inspect do
+    case Accounts.delete_user(id, password, email, token) do
       {:ok, _} ->
         Guardian.revoke(token)
         #send_resp(conn, :no_content, "")
         json(conn, %{result: true})
-      _ -> 
+      _ ->
         json(conn, %{result: false})
     end
   end
@@ -110,7 +110,7 @@ defmodule MilkWeb.UserController do
   """
   def logout(conn, %{"id" => id, "token" => token}) do
     result = Accounts.logout id
-    
+
     Guardian.revoke(token)
     json(conn, %{result: result})
   end
