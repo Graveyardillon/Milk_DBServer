@@ -110,6 +110,22 @@ defmodule Milk.TournamentsTest do
       assert length(Tournaments.home_tournament_plan(tournament.master_id)) == 0
     end
 
+    test "get_tournaments_by_master_id/1 returns tournaments of a user" do
+      tournament = fixture(:tournament)
+      refute length(Tournaments.get_tournaments_by_master_id(tournament.master_id)) == 0
+    end
+
+    test "get_tournaments_by_master_id/1 fails to return tournaments of a user" do
+      user = fixture(:user)
+      tournament = fixture(:tournament)
+      assert length(Tournaments.get_tournaments_by_master_id(user.id)) == 0
+    end
+
+    test "get_ongoing_tournaments_by_master_id/1 fails to return user's ongoing tournaments" do
+      tournament = fixture(:tournament)
+      assert length(Tournaments.get_ongoing_tournaments_by_master_id(tournament.master_id)) == 0
+    end
+
     test "create_tournament/1 with valid data creates a tournament" do
       tournament = fixture(:tournament)
       assert tournament.capacity == 42

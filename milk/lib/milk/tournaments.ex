@@ -79,6 +79,7 @@ defmodule Milk.Tournaments do
   Returns the list of tournament specified with a game id.
   """
   def game_tournament(attrs) do
+    # FIXME: テストでカバーしていない
     Repo.all(from t in Tournament, where: t.game_id == ^attrs["game_id"])
   end
 
