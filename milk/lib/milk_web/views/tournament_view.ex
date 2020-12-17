@@ -5,6 +5,15 @@ defmodule MilkWeb.TournamentView do
   alias MilkWeb.UserView
   alias Milk.{Accounts, Tournaments}
 
+
+  def render("users.json", %{users: users}) do
+    if users != [] do
+      %{data: render_many(users, UserView, "user.json"), result: true}
+    else
+      %{data: nil, result: false}
+    end
+  end
+
   def render("index.json", %{tournament: tournament}) do
     %{data: render_many(tournament, TournamentView, "tournament.json")}
   end
@@ -27,8 +36,6 @@ defmodule MilkWeb.TournamentView do
       type: tournament.type,
       capacity: tournament.capacity,
       password: tournament.password,
-      live: tournament.live,
-      join: tournament.join,
       description: tournament.description,
       master_id: tournament.master_id,
       url: tournament.url,
@@ -52,8 +59,6 @@ defmodule MilkWeb.TournamentView do
         type: tournament.type,
         capacity: tournament.capacity,
         password: tournament.password,
-        live: tournament.live,
-        join: tournament.join,
         description: tournament.description,
         master_id: tournament.master_id,
         url: tournament.url,
@@ -72,6 +77,24 @@ defmodule MilkWeb.TournamentView do
             bio: user.bio
           }
         end)
+      }
+    }
+  end
+
+  def render("tournament_log.json", %{tournament_log: tournament_log}) do
+    %{
+      data: %{
+        capacity: tournament_log.capacity,
+        deadline: tournament_log.deadline,
+        description: tournament_log.description,
+        event_date: tournament_log.event_date,
+        game_id: tournament_log.game_id,
+        tournament_id: tournament_log.tournament_id,
+        winner_id: tournament_log.winner_id,
+        master_id: tournament_log.master_id,
+        name: tournament_log.name,
+        url: tournament_log.url,
+        type: tournament_log.type
       }
     }
   end
@@ -101,8 +124,6 @@ defmodule MilkWeb.TournamentView do
           type: info.tournament.type,
           capacity: info.tournament.capacity,
           password: info.tournament.password,
-          live: info.tournament.live,
-          join: info.tournament.join,
           description: info.tournament.description,
           master_id: info.tournament.master_id,
           url: info.tournament.url,
@@ -141,8 +162,6 @@ defmodule MilkWeb.TournamentView do
         type: tournament.type,
         capacity: tournament.capacity,
         password: tournament.password,
-        live: tournament.live,
-        join: tournament.join,
         description: tournament.description,
         master_id: tournament.master_id,
         url: tournament.url,

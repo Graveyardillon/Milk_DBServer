@@ -4,14 +4,16 @@ defmodule Milk.AccountsTest do
   alias Milk.Accounts
   alias Milk.Profiles
   alias Milk.Relations
+  alias Milk.Chat
 
   describe "users" do
     alias Milk.Accounts.User
+    alias Milk.Chat.Chats
 
     @user_valid_attrs %{"icon_path" => "some icon_path", "language" => "some language", "name" => "some name", "notification_number" => 42, "point" => 42, "email" => "some@email.com", "logout_fl" => true, "password" => "S1ome password"}
+    @user2_valid_attrs %{"icon_path" => "some icon_path", "language" => "some language", "name" => "some name", "notification_number" => 42, "point" => 42, "email" => "some2@email.com", "logout_fl" => true, "password" => "S1ome password"}
     @update_attrs %{icon_path: "some updated icon_path", language: "some updated language", name: "some updated name", notification_number: 43, point: 43,  email: "some updated email", logout_fl: false, password: "S1ome updated password"}
     @invalid_attrs %{"icon_path" => nil, "language" => nil, "name" => nil, "notification_number" => nil, "point" => nil, "email" => nil, "password" => nil}
-
 
     def user_fixture(attrs \\ %{}) do
       {:ok, user} =
@@ -55,6 +57,16 @@ defmodule Milk.AccountsTest do
       assert {:ok, _} = Accounts.delete_user(user.id, user.auth.password, user.auth.email, token)
       assert !Accounts.get_user(user.id)
     end
+
+    test "get_users_in_touch/1 gets users in touch" do
+      {:ok, %User{} = user1} = Accounts.create_user(@user_valid_attrs)
+      {:ok, %User{} = user2} = Accounts.create_user(@user2_valid_attrs)
+      {:ok, %Chats{} = _chat} = Chat.dialogue(%{"user_id" => user1.id, "partner_id" => user2.id, "word" => "Hello"})
+      user = 
+        Accounts.get_users_in_touch(user1.id) 
+        |> hd()
+      assert user2.id == user.id
+    end
   end
 
   describe "profiles" do
@@ -72,16 +84,6 @@ defmodule Milk.AccountsTest do
 
       profile
     end
-# FIXME:
-    # test "list_profiles/0 returns all profiles" do
-    #   profile = profile_fixture()
-    #   assert Profiles.list_profiles() == [profile]
-    # end
-
-    # test "get_profile!/1 returns the profile with given id" do
-    #   profile = profile_fixture()
-    #   assert Profiles.get_profile!(profile.id) == profile
-    # end
 
     test "create_profile/1 with valid data creates a profile" do
       assert {:ok, %Profile{} = profile} = Profiles.create_profile(@valid_attrs)
@@ -141,16 +143,6 @@ defmodule Milk.AccountsTest do
       relation
     end
 
-    # test "list_relations/0 returns all relations" do
-    #   relation = relation_fixture()
-    #   assert Relations.list_relations() == [relation]
-    # end
-    # FIXME:
-    # test "get_relation!/1 returns the relation with given id" do
-    #   relation = relation_fixture()
-    #   assert Relations.get_relation!(relation.id) == relation
-    # end
-
     test "create_relation/1 with valid data creates a relation" do
       {:ok, user1} = Accounts.create_user(%{"name" => "name", "email" => "e@mail.com", "password" => "Password123"})
       {:ok, user2} = Accounts.create_user(%{"name" => "name", "email" => "ew@mail.com", "password" => "Password123"})
@@ -158,7 +150,7 @@ defmodule Milk.AccountsTest do
         @valid_attrs
         |> Map.put("followee_id", user1.id)
         |> Map.put("follower_id", user2.id)
-        |>Relations.create_relation()
+        |> Relations.create_relation()
     end
 
     test "create_relation/1 with invalid data returns error" do
@@ -203,7 +195,6 @@ defmodule Milk.AccountsTest do
         }
       assert %{user: %User{}, token: token} = Accounts.login(login_params)
     end
-
 
     test "login/1 can login user by username" do
       user = user_fixture()

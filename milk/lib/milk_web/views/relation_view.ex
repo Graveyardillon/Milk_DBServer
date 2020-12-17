@@ -22,7 +22,7 @@ defmodule MilkWeb.RelationView do
     %{following: list, result: true}
   end
 
-  def render("users.json", %{users: users}) do
+  def render("user.json", %{users: users}) do
     m =
       users
       |> Enum.map(fn user ->
