@@ -15,7 +15,7 @@ config :milk, Milk.Repo,
   username: "postgres",
   password: "1il5eEpK8rTc0ba1N",
   database: "milk",
-  socket_dir: "/tmp/cloudsql/e-players-296316:asia-northeast1:milkdb",
+  socket_dir: "/tmp/cloudsql/crack-producer-298904:asia-northeast1:milkdb",
   pool_size: 10
 
 #secret_key_base =
