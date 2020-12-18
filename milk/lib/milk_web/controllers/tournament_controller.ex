@@ -90,25 +90,28 @@ defmodule MilkWeb.TournamentController do
     end
 
     tournament_params = if is_binary(tournament_params), do: Poison.decode!(tournament_params), else: tournament_params
+    if is_nil(tournament_params["join"]) do
+      render(conn, "error.json", error: "join parameter is nil")
+    else
+      case Tournaments.create_tournament(tournament_params, thumbnail_path) do
+        {:ok, %Tournament{} = tournament} ->
 
-    case Tournaments.create_tournament(tournament_params, thumbnail_path) do
-      {:ok, %Tournament{} = tournament} ->
+          if tournament_params["join"] == "true" do
+            params = %{"user_id" => tournament.master_id, "tournament_id" => tournament.id}
+            Tournaments.create_entrant(params)
+          end
 
-        if tournament_params["join"] == "true" do
-          params = %{"user_id" => tournament.master_id, "tournament_id" => tournament.id}
-          Tournaments.create_entrant(params)
-        end
+          t =
+            tournament
+            |> Map.put(:followers, Relations.get_followers(tournament.master_id))
 
-        t =
-          tournament
-          |> Map.put(:followers, Relations.get_followers(tournament.master_id))
-
-        conn
-        |> render("create.json", tournament: t)
-      {:error, error} ->
-        render(conn, "error.json", error: error)
-      _ ->
-        render(conn, "error.json", error: nil)
+          conn
+          |> render("create.json", tournament: t)
+        {:error, error} ->
+          render(conn, "error.json", error: error)
+        _ ->
+          render(conn, "error.json", error: nil)
+      end
     end
   end
 
@@ -217,6 +220,8 @@ defmodule MilkWeb.TournamentController do
   def delete(conn, %{"tournament_id" => id}) do
     with {:ok, %Tournament{}} <- Tournaments.delete_tournament(id) do
       send_resp(conn, :no_content, "")
+    else
+      _ -> render(conn, "error.json", error: nil)
     end
   end
 

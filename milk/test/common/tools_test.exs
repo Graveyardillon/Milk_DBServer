@@ -19,7 +19,8 @@ defmodule Common.ToolsTest do
   describe "is_map_element_nil?/1" do
     @valid_data_1 %{"a" => nil, "b" => nil, "c" => nil}
     @valid_data_2 %{"a" => 2, "b" => 3, "c" => nil}
-    @invalid_data "Hello"
+    @invalid_data_1 "Hello"
+    @invalid_data_2 42
 
     test "is_map_element_nil?/1 works fine with valid data" do
       assert Tools.is_all_map_elements_nil?(@valid_data_1)
@@ -27,7 +28,8 @@ defmodule Common.ToolsTest do
     end
 
     test "is_map_element_nil?/1 does not work with invalid data" do
-      assert catch_error(Tools.is_all_map_elements_nil?(@invalid_data)) == %RuntimeError{message: "Argument is not map"}
+      assert catch_error(Tools.is_all_map_elements_nil?(@invalid_data_1)) == %RuntimeError{message: "Argument is not map"}
+      assert catch_error(Tools.is_all_map_elements_nil?(@invalid_data_2)) == %RuntimeError{message: "Argument is not map"}
     end
   end
 end

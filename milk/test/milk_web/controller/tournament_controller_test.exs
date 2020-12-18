@@ -17,6 +17,7 @@ defmodule MilkWeb.TournamentControllerTest do
     "master_id" => 42,
     "name" => "some name",
     "type" => 42,
+    "join" => "true",
     "url" => "some url"
   }
   @update_attrs %{
@@ -63,55 +64,26 @@ defmodule MilkWeb.TournamentControllerTest do
 
     test "renders errors when data is invalid", %{conn: conn} do
       conn = post(conn, Routes.tournament_path(conn, :create), tournament: @invalid_attrs, file: "")
-      json_response(conn, 422)["errors"] |> IO.inspect()
+      assert json_response(conn, 200)["error"] == "join parameter is nil"
     end
   end
 
-  # describe "update tournament" do
-  #   setup [:create_tournament]
+  describe "delete tournament" do
+    setup [:create_tournament]
 
-  #   test "renders tournament when data is valid", %{conn: conn, tournament: %Tournament{id: id} = tournament} do
-  #     conn = put(conn, Routes.tournament_path(conn, :update, tournament), tournament: @update_attrs)
-  #     assert %{"id" => ^id} = json_response(conn, 200)["data"]
+    test "deletes chosen tournament", %{conn: conn, tournament: tournament} do
+      conn = post(conn, Routes.tournament_path(conn, :delete, %{"tournament_id" => tournament.id}))
+      assert response(conn, 204)
 
-  #     conn = get(conn, Routes.tournament_path(conn, :show, id))
-
-  #     assert %{
-  #       "id" => id,
-  #       "capacity" => 43,
-  #       "deadline" => "2011-05-18T15:01:01Z",
-  #       "description" => "some updated description",
-  #       "event_date" => "2011-05-18T15:01:01Z",
-  #       "game_id" => 43,
-  #       "master_id" => 43,
-  #       "name" => "some updated name",
-  #       "type" => 43,
-  #       "url" => "some updated url"
-  #     } = json_response(conn, 200)["data"]
-  #   end
-
-  #   test "renders errors when data is invalid", %{conn: conn, tournament: tournament} do
-  #     conn = put(conn, Routes.tournament_path(conn, :update, tournament), tournament: @invalid_attrs)
-  #     assert json_response(conn, 422)["errors"] != %{}
-  #   end
-  # end
-
-  # describe "delete tournament" do
-  #   setup [:create_tournament]
-
-  #   test "deletes chosen tournament", %{conn: conn, tournament: tournament} do
-  #     conn = delete(conn, Routes.tournament_path(conn, :delete, tournament))
-  #     assert response(conn, 204)
-
-  #     assert_error_sent 404, fn ->
-  #       get(conn, Routes.tournament_path(conn, :show, tournament))
-  #     end
-  #   end
-  # end
+      assert_error_sent 404, fn ->
+        get(conn, Routes.tournament_path(conn, :show, %{"tournament_id" => tournament.id}))
+      end
+    end
+  end
 
   # describe "start tournament" do
   #   setup [:create_tournament]
-  #   test "start tournament with valid data", %{conn: conn, tournament: tournament} do
+  #   test "start a tournament with valid data", %{conn: conn, tournament: tournament} do
   #     entrants = create_entrants(12, tournament.id)
   #     conn = post(conn, Routes.tournament_path(conn, :start), tournament: %{"master_id" => tournament.master_id, "tournament_id" => tournament.id})
   #     assert json_response(conn, 200)["data"]["match_list"] |> is_list()
@@ -140,5 +112,4 @@ defmodule MilkWeb.TournamentControllerTest do
       entrant
     end)
   end
-
 end

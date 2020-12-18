@@ -283,8 +283,7 @@ defmodule Milk.Tournaments do
     TournamentLog.changeset(%TournamentLog{}, Map.from_struct(tournament))
     |> Repo.insert()
 
-    {:ok, tournament} = Repo.delete(tournament)
-    tournament
+    Repo.delete(tournament)
   end
 
   @doc """
