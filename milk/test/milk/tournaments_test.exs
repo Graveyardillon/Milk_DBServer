@@ -182,9 +182,7 @@ defmodule Milk.TournamentsTest do
   describe "promote_rank" do
     setup [:create_entrant]
 
-    # FIXME: このテストがなぜか通らない
     test "promote_rank/1 returns promoted rank with valid attrs", %{entrant: entrant} do
-      # promote_rankの引数となるattrs
       attrs =
         %{
           "tournament_id" => entrant.tournament_id,

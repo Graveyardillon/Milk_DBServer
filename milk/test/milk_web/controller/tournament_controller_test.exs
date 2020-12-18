@@ -108,6 +108,7 @@ defmodule MilkWeb.TournamentControllerTest do
       end
     end
   end
+
   describe "start tournament" do
     setup [:create_tournament]
     test "start tournament with valid data", %{conn: conn, tournament: tournament} do
@@ -122,6 +123,7 @@ defmodule MilkWeb.TournamentControllerTest do
     end
 
   end
+
   defp create_tournament(_) do
     tournament = fixture(:tournament)
     %{tournament: tournament}
