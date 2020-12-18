@@ -175,7 +175,12 @@ defmodule Milk.TournamentsTest do
     setup [:create_tournament_for_flow]
 
     test "start/2 with valid data works fine", %{tournament: tournament} do
-      assert {:ok, tournament} = Tournaments.start(tournament.master_id, tournament.id)
+      assert {:ok, _tournament} = Tournaments.start(tournament.master_id, tournament.id)
+      assert {:error, _} = Tournaments.start(tournament.master_id, tournament.id)
+    end
+
+    test "start/2 with invalid data does not work", %{tournament: _tournament} do
+      assert {:error, _tournament} = Tournaments.start(nil, nil)
     end
   end
 
@@ -284,11 +289,6 @@ defmodule Milk.TournamentsTest do
       # assertフェーズ
       assert {:error, "undefined user"} = Tournaments.promote_rank(attrs)
     end
-  end
-
-  defp create_tournament(_) do
-    tournament = fixture(:tournament)
-    %{tournament: tournament}
   end
 
   defp create_tournament_for_flow(_) do

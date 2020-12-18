@@ -657,8 +657,8 @@ defmodule Milk.Tournaments do
   Starts a tournament.
   """
   def start(master_id, tournament_id) do
-    with tournament <-
-      Tournament
+    with :false <- is_nil(master_id) or is_nil(tournament_id),
+    tournament <- Tournament
       |> where([t], t.master_id == ^master_id and t.id == ^tournament_id)
       |> Repo.one(),
       :false <- is_nil(tournament) do
@@ -707,9 +707,6 @@ defmodule Milk.Tournaments do
     }
   end
 
-  @doc """
-  Generate matchlist.
-  """
   defp priv_generate_matchlist(list) when list != [] do
     shuffled = list |> Enum.shuffle()
     case(length(shuffled)) do
