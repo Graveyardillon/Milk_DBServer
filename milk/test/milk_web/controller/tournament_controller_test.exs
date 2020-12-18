@@ -81,19 +81,20 @@ defmodule MilkWeb.TournamentControllerTest do
     end
   end
 
-  # describe "start tournament" do
-  #   setup [:create_tournament]
-  #   test "start a tournament with valid data", %{conn: conn, tournament: tournament} do
-  #     entrants = create_entrants(12, tournament.id)
-  #     conn = post(conn, Routes.tournament_path(conn, :start), tournament: %{"master_id" => tournament.master_id, "tournament_id" => tournament.id})
-  #     assert json_response(conn, 200)["data"]["match_list"] |> is_list()
-  #     assert Tournaments.get_entrants(tournament.id)
-  #         |> Enum.map(fn x -> x.rank end)
-  #         |> Enum.filter(fn x -> x == 8 end)
-  #         |> length()
-  #         |> Kernel.==(4)
-  #   end
-  # end
+  describe "start tournament" do
+    setup [:create_tournament]
+    test "start a tournament with valid data", %{conn: conn, tournament: tournament} do
+      entrants = create_entrants(12, tournament.id)
+      conn = post(conn, Routes.tournament_path(conn, :start), tournament: %{"master_id" => tournament.master_id, "tournament_id" => tournament.id})
+
+      assert json_response(conn, 200)["data"]["match_list"] |> is_list()
+      assert Tournaments.get_entrants(tournament.id)
+          |> Enum.map(fn x -> x.rank end)
+          |> Enum.filter(fn x -> x == 8 end)
+          |> length()
+          |> Kernel.==(4)
+    end
+  end
 
   defp create_tournament(_) do
     tournament = fixture(:tournament)
@@ -104,7 +105,7 @@ defmodule MilkWeb.TournamentControllerTest do
   defp create_entrants(num, tournament_id) do
     Enum.map(1 .. num, fn x ->
       {:ok, user} =
-        %{"name" => "name", "email" => "e" <> to_string(x) <> "@mail.com", "password" => "Password123"}
+        %{"name" => "name" <> to_string(x), "email" => "e" <> to_string(x) <> "@mail.com", "password" => "Password123"}
         |> Accounts.create_user()
       {:ok, entrant} =
         %{@entrant_create_attrs | "tournament_id" => tournament_id, "user_id" => user.id}
