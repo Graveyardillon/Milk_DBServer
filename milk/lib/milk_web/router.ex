@@ -37,6 +37,8 @@ defmodule MilkWeb.Router do
     post "/user/login_forced", UserController, :login_forced
     post "/user/logout", UserController, :logout
 
+    post "/user_report", ReportController, :create
+
     resources "/relation", RelationController, except: [:new, :edit, :index, :show, :delete]
     get  "/relation/following_list", RelationController, :following_list
     get  "/relation/following_id_list", RelationController, :following_id_list
