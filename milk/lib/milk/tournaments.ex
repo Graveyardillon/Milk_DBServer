@@ -610,9 +610,16 @@ defmodule Milk.Tournaments do
     match
     |> Enum.filter(&(&1 != user_id))
     |> hd()
-    #FIXME: 多分ここでifの分岐
-    |> Accounts.get_user()
-    |> atom_user_map_to_string_map()
+    |> (fn the_other ->
+      if is_integer(the_other) do
+        opponent =
+          Accounts.get_user(the_other)
+          |> atom_user_map_to_string_map()
+        {:ok, opponent}
+      else
+        {:wait, nil}
+      end
+    end).()
   end
 
   def get_opponent(match, user_id, :promote) do

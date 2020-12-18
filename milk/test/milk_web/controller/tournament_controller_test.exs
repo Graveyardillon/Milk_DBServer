@@ -1,8 +1,7 @@
 defmodule MilkWeb.TournamentControllerTest do
   use MilkWeb.ConnCase
 
-  alias Milk.{Accounts, Tournaments, Log}
-  alias Milk.Tournaments.Tournament
+  alias Milk.{Accounts, Tournaments}
 
   @entrant_create_attrs %{
     "rank" => 42,
@@ -20,16 +19,6 @@ defmodule MilkWeb.TournamentControllerTest do
     "join" => "true",
     "url" => "some url"
   }
-  @update_attrs %{
-    "capacity" => 43,
-    "deadline" => "2011-05-18T15:01:01Z",
-    "description" => "some updated description",
-    "event_date" => "2011-05-18T15:01:01Z",
-    "master_id" => 1,
-    "name" => "some updated name",
-    "type" => 43,
-    "url" => "some updated url"
-  }
   @invalid_attrs %{"capacity" => nil, "deadline" => nil, "description" => nil, "event_date" => nil, "game_id" => nil, "master_id" => nil, "name" => nil, "type" => nil, "url" => nil}
 
   @create_user_attrs %{"icon_path" => "some icon_path", "language" => "some language", "name" => "some name", "notification_number" => 42, "point" => 42, "email" => "some2@email.com", "logout_fl" => true, "password" => "S1ome password"}
@@ -43,7 +32,7 @@ defmodule MilkWeb.TournamentControllerTest do
   end
 
   def fixture(:user) do
-    {:ok, user} = Accounts.create_user(@create_user_attrs)
+    {:ok, _user} = Accounts.create_user(@create_user_attrs)
   end
 
   setup %{conn: conn} do
@@ -83,16 +72,30 @@ defmodule MilkWeb.TournamentControllerTest do
 
   describe "start tournament" do
     setup [:create_tournament]
+
     test "start a tournament with valid data", %{conn: conn, tournament: tournament} do
-      entrants = create_entrants(12, tournament.id)
+      _entrants = create_entrants(12, tournament.id)
       conn = post(conn, Routes.tournament_path(conn, :start), tournament: %{"master_id" => tournament.master_id, "tournament_id" => tournament.id})
 
       assert json_response(conn, 200)["data"]["match_list"] |> is_list()
       assert Tournaments.get_entrants(tournament.id)
-          |> Enum.map(fn x -> x.rank end)
-          |> Enum.filter(fn x -> x == 8 end)
-          |> length()
-          |> Kernel.==(4)
+        |> Enum.map(fn x -> x.rank end)
+        |> Enum.filter(fn x -> x == 8 end)
+        |> length()
+        |> Kernel.==(4)
+    end
+  end
+
+  describe "get opponent" do
+    setup [:create_tournament]
+
+    test "get an opponent of a started tournament with valid data", %{conn: conn, tournament: tournament} do
+      entrants = create_entrants(12, tournament.id)
+
+      conn = post(conn, Routes.tournament_path(conn, :start), tournament: %{"master_id" => tournament.master_id, "tournament_id" => tournament.id})
+      conn = get(conn, Routes.tournament_path(conn, :get_opponent), %{"tournament_id" => tournament.id, "user_id" => hd(entrants).user_id})
+
+      assert json_response(conn, 200)
     end
   end
 
@@ -101,7 +104,7 @@ defmodule MilkWeb.TournamentControllerTest do
     %{tournament: tournament}
   end
 
-    # 複数の参加者作成用関数
+  # 複数の参加者作成用関数
   defp create_entrants(num, tournament_id) do
     Enum.map(1 .. num, fn x ->
       {:ok, user} =

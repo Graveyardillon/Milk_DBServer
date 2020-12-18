@@ -398,9 +398,12 @@ defmodule MilkWeb.TournamentController do
 
     {_, match_list} = hd(Ets.get_match_list(tournament_id))
     match = Tournaments.find_match(match_list, user_id)
-    opponent = Tournaments.get_opponent(match, user_id)
-
-    json(conn, %{result: true, opponent: opponent})
+    with {:ok, opponent} <- Tournaments.get_opponent(match, user_id) do
+      json(conn, %{result: true, opponent: opponent})
+    else
+      {:wait, _} -> json(conn, %{result: false, opponent: nil})
+      _ -> render(conn, "error.json", error: nil)
+    end
   end
 
   def claim_win(conn, %{"opponent_id" => opponent_id, "user_id" => user_id, "tournament_id" => tournament_id}) do
