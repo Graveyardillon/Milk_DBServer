@@ -669,6 +669,8 @@ defmodule Milk.Tournaments do
       else
         {:error, nil}
       end
+    else
+      _ -> {:error, "unexpected error"}
     end
   end
 

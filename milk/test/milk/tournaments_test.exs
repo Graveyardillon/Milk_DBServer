@@ -3,75 +3,87 @@ defmodule Milk.TournamentsTest do
 
   alias Milk.{Tournaments, Accounts, Ets, Relations}
 
+  # 外部キーが二つ以上の場合は %{"capacity" => 42} のようにしなければいけない
+  @valid_attrs %{
+    "capacity" => 42,
+    "deadline" => "2010-04-17T14:00:00Z",
+    "description" => "some description",
+    "event_date" => "2010-04-17T14:00:00Z",
+    "name" => "some name",
+    "type" => 0,
+    "url" => "some url",
+    "master_id" => 1,
+    "platform" => 1,
+    "is_started" => true
+  }
+  @update_attrs %{
+    capacity: 43,
+    deadline: "2011-05-18T15:01:01Z",
+    description: "some updated description",
+    event_date: "2011-05-18T15:01:01Z",
+    name: "some updated name",
+    type: 43,
+    url: "some updated url"
+  }
+  @invalid_attrs %{
+    "capacity" => nil,
+    "deadline" => nil,
+    "description" => nil,
+    "event_date" => nil,
+    "name" => nil,
+    "type" => nil,
+    "url" => nil,
+    "master_id" => 1,
+    "platform" => 1
+  }
+  @entrant_create_attrs %{
+    "rank" => 42,
+    "user_id" => -1,
+    "tournament_id" => -1
+  }
+
+  defp fixture(:tournament) do
+    {:ok, user} = Accounts.create_user(%{"name" => "name", "email" => "e@mail.com", "password" => "Password123"})
+    {:ok, tournament} =
+      %{}
+      |> Enum.into(@valid_attrs)
+      |> Map.put("master_id", user.id)
+      |> Tournaments.create_tournament()
+    tournament
+  end
+
+  defp fixture(:tournament, :is_not_started) do
+    {:ok, user} = Accounts.create_user(%{"name" => "name", "email" => "e@mail.com", "password" => "Password123"})
+    {:ok, tournament} =
+      %{}
+      |> Enum.into(@valid_attrs)
+      |> Map.put("master_id", user.id)
+      |> Map.put("is_started", false)
+      |> Tournaments.create_tournament()
+    tournament
+  end
+
+  defp fixture(:user) do
+    {:ok, user} = Accounts.create_user(%{"name" => "name1", "email" => "e1@mail.com", "password" => "Password123"})
+    user
+  end
+
+  defp fixture(:entrant) do
+    tournament = fixture(:tournament)
+
+    {:ok, entrant} =
+      %{@entrant_create_attrs | "tournament_id" => tournament.id, "user_id" => tournament.master_id}
+      |> Tournaments.create_entrant()
+    entrant
+  end
+
   describe "tournament" do
     alias Milk.Tournaments.Tournament
-    # 外部キーが二つ以上の場合は %{"capacity" => 42} のようにしなければいけない
-    @valid_attrs %{
-      "capacity" => 42,
-      "deadline" => "2010-04-17T14:00:00Z",
-      "description" => "some description",
-      "event_date" => "2010-04-17T14:00:00Z",
-      "name" => "some name",
-      "type" => 0,
-      "url" => "some url",
-      "master_id" => 1,
-      "platform" => 1,
-      "is_started" => true
-    }
-    @update_attrs %{
-      capacity: 43,
-      deadline: "2011-05-18T15:01:01Z",
-      description: "some updated description",
-      event_date: "2011-05-18T15:01:01Z",
-      name: "some updated name",
-      type: 43,
-      url: "some updated url"
-    }
-    @invalid_attrs %{
-      "capacity" => nil,
-      "deadline" => nil,
-      "description" => nil,
-      "event_date" => nil,
-      "name" => nil,
-      "type" => nil,
-      "url" => nil,
-      "master_id" => 1,
-      "platform" => 1
-    }
 
-    @entrant_create_attrs %{
-      "rank" => 42,
-      "user_id" => -1,
-      "tournament_id" => -1
-    }
     @home_attrs %{
       deadline: "2031-05-18T15:01:01Z",
       event_date: "2031-05-18T15:01:01Z"
     }
-
-    defp fixture(:tournament) do
-      {:ok, user} = Accounts.create_user(%{"name" => "name", "email" => "e@mail.com", "password" => "Password123"})
-      {:ok, tournament} =
-        %{}
-        |> Enum.into(@valid_attrs)
-        |> Map.put("master_id", user.id)
-        |> Tournaments.create_tournament()
-      tournament
-    end
-
-    defp fixture(:user) do
-      {:ok, user} = Accounts.create_user(%{"name" => "name1", "email" => "e1@mail.com", "password" => "Password123"})
-      user
-    end
-
-    defp fixture(:entrant) do
-      tournament = fixture(:tournament)
-
-      {:ok, entrant} =
-        %{@entrant_create_attrs | "tournament_id" => tournament.id, "user_id" => tournament.master_id}
-        |> Tournaments.create_entrant()
-      entrant
-    end
 
     test "list_tournament/0 returns all tournament" do
       _ = fixture(:tournament)
@@ -117,7 +129,7 @@ defmodule Milk.TournamentsTest do
 
     test "get_tournaments_by_master_id/1 fails to return tournaments of a user" do
       user = fixture(:user)
-      tournament = fixture(:tournament)
+      _tournament = fixture(:tournament)
       assert length(Tournaments.get_tournaments_by_master_id(user.id)) == 0
     end
 
@@ -156,6 +168,14 @@ defmodule Milk.TournamentsTest do
     test "update_tournament/2 with invalid data returns error changeset" do
       tournament = fixture(:tournament)
       assert {:error, _} = Tournaments.update_tournament(tournament, @invalid_attrs)
+    end
+  end
+
+  describe "tournament flow functions" do
+    setup [:create_tournament_for_flow]
+
+    test "start/2 with valid data works fine", %{tournament: tournament} do
+      assert {:ok, tournament} = Tournaments.start(tournament.master_id, tournament.id)
     end
   end
 
@@ -264,6 +284,16 @@ defmodule Milk.TournamentsTest do
       # assertフェーズ
       assert {:error, "undefined user"} = Tournaments.promote_rank(attrs)
     end
+  end
+
+  defp create_tournament(_) do
+    tournament = fixture(:tournament)
+    %{tournament: tournament}
+  end
+
+  defp create_tournament_for_flow(_) do
+    tournament = fixture(:tournament, :is_not_started)
+    %{tournament: tournament}
   end
 
   # 複数の参加者作成用関数
