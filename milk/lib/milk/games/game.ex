@@ -16,6 +16,5 @@ defmodule Milk.Games.Game do
   def changeset(game, attrs) do
     game
     |> cast(attrs, [:title, :icon_path])
-    |> validate_required([:title, :icon_path])
   end
 end

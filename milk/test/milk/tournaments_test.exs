@@ -1,7 +1,8 @@
 defmodule Milk.TournamentsTest do
   use Milk.DataCase
 
-  alias Milk.{Tournaments, Accounts, Ets, Relations}
+  alias Milk.{Tournaments, Accounts, Ets, Relations, Games}
+  alias Milk.Tournaments.Tournament
 
   # 外部キーが二つ以上の場合は %{"capacity" => 42} のようにしなければいけない
   @valid_attrs %{
@@ -63,6 +64,11 @@ defmodule Milk.TournamentsTest do
     tournament
   end
 
+  defp fixture(:game) do
+    {:ok, game} = Games.create_game(%{"title" => "Test Game"})
+    game
+  end
+
   defp fixture(:user) do
     {:ok, user} = Accounts.create_user(%{"name" => "name1", "email" => "e1@mail.com", "password" => "Password123"})
     user
@@ -78,48 +84,9 @@ defmodule Milk.TournamentsTest do
   end
 
   describe "tournament" do
-    alias Milk.Tournaments.Tournament
-
-    @home_attrs %{
-      deadline: "2031-05-18T15:01:01Z",
-      event_date: "2031-05-18T15:01:01Z"
-    }
-
     test "list_tournament/0 returns all tournament" do
       _ = fixture(:tournament)
       refute length(Tournaments.list_tournament()) == 0
-    end
-
-    test "home_tournament()/0 returns tournaments for home screen" do
-      tournament = fixture(:tournament)
-      {:ok, _} = Tournaments.update_tournament(tournament, @home_attrs)
-      refute length(Tournaments.home_tournament()) == 0
-    end
-
-    test "home_tournament_fav/1 returns tournaments which is filtered by favorite users for home screen" do
-      user1 = fixture(:user)
-      tournament = fixture(:tournament)
-      {:ok, _} = Tournaments.update_tournament(tournament, @home_attrs)
-      Relations.create_relation(%{"follower_id" => user1.id, "followee_id" => tournament.master_id})
-
-      refute length(Tournaments.home_tournament_fav(user1.id)) == 0
-    end
-
-    test "home_tournament_fav/1 fails to return tournaments which is filtered by favorite users for home screen" do
-      tournament = fixture(:tournament)
-      {:ok, _} = Tournaments.update_tournament(tournament, @home_attrs)
-      assert length(Tournaments.home_tournament_fav(tournament.master_id)) == 0
-    end
-
-    test "home_tournament_plan/1 returns user's tournaments" do
-      tournament = fixture(:tournament)
-      {:ok, _} = Tournaments.update_tournament(tournament, @home_attrs)
-      refute length(Tournaments.home_tournament_plan(tournament.master_id)) == 0
-    end
-
-    test "home_tournament_plan/1 fails to return user's tournaments" do
-      tournament = fixture(:tournament)
-      assert length(Tournaments.home_tournament_plan(tournament.master_id)) == 0
     end
 
     test "get_tournaments_by_master_id/1 returns tournaments of a user" do
@@ -168,6 +135,64 @@ defmodule Milk.TournamentsTest do
     test "update_tournament/2 with invalid data returns error changeset" do
       tournament = fixture(:tournament)
       assert {:error, _} = Tournaments.update_tournament(tournament, @invalid_attrs)
+    end
+  end
+
+  describe "home" do
+    @home_attrs %{
+      deadline: "2031-05-18T15:01:01Z",
+      event_date: "2031-05-18T15:01:01Z"
+    }
+
+    test "home_tournament()/0 returns tournaments for home screen" do
+      tournament = fixture(:tournament)
+      {:ok, _} = Tournaments.update_tournament(tournament, @home_attrs)
+      refute length(Tournaments.home_tournament()) == 0
+    end
+
+    test "home_tournament_fav/1 returns tournaments which is filtered by favorite users for home screen" do
+      user1 = fixture(:user)
+      tournament = fixture(:tournament)
+      {:ok, _} = Tournaments.update_tournament(tournament, @home_attrs)
+      Relations.create_relation(%{"follower_id" => user1.id, "followee_id" => tournament.master_id})
+
+      refute length(Tournaments.home_tournament_fav(user1.id)) == 0
+    end
+
+    test "home_tournament_fav/1 fails to return tournaments which is filtered by favorite users for home screen" do
+      tournament = fixture(:tournament)
+      {:ok, _} = Tournaments.update_tournament(tournament, @home_attrs)
+      assert length(Tournaments.home_tournament_fav(tournament.master_id)) == 0
+    end
+
+    test "home_tournament_plan/1 returns user's tournaments" do
+      tournament = fixture(:tournament)
+      {:ok, _} = Tournaments.update_tournament(tournament, @home_attrs)
+      refute length(Tournaments.home_tournament_plan(tournament.master_id)) == 0
+    end
+
+    test "home_tournament_plan/1 fails to return user's tournaments" do
+      tournament = fixture(:tournament)
+      assert length(Tournaments.home_tournament_plan(tournament.master_id)) == 0
+    end
+  end
+
+  describe "game" do
+    test "game_tournament/1 returns game of the tournament" do
+      game = fixture(:game)
+      user = fixture(:user)
+
+      tournament =
+        @valid_attrs
+        |> Map.put("game_id", game.id)
+        |> Map.put("master_id", user.id)
+        |> Tournaments.create_tournament()
+
+      assert tournaments = Tournaments.game_tournament(%{"game_id" => game.id})
+      assert is_list(tournaments)
+      Enum.each(tournaments, fn tournament ->
+        assert %Tournament{} = tournament
+      end)
     end
   end
 
@@ -223,7 +248,7 @@ defmodule Milk.TournamentsTest do
       assert {:wait, nil} = Tournaments.get_opponent(list_input, hd(id_list))
     end
 
-    test "get_opponent with invalid data does not work", %{tournament: tournament} do
+    test "get_opponent with invalid data does not work", %{tournament: _tournament} do
 
     end
   end
