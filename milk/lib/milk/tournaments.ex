@@ -84,7 +84,6 @@ defmodule Milk.Tournaments do
 
   @doc """
   Returns tournaments of certain user.
-  FIXME: Duplicate function
   """
   def get_tournaments_by_master_id(user_id) do
     Repo.all(from t in Tournament, where: t.master_id == ^user_id)
@@ -124,15 +123,6 @@ defmodule Milk.Tournaments do
   """
   def get_tournament(id), do: Repo.get(Tournament, id)
   def get_tournament!(id), do: Repo.get!(Tournament, id)
-
-  @doc """
-  Get tournaments which the user is holding.
-  """
-  def get_holding_tournaments(user_id) do
-    Tournament
-    |> where([t], t.master_id == ^user_id)
-    |> Repo.all()
-  end
 
   @doc """
   Get tournaments which the user participating in.
@@ -284,19 +274,6 @@ defmodule Milk.Tournaments do
     |> Repo.insert()
 
     Repo.delete(tournament)
-  end
-
-  @doc """
-  Returns an `%Ecto.Changeset{}` for tracking tournament changes.
-
-  ## Examples
-
-      iex> change_tournament(tournament)
-      %Ecto.Changeset{data: %Tournament{}}
-
-  """
-  def change_tournament(%Tournament{} = tournament, attrs \\ %{}) do
-    Tournament.changeset(tournament, attrs)
   end
 
   @doc """

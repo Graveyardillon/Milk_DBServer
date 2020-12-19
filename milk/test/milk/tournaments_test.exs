@@ -84,7 +84,7 @@ defmodule Milk.TournamentsTest do
     entrant
   end
 
-  describe "tournament" do
+  describe "get" do
     test "list_tournament/0 returns all tournament" do
       _ = fixture(:tournament)
       refute length(Tournaments.list_tournament()) == 0
@@ -138,7 +138,9 @@ defmodule Milk.TournamentsTest do
         assert %User{} = user
       end)
     end
+  end
 
+  describe "create" do
     test "create_tournament/1 with valid data creates a tournament" do
       tournament = fixture(:tournament)
       assert tournament.capacity == 42
@@ -153,7 +155,9 @@ defmodule Milk.TournamentsTest do
     test "create_tournament/1 with invalid data returns error changeset" do
       assert {:error, _} = Tournaments.create_tournament(@invalid_attrs)
     end
+  end
 
+  describe "update" do
     test "update_tournament/2 with valid data updates the tournament" do
       tournament = fixture(:tournament)
       assert {:ok, %Tournament{} = tournament} = Tournaments.update_tournament(tournament, @update_attrs)
@@ -169,6 +173,30 @@ defmodule Milk.TournamentsTest do
     test "update_tournament/2 with invalid data returns error changeset" do
       tournament = fixture(:tournament)
       assert {:error, _} = Tournaments.update_tournament(tournament, @invalid_attrs)
+    end
+  end
+
+  describe "delete" do
+    test "delete_tournament/1 of Tournament structure works fine with a valid data" do
+      tournament = fixture(:tournament)
+      assert {:ok, %Tournament{}} = Tournaments.delete_tournament(tournament)
+      refute Tournaments.get_tournament(tournament.id)
+    end
+
+    test "delete_tournament/1 of map works fine with a valid data" do
+      user = fixture(:user)
+      {:ok, tournament} =
+        @valid_attrs
+        |> Map.put("master_id", user.id)
+        |> Tournaments.create_tournament()
+      assert {:ok, %Tournament{}} = Tournaments.delete_tournament(tournament)
+      refute Tournaments.get_tournament(tournament.id)
+    end
+
+    test "delete_tournament/1 of id works fine with a valid data" do
+      tournament = fixture(:tournament)
+      assert {:ok, %Tournament{}} = Tournaments.delete_tournament(tournament.id)
+      refute Tournaments.get_tournament(tournament.id)
     end
   end
 
