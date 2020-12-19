@@ -1,7 +1,6 @@
 defmodule MilkWeb.NotifController do
   use MilkWeb, :controller
 
-  alias Milk.Accounts
   alias Milk.Notif
   alias Milk.Notif.Notification
 
