@@ -5,9 +5,7 @@ defmodule Milk.Tournaments.Assistant do
   alias Milk.Accounts.User
 
   schema "assistant" do
-    # field :tournament_id, :id
     belongs_to :tournament, Tournament
-    # field :user_id, :id
     belongs_to :user, User
 
     timestamps()
@@ -17,6 +15,5 @@ defmodule Milk.Tournaments.Assistant do
   def changeset(assistant, attrs) do
     assistant
     |> cast(attrs, [])
-    |> validate_required([])
   end
 end

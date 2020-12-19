@@ -1,6 +1,5 @@
 defmodule MilkWeb.Router do
   use MilkWeb, :router
-  # FIXME: ルーティングの整理
 
   pipeline :browser do
     plug :accepts, ["html"]

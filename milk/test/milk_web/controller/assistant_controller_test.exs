@@ -3,40 +3,35 @@ defmodule MilkWeb.AssistantControllerTest do
 
   alias Milk.Tournaments
   alias Milk.Tournaments.Assistant
-
   alias Milk.Accounts
 
-  @create_attrs %{
-    tournament_id: "some id"
-  }
-  @update_attrs %{
-
-  }
-  @invalid_attrs %{
-    tournament_id: -1
-  }
+  @invalid_attrs %{}
+  @update_attrs %{}
   @tournament_create_attrs %{
     "capacity" => 42,
     "deadline" => "2010-04-17T14:00:00Z",
     "description" => "some description",
     "event_date" => "2010-04-17T14:00:00Z",
-    "game_id" => 42,
     "master_id" => 42,
     "name" => "some name",
     "type" => 42,
+    "join" => "true",
     "url" => "some url"
   }
-  def tournament_fixture() do
+
+  defp fixture(:user) do
     {:ok, user} = Accounts.create_user(%{"name" => "name", "email" => "e@mail.com", "password" => "Password123"})
-      %{}
-      |> Enum.into(@tournament_create_attrs)
+    user
+  end
+
+  defp fixture(:tournament) do
+    {:ok, user} = Accounts.create_user(%{"name" => "myname", "email" => "mye@mail.com", "password" => "Password123"})
+
+    {:ok, tournament} =
+      @tournament_create_attrs
       |> Map.put("master_id", user.id)
       |> Tournaments.create_tournament()
-  end
-  def fixture(:assistant) do
-    tournament = tournament_fixture()
-    {:ok, assistant} = Tournaments.create_assistant(%{@create_attrs|tournament_id: tournament.id})
-    assistant
+    tournament
   end
 
   setup %{conn: conn} do
@@ -52,20 +47,20 @@ defmodule MilkWeb.AssistantControllerTest do
 
   describe "create assistant" do
     test "renders assistant when data is valid", %{conn: conn} do
-      tournament = tournament_fixture()
-      conn = post(conn, Routes.assistant_path(conn, :create), assistant: %{@create_attrs|tournament_id: tournament.id})
-      assert %{"id" => id} = json_response(conn, 200)["data"]
+      tournament = fixture(:tournament)
+      user = fixture(:user)
 
-      conn = get(conn, Routes.assistant_path(conn, :show, id))
+      conn = post(conn, Routes.assistant_path(conn, :create), %{"assistant" => %{"tournament_id" => tournament.id, "user_id" => [user.id]}})
+      assert %{"id" => id, "create_time" => _, "tournament_id" => _, "update_time" => _, "user_id" => _} = json_response(conn, 200)["data"] |> hd()
 
-      assert %{
-               "id" => id
-             } = json_response(conn, 200)["data"]
+      conn = post(conn, Routes.assistant_path(conn, :show, %{"id" => id}))
+
+      assert %{"id" => _id} = json_response(conn, 200)["data"]
     end
 
     test "renders errors when data is invalid", %{conn: conn} do
-      conn = post(conn, Routes.assistant_path(conn, :create), assistant: @invalid_attrs)
-      assert json_response(conn, 422)["errors"] != %{}
+      conn = post(conn, Routes.assistant_path(conn, :create), %{"assistant" => @invalid_attrs})
+      assert %{"data" => _, "error" => _, "result" => false} = json_response(conn, 200)
     end
   end
 
