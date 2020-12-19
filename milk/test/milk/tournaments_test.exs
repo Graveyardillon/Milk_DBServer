@@ -411,7 +411,6 @@ defmodule Milk.TournamentsTest do
       id_list = Enum.map(entrants, fn entrant -> entrant.user_id end)
 
       integer_input = Enum.slice(id_list, 0..1)
-      list_input = [hd(id_list)] ++ [Enum.slice(id_list, 1..2)]
 
       assert {:error, _} = Tournaments.get_opponent(integer_input, hd(id_list)-1)
     end
@@ -421,6 +420,16 @@ defmodule Milk.TournamentsTest do
       refute Tournaments.is_alone?(list)
       list = [1, [2, 3]]
       assert Tournaments.is_alone?(list)
+    end
+
+    test "finish/2 works fine with valid data" do
+      user = fixture(:user)
+      {:ok, tournament} =
+        @valid_attrs
+        |> Map.put("master_id", user.id)
+        |> Tournaments.create_tournament()
+
+      assert Tournaments.finish(tournament.id, user.id)
     end
   end
 

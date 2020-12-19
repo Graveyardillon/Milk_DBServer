@@ -668,9 +668,12 @@ defmodule Milk.Tournaments do
   def finish(tournament_id, winner_user_id) do
     # FIXME: user_idを使って認証する処理を書いてない
 
-    tournament_id
-    |> get_tournament!()
-    |> delete_tournament()
+    {:ok, tournament} =
+      tournament_id
+      |> get_tournament!()
+      |> delete_tournament()
+
+    tournament
     |> atom_tournament_map_to_string_map(winner_user_id)
     |> Log.create_tournament_log()
     |> case do
