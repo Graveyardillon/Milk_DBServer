@@ -315,6 +315,45 @@ defmodule Milk.TournamentsTest do
     end
   end
 
+  describe "delete entrant" do
+    setup [:create_entrant]
+
+    test "delete_entrant/2 works fine with a valid data", %{entrant: entrant} do
+      assert {:ok, _entrant} = Tournaments.delete_entrant(entrant.tournament_id, entrant.user_id)
+      assert %Ecto.NoResultsError{} = catch_error(Tournaments.get_entrant!(entrant.id))
+    end
+
+    test "delete_entrant/1 works fine with a valid data", %{entrant: entrant} do
+      assert {:ok, _entrant} = Tournaments.delete_entrant(entrant)
+      assert %Ecto.NoResultsError{} = catch_error(Tournaments.get_entrant!(entrant.id))
+    end
+  end
+
+  describe "delete loser" do
+    test "delete_loser/2 works fine with a valid data of 4 players" do
+      list = [[1, 2], [3, 4]]
+      assert Tournaments.delete_loser(list, 1) == [2, [3, 4]]
+      assert Tournaments.delete_loser(list, [1]) == [2, [3, 4]]
+      assert Tournaments.delete_loser(list, 2) == [1, [3, 4]]
+      assert Tournaments.delete_loser(list, [2]) == [1, [3, 4]]
+      assert Tournaments.delete_loser(list, 3) == [[1, 2], 4]
+      assert Tournaments.delete_loser(list, [3]) == [[1, 2], 4]
+      assert Tournaments.delete_loser(list, 4) == [[1, 2], 3]
+      assert Tournaments.delete_loser(list, [4]) == [[1, 2], 3]
+    end
+
+    test "delete_loser/2 works fine with a valid data of 3 players" do
+      list = [[1, 2], 3]
+
+      assert Tournaments.delete_loser(list, 1) == [2, 3]
+      assert Tournaments.delete_loser(list, [1]) == [2, 3]
+      assert Tournaments.delete_loser(list, 2) == [1, 3]
+      assert Tournaments.delete_loser(list, [2]) == [1, 3]
+      #assert Tournaments.delete_loser(list, 3) == [1, 2]
+      assert Tournaments.delete_loser(list, [3]) == [1, 2]
+    end
+  end
+
   describe "tournament flow functions" do
     setup [:create_tournament_for_flow]
 

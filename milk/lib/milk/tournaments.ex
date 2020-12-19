@@ -524,6 +524,9 @@ defmodule Milk.Tournaments do
     Entrant.changeset(entrant, attrs)
   end
 
+  @doc """
+  Get a rank of a user.
+  """
   def get_rank(tournament_id, user_id) do
     with entrant <- Repo.one(from e in Entrant, where: e.tournament_id == ^tournament_id and e.user_id == ^user_id),
     :false <- is_nil(entrant) do
@@ -540,7 +543,8 @@ defmodule Milk.Tournaments do
     [a, b] -- loser
   end
 
-  def delete_loser(list,loser) do
+  def delete_loser(list, loser) when is_integer(loser), do: delete_loser(list, [loser])
+  def delete_loser(list, loser) do
     list
     |> Enum.map(fn x ->
       case x do
