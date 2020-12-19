@@ -79,12 +79,12 @@ defmodule Milk.Tournaments do
   Returns the list of tournament specified with a game id.
   """
   def game_tournament(attrs) do
-    # FIXME: テストでカバーしていない
     Repo.all(from t in Tournament, where: t.game_id == ^attrs["game_id"])
   end
 
   @doc """
   Returns tournaments of certain user.
+  FIXME: Duplicate function
   """
   def get_tournaments_by_master_id(user_id) do
     Repo.all(from t in Tournament, where: t.master_id == ^user_id)

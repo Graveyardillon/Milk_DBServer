@@ -3,6 +3,7 @@ defmodule Milk.TournamentsTest do
 
   alias Milk.{Tournaments, Accounts, Ets, Relations, Games}
   alias Milk.Tournaments.Tournament
+  alias Milk.Accounts.User
 
   # 外部キーが二つ以上の場合は %{"capacity" => 42} のようにしなければいけない
   @valid_attrs %{
@@ -105,6 +106,39 @@ defmodule Milk.TournamentsTest do
       assert length(Tournaments.get_ongoing_tournaments_by_master_id(tournament.master_id)) == 0
     end
 
+    test "get_tournament/1 with valid data works fine" do
+      tournament = fixture(:tournament)
+      assert %Tournament{} = obtained_tournament = Tournaments.get_tournament(tournament.id)
+      assert obtained_tournament.id == tournament.id
+    end
+
+    test "get_tournament!/1 with valid data works fine" do
+      tournament = fixture(:tournament)
+      assert %Tournament{} = obtained_tournament = Tournaments.get_tournament!(tournament.id)
+      assert obtained_tournament.id == tournament.id
+    end
+
+    test "get_participating_tournaments!/1 with valid data works fine" do
+      entrant = fixture(:entrant)
+      _tournament = Tournaments.get_tournament(entrant.tournament_id)
+
+      assert tournaments = Tournaments.get_participating_tournaments!(entrant.user_id)
+      assert is_list(tournaments)
+      Enum.each(tournaments, fn tournament ->
+        assert %Tournament{} = tournament
+      end)
+    end
+
+    test "get_masters/1 with valid data works fine" do
+      tournament = fixture(:tournament)
+
+      assert users = Tournaments.get_masters(tournament.id)
+      assert is_list(users)
+      Enum.each(users, fn user ->
+        assert %User{} = user
+      end)
+    end
+
     test "create_tournament/1 with valid data creates a tournament" do
       tournament = fixture(:tournament)
       assert tournament.capacity == 42
@@ -182,11 +216,10 @@ defmodule Milk.TournamentsTest do
       game = fixture(:game)
       user = fixture(:user)
 
-      tournament =
-        @valid_attrs
-        |> Map.put("game_id", game.id)
-        |> Map.put("master_id", user.id)
-        |> Tournaments.create_tournament()
+      @valid_attrs
+      |> Map.put("game_id", game.id)
+      |> Map.put("master_id", user.id)
+      |> Tournaments.create_tournament()
 
       assert tournaments = Tournaments.game_tournament(%{"game_id" => game.id})
       assert is_list(tournaments)
