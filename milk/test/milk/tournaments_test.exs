@@ -349,8 +349,35 @@ defmodule Milk.TournamentsTest do
       assert Tournaments.delete_loser(list, [1]) == [2, 3]
       assert Tournaments.delete_loser(list, 2) == [1, 3]
       assert Tournaments.delete_loser(list, [2]) == [1, 3]
-      assert Tournaments.delete_loser(list, 3) == [[1, 2],nil]
-      assert Tournaments.delete_loser(list, [3]) == [[1, 2],nil]
+      assert Tournaments.delete_loser(list, 3) == [1, 2]
+      assert Tournaments.delete_loser(list, [3]) == [1, 2]
+    end
+
+    test "delete_loser/2 works fine with a valid data of 5 players" do
+      list = [[1, 2], [[3, 4], 5]]
+
+      assert Tournaments.delete_loser(list, 1) == [2, [[3, 4], 5]]
+      assert Tournaments.delete_loser(list, [1]) == [2, [[3, 4], 5]]
+      assert Tournaments.delete_loser(list, 2) == [1, [[3, 4], 5]]
+      assert Tournaments.delete_loser(list, [2]) == [1, [[3, 4], 5]]
+      assert Tournaments.delete_loser(list, 3) == [[1, 2], [4, 5]]
+      assert Tournaments.delete_loser(list, [3]) == [[1, 2], [4, 5]]
+      assert Tournaments.delete_loser(list, 4) == [[1, 2], [3, 5]]
+      assert Tournaments.delete_loser(list, [4]) == [[1, 2], [3, 5]]
+      assert Tournaments.delete_loser(list, 5) == [[1, 2], [3, 4]]
+      assert Tournaments.delete_loser(list, [5]) == [[1, 2], [3, 4]]
+    end
+
+    test "delete_loser/2 does not work with an invalid data of 3 players" do
+      list = [1, 2, 3]
+
+      assert catch_error(Tournaments.delete_loser(list, 1)) == %RuntimeError{message: "Bad Argument"}
+    end
+
+    test "delete_loser/2 does not work with an invalid data of 1 player" do
+      list = [1]
+
+      assert catch_error(Tournaments.delete_loser(list, 1)) == %RuntimeError{message: "Bad Argument"}
     end
   end
 

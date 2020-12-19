@@ -539,38 +539,32 @@ defmodule Milk.Tournaments do
   @doc """
   Delete a loser in a matchlist
   """
+  def delete_loser(list, loser) when is_integer(loser) do
+    delete_loser(list, [loser])
+  end
+
   def delete_loser([a, b], loser) when is_integer(a) and is_integer(b) do
-    [a, b] -- loser
+    list = [a, b] -- loser
+    if length(list) == 1, do: hd(list), else: list
   end
 
-  def delete_loser(list, loser) when is_integer(loser), do: delete_loser(list, [loser])
   def delete_loser(list, loser) do
-    list
-    |> Enum.map(fn x ->
-      case x do
-        [[_a,_b],[_c,_d]] -> Milk.Tournaments.delete_loser(x, loser)
-        [_a,[_b,_c]] -> Milk.Tournaments.delete_loser(x, loser)
-        [[_a,_b],_c] -> Milk.Tournaments.delete_loser(x, loser)
-        a when is_integer(a) and is_list(loser) ->
-          Enum.find(loser, fn x -> x == a end)
-          |> case do
-            nil -> a
-            _ -> nil
-          end
-        a when a == loser -> nil
-        a when is_integer(a) and a != loser -> a
-        _ ->
-          case (x -- loser) do
-            [a,b] -> [a,b]
-            [a] -> a
-            [a, nil] -> a
-            [nil, a] -> a
-            [] -> nil
-          end
-      end
-    end)
+    case list do
+      [[a, b], [c, d]] ->
+        [delete_loser([a, b], loser), delete_loser([c, d], loser)]
+      [a, [b, c]] when is_integer(a) and [a] == loser ->
+        [b, c]
+      [a, [b, c]] ->
+        [a, delete_loser([b, c], loser)]
+      [[a, b], c] when is_integer(c) and [c] == loser ->
+        [a, b]
+      [[a, b], c] ->
+        [delete_loser([a, b], loser), c]
+      [a, b] ->
+        delete_loser([a, b], loser)
+      _ -> raise "Bad Argument"
+    end
   end
-
 
   @doc """
   Finds a 1v1 match of given id and match list.
