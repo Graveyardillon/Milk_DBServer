@@ -65,7 +65,8 @@ defmodule Milk.MixProject do
       {:distillery, "~> 2.0"},
       {:bamboo, "~> 1.6"},
       {:bamboo_smtp, "~>3.0.0"},
-      {:argon2_elixir, "~> 2.3.0"}
+      {:argon2_elixir, "~> 2.3.0"},
+      {:ex_crypto, "~> 0.10.0"}
     ]
   end
 

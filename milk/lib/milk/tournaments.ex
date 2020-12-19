@@ -551,11 +551,20 @@ defmodule Milk.Tournaments do
         [[_a,_b],[_c,_d]] -> Milk.Tournaments.delete_loser(x, loser)
         [_a,[_b,_c]] -> Milk.Tournaments.delete_loser(x, loser)
         [[_a,_b],_c] -> Milk.Tournaments.delete_loser(x, loser)
-        a when is_integer(a) -> a
+        a when is_integer(a) and is_list(loser) ->
+          Enum.find(loser, fn x -> x == a end)
+          |> case do
+            nil -> a
+            _ -> nil
+          end
+        a when a == loser -> nil
+        a when is_integer(a) and a != loser -> a
         _ ->
-          case x -- loser ++ [nil] do
+          case (x -- loser) do
             [a,b] -> [a,b]
             [a] -> a
+            [a, nil] -> a
+            [nil, a] -> a
             [] -> nil
           end
       end
