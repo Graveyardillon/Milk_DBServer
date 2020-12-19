@@ -338,7 +338,7 @@ defmodule MilkWeb.TournamentController do
     {_, match_list} = hd(Ets.get_match_list(tournament_id))
 
     match = Tournaments.find_match(match_list, user_id)
-    result = Tournaments.is_alone(match)
+    result = Tournaments.is_alone?(match)
 
     json(conn, %{result: result, match: match})
   end

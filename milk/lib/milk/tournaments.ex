@@ -537,7 +537,7 @@ defmodule Milk.Tournaments do
   end
 
   @doc """
-  Generate a match list of entrants.
+  Delete a loser in a matchlist
   """
   def delete_loser([a, b], loser) when is_integer(a) and is_integer(b) do
     [a, b] -- loser
@@ -590,30 +590,34 @@ defmodule Milk.Tournaments do
   Get an opponent of tournament match.
   """
   def get_opponent(match, user_id) do
-    match
-    |> Enum.filter(&(&1 != user_id))
-    |> hd()
-    |> (fn the_other ->
-      if is_integer(the_other) do
-        opponent =
-          Accounts.get_user(the_other)
-          |> atom_user_map_to_string_map()
-        {:ok, opponent}
-      else
-        {:wait, nil}
-      end
-    end).()
+    if Enum.member?(match, user_id) do
+      match
+      |> Enum.filter(&(&1 != user_id))
+      |> hd()
+      |> (fn the_other ->
+        if is_integer(the_other) do
+          opponent =
+            Accounts.get_user(the_other)
+            |> atom_user_map_to_string_map()
+          {:ok, opponent}
+        else
+          {:wait, nil}
+        end
+      end).()
+    else
+      {:error, "opponent does not exist"}
+    end
   end
 
   def get_opponent(match, user_id, :promote) do
     a =
       match
       |> Enum.filter(fn x ->
-        inspect(x, printable_limit: 0)
+        inspect(x)
         x.user_id != user_id
       end)
       |> hd()
-    inspect(a, printable_limit: 0)
+    inspect(a)
 
     a.user_id
     |> Accounts.get_user()
@@ -632,7 +636,7 @@ defmodule Milk.Tournaments do
   @doc """
   Judges whether the user have to wait.
   """
-  def is_alone(match) do
+  def is_alone?(match) do
     Enum.filter(match, &(is_list(&1))) != []
   end
 

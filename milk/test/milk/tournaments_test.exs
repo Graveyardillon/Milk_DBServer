@@ -406,8 +406,21 @@ defmodule Milk.TournamentsTest do
       assert {:wait, nil} = Tournaments.get_opponent(list_input, hd(id_list))
     end
 
-    test "get_opponent with invalid data does not work", %{tournament: _tournament} do
+    test "get_opponent/2 with invalid data does not work", %{tournament: tournament} do
+      entrants = create_entrants(6, tournament.id)
+      id_list = Enum.map(entrants, fn entrant -> entrant.user_id end)
 
+      integer_input = Enum.slice(id_list, 0..1)
+      list_input = [hd(id_list)] ++ [Enum.slice(id_list, 1..2)]
+
+      assert {:error, _} = Tournaments.get_opponent(integer_input, hd(id_list)-1)
+    end
+
+    test "is_alone?/1 works fine with valid data" do
+      list = [1, 2]
+      refute Tournaments.is_alone?(list)
+      list = [1, [2, 3]]
+      assert Tournaments.is_alone?(list)
     end
   end
 
