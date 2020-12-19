@@ -593,4 +593,35 @@ defmodule Milk.TournamentsTest do
     entrant = fixture(:entrant)
     %{entrant: entrant}
   end
+
+  defp fixture(:assistant) do
+    user = fixture(:user)
+    {:ok, tournament} =
+      @valid_attrs
+      |> Map.put("master_id", user.id)
+      |> Map.put("is_started", false)
+      |> Tournaments.create_tournament()
+
+    assistant_attrs = %{
+      "tournament_id" => tournament.id,
+      "user_id" => [user.id]
+    }
+
+    assistant = Tournaments.create_assistant(assistant_attrs)
+    assistant_attrs
+  end
+
+  describe "get assistant" do
+    test "list_assistant/0 works fine" do
+      fixture(:assistant)
+      assert is_list(Tournaments.list_assistant())
+      assert length(Tournaments.list_assistant())
+    end
+  end
+
+  describe "create assistant" do
+    test "create_assistant/1 with valid data works fine" do
+      assert assistant = fixture(:assistant)
+    end
+  end
 end

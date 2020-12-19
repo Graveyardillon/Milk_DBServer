@@ -743,7 +743,7 @@ defmodule Milk.Tournaments do
       [%Assistant{}, ...]
 
   """
-  def list_assistant do
+  def list_assistant() do
     Repo.all(Assistant)
   end
 
@@ -786,6 +786,7 @@ defmodule Milk.Tournaments do
       iex> create_assistant(%{field: bad_value})
       {:error, %Ecto.Changeset{}}
 
+      FIXME: 戻り値とか
   """
   def create_assistant(attrs \\ %{}) do
     tournament_id = Tools.to_integer_as_needed(attrs["tournament_id"])
