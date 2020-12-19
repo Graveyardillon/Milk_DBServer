@@ -563,6 +563,8 @@ defmodule Milk.Tournaments do
           case (x -- loser) do
             [a,b] -> [a,b]
             [a] -> a
+            [a, nil] -> a
+            [nil, a] -> a
             [] -> nil
           end
       end
