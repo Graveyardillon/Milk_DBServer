@@ -2,7 +2,7 @@ defmodule Milk.TournamentsTest do
   use Milk.DataCase
 
   alias Milk.{Tournaments, Accounts, Ets, Relations, Games}
-  alias Milk.Tournaments.Tournament
+  alias Milk.Tournaments.{Tournament, Entrant}
   alias Milk.Accounts.User
 
   # 外部キーが二つ以上の場合は %{"capacity" => 42} のようにしなければいけない
@@ -42,6 +42,10 @@ defmodule Milk.TournamentsTest do
     "rank" => 42,
     "user_id" => -1,
     "tournament_id" => -1
+  }
+  @invalid_entrant_create_attrs %{
+    "user_id" => nil,
+    "tournament_id" => nil
   }
 
   defp fixture(:tournament) do
@@ -84,7 +88,7 @@ defmodule Milk.TournamentsTest do
     entrant
   end
 
-  describe "get" do
+  describe "get tournament" do
     test "list_tournament/0 returns all tournament" do
       _ = fixture(:tournament)
       refute length(Tournaments.list_tournament()) == 0
@@ -140,7 +144,7 @@ defmodule Milk.TournamentsTest do
     end
   end
 
-  describe "create" do
+  describe "create tournament" do
     test "create_tournament/1 with valid data creates a tournament" do
       tournament = fixture(:tournament)
       assert tournament.capacity == 42
@@ -157,7 +161,7 @@ defmodule Milk.TournamentsTest do
     end
   end
 
-  describe "update" do
+  describe "update tournament" do
     test "update_tournament/2 with valid data updates the tournament" do
       tournament = fixture(:tournament)
       assert {:ok, %Tournament{} = tournament} = Tournaments.update_tournament(tournament, @update_attrs)
@@ -176,7 +180,7 @@ defmodule Milk.TournamentsTest do
     end
   end
 
-  describe "delete" do
+  describe "delete tournament" do
     test "delete_tournament/1 of Tournament structure works fine with a valid data" do
       tournament = fixture(:tournament)
       assert {:ok, %Tournament{}} = Tournaments.delete_tournament(tournament)
@@ -254,6 +258,60 @@ defmodule Milk.TournamentsTest do
       Enum.each(tournaments, fn tournament ->
         assert %Tournament{} = tournament
       end)
+    end
+  end
+
+  describe "get entrant" do
+    setup [:create_entrant]
+
+    test "list_entrant/0 works fine" do
+      assert entrants = Tournaments.list_entrant()
+      assert is_list(entrants)
+      Enum.each(entrants, fn entrant ->
+        assert %Entrant{} = entrant
+      end)
+    end
+
+    test "get_entrant!/1 works fine with a valid data", %{entrant: entrant} do
+      assert %Entrant{} = obtained_entrant = Tournaments.get_entrant!(entrant.id)
+      assert obtained_entrant.id == entrant.id
+    end
+
+    test "get_entrants/1 works fine with a valid data", %{entrant: entrant} do
+      num = 7
+      create_entrants(num, entrant.tournament_id)
+      assert entrants = Tournaments.get_entrants(entrant.tournament_id)
+      assert is_list(entrants)
+      Enum.each(entrants, fn entrant ->
+        assert %Entrant{} = entrant
+      end)
+    end
+  end
+
+  describe "create entrant" do
+    test "create_entrant/1 with a valid data works fine" do
+      user = fixture(:user)
+      tournament = fixture(:tournament)
+      {:ok, entrant} =
+        @entrant_create_attrs
+        |> Map.put("tournament_id", tournament.id)
+        |> Map.put("user_id", user.id)
+        |> Tournaments.create_entrant()
+
+      assert entrant.user_id == user.id
+    end
+
+    test "create_entrant/1 with an invalid data does not work" do
+      assert {:error, _} = Tournaments.create_entrant(@invalid_entrant_create_attrs)
+    end
+  end
+
+  describe "update entrant" do
+    setup [:create_entrant]
+
+    test "update_entrant/2 works fine with a valid data", %{entrant: entrant} do
+      update_attrs = %{"rank" => 1}
+      assert {:ok, _entrant} = Tournaments.update_entrant(entrant, update_attrs)
     end
   end
 

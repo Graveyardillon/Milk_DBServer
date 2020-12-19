@@ -285,7 +285,7 @@ defmodule Milk.Tournaments do
       [%Entrant{}, ...]
 
   """
-  def list_entrant do
+  def list_entrant() do
     Repo.all(Entrant)
   end
 
@@ -309,6 +309,9 @@ defmodule Milk.Tournaments do
     Repo.one(from e in Entrant, where: ^tournament_id == e.tournament_id and ^user_id == e.user_id)
   end
 
+  @doc """
+  Get entrants of a tournament.
+  """
   def get_entrants(id) do
     Entrant
     |> where([e], e.tournament_id == ^id)
