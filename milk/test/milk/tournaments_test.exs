@@ -182,6 +182,13 @@ defmodule Milk.TournamentsTest do
     test "start/2 with invalid data does not work", %{tournament: _tournament} do
       assert {:error, _tournament} = Tournaments.start(nil, nil)
     end
+
+    # FIXME: 関数を１つずつ丁寧にチェックする
+    test "generate_matchlist/1 with valid data works fine", %{tournament: _tournament} do
+      data = [1, 2, 3, 4, 5, 6]
+      assert {:ok, matchlist} = Tournaments.generate_matchlist(data)
+      assert is_list(matchlist)
+    end
   end
 
   describe "get entrant's rank" do
