@@ -349,7 +349,7 @@ defmodule Milk.TournamentsTest do
       assert Tournaments.delete_loser(list, [1]) == [2, 3]
       assert Tournaments.delete_loser(list, 2) == [1, 3]
       assert Tournaments.delete_loser(list, [2]) == [1, 3]
-      #assert Tournaments.delete_loser(list, 3) == [1, 2]
+      assert Tournaments.delete_loser(list, 3) == [1, 2]
       assert Tournaments.delete_loser(list, [3]) == [1, 2]
     end
   end
