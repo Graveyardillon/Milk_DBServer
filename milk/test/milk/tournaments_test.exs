@@ -183,11 +183,48 @@ defmodule Milk.TournamentsTest do
       assert {:error, _tournament} = Tournaments.start(nil, nil)
     end
 
-    # FIXME: 関数を１つずつ丁寧にチェックする
     test "generate_matchlist/1 with valid data works fine", %{tournament: _tournament} do
       data = [1, 2, 3, 4, 5, 6]
       assert {:ok, matchlist} = Tournaments.generate_matchlist(data)
       assert is_list(matchlist)
+    end
+
+    test "generate_matchlist/1 with invalid integer data does not work", %{tournament: _tournament} do
+      data = 1
+      assert {:error, _} = Tournaments.generate_matchlist(data)
+    end
+
+    test "generate_matchlist/1 with invalid map data does not work", %{tournament: _tournament} do
+      data = %{a: 1, b: 2, c: 3}
+      assert {:error, _} = Tournaments.generate_matchlist(data)
+    end
+
+    test "find_match/3 with valid data works fine" do
+      data = [1, 2, 3, 4, 5, 6]
+      {:ok, matchlist} = Tournaments.generate_matchlist(data)
+      assert match = Tournaments.find_match(matchlist, 1)
+      assert is_list(match)
+    end
+
+    test "find_match/3 with invalid data does not work" do
+      invalid_data = 3
+      assert catch_error(Tournaments.find_match(invalid_data, 3)) == %Protocol.UndefinedError{description: "", protocol: Enumerable, value: 3}
+    end
+
+    test "get_opponent/2 with valid data works fine", %{tournament: tournament} do
+      entrants = create_entrants(6, tournament.id)
+      id_list = Enum.map(entrants, fn entrant -> entrant.user_id end)
+
+      integer_input = Enum.slice(id_list, 0..1)
+      list_input = [hd(id_list)] ++ [Enum.slice(id_list, 1..2)]
+
+      assert {:ok, opponent} = Tournaments.get_opponent(integer_input, hd(id_list))
+      assert opponent["id"] == integer_input |> tl() |> hd()
+      assert {:wait, nil} = Tournaments.get_opponent(list_input, hd(id_list))
+    end
+
+    test "get_opponent with invalid data does not work", %{tournament: tournament} do
+
     end
   end
 

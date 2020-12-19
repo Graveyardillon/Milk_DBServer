@@ -602,7 +602,6 @@ defmodule Milk.Tournaments do
 
   defp process_entrant(id), do: id
 
-  #FIXME: バグ修正
   @doc """
   Get an opponent of tournament match.
   """
@@ -707,6 +706,22 @@ defmodule Milk.Tournaments do
     }
   end
 
+  @doc """
+  Generate a matchlist.
+  """
+  def generate_matchlist(list) do
+    unless is_list(list) do
+      {:error, "Argument is not list"}
+    else
+      list
+      |> priv_generate_matchlist()
+      |> case do
+        list when is_list(list) -> {:ok, list}
+        tuple -> tuple
+      end
+    end
+  end
+
   defp priv_generate_matchlist(list) when list != [] do
     shuffled = list |> Enum.shuffle()
     case(length(shuffled)) do
@@ -724,14 +739,6 @@ defmodule Milk.Tournaments do
     end
   end
   defp priv_generate_matchlist([]), do: {:error, "参加者がいません"}
-  def generate_matchlist(list) do
-    list
-    |> priv_generate_matchlist
-    |>case do
-      list when is_list(list) -> {:ok, list}
-      tuple -> tuple
-    end
-  end
 
   @doc """
   Returns the list of assistant.
