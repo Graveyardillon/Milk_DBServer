@@ -6,4 +6,12 @@ defmodule Common.Tools do
       data
     end
   end
+
+  def is_all_map_elements_nil?(map) do
+    unless is_map(map), do: raise "Argument is not map"
+
+    map
+    |> Enum.filter(fn {_k, v} -> !is_nil(v) end)
+    |> (fn x -> length(x) == 0 end).()
+  end
 end

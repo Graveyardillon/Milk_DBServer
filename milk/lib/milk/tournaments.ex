@@ -79,7 +79,6 @@ defmodule Milk.Tournaments do
   Returns the list of tournament specified with a game id.
   """
   def game_tournament(attrs) do
-    # FIXME: テストでカバーしていない
     Repo.all(from t in Tournament, where: t.game_id == ^attrs["game_id"])
   end
 
@@ -124,15 +123,6 @@ defmodule Milk.Tournaments do
   """
   def get_tournament(id), do: Repo.get(Tournament, id)
   def get_tournament!(id), do: Repo.get!(Tournament, id)
-
-  @doc """
-  Get tournaments which the user is holding.
-  """
-  def get_holding_tournaments(user_id) do
-    Tournament
-    |> where([t], t.master_id == ^user_id)
-    |> Repo.all()
-  end
 
   @doc """
   Get tournaments which the user participating in.
@@ -283,21 +273,7 @@ defmodule Milk.Tournaments do
     TournamentLog.changeset(%TournamentLog{}, Map.from_struct(tournament))
     |> Repo.insert()
 
-    {:ok, tournament} = Repo.delete(tournament)
-    tournament
-  end
-
-  @doc """
-  Returns an `%Ecto.Changeset{}` for tracking tournament changes.
-
-  ## Examples
-
-      iex> change_tournament(tournament)
-      %Ecto.Changeset{data: %Tournament{}}
-
-  """
-  def change_tournament(%Tournament{} = tournament, attrs \\ %{}) do
-    Tournament.changeset(tournament, attrs)
+    Repo.delete(tournament)
   end
 
   @doc """
@@ -309,7 +285,7 @@ defmodule Milk.Tournaments do
       [%Entrant{}, ...]
 
   """
-  def list_entrant do
+  def list_entrant() do
     Repo.all(Entrant)
   end
 
@@ -333,6 +309,9 @@ defmodule Milk.Tournaments do
     Repo.one(from e in Entrant, where: ^tournament_id == e.tournament_id and ^user_id == e.user_id)
   end
 
+  @doc """
+  Get entrants of a tournament.
+  """
   def get_entrants(id) do
     Entrant
     |> where([e], e.tournament_id == ^id)
@@ -545,6 +524,9 @@ defmodule Milk.Tournaments do
     Entrant.changeset(entrant, attrs)
   end
 
+  @doc """
+  Get a rank of a user.
+  """
   def get_rank(tournament_id, user_id) do
     with entrant <- Repo.one(from e in Entrant, where: e.tournament_id == ^tournament_id and e.user_id == ^user_id),
     :false <- is_nil(entrant) do
@@ -561,7 +543,8 @@ defmodule Milk.Tournaments do
     [a, b] -- loser
   end
 
-  def delete_loser(list,loser) do
+  def delete_loser(list, loser) when is_integer(loser), do: delete_loser(list, [loser])
+  def delete_loser(list, loser) do
     list
     |> Enum.map(fn x ->
       case x do
@@ -603,7 +586,6 @@ defmodule Milk.Tournaments do
 
   defp process_entrant(id), do: id
 
-  #FIXME: バグ修正
   @doc """
   Get an opponent of tournament match.
   """
@@ -611,9 +593,16 @@ defmodule Milk.Tournaments do
     match
     |> Enum.filter(&(&1 != user_id))
     |> hd()
-    #FIXME: 多分ここでifの分岐
-    |> Accounts.get_user()
-    |> atom_user_map_to_string_map()
+    |> (fn the_other ->
+      if is_integer(the_other) do
+        opponent =
+          Accounts.get_user(the_other)
+          |> atom_user_map_to_string_map()
+        {:ok, opponent}
+      else
+        {:wait, nil}
+      end
+    end).()
   end
 
   def get_opponent(match, user_id, :promote) do
@@ -651,8 +640,8 @@ defmodule Milk.Tournaments do
   Starts a tournament.
   """
   def start(master_id, tournament_id) do
-    with tournament <-
-      Tournament
+    with :false <- is_nil(master_id) or is_nil(tournament_id),
+    tournament <- Tournament
       |> where([t], t.master_id == ^master_id and t.id == ^tournament_id)
       |> Repo.one(),
       :false <- is_nil(tournament) do
@@ -663,6 +652,8 @@ defmodule Milk.Tournaments do
       else
         {:error, nil}
       end
+    else
+      _ -> {:error, "unexpected error"}
     end
   end
 
@@ -700,8 +691,21 @@ defmodule Milk.Tournaments do
   end
 
   @doc """
-  Generate matchlist.
+  Generate a matchlist.
   """
+  def generate_matchlist(list) do
+    unless is_list(list) do
+      {:error, "Argument is not list"}
+    else
+      list
+      |> priv_generate_matchlist()
+      |> case do
+        list when is_list(list) -> {:ok, list}
+        tuple -> tuple
+      end
+    end
+  end
+
   defp priv_generate_matchlist(list) when list != [] do
     shuffled = list |> Enum.shuffle()
     case(length(shuffled)) do
@@ -719,14 +723,6 @@ defmodule Milk.Tournaments do
     end
   end
   defp priv_generate_matchlist([]), do: {:error, "参加者がいません"}
-  def generate_matchlist(list) do
-    list
-    |> priv_generate_matchlist
-    |>case do
-      list when is_list(list) -> {:ok, list}
-      tuple -> tuple
-    end
-  end
 
   @doc """
   Returns the list of assistant.

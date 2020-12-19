@@ -1,0 +1,178 @@
+{
+  "info":
+  {
+    "name": "Notification Collection for Milk DBServer"
+  },
+  "item": [
+    {
+      "name": "Notification post request",
+      "request": {
+        "url": "http://35.200.124.100/api/notif/create",
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"notif\":{\"user_id\":1, \"content\":\"Papillon2\",\"process_code\":1,\"data\":\"something\"}}"
+        }
+      }
+    },
+    {
+      "name": "Notification post request",
+      "request": {
+        "url": "http://35.200.124.100/api/notif/create",
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"notif\":{\"user_id\":1, \"content\":\"Papillon2\",\"process_code\":1,\"data\":\"something\"}}"
+        }
+      }
+    },
+    {
+      "name": "Notification post request",
+      "request": {
+        "url": "http://35.200.124.100/api/notif/create",
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"notif\":{\"user_id\":1, \"content\":\"Papillon2\",\"process_code\":1,\"data\":\"something\"}}"
+        }
+      }
+    },
+    {
+      "name": "Notification post request",
+      "request": {
+        "url": "http://35.200.124.100/api/notif/create",
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"notif\":{\"user_id\":1, \"content\":\"Papillon2\",\"process_code\":4,\"data\":\"2\"}}"
+        }
+      }
+    },
+    {
+      "name": "Notification post request",
+      "request": {
+        "url": "http://35.200.124.100/api/notif/create",
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"notif\":{\"user_id\":1, \"content\":\"Papillon2\",\"process_code\":4,\"data\":\"2\"}}"
+        }
+      }
+    },
+    {
+      "name": "Notification post request",
+      "request": {
+        "url": "http://35.200.124.100/api/notif/create",
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"notif\":{\"user_id\":1, \"content\":\"Papillon2\",\"process_code\":5,\"data\":\"something\"}}"
+        }
+      }
+    },
+    {
+      "name": "Notification post request",
+      "request": {
+        "url": "http://35.200.124.100/api/notif/create",
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"notif\":{\"user_id\":1, \"content\":\"Papillon2\",\"process_code\":5,\"data\":\"something\"}}"
+        }
+      }
+    },
+    {
+      "name": "Notification post request",
+      "request": {
+        "url": "http://35.200.124.100/api/notif/create",
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"notif\":{\"user_id\":1, \"content\":\"Papillon2\",\"process_code\":5,\"data\":\"something\"}}"
+        }
+      }
+    },
+    {
+      "name": "Notification post request",
+      "request": {
+        "url": "http://35.200.124.100/api/notif/create",
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"notif\":{\"user_id\":2, \"content\":\"Papillon1\",\"process_code\":5,\"data\":\"something\"}}"
+        }
+      }
+    },
+    {
+      "name": "Notification post request",
+      "request": {
+        "url": "http://35.200.124.100/api/notif/create",
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"notif\":{\"user_id\":2, \"content\":\"Papillon1\",\"process_code\":5,\"data\":\"something\"}}"
+        }
+      }
+    }
+  ]
+}
