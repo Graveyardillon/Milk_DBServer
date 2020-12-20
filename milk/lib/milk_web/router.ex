@@ -51,10 +51,10 @@ defmodule MilkWeb.Router do
     get  "/chat_room/private_rooms", ChatRoomController, :private_rooms
     get  "/chat_room/private_room", ChatRoomController, :private_room
 
-    resources "/chat_room_log", ChatRoomLogController, except: [:new, :edit, :index, :show]
-    resources "/chat_log", ChatsLogController, except: [:new, :edit, :index, :show]
-    resources "/chat_member_log", ChatMemberLogController, except: [:new, :edit, :index, :show]
-    resources "/assistant_log", AssistantLogController, except: [:new, :edit, :index, :show]
+    resources "/chat_room_log", ChatRoomLogController, except: [:new, :edit]
+    resources "/chat_log", ChatsLogController, except: [:new, :edit]
+    resources "/chat_member_log", ChatMemberLogController, except: [:new, :edit]
+    resources "/assistant_log", AssistantLogController, except: [:new, :edit]
     resources "/entrant_log", EntrantLogController
 
     resources "/tournament", TournamentController, except: [:new, :edit, :index, :show, :delete]

@@ -21,6 +21,10 @@ defmodule MilkWeb.ChatRoomLogControllerTest do
     chat_room_log
   end
 
+  def fixture(:chat_room) do
+
+  end
+
   setup %{conn: conn} do
     {:ok, conn: put_req_header(conn, "accept", "application/json")}
   end
