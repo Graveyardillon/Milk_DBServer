@@ -14,8 +14,8 @@ defmodule Milk.Accounts.UserReport do
   def changeset(report, attrs) do
     report
     |> cast(attrs, [:report_type])
-    # |> validate_required([])
+    |> validate_required([:report_type])
     |> foreign_key_constraint(:reporter_id)
-    |> foreign_key_constraint(:follower_id)
+    |> foreign_key_constraint(:reportee_id)
   end
 end
