@@ -1,8 +1,19 @@
 defmodule Milk.TournamentsTest do
   use Milk.DataCase
 
-  alias Milk.{Tournaments, Accounts, Ets, Relations, Games}
-  alias Milk.Tournaments.{Tournament, Entrant}
+  alias Milk.{
+    Tournaments,
+    Accounts,
+    Ets,
+    Relations,
+    Games,
+    Chat
+  }
+  alias Milk.Tournaments.{
+    Tournament,
+    Entrant,
+    TournamentChatTopic
+  }
   alias Milk.Accounts.User
 
   # 外部キーが二つ以上の場合は %{"capacity" => 42} のようにしなければいけない
@@ -51,8 +62,7 @@ defmodule Milk.TournamentsTest do
   defp fixture(:tournament) do
     {:ok, user} = Accounts.create_user(%{"name" => "name", "email" => "e@mail.com", "password" => "Password123"})
     {:ok, tournament} =
-      %{}
-      |> Enum.into(@valid_attrs)
+      @valid_attrs
       |> Map.put("master_id", user.id)
       |> Tournaments.create_tournament()
     tournament
@@ -607,7 +617,7 @@ defmodule Milk.TournamentsTest do
       "user_id" => [user.id]
     }
 
-    assistant = Tournaments.create_assistant(assistant_attrs)
+    :ok = Tournaments.create_assistant(assistant_attrs)
     assistant_attrs
   end
 
@@ -622,6 +632,43 @@ defmodule Milk.TournamentsTest do
   describe "create assistant" do
     test "create_assistant/1 with valid data works fine" do
       assert assistant = fixture(:assistant)
+    end
+  end
+
+  defp fixture(:tournament_chat_topic) do
+    tournament = fixture(:tournament)
+    {:ok, chat_room} = Chat.create_chat_room(%{"name" => "name"})
+
+    {:ok, topic} =
+      %{"topic_name" => "name", "tournament_id" => tournament.id, "chat_room_id" => chat_room.id}
+      |> Tournaments.create_tournament_chat_topic()
+
+    topic
+  end
+
+  describe "get tournament chat topic" do
+    test "list_tournament_chat_topics/0 works fine" do
+      fixture(:tournament_chat_topic)
+      assert is_list(Tournaments.list_tournament_chat_topics())
+      refute Tournaments.list_tournament_chat_topics() == 0
+    end
+
+    test "get_tournament_chat_topic!/1 with valid data works fine" do
+      topic = fixture(:tournament_chat_topic)
+      assert %TournamentChatTopic{} = obtained_topic = Tournaments.get_tournament_chat_topic!(topic.id)
+      assert obtained_topic.id == topic.id
+      assert obtained_topic.topic_name == topic.topic_name
+    end
+
+    test "get_tabs_by_tournament_id/1 with valid data works fine" do
+      topic = fixture(:tournament_chat_topic)
+      tabs = Tournaments.get_tabs_by_tournament_id(topic.tournament_id)
+      assert is_list(tabs)
+      refute length(tabs) == 0
+      Enum.each(tabs, fn tab ->
+        assert %TournamentChatTopic{} = tab
+        assert tab.tournament_id == topic.tournament_id
+      end)
     end
   end
 end

@@ -827,62 +827,6 @@ defmodule Milk.Tournaments do
   end
 
   @doc """
-  Updates a assistant.
-
-  ## Examples
-
-      iex> update_assistant(assistant, %{field: new_value})
-      {:ok, %Assistant{}}
-
-      iex> update_assistant(assistant, %{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
-  """
-  def update_assistant(%Assistant{} = assistant, attrs) do
-    case assistant
-    |> Assistant.changeset(attrs)
-    |> Repo.update() do
-      {:ok, assistant} ->
-        {:ok, assistant}
-      {:error, error} ->
-        {:error, error.errors}
-      _ ->
-        {:error, nil}
-    end
-  end
-
-  @doc """
-  Deletes a assistant.
-
-  ## Examples
-
-      iex> delete_assistant(assistant)
-      {:ok, %Assistant{}}
-
-      iex> delete_assistant(assistant)
-      {:error, %Ecto.Changeset{}}
-
-  """
-  def delete_assistant(%Assistant{} = assistant) do
-    AssistantLog.changeset(%AssistantLog{}, Map.from_struct(assistant))
-    |> Repo.insert()
-    Repo.delete(assistant)
-  end
-
-  @doc """
-  Returns an `%Ecto.Changeset{}` for tracking assistant changes.
-
-  ## Examples
-
-      iex> change_assistant(assistant)
-      %Ecto.Changeset{data: %Assistant{}}
-
-  """
-  def change_assistant(%Assistant{} = assistant, attrs \\ %{}) do
-    Assistant.changeset(assistant, attrs)
-  end
-
-  @doc """
   Returns the list of tournament_chat_topics.
 
   ## Examples
@@ -891,7 +835,7 @@ defmodule Milk.Tournaments do
       [%TournamentChatTopic{}, ...]
 
   """
-  def list_tournament_chat_topics do
+  def list_tournament_chat_topics() do
     Repo.all(TournamentChatTopic)
   end
 
@@ -933,9 +877,14 @@ defmodule Milk.Tournaments do
 
   """
   def create_tournament_chat_topic(attrs \\ %{}) do
+    with {:ok, topic} <-
     %TournamentChatTopic{}
     |> TournamentChatTopic.changeset(attrs)
-    |> Repo.insert()
+    |> Repo.insert() do
+      {:ok, Map.put(topic, :tournament_id, attrs["tournament_id"])}
+    else
+      _ -> {:error, nil}
+    end
   end
 
   @doc """

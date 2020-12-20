@@ -50,12 +50,4 @@ defmodule MilkWeb.AssistantController do
       render(conn, "error.json", error: nil)
     end
   end
-
-  def delete(conn, %{"id" => id}) do
-    assistant = Tournaments.get_assistant!(id)
-
-    with {:ok, %Assistant{}} <- Tournaments.delete_assistant(assistant) do
-      send_resp(conn, :no_content, "")
-    end
-  end
 end
