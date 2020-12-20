@@ -47,7 +47,7 @@ defmodule MilkWeb.Router do
     resources "/chat", ChatsController, except: [:new, :edit, :index, :show, :delete]
     post "/chat/create_dialogue", ChatsController, :create_dialogue
 
-    resources "/chat_room", ChatRoomController, except: [:new, :edit, :index, :show]
+    resources "/chat_room", ChatRoomController, except: [:new, :edit, :index]
     get  "/chat_room/private_rooms", ChatRoomController, :private_rooms
     get  "/chat_room/private_room", ChatRoomController, :private_room
 
@@ -56,8 +56,6 @@ defmodule MilkWeb.Router do
     resources "/chat_member_log", ChatMemberLogController, except: [:new, :edit, :index, :show]
     resources "/assistant_log", AssistantLogController, except: [:new, :edit, :index, :show]
     resources "/entrant_log", EntrantLogController
-
-    resources "/chat_member", ChatMemberController, except: [:new, :edit, :index, :show, :delete]
 
     resources "/tournament", TournamentController, except: [:new, :edit, :index, :show, :delete]
     get  "/tournament/users_for_add_assistant", TournamentController, :get_users_for_add_assistant
@@ -135,8 +133,6 @@ defmodule MilkWeb.Router do
     get  "/tournament/image", TournamentController, :image
     post "/tournament/get_all", TournamentController, :index
     post "/tournament/debug_match_list", TournamentController, :debug_match_list
-    post "/chat_member/delete", ChatMemberController, :delete
-    post "/chat_member/get_all", ChatMemberController, :index
     post "/assistant/get", AssistantController, :show
     post "/assistant/get_all", AssistantController, :index
   end

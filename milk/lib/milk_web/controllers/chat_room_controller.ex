@@ -6,7 +6,7 @@ defmodule MilkWeb.ChatRoomController do
   alias Milk.Accounts
 
   @doc """
-  Make a new chat room.
+  Create a new chat room.
   """
   def create(conn, %{"chat_room" => chat_room_params}) do
     case Chat.create_chat_room(chat_room_params) do
@@ -73,7 +73,7 @@ defmodule MilkWeb.ChatRoomController do
         id
       end
 
-    chat_with_user = 
+    chat_with_user =
       Chat.get_private_chat_rooms(user_id)
       |> Enum.map(fn room ->
         user = Chat.get_user_in_private_room(room.id, user_id)

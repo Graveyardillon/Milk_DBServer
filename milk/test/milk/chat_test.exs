@@ -64,7 +64,6 @@ defmodule Milk.ChatTest do
   describe "chat_member" do
     alias Milk.Chat.ChatMember
 
-    @valid_attrs %{authority: 42}
     @update_attrs %{authority: 43}
     @invalid_attrs %{"authority" => nil}
     @room_attrs %{count: 42, last_chat: "some last_chat", name: "some name"}
