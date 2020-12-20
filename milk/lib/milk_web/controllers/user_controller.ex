@@ -6,7 +6,7 @@ defmodule MilkWeb.UserController do
   alias Milk.UserManager.Guardian
 
   def check_username_duplication(conn, %{"name" => name}) do
-    case Accounts.check_duplication(name) do
+    case Accounts.check_duplication?(name) do
       true ->
         json(conn, %{isUnique: false})
       false ->
