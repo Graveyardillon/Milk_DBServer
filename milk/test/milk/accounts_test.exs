@@ -14,7 +14,7 @@ defmodule Milk.AccountsTest do
   }
   alias Milk.Chat.Chats
 
-  def user_fixture(attrs \\ %{}) do
+  defp user_fixture(attrs \\ %{}) do
     user_valid_attrs = %{"icon_path" => "some icon_path", "language" => "some language", "name" => "some name", "notification_number" => 42, "point" => 42, "email" => "some@email.com", "logout_fl" => true, "password" => "S1ome password"}
 
     {:ok, user} =
@@ -23,21 +23,6 @@ defmodule Milk.AccountsTest do
       |> Accounts.create_user()
 
     Accounts.get_user(user.id)
-  end
-
-  def relation_fixture(_attrs \\ %{}) do
-    valid_attrs = %{"id" => 1}
-
-    {:ok, user1} = Accounts.create_user(%{"name" => "name", "email" => "e@mail.com", "password" => "Password123"})
-    {:ok, user2} = Accounts.create_user(%{"name" => "name2", "email" => "ew@mail.com", "password" => "Password123"})
-    {:ok, relation} =
-
-      valid_attrs
-      |> Map.put("followee_id", user1.id)
-      |> Map.put("follower_id", user2.id)
-      |> Relations.create_relation()
-
-    relation
   end
 
   describe "users get" do
@@ -100,19 +85,24 @@ defmodule Milk.AccountsTest do
     end
   end
 
-  describe "profiles" do
+  defp profile_fixture(attrs \\ %{}) do
+    valid_attrs = %{content_id: 42, content_type: "42", user_id: 42}
+    {:ok, profile} =
+      attrs
+      |> Enum.into(valid_attrs)
+      |> Profiles.create_profile()
+
+    profile
+  end
+
+  describe "get profiles" do
+
+  end
+
+  describe "create profiles" do
     @valid_attrs %{content_id: 42, content_type: "42", user_id: 42}
     @update_attrs %{content_id: 43, content_type: "43", user_id: 42}
     @invalid_attrs %{content_id: nil, content_type: nil, user_id: nil}
-
-    def profile_fixture(attrs \\ %{}) do
-      {:ok, profile} =
-        attrs
-        |> Enum.into(@valid_attrs)
-        |> Profiles.create_profile()
-
-      profile
-    end
 
     test "create_profile/1 with valid data creates a profile" do
       assert {:ok, %Profile{} = profile} = Profiles.create_profile(@valid_attrs)
@@ -124,6 +114,11 @@ defmodule Milk.AccountsTest do
     test "create_profile/1 with invalid data returns error changeset" do
       assert {:error, %Ecto.Changeset{}} = Profiles.create_profile(@invalid_attrs)
     end
+  end
+
+  describe "update profiles" do
+    @update_attrs %{content_id: 43, content_type: "43", user_id: 42}
+    @invalid_attrs %{content_id: nil, content_type: nil, user_id: nil}
 
     test "update_profile/2 with valid data updates the profile" do
       profile = profile_fixture()
@@ -136,26 +131,34 @@ defmodule Milk.AccountsTest do
     test "update_profile/2 with invalid data returns error changeset" do
       profile = profile_fixture()
       assert {:error, %Ecto.Changeset{}} = Profiles.update_profile(profile, @invalid_attrs)
-      # FIXME:
-      # assert profile == Profiles.get_profile!(profile.id)
     end
+  end
 
+  describe "delete profiles" do
     test "delete_profile/1 deletes the profile" do
       profile = profile_fixture()
       assert {:ok, %Profile{}} = Profiles.delete_profile(profile)
       assert_raise Ecto.NoResultsError, fn -> Profiles.get_profile!(profile.id) end
     end
+  end
 
-    test "change_profile/1 returns a profile changeset" do
-      profile = profile_fixture()
-      assert %Ecto.Changeset{} = Profiles.change_profile(profile)
-    end
+  defp relation_fixture(_attrs \\ %{}) do
+    valid_attrs = %{"id" => 1}
+
+    {:ok, user1} = Accounts.create_user(%{"name" => "name", "email" => "e@mail.com", "password" => "Password123"})
+    {:ok, user2} = Accounts.create_user(%{"name" => "name2", "email" => "ew@mail.com", "password" => "Password123"})
+    {:ok, relation} =
+
+      valid_attrs
+      |> Map.put("followee_id", user1.id)
+      |> Map.put("follower_id", user2.id)
+      |> Relations.create_relation()
+
+    relation
   end
 
   describe "get relations" do
-    @valid_attrs %{"id" => 1}
-    @update_attrs %{id: 1, followee_id: 1, follower_id: 3}
-    @invalid_attrs %{id: nil, followee_id: 0999999999999, follower_id: 999999999}
+
   end
 
   describe "create relations" do
