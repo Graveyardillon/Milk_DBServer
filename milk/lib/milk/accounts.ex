@@ -57,7 +57,6 @@ defmodule Milk.Accounts do
     |> get_users_by_member_id()
   end
 
-  # FIXME: Chatの方に移した方がいいかもしれない
   defp get_private_rooms(members) do
     Enum.map(members, fn member ->
       ChatRoom
@@ -180,7 +179,6 @@ defmodule Milk.Accounts do
   def delete_user(id, password, email, token) do
     user = get_authorized_user(id, password, email, token)
 
-    # FIXME: get_authorized_userのエラー出力を活かせていないのと、ifの条件式もっとよく書けそう
     if user && !is_binary(user) do
       if is_list(user.chat_member) do
         member = Enum.map(user.chat_member, fn x -> %{chat_room_id: x.chat_room_id, user_id: x.user_id, authority: x.authority, create_time: x.create_time, update_time: x.update_time} end)

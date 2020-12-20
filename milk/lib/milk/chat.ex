@@ -10,9 +10,11 @@ defmodule Milk.Chat do
   alias Milk.Chat.{ChatRoom, Chats, ChatMember}
   alias Milk.Accounts.User
   alias Milk.Tournaments.TournamentChatTopic
-  alias Milk.Log.ChatsLog
-  alias Milk.Log.ChatMemberLog
-  alias Milk.Log.ChatRoomLog
+  alias Milk.Log.{
+    ChatsLog,
+    ChatMemberLog,
+    ChatRoomLog
+  }
   alias Ecto.Multi
   alias Common.Tools
 
