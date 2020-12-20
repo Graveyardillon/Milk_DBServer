@@ -51,22 +51,6 @@ defmodule MilkWeb.AssistantController do
     end
   end
 
-  def update(conn, %{"id" => id, "assistant" => assistant_params}) do
-    assistant = Tournaments.get_assistant!(id)
-    if(assistant) do
-      case Tournaments.update_assistant(assistant, assistant_params) do
-      {:ok, %Assistant{} = assistant} ->
-        render(conn, "show.json", assistant: assistant)
-      {:error, error} ->
-        render(conn, "error.json", error: error)
-      _ ->
-        render(conn, "error.json", error: nil)
-      end
-    else
-      render(conn, "error.json", error: nil)
-    end
-  end
-
   def delete(conn, %{"id" => id}) do
     assistant = Tournaments.get_assistant!(id)
 

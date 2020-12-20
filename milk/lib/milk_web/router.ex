@@ -77,7 +77,7 @@ defmodule MilkWeb.Router do
     post "/tournament/start", TournamentController, :start
     post "/tournament/deleteloser", TournamentController, :delete_loser
     post "/tournament/get", TournamentController, :show
-    get "/tournament/get_all", TournamentController, :index
+    get  "/tournament/get_all", TournamentController, :index
     post "/tournament/get_by_master_id", TournamentController, :get_tournaments_by_master_id
     post "/tournament/get_planned", TournamentController, :get_ongoing_tournaments_by_master_id
     post "/tournament/get_game", TournamentController, :get_game
@@ -96,7 +96,7 @@ defmodule MilkWeb.Router do
     resources "/entrant_log", EntrantLogController
     post "/entrant/rank/promote", EntrantController, :promote
 
-    resources "/assistant", AssistantController, except: [:new, :edit, :index, :show, :delete]
+    resources "/assistant", AssistantController, except: [:new, :edit, :index, :show, :delete, :update]
     post "/assistant/delete", AssistantController, :delete
 
     get  "/live/home", LiveController, :home
