@@ -1,12 +1,11 @@
 defmodule MilkWeb.NotifController do
   use MilkWeb, :controller
 
-  alias Milk.Accounts
   alias Milk.Notif
   alias Milk.Notif.Notification
 
-  def get_list(conn, %{"notif" => notif}) do
-    notifs = Notif.list_notification(notif["user_id"])
+  def get_list(conn, %{"user_id" => user_id}) do
+    notifs = Notif.list_notification(user_id)
     render(conn, "list.json", notif: notifs)
   end
 

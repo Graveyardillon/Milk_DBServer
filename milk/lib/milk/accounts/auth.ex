@@ -42,7 +42,6 @@ defmodule Milk.Accounts.Auth do
   def create_pass(password) do
     Argon2.hash_pwd_salt(password)
   end
-
   def not_space(changeset) do
     password = get_field(changeset, :password)
     unless String.match?(password, ~r/\A^(?=.\s).*$/) do

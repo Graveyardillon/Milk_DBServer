@@ -1,6 +1,5 @@
 defmodule MilkWeb.Router do
   use MilkWeb, :router
-  # FIXME: ルーティングの整理
 
   pipeline :browser do
     plug :accepts, ["html"]
@@ -80,7 +79,7 @@ defmodule MilkWeb.Router do
     post "/tournament/start", TournamentController, :start
     post "/tournament/deleteloser", TournamentController, :delete_loser
     post "/tournament/get", TournamentController, :show
-    get "/tournament/get_all", TournamentController, :index
+    get  "/tournament/get_all", TournamentController, :index
     post "/tournament/get_by_master_id", TournamentController, :get_tournaments_by_master_id
     post "/tournament/get_planned", TournamentController, :get_ongoing_tournaments_by_master_id
     post "/tournament/get_game", TournamentController, :get_game
@@ -96,11 +95,10 @@ defmodule MilkWeb.Router do
     resources "/entrant", EntrantController, except: [:new, :edit, :delete]
     get  "/entrant/rank/:tournament_id/:user_id", EntrantController, :show_rank
     delete "/entrant/delete", EntrantController, :delete
-    get "/entrant/rank/:tournament_id/:user_id", EntrantController, :show_rank
     resources "/entrant_log", EntrantLogController
     post "/entrant/rank/promote", EntrantController, :promote
 
-    resources "/assistant", AssistantController, except: [:new, :edit, :index, :show, :delete]
+    resources "/assistant", AssistantController, except: [:new, :edit, :index, :show, :delete, :update]
     post "/assistant/delete", AssistantController, :delete
 
     get  "/live/home", LiveController, :home

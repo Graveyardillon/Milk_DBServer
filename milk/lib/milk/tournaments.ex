@@ -79,7 +79,6 @@ defmodule Milk.Tournaments do
   Returns the list of tournament specified with a game id.
   """
   def game_tournament(attrs) do
-    # FIXME: テストでカバーしていない
     Repo.all(from t in Tournament, where: t.game_id == ^attrs["game_id"])
   end
 
@@ -124,15 +123,6 @@ defmodule Milk.Tournaments do
   """
   def get_tournament(id), do: Repo.get(Tournament, id)
   def get_tournament!(id), do: Repo.get!(Tournament, id)
-
-  @doc """
-  Get tournaments which the user is holding.
-  """
-  def get_holding_tournaments(user_id) do
-    Tournament
-    |> where([t], t.master_id == ^user_id)
-    |> Repo.all()
-  end
 
   @doc """
   Get tournaments which the user participating in.
@@ -283,21 +273,7 @@ defmodule Milk.Tournaments do
     TournamentLog.changeset(%TournamentLog{}, Map.from_struct(tournament))
     |> Repo.insert()
 
-    {:ok, tournament} = Repo.delete(tournament)
-    tournament
-  end
-
-  @doc """
-  Returns an `%Ecto.Changeset{}` for tracking tournament changes.
-
-  ## Examples
-
-      iex> change_tournament(tournament)
-      %Ecto.Changeset{data: %Tournament{}}
-
-  """
-  def change_tournament(%Tournament{} = tournament, attrs \\ %{}) do
-    Tournament.changeset(tournament, attrs)
+    Repo.delete(tournament)
   end
 
   @doc """
@@ -309,7 +285,7 @@ defmodule Milk.Tournaments do
       [%Entrant{}, ...]
 
   """
-  def list_entrant do
+  def list_entrant() do
     Repo.all(Entrant)
   end
 
@@ -333,6 +309,9 @@ defmodule Milk.Tournaments do
     Repo.one(from e in Entrant, where: ^tournament_id == e.tournament_id and ^user_id == e.user_id)
   end
 
+  @doc """
+  Get entrants of a tournament.
+  """
   def get_entrants(id) do
     Entrant
     |> where([e], e.tournament_id == ^id)
@@ -545,6 +524,9 @@ defmodule Milk.Tournaments do
     Entrant.changeset(entrant, attrs)
   end
 
+  @doc """
+  Get a rank of a user.
+  """
   def get_rank(tournament_id, user_id) do
     with entrant <- Repo.one(from e in Entrant, where: e.tournament_id == ^tournament_id and e.user_id == ^user_id),
     :false <- is_nil(entrant) do
@@ -555,30 +537,34 @@ defmodule Milk.Tournaments do
   end
 
   @doc """
-  Generate a match list of entrants.
+  Delete a loser in a matchlist
   """
+  def delete_loser(list, loser) when is_integer(loser) do
+    delete_loser(list, [loser])
+  end
+
   def delete_loser([a, b], loser) when is_integer(a) and is_integer(b) do
-    [a, b] -- loser
+    list = [a, b] -- loser
+    if length(list) == 1, do: hd(list), else: list
   end
 
-  def delete_loser(list,loser) do
-    list
-    |> Enum.map(fn x ->
-      case x do
-        [[_a,_b],[_c,_d]] -> Milk.Tournaments.delete_loser(x, loser)
-        [_a,[_b,_c]] -> Milk.Tournaments.delete_loser(x, loser)
-        [[_a,_b],_c] -> Milk.Tournaments.delete_loser(x, loser)
-        a when is_integer(a) -> a
-        _ ->
-          case x -- loser ++ [nil] do
-            [a,b] -> [a,b]
-            [a] -> a
-            [] -> nil
-          end
-      end
-    end)
+  def delete_loser(list, loser) do
+    case list do
+      [[a, b], [c, d]] ->
+        [delete_loser([a, b], loser), delete_loser([c, d], loser)]
+      [a, [b, c]] when is_integer(a) and [a] == loser ->
+        [b, c]
+      [a, [b, c]] ->
+        [a, delete_loser([b, c], loser)]
+      [[a, b], c] when is_integer(c) and [c] == loser ->
+        [a, b]
+      [[a, b], c] ->
+        [delete_loser([a, b], loser), c]
+      [a, b] ->
+        delete_loser([a, b], loser)
+      _ -> raise "Bad Argument"
+    end
   end
-
 
   @doc """
   Finds a 1v1 match of given id and match list.
@@ -603,28 +589,38 @@ defmodule Milk.Tournaments do
 
   defp process_entrant(id), do: id
 
-  #FIXME: バグ修正
   @doc """
   Get an opponent of tournament match.
   """
   def get_opponent(match, user_id) do
-    match
-    |> Enum.filter(&(&1 != user_id))
-    |> hd()
-    #FIXME: 多分ここでifの分岐
-    |> Accounts.get_user()
-    |> atom_user_map_to_string_map()
+    if Enum.member?(match, user_id) do
+      match
+      |> Enum.filter(&(&1 != user_id))
+      |> hd()
+      |> (fn the_other ->
+        if is_integer(the_other) do
+          opponent =
+            Accounts.get_user(the_other)
+            |> atom_user_map_to_string_map()
+          {:ok, opponent}
+        else
+          {:wait, nil}
+        end
+      end).()
+    else
+      {:error, "opponent does not exist"}
+    end
   end
 
   def get_opponent(match, user_id, :promote) do
     a =
       match
       |> Enum.filter(fn x ->
-        inspect(x, printable_limit: 0)
+        inspect(x)
         x.user_id != user_id
       end)
       |> hd()
-    inspect(a, printable_limit: 0)
+    inspect(a)
 
     a.user_id
     |> Accounts.get_user()
@@ -643,7 +639,7 @@ defmodule Milk.Tournaments do
   @doc """
   Judges whether the user have to wait.
   """
-  def is_alone(match) do
+  def is_alone?(match) do
     Enum.filter(match, &(is_list(&1))) != []
   end
 
@@ -651,8 +647,8 @@ defmodule Milk.Tournaments do
   Starts a tournament.
   """
   def start(master_id, tournament_id) do
-    with tournament <-
-      Tournament
+    with :false <- is_nil(master_id) or is_nil(tournament_id),
+    tournament <- Tournament
       |> where([t], t.master_id == ^master_id and t.id == ^tournament_id)
       |> Repo.one(),
       :false <- is_nil(tournament) do
@@ -663,6 +659,8 @@ defmodule Milk.Tournaments do
       else
         {:error, nil}
       end
+    else
+      _ -> {:error, "unexpected error"}
     end
   end
 
@@ -673,9 +671,12 @@ defmodule Milk.Tournaments do
   def finish(tournament_id, winner_user_id) do
     # FIXME: user_idを使って認証する処理を書いてない
 
-    tournament_id
-    |> get_tournament!()
-    |> delete_tournament()
+    {:ok, tournament} =
+      tournament_id
+      |> get_tournament!()
+      |> delete_tournament()
+
+    tournament
     |> atom_tournament_map_to_string_map(winner_user_id)
     |> Log.create_tournament_log()
     |> case do
@@ -700,8 +701,21 @@ defmodule Milk.Tournaments do
   end
 
   @doc """
-  Generate matchlist.
+  Generate a matchlist.
   """
+  def generate_matchlist(list) do
+    unless is_list(list) do
+      {:error, "Argument is not list"}
+    else
+      list
+      |> priv_generate_matchlist()
+      |> case do
+        list when is_list(list) -> {:ok, list}
+        tuple -> tuple
+      end
+    end
+  end
+
   defp priv_generate_matchlist(list) when list != [] do
     shuffled = list |> Enum.shuffle()
     case(length(shuffled)) do
@@ -719,14 +733,6 @@ defmodule Milk.Tournaments do
     end
   end
   defp priv_generate_matchlist([]), do: {:error, "参加者がいません"}
-  def generate_matchlist(list) do
-    list
-    |> priv_generate_matchlist
-    |>case do
-      list when is_list(list) -> {:ok, list}
-      tuple -> tuple
-    end
-  end
 
   @doc """
   Returns the list of assistant.
@@ -737,7 +743,7 @@ defmodule Milk.Tournaments do
       [%Assistant{}, ...]
 
   """
-  def list_assistant do
+  def list_assistant() do
     Repo.all(Assistant)
   end
 
@@ -780,6 +786,7 @@ defmodule Milk.Tournaments do
       iex> create_assistant(%{field: bad_value})
       {:error, %Ecto.Changeset{}}
 
+      FIXME: 戻り値とか
   """
   def create_assistant(attrs \\ %{}) do
     tournament_id = Tools.to_integer_as_needed(attrs["tournament_id"])
@@ -820,62 +827,6 @@ defmodule Milk.Tournaments do
   end
 
   @doc """
-  Updates a assistant.
-
-  ## Examples
-
-      iex> update_assistant(assistant, %{field: new_value})
-      {:ok, %Assistant{}}
-
-      iex> update_assistant(assistant, %{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
-  """
-  def update_assistant(%Assistant{} = assistant, attrs) do
-    case assistant
-    |> Assistant.changeset(attrs)
-    |> Repo.update() do
-      {:ok, assistant} ->
-        {:ok, assistant}
-      {:error, error} ->
-        {:error, error.errors}
-      _ ->
-        {:error, nil}
-    end
-  end
-
-  @doc """
-  Deletes a assistant.
-
-  ## Examples
-
-      iex> delete_assistant(assistant)
-      {:ok, %Assistant{}}
-
-      iex> delete_assistant(assistant)
-      {:error, %Ecto.Changeset{}}
-
-  """
-  def delete_assistant(%Assistant{} = assistant) do
-    AssistantLog.changeset(%AssistantLog{}, Map.from_struct(assistant))
-    |> Repo.insert()
-    Repo.delete(assistant)
-  end
-
-  @doc """
-  Returns an `%Ecto.Changeset{}` for tracking assistant changes.
-
-  ## Examples
-
-      iex> change_assistant(assistant)
-      %Ecto.Changeset{data: %Assistant{}}
-
-  """
-  def change_assistant(%Assistant{} = assistant, attrs \\ %{}) do
-    Assistant.changeset(assistant, attrs)
-  end
-
-  @doc """
   Returns the list of tournament_chat_topics.
 
   ## Examples
@@ -884,7 +835,7 @@ defmodule Milk.Tournaments do
       [%TournamentChatTopic{}, ...]
 
   """
-  def list_tournament_chat_topics do
+  def list_tournament_chat_topics() do
     Repo.all(TournamentChatTopic)
   end
 
@@ -926,9 +877,14 @@ defmodule Milk.Tournaments do
 
   """
   def create_tournament_chat_topic(attrs \\ %{}) do
+    with {:ok, topic} <-
     %TournamentChatTopic{}
     |> TournamentChatTopic.changeset(attrs)
-    |> Repo.insert()
+    |> Repo.insert() do
+      {:ok, Map.put(topic, :tournament_id, attrs["tournament_id"])}
+    else
+      _ -> {:error, nil}
+    end
   end
 
   @doc """
@@ -966,112 +922,8 @@ defmodule Milk.Tournaments do
   end
 
   @doc """
-  Returns an `%Ecto.Changeset{}` for tracking tournament_chat_topic changes.
-
-  ## Examples
-
-      iex> change_tournament_chat_topic(tournament_chat_topic)
-      %Ecto.Changeset{data: %TournamentChatTopic{}}
-
+  Promotes rank of a entrant.
   """
-  def change_tournament_chat_topic(%TournamentChatTopic{} = tournament_chat_topic, attrs \\ %{}) do
-    TournamentChatTopic.changeset(tournament_chat_topic, attrs)
-  end
-
-  @doc """
-  Returns the list of tournament_user_topic_log.
-
-  ## Examples
-
-      iex> list_tournament_user_topic_log()
-      [%TournamentChatTopicLog{}, ...]
-
-  """
-  def list_tournament_user_topic_log do
-    Repo.all(TournamentChatTopicLog)
-  end
-
-  @doc """
-  Gets a single tournament_chat_topic_log.
-
-  Raises `Ecto.NoResultsError` if the Tournament chat topic log does not exist.
-
-  ## Examples
-
-      iex> get_tournament_chat_topic_log!(123)
-      %TournamentChatTopicLog{}
-
-      iex> get_tournament_chat_topic_log!(456)
-      ** (Ecto.NoResultsError)
-
-  """
-  def get_tournament_chat_topic_log!(id), do: Repo.get!(TournamentChatTopicLog, id)
-
-  @doc """
-  Creates a tournament_chat_topic_log.
-
-  ## Examples
-
-      iex> create_tournament_chat_topic_log(%{field: value})
-      {:ok, %TournamentChatTopicLog{}}
-
-      iex> create_tournament_chat_topic_log(%{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
-  """
-  def create_tournament_chat_topic_log(attrs \\ %{}) do
-    %TournamentChatTopicLog{}
-    |> TournamentChatTopicLog.changeset(attrs)
-    |> Repo.insert()
-  end
-
-  @doc """
-  Updates a tournament_chat_topic_log.
-
-  ## Examples
-
-      iex> update_tournament_chat_topic_log(tournament_chat_topic_log, %{field: new_value})
-      {:ok, %TournamentChatTopicLog{}}
-
-      iex> update_tournament_chat_topic_log(tournament_chat_topic_log, %{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
-  """
-  def update_tournament_chat_topic_log(%TournamentChatTopicLog{} = tournament_chat_topic_log, attrs) do
-    tournament_chat_topic_log
-    |> TournamentChatTopicLog.changeset(attrs)
-    |> Repo.update()
-  end
-
-  @doc """
-  Deletes a tournament_chat_topic_log.
-
-  ## Examples
-
-      iex> delete_tournament_chat_topic_log(tournament_chat_topic_log)
-      {:ok, %TournamentChatTopicLog{}}
-
-      iex> delete_tournament_chat_topic_log(tournament_chat_topic_log)
-      {:error, %Ecto.Changeset{}}
-
-  """
-  def delete_tournament_chat_topic_log(%TournamentChatTopicLog{} = tournament_chat_topic_log) do
-    Repo.delete(tournament_chat_topic_log)
-  end
-
-  @doc """
-  Returns an `%Ecto.Changeset{}` for tracking tournament_chat_topic_log changes.
-
-  ## Examples
-
-      iex> change_tournament_chat_topic_log(tournament_chat_topic_log)
-      %Ecto.Changeset{data: %TournamentChatTopicLog{}}
-
-  """
-  def change_tournament_chat_topic_log(%TournamentChatTopicLog{} = tournament_chat_topic_log, attrs \\ %{}) do
-    TournamentChatTopicLog.changeset(tournament_chat_topic_log, attrs)
-  end
-
   def promote_rank(attrs \\ %{}) do
     attrs
     |> user_exist_check()
@@ -1175,11 +1027,18 @@ defmodule Milk.Tournaments do
     {:error, error}
   end
 
+  @doc """
+  Initialize rank of a user.
+  """
   def initialize_rank(match_list, number_of_entrant, tournament_id, count \\ 1)
   def initialize_rank(match_list, number_of_entrant, tournament_id, count) when is_integer(match_list) do
     final = if number_of_entrant < count, do: number_of_entrant, else: count
-    get_entrant_by_user_id_and_tournament_id(match_list, tournament_id)
-    |> update_entrant(%{rank: final})
+
+    {:ok, entrant} =
+      get_entrant_by_user_id_and_tournament_id(match_list, tournament_id)
+      |> update_entrant(%{rank: final})
+
+    entrant
   end
   def initialize_rank(match_list, number_of_entrant, tournament_id, count) do
     Enum.map(match_list, fn x -> initialize_rank(x, number_of_entrant, tournament_id, count *2) end)
