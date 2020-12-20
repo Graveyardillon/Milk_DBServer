@@ -6,7 +6,10 @@ defmodule Milk.Log do
   import Ecto.Query, warn: false
   alias Milk.Repo
 
-  alias Milk.Log.ChatRoomLog
+  alias Milk.Log.{
+    ChatRoomLog,
+    TournamentChatTopicLog
+  }
 
   @doc """
   Returns the list of chat_room_log.
@@ -700,5 +703,99 @@ defmodule Milk.Log do
   """
   def change_notification_log(%NotificationLog{} = notification_log, attrs \\ %{}) do
     NotificationLog.changeset(notification_log, attrs)
+  end
+
+  @doc """
+  Returns the list of tournament_chat_topic_log.
+
+  ## Examples
+
+      iex> list_tournament_chat_topic_log()
+      [%TournamentChatTopicLog{}, ...]
+
+  """
+  def list_tournament_chat_topic_log do
+    Repo.all(TournamentChatTopicLog)
+  end
+
+  @doc """
+  Gets a single tournament_chat_topic_log.
+
+  Raises `Ecto.NoResultsError` if the Tournament chat topic log does not exist.
+
+  ## Examples
+
+      iex> get_tournament_chat_topic_log!(123)
+      %TournamentChatTopicLog{}
+
+      iex> get_tournament_chat_topic_log!(456)
+      ** (Ecto.NoResultsError)
+
+  """
+  def get_tournament_chat_topic_log!(id), do: Repo.get!(TournamentChatTopicLog, id)
+
+  @doc """
+  Creates a tournament_chat_topic_log.
+
+  ## Examples
+
+      iex> create_tournament_chat_topic_log(%{field: value})
+      {:ok, %TournamentChatTopicLog{}}
+
+      iex> create_tournament_chat_topic_log(%{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def create_tournament_chat_topic_log(attrs \\ %{}) do
+    %TournamentChatTopicLog{}
+    |> TournamentChatTopicLog.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  @doc """
+  Updates a tournament_chat_topic_log.
+
+  ## Examples
+
+      iex> update_tournament_chat_topic_log(tournament_chat_topic_log, %{field: new_value})
+      {:ok, %TournamentChatTopicLog{}}
+
+      iex> update_tournament_chat_topic_log(tournament_chat_topic_log, %{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def update_tournament_chat_topic_log(%TournamentChatTopicLog{} = tournament_chat_topic_log, attrs) do
+    tournament_chat_topic_log
+    |> TournamentChatTopicLog.changeset(attrs)
+    |> Repo.update()
+  end
+
+  @doc """
+  Deletes a tournament_chat_topic_log.
+
+  ## Examples
+
+      iex> delete_tournament_chat_topic_log(tournament_chat_topic_log)
+      {:ok, %TournamentChatTopicLog{}}
+
+      iex> delete_tournament_chat_topic_log(tournament_chat_topic_log)
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def delete_tournament_chat_topic_log(%TournamentChatTopicLog{} = tournament_chat_topic_log) do
+    Repo.delete(tournament_chat_topic_log)
+  end
+
+  @doc """
+  Returns an `%Ecto.Changeset{}` for tracking tournament_chat_topic_log changes.
+
+  ## Examples
+
+      iex> change_tournament_chat_topic_log(tournament_chat_topic_log)
+      %Ecto.Changeset{data: %TournamentChatTopicLog{}}
+
+  """
+  def change_tournament_chat_topic_log(%TournamentChatTopicLog{} = tournament_chat_topic_log, attrs \\ %{}) do
+    TournamentChatTopicLog.changeset(tournament_chat_topic_log, attrs)
   end
 end

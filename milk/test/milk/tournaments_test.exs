@@ -490,93 +490,6 @@ defmodule Milk.TournamentsTest do
     end
   end
 
-  describe "promote_rank" do
-    setup [:create_entrant]
-
-    test "promote_rank/1 returns promoted rank with valid attrs", %{entrant: entrant} do
-      attrs =
-        %{
-          "tournament_id" => entrant.tournament_id,
-          "user_id" => entrant.user_id
-        }
-
-      # numは生成する参加者の数で後に一人追加するので8 - 1 = 7
-      num = 7
-      # 参加者作成，マッチリストを生成してEtsに登録
-      {_, match_list} =
-        create_entrants(num, entrant.tournament_id)
-        |> Enum.map(fn x -> %{x | rank: num + 1} end)
-        |> Kernel.++([%{entrant | rank: num + 1}])
-        |> Tournaments.generate_matchlist()
-
-      Ets.insert_match_list(match_list, entrant.tournament_id)
-      # assertフェーズ
-      assert {:ok, promoted} = Tournaments.promote_rank(attrs)
-      # assert promoted.user_id  == entrant.user_id
-      # assert promoted.rank == 4
-    end
-
-    test "promote_rank/1 returns error with invalid attrs(tournament_id)", %{entrant: entrant} do
-      # promote_rankの引数となるattrs
-      attrs =
-        %{
-          "tournament_id" => -1,
-          "user_id" => entrant.user_id
-        }
-
-      # numは生成する参加者の数で後に一人追加するので8 - 1 = 7
-      num = 7
-      # 参加者作成，マッチリストを生成してEtsに登録
-      create_entrants(num, entrant.tournament_id)
-      |> Enum.map(fn x -> %{x | rank: num + 1} end)
-      |> Kernel.++([%{entrant | rank: num + 1}])
-      |> Tournaments.generate_matchlist()
-      |> Ets.insert_match_list(entrant.tournament_id)
-      # assertフェーズ
-      assert {:error, "undefined tournament"} = Tournaments.promote_rank(attrs)
-    end
-
-    test "promote_rank/1 returns error with invalid attrs(user_id)", %{entrant: entrant} do
-      # promote_rankの引数となるattrs
-      attrs =
-        %{
-          "tournament_id" => entrant.tournament_id,
-          "user_id" => -1
-        }
-
-      # numは生成する参加者の数で後に一人追加するので8 - 1 = 7
-      num = 7
-      # 参加者作成，マッチリストを生成してEtsに登録
-      create_entrants(num, entrant.tournament_id)
-      |> Enum.map(fn x -> %{x | rank: num + 1} end)
-      |> Kernel.++([%{entrant | rank: num + 1}])
-      |> Tournaments.generate_matchlist()
-      |> Ets.insert_match_list(entrant.tournament_id)
-      # assertフェーズ
-      assert {:error, "undefined user"} = Tournaments.promote_rank(attrs)
-    end
-
-    test "promote_rank/1 returns error with invalid attrs(all)", %{entrant: entrant} do
-      # promote_rankの引数となるattrs
-      attrs =
-        %{
-          "tournament_id" => -1,
-          "user_id" => -1
-        }
-
-      # numは生成する参加者の数で後に一人追加するので8 - 1 = 7
-      num = 7
-      # 参加者作成，マッチリストを生成してEtsに登録
-      create_entrants(num, entrant.tournament_id)
-      |> Enum.map(fn x -> %{x | rank: num + 1} end)
-      |> Kernel.++([%{entrant | rank: num + 1}])
-      |> Tournaments.generate_matchlist()
-      |> Ets.insert_match_list(entrant.tournament_id)
-      # assertフェーズ
-      assert {:error, "undefined user"} = Tournaments.promote_rank(attrs)
-    end
-  end
-
   defp create_tournament_for_flow(_) do
     tournament = fixture(:tournament, :is_not_started)
     %{tournament: tournament}
@@ -693,6 +606,106 @@ defmodule Milk.TournamentsTest do
       assert {:ok, deleted_topic}  = Tournaments.delete_tournament_chat_topic(topic)
       assert deleted_topic.id == topic.id
       assert %Ecto.NoResultsError{} = catch_error(Tournaments.get_tournament_chat_topic!(deleted_topic.id))
+    end
+  end
+
+  describe "initialize rank" do
+    test "initialize_rank works fine with valid data" do
+      tournament = fixture(:tournament)
+      entrants = create_entrants(6, tournament.id)
+      id_list = Enum.map(entrants, fn entrant -> entrant.user_id end)
+      {:ok, match_list} = Tournaments.generate_matchlist(id_list)
+
+      ranked_entrants = Tournaments.initialize_rank(match_list, 6, tournament.id)
+      assert is_list(ranked_entrants)
+      refute length(ranked_entrants) == 0
+    end
+  end
+
+  describe "promote rank" do
+    setup [:create_entrant]
+
+    test "promote_rank/1 returns promoted rank with valid attrs", %{entrant: entrant} do
+      attrs =
+        %{
+          "tournament_id" => entrant.tournament_id,
+          "user_id" => entrant.user_id
+        }
+
+      # numは生成する参加者の数で後に一人追加するので8 - 1 = 7
+      num = 7
+      # 参加者作成，マッチリストを生成してEtsに登録
+      {_, match_list} =
+        create_entrants(num, entrant.tournament_id)
+        |> Enum.map(fn x -> %{x | rank: num + 1} end)
+        |> Kernel.++([%{entrant | rank: num + 1}])
+        |> Tournaments.generate_matchlist()
+
+      Ets.insert_match_list(match_list, entrant.tournament_id)
+      # assertフェーズ
+      assert {:ok, promoted} = Tournaments.promote_rank(attrs)
+      # assert promoted.user_id  == entrant.user_id
+      # assert promoted.rank == 4
+    end
+
+    test "promote_rank/1 returns error with invalid attrs(tournament_id)", %{entrant: entrant} do
+      # promote_rankの引数となるattrs
+      attrs =
+        %{
+          "tournament_id" => -1,
+          "user_id" => entrant.user_id
+        }
+
+      # numは生成する参加者の数で後に一人追加するので8 - 1 = 7
+      num = 7
+      # 参加者作成，マッチリストを生成してEtsに登録
+      create_entrants(num, entrant.tournament_id)
+      |> Enum.map(fn x -> %{x | rank: num + 1} end)
+      |> Kernel.++([%{entrant | rank: num + 1}])
+      |> Tournaments.generate_matchlist()
+      |> Ets.insert_match_list(entrant.tournament_id)
+      # assertフェーズ
+      assert {:error, "undefined tournament"} = Tournaments.promote_rank(attrs)
+    end
+
+    test "promote_rank/1 returns error with invalid attrs(user_id)", %{entrant: entrant} do
+      # promote_rankの引数となるattrs
+      attrs =
+        %{
+          "tournament_id" => entrant.tournament_id,
+          "user_id" => -1
+        }
+
+      # numは生成する参加者の数で後に一人追加するので8 - 1 = 7
+      num = 7
+      # 参加者作成，マッチリストを生成してEtsに登録
+      create_entrants(num, entrant.tournament_id)
+      |> Enum.map(fn x -> %{x | rank: num + 1} end)
+      |> Kernel.++([%{entrant | rank: num + 1}])
+      |> Tournaments.generate_matchlist()
+      |> Ets.insert_match_list(entrant.tournament_id)
+      # assertフェーズ
+      assert {:error, "undefined user"} = Tournaments.promote_rank(attrs)
+    end
+
+    test "promote_rank/1 returns error with invalid attrs(all)", %{entrant: entrant} do
+      # promote_rankの引数となるattrs
+      attrs =
+        %{
+          "tournament_id" => -1,
+          "user_id" => -1
+        }
+
+      # numは生成する参加者の数で後に一人追加するので8 - 1 = 7
+      num = 7
+      # 参加者作成，マッチリストを生成してEtsに登録
+      create_entrants(num, entrant.tournament_id)
+      |> Enum.map(fn x -> %{x | rank: num + 1} end)
+      |> Kernel.++([%{entrant | rank: num + 1}])
+      |> Tournaments.generate_matchlist()
+      |> Ets.insert_match_list(entrant.tournament_id)
+      # assertフェーズ
+      assert {:error, "undefined user"} = Tournaments.promote_rank(attrs)
     end
   end
 end
