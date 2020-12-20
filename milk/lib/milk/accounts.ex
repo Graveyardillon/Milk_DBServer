@@ -265,8 +265,7 @@ defmodule Milk.Accounts do
           user
           |> User.changeset(%{logout_fl: false})
           |> Repo.update()
-        {:ok, token, _} =
-          Guardian.encode_and_sign(userinfo, %{}, token_type: "refresh", ttl: {4, :weeks})
+        {:ok, token, _} = Guardian.encode_and_sign(userinfo, %{}, token_type: "refresh", ttl: {4, :weeks})
         %{user: userinfo, token: token}
       _ -> nil
     end
@@ -276,7 +275,7 @@ defmodule Milk.Accounts do
     where(query, [u,a], a.email == ^user["email_or_username"])
   end
   defp where_mode(query, :username, user) do
-    where(query, [u,a], a.name == ^user["email_or_username"])
+    where(query, [u,a], u.name == ^user["email_or_username"])
   end
   defp get_valid_user(user, password, mode) do
     User

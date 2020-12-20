@@ -7,17 +7,37 @@ defmodule Milk.AccountsTest do
     Relations,
     Chat
   }
-  alias Milk.Accounts.User
+  alias Milk.Accounts.{
+    User,
+    Profile,
+    Relation
+  }
   alias Milk.Chat.Chats
-  alias Milk.Accounts.Profile
 
   def user_fixture(attrs \\ %{}) do
+    user_valid_attrs = %{"icon_path" => "some icon_path", "language" => "some language", "name" => "some name", "notification_number" => 42, "point" => 42, "email" => "some@email.com", "logout_fl" => true, "password" => "S1ome password"}
+
     {:ok, user} =
       attrs
-      |> Enum.into(@user_valid_attrs)
+      |> Enum.into(user_valid_attrs)
       |> Accounts.create_user()
 
     Accounts.get_user(user.id)
+  end
+
+  def relation_fixture(_attrs \\ %{}) do
+    valid_attrs = %{"id" => 1}
+
+    {:ok, user1} = Accounts.create_user(%{"name" => "name", "email" => "e@mail.com", "password" => "Password123"})
+    {:ok, user2} = Accounts.create_user(%{"name" => "name2", "email" => "ew@mail.com", "password" => "Password123"})
+    {:ok, relation} =
+
+      valid_attrs
+      |> Map.put("followee_id", user1.id)
+      |> Map.put("follower_id", user2.id)
+      |> Relations.create_relation()
+
+    relation
   end
 
   describe "users get" do
@@ -132,29 +152,20 @@ defmodule Milk.AccountsTest do
     end
   end
 
-  describe "relations" do
-    alias Milk.Accounts.Relation
+  describe "get relations" do
+    @valid_attrs %{"id" => 1}
+    @update_attrs %{id: 1, followee_id: 1, follower_id: 3}
+    @invalid_attrs %{id: nil, followee_id: 0999999999999, follower_id: 999999999}
+  end
 
+  describe "create relations" do
     @valid_attrs %{"id" => 1}
     @update_attrs %{id: 1, followee_id: 1, follower_id: 3}
     @invalid_attrs %{id: nil, followee_id: 0999999999999, follower_id: 999999999}
 
-    def relation_fixture(attrs \\ %{}) do
-      {:ok, user1} = Accounts.create_user(%{"name" => "name", "email" => "e@mail.com", "password" => "Password123"})
-      {:ok, user2} = Accounts.create_user(%{"name" => "name", "email" => "ew@mail.com", "password" => "Password123"})
-      {:ok, relation} =
-        attrs
-        |> Enum.into(@valid_attrs)
-        |> Map.put("followee_id", user1.id)
-        |> Map.put("follower_id", user2.id)
-        |> Relations.create_relation()
-
-      relation
-    end
-
     test "create_relation/1 with valid data creates a relation" do
       {:ok, user1} = Accounts.create_user(%{"name" => "name", "email" => "e@mail.com", "password" => "Password123"})
-      {:ok, user2} = Accounts.create_user(%{"name" => "name", "email" => "ew@mail.com", "password" => "Password123"})
+      {:ok, user2} = Accounts.create_user(%{"name" => "name2", "email" => "ew@mail.com", "password" => "Password123"})
       assert {:ok, %Relation{} = relation} =
         @valid_attrs
         |> Map.put("followee_id", user1.id)
@@ -165,6 +176,11 @@ defmodule Milk.AccountsTest do
     test "create_relation/1 with invalid data returns error" do
       assert {:error, _} = Relations.create_relation(@invalid_attrs)
     end
+  end
+
+  describe "update relations" do
+    @update_attrs %{id: 1, followee_id: 1, follower_id: 3}
+    @invalid_attrs %{id: nil, followee_id: 0999999999999, follower_id: 999999999}
 
     test "update_relation/2 with valid data updates the relation" do
       relation = relation_fixture()
@@ -176,25 +192,18 @@ defmodule Milk.AccountsTest do
       assert relation = Relations.update_relation(relation, @invalid_attrs)
       # assert relation == Relations.get_relation!(relation.id)
     end
+  end
 
+  describe "delete relations" do
     test "delete_relation/1 deletes the relation" do
       relation = relation_fixture()
       assert {:ok, %Relation{}} = Relations.delete_relation(relation)
       assert_raise Ecto.NoResultsError, fn -> Relations.get_relation!(relation.id) end
     end
-
-    test "change_relation/1 returns a relation changeset" do
-      relation = relation_fixture()
-      assert %Ecto.Changeset{} = Relations.change_relation(relation)
-    end
   end
 
-  # FIXME: あとでやります
-  # describe "chat" do
-  #   test "get_users_in_touch/1 returns "
-  # end
-  describe "auth" do
-    alias Milk.Accounts.User
+  describe "login" do
+    @user_valid_attrs %{"icon_path" => "some icon_path", "language" => "some language", "name" => "some name", "notification_number" => 42, "point" => 42, "email" => "some@email.com", "logout_fl" => true, "password" => "S1ome password"}
 
     test "login/1 can login user by email" do
       user = user_fixture()
@@ -209,7 +218,7 @@ defmodule Milk.AccountsTest do
       user = user_fixture()
       login_params = %{
           "password" => @user_valid_attrs["password"],
-          "email_or_username" => user.auth.name
+          "email_or_username" => user.name
         }
       assert %{user: %User{}, token: token} = Accounts.login(login_params)
     end
@@ -217,9 +226,9 @@ defmodule Milk.AccountsTest do
     test "login/1 can't login user by invalid username" do
       user_fixture()
       login_params = %{
-          "password" => @user_valid_attrs["password"],
-          "email_or_username" => "invalid"
-        }
+        "password" => @user_valid_attrs["password"],
+        "email_or_username" => "invalid"
+      }
       assert is_nil(Accounts.login(login_params))
     end
 
@@ -235,7 +244,7 @@ defmodule Milk.AccountsTest do
     test "login/1 can't login user by invalid password" do
       user = user_fixture()
       login_params = %{
-          "password" => "@u",
+          "password" => "powd",
           "email_or_username" => user.auth.email
         }
       assert is_nil(Accounts.login(login_params))
