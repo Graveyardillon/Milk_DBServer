@@ -671,4 +671,28 @@ defmodule Milk.TournamentsTest do
       end)
     end
   end
+
+  describe "create tournament chat topic" do
+    test "create_tournament_chat_topic/1 works fine with a valid data" do
+      assert %TournamentChatTopic{} = fixture(:tournament_chat_topic)
+    end
+  end
+
+  describe "update tournament chat topic" do
+    test "update_tournament_chat_topic/1 works fine with a valid data" do
+      topic = fixture(:tournament_chat_topic)
+      attrs = %{"topic_name" => "updated name"}
+      assert {:ok, updated_topic} = Tournaments.update_tournament_chat_topic(topic, attrs)
+      assert updated_topic.topic_name == attrs["topic_name"]
+    end
+  end
+
+  describe "delete tournament chat topic" do
+    test "delete_tournament_chat_topic/1 works fine with a valid data" do
+      topic = fixture(:tournament_chat_topic)
+      assert {:ok, deleted_topic}  = Tournaments.delete_tournament_chat_topic(topic)
+      assert deleted_topic.id == topic.id
+      assert %Ecto.NoResultsError{} = catch_error(Tournaments.get_tournament_chat_topic!(deleted_topic.id))
+    end
+  end
 end
