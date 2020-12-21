@@ -41,6 +41,7 @@ defmodule Milk.Accounts do
   @doc """
   Checks name duplication.
   """
+  @spec check_duplication?(binary) :: boolean
   def check_duplication?(name) do
     Repo.exists?(from u in User, where: u.name == ^name)
   end
@@ -48,6 +49,7 @@ defmodule Milk.Accounts do
   @doc """
   Get all users in touch.
   """
+  @spec get_users_in_touch(integer) :: list(Accounts.t)
   def get_users_in_touch(id) do
     ChatMember
     |> where([cm], cm.user_id == ^id)
@@ -88,24 +90,10 @@ defmodule Milk.Accounts do
     end)
   end
 
-  defp generate_id_for_show() do
-    Enum.random(0..999999)
-    |> generate_id_for_show()
-  end
-  defp generate_id_for_show(tmp_id) when tmp_id > 999999 do
-    generate_id_for_show(0)
-  end
-  defp generate_id_for_show(tmp_id) do
-    unless Repo.exists?(from u in User, where: u.id_for_show == ^tmp_id) do
-      tmp_id
-    else
-      generate_id_for_show(tmp_id + 1)
-    end
-  end
-
   @doc """
   Creates a user.
   """
+  @spec create_user(map) :: tuple()
   def create_user(without_id_attrs \\ %{}) do
     attrs = Map.put(without_id_attrs, "id_for_show", generate_id_for_show())
 
@@ -122,6 +110,21 @@ defmodule Milk.Accounts do
       {:ok, user} -> {:ok, Map.put(user.user, :auth, %Auth{email: user.auth.email})}
       {:error, _, error, _data} -> {:error, error.errors}
       _ -> {:error, nil}
+    end
+  end
+
+  defp generate_id_for_show() do
+    Enum.random(0..999999)
+    |> generate_id_for_show()
+  end
+  defp generate_id_for_show(tmp_id) when tmp_id > 999999 do
+    generate_id_for_show(0)
+  end
+  defp generate_id_for_show(tmp_id) do
+    unless Repo.exists?(from u in User, where: u.id_for_show == ^tmp_id) do
+      tmp_id
+    else
+      generate_id_for_show(tmp_id + 1)
     end
   end
 

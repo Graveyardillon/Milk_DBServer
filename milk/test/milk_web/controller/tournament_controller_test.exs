@@ -17,7 +17,8 @@ defmodule MilkWeb.TournamentControllerTest do
     "name" => "some name",
     "type" => 42,
     "join" => "true",
-    "url" => "some url"
+    "url" => "some url",
+    "platform" => 1
   }
   @invalid_attrs %{"capacity" => nil, "deadline" => nil, "description" => nil, "event_date" => nil, "game_id" => nil, "master_id" => nil, "name" => nil, "type" => nil, "url" => nil}
 

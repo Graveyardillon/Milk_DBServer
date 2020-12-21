@@ -95,7 +95,7 @@ defmodule MilkWeb.TournamentController do
     else
       case Tournaments.create_tournament(tournament_params, thumbnail_path) do
         {:ok, %Tournament{} = tournament} ->
-
+          IO.inspect(tournament)
           if tournament_params["join"] == "true" do
             params = %{"user_id" => tournament.master_id, "tournament_id" => tournament.id}
             Tournaments.create_entrant(params)

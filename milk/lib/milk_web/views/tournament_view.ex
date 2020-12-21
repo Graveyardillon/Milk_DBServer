@@ -1,6 +1,6 @@
 defmodule MilkWeb.TournamentView do
   use MilkWeb, :view
-  
+
   alias MilkWeb.TournamentView
   alias MilkWeb.UserView
   alias Milk.{Accounts, Tournaments}
@@ -67,7 +67,7 @@ defmodule MilkWeb.TournamentView do
         create_time: tournament.create_time,
         update_time: tournament.update_time,
         is_started: tournament.is_started,
-        entrants: Enum.map(entrants, fn user -> 
+        entrants: Enum.map(entrants, fn user ->
           %{
             id: user.id,
             name: user.name,
@@ -113,7 +113,7 @@ defmodule MilkWeb.TournamentView do
 
   def render("home.json", %{tournaments_info: tournaments_info}) do
     %{
-      data: Enum.map(tournaments_info, fn info -> 
+      data: Enum.map(tournaments_info, fn info ->
         %{
           id: info.tournament.id,
           name: info.tournament.name,
@@ -133,7 +133,7 @@ defmodule MilkWeb.TournamentView do
           create_time: info.tournament.create_time,
           update_time: info.tournament.update_time,
           is_started: info.tournament.is_started,
-          entrants: Enum.map(info.entrants, fn user -> 
+          entrants: Enum.map(info.entrants, fn user ->
             %{
               id: user.id,
               name: user.name,
@@ -163,7 +163,7 @@ defmodule MilkWeb.TournamentView do
         start_recruiting: tournament.start_recruiting,
         deadline: tournament.deadline,
         type: tournament.type,
-        platform: tournament.pratform_id,
+        platform: tournament.platform_id,
         capacity: tournament.capacity,
         password: tournament.password,
         description: tournament.description,
@@ -171,7 +171,7 @@ defmodule MilkWeb.TournamentView do
         url: tournament.url,
         create_time: tournament.create_time,
         update_time: tournament.update_time,
-        followers: Enum.map(tournament.followers, fn follower -> 
+        followers: Enum.map(tournament.followers, fn follower ->
           %{
             id: follower.id,
             name: follower.name
@@ -203,7 +203,7 @@ defmodule MilkWeb.TournamentView do
   # FIXME: Authは読み込んでないのでemailを返すようにしていない
   def render("masters.json", %{masters: masters}) do
     %{
-      data: Enum.map(masters, fn master -> 
+      data: Enum.map(masters, fn master ->
         %{
           id: master.id,
           name: master.name,

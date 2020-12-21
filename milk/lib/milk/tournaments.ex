@@ -22,6 +22,13 @@ defmodule Milk.Tournaments do
   require Integer
   require Logger
 
+  @typedoc """
+  Tournament changeset structure.
+
+  The types %Tournament{} and Tournaments are equivalent.
+  """
+  @type t :: %Tournament{}
+
   @doc """
   Returns the list of tournament.
 
