@@ -90,7 +90,7 @@ defmodule Milk.AccountsTest do
         "password" => @user_valid_attrs["password"],
         "email_or_username" => user.name
       }
-      assert %{user: %User{}, token: token} = Accounts.login(login_params)
+      assert {:ok, %User{}, token} = Accounts.login(login_params)
       assert {:ok, _} = Accounts.delete_user(user.id, @user_valid_attrs["password"], user.auth.email, token)
       assert !Accounts.get_user(user.id)
     end
@@ -105,7 +105,7 @@ defmodule Milk.AccountsTest do
         "password" => @user_valid_attrs["password"],
         "email_or_username" => user.auth.email
       }
-      assert %{user: %User{}, token: token} = Accounts.login(login_params)
+      assert {:ok, %User{}, _token} = Accounts.login(login_params)
     end
 
     test "login/1 can login user by username" do
@@ -114,7 +114,7 @@ defmodule Milk.AccountsTest do
         "password" => @user_valid_attrs["password"],
         "email_or_username" => user.name
       }
-      assert %{user: %User{}, token: token} = Accounts.login(login_params)
+      assert {:ok, %User{}, _token} = Accounts.login(login_params)
     end
 
     test "login/1 can't login user by invalid username" do
@@ -123,7 +123,7 @@ defmodule Milk.AccountsTest do
         "password" => @user_valid_attrs["password"],
         "email_or_username" => "invalid"
       }
-      assert is_nil(Accounts.login(login_params))
+      assert {:error, nil, nil} ==  Accounts.login(login_params)
     end
 
     test "login/1 can't login user by invalid email" do
@@ -132,7 +132,7 @@ defmodule Milk.AccountsTest do
         "password" => @user_valid_attrs["password"],
         "email_or_username" => "invalid@a.com"
       }
-      assert is_nil(Accounts.login(login_params))
+      assert {:error, nil, nil} == Accounts.login(login_params)
     end
 
     test "login/1 can't login user by invalid password" do
@@ -141,7 +141,7 @@ defmodule Milk.AccountsTest do
         "password" => "powd",
         "email_or_username" => user.auth.email
       }
-      assert is_nil(Accounts.login(login_params))
+      assert {:error, nil, nil} == Accounts.login(login_params)
     end
   end
 
@@ -154,7 +154,7 @@ defmodule Milk.AccountsTest do
         "password" => @user_valid_attrs["password"],
         "email_or_username" => user.auth.email
       }
-      %{user: %User{} = user, token: _token} = Accounts.login(login_params)
+      {:ok, %User{}, _token} = Accounts.login(login_params)
       assert Accounts.logout(user.id)
     end
   end

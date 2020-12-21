@@ -9,6 +9,7 @@ defmodule Milk.Accounts do
 
   alias Milk.Repo
   alias Ecto.Multi
+  alias Milk.Accounts
   alias Milk.UserManager.Guardian
   alias Milk.Accounts.{User, Auth}
   alias Milk.Chat.{ChatRoom, ChatMember}
@@ -139,6 +140,7 @@ defmodule Milk.Accounts do
       iex> update_user(user, %{field: bad_value})
       {:error, error}
   """
+  @spec update_user(Accounts.t, map) :: tuple()
   def update_user(%User{} = user, attrs) do
     Multi.new()
     |> Multi.update(:user, fn _ ->
@@ -158,6 +160,7 @@ defmodule Milk.Accounts do
   @doc """
   Updates an icon.
   """
+  @spec update_icon_path(Accounts.t, binary) :: tuple()
   def update_icon_path(user, icon_path) do
     old_icon_path = Repo.one(from u in User, where: u.id == ^user.id, select: u.icon_path)
     unless is_nil(old_icon_path) do
@@ -179,6 +182,7 @@ defmodule Milk.Accounts do
       {:error, %Ecto.Changeset{}}
 
   """
+  @spec delete_user(integer, binary, binary, binary) :: tuple()
   def delete_user(id, password, email, token) do
     user = get_authorized_user(id, password, email, token)
 
@@ -238,6 +242,7 @@ defmodule Milk.Accounts do
   @doc """
   Login function.
   """
+  @spec login(nil | Keyword.t() | map()) :: {:ok, _, binary()} | {:error, nil, nil}
   def login(user) do
     password = user["password"]
     # usernameかemailか
@@ -253,8 +258,8 @@ defmodule Milk.Accounts do
           |> User.changeset(%{logout_fl: false})
           |> Repo.update()
         {:ok, token, _} = Guardian.encode_and_sign(userinfo, %{}, token_type: "refresh", ttl: {4, :weeks})
-        %{user: userinfo, token: token}
-      _ -> nil
+        {:ok, userinfo, token}
+      _ -> {:error, nil, nil}
     end
   end
 
