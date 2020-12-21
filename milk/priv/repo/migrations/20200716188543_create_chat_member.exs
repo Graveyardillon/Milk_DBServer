@@ -3,7 +3,7 @@ defmodule Milk.Repo.Migrations.CreateChatMember do
 
   def change do
     create table(:chat_member) do
-      add :authority, :integer
+      add :authority, :integer, default: 0
       add :chat_room_id, references(:chat_room, on_delete: :delete_all)
       add :user_id, references(:users, on_delete: :delete_all)
 

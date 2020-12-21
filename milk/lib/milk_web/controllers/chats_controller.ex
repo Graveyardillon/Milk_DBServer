@@ -5,32 +5,19 @@ defmodule MilkWeb.ChatsController do
   alias Milk.Chat.Chats
 
   @doc """
-  Get a list of chat.
-  """
-  def index(conn, %{"chat" => params}) do
-    chat = Chat.list_chat(params)
-    if chat do
-      render(conn, "index.json", chat: chat)
-    else
-      render(conn, "error.json", error: nil)
-    end
-  end
-
-  @doc """
   Create a new chat.
   """
   def create(conn, %{"chat" => chats_params}) do
     case Chat.create_chats(chats_params) do
       {:ok, %Chats{} = chats} ->
-        conn
-        |> render("show.json", chats: chats)
+        render(conn, "show.json", chats: chats)
       {:error, error} ->
         render(conn, "error.json", error: error)
       _ ->
         render(conn, "error.json", error: nil)
     end
   end
-  
+
   @doc """
   Get an information of a chat.
   """
@@ -85,11 +72,11 @@ defmodule MilkWeb.ChatsController do
         |> render("show.json", chats: chats)
       {:error, error} ->
         render(conn, "error.json", error: error)
-      _ -> 
+      _ ->
         render(conn, "error.json", error: nil)
     end
   end
-  
+
   def create_dialogue(conn, %{"chat_group" => chats_params}) do
     case Chat.dialogue(chats_params) do
       {:ok, %Chats{} = chats} ->
@@ -102,7 +89,7 @@ defmodule MilkWeb.ChatsController do
         |> render("show.json", chats: chats, members: members)
       {:error, error} ->
         render(conn, "error.json", error: error)
-      _ -> 
+      _ ->
         render(conn, "error.json", error: nil)
     end
   end
