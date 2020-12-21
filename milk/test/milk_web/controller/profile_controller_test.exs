@@ -2,90 +2,65 @@ defmodule MilkWeb.ProfileControllerTest do
   use MilkWeb.ConnCase
 
   alias Milk.Accounts
+  alias Milk.Profiles
   alias Milk.Accounts.Profile
 
   @create_attrs %{
-    content_id: 42,
-    content_type: 42,
-    user_id: 42
+    "name" => "some name",
+    "content_id" => "42",
+    "content_type" => "42",
+    "bio" => "some bio",
+    "gameList" => [],
+    "achievementList" => []
   }
   @update_attrs %{
-    content_id: 43,
-    content_type: 43,
-    user_id: 43
+    "name" => "some name",
+    "content_id" => "42",
+    "content_type" => "42",
+    "bio" => "some bio",
+    "gameList" => [],
+    "achievementList" => []
   }
   @invalid_attrs %{content_id: nil, content_type: nil, user_id: nil}
 
   def fixture(:profile) do
-    {:ok, profile} = Accounts.create_profile(@create_attrs)
+    user = fixture(:user)
+    {:ok, profile} =
+      @create_attrs
+      |> Map.put("user_id", user.id)
+      |> Profiles.create_profile()
     profile
+  end
+
+  def fixture(:user) do
+    attrs = %{
+      "icon_path"  => "some icon_path",
+      "language" => "some language",
+      "name" => "some name",
+      "notification_number" => 42,
+      "point" => 42,
+      "password" => "Password123",
+      "email" => "e@mail.com"
+    }
+    {:ok, user} = Accounts.create_user(attrs)
+    user
   end
 
   setup %{conn: conn} do
     {:ok, conn: put_req_header(conn, "accept", "application/json")}
   end
 
-  describe "index" do
-    test "lists all profiles", %{conn: conn} do
-      conn = get(conn, Routes.profile_path(conn, :index))
-      assert json_response(conn, 200)["data"] == []
-    end
-  end
-
-  describe "create profile" do
-    test "renders profile when data is valid", %{conn: conn} do
-      conn = post(conn, Routes.profile_path(conn, :create), profile: @create_attrs)
-      assert %{"id" => id} = json_response(conn, 201)["data"]
-
-      conn = get(conn, Routes.profile_path(conn, :show, id))
-
-      assert %{
-               "id" => id,
-               "content_id" => 42,
-               "content_type" => 42,
-               "user_id" => 42
-             } = json_response(conn, 200)["data"]
-    end
-
-    test "renders errors when data is invalid", %{conn: conn} do
-      conn = post(conn, Routes.profile_path(conn, :create), profile: @invalid_attrs)
-      assert json_response(conn, 422)["errors"] != %{}
-    end
-  end
-
   describe "update profile" do
     setup [:create_profile]
 
     test "renders profile when data is valid", %{conn: conn, profile: %Profile{id: id} = profile} do
-      conn = put(conn, Routes.profile_path(conn, :update, profile), profile: @update_attrs)
-      assert %{"id" => ^id} = json_response(conn, 200)["data"]
+      attrs = Map.put(@update_attrs, "user_id", profile.user_id)
+      conn = post(conn, Routes.profile_path(conn, :update), profile: attrs)
+      assert json_response(conn, 200)["result"]
 
-      conn = get(conn, Routes.profile_path(conn, :show, id))
+      conn = post(conn, Routes.profile_path(conn, :get_profile), user_id: profile.user_id)
 
-      assert %{
-               "id" => id,
-               "content_id" => 43,
-               "content_type" => 43,
-               "user_id" => 43
-             } = json_response(conn, 200)["data"]
-    end
-
-    test "renders errors when data is invalid", %{conn: conn, profile: profile} do
-      conn = put(conn, Routes.profile_path(conn, :update, profile), profile: @invalid_attrs)
-      assert json_response(conn, 422)["errors"] != %{}
-    end
-  end
-
-  describe "delete profile" do
-    setup [:create_profile]
-
-    test "deletes chosen profile", %{conn: conn, profile: profile} do
-      conn = delete(conn, Routes.profile_path(conn, :delete, profile))
-      assert response(conn, 204)
-
-      assert_error_sent 404, fn ->
-        get(conn, Routes.profile_path(conn, :show, profile))
-      end
+      assert %{"id" => id} = json_response(conn, 200)["data"]
     end
   end
 

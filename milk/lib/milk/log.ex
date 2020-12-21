@@ -551,11 +551,11 @@ defmodule Milk.Log do
   """
   def create_assistant_log(attrs \\ %{}) do
     Enum.all?(attrs, fn attr ->
-      !is_nil(attr.tournament_id) && !is_nil(attr.user_id)
+      !is_nil(attr["tournament_id"]) && !is_nil(attr["user_id"])
     end)
     |> if do
       Enum.filter(attrs, fn x ->
-        !Repo.exists?(from al in AssistantLog, where: al.tournament_id == ^x.tournament_id and al.user_id == ^x.user_id)
+        !Repo.exists?(from al in AssistantLog, where: al.tournament_id == ^x["tournament_id"] and al.user_id == ^x["user_id"])
       end)
       |> Enum.map(fn x ->
         %AssistantLog{}

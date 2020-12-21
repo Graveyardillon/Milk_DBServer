@@ -19,15 +19,16 @@ defmodule MilkWeb.ProfileController do
   end
 
   def update(conn, %{"profile" => profile_params}) do
-
-    user = Map.get(profile_params, "user_id") |> Accounts.get_user()
+    user =
+      Map.get(profile_params, "user_id")
+      |> Accounts.get_user()
 
     if user do
       name = Map.get(profile_params, "name")
       bio = Map.get(profile_params, "bio")
       gameList = Map.get(profile_params, "gameList")
       achievementList = Map.get(profile_params, "achievementList")
-      
+
       Profiles.update_profile(user, name, bio, gameList, achievementList)
       json(conn, %{result: true})
     else
@@ -37,14 +38,14 @@ defmodule MilkWeb.ProfileController do
 
   def update_icon(conn, %{"user_id" => user_id, "image" => image}) do
     user = Accounts.get_user(user_id)
-    if user do 
+    if user do
       uuid = SecureRandom.uuid()
 
       File.cp(image.path, "./static/image/profile_icon/#{uuid}.png")
 
       Accounts.update_icon_path(user, "./static/image/profile_icon/#{uuid}.png")
       json(conn, %{local_path: uuid})
-    else 
+    else
       json(conn, %{error: "user not found"})
     end
   end
@@ -52,13 +53,13 @@ defmodule MilkWeb.ProfileController do
   def get_icon(conn, %{"path" => path}) do
     if path != "" do
       case File.read(path) do
-        {:ok, file} -> 
+        {:ok, file} ->
           b64 = Base.encode64(file)
           json(conn, %{b64: b64})
-        {:error, _} -> 
+        {:error, _} ->
           json(conn, %{error: "image not found"})
       end
-    else 
+    else
       json(conn, %{error: "path nil"})
     end
   end

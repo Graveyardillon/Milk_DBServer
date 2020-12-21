@@ -12,14 +12,21 @@ defmodule MilkWeb.AssistantLogController do
   end
 
   def create(conn, %{"data" => assistant_log_params}) do
-
-    with {:ok, %AssistantLog{} = assistant_log} <- Log.create_assistant_log(assistant_log_params) do
-      # |> put_status(:created)
-      # |> put_resp_header("location", Routes.assistant_log_path(conn, :show, assistant_log))
-      json(conn, assistant_log)
-      #render(conn, "show.json", assistant_log: assistant_log)
+    with [ok: %AssistantLog{} = assistant_log] <- Log.create_assistant_log(assistant_log_params) do
+      json(conn, %{result: true})
+    else
+      _ -> json(conn, %{result: false})
     end
   end
+
+  # def create(conn, %{"data" => assistant_log_params}) do
+  #   with {:ok, %AssistantLog{} = assistant_log} <- Log.create_assistant_log(assistant_log_params) do
+  #     # |> put_status(:created)
+  #     # |> put_resp_header("location", Routes.assistant_log_path(conn, :show, assistant_log))
+  #     json(conn, assistant_log)
+  #     #render(conn, "show.json", assistant_log: assistant_log)
+  #   end
+  # end
 
   def show(conn, %{"id" => id}) do
     assistant_log = Log.get_assistant_log!(id)
@@ -31,6 +38,8 @@ defmodule MilkWeb.AssistantLogController do
 
     with {:ok, %AssistantLog{} = assistant_log} <- Log.update_assistant_log(assistant_log, assistant_log_params) do
       render(conn, "show.json", assistant_log: assistant_log)
+    else
+      _ -> json(conn, %{result: false})
     end
   end
 

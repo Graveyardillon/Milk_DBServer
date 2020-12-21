@@ -265,65 +265,6 @@ defmodule Milk.LogTest do
     end
   end
 
-  describe "assistant_log" do
-    alias Milk.Log.AssistantLog
-
-    @valid_attrs %{tournament_id: 42, user_id: 42, create_time: ~U[2020-12-20 16:29:01.100311Z], update_time: ~U[2020-12-20 16:29:01.100311Z]}
-    @update_attrs %{tournament_id: 43, user_id: 43}
-    @invalid_attrs %{tournament_id: nil, user_id: nil}
-
-    def assistant_log_fixture(attrs \\ %{}) do
-      [ok: assistant_log] =
-        attrs
-        |> Enum.into(@valid_attrs)
-        |> List.wrap()
-        |> Log.create_assistant_log()
-
-      assistant_log
-    end
-
-    test "list_assistant_log/0 returns all assistant_log" do
-      assistant_log_fixture()
-      assistant_logs = Log.list_assistant_log()
-      assert is_list(assistant_logs)
-      refute length(assistant_logs) == 0
-    end
-
-    test "get_assistant_log!/1 returns the assistant_log with given id" do
-      assistant_log = assistant_log_fixture()
-      assert Log.get_assistant_log!(assistant_log.id).id == assistant_log.id
-    end
-
-    test "create_assistant_log/1 with valid data creates a assistant_log" do
-      assert [ok: assistant_log] = Log.create_assistant_log([@valid_attrs])
-      assert assistant_log.tournament_id == 42
-      assert assistant_log.user_id == 42
-    end
-
-    test "create_assistant_log/1 with invalid data returns error changeset" do
-      assert [error: nil] = Log.create_assistant_log([@invalid_attrs])
-    end
-
-    test "update_assistant_log/2 with valid data updates the assistant_log" do
-      assistant_log = assistant_log_fixture()
-      assert {:ok, %AssistantLog{} = assistant_log} = Log.update_assistant_log(assistant_log, @update_attrs)
-      assert assistant_log.tournament_id == 43
-      assert assistant_log.user_id == 43
-    end
-
-    test "update_assistant_log/2 with invalid data returns error changeset" do
-      assistant_log = assistant_log_fixture()
-      assert {:error, %Ecto.Changeset{}} = Log.update_assistant_log(assistant_log, @invalid_attrs)
-      assert assistant_log.id == Log.get_assistant_log!(assistant_log.id).id
-    end
-
-    test "delete_assistant_log/1 deletes the assistant_log" do
-      assistant_log = assistant_log_fixture()
-      assert {:ok, %AssistantLog{}} = Log.delete_assistant_log(assistant_log)
-      assert_raise Ecto.NoResultsError, fn -> Log.get_assistant_log!(assistant_log.id) end
-    end
-  end
-
   describe "tournament_log" do
     alias Milk.Log.TournamentLog
 
