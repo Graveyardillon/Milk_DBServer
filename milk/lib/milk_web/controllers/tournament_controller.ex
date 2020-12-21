@@ -94,8 +94,7 @@ defmodule MilkWeb.TournamentController do
       render(conn, "error.json", error: "join parameter is nil")
     else
       case Tournaments.create_tournament(tournament_params, thumbnail_path) do
-        {:ok, %Tournament{} = tournament} ->
-          IO.inspect(tournament)
+        {:ok, %Tournament{} = tournament} ->å
           if tournament_params["join"] == "true" do
             params = %{"user_id" => tournament.master_id, "tournament_id" => tournament.id}
             Tournaments.create_entrant(params)
