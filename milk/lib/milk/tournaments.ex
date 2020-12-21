@@ -593,7 +593,7 @@ defmodule Milk.Tournaments do
   Get an opponent of tournament match.
   """
   def get_opponent(match, user_id) do
-    if Enum.member?(match, user_id) do
+    if Enum.member?(match, user_id) and length(match) == 2 do
       match
       |> Enum.filter(&(&1 != user_id))
       |> hd()
@@ -711,7 +711,8 @@ defmodule Milk.Tournaments do
       |> priv_generate_matchlist()
       |> case do
         list when is_list(list) -> {:ok, list}
-        tuple -> tuple
+        tuple when is_tuple(tuple) -> tuple
+        scala -> {:ok, [scala]}
       end
     end
   end
