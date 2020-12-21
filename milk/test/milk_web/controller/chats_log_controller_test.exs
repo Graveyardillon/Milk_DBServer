@@ -5,18 +5,23 @@ defmodule MilkWeb.ChatsLogControllerTest do
   alias Milk.Log.ChatsLog
 
   @create_attrs %{
-    chat_room_id: 42,
-    index: 42,
-    user_id: 42,
-    word: "some word"
+    "chat_room_id" => 42,
+    "index" => 42,
+    "user_id" => 42,
+    "word" => "some word"
   }
   @update_attrs %{
-    chat_room_id: 43,
-    index: 43,
-    user_id: 43,
-    word: "some updated word"
+    "chat_room_id" => 43,
+    "index" => 43,
+    "user_id" => 43,
+    "word" => "some updated word"
   }
-  @invalid_attrs %{chat_room_id: nil, index: nil, user_id: nil, word: nil}
+  @invalid_attrs %{
+    "chat_room_id" => nil,
+    "index" => nil,
+    "user_id" => nil,
+    "word" => nil
+  }
 
   def fixture(:chats_log) do
     {:ok, chats_log} = Log.create_chats_log(@create_attrs)
@@ -36,22 +41,22 @@ defmodule MilkWeb.ChatsLogControllerTest do
 
   describe "create chats_log" do
     test "renders chats_log when data is valid", %{conn: conn} do
-      conn = post(conn, Routes.chats_log_path(conn, :create), chats_log: @create_attrs)
-      assert %{"id" => id} = json_response(conn, 201)["data"]
+      conn = post(conn, Routes.chats_log_path(conn, :create), @create_attrs)
+      assert %{"id" => id} = json_response(conn, 200)["data"]
 
       conn = get(conn, Routes.chats_log_path(conn, :show, id))
 
       assert %{
-               "id" => id,
-               "chat_room_id" => 42,
-               "index" => 42,
-               "user_id" => 42,
-               "word" => "some word"
-             } = json_response(conn, 200)["data"]
+        "id" => id,
+        "chat_room_id" => 42,
+        "index" => 42,
+        "user_id" => 42,
+        "word" => "some word"
+      } = json_response(conn, 200)["data"]
     end
 
     test "renders errors when data is invalid", %{conn: conn} do
-      conn = post(conn, Routes.chats_log_path(conn, :create), chats_log: @invalid_attrs)
+      conn = post(conn, Routes.chats_log_path(conn, :create), @invalid_attrs)
       assert json_response(conn, 422)["errors"] != %{}
     end
   end
