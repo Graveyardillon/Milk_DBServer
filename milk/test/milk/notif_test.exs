@@ -21,11 +21,6 @@ defmodule Milk.NotifTest do
 
       notification
     end
-    #FIXME: 時間の型とアソシエーション
-    # test "get_notification!/1 returns the notification with given id" do
-    #   notification = notification_fixture()
-    #   assert Notif.get_notification!(notification.id) == notification
-    # end
 
     test "create_notification/1 with valid data creates a notification" do
       {:ok, user} = Accounts.create_user(%{"name" => "name", "email" => "e@mail.com", "password" => "Password123"})

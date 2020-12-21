@@ -46,20 +46,19 @@ defmodule MilkWeb.Router do
     post "/relation/follow", RelationController, :create
     post "/relation/unfollow", RelationController, :delete
 
-    resources "/chat", ChatsController, except: [:new, :edit, :index, :show, :delete]
+    resources "/chat", ChatsController, except: [:new, :edit, :index, :delete]
+    delete "/chat", ChatsController, :delete
     post "/chat/create_dialogue", ChatsController, :create_dialogue
 
-    resources "/chat_room", ChatRoomController, except: [:new, :edit, :index, :show]
+    resources "/chat_room", ChatRoomController, except: [:new, :edit, :index]
     get  "/chat_room/private_rooms", ChatRoomController, :private_rooms
     get  "/chat_room/private_room", ChatRoomController, :private_room
 
-    resources "/chat_room_log", ChatRoomLogController, except: [:new, :edit, :index, :show]
-    resources "/chat_log", ChatsLogController, except: [:new, :edit, :index, :show]
-    resources "/chat_member_log", ChatMemberLogController, except: [:new, :edit, :index, :show]
-    resources "/assistant_log", AssistantLogController, except: [:new, :edit, :index, :show]
+    resources "/chat_room_log", ChatRoomLogController, except: [:new, :edit]
+    resources "/chat_log", ChatsLogController, except: [:new, :edit]
+    resources "/chat_member_log", ChatMemberLogController, except: [:new, :edit]
+    resources "/assistant_log", AssistantLogController, except: [:new, :edit]
     resources "/entrant_log", EntrantLogController
-
-    resources "/chat_member", ChatMemberController, except: [:new, :edit, :index, :show, :delete]
 
     resources "/tournament", TournamentController, except: [:new, :edit, :index, :show, :delete]
     get  "/tournament/users_for_add_assistant", TournamentController, :get_users_for_add_assistant
@@ -76,6 +75,7 @@ defmodule MilkWeb.Router do
     get  "/tournament/masters", TournamentController, :get_game_masters
     get  "/tournament/members", TournamentController, :get_match_members
     get  "/tournament/find_match", TournamentController, :find_match
+    get  "/tournament_log/index", TournamentLogController, :index
     post "/tournament/start", TournamentController, :start
     post "/tournament/deleteloser", TournamentController, :delete_loser
     post "/tournament/get", TournamentController, :show
@@ -121,8 +121,8 @@ defmodule MilkWeb.Router do
     post "/profile", ProfileController, :get_profile
     post "/profile/update", ProfileController, :update
     post "/profile/update_icon", ProfileController, :update_icon
-    get "/profile/get_icon", ProfileController, :get_icon
-    get "/game/list", GameController, :list
+    get  "/profile/get_icon", ProfileController, :get_icon
+    get  "/game/list", GameController, :list
     post "/game/add", GameController, :create
     post "/achievement/list", AchievementController, :show
     post "/achievement", AchievementController, :create
@@ -137,8 +137,6 @@ defmodule MilkWeb.Router do
     get  "/tournament/image", TournamentController, :image
     post "/tournament/get_all", TournamentController, :index
     post "/tournament/debug_match_list", TournamentController, :debug_match_list
-    post "/chat_member/delete", ChatMemberController, :delete
-    post "/chat_member/get_all", ChatMemberController, :index
     post "/assistant/get", AssistantController, :show
     post "/assistant/get_all", AssistantController, :index
   end

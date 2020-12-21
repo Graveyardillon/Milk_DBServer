@@ -5,14 +5,16 @@ defmodule MilkWeb.UserController do
   alias Milk.Accounts.User
   alias Milk.UserManager.Guardian
 
+  @doc """
+  Checks username has been already taken.
+  """
   def check_username_duplication(conn, %{"name" => name}) do
-    case Accounts.check_duplication(name) do
+    case Accounts.check_duplication?(name) do
       true ->
         json(conn, %{isUnique: false})
       false ->
         json(conn, %{isUnique: true})
     end
-
   end
 
   @doc """
@@ -29,7 +31,6 @@ defmodule MilkWeb.UserController do
           [password: {"has invalid format", _ }] -> render(conn, "error.json", error_code: 103)
           _ -> render(conn, "error.json", error: error)
         end
-
       _ ->
         render(conn, "show.json",user: nil)
     end

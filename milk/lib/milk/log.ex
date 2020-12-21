@@ -8,7 +8,8 @@ defmodule Milk.Log do
 
   alias Milk.Log.{
     ChatRoomLog,
-    TournamentChatTopicLog
+    TournamentChatTopicLog,
+    AssistantLog
   }
 
   @doc """
@@ -326,7 +327,7 @@ defmodule Milk.Log do
       ** (Ecto.NoResultsError)
 
   """
-  def get_tournament_log!(id), do: Repo.one(TournamentLog, id)
+  def get_tournament_log!(id), do: Repo.get(TournamentLog, id)
 
   @doc """
   Gets a single tournament.
@@ -507,8 +508,6 @@ defmodule Milk.Log do
     EntrantLog.changeset(entrant_log, attrs)
   end
 
-  alias Milk.Log.AssistantLog
-
   @doc """
   Returns the list of assistant_log.
 
@@ -551,14 +550,21 @@ defmodule Milk.Log do
 
   """
   def create_assistant_log(attrs \\ %{}) do
-  Enum.filter(attrs,fn x ->
-    !Repo.exists?(from al in AssistantLog, where: al.tournament_id == ^x.tournament_id and al.user_id == ^x.user_id)
+    Enum.all?(attrs, fn attr ->
+      !is_nil(attr["tournament_id"]) && !is_nil(attr["user_id"])
     end)
-    |>Enum.each(fn x ->
-      %AssistantLog{}
-      |> AssistantLog.changeset(x)
-      |> Repo.insert()
-    end)
+    |> if do
+      Enum.filter(attrs, fn x ->
+        !Repo.exists?(from al in AssistantLog, where: al.tournament_id == ^x["tournament_id"] and al.user_id == ^x["user_id"])
+      end)
+      |> Enum.map(fn x ->
+        %AssistantLog{}
+        |> AssistantLog.changeset(x)
+        |> Repo.insert()
+      end)
+    else
+      [error: nil]
+    end
   end
 
   @doc """

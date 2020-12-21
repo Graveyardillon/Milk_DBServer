@@ -41,7 +41,7 @@ defmodule Milk.Accounts do
   @doc """
   Checks name duplication.
   """
-  def check_duplication(name) do
+  def check_duplication?(name) do
     Repo.exists?(from u in User, where: u.name == ^name)
   end
 
@@ -57,7 +57,6 @@ defmodule Milk.Accounts do
     |> get_users_by_member_id()
   end
 
-  # FIXME: Chatの方に移した方がいいかもしれない
   defp get_private_rooms(members) do
     Enum.map(members, fn member ->
       ChatRoom
@@ -89,19 +88,18 @@ defmodule Milk.Accounts do
     end)
   end
 
-  # Gets id_for_show.
-  defp generate_random_id() do
+  defp generate_id_for_show() do
     Enum.random(0..999999)
-    |> generate_random_id()
+    |> generate_id_for_show()
   end
-  defp generate_random_id(tmp_id) when tmp_id > 999999 do
-    generate_random_id(0)
+  defp generate_id_for_show(tmp_id) when tmp_id > 999999 do
+    generate_id_for_show(0)
   end
-  defp generate_random_id(tmp_id) do
+  defp generate_id_for_show(tmp_id) do
     unless Repo.exists?(from u in User, where: u.id_for_show == ^tmp_id) do
       tmp_id
     else
-      generate_random_id(tmp_id + 1)
+      generate_id_for_show(tmp_id + 1)
     end
   end
 
@@ -109,7 +107,7 @@ defmodule Milk.Accounts do
   Creates a user.
   """
   def create_user(without_id_attrs \\ %{}) do
-    attrs = Map.put(without_id_attrs, "id_for_show", generate_random_id())
+    attrs = Map.put(without_id_attrs, "id_for_show", generate_id_for_show())
 
     User.changeset(%User{}, attrs)
 
@@ -181,7 +179,6 @@ defmodule Milk.Accounts do
   def delete_user(id, password, email, token) do
     user = get_authorized_user(id, password, email, token)
 
-    # FIXME: get_authorized_userのエラー出力を活かせていないのと、ifの条件式もっとよく書けそう
     if user && !is_binary(user) do
       if is_list(user.chat_member) do
         member = Enum.map(user.chat_member, fn x -> %{chat_room_id: x.chat_room_id, user_id: x.user_id, authority: x.authority, create_time: x.create_time, update_time: x.update_time} end)
@@ -232,19 +229,6 @@ defmodule Milk.Accounts do
       _ ->
         "That token is not exist"
     end
-  end
-
-  @doc """
-  Returns an `%Ecto.Changeset{}` for tracking user changes.
-
-  ## Examples
-
-      iex> change_user(user)
-      %Ecto.Changeset{source: %User{}}
-
-  """
-  def change_user(%User{} = user) do
-    User.changeset(user, %{})
   end
 
   # logout_flのないバージョン
@@ -335,7 +319,6 @@ defmodule Milk.Accounts do
       user
       |> User.changeset(%{logout_fl: true})
       |> Repo.update()
-
       true
     else
       false
@@ -392,18 +375,5 @@ defmodule Milk.Accounts do
   """
   def delete_auth(%Auth{} = auth) do
     Repo.delete(auth)
-  end
-
-  @doc """
-  Returns an `%Ecto.Changeset{}` for tracking auth changes.
-
-  ## Examples
-
-      iex> change_auth(auth)
-      %Ecto.Changeset{source: %Auth{}}
-
-  """
-  def change_auth(%Auth{} = auth) do
-    Auth.changeset(auth, %{})
   end
 end

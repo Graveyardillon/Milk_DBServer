@@ -3,10 +3,9 @@ defmodule Milk.ChatTest do
 
   alias Milk.Chat
   alias Milk.Accounts
+  alias Milk.Chat.ChatRoom
 
   describe "chat_room" do
-    alias Milk.Chat.ChatRoom
-
     @valid_attrs %{count: 42, last_chat: "some last_chat", name: "some name"}
     @update_attrs %{count: 43, last_chat: "some updated last_chat", name: "some updated name"}
     @invalid_attrs %{count: nil, last_chat: nil, name: "aa"}
@@ -65,7 +64,6 @@ defmodule Milk.ChatTest do
   describe "chat_member" do
     alias Milk.Chat.ChatMember
 
-    @valid_attrs %{authority: 42}
     @update_attrs %{authority: 43}
     @invalid_attrs %{"authority" => nil}
     @room_attrs %{count: 42, last_chat: "some last_chat", name: "some name"}
@@ -84,26 +82,11 @@ defmodule Milk.ChatTest do
       |> Map.put(:user_id, user.id)
     end
 
-    # test "list_chat_member/0 returns all chat_member" do
-    #   chat_member = chat_member_fixture()
-    #   assert Chat.list_chat_member() == [chat_member]
-    # end
-    #fix me
-    # test "get_chat_member/1 returns the chat_member with given id" do
-    #   chat_member = chat_member_fixture()
-    #   assert Chat.get_chat_member!(chat_member.id) == chat_member
-    # end
-
     test "create_chat_member/1 with valid data creates a chat_member" do
       # assert {:ok, %ChatMember{} = chat_member} = Chat.create_chat_member(@valid_attrs)
       chat_member = chat_member_fixture()
       assert chat_member.authority == 42
     end
-# fix me
-    # test "create_chat_member/1 with invalid data returns error" do
-    #   chat = chat_member_fixture(@invalid_attrs)
-    #   assert {:error, _} = chat
-    # end
 
     test "update_chat_member/2 with valid data updates the chat_member" do
       chat_member = chat_member_fixture()
@@ -111,29 +94,17 @@ defmodule Milk.ChatTest do
       assert chat_member.authority == 43
     end
 
-    # test "update_chat_member/2 with invalid data returns error changeset" do
-    #   chat_member = chat_member_fixture()
-    #   assert {:error, %Ecto.Changeset{}} = Chat.update_chat_member(chat_member, @invalid_attrs)
-    #   assert chat_member == Chat.get_chat_member(chat_member.id)
-    # end
-
     test "delete_chat_member/1 deletes the chat_member" do
       chat_member = chat_member_fixture()
       assert {:ok, %ChatMember{}} = Chat.delete_chat_member(chat_member.chat_room_id,chat_member.user_id)
       # assert_raise Ecto.NoResultsError, fn -> Chat.get_chat_member!(chat_member.id) end
     end
-
-  #   test "change_chat_member/1 returns a chat_member changeset" do
-  #     chat_member = chat_member_fixture()
-  #     assert %Ecto.Changeset{} = Chat.change_chat_member(chat_member)
-  #   end
   end
 
   describe "chat" do
     alias Milk.Chat.Chats
     @room_attrs %{count: 42, last_chat: "some last_chat", name: "some name"}
     @member_attrs %{"authority" => 42}
-    @valid_attrs %{word: "some word"}
     @update_attrs %{word: "some updated word"}
     @invalid_attrs %{"word" => nil}
     @user_attrs %{"icon_path" => "some icon_path", "language" => "some language", "name" => "some name", "notification_number" => 42, "point"  =>  42, "email" => "some email", "logout_fl" => true, "password" => "S1ome password"}
@@ -159,20 +130,11 @@ defmodule Milk.ChatTest do
       chats = chats_fixture()
       assert Chat.list_chat(%{chat_room_id: chats.chat_room_id, max: 999, min: 0}) == [chats]
     end
-#fixme
-    # test "get_chat/1 returns the chats with given id" do
-    #   chats = chats_fixture()
-    #   assert Chat.get_chat(chats.chat_room_id, chats.index) == chats
-    # end
 
     test "create_chats/1 with valid data creates a chats" do
       chats = chats_fixture()
       assert chats.word == "some word"
     end
-# fixme
-#     test "create_chats/1 with invalid data returns error changeset" do
-#       assert {:error, _} = chats_fixture(@invalid_attrs)
-#     end
 
     test "update_chats/2 with valid data updates the chats" do
       chats = chats_fixture()

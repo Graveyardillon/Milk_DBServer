@@ -10,9 +10,11 @@ defmodule Milk.Chat do
   alias Milk.Chat.{ChatRoom, Chats, ChatMember}
   alias Milk.Accounts.User
   alias Milk.Tournaments.TournamentChatTopic
-  alias Milk.Log.ChatsLog
-  alias Milk.Log.ChatMemberLog
-  alias Milk.Log.ChatRoomLog
+  alias Milk.Log.{
+    ChatsLog,
+    ChatMemberLog,
+    ChatRoomLog
+  }
   alias Ecto.Multi
   alias Common.Tools
 
@@ -292,22 +294,6 @@ defmodule Milk.Chat do
   """
   def create_chat_member(attrs \\ %{}) do
     if (Repo.exists?(from u in User, where: u.id == ^attrs["user_id"])) do
-      #chat_room = Repo.one(from c in ChatRoom, where: c.id == ^attrs["chat_room_id"])
-      # if chat_room do
-      #   case %ChatMember{user_id: attrs["user_id"], chat_room_id: attrs["chat_room_id"]}
-      #   |> ChatMember.changeset(attrs)
-      #   |> Repo.insert() do
-      #   {:ok, chat_member} ->
-      #     Repo.update()
-      #     {:ok, chat_member}
-      #   {:error, error} ->
-      #     {:error, error.errors}
-      #   _ ->
-      #     {:error, nil}
-      #   end
-      # else
-      #   {:error, nil}
-      # end
       case Multi.new()
       |> Multi.run(:chat_room, fn repo, _ ->
         {:ok, repo.get(ChatRoom, attrs["chat_room_id"])}
@@ -467,8 +453,11 @@ defmodule Milk.Chat do
 
   """
   def create_chats(attrs \\ %{}) do
-    if (Repo.exists?(from cm in ChatMember, where: cm.user_id == ^attrs["user_id"] and cm.chat_room_id == ^attrs["chat_room_id"])) do
+    can_create? =
+      !Tools.is_all_map_elements_nil?(attrs)
+      |> Kernel.and(Repo.exists?(from cm in ChatMember, where: cm.user_id == ^attrs["user_id"] and cm.chat_room_id == ^attrs["chat_room_id"]))
 
+    if can_create? do
       case Multi.new()
       |> Multi.run(:chat_room, fn repo, _ ->
         {:ok, repo.get(ChatRoom, attrs["chat_room_id"])}
@@ -478,10 +467,9 @@ defmodule Milk.Chat do
         |> Chats.changeset(attrs)
       end)
       |> Repo.transaction() do
-
         {:ok, chat} ->
           chat.chat_room
-          |> ChatRoom.changeset_update(%{last_chat: chat.chat.word, count: chat.chat.index, update_time: attrs["datetime"]})
+          |> ChatRoom.changeset_update(%{last_chat: chat.chat.word, count: chat.chat.index})
           |> Repo.update
 
           {:ok, chat.chat}
@@ -489,7 +477,6 @@ defmodule Milk.Chat do
         _ -> {:error, nil}
       end
     else
-      Logger.error("Chat Member does not exist")
       {:error, nil}
     end
   end

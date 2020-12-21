@@ -14,7 +14,7 @@ defmodule Milk.AccountsTest do
   }
   alias Milk.Chat.Chats
 
-  def user_fixture(attrs \\ %{}) do
+  defp user_fixture(attrs \\ %{}) do
     user_valid_attrs = %{"icon_path" => "some icon_path", "language" => "some language", "name" => "some name", "notification_number" => 42, "point" => 42, "email" => "some@email.com", "logout_fl" => true, "password" => "S1ome password"}
 
     {:ok, user} =
@@ -25,25 +25,21 @@ defmodule Milk.AccountsTest do
     Accounts.get_user(user.id)
   end
 
-  def relation_fixture(_attrs \\ %{}) do
-    valid_attrs = %{"id" => 1}
-
-    {:ok, user1} = Accounts.create_user(%{"name" => "name", "email" => "e@mail.com", "password" => "Password123"})
-    {:ok, user2} = Accounts.create_user(%{"name" => "name2", "email" => "ew@mail.com", "password" => "Password123"})
-    {:ok, relation} =
-
-      valid_attrs
-      |> Map.put("followee_id", user1.id)
-      |> Map.put("follower_id", user2.id)
-      |> Relations.create_relation()
-
-    relation
-  end
-
   describe "users get" do
     @user_valid_attrs %{"icon_path" => "some icon_path", "language" => "some language", "name" => "some name", "notification_number" => 42, "point" => 42, "email" => "some@email.com", "logout_fl" => true, "password" => "S1ome password"}
     @user2_valid_attrs %{"icon_path" => "some icon_path", "language" => "some language", "name" => "some name2", "notification_number" => 42, "point" => 42, "email" => "some2@email.com", "logout_fl" => true, "password" => "S1ome password"}
     @invalid_attrs %{"icon_path" => nil, "language" => nil, "name" => nil, "notification_number" => nil, "point" => nil, "email" => nil, "password" => nil}
+
+    test "get_user/1 gets a user" do
+      user = user_fixture()
+      assert user.id == Accounts.get_user(user.id).id
+    end
+
+    test "check_duplication?/1 checks given name is already taken" do
+      _user = user_fixture()
+      assert Accounts.check_duplication?("some name")
+      refute Accounts.check_duplication?("not taken name")
+    end
 
     test "get_users_in_touch/1 gets users in touch" do
       {:ok, %User{} = user1} = Accounts.create_user(@user_valid_attrs)
@@ -100,19 +96,87 @@ defmodule Milk.AccountsTest do
     end
   end
 
-  describe "profiles" do
+  describe "login" do
+    @user_valid_attrs %{"icon_path" => "some icon_path", "language" => "some language", "name" => "some name", "notification_number" => 42, "point" => 42, "email" => "some@email.com", "logout_fl" => true, "password" => "S1ome password"}
+
+    test "login/1 can login user by email" do
+      user = user_fixture()
+      login_params = %{
+        "password" => @user_valid_attrs["password"],
+        "email_or_username" => user.auth.email
+      }
+      assert %{user: %User{}, token: token} = Accounts.login(login_params)
+    end
+
+    test "login/1 can login user by username" do
+      user = user_fixture()
+      login_params = %{
+        "password" => @user_valid_attrs["password"],
+        "email_or_username" => user.name
+      }
+      assert %{user: %User{}, token: token} = Accounts.login(login_params)
+    end
+
+    test "login/1 can't login user by invalid username" do
+      user_fixture()
+      login_params = %{
+        "password" => @user_valid_attrs["password"],
+        "email_or_username" => "invalid"
+      }
+      assert is_nil(Accounts.login(login_params))
+    end
+
+    test "login/1 can't login user by invalid email" do
+      user_fixture()
+      login_params = %{
+        "password" => @user_valid_attrs["password"],
+        "email_or_username" => "invalid@a.com"
+      }
+      assert is_nil(Accounts.login(login_params))
+    end
+
+    test "login/1 can't login user by invalid password" do
+      user = user_fixture()
+      login_params = %{
+        "password" => "powd",
+        "email_or_username" => user.auth.email
+      }
+      assert is_nil(Accounts.login(login_params))
+    end
+  end
+
+  describe "logout" do
+    @user_valid_attrs %{"icon_path" => "some icon_path", "language" => "some language", "name" => "some name", "notification_number" => 42, "point" => 42, "email" => "some@email.com", "logout_fl" => true, "password" => "S1ome password"}
+
+    test "logout/1 can logout user by id" do
+      user = user_fixture()
+      login_params = %{
+        "password" => @user_valid_attrs["password"],
+        "email_or_username" => user.auth.email
+      }
+      %{user: %User{} = user, token: _token} = Accounts.login(login_params)
+      assert Accounts.logout(user.id)
+    end
+  end
+
+  defp profile_fixture(attrs \\ %{}) do
+    valid_attrs = %{content_id: 42, content_type: "42", user_id: 42}
+    {:ok, profile} =
+      attrs
+      |> Enum.into(valid_attrs)
+      |> Profiles.create_profile()
+
+    profile
+  end
+
+  describe "get profiles" do
+
+  end
+
+  describe "create profiles" do
     @valid_attrs %{content_id: 42, content_type: "42", user_id: 42}
     @update_attrs %{content_id: 43, content_type: "43", user_id: 42}
     @invalid_attrs %{content_id: nil, content_type: nil, user_id: nil}
-
-    def profile_fixture(attrs \\ %{}) do
-      {:ok, profile} =
-        attrs
-        |> Enum.into(@valid_attrs)
-        |> Profiles.create_profile()
-
-      profile
-    end
 
     test "create_profile/1 with valid data creates a profile" do
       assert {:ok, %Profile{} = profile} = Profiles.create_profile(@valid_attrs)
@@ -124,6 +188,11 @@ defmodule Milk.AccountsTest do
     test "create_profile/1 with invalid data returns error changeset" do
       assert {:error, %Ecto.Changeset{}} = Profiles.create_profile(@invalid_attrs)
     end
+  end
+
+  describe "update profiles" do
+    @update_attrs %{content_id: 43, content_type: "43", user_id: 42}
+    @invalid_attrs %{content_id: nil, content_type: nil, user_id: nil}
 
     test "update_profile/2 with valid data updates the profile" do
       profile = profile_fixture()
@@ -136,26 +205,34 @@ defmodule Milk.AccountsTest do
     test "update_profile/2 with invalid data returns error changeset" do
       profile = profile_fixture()
       assert {:error, %Ecto.Changeset{}} = Profiles.update_profile(profile, @invalid_attrs)
-      # FIXME:
-      # assert profile == Profiles.get_profile!(profile.id)
     end
+  end
 
+  describe "delete profiles" do
     test "delete_profile/1 deletes the profile" do
       profile = profile_fixture()
       assert {:ok, %Profile{}} = Profiles.delete_profile(profile)
       assert_raise Ecto.NoResultsError, fn -> Profiles.get_profile!(profile.id) end
     end
+  end
 
-    test "change_profile/1 returns a profile changeset" do
-      profile = profile_fixture()
-      assert %Ecto.Changeset{} = Profiles.change_profile(profile)
-    end
+  defp relation_fixture(_attrs \\ %{}) do
+    valid_attrs = %{"id" => 1}
+
+    {:ok, user1} = Accounts.create_user(%{"name" => "name", "email" => "e@mail.com", "password" => "Password123"})
+    {:ok, user2} = Accounts.create_user(%{"name" => "name2", "email" => "ew@mail.com", "password" => "Password123"})
+    {:ok, relation} =
+
+      valid_attrs
+      |> Map.put("followee_id", user1.id)
+      |> Map.put("follower_id", user2.id)
+      |> Relations.create_relation()
+
+    relation
   end
 
   describe "get relations" do
-    @valid_attrs %{"id" => 1}
-    @update_attrs %{id: 1, followee_id: 1, follower_id: 3}
-    @invalid_attrs %{id: nil, followee_id: 0999999999999, follower_id: 999999999}
+
   end
 
   describe "create relations" do
@@ -199,55 +276,6 @@ defmodule Milk.AccountsTest do
       relation = relation_fixture()
       assert {:ok, %Relation{}} = Relations.delete_relation(relation)
       assert_raise Ecto.NoResultsError, fn -> Relations.get_relation!(relation.id) end
-    end
-  end
-
-  describe "login" do
-    @user_valid_attrs %{"icon_path" => "some icon_path", "language" => "some language", "name" => "some name", "notification_number" => 42, "point" => 42, "email" => "some@email.com", "logout_fl" => true, "password" => "S1ome password"}
-
-    test "login/1 can login user by email" do
-      user = user_fixture()
-      login_params = %{
-          "password" => @user_valid_attrs["password"],
-          "email_or_username" => user.auth.email
-        }
-      assert %{user: %User{}, token: token} = Accounts.login(login_params)
-    end
-
-    test "login/1 can login user by username" do
-      user = user_fixture()
-      login_params = %{
-          "password" => @user_valid_attrs["password"],
-          "email_or_username" => user.name
-        }
-      assert %{user: %User{}, token: token} = Accounts.login(login_params)
-    end
-
-    test "login/1 can't login user by invalid username" do
-      user_fixture()
-      login_params = %{
-        "password" => @user_valid_attrs["password"],
-        "email_or_username" => "invalid"
-      }
-      assert is_nil(Accounts.login(login_params))
-    end
-
-    test "login/1 can't login user by invalid email" do
-      user_fixture()
-      login_params = %{
-          "password" => @user_valid_attrs["password"],
-          "email_or_username" => "invalid@a.com"
-        }
-      assert is_nil(Accounts.login(login_params))
-    end
-
-    test "login/1 can't login user by invalid password" do
-      user = user_fixture()
-      login_params = %{
-          "password" => "powd",
-          "email_or_username" => user.auth.email
-        }
-      assert is_nil(Accounts.login(login_params))
     end
   end
 end

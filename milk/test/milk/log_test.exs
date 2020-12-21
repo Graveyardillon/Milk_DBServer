@@ -2,6 +2,7 @@ defmodule Milk.LogTest do
   use Milk.DataCase
 
   alias Milk.Log
+  alias Milk.Chat
 
   describe "chat_room_log" do
     alias Milk.Log.ChatRoomLog
@@ -11,9 +12,11 @@ defmodule Milk.LogTest do
     @invalid_attrs %{count: nil, last_chat: nil, name: nil}
 
     def chat_room_log_fixture(attrs \\ %{}) do
+      {:ok, chat_room} = Chat.create_chat_room(%{"name" => "some name"})
       {:ok, chat_room_log} =
         attrs
         |> Enum.into(@valid_attrs)
+        |> Map.put(:id, chat_room.id)
         |> Log.create_chat_room_log()
 
       chat_room_log
@@ -30,7 +33,7 @@ defmodule Milk.LogTest do
     end
 
     test "create_chat_room_log/1 with valid data creates a chat_room_log" do
-      assert {:ok, %ChatRoomLog{} = chat_room_log} = Log.create_chat_room_log(@valid_attrs)
+      assert %ChatRoomLog{} = chat_room_log = chat_room_log_fixture()
       assert chat_room_log.count == 42
       assert chat_room_log.last_chat == "some last_chat"
       assert chat_room_log.name == "some name"
@@ -197,7 +200,7 @@ defmodule Milk.LogTest do
   describe "entrant_log" do
     alias Milk.Log.EntrantLog
 
-    @valid_attrs %{rank: 42, tournament_id: 42, user_id: 42,create_time: "time"}
+    @valid_attrs %{rank: 42, tournament_id: 42, user_id: 42, create_time: ~U[2020-12-20 16:29:01.100311Z], update_time: ~U[2020-12-20 16:29:01.100311Z]}
     @update_attrs %{rank: 43, tournament_id: 43, user_id: 43}
     @invalid_attrs %{rank: nil, tournament_id: nil, user_id: nil}
 
@@ -211,13 +214,18 @@ defmodule Milk.LogTest do
     end
 
     test "list_entrant_log/0 returns all entrant_log" do
-      entrant_log = entrant_log_fixture()
-      assert Log.list_entrant_log() == [entrant_log]
+      entrant_log_fixture()
+      entrant_logs = Log.list_entrant_log()
+      assert is_list(entrant_logs)
+      refute length(entrant_logs) == 0
+      Enum.each(entrant_logs, fn log ->
+        assert %EntrantLog{} = log
+      end)
     end
 
     test "get_entrant_log!/1 returns the entrant_log with given id" do
       entrant_log = entrant_log_fixture()
-      assert Log.get_entrant_log!(entrant_log.id) == entrant_log
+      assert Log.get_entrant_log!(entrant_log.id).id == entrant_log.id
     end
 
     test "create_entrant_log/1 with valid data creates a entrant_log" do
@@ -242,7 +250,7 @@ defmodule Milk.LogTest do
     test "update_entrant_log/2 with invalid data returns error changeset" do
       entrant_log = entrant_log_fixture()
       assert {:error, %Ecto.Changeset{}} = Log.update_entrant_log(entrant_log, @invalid_attrs)
-      assert entrant_log == Log.get_entrant_log!(entrant_log.id)
+      assert entrant_log.id == Log.get_entrant_log!(entrant_log.id).id
     end
 
     test "delete_entrant_log/1 deletes the entrant_log" do
@@ -254,67 +262,6 @@ defmodule Milk.LogTest do
     test "change_entrant_log/1 returns a entrant_log changeset" do
       entrant_log = entrant_log_fixture()
       assert %Ecto.Changeset{} = Log.change_entrant_log(entrant_log)
-    end
-  end
-
-  describe "assistant_log" do
-    alias Milk.Log.AssistantLog
-
-    @valid_attrs %{tournament_id: 42, user_id: 42}
-    @update_attrs %{tournament_id: 43, user_id: 43}
-    @invalid_attrs %{tournament_id: nil, user_id: nil}
-
-    def assistant_log_fixture(attrs \\ %{}) do
-      {:ok, assistant_log} =
-        attrs
-        |> Enum.into(@valid_attrs)
-        |> Log.create_assistant_log()
-
-      assistant_log
-    end
-
-    test "list_assistant_log/0 returns all assistant_log" do
-      assistant_log = assistant_log_fixture()
-      assert Log.list_assistant_log() == [assistant_log]
-    end
-
-    test "get_assistant_log!/1 returns the assistant_log with given id" do
-      assistant_log = assistant_log_fixture()
-      assert Log.get_assistant_log!(assistant_log.id) == assistant_log
-    end
-
-    test "create_assistant_log/1 with valid data creates a assistant_log" do
-      assert {:ok, %AssistantLog{} = assistant_log} = Log.create_assistant_log(@valid_attrs)
-      assert assistant_log.tournament_id == 42
-      assert assistant_log.user_id == 42
-    end
-
-    test "create_assistant_log/1 with invalid data returns error changeset" do
-      assert {:error, %Ecto.Changeset{}} = Log.create_assistant_log(@invalid_attrs)
-    end
-
-    test "update_assistant_log/2 with valid data updates the assistant_log" do
-      assistant_log = assistant_log_fixture()
-      assert {:ok, %AssistantLog{} = assistant_log} = Log.update_assistant_log(assistant_log, @update_attrs)
-      assert assistant_log.tournament_id == 43
-      assert assistant_log.user_id == 43
-    end
-
-    test "update_assistant_log/2 with invalid data returns error changeset" do
-      assistant_log = assistant_log_fixture()
-      assert {:error, %Ecto.Changeset{}} = Log.update_assistant_log(assistant_log, @invalid_attrs)
-      assert assistant_log == Log.get_assistant_log!(assistant_log.id)
-    end
-
-    test "delete_assistant_log/1 deletes the assistant_log" do
-      assistant_log = assistant_log_fixture()
-      assert {:ok, %AssistantLog{}} = Log.delete_assistant_log(assistant_log)
-      assert_raise Ecto.NoResultsError, fn -> Log.get_assistant_log!(assistant_log.id) end
-    end
-
-    test "change_assistant_log/1 returns a assistant_log changeset" do
-      assistant_log = assistant_log_fixture()
-      assert %Ecto.Changeset{} = Log.change_assistant_log(assistant_log)
     end
   end
 
@@ -335,13 +282,18 @@ defmodule Milk.LogTest do
     end
 
     test "list_tournament_log/0 returns all tournament_log" do
-      tournament_log = tournament_log_fixture()
-      assert Log.list_tournament_log() == [tournament_log]
+      tournament_log_fixture()
+      tournament_logs = Log.list_tournament_log()
+      assert is_list(tournament_logs)
+      refute length(tournament_logs) == 0
+      Enum.each(tournament_logs, fn log ->
+        assert %TournamentLog{} = log
+      end)
     end
 
     test "get_tournament_log!/1 returns the tournament_log with given id" do
       tournament_log = tournament_log_fixture()
-      assert Log.get_tournament_log!(tournament_log.id) == tournament_log
+      assert Log.get_tournament_log!(tournament_log.id).id == tournament_log.id
     end
 
     test "create_tournament_log/1 with valid data creates a tournament_log" do
@@ -362,19 +314,13 @@ defmodule Milk.LogTest do
     test "update_tournament_log/2 with invalid data returns error changeset" do
       tournament_log = tournament_log_fixture()
       assert {:error, %Ecto.Changeset{}} = Log.update_tournament_log(tournament_log, @invalid_attrs)
-      assert tournament_log == Log.get_tournament_log!(tournament_log.id)
+      assert tournament_log.id == Log.get_tournament_log!(tournament_log.id).id
     end
 
     test "delete_tournament_log/1 deletes the tournament_log" do
       tournament_log = tournament_log_fixture()
       assert {:ok, %TournamentLog{}} = Log.delete_tournament_log(tournament_log)
-      assert_raise Ecto.NoResultsError, fn -> Log.get_tournament_log!(tournament_log.id) end
-    end
-
-    test "change_tournament_log/1 returns a tournament_log changeset" do
-      tournament_log = tournament_log_fixture()
-      assert %Ecto.Changeset{} = Log.change_tournament_log(tournament_log)
+      refute Log.get_tournament_log!(tournament_log.id)
     end
   end
-
 end

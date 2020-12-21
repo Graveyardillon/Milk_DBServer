@@ -27,7 +27,7 @@ defmodule MilkWeb.TournamentLogController do
     tournament_log = Log.get_tournament_log!(id)
 
     with {:ok, %TournamentLog{} = tournament_log} <- Log.update_tournament_log(tournament_log, tournament_log_params) do
-      render(conn, "show.json", tournament_log: tournament_log)
+      render(conn, "show.json", tournament_log: [tournament_log])
     end
   end
 

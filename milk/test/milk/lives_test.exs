@@ -18,16 +18,6 @@ defmodule Milk.LivesTest do
 
       live
     end
-    #fix me
-    # test "list_lives/0 returns all lives" do
-    #   live = live_fixture()
-    #   assert Lives.list_lives() == [live]
-    # end
-    #fix me
-    # test "get_live!/1 returns the live with given id" do
-    #   live = live_fixture()
-    #   assert Lives.get_live!(live.id) == live
-    # end
 
     test "create_live/1 with valid data creates a live" do
       assert {:ok, %Live{} = live} = Lives.create_live(@valid_attrs)

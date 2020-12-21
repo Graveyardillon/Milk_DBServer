@@ -7,8 +7,6 @@ defmodule Milk.Chat.Chats do
   schema "chat" do
     field :index, :integer
     field :word, :string
-    # field :chat_room_id, :id
-    # field :user_id, :id
     belongs_to :user, User
     belongs_to :chat_room, ChatRoom
 
