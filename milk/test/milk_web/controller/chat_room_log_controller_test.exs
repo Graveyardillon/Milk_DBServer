@@ -49,21 +49,22 @@ defmodule MilkWeb.ChatRoomLogControllerTest do
   describe "create chat_room_log" do
     test "renders chat_room_log when data is valid", %{conn: conn} do
       chat_room = fixture(:chat_room)
-      conn = post(conn, Routes.chat_room_log_path(conn, :create), chat_room_log: @create_attrs)
+      attrs = Map.put(@create_attrs, "id", chat_room.id)
+      conn = post(conn, Routes.chat_room_log_path(conn, :create), data: attrs)
       assert %{"id" => id} = json_response(conn, 201)["data"]
 
       conn = get(conn, Routes.chat_room_log_path(conn, :show, id))
 
       assert %{
-               "id" => id,
-               "count" => 42,
-               "last_chat" => "some last_chat",
-               "name" => "some name"
-             } = json_response(conn, 200)["data"]
+        "id" => id,
+        "count" => 42,
+        "last_chat" => "some last_chat",
+        "name" => "some name"
+      } = json_response(conn, 200)["data"]
     end
 
     test "renders errors when data is invalid", %{conn: conn} do
-      conn = post(conn, Routes.chat_room_log_path(conn, :create), chat_room_log: @invalid_attrs)
+      conn = post(conn, Routes.chat_room_log_path(conn, :create), data: @invalid_attrs)
       assert json_response(conn, 422)["errors"] != %{}
     end
   end
