@@ -42,9 +42,9 @@ defmodule MilkWeb.EntrantLogControllerTest do
       conn = get(conn, Routes.entrant_log_path(conn, :show, id))
 
       assert %{
-               "id" => id,
-               "user_id" => 42
-             } = json_response(conn, 200)["data"]
+        "id" => id,
+        "user_id" => 42
+      } = json_response(conn, 200)["data"]
     end
 
     test "renders errors when data is invalid", %{conn: conn} do
