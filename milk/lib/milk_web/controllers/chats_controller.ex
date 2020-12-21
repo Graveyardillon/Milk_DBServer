@@ -51,7 +51,7 @@ defmodule MilkWeb.ChatsController do
   """
   def delete(conn, %{"chat_room_id" => chat_room_id, "index" => index}) do
     chats = Chat.get_chat(chat_room_id, index)
-    if (chats) do
+    if chats do
       with {:ok, %Chats{}} <- Chat.delete_chats(chats) do
         send_resp(conn, :no_content, "")
       end

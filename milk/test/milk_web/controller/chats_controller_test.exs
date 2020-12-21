@@ -9,6 +9,10 @@ defmodule MilkWeb.ChatsControllerTest do
     "index" => 42,
     "word" => "some word"
   }
+  @update_attrs %{
+    "index" => 4,
+    "word" => "some updated word"
+  }
   @invalid_attrs %{"index" => nil, "word" => nil}
 
   defp fixture(:chats) do
@@ -71,40 +75,40 @@ defmodule MilkWeb.ChatsControllerTest do
     end
   end
 
-  # describe "update chats" do
-  #   setup [:create_chats]
+  describe "update chats" do
+    setup [:create_chats]
 
-  #   test "renders chats when data is valid", %{conn: conn, chats: %Chats{id: id} = chats} do
-  #     conn = put(conn, Routes.chats_path(conn, :update, chats), chat: @update_attrs)
-  #     assert %{"id" => ^id} = json_response(conn, 200)["data"]
+    test "renders chats when data is valid", %{conn: conn, chats: %Chats{id: id} = chats} do
+      conn = put(conn, Routes.chats_path(conn, :update, chats), chat: @update_attrs)
+      assert %{"id" => ^id} = json_response(conn, 200)["data"]
 
-  #     conn = get(conn, Routes.chats_path(conn, :show, id))
+      conn = get(conn, Routes.chats_path(conn, :show, id))
 
-  #     assert %{
-  #              "id" => id,
-  #              "index" => 43,
-  #              "word" => "some updated word"
-  #            } = json_response(conn, 200)["data"]
-  #   end
+      assert %{
+        "id" => id,
+        "index" => 43,
+        "word" => "some updated word"
+      } = json_response(conn, 200)["data"]
+    end
 
-  #   test "renders errors when data is invalid", %{conn: conn, chats: chats} do
-  #     conn = put(conn, Routes.chats_path(conn, :update, chats), chat: @invalid_attrs)
-  #     assert json_response(conn, 422)["errors"] != %{}
-  #   end
-  # end
+    test "renders errors when data is invalid", %{conn: conn, chats: chats} do
+      conn = put(conn, Routes.chats_path(conn, :update, chats), chat: @invalid_attrs)
+      refute json_response(conn, 200)["result"]
+    end
+  end
 
-  # describe "delete chats" do
-  #   setup [:create_chats]
+  describe "delete chats" do
+    setup [:create_chats]
 
-  #   test "deletes chosen chats", %{conn: conn, chats: chats} do
-  #     conn = delete(conn, Routes.chats_path(conn, :delete, chats))
-  #     assert response(conn, 204)
+    test "deletes chosen chats", %{conn: conn, chats: chats} do
+      conn = delete(conn, Routes.chats_path(conn, :delete, %{chat_room_id: chats.chat_room_id, index: chats.index}))
+      assert response(conn, 204)
 
-  #     assert_error_sent 404, fn ->
-  #       get(conn, Routes.chats_path(conn, :show, chats))
-  #     end
-  #   end
-  # end
+      # assert_error_sent 404, fn ->
+      #   get(conn, Routes.chats_path(conn, :show, chats))
+      # end
+    end
+  end
 
   defp create_chats(_) do
     chats = fixture(:chats)
