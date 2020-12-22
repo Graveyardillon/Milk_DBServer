@@ -715,4 +715,41 @@ defmodule Milk.TournamentsTest do
       assert {:error, "undefined user"} = Tournaments.promote_rank(attrs)
     end
   end
+
+  describe "data for brackets" do
+    # test "data_for_brackets/1 just works fine" do
+    #   match_list = [[1, 2], [3, 4]]
+    #   IO.inspect(Tournaments.data_for_brackets(match_list), label: :four)
+    # end
+
+    # test "data_for_brackets/1 works fine with valid list data of size 3" do
+    #   match_list = [[1, 2], 3]
+    #   assert Tournaments.data_for_brackets(match_list) == [[1, 2, 3]]
+    # end
+
+    # test "data_for_brackets/1 works fine with valid list data of size 4" do
+    #   match_list = [[1, 2], [3, 4]]
+    #   assert Tournaments.data_for_brackets(match_list) == [[1, 2, 3, 4, nil, nil, nil, nil]]
+    # end
+
+    # test "data_for_brackets/1 works fine with valid list data of size 5" do
+    #   match_list = [[1, 2], [[3, 4], 5]]
+    #   assert Tournaments.data_for_brackets(match_list) == [[1, 2, 3, 4, 5, nil, nil, nil]]
+    # end
+
+    # test "data_for_brackets/1 works fine with valid list data of size 6" do
+    #   match_list = [[1, 2], [[3, 4], [5, 6]]]
+    #   assert Tournaments.data_for_brackets(match_list) == [[3, 4, 5, 6, 1, 2, nil, nil, nil]]
+    # end
+
+    # test "data_for_brackets/1 works fine with valid list data of size 7" do
+    #   match_list = [[[1, 2], 3], [[4, 5], [6, 7]]]
+    #   assert Tournaments.data_for_brackets(match_list) == [[4, 5, 6, 7, 1, 2, 3, nil]]
+    # end
+
+    # test "data_for_brackets/1 works fine with valid list data of size 8" do
+    #   match_list = [[[1, 2], [3, 4]], [[5, 6], [7, 8]]]
+    #   assert Tournaments.data_for_brackets(match_list) == [[1, 2, 3 ,4, 5, 6, 7, 8]]
+    # end
+  end
 end
