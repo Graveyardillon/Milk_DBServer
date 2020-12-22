@@ -52,6 +52,17 @@ defmodule Milk.Tournaments do
     |> Repo.all()
   end
 
+  def home_tournament(offset) do
+    offset = Tools.to_integer_as_needed(offset)
+
+    Tournament
+    |> where([e], e.deadline > ^Timex.now)
+    |> order_by([e], asc: :event_date)
+    |> offset(^offset)
+    |> limit(5)
+    |> Repo.all()
+  end
+
   @doc """
   Returns the list of tournament which is filtered by "fav" for home screen.
   """
