@@ -194,10 +194,10 @@ defmodule MilkWeb.TournamentController do
   #   render(conn, "home.json", tournaments_info: tournaments)
   # end
 
-  def home(conn, %{"offset" => offset}) do
-  IO.inspect(offset)
+  def home(conn, %{"date_offset" => date_offset, "offset" => offset}) do
+
     tournaments =
-    Tournaments.home_tournament(offset)
+    Tournaments.home_tournament(date_offset, offset)
     |> Enum.map(fn tournament ->
       entrants =
         Tournaments.get_entrants(tournament.id)

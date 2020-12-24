@@ -52,11 +52,11 @@ defmodule Milk.Tournaments do
     |> Repo.all()
   end
 
-  def home_tournament(offset) do
+  def home_tournament(date_offset, offset) do
     offset = Tools.to_integer_as_needed(offset)
 
     Tournament
-    |> where([e], e.deadline > ^Timex.now)
+    |> where([e], e.deadline > ^Timex.now and e.create_time < ^date_offset)
     |> order_by([e], asc: :event_date)
     |> offset(^offset)
     |> limit(5)
