@@ -1062,23 +1062,5 @@ defmodule Milk.Tournaments do
         x when is_integer(x) -> [x | acc]
       end
     end)
-    |> align_list()
-  end
-
-  defp align_list(list) do
-    find_exponent(list, 1)
-    |> IO.inspect()
-  end
-
-  defp find_exponent(list, n) do
-    if length(list) < exponent_of(n) do
-      find_exponent(list, n+1)
-    else
-      n
-    end
-  end
-
-  defp exponent_of(num) do
-    :math.pow(2, num)
   end
 end

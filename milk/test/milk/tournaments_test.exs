@@ -717,10 +717,10 @@ defmodule Milk.TournamentsTest do
   end
 
   describe "data for brackets" do
-    # test "data_for_brackets/1 just works fine" do
-    #   match_list = [[1, 2], [3, 4]]
-    #   IO.inspect(Tournaments.data_for_brackets(match_list), label: :four)
-    # end
+    test "data_for_brackets/1 just works fine" do
+      match_list = [[1, 2], [3, 4]]
+      IO.inspect(Tournaments.data_for_brackets(match_list), label: :four)
+    end
 
     # test "data_for_brackets/1 works fine with valid list data of size 3" do
     #   match_list = [[1, 2], 3]
