@@ -145,9 +145,14 @@ defmodule Milk.Tournaments do
   @doc """
   Get tournaments which the user participating in.
   """
-  def get_participating_tournaments!(user_id) do
+  def get_participating_tournaments(user_id, offset) do
+    offset = Tools.to_integer_as_needed(offset)
+
     Entrant
     |> where([e], e.user_id == ^user_id)
+    |> order_by([e], asc: :tournament_id)
+    |> offset(^offset)
+    |> limit(5)
     |> Repo.all()
     |> Enum.map(fn entrant ->
       get_tournament!(entrant.tournament_id)

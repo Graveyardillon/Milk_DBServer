@@ -258,9 +258,9 @@ defmodule MilkWeb.TournamentController do
   @doc """
   Get tournaments which a user is participating in.
   """
-  def participating_tournaments(conn, %{"user_id" => user_id}) do
+  def participating_tournaments(conn, %{"user_id" => user_id, "offset" => offset}) do
     tournaments =
-    Tournaments.get_participating_tournaments!(user_id)
+    Tournaments.get_participating_tournaments(user_id, offset)
     |> Enum.map(fn tournament ->
       entrants =
         Tournaments.get_entrants(tournament.id)
