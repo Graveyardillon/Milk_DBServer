@@ -405,6 +405,23 @@ defmodule MilkWeb.TournamentController do
     end
   end
 
+  @doc """
+  Check if the user has already matching.
+  """
+  def check_pending(conn, %{"user_id" => user_id}) do
+    user_id = Tools.to_integer_as_needed(user_id)
+
+    pending_list = Ets.get_match_pending_list(user_id)
+    unless pending_list == [] do
+      json(conn, %{result: true})
+    else
+      json(conn, %{result: false})
+    end
+  end
+
+  @doc """
+  Claim win of the user.
+  """
   def claim_win(conn, %{"opponent_id" => opponent_id, "user_id" => user_id, "tournament_id" => tournament_id}) do
     opponent_id = Tools.to_integer_as_needed(opponent_id)
     user_id = Tools.to_integer_as_needed(user_id)
@@ -428,6 +445,9 @@ defmodule MilkWeb.TournamentController do
     end
   end
 
+  @doc """
+  Claim lose of the user.
+  """
   def claim_lose(conn, %{"opponent_id" => opponent_id, "user_id" => user_id, "tournament_id" => tournament_id}) do
     opponent_id = Tools.to_integer_as_needed(opponent_id)
     user_id = Tools.to_integer_as_needed(user_id)
@@ -444,13 +464,14 @@ defmodule MilkWeb.TournamentController do
           Chat.notify_game_masters(tournament_id)
           json(conn, %{validated: false, completed: false})
         else
-
-          # マッチングが正常に終了している
           json(conn, %{validated: true, completed: true})
         end
     end
   end
 
+  @doc """
+  Publish a url of a tournament.
+  """
   def publish_url(conn, _params) do
     url = SecureRandom.urlsafe_base64()
 
@@ -460,7 +481,7 @@ defmodule MilkWeb.TournamentController do
   def get_match_members(conn, %{"tournament_id" => tournament_id}) do
     tournament = Tournaments.get_tournament(tournament_id)
 
-    if(tournament) do
+    if tournament do
       master = Accounts.get_user(tournament.master_id)
       assistants = Tournaments.get_assistants(tournament.id)
       |> Enum.map(fn assistant ->
