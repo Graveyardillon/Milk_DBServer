@@ -136,7 +136,7 @@ defmodule Milk.TournamentsTest do
       entrant = fixture(:entrant)
       _tournament = Tournaments.get_tournament(entrant.tournament_id)
 
-      assert tournaments = Tournaments.get_participating_tournaments!(entrant.user_id)
+      assert tournaments = Tournaments.get_participating_tournaments(entrant.user_id, 0)
       assert is_list(tournaments)
       Enum.each(tournaments, fn tournament ->
         assert %Tournament{} = tournament
