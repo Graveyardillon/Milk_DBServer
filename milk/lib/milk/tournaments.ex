@@ -1029,32 +1029,7 @@ defmodule Milk.Tournaments do
   1. align list by big chunk.
   """
   def data_for_brackets(match_list) do
-    align(match_list)
-  end
-
-  defp align(match_list, result \\ []) do
-    Enum.reduce(match_list, result, fn x, acc ->
-      case x do
-        x when is_list(x) ->
-          align(x, acc)
-        x when is_integer(x) and hd(match_list) == x ->
-          [ml(match_list) | acc]
-        x when is_integer(x) ->
-          acc
-        _ ->
-          raise "invalid list"
-      end
-    end)
-  end
-
-  # Length of this list should be 2.
-  defp ml(list) do
-    Enum.reduce(list, [], fn element, acc ->
-      case element do
-        x when is_integer(x) -> [x | acc]
-        _ -> [nil | acc]
-      end
-    end)
+    Tournamex.brackets(match_list)
   end
 
   # defp align(match_list, result \\ []) do
