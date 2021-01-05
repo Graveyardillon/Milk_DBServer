@@ -562,31 +562,8 @@ defmodule Milk.Tournaments do
   @doc """
   Delete a loser in a matchlist
   """
-  def delete_loser(list, loser) when is_integer(loser) do
-    delete_loser(list, [loser])
-  end
-
-  def delete_loser([a, b], loser) when is_integer(a) and is_integer(b) do
-    list = [a, b] -- loser
-    if length(list) == 1, do: hd(list), else: list
-  end
-
   def delete_loser(list, loser) do
-    case list do
-      [[a, b], [c, d]] ->
-        [delete_loser([a, b], loser), delete_loser([c, d], loser)]
-      [a, [b, c]] when is_integer(a) and [a] == loser ->
-        [b, c]
-      [a, [b, c]] ->
-        [a, delete_loser([b, c], loser)]
-      [[a, b], c] when is_integer(c) and [c] == loser ->
-        [a, b]
-      [[a, b], c] ->
-        [delete_loser([a, b], loser), c]
-      [a, b] ->
-        delete_loser([a, b], loser)
-      _ -> raise "Bad Argument"
-    end
+    Tournamex.delete_loser(list, loser)
   end
 
   @doc """
