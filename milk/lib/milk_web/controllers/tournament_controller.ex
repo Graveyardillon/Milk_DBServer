@@ -354,7 +354,10 @@ defmodule MilkWeb.TournamentController do
     tournament_id = Tools.to_integer_as_needed(tournament_id)
     user_id = Tools.to_integer_as_needed(user_id)
 
-    {_, match_list} = hd(Ets.get_match_list(tournament_id))
+    {_, match_list} =
+      tournament_id
+      |> Ets.get_match_list()
+      |> hd()
 
     match = Tournaments.find_match(match_list, user_id)
     result = Tournaments.is_alone?(match)
