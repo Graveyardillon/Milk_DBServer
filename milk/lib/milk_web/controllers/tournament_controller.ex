@@ -559,9 +559,12 @@ defmodule MilkWeb.TournamentController do
     case list do
       {_, match_list} ->
         brackets = Tournaments.data_for_brackets(match_list)
-        json(conn, %{data: brackets, result: true})
+        count = Enum.count(brackets)*2
+        num_for_brackets = Tournamex.Number.closest_number_to_power_of_two(count)
+
+        json(conn, %{data: brackets, result: true, count: num_for_brackets})
       _ ->
-        json(conn, %{data: nil, result: false})
+        json(conn, %{data: nil, result: false, count: nil})
     end
   end
 
