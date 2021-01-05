@@ -138,7 +138,7 @@ defmodule MilkWeb.Router do
     # FIXME: 見た感じ使われてなさそうだったけど、一応残しておいた
     get  "/tournament/image", TournamentController, :image
     post "/tournament/get_all", TournamentController, :index
-    post "/tournament/debug_match_list", TournamentController, :debug_match_list
+    get  "/tournament/debug_match_list", TournamentController, :debug_match_list
     post "/assistant/get", AssistantController, :show
     post "/assistant/get_all", AssistantController, :index
   end
