@@ -727,36 +727,8 @@ defmodule Milk.Tournaments do
   Generate a matchlist.
   """
   def generate_matchlist(list) do
-    unless is_list(list) do
-      {:error, "Argument is not list"}
-    else
-      list
-      |> priv_generate_matchlist()
-      |> case do
-        list when is_list(list) -> {:ok, list}
-        tuple when is_tuple(tuple) -> tuple
-        scala -> {:ok, [scala]}
-      end
-    end
+    Tournamex.generate_matchlist(list)
   end
-
-  defp priv_generate_matchlist(list) when list != [] do
-    shuffled = list |> Enum.shuffle()
-    case(length(shuffled)) do
-    1 ->
-      shuffled |> hd()
-    2 -> shuffled
-    _ ->
-      b = Enum.slice(shuffled, 0..trunc(length(shuffled)/2 -1))
-      |> priv_generate_matchlist()
-
-      c = Enum.slice(shuffled, trunc(length(shuffled)/2)..length(shuffled)-1)
-      |> priv_generate_matchlist()
-
-      [b,c]
-    end
-  end
-  defp priv_generate_matchlist([]), do: {:error, "参加者がいません"}
 
   @doc """
   Returns the list of assistant.
@@ -1066,5 +1038,12 @@ defmodule Milk.Tournaments do
   end
   def initialize_rank(match_list, number_of_entrant, tournament_id, count) do
     Enum.map(match_list, fn x -> initialize_rank(x, number_of_entrant, tournament_id, count *2) end)
+  end
+
+  @doc """
+  Returns data for tournament brackets.
+  """
+  def data_for_brackets(match_list) do
+    Tournamex.brackets(match_list)
   end
 end
