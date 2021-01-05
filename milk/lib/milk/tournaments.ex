@@ -1021,6 +1021,7 @@ defmodule Milk.Tournaments do
   Returns data for tournament brackets.
   """
   def data_for_brackets(match_list) do
-    Tournamex.brackets(match_list)
+    {:ok, brackets} = Tournamex.brackets(match_list)
+    brackets
   end
 end
