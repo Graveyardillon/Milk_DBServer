@@ -91,6 +91,7 @@ defmodule MilkWeb.Router do
     post "/tournament/claim_win", TournamentController, :claim_win
     post "/tournament/claim_lose", TournamentController, :claim_lose
     get  "/tournament/check_pending", TournamentController, :check_pending
+    get  "/tournament/brackets", TournamentController, :brackets
     post "/tournament/finish", TournamentController, :finish
 
     resources "/entrant", EntrantController, except: [:new, :edit, :delete]

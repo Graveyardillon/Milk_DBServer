@@ -1026,18 +1026,8 @@ defmodule Milk.Tournaments do
 
   @doc """
   Returns data for tournament brackets.
-  1. align list by big chunk.
   """
   def data_for_brackets(match_list) do
     Tournamex.brackets(match_list)
   end
-
-  # defp align(match_list, result \\ []) do
-  #   Enum.reduce(match_list, result, fn x, acc ->
-  #     case x do
-  #       x when is_list(x) -> align(x, acc)
-  #       x when is_integer(x) -> [x | acc]
-  #     end
-  #   end)
-  # end
 end
