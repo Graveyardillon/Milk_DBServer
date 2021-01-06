@@ -180,10 +180,12 @@ defmodule MilkWeb.TournamentView do
       }
     }
   end
-  def render("match.json",%{list: list}) do
+
+  def render("match.json", %{list: list}) do
     %{data: %{match_list: list}}
   end
-  def render("loser.json",%{list: list}) do
+
+  def render("loser.json", %{list: list}) do
     %{updated_match_list: list}
   end
 
