@@ -13,8 +13,6 @@ defmodule Milk.Application do
       # Start the endpoint when the application starts
       MilkWeb.Endpoint,
       {Phoenix.PubSub, [name: Milk.PubSub, adapter: Phoenix.PubSub.PG2]},
-      # Starts a worker by calling: Milk.Worker.start_link(arg)
-      #{Task, fn -> Milk.accept(4041) end}
       {Task, fn -> Milk.setup_platform() end},
       Milk.ConfNum,
     ]
