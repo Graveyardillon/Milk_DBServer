@@ -493,6 +493,21 @@ defmodule MilkWeb.TournamentController do
   end
 
   @doc """
+  Get a result of fight.
+  """
+  def is_user_win(conn, %{"user_id" => user_id}) do
+    user_id = Tools.to_integer_as_needed(user_id)
+    case Ets.get_fight_result(user_id) do
+      [] ->
+        json(conn, %{is_win: nil, is_claimed: false})
+      result_list ->
+        {_, is_win} = hd(result_list)
+
+        json(conn, %{is_win: is_win, is_claimed: true})
+    end
+  end
+
+  @doc """
   Publish a url of a tournament.
   """
   def publish_url(conn, _params) do

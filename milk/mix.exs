@@ -11,6 +11,13 @@ defmodule Milk.MixProject do
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
       deps: deps(),
+      test_coverage: [tool: ExCoveralls],
+      preferred_cli_env: [
+        coveralls: :test,
+        "coveralls.detail": :test,
+        "coveralls.post": :test,
+        "coveralls.html": :test
+      ],
       releases: [
         milk: [
           include_erts: true,
@@ -68,7 +75,8 @@ defmodule Milk.MixProject do
       {:argon2_elixir, "~> 2.3.0"},
       {:ex_crypto, "~> 0.10.0"},
       {:tournamex, "~> 0.1.4"},
-      {:dialyxir, "~> 1.0", only: [:dev], runtime: false}
+      {:dialyxir, "~> 1.0", only: [:dev], runtime: false},
+      {:excoveralls, "~> 0.10", only: :test}
     ]
   end
 
