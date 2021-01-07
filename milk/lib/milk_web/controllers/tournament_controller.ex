@@ -282,6 +282,18 @@ defmodule MilkWeb.TournamentController do
   end
 
   @doc """
+  Get relevant tournaments.
+  """
+  def relevant(conn, %{"user_id" => user_id}) do
+    participatings = Tournaments.get_participating_tournaments(user_id)
+    hostings = Tournaments.get_tournaments_by_master_id(user_id)
+
+    tournaments = Enum.uniq(participatings ++ hostings)
+
+    render(conn, "index.json", tournament: tournaments)
+  end
+
+  @doc """
   Get tournament topics.
   """
   def tournament_topics(conn, %{"tournament_id" => tournament_id}) do
