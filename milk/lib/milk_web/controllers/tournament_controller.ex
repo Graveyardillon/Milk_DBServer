@@ -258,29 +258,6 @@ defmodule MilkWeb.TournamentController do
   @doc """
   Get tournaments which a user is participating in.
   """
-  def participating_tournaments(conn, %{"user_id" => user_id}) do
-    tournaments =
-      Tournaments.get_participating_tournaments(user_id)
-      |> Enum.map(fn tournament ->
-        entrants =
-          Tournaments.get_entrants(tournament.id)
-          |> Enum.map(fn entrant ->
-            Accounts.get_user(entrant.user_id)
-          end)
-
-        %{
-          tournament: tournament,
-          entrants: entrants
-        }
-      end)
-
-      if tournaments do
-        render(conn, "home.json", tournaments_info: tournaments)
-      else
-        render(conn, "error.json", error: nil)
-      end
-  end
-
   def participating_tournaments(conn, %{"user_id" => user_id, "offset" => offset}) do
     tournaments =
     Tournaments.get_participating_tournaments(user_id, offset)
@@ -302,6 +279,29 @@ defmodule MilkWeb.TournamentController do
     else
       render(conn, "error.json", error: nil)
     end
+  end
+
+  def participating_tournaments(conn, %{"user_id" => user_id}) do
+    tournaments =
+      Tournaments.get_participating_tournaments(user_id)
+      |> Enum.map(fn tournament ->
+        entrants =
+          Tournaments.get_entrants(tournament.id)
+          |> Enum.map(fn entrant ->
+            Accounts.get_user(entrant.user_id)
+          end)
+
+        %{
+          tournament: tournament,
+          entrants: entrants
+        }
+      end)
+
+      if tournaments do
+        render(conn, "home.json", tournaments_info: tournaments)
+      else
+        render(conn, "error.json", error: nil)
+      end
   end
 
   @doc """
