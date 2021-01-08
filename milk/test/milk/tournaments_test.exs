@@ -152,6 +152,32 @@ defmodule Milk.TournamentsTest do
         assert %User{} = user
       end)
     end
+
+    test "get_tournament_including_logs/1 with valid data gets tournament from log" do
+      user = fixture(:user)
+      {:ok, tournament} =
+        @valid_attrs
+        |> Map.put("master_id", user.id)
+        |> Tournaments.create_tournament()
+
+      Tournaments.finish(tournament.id, user.id)
+
+      assert {:ok, _tournament} = Tournaments.get_tournament_including_logs(tournament.id)
+    end
+
+    test "get_tournament_including_logs/1 with valid data gets tournament" do
+      user = fixture(:user)
+      {:ok, tournament} =
+        @valid_attrs
+        |> Map.put("master_id", user.id)
+        |> Tournaments.create_tournament()
+
+      assert {:ok, _tournament} = Tournaments.get_tournament_including_logs(tournament.id)
+    end
+
+    test "get_tournament_including_logs/1 with invalid data does not get tournament" do
+      assert {:error, _} = Tournaments.get_tournament_including_logs(-1)
+    end
   end
 
   describe "create tournament" do

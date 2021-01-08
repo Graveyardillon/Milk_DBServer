@@ -28,7 +28,7 @@ defmodule MilkWeb.Router do
     get  "/user/get", UserController, :show
     get  "/user/in_touch", UserController, :users_in_touch
     post "/user/update", UserController, :update
-    get "/user/get_all", UserController, :index
+    get  "/user/get_all", UserController, :index
     post "/user/get", UserController, :show
     post "/user/in_touch", UserController, :get_users_in_touch
     post "/user/signup", UserController, :create
@@ -97,6 +97,7 @@ defmodule MilkWeb.Router do
     post "/tournament/finish", TournamentController, :finish
 
     resources "/entrant", EntrantController, except: [:new, :edit, :delete]
+    # FIXME: GETのパラメータの渡し方を統一したい
     get  "/entrant/rank/:tournament_id/:user_id", EntrantController, :show_rank
     delete "/entrant/delete", EntrantController, :delete
     resources "/entrant_log", EntrantLogController

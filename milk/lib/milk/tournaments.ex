@@ -143,6 +143,22 @@ defmodule Milk.Tournaments do
   def get_tournament!(id), do: Repo.get!(Tournament, id)
 
   @doc """
+  Gets a single tournament or tournament log.
+  If tournament does not exist in the table, it checks log table.
+  """
+  def get_tournament_including_logs(id) do
+    case get_tournament(id) do
+      nil ->
+        case Log.get_tournament_log_by_tournament_id(id) do
+          nil -> {:error, nil}
+          log -> {:ok, log}
+        end
+      tournament ->
+        {:ok, tournament}
+    end
+  end
+
+  @doc """
   Get tournaments which the user participating in.
   """
   def get_participating_tournaments(user_id) do
@@ -696,7 +712,7 @@ defmodule Milk.Tournaments do
 
   defp atom_tournament_map_to_string_map(%Tournament{} = tournament, winner_id) do
     %{
-      "id" => tournament.id,
+      "tournament_id" => tournament.id,
       "name" => tournament.name,
       "type" => tournament.type,
       "deadline" => tournament.deadline,
