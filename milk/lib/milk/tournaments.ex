@@ -352,6 +352,7 @@ defmodule Milk.Tournaments do
 
   """
   def get_entrant!(id), do: Repo.get!(Entrant, id)
+  def get_entrant(id), do: Repo.get(Entrant, id)
 
   defp get_entrant_by_user_id_and_tournament_id(user_id, tournament_id) do
     Repo.one(from e in Entrant, where: ^tournament_id == e.tournament_id and ^user_id == e.user_id)
@@ -360,10 +361,22 @@ defmodule Milk.Tournaments do
   @doc """
   Get entrants of a tournament.
   """
-  def get_entrants(id) do
+  def get_entrants(tournament_id) do
     Entrant
-    |> where([e], e.tournament_id == ^id)
+    |> where([e], e.tournament_id == ^tournament_id)
     |> Repo.all()
+  end
+
+  @doc """
+  Get a single entrant or log.
+  """
+  def get_entrant_including_logs(id) do
+    case get_entrant(id) do
+      nil ->
+        {:ok, nil}
+      entrant ->
+        {:ok, entrant}
+    end
   end
 
   @doc """
@@ -553,9 +566,11 @@ defmodule Milk.Tournaments do
   def delete_entrant(%Entrant{} = entrant) do
     EntrantLog.changeset(%EntrantLog{}, Map.from_struct(entrant))
     |> Repo.insert()
+
     tournament = Repo.get(Tournament, entrant.tournament_id)
     Tournament.changeset(tournament, %{count: tournament.count - 1})
     |> Repo.update()
+
     Repo.delete(entrant)
   end
 
@@ -695,7 +710,14 @@ defmodule Milk.Tournaments do
   """
   def finish(tournament_id, winner_user_id) do
     # FIXME: user_idを使って認証する処理を書いてない
+    case finish_entrants(tournament_id) do
+      :ok -> finish_tournament(tournament_id, winner_user_id)
+      :error -> false
+      _ -> false
+    end
+  end
 
+  defp finish_tournament(tournament_id, winner_user_id) do
     {:ok, tournament} =
       tournament_id
       |> get_tournament!()
@@ -708,6 +730,14 @@ defmodule Milk.Tournaments do
       {:ok, _tournament_log} -> true
       {:error, _} -> false
     end
+  end
+
+  defp finish_entrants(tournament_id) do
+    tournament_id
+    |> get_entrants()
+    |> Enum.each(fn entrant ->
+      delete_entrant(entrant)
+    end)
   end
 
   defp atom_tournament_map_to_string_map(%Tournament{} = tournament, winner_id) do

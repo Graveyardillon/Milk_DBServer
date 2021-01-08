@@ -322,6 +322,33 @@ defmodule Milk.TournamentsTest do
         assert %Entrant{} = entrant
       end)
     end
+
+    test "get_entrant_including_logs/1 works fine with a valid data", %{entrant: entrant} do
+      num = 7
+      create_entrants(num, entrant.tournament_id)
+      Tournaments.finish(entrant.tournament_id, entrant.id)
+
+      assert {:ok, _entrant} = Tournaments.get_entrant_including_logs(entrant.id)
+    end
+
+    test "get_entrant_including_logs/1 gets tournament log with a valid data", %{entrant: entrant} do
+      num = 7
+      create_entrants(num, entrant.tournament_id)
+      Tournaments.finish(entrant.tournament_id, entrant.id)
+
+      assert {:ok, _entrant} = Tournaments.get_entrant_including_logs(entrant.id)
+    end
+
+    test "get_entrant_including_logs/1 gets tournament with a valid data", %{entrant: entrant} do
+      num = 7
+      create_entrants(num, entrant.tournament_id)
+
+      assert {:ok, _entrant} = Tournaments.get_entrant_including_logs(entrant.id)
+    end
+
+    test "get_entrant_including_logs/1 does not work with an invalid data", %{entrant: entrant} do
+      assert {:ok, _entrant} = Tournaments.get_entrant_including_logs(-1)
+    end
   end
 
   describe "create entrant" do
