@@ -14,6 +14,7 @@ defmodule Milk.TournamentsTest do
     Entrant,
     TournamentChatTopic
   }
+  alias Milk.Log.EntrantLog
   alias Milk.Accounts.User
 
   # 外部キーが二つ以上の場合は %{"capacity" => 42} のようにしなければいけない
@@ -323,31 +324,23 @@ defmodule Milk.TournamentsTest do
       end)
     end
 
-    test "get_entrant_including_logs/1 works fine with a valid data", %{entrant: entrant} do
-      num = 7
-      create_entrants(num, entrant.tournament_id)
-      Tournaments.finish(entrant.tournament_id, entrant.id)
-
-      assert {:ok, _entrant} = Tournaments.get_entrant_including_logs(entrant.id)
-    end
-
     test "get_entrant_including_logs/1 gets tournament log with a valid data", %{entrant: entrant} do
       num = 7
       create_entrants(num, entrant.tournament_id)
       Tournaments.finish(entrant.tournament_id, entrant.id)
 
-      assert {:ok, _entrant} = Tournaments.get_entrant_including_logs(entrant.id)
+      assert %EntrantLog{} = Tournaments.get_entrant_including_logs(entrant.id)
     end
 
     test "get_entrant_including_logs/1 gets tournament with a valid data", %{entrant: entrant} do
       num = 7
       create_entrants(num, entrant.tournament_id)
 
-      assert {:ok, _entrant} = Tournaments.get_entrant_including_logs(entrant.id)
+      assert %Entrant{} = Tournaments.get_entrant_including_logs(entrant.id)
     end
 
     test "get_entrant_including_logs/1 does not work with an invalid data", %{entrant: entrant} do
-      assert {:ok, _entrant} = Tournaments.get_entrant_including_logs(-1)
+      assert nil == Tournaments.get_entrant_including_logs(-1)
     end
   end
 
@@ -382,12 +375,12 @@ defmodule Milk.TournamentsTest do
     setup [:create_entrant]
 
     test "delete_entrant/2 works fine with a valid data", %{entrant: entrant} do
-      assert {:ok, _entrant} = Tournaments.delete_entrant(entrant.tournament_id, entrant.user_id)
+      assert {:ok, %Entrant{} = entrant} = Tournaments.delete_entrant(entrant.tournament_id, entrant.user_id)
       assert %Ecto.NoResultsError{} = catch_error(Tournaments.get_entrant!(entrant.id))
     end
 
     test "delete_entrant/1 works fine with a valid data", %{entrant: entrant} do
-      assert {:ok, _entrant} = Tournaments.delete_entrant(entrant)
+      assert {:ok, %Entrant{} = entrant} = Tournaments.delete_entrant(entrant)
       assert %Ecto.NoResultsError{} = catch_error(Tournaments.get_entrant!(entrant.id))
     end
   end

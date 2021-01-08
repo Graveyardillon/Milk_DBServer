@@ -372,10 +372,8 @@ defmodule Milk.Tournaments do
   """
   def get_entrant_including_logs(id) do
     case get_entrant(id) do
-      nil ->
-        {:ok, nil}
-      entrant ->
-        {:ok, entrant}
+      nil -> Log.get_entrant_log_by_entrant_id(id)
+      entrant -> entrant
     end
   end
 
@@ -564,7 +562,11 @@ defmodule Milk.Tournaments do
   end
 
   def delete_entrant(%Entrant{} = entrant) do
-    EntrantLog.changeset(%EntrantLog{}, Map.from_struct(entrant))
+    map =
+      entrant
+      |> Map.from_struct()
+      |> Map.put(:entrant_id, entrant.id)
+    EntrantLog.changeset(%EntrantLog{}, map)
     |> Repo.insert()
 
     tournament = Repo.get(Tournament, entrant.tournament_id)
