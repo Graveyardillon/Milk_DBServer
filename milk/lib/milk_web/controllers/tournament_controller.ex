@@ -455,12 +455,17 @@ defmodule MilkWeb.TournamentController do
     user_id = Tools.to_integer_as_needed(user_id)
 
     {_, match_list} = hd(Ets.get_match_list(tournament_id))
-    match = Tournaments.find_match(match_list, user_id)
-    with {:ok, opponent} <- Tournaments.get_opponent(match, user_id) do
-      json(conn, %{result: true, opponent: opponent})
+
+    unless is_integer(match_list) do
+      match = Tournaments.find_match(match_list, user_id)
+      with {:ok, opponent} <- Tournaments.get_opponent(match, user_id) do
+        json(conn, %{result: true, opponent: opponent})
+      else
+        {:wait, _} -> json(conn, %{result: false, opponent: nil})
+        _ -> render(conn, "error.json", error: nil)
+      end
     else
-      {:wait, _} -> json(conn, %{result: false, opponent: nil})
-      _ -> render(conn, "error.json", error: nil)
+      json(conn, %{result: false})
     end
   end
 

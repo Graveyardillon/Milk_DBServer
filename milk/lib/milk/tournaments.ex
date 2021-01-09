@@ -377,6 +377,13 @@ defmodule Milk.Tournaments do
     end
   end
 
+  def get_entrant_including_logs(tournament_id, user_id) do
+    case get_entrant_by_user_id_and_tournament_id(user_id, tournament_id) do
+      nil -> Log.get_entrant_log_by_user_id_and_tournament_id(user_id, tournament_id)
+      entrant -> entrant
+    end
+  end
+
   @doc """
   Creates a entrant.
 
@@ -566,6 +573,7 @@ defmodule Milk.Tournaments do
       entrant
       |> Map.from_struct()
       |> Map.put(:entrant_id, entrant.id)
+      |> IO.inspect()
     EntrantLog.changeset(%EntrantLog{}, map)
     |> Repo.insert()
 
@@ -593,8 +601,9 @@ defmodule Milk.Tournaments do
   Get a rank of a user.
   """
   def get_rank(tournament_id, user_id) do
-    with entrant <- Repo.one(from e in Entrant, where: e.tournament_id == ^tournament_id and e.user_id == ^user_id),
+    with entrant <- get_entrant_including_logs(tournament_id, user_id),
     :false <- is_nil(entrant) do
+      IO.inspect(entrant, label: :entrant)
       Map.get(entrant, :rank)
     else
       :true -> {:error, "entrant is not found"}

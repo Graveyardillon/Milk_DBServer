@@ -453,6 +453,16 @@ defmodule Milk.Log do
   end
 
   @doc """
+  Get a single entrant log by user id and tournament id.
+  """
+  def get_entrant_log_by_user_id_and_tournament_id(user_id, tournament_id) do
+    EntrantLog
+    |> where([e], e.user_id == ^user_id)
+    |> where([e], e.tournament_id == ^tournament_id)
+    |> Repo.one()
+  end
+
+  @doc """
   Creates a entrant_log.
 
   ## Examples
