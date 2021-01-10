@@ -372,7 +372,7 @@ defmodule MilkWeb.TournamentController do
     |> Tournaments.find_match(hd(loser_list))
     |> Enum.each(fn user_id ->
       Ets.delete_match_pending_list(user_id)
-      Ets.delete_fight_result(user_id)
+      Ets.delete_fight_result({user_id, tournament_id})
     end)
 
     Tournaments.promote_winners_by_loser(tournament_id, match_list, loser_list)
@@ -492,13 +492,13 @@ defmodule MilkWeb.TournamentController do
     user_id = Tools.to_integer_as_needed(user_id)
     tournament_id = Tools.to_integer_as_needed(tournament_id)
 
-    case Ets.get_fight_result(opponent_id) do
+    case Ets.get_fight_result({opponent_id, tournament_id}) do
       [] ->
-        Ets.insert_fight_result_table(user_id, tournament_id, true)
+        Ets.insert_fight_result_table({user_id, tournament_id}, true)
         json(conn, %{validated: true, completed: false})
 
       result_list ->
-        {_, _tournament_id, is_win} = hd(result_list)
+        {{_, _tournament_id}, is_win} = hd(result_list)
 
         if is_win do
           Chat.notify_game_masters(tournament_id)
@@ -518,12 +518,12 @@ defmodule MilkWeb.TournamentController do
     user_id = Tools.to_integer_as_needed(user_id)
     tournament_id = Tools.to_integer_as_needed(tournament_id)
 
-    case Ets.get_fight_result(opponent_id) do
+    case Ets.get_fight_result({opponent_id, tournament_id}) do
       [] ->
-        Ets.insert_fight_result_table(user_id, tournament_id, false)
+        Ets.insert_fight_result_table({user_id, tournament_id}, false)
         json(conn, %{validated: true, completed: false})
       result_list ->
-        {_, _tournament_id, is_win} = hd(result_list)
+        {{_, _tournament_id}, is_win} = hd(result_list)
 
         unless is_win do
           Chat.notify_game_masters(tournament_id)
@@ -537,13 +537,14 @@ defmodule MilkWeb.TournamentController do
   @doc """
   Get a result of fight.
   """
-  def is_user_win(conn, %{"user_id" => user_id}) do
+  def is_user_win(conn, %{"user_id" => user_id, "tournament_id" => tournament_id}) do
     user_id = Tools.to_integer_as_needed(user_id)
-    case Ets.get_fight_result(user_id) do
+    tournament_id = Tools.to_integer_as_needed(tournament_id)
+    case Ets.get_fight_result({user_id, tournament_id}) do
       [] ->
         json(conn, %{is_win: nil, is_claimed: false})
       result_list ->
-        {_, tournament_id, is_win} = hd(result_list)
+        {{_, tournament_id}, is_win} = hd(result_list)
 
         json(conn, %{is_win: is_win, tournament_id: tournament_id, is_claimed: true})
     end
