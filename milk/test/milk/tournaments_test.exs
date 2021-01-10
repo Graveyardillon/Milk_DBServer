@@ -844,7 +844,6 @@ defmodule Milk.TournamentsTest do
         |> Tournaments.generate_matchlist()
 
       Ets.insert_match_list(match_list, entrant.tournament_id)
-      IO.inspect(match_list, label: :match_list)
 
       assert {:ok, _promoted} = Tournaments.promote_rank(attrs)
       assert Tournaments.get_rank(entrant.tournament_id, entrant.user_id) == 1

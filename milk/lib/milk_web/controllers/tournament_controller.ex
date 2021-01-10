@@ -494,11 +494,11 @@ defmodule MilkWeb.TournamentController do
 
     case Ets.get_fight_result(opponent_id) do
       [] ->
-        Ets.insert_fight_result_table(user_id, true)
+        Ets.insert_fight_result_table(user_id, tournament_id, true)
         json(conn, %{validated: true, completed: false})
 
       result_list ->
-        {_, is_win} = hd(result_list)
+        {_, _tournament_id, is_win} = hd(result_list)
 
         if is_win do
           Chat.notify_game_masters(tournament_id)
@@ -520,10 +520,10 @@ defmodule MilkWeb.TournamentController do
 
     case Ets.get_fight_result(opponent_id) do
       [] ->
-        Ets.insert_fight_result_table(user_id, false)
+        Ets.insert_fight_result_table(user_id, tournament_id, false)
         json(conn, %{validated: true, completed: false})
       result_list ->
-        {_, is_win} = hd(result_list)
+        {_, _tournament_id, is_win} = hd(result_list)
 
         unless is_win do
           Chat.notify_game_masters(tournament_id)
@@ -543,9 +543,9 @@ defmodule MilkWeb.TournamentController do
       [] ->
         json(conn, %{is_win: nil, is_claimed: false})
       result_list ->
-        {_, is_win} = hd(result_list)
+        {_, tournament_id, is_win} = hd(result_list)
 
-        json(conn, %{is_win: is_win, is_claimed: true})
+        json(conn, %{is_win: is_win, tournament_id: tournament_id, is_claimed: true})
     end
   end
 

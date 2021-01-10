@@ -985,7 +985,6 @@ defmodule Milk.Tournaments do
   def promote_rank(attrs \\ %{}) do
     attrs
     |> user_exist_check()
-    |> IO.inspect()
     |> tournament_exist_check()
     |> tournament_start_check()
     |> case do

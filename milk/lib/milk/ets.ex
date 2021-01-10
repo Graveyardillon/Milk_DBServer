@@ -21,8 +21,8 @@ defmodule Milk.Ets do
     :ets.insert_new(:match_pending_list, {user_id, tournament_id})
   end
 
-  def insert_fight_result_table(user_id, is_win) do
-    :ets.insert_new(:fight_result, {user_id, is_win})
+  def insert_fight_result_table(user_id, tournament_id, is_win) do
+    :ets.insert_new(:fight_result, {user_id, tournament_id, is_win})
   end
 
   def get_match_list(tournament_id) do
