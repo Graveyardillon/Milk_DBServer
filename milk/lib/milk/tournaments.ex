@@ -573,7 +573,6 @@ defmodule Milk.Tournaments do
       entrant
       |> Map.from_struct()
       |> Map.put(:entrant_id, entrant.id)
-      |> IO.inspect()
     EntrantLog.changeset(%EntrantLog{}, map)
     |> Repo.insert()
 
@@ -603,7 +602,6 @@ defmodule Milk.Tournaments do
   def get_rank(tournament_id, user_id) do
     with entrant <- get_entrant_including_logs(tournament_id, user_id),
     :false <- is_nil(entrant) do
-      IO.inspect(entrant, label: :entrant)
       Map.get(entrant, :rank)
     else
       :true -> {:error, "entrant is not found"}
@@ -962,6 +960,7 @@ defmodule Milk.Tournaments do
 
   @doc """
   Promotes rank of a entrant.
+  勝った人のランクが上がるやつ
   """
   def promote_rank(attrs \\ %{}) do
     attrs
@@ -978,43 +977,54 @@ defmodule Milk.Tournaments do
           |> Ets.get_match_list()
           |> hd()
         # 対戦相手
-        opponent =
-          match_list
-          |> find_match(attrs["user_id"])
-          |> get_opponent(attrs["user_id"], :promote)
-          |> Map.get("id")
-          |> get_entrant_by_user_id_and_tournament_id(attrs["tournament_id"])
-        opponents_rank = Map.get(opponent, :rank)
+        match_list
+        |> find_match(attrs["user_id"])
+        |> get_opponent(attrs["user_id"])
+        |> case do
+          {:ok, opponent} ->
+            opponent =
+              opponent
+              |> Map.get("id")
+              |> get_entrant_by_user_id_and_tournament_id(attrs["tournament_id"])
+            opponents_rank = Map.get(opponent, :rank)
 
-        user =
-          attrs["user_id"]
-          |> get_entrant_by_user_id_and_tournament_id(attrs["tournament_id"])
+            user =
+              attrs["user_id"]
+              |> get_entrant_by_user_id_and_tournament_id(attrs["tournament_id"])
 
-          user
-          |> Map.get(:rank)
-          |> case do
-            rank when rank > opponents_rank -> update_entrant(opponent, %{rank: rank})
-            rank when rank < opponents_rank -> update_entrant(user, %{rank: opponents_rank})
-            _ ->
-          end
-        {bool, rank} =
-          opponent
-          |> Map.get(:rank)
-          |> check_exponentiation_of_two()
-        updated =
-          bool
-          |> if do
-            div(rank, 2)
-          else
-            rank
-            |> find_num_closest_exponentiation_of_two()
-          end
-        entrant
-        |> update_entrant(%{rank: updated})
+              user
+              |> Map.get(:rank)
+              |> case do
+                rank when rank > opponents_rank -> update_entrant(opponent, %{rank: rank})
+                rank when rank < opponents_rank -> update_entrant(user, %{rank: opponents_rank})
+                _ ->
+              end
+            {bool, rank} =
+              opponent
+              |> Map.get(:rank)
+              |> IO.inspect(label: :rank)
+              |> check_exponentiation_of_two()
+            updated =
+              bool
+              |> if do
+                div(rank, 2)
+              else
+                rank
+                |> find_num_closest_exponentiation_of_two()
+              end
+            entrant
+            |> update_entrant(%{rank: updated})
+          {:wait, nil} ->
+            {:wait, nil}
+          {:error, _} ->
+            {:error, nil}
+        end
       {:error, error} -> {:error, error}
     end
   end
 
+  defp find_num_closest_exponentiation_of_two(1), do: 1
+  defp find_num_closest_exponentiation_of_two(2), do: 1
   defp find_num_closest_exponentiation_of_two(num) do
     if num > 4 do
       find_num_closest_exponentiation_of_two(num, 8)

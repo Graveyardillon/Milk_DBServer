@@ -692,13 +692,12 @@ defmodule Milk.TournamentsTest do
         create_entrants(num, entrant.tournament_id)
         |> Enum.map(fn x -> %{x | rank: num + 1} end)
         |> Kernel.++([%{entrant | rank: num + 1}])
+        |> Enum.map(fn entrant -> entrant.user_id end)
         |> Tournaments.generate_matchlist()
 
       Ets.insert_match_list(match_list, entrant.tournament_id)
 
       assert {:ok, promoted} = Tournaments.promote_rank(attrs)
-      # assert promoted.user_id  == entrant.user_id
-      # assert promoted.rank == 4
     end
 
     test "promote_rank/1 returns error with invalid attrs(tournament_id)", %{entrant: entrant} do
@@ -759,6 +758,106 @@ defmodule Milk.TournamentsTest do
       |> Ets.insert_match_list(entrant.tournament_id)
 
       assert {:error, "undefined user"} = Tournaments.promote_rank(attrs)
+    end
+
+    test "run promote_rank/1 in a row with 8 entrants", %{entrant: entrant} do
+      attrs =
+        %{
+          "tournament_id" => entrant.tournament_id,
+          "user_id" => entrant.user_id
+        }
+
+      # numは生成する参加者の数で後に一人追加するので8 - 1 = 7
+      num = 7
+      # 参加者作成，マッチリストを生成してEtsに登録
+      {:ok, match_list} =
+        create_entrants(num, entrant.tournament_id)
+        |> Enum.map(fn x -> %{x | rank: num + 1} end)
+        |> Kernel.++([%{entrant | rank: num + 1}])
+        |> Enum.map(fn entrant -> entrant.user_id end)
+        |> Tournaments.generate_matchlist()
+
+      Ets.insert_match_list(match_list, entrant.tournament_id)
+
+      assert {:ok, _promoted} = Tournaments.promote_rank(attrs)
+      assert Tournaments.get_rank(entrant.tournament_id, entrant.user_id) == 4
+
+      {:ok, opponent} =
+        match_list
+        |> Tournaments.find_match(entrant.user_id)
+        |> Tournaments.get_opponent(entrant.user_id)
+
+      Ets.delete_match_list(entrant.tournament_id)
+      updated = Tournaments.delete_loser(match_list, opponent["id"])
+
+      Ets.insert_match_list(updated, entrant.tournament_id)
+
+      assert {:wait, nil} = Tournaments.promote_rank(attrs)
+    end
+
+    test "run promote_rank/1 in a row with 4 entrants", %{entrant: entrant} do
+      attrs =
+        %{
+          "tournament_id" => entrant.tournament_id,
+          "user_id" => entrant.user_id
+        }
+
+      num = 3
+      {:ok, match_list} =
+        create_entrants(num, entrant.tournament_id)
+        |> Enum.map(fn x -> %{x | rank: num + 1} end)
+        |> Kernel.++([%{entrant | rank: num + 1}])
+        |> Enum.map(fn entrant -> entrant.user_id end)
+        |> Tournaments.generate_matchlist()
+
+      Ets.insert_match_list(match_list, entrant.tournament_id)
+
+      assert {:ok, _promoted} = Tournaments.promote_rank(attrs)
+      assert Tournaments.get_rank(entrant.tournament_id, entrant.user_id) == 2
+
+      {:ok, opponent} =
+        match_list
+        |> Tournaments.find_match(entrant.user_id)
+        |> Tournaments.get_opponent(entrant.user_id)
+
+      Ets.delete_match_list(entrant.tournament_id)
+      updated = Tournaments.delete_loser(match_list, opponent["id"])
+
+      Ets.insert_match_list(updated, entrant.tournament_id)
+
+      assert {:wait, nil} = Tournaments.promote_rank(attrs)
+    end
+
+    test "run promote_rank/1 in a row with 2 entrants", %{entrant: entrant} do
+      attrs =
+        %{
+          "tournament_id" => entrant.tournament_id,
+          "user_id" => entrant.user_id
+        }
+
+      num = 1
+      {:ok, match_list} =
+        create_entrants(num, entrant.tournament_id)
+        |> Enum.map(fn x -> %{x | rank: num + 1} end)
+        |> Kernel.++([%{entrant | rank: num + 1}])
+        |> Enum.map(fn entrant -> entrant.user_id end)
+        |> Tournaments.generate_matchlist()
+
+      Ets.insert_match_list(match_list, entrant.tournament_id)
+      IO.inspect(match_list, label: :match_list)
+
+      assert {:ok, _promoted} = Tournaments.promote_rank(attrs)
+      assert Tournaments.get_rank(entrant.tournament_id, entrant.user_id) == 1
+
+      {:ok, opponent} =
+        match_list
+        |> Tournaments.find_match(entrant.user_id)
+        |> Tournaments.get_opponent(entrant.user_id)
+
+      Ets.delete_match_list(entrant.tournament_id)
+      updated = Tournaments.delete_loser(match_list, opponent["id"])
+
+      Ets.insert_match_list(updated, entrant.tournament_id)
     end
   end
 
