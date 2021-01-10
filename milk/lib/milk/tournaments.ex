@@ -615,6 +615,26 @@ defmodule Milk.Tournaments do
     Tournamex.delete_loser(list, loser)
   end
 
+  def promote_winners_by_loser(tournament_id, match_list, losers) when is_list(losers) do
+    Enum.each(losers, fn loser ->
+      {:ok, opponent} =
+        match_list
+        |> find_match(loser)
+        |> get_opponent(loser)
+
+      promote_rank(%{"tournament_id" => tournament_id, "user_id" => opponent["id"]})
+    end)
+  end
+
+  def promote_winners_by_loser(tournament_id, match_list, loser) do
+    {:ok, opponent} =
+      match_list
+      |> find_match(loser)
+      |> get_opponent(loser)
+
+    promote_rank(%{"tournament_id" => tournament_id, "user_id" => opponent["id"]})
+  end
+
   @doc """
   Finds a 1v1 match of given id and match list.
   """
@@ -965,6 +985,7 @@ defmodule Milk.Tournaments do
   def promote_rank(attrs \\ %{}) do
     attrs
     |> user_exist_check()
+    |> IO.inspect()
     |> tournament_exist_check()
     |> tournament_start_check()
     |> case do
@@ -1002,7 +1023,6 @@ defmodule Milk.Tournaments do
             {bool, rank} =
               opponent
               |> Map.get(:rank)
-              |> IO.inspect(label: :rank)
               |> check_exponentiation_of_two()
             updated =
               bool

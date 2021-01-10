@@ -375,6 +375,7 @@ defmodule MilkWeb.TournamentController do
       Ets.delete_fight_result(user_id)
     end)
 
+    Tournaments.promote_winners_by_loser(tournament_id, match_list, loser_list)
     updated_match_list = Tournaments.delete_loser(match_list, loser_list)
     Ets.delete_match_list(tournament_id)
     Ets.insert_match_list(updated_match_list, tournament_id)
