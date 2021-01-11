@@ -441,7 +441,7 @@ defmodule MilkWeb.TournamentController do
 
     case Ets.get_match_pending_list(user_id) do
       [] ->
-        Ets.insert_match_pending_list_table(tournament_id, user_id)
+        Ets.insert_match_pending_list_table(user_id, tournament_id)
         json(conn, %{result: true})
       _ ->
         json(conn, %{result: false})
@@ -473,12 +473,21 @@ defmodule MilkWeb.TournamentController do
   @doc """
   Check if the user has already matching.
   """
-  def check_pending(conn, %{"user_id" => user_id}) do
+  def check_pending(conn, %{"user_id" => user_id, "tournament_id" => tournament_id}) do
     user_id = Tools.to_integer_as_needed(user_id)
+    tournament_id = Tools.to_integer_as_needed(tournament_id)
 
-    pending_list = Ets.get_match_pending_list(user_id)
+    pending_list =
+      Ets.get_match_pending_list(user_id)
+      |> IO.inspect(label: :pend)
+      |> Enum.filter(fn {_, id} ->
+        id == tournament_id
+      end)
+      |> IO.inspect(label: :filtered)
+
     unless pending_list == [] do
-      json(conn, %{result: true})
+      {_, id} = hd(pending_list)
+      json(conn, %{result: true, tournament_id: id})
     else
       json(conn, %{result: false})
     end
