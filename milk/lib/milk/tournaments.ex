@@ -752,6 +752,7 @@ defmodule Milk.Tournaments do
           {:error, "cannot find tournament"}
         end
       else
+        delete_tournament(tournament_id)
         {:error, "too few entrants"}
       end
     else
