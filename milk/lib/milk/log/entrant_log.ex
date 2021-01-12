@@ -3,6 +3,7 @@ defmodule Milk.Log.EntrantLog do
   import Ecto.Changeset
 
   schema "entrant_log" do
+    field :entrant_id, :integer
     field :rank, :integer
     field :tournament_id, :integer
     field :user_id, :integer
@@ -14,7 +15,7 @@ defmodule Milk.Log.EntrantLog do
   @doc false
   def changeset(entrant_log, attrs) do
     entrant_log
-    |> cast(attrs, [:tournament_id, :user_id, :rank, :create_time, :update_time])
-    |> validate_required([:tournament_id, :user_id, :rank])
+    |> cast(attrs, [:entrant_id, :tournament_id, :user_id, :rank, :create_time, :update_time])
+    |> validate_required([:entrant_id, :tournament_id, :user_id, :rank])
   end
 end
