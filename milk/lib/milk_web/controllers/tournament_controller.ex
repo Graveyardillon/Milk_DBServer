@@ -371,7 +371,7 @@ defmodule MilkWeb.TournamentController do
     match_list
     |> Tournaments.find_match(hd(loser_list))
     |> Enum.each(fn user_id ->
-      Ets.delete_match_pending_list(user_id)
+      Ets.delete_match_pending_list({user_id, tournament_id})
       Ets.delete_fight_result({user_id, tournament_id})
     end)
 
@@ -439,12 +439,13 @@ defmodule MilkWeb.TournamentController do
     user_id = Tools.to_integer_as_needed(user_id)
     tournament_id = Tools.to_integer_as_needed(tournament_id)
 
-    case Ets.get_match_pending_list(user_id) do
-      [] ->
-        Ets.insert_match_pending_list_table(user_id, tournament_id)
-        json(conn, %{result: true})
-      _ ->
-        json(conn, %{result: false})
+    pending_list = Ets.get_match_pending_list({user_id, tournament_id})
+
+    if pending_list == [] do
+      Ets.insert_match_pending_list_table({user_id, tournament_id})
+      json(conn, %{result: true})
+    else
+      json(conn, %{result: false})
     end
   end
 
@@ -477,16 +478,10 @@ defmodule MilkWeb.TournamentController do
     user_id = Tools.to_integer_as_needed(user_id)
     tournament_id = Tools.to_integer_as_needed(tournament_id)
 
-    pending_list =
-      Ets.get_match_pending_list(user_id)
-      |> IO.inspect(label: :pend)
-      |> Enum.filter(fn {_, id} ->
-        id == tournament_id
-      end)
-      |> IO.inspect(label: :filtered)
+    pending_list = Ets.get_match_pending_list({user_id, tournament_id})
 
     unless pending_list == [] do
-      {_, id} = hd(pending_list)
+      {{_, id}} = hd(pending_list)
       json(conn, %{result: true, tournament_id: id})
     else
       json(conn, %{result: false})
