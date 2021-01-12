@@ -440,9 +440,14 @@ defmodule Milk.TournamentsTest do
   describe "tournament flow functions" do
     setup [:create_tournament_for_flow]
 
-    test "start/2 with valid data works fine", %{tournament: tournament} do
-      assert {:ok, _tournament} = Tournaments.start(tournament.master_id, tournament.id)
-      assert {:error, _} = Tournaments.start(tournament.master_id, tournament.id)
+    # FIXME: startのテストを増やしたほうがいい
+    # test "start/2 with valid data works fine", %{tournament: tournament} do
+    #   assert {:ok, _tournament} = Tournaments.start(tournament.master_id, tournament.id)
+    #   assert {:error, _} = Tournaments.start(tournament.master_id, tournament.id)
+    # end
+
+    test "start/2 with only one entrant does not work", %{tournament: tournament} do
+      assert {:error, "too few entrants"} = Tournaments.start(tournament.master_id, tournament.id)
     end
 
     test "start/2 with invalid data does not work", %{tournament: _tournament} do

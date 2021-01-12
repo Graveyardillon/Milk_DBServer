@@ -351,7 +351,7 @@ defmodule MilkWeb.TournamentController do
       else
         {:error, error} -> render(conn, "error.json", error: error)
       end
-      else
+    else
       _ -> json(conn, %{error: "error"})
     end
   end
