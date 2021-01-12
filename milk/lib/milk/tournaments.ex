@@ -715,22 +715,55 @@ defmodule Milk.Tournaments do
   @doc """
   Starts a tournament.
   """
+  # def start(master_id, tournament_id) do
+  #   with :false <- is_nil(master_id) or is_nil(tournament_id),
+  #   tournament <- Tournament
+  #     |> where([t], t.master_id == ^master_id and t.id == ^tournament_id)
+  #     |> Repo.one(),
+  #     :false <- is_nil(tournament) do
+  #     unless tournament.is_started do
+  #       tournament
+  #       |> Tournament.changeset(%{is_started: true})
+  #       |> Repo.update()
+  #     else
+  #       {:error, nil}
+  #     end
+  #   else
+  #     _ -> {:error, "unexpected error"}
+  #   end
+  # end
+
   def start(master_id, tournament_id) do
-    with :false <- is_nil(master_id) or is_nil(tournament_id),
-    tournament <- Tournament
-      |> where([t], t.master_id == ^master_id and t.id == ^tournament_id)
-      |> Repo.one(),
-      :false <- is_nil(tournament) do
-      unless tournament.is_started do
-        tournament
-        |> Tournament.changeset(%{is_started: true})
-        |> Repo.update()
+    unless is_nil(master_id) or is_nil(tournament_id) do
+      unless number_of_entrants(tournament_id) <= 1 do
+        tournament =
+          Tournament
+          |> where([t], t.master_id == ^master_id and t.id == ^tournament_id)
+          |> Repo.one()
+        unless is_nil(tournament) do
+          unless tournament.is_started do
+            tournament
+            |> Tournament.changeset(%{is_started: true})
+            |> Repo.update()
+          else
+            {:error, "tournament is already started"}
+          end
+        else
+          {:error, "cannot find tournament"}
+        end
       else
-        {:error, nil}
+        {:error, "too few entrants"}
       end
     else
-      _ -> {:error, "unexpected error"}
+      {:error, "master_id or tournament_id is nil"}
     end
+  end
+
+  defp number_of_entrants(tournament_id) do
+    Entrant
+    |> where([e], e.tournament_id == ^tournament_id)
+    |> Repo.all()
+    |> length()
   end
 
   @doc """

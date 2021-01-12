@@ -219,7 +219,7 @@ defmodule MilkWeb.TournamentView do
 
   #def render("error.json", %{error: error, msg: "Creating tournament failed"}) do
   def render("error.json", %{error: error}) do
-    if(error) do
+    if error do
       %{result: false, error: error, data: nil}
     else
       %{result: false, error: nil, data: nil}

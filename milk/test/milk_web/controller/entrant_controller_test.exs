@@ -151,7 +151,6 @@ defmodule MilkWeb.EntrantControllerTest do
         |> Kernel.++([%{entrant | rank: num + 1}])
         |> Enum.map(fn entrant -> entrant.user_id end)
         |> Tournaments.generate_matchlist()
-        |> IO.inspect()
 
       Ets.insert_match_list(matchlist, entrant.tournament_id)
 
