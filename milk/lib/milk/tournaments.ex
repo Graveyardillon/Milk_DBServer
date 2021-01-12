@@ -143,8 +143,33 @@ defmodule Milk.Tournaments do
   def get_tournament!(id), do: Repo.get!(Tournament, id)
 
   @doc """
+  Gets a single tournament or tournament log.
+  If tournament does not exist in the table, it checks log table.
+  """
+  def get_tournament_including_logs(id) do
+    case get_tournament(id) do
+      nil ->
+        case Log.get_tournament_log_by_tournament_id(id) do
+          nil -> {:error, nil}
+          log -> {:ok, log}
+        end
+      tournament ->
+        {:ok, tournament}
+    end
+  end
+
+  @doc """
   Get tournaments which the user participating in.
   """
+  def get_participating_tournaments(user_id) do
+    Entrant
+    |> where([e], e.user_id == ^user_id)
+    |> Repo.all()
+    |> Enum.map(fn entrant ->
+      get_tournament!(entrant.tournament_id)
+    end)
+  end
+
   def get_participating_tournaments(user_id, offset) do
     offset = Tools.to_integer_as_needed(offset)
 
@@ -327,6 +352,7 @@ defmodule Milk.Tournaments do
 
   """
   def get_entrant!(id), do: Repo.get!(Entrant, id)
+  def get_entrant(id), do: Repo.get(Entrant, id)
 
   defp get_entrant_by_user_id_and_tournament_id(user_id, tournament_id) do
     Repo.one(from e in Entrant, where: ^tournament_id == e.tournament_id and ^user_id == e.user_id)
@@ -335,10 +361,27 @@ defmodule Milk.Tournaments do
   @doc """
   Get entrants of a tournament.
   """
-  def get_entrants(id) do
+  def get_entrants(tournament_id) do
     Entrant
-    |> where([e], e.tournament_id == ^id)
+    |> where([e], e.tournament_id == ^tournament_id)
     |> Repo.all()
+  end
+
+  @doc """
+  Get a single entrant or log.
+  """
+  def get_entrant_including_logs(id) do
+    case get_entrant(id) do
+      nil -> Log.get_entrant_log_by_entrant_id(id)
+      entrant -> entrant
+    end
+  end
+
+  def get_entrant_including_logs(tournament_id, user_id) do
+    case get_entrant_by_user_id_and_tournament_id(user_id, tournament_id) do
+      nil -> Log.get_entrant_log_by_user_id_and_tournament_id(user_id, tournament_id)
+      entrant -> entrant
+    end
   end
 
   @doc """
@@ -526,11 +569,17 @@ defmodule Milk.Tournaments do
   end
 
   def delete_entrant(%Entrant{} = entrant) do
-    EntrantLog.changeset(%EntrantLog{}, Map.from_struct(entrant))
+    map =
+      entrant
+      |> Map.from_struct()
+      |> Map.put(:entrant_id, entrant.id)
+    EntrantLog.changeset(%EntrantLog{}, map)
     |> Repo.insert()
+
     tournament = Repo.get(Tournament, entrant.tournament_id)
     Tournament.changeset(tournament, %{count: tournament.count - 1})
     |> Repo.update()
+
     Repo.delete(entrant)
   end
 
@@ -551,7 +600,7 @@ defmodule Milk.Tournaments do
   Get a rank of a user.
   """
   def get_rank(tournament_id, user_id) do
-    with entrant <- Repo.one(from e in Entrant, where: e.tournament_id == ^tournament_id and e.user_id == ^user_id),
+    with entrant <- get_entrant_including_logs(tournament_id, user_id),
     :false <- is_nil(entrant) do
       Map.get(entrant, :rank)
     else
@@ -564,6 +613,26 @@ defmodule Milk.Tournaments do
   """
   def delete_loser(list, loser) do
     Tournamex.delete_loser(list, loser)
+  end
+
+  def promote_winners_by_loser(tournament_id, match_list, losers) when is_list(losers) do
+    Enum.each(losers, fn loser ->
+      {:ok, opponent} =
+        match_list
+        |> find_match(loser)
+        |> get_opponent(loser)
+
+      promote_rank(%{"tournament_id" => tournament_id, "user_id" => opponent["id"]})
+    end)
+  end
+
+  def promote_winners_by_loser(tournament_id, match_list, loser) do
+    {:ok, opponent} =
+      match_list
+      |> find_match(loser)
+      |> get_opponent(loser)
+
+    promote_rank(%{"tournament_id" => tournament_id, "user_id" => opponent["id"]})
   end
 
   @doc """
@@ -670,7 +739,14 @@ defmodule Milk.Tournaments do
   """
   def finish(tournament_id, winner_user_id) do
     # FIXME: user_idを使って認証する処理を書いてない
+    case finish_entrants(tournament_id) do
+      :ok -> finish_tournament(tournament_id, winner_user_id)
+      :error -> false
+      _ -> false
+    end
+  end
 
+  defp finish_tournament(tournament_id, winner_user_id) do
     {:ok, tournament} =
       tournament_id
       |> get_tournament!()
@@ -685,9 +761,17 @@ defmodule Milk.Tournaments do
     end
   end
 
+  defp finish_entrants(tournament_id) do
+    tournament_id
+    |> get_entrants()
+    |> Enum.each(fn entrant ->
+      delete_entrant(entrant)
+    end)
+  end
+
   defp atom_tournament_map_to_string_map(%Tournament{} = tournament, winner_id) do
     %{
-      "id" => tournament.id,
+      "tournament_id" => tournament.id,
       "name" => tournament.name,
       "type" => tournament.type,
       "deadline" => tournament.deadline,
@@ -896,6 +980,7 @@ defmodule Milk.Tournaments do
 
   @doc """
   Promotes rank of a entrant.
+  勝った人のランクが上がるやつ
   """
   def promote_rank(attrs \\ %{}) do
     attrs
@@ -912,43 +997,53 @@ defmodule Milk.Tournaments do
           |> Ets.get_match_list()
           |> hd()
         # 対戦相手
-        opponent =
-          match_list
-          |> find_match(attrs["user_id"])
-          |> get_opponent(attrs["user_id"], :promote)
-          |> Map.get("id")
-          |> get_entrant_by_user_id_and_tournament_id(attrs["tournament_id"])
-        opponents_rank = Map.get(opponent, :rank)
+        match_list
+        |> find_match(attrs["user_id"])
+        |> get_opponent(attrs["user_id"])
+        |> case do
+          {:ok, opponent} ->
+            opponent =
+              opponent
+              |> Map.get("id")
+              |> get_entrant_by_user_id_and_tournament_id(attrs["tournament_id"])
+            opponents_rank = Map.get(opponent, :rank)
 
-        user =
-          attrs["user_id"]
-          |> get_entrant_by_user_id_and_tournament_id(attrs["tournament_id"])
+            user =
+              attrs["user_id"]
+              |> get_entrant_by_user_id_and_tournament_id(attrs["tournament_id"])
 
-          user
-          |> Map.get(:rank)
-          |> case do
-            rank when rank > opponents_rank -> update_entrant(opponent, %{rank: rank})
-            rank when rank < opponents_rank -> update_entrant(user, %{rank: opponents_rank})
-            _ ->
-          end
-        {bool, rank} =
-          opponent
-          |> Map.get(:rank)
-          |> check_exponentiation_of_two()
-        updated =
-          bool
-          |> if do
-            div(rank, 2)
-          else
-            rank
-            |> find_num_closest_exponentiation_of_two()
-          end
-        entrant
-        |> update_entrant(%{rank: updated})
+              user
+              |> Map.get(:rank)
+              |> case do
+                rank when rank > opponents_rank -> update_entrant(opponent, %{rank: rank})
+                rank when rank < opponents_rank -> update_entrant(user, %{rank: opponents_rank})
+                _ ->
+              end
+            {bool, rank} =
+              opponent
+              |> Map.get(:rank)
+              |> check_exponentiation_of_two()
+            updated =
+              bool
+              |> if do
+                div(rank, 2)
+              else
+                rank
+                |> find_num_closest_exponentiation_of_two()
+              end
+            entrant
+            |> update_entrant(%{rank: updated})
+          {:wait, nil} ->
+            {:wait, nil}
+          {:error, _} ->
+            {:error, nil}
+        end
       {:error, error} -> {:error, error}
     end
   end
 
+  defp find_num_closest_exponentiation_of_two(1), do: 1
+  defp find_num_closest_exponentiation_of_two(2), do: 1
   defp find_num_closest_exponentiation_of_two(num) do
     if num > 4 do
       find_num_closest_exponentiation_of_two(num, 8)
@@ -1021,6 +1116,7 @@ defmodule Milk.Tournaments do
   Returns data for tournament brackets.
   """
   def data_for_brackets(match_list) do
-    Tournamex.brackets(match_list)
+    {:ok, brackets} = Tournamex.brackets(match_list)
+    brackets
   end
 end

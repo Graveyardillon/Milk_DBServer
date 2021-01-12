@@ -200,9 +200,9 @@ defmodule Milk.LogTest do
   describe "entrant_log" do
     alias Milk.Log.EntrantLog
 
-    @valid_attrs %{rank: 42, tournament_id: 42, user_id: 42, create_time: ~U[2020-12-20 16:29:01.100311Z], update_time: ~U[2020-12-20 16:29:01.100311Z]}
-    @update_attrs %{rank: 43, tournament_id: 43, user_id: 43}
-    @invalid_attrs %{rank: nil, tournament_id: nil, user_id: nil}
+    @valid_attrs %{entrant_id: 42, rank: 42, tournament_id: 42, user_id: 42, create_time: ~U[2020-12-20 16:29:01.100311Z], update_time: ~U[2020-12-20 16:29:01.100311Z]}
+    @update_attrs %{entrant_id: 42, rank: 43, tournament_id: 43, user_id: 43}
+    @invalid_attrs %{entrant_id: 42, rank: nil, tournament_id: nil, user_id: nil}
 
     def entrant_log_fixture(attrs \\ %{}) do
       {:ok, entrant_log} =

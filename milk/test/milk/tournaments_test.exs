@@ -14,6 +14,7 @@ defmodule Milk.TournamentsTest do
     Entrant,
     TournamentChatTopic
   }
+  alias Milk.Log.EntrantLog
   alias Milk.Accounts.User
 
   # 外部キーが二つ以上の場合は %{"capacity" => 42} のようにしなければいけない
@@ -151,6 +152,32 @@ defmodule Milk.TournamentsTest do
       Enum.each(users, fn user ->
         assert %User{} = user
       end)
+    end
+
+    test "get_tournament_including_logs/1 with valid data gets tournament from log" do
+      user = fixture(:user)
+      {:ok, tournament} =
+        @valid_attrs
+        |> Map.put("master_id", user.id)
+        |> Tournaments.create_tournament()
+
+      Tournaments.finish(tournament.id, user.id)
+
+      assert {:ok, _tournament} = Tournaments.get_tournament_including_logs(tournament.id)
+    end
+
+    test "get_tournament_including_logs/1 with valid data gets tournament" do
+      user = fixture(:user)
+      {:ok, tournament} =
+        @valid_attrs
+        |> Map.put("master_id", user.id)
+        |> Tournaments.create_tournament()
+
+      assert {:ok, _tournament} = Tournaments.get_tournament_including_logs(tournament.id)
+    end
+
+    test "get_tournament_including_logs/1 with invalid data does not get tournament" do
+      assert {:error, _} = Tournaments.get_tournament_including_logs(-1)
     end
   end
 
@@ -296,6 +323,25 @@ defmodule Milk.TournamentsTest do
         assert %Entrant{} = entrant
       end)
     end
+
+    test "get_entrant_including_logs/1 gets tournament log with a valid data", %{entrant: entrant} do
+      num = 7
+      create_entrants(num, entrant.tournament_id)
+      Tournaments.finish(entrant.tournament_id, entrant.id)
+
+      assert %EntrantLog{} = Tournaments.get_entrant_including_logs(entrant.id)
+    end
+
+    test "get_entrant_including_logs/1 gets tournament with a valid data", %{entrant: entrant} do
+      num = 7
+      create_entrants(num, entrant.tournament_id)
+
+      assert %Entrant{} = Tournaments.get_entrant_including_logs(entrant.id)
+    end
+
+    test "get_entrant_including_logs/1 does not work with an invalid data", %{entrant: entrant} do
+      assert nil == Tournaments.get_entrant_including_logs(-1)
+    end
   end
 
   describe "create entrant" do
@@ -329,12 +375,12 @@ defmodule Milk.TournamentsTest do
     setup [:create_entrant]
 
     test "delete_entrant/2 works fine with a valid data", %{entrant: entrant} do
-      assert {:ok, _entrant} = Tournaments.delete_entrant(entrant.tournament_id, entrant.user_id)
+      assert {:ok, %Entrant{} = entrant} = Tournaments.delete_entrant(entrant.tournament_id, entrant.user_id)
       assert %Ecto.NoResultsError{} = catch_error(Tournaments.get_entrant!(entrant.id))
     end
 
     test "delete_entrant/1 works fine with a valid data", %{entrant: entrant} do
-      assert {:ok, _entrant} = Tournaments.delete_entrant(entrant)
+      assert {:ok, %Entrant{} = entrant} = Tournaments.delete_entrant(entrant)
       assert %Ecto.NoResultsError{} = catch_error(Tournaments.get_entrant!(entrant.id))
     end
   end
@@ -646,13 +692,12 @@ defmodule Milk.TournamentsTest do
         create_entrants(num, entrant.tournament_id)
         |> Enum.map(fn x -> %{x | rank: num + 1} end)
         |> Kernel.++([%{entrant | rank: num + 1}])
+        |> Enum.map(fn entrant -> entrant.user_id end)
         |> Tournaments.generate_matchlist()
 
       Ets.insert_match_list(match_list, entrant.tournament_id)
 
       assert {:ok, promoted} = Tournaments.promote_rank(attrs)
-      # assert promoted.user_id  == entrant.user_id
-      # assert promoted.rank == 4
     end
 
     test "promote_rank/1 returns error with invalid attrs(tournament_id)", %{entrant: entrant} do
@@ -713,6 +758,105 @@ defmodule Milk.TournamentsTest do
       |> Ets.insert_match_list(entrant.tournament_id)
 
       assert {:error, "undefined user"} = Tournaments.promote_rank(attrs)
+    end
+
+    test "run promote_rank/1 in a row with 8 entrants", %{entrant: entrant} do
+      attrs =
+        %{
+          "tournament_id" => entrant.tournament_id,
+          "user_id" => entrant.user_id
+        }
+
+      # numは生成する参加者の数で後に一人追加するので8 - 1 = 7
+      num = 7
+      # 参加者作成，マッチリストを生成してEtsに登録
+      {:ok, match_list} =
+        create_entrants(num, entrant.tournament_id)
+        |> Enum.map(fn x -> %{x | rank: num + 1} end)
+        |> Kernel.++([%{entrant | rank: num + 1}])
+        |> Enum.map(fn entrant -> entrant.user_id end)
+        |> Tournaments.generate_matchlist()
+
+      Ets.insert_match_list(match_list, entrant.tournament_id)
+
+      assert {:ok, _promoted} = Tournaments.promote_rank(attrs)
+      assert Tournaments.get_rank(entrant.tournament_id, entrant.user_id) == 4
+
+      {:ok, opponent} =
+        match_list
+        |> Tournaments.find_match(entrant.user_id)
+        |> Tournaments.get_opponent(entrant.user_id)
+
+      Ets.delete_match_list(entrant.tournament_id)
+      updated = Tournaments.delete_loser(match_list, opponent["id"])
+
+      Ets.insert_match_list(updated, entrant.tournament_id)
+
+      assert {:wait, nil} = Tournaments.promote_rank(attrs)
+    end
+
+    test "run promote_rank/1 in a row with 4 entrants", %{entrant: entrant} do
+      attrs =
+        %{
+          "tournament_id" => entrant.tournament_id,
+          "user_id" => entrant.user_id
+        }
+
+      num = 3
+      {:ok, match_list} =
+        create_entrants(num, entrant.tournament_id)
+        |> Enum.map(fn x -> %{x | rank: num + 1} end)
+        |> Kernel.++([%{entrant | rank: num + 1}])
+        |> Enum.map(fn entrant -> entrant.user_id end)
+        |> Tournaments.generate_matchlist()
+
+      Ets.insert_match_list(match_list, entrant.tournament_id)
+
+      assert {:ok, _promoted} = Tournaments.promote_rank(attrs)
+      assert Tournaments.get_rank(entrant.tournament_id, entrant.user_id) == 2
+
+      {:ok, opponent} =
+        match_list
+        |> Tournaments.find_match(entrant.user_id)
+        |> Tournaments.get_opponent(entrant.user_id)
+
+      Ets.delete_match_list(entrant.tournament_id)
+      updated = Tournaments.delete_loser(match_list, opponent["id"])
+
+      Ets.insert_match_list(updated, entrant.tournament_id)
+
+      assert {:wait, nil} = Tournaments.promote_rank(attrs)
+    end
+
+    test "run promote_rank/1 in a row with 2 entrants", %{entrant: entrant} do
+      attrs =
+        %{
+          "tournament_id" => entrant.tournament_id,
+          "user_id" => entrant.user_id
+        }
+
+      num = 1
+      {:ok, match_list} =
+        create_entrants(num, entrant.tournament_id)
+        |> Enum.map(fn x -> %{x | rank: num + 1} end)
+        |> Kernel.++([%{entrant | rank: num + 1}])
+        |> Enum.map(fn entrant -> entrant.user_id end)
+        |> Tournaments.generate_matchlist()
+
+      Ets.insert_match_list(match_list, entrant.tournament_id)
+
+      assert {:ok, _promoted} = Tournaments.promote_rank(attrs)
+      assert Tournaments.get_rank(entrant.tournament_id, entrant.user_id) == 1
+
+      {:ok, opponent} =
+        match_list
+        |> Tournaments.find_match(entrant.user_id)
+        |> Tournaments.get_opponent(entrant.user_id)
+
+      Ets.delete_match_list(entrant.tournament_id)
+      updated = Tournaments.delete_loser(match_list, opponent["id"])
+
+      Ets.insert_match_list(updated, entrant.tournament_id)
     end
   end
 
