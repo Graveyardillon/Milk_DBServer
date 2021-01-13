@@ -498,6 +498,9 @@ defmodule MilkWeb.TournamentController do
 
     case Ets.get_fight_result({opponent_id, tournament_id}) do
       [] ->
+        if Ets.get_fight_result({user_id, tournament_id}) != [] do
+          Ets.delete_fight_result({user_id, tournament_id})
+        end
         Ets.insert_fight_result_table({user_id, tournament_id}, true)
         json(conn, %{validated: true, completed: false})
 
@@ -524,8 +527,12 @@ defmodule MilkWeb.TournamentController do
 
     case Ets.get_fight_result({opponent_id, tournament_id}) do
       [] ->
+        if Ets.get_fight_result({user_id, tournament_id}) != [] do
+          Ets.delete_fight_result({user_id, tournament_id})
+        end
         Ets.insert_fight_result_table({user_id, tournament_id}, false)
         json(conn, %{validated: true, completed: false})
+
       result_list ->
         {{_, _tournament_id}, is_win} = hd(result_list)
 
