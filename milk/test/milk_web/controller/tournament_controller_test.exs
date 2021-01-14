@@ -100,6 +100,31 @@ defmodule MilkWeb.TournamentControllerTest do
     end
   end
 
+  describe "has lost?" do
+    setup [:create_tournament]
+
+    test "check if a user has lost with lost match list", %{conn: conn, tournament: tournament} do
+      entrants = create_entrants(8, tournament.id)
+      entrant = hd(entrants)
+
+      conn = post(conn, Routes.tournament_path(conn, :start), tournament: %{"master_id" => tournament.master_id, "tournament_id" => tournament.id})
+      conn = post(conn, Routes.tournament_path(conn, :delete_loser), tournament: %{"tournament_id" => tournament.id, "loser_list" => [entrant.user_id]})
+      conn = get(conn, Routes.tournament_path(conn, :has_lost?), %{"user_id" => entrant.user_id, "tournament_id" => tournament.id})
+
+      assert json_response(conn, 200)["has_lost"]
+    end
+
+    test "chec if a user has lost with just generated match list", %{conn: conn, tournament: tournament} do
+      entrants = create_entrants(8, tournament.id)
+      entrant = hd(entrants)
+
+      conn = post(conn, Routes.tournament_path(conn, :start), tournament: %{"master_id" => tournament.master_id, "tournament_id" => tournament.id})
+      conn = get(conn, Routes.tournament_path(conn, :has_lost?), %{"user_id" => entrant.user_id, "tournament_id" => tournament.id})
+
+      refute json_response(conn, 200)["has_lost"]
+    end
+  end
+
   defp create_tournament(_) do
     tournament = fixture(:tournament)
     %{tournament: tournament}

@@ -489,6 +489,20 @@ defmodule MilkWeb.TournamentController do
   end
 
   @doc """
+  Check if the user has already lost.
+  """
+  def has_lost?(conn, %{"user_id" => user_id, "tournament_id" => tournament_id}) do
+    user_id = Tools.to_integer_as_needed(user_id)
+    tournament_id = Tools.to_integer_as_needed(tournament_id)
+
+    {_, match_list} = hd(Ets.get_match_list(tournament_id))
+
+    has_lost = Tournaments.has_lost?(match_list, user_id)
+
+    json(conn, %{has_lost: has_lost})
+  end
+
+  @doc """
   Claim win of the user.
   """
   def claim_win(conn, %{"opponent_id" => opponent_id, "user_id" => user_id, "tournament_id" => tournament_id}) do
