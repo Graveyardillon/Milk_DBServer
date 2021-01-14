@@ -21,7 +21,7 @@
                "key": "image",
                "type": "file",
                "enabled": true,
-               "src": "img/am.jpg"
+               "src": "img/inu.png"
              },
              {
                "key": "tournament",
