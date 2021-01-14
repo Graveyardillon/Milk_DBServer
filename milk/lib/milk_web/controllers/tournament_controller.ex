@@ -120,7 +120,7 @@ defmodule MilkWeb.TournamentController do
   def show(conn, %{"tournament_id" => id}) do
     id = Tools.to_integer_as_needed(id)
 
-    tournament = Tournaments.get_tournament!(id)
+    tournament = Tournaments.get_tournament(id)
     tournament_log = Log.get_tournament_log_by_tournament_id(id)
 
     if tournament do

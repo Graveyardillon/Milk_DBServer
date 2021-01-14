@@ -40,6 +40,32 @@ defmodule MilkWeb.TournamentControllerTest do
     {:ok, conn: put_req_header(conn, "accept", "application/json")}
   end
 
+  describe "get tournament" do
+    setup [:create_tournament]
+
+    test "get tournament with valid data", %{conn: conn, tournament: tournament} do
+      conn = get(conn, Routes.tournament_path(conn, :show), %{"tournament_id" => tournament.id})
+      assert json_response(conn, 200)["result"]
+    end
+
+    test "get finished tournament", %{conn: conn, tournament: tournament} do
+      entrants = create_entrants(2, tournament.id)
+      entrant = hd(entrants)
+
+      conn = post(conn, Routes.tournament_path(conn, :start), tournament: %{"master_id" => tournament.master_id, "tournament_id" => tournament.id})
+      conn = post(conn, Routes.tournament_path(conn, :delete_loser), tournament: %{"tournament_id" => tournament.id, "loser_list" => [entrant.user_id]})
+      conn = post(conn, Routes.tournament_path(conn, :finish), %{"tournament_id" => tournament.id, "user_id" => tournament.master_id})
+      conn = get(conn, Routes.tournament_path(conn, :show), %{"tournament_id" => tournament.id})
+
+      assert json_response(conn, 200)["result"]
+    end
+
+    test "cannot get a tournament which does not exist", %{conn: conn, tournament: _tournament} do
+      conn = get(conn, Routes.tournament_path(conn, :show), %{"tournament_id" => -1})
+      refute json_response(conn, 200)["result"]
+    end
+  end
+
   describe "create tournament" do
     test "renders tournament when data is valid", %{conn: conn} do
       {:ok, user} = fixture(:user)
@@ -65,9 +91,8 @@ defmodule MilkWeb.TournamentControllerTest do
       conn = post(conn, Routes.tournament_path(conn, :delete, %{"tournament_id" => tournament.id}))
       assert response(conn, 204)
 
-      assert_error_sent 404, fn ->
-        get(conn, Routes.tournament_path(conn, :show, %{"tournament_id" => tournament.id}))
-      end
+      conn = get(conn, Routes.tournament_path(conn, :show, %{"tournament_id" => tournament.id}))
+      assert response(conn, 200)
     end
   end
 
@@ -97,31 +122,6 @@ defmodule MilkWeb.TournamentControllerTest do
       conn = get(conn, Routes.tournament_path(conn, :get_opponent), %{"tournament_id" => tournament.id, "user_id" => hd(entrants).user_id})
 
       assert json_response(conn, 200)
-    end
-  end
-
-  describe "has lost?" do
-    setup [:create_tournament]
-
-    test "check if a user has lost with lost match list", %{conn: conn, tournament: tournament} do
-      entrants = create_entrants(8, tournament.id)
-      entrant = hd(entrants)
-
-      conn = post(conn, Routes.tournament_path(conn, :start), tournament: %{"master_id" => tournament.master_id, "tournament_id" => tournament.id})
-      conn = post(conn, Routes.tournament_path(conn, :delete_loser), tournament: %{"tournament_id" => tournament.id, "loser_list" => [entrant.user_id]})
-      conn = get(conn, Routes.tournament_path(conn, :has_lost?), %{"user_id" => entrant.user_id, "tournament_id" => tournament.id})
-
-      assert json_response(conn, 200)["has_lost"]
-    end
-
-    test "chec if a user has lost with just generated match list", %{conn: conn, tournament: tournament} do
-      entrants = create_entrants(8, tournament.id)
-      entrant = hd(entrants)
-
-      conn = post(conn, Routes.tournament_path(conn, :start), tournament: %{"master_id" => tournament.master_id, "tournament_id" => tournament.id})
-      conn = get(conn, Routes.tournament_path(conn, :has_lost?), %{"user_id" => entrant.user_id, "tournament_id" => tournament.id})
-
-      refute json_response(conn, 200)["has_lost"]
     end
   end
 

@@ -3,7 +3,6 @@ defmodule MilkWeb.TournamentView do
 
   alias MilkWeb.TournamentView
   alias MilkWeb.UserView
-  alias Milk.{Accounts, Tournaments}
 
   def render("users.json", %{users: users}) do
     if users != [] do
@@ -78,7 +77,9 @@ defmodule MilkWeb.TournamentView do
             bio: user.bio
           }
         end)
-      }
+      },
+      is_log: false,
+      result: true
     }
   end
 
@@ -96,7 +97,9 @@ defmodule MilkWeb.TournamentView do
         name: tournament_log.name,
         url: tournament_log.url,
         type: tournament_log.type
-      }
+      },
+      is_log: true,
+      result: true
     }
   end
 
