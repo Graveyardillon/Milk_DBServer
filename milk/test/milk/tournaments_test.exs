@@ -680,6 +680,37 @@ defmodule Milk.TournamentsTest do
     end
   end
 
+  describe "has_lost?" do
+    setup [:create_entrant]
+
+    test "has_lost?/3 returns true with a lost match list", %{entrant: entrant} do
+      num = 7
+
+      {_, match_list} =
+        create_entrants(num, entrant.tournament_id)
+        |> Enum.map(fn x -> %{x | rank: num + 1} end)
+        |> Kernel.++([%{entrant | rank: num + 1}])
+        |> Enum.map(fn entrant -> entrant.user_id end)
+        |> Tournaments.generate_matchlist()
+
+      match_list = Tournaments.delete_loser(match_list, entrant.user_id)
+      assert Tournaments.has_lost?(match_list, entrant.user_id)
+    end
+
+    test "has_lost?/3 returns false with a just generated match list", %{entrant: entrant} do
+      num = 7
+
+      {_, match_list} =
+        create_entrants(num, entrant.tournament_id)
+        |> Enum.map(fn x -> %{x | rank: num + 1} end)
+        |> Kernel.++([%{entrant | rank: num + 1}])
+        |> Enum.map(fn entrant -> entrant.user_id end)
+        |> Tournaments.generate_matchlist()
+
+      refute Tournaments.has_lost?(match_list, entrant.user_id)
+    end
+  end
+
   describe "promote rank" do
     setup [:create_entrant]
 

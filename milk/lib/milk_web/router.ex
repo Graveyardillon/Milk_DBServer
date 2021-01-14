@@ -50,7 +50,8 @@ defmodule MilkWeb.Router do
     delete "/chat", ChatsController, :delete
     post "/chat/create_dialogue", ChatsController, :create_dialogue
 
-    resources "/chat_room", ChatRoomController, except: [:new, :edit, :index]
+    resources "/chat_room", ChatRoomController, except: [:new, :edit, :index, :show]
+    get  "/chat_room", ChatRoomController, :show
     get  "/chat_room/private_rooms", ChatRoomController, :private_rooms
     get  "/chat_room/private_room", ChatRoomController, :private_room
 
@@ -94,6 +95,7 @@ defmodule MilkWeb.Router do
     get  "/tournament/brackets", TournamentController, :brackets
     get  "/tournament/is_user_win", TournamentController, :is_user_win
     get  "/tournament/relevant", TournamentController, :relevant
+    get  "/tournament/has_lost", TournamentController, :has_lost?
     post "/tournament/finish", TournamentController, :finish
 
     resources "/entrant", EntrantController, except: [:new, :edit, :delete]

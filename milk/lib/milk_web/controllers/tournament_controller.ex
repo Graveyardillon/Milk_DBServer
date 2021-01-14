@@ -489,6 +489,20 @@ defmodule MilkWeb.TournamentController do
   end
 
   @doc """
+  Check if the user has already lost.
+  """
+  def has_lost?(conn, %{"user_id" => user_id, "tournament_id" => tournament_id}) do
+    user_id = Tools.to_integer_as_needed(user_id)
+    tournament_id = Tools.to_integer_as_needed(tournament_id)
+
+    {_, match_list} = hd(Ets.get_match_list(tournament_id))
+
+    has_lost = Tournaments.has_lost?(match_list, user_id)
+
+    json(conn, %{has_lost: has_lost})
+  end
+
+  @doc """
   Claim win of the user.
   """
   def claim_win(conn, %{"opponent_id" => opponent_id, "user_id" => user_id, "tournament_id" => tournament_id}) do
@@ -498,6 +512,9 @@ defmodule MilkWeb.TournamentController do
 
     case Ets.get_fight_result({opponent_id, tournament_id}) do
       [] ->
+        if Ets.get_fight_result({user_id, tournament_id}) != [] do
+          Ets.delete_fight_result({user_id, tournament_id})
+        end
         Ets.insert_fight_result_table({user_id, tournament_id}, true)
         json(conn, %{validated: true, completed: false})
 
@@ -524,8 +541,12 @@ defmodule MilkWeb.TournamentController do
 
     case Ets.get_fight_result({opponent_id, tournament_id}) do
       [] ->
+        if Ets.get_fight_result({user_id, tournament_id}) != [] do
+          Ets.delete_fight_result({user_id, tournament_id})
+        end
         Ets.insert_fight_result_table({user_id, tournament_id}, false)
         json(conn, %{validated: true, completed: false})
+
       result_list ->
         {{_, _tournament_id}, is_win} = hd(result_list)
 
