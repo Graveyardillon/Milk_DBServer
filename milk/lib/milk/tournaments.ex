@@ -706,10 +706,23 @@ defmodule Milk.Tournaments do
   end
 
   @doc """
-  Judges whether the user have to wait.
+  Checks whether the user have to wait.
   """
   def is_alone?(match) do
     Enum.filter(match, &(is_list(&1))) != []
+  end
+
+  @doc """
+  Checks whether the user has already lost.
+  """
+  def has_lost?(match_list, user_id, result \\ true) do
+    Enum.reduce(match_list, result, fn x, acc ->
+      case x do
+        x when is_list(x) -> has_lost?(x, user_id, acc)
+        x when x == user_id -> false
+        _ -> acc
+      end
+    end)
   end
 
   @doc """
