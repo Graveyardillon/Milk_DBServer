@@ -326,6 +326,12 @@ defmodule MilkWeb.TournamentController do
     render(conn, "tournament_topics.json", topics: tabs)
   end
 
+  def tournament_update_topics(conn, %{"tournament_id" => tournament_id, "tabs_info" => tabs_info}) do
+    IO.inspect(tournament_id)
+    IO.inspect(tabs_info)
+    
+  end
+
   @doc """
   Start a tournament.
   """
