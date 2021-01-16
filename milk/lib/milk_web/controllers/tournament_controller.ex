@@ -362,6 +362,9 @@ defmodule MilkWeb.TournamentController do
   # FIXME: loserをリストじゃなくて整数で入力できるようにしたほうが良さそう
   def delete_loser(conn, %{"tournament" => %{"tournament_id" => tournament_id, "loser_list" => loser_list}}) do
     tournament_id = Tools.to_integer_as_needed(tournament_id)
+    loser_list = Enum.map(loser_list, fn loser ->
+      Tools.to_integer_as_needed(loser)
+    end)
     {_, match_list} = hd(Ets.get_match_list(tournament_id))
     # FIXME: ここのリストが空だったときのエラー処理どうやってやろうかな
     # match_list = unless match_list == [] do
