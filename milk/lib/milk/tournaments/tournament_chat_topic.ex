@@ -6,6 +6,7 @@ defmodule Milk.Tournaments.TournamentChatTopic do
 
   schema "tournament_chat_topics" do
     field :topic_name, :string
+    field :tab_index, :integer
     belongs_to :tournament, Tournament
     belongs_to :chat_room, ChatRoom
 
@@ -15,6 +16,6 @@ defmodule Milk.Tournaments.TournamentChatTopic do
   @doc false
   def changeset(tournament_chat_topic, attrs) do
     tournament_chat_topic
-    |> cast(attrs, [:topic_name])
+    |> cast(attrs, [:topic_name, :tab_index])
   end
 end

@@ -17,6 +17,7 @@ defmodule Milk.Tournaments do
   alias Milk.Log.{TournamentLog, EntrantLog, AssistantLog, TournamentChatTopicLog}
   alias Milk.Games.Game
   alias Milk.Chat
+  alias Milk.Chat.ChatRoom
   alias Milk.Log
   alias Common.Tools
   require Integer
@@ -217,7 +218,7 @@ defmodule Milk.Tournaments do
     end
   end
 
-  defp create_topic(tournament, topic) do
+  defp create_topic(tournament, topic, tab_index) do
     {:ok, chat_room} =
       %{
         name: tournament.name <> "-" <> topic,
@@ -225,7 +226,35 @@ defmodule Milk.Tournaments do
       }
       |> Chat.create_chat_room()
     %TournamentChatTopic{tournament_id: tournament.id, chat_room_id: chat_room.id}
-    |> TournamentChatTopic.changeset(%{"topic_name" => topic})
+    |> TournamentChatTopic.changeset(%{"topic_name" => topic, "tab_index" => tab_index})
+  end
+
+  # TODO: エラーハンドリング
+  def update_topic(tournament, current_tabs, new_tabs) do
+
+    currentIds = Enum.map(current_tabs, fn tab ->
+        tab.chat_room_id
+    end)
+    newIds = Enum.map(new_tabs, fn tab ->
+        tab["chat_room_id"]
+    end)
+
+    removedTabIds = currentIds -- newIds
+
+    Enum.each(removedTabIds, fn id ->
+        ChatRoom
+        |> where([c], c.id == ^id)
+        |> Repo.delete_all()
+    end)
+
+    Enum.each(new_tabs, fn tab ->
+      if tab["chat_room_id"] do
+        topic = Repo.one(from c in TournamentChatTopic, where: c.chat_room_id == ^tab["chat_room_id"])
+        update_tournament_chat_topic(topic, %{topic_name: tab["topic_name"], tab_index: tab["tab_index"]})
+      else 
+        Repo.insert(create_topic(tournament, tab["topic_name"], tab["tab_index"]))
+      end
+    end)
   end
 
   defp create(attrs, thumbnail_path) do
@@ -242,9 +271,9 @@ defmodule Milk.Tournaments do
       }
       |> Tournament.changeset(attrs)
     )
-    |> Multi.insert(:group_topic, fn %{tournament: tournament} -> create_topic(tournament, "Group") end)
-    |> Multi.insert(:notification_topic, fn %{tournament: tournament} -> create_topic(tournament, "Notification") end)
-    |> Multi.insert(:q_and_a_topic, fn %{tournament: tournament} -> create_topic(tournament, "Q&A") end)
+    |> Multi.insert(:group_topic, fn %{tournament: tournament} -> create_topic(tournament, "Group", 0) end)
+    |> Multi.insert(:notification_topic, fn %{tournament: tournament} -> create_topic(tournament, "Notification", 1) end)
+    |> Multi.insert(:q_and_a_topic, fn %{tournament: tournament} -> create_topic(tournament, "Q&A", 2) end)
     |> Repo.transaction()
     |> case do
       {:ok, tournament} ->
