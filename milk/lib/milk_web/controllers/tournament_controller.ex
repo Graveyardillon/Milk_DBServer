@@ -326,10 +326,18 @@ defmodule MilkWeb.TournamentController do
     render(conn, "tournament_topics.json", topics: tabs)
   end
 
-  def tournament_update_topics(conn, %{"tournament_id" => tournament_id, "tabs_info" => tabs_info}) do
-    IO.inspect(tournament_id)
-    IO.inspect(tabs_info)
-    
+  def tournament_update_topics(conn, %{"tournament_id" => tournament_id, "tabs" => tabs}) do
+    tournament = Tournaments.get_tournament(tournament_id)
+    if tournament do
+      Enum.each(tabs, fn tab ->
+        Tournaments.update_topic(tournament, tab["chat_room_id"], tab["tab_index"], tab["topic_name"])
+      end)
+      
+      tabs = Tournaments.get_tabs_by_tournament_id(tournament_id)
+      render(conn, "tournament_topics.json", topics: tabs)
+    else 
+      render(conn, "error.json", error: "tournament not found")
+    end
   end
 
   @doc """
