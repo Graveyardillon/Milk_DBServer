@@ -22,7 +22,7 @@ defmodule MilkWeb.RelationController do
     case Relations.delete_relation_by_ids(params) do
       {:ok, _relation} ->
         json(conn, %{result: true})
-      {:error, error} -> 
+      {:error, error} ->
         json(conn, %{result: false, error: error})
     end
   end
@@ -53,6 +53,7 @@ defmodule MilkWeb.RelationController do
 
   @doc """
   Get a list of followers' id.
+  FIXME: renderを変えたほうが良さそう
   """
   def followers_id_list(conn, %{"user_id" => user_id}) do
     users = Relations.get_followers_id_list(user_id)

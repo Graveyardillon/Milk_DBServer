@@ -64,6 +64,7 @@ defmodule MilkWeb.TournamentController do
 
   @doc """
   Get a game of a specific tournament.
+  FIXME: 引数をidに対応させたい
   """
   def get_game(conn, %{"tournament" => params}) do
     tournament = Tournaments.game_tournament(params)
@@ -195,7 +196,6 @@ defmodule MilkWeb.TournamentController do
   # end
 
   def home(conn, %{"date_offset" => date_offset, "offset" => offset}) do
-
     tournaments =
     Tournaments.home_tournament(date_offset, offset)
     |> Enum.map(fn tournament ->
@@ -238,7 +238,8 @@ defmodule MilkWeb.TournamentController do
   """
   def delete(conn, %{"tournament_id" => id}) do
     with {:ok, %Tournament{}} <- Tournaments.delete_tournament(id) do
-      send_resp(conn, :no_content, "")
+      #send_resp(conn, :no_content, "")
+      json(conn, %{result: true})
     else
       _ -> render(conn, "error.json", error: nil)
     end
@@ -334,7 +335,7 @@ defmodule MilkWeb.TournamentController do
 
       tabs = Tournaments.get_tabs_by_tournament_id(tournament_id)
       render(conn, "tournament_topics.json", topics: tabs)
-    else 
+    else
       render(conn, "error.json", error: "tournament not found")
     end
   end

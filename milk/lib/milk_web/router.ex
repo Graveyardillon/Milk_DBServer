@@ -70,34 +70,35 @@ defmodule MilkWeb.Router do
     get  "/tournament/get_opponent", TournamentController, :get_opponent
     get  "/tournament/get_participating_tournaments", TournamentController, :participating_tournaments
     get  "/tournament/get_tabs", TournamentController, :tournament_topics
-    post "/tournament/update_tabs", TournamentController, :tournament_update_topics
     get  "/tournament/get_thumbnail", TournamentController, :get_thumbnail_image
     get  "/tournament/get_match_list", TournamentController, :get_match_list
     get  "/tournament/home", TournamentController, :home
     get  "/tournament/masters", TournamentController, :get_game_masters
     get  "/tournament/members", TournamentController, :get_match_members
     get  "/tournament/find_match", TournamentController, :find_match
-    get  "/tournament_log/index", TournamentLogController, :index
-    post "/tournament/start", TournamentController, :start
-    post "/tournament/deleteloser", TournamentController, :delete_loser
-    post "/tournament/get", TournamentController, :show
     get  "/tournament/get_all", TournamentController, :index
-    post "/tournament/get_by_master_id", TournamentController, :get_tournaments_by_master_id
-    post "/tournament/get_planned", TournamentController, :get_ongoing_tournaments_by_master_id
-    post "/tournament/get_game", TournamentController, :get_game
-    post "/tournament/get_opponent", TournamentController, :get_opponent
-    post "/tournament/delete", TournamentController, :delete
-    post "/tournament/publish_url", TournamentController, :publish_url
-    post "/tournament_log/add", TournamentLogController, :create
-    post "/tournament/start_match", TournamentController, :start_match
-    post "/tournament/claim_win", TournamentController, :claim_win
-    post "/tournament/claim_lose", TournamentController, :claim_lose
     get  "/tournament/check_pending", TournamentController, :check_pending
     get  "/tournament/brackets", TournamentController, :brackets
     get  "/tournament/is_user_win", TournamentController, :is_user_win
     get  "/tournament/relevant", TournamentController, :relevant
     get  "/tournament/has_lost", TournamentController, :has_lost?
+    post "/tournament/start", TournamentController, :start
+    post "/tournament/deleteloser", TournamentController, :delete_loser
+    # FIXME: このgetはpostメソッドなので消したほうがいい
+    post "/tournament/get", TournamentController, :show
+    post "/tournament/get_by_master_id", TournamentController, :get_tournaments_by_master_id
+    post "/tournament/get_planned", TournamentController, :get_ongoing_tournaments_by_master_id
+    post "/tournament/get_game", TournamentController, :get_game
+    post "/tournament/get_opponent", TournamentController, :get_opponent
+    post "/tournament/delete", TournamentController, :delete
+    post "/tournament/update_tabs", TournamentController, :tournament_update_topics
+    post "/tournament/publish_url", TournamentController, :publish_url
+    post "/tournament/start_match", TournamentController, :start_match
+    post "/tournament/claim_win", TournamentController, :claim_win
+    post "/tournament/claim_lose", TournamentController, :claim_lose
     post "/tournament/finish", TournamentController, :finish
+    get  "/tournament_log/index", TournamentLogController, :index
+    post "/tournament_log/add", TournamentLogController, :create
 
     resources "/entrant", EntrantController, except: [:new, :edit, :delete]
     # FIXME: GETのパラメータの渡し方を統一したい
