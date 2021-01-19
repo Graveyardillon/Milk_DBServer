@@ -32,7 +32,7 @@ defmodule MilkWeb.Router do
     post "/user/get", UserController, :show
     post "/user/in_touch", UserController, :get_users_in_touch
     post "/user/signup", UserController, :create
-    post "/user/login", UserController, :login
+    post "/user/signin", UserController, :login
     post "/user/login_forced", UserController, :login_forced
     post "/user/logout", UserController, :logout
 
