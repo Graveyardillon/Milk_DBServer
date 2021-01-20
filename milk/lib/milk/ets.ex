@@ -4,6 +4,10 @@ defmodule Milk.Ets do
     :ets.new(:match_list, [:set, :public, :named_table])
   end
 
+  def create_match_list_with_fight_result_table() do
+    :ets.new(:match_list_with_fight_result, [:set, :public, :named_table])
+  end
+
   def create_match_pending_list_table() do
     :ets.new(:match_pending_list, [:set, :public, :named_table])
   end
@@ -15,6 +19,10 @@ defmodule Milk.Ets do
 # FIXME:引数の順番をこの関数に合わせる
   def insert_match_list(match_list, tournament_id) do
     :ets.insert_new(:match_list, {tournament_id, match_list})
+  end
+
+  def insert_match_list_with_fight_result_table(match_list, tournament_id) do
+    :ets.insert_new(:match_list_with_fight_result, {tournament_id, match_list})
   end
 
   def insert_match_pending_list_table({user_id, tournament_id}) do
@@ -29,6 +37,10 @@ defmodule Milk.Ets do
     :ets.lookup(:match_list, tournament_id)
   end
 
+  def get_match_list_with_fight_result(tournament_id) do
+    :ets.lookup(:match_list_with_fight_result, tournament_id)
+  end
+
   def get_match_pending_list({user_id, tournament_id}) do
     :ets.lookup(:match_pending_list, {user_id, tournament_id})
   end
@@ -39,6 +51,10 @@ defmodule Milk.Ets do
 
   def delete_match_list(tournament_id) do
     :ets.delete(:match_list, tournament_id)
+  end
+
+  def delete_match_list_with_fight_result(tournament_id) do
+    :ets.delete(:match_list_with_fight_result, tournament_id)
   end
 
   def delete_match_pending_list({user_id, tournament_id}) do

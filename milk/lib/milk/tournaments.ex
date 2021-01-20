@@ -251,7 +251,7 @@ defmodule Milk.Tournaments do
       if tab["chat_room_id"] do
         topic = Repo.one(from c in TournamentChatTopic, where: c.chat_room_id == ^tab["chat_room_id"])
         update_tournament_chat_topic(topic, %{topic_name: tab["topic_name"], tab_index: tab["tab_index"]})
-      else 
+      else
         Repo.insert(create_topic(tournament, tab["topic_name"], tab["tab_index"]))
       end
     end)

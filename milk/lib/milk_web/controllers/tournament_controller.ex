@@ -372,8 +372,8 @@ defmodule MilkWeb.TournamentController do
 
   @doc """
   Delete losers of a loser list.
+  FIXME: loserをリストじゃなくて整数で入力できるようにしたほうが良さそう
   """
-  # FIXME: loserをリストじゃなくて整数で入力できるようにしたほうが良さそう
   def delete_loser(conn, %{"tournament" => %{"tournament_id" => tournament_id, "loser_list" => loser_list}}) do
     tournament_id = Tools.to_integer_as_needed(tournament_id)
     loser_list = Enum.map(loser_list, fn loser ->
