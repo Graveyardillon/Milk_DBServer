@@ -868,6 +868,13 @@ defmodule Milk.Tournaments do
   end
 
   @doc """
+  Initialize fight result of match list.
+  """
+  def initialize_match_list_with_fight_result(match_list) do
+    Tournamex.initialize_match_list_with_fight_result(match_list)
+  end
+
+  @doc """
   Returns the list of assistant.
 
   ## Examples

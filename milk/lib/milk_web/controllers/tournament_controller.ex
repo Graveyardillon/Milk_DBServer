@@ -348,26 +348,36 @@ defmodule MilkWeb.TournamentController do
     tournament_id = Tools.to_integer_as_needed(tournament_id)
 
     with {:ok, _} <- Tournaments.start(master_id, tournament_id) do
-      # マッチングリストを生成
-      with {:ok, match_list} <-
-        Tournaments.get_entrants(tournament_id)
-        |> Enum.map(fn x -> x.user_id end)
-        |> Tournaments.generate_matchlist() do
-          count =
-            Tournaments.get_tournament(tournament_id)
-            |> Map.get(:count)
-          match_list
-          |> Tournaments.initialize_rank(count, tournament_id)
-          match_list
-          |> Ets.insert_match_list(tournament_id)
-          Ets.get_match_list(tournament_id)
-          render(conn, "match.json", list: match_list)
-      else
-        {:error, error} -> render(conn, "error.json", error: error)
-      end
+      make_matches(conn, tournament_id)
     else
       _ -> json(conn, %{error: "error"})
     end
+  end
+
+  # FIXME: 関数名適当
+  defp make_matches(conn, tournament_id) do
+    with {:ok, match_list} <-
+      Tournaments.get_entrants(tournament_id)
+      |> Enum.map(fn x -> x.user_id end)
+      |> Tournaments.generate_matchlist() do
+        count =
+          Tournaments.get_tournament(tournament_id)
+          |> Map.get(:count)
+        match_list
+        |> Tournaments.initialize_rank(count, tournament_id)
+        match_list
+        |> Ets.insert_match_list(tournament_id)
+        match_list
+        |> match_list_with_fight_result()
+        |> Ets.insert_match_list_with_fight_result_table(tournament_id)
+        render(conn, "match.json", list: match_list)
+    else
+      {:error, error} -> render(conn, "error.json", error: error)
+    end
+  end
+
+  defp match_list_with_fight_result(match_list) do
+    Tournaments.initialize_match_list_with_fight_result(match_list)
   end
 
   @doc """
