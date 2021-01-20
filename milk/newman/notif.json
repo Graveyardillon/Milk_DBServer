@@ -7,7 +7,7 @@
     {
       "name": "Notification post request",
       "request": {
-        "url": "http://localhost:4000/api/notif/create",
+        "url": "http://localhost:4000/api/notification/create",
         "method": "POST",
         "header": [
           {
@@ -24,7 +24,7 @@
     {
       "name": "Notification post request",
       "request": {
-        "url": "http://localhost:4000/api/notif/create",
+        "url": "http://localhost:4000/api/notification/create",
         "method": "POST",
         "header": [
           {
@@ -41,7 +41,7 @@
     {
       "name": "Notification post request",
       "request": {
-        "url": "http://localhost:4000/api/notif/create",
+        "url": "http://localhost:4000/api/notification/create",
         "method": "POST",
         "header": [
           {
@@ -58,7 +58,7 @@
     {
       "name": "Notification post request",
       "request": {
-        "url": "http://localhost:4000/api/notif/create",
+        "url": "http://localhost:4000/api/notification/create",
         "method": "POST",
         "header": [
           {
@@ -75,7 +75,7 @@
     {
       "name": "Notification post request",
       "request": {
-        "url": "http://localhost:4000/api/notif/create",
+        "url": "http://localhost:4000/api/notification/create",
         "method": "POST",
         "header": [
           {
@@ -92,7 +92,7 @@
     {
       "name": "Notification post request",
       "request": {
-        "url": "http://localhost:4000/api/notif/create",
+        "url": "http://localhost:4000/api/notification/create",
         "method": "POST",
         "header": [
           {
@@ -109,7 +109,7 @@
     {
       "name": "Notification post request",
       "request": {
-        "url": "http://localhost:4000/api/notif/create",
+        "url": "http://localhost:4000/api/notification/create",
         "method": "POST",
         "header": [
           {
@@ -126,7 +126,7 @@
     {
       "name": "Notification post request",
       "request": {
-        "url": "http://localhost:4000/api/notif/create",
+        "url": "http://localhost:4000/api/notification/create",
         "method": "POST",
         "header": [
           {
@@ -143,7 +143,7 @@
     {
       "name": "Notification post request",
       "request": {
-        "url": "http://localhost:4000/api/notif/create",
+        "url": "http://localhost:4000/api/notification/create",
         "method": "POST",
         "header": [
           {
@@ -160,7 +160,7 @@
     {
       "name": "Notification post request",
       "request": {
-        "url": "http://localhost:4000/api/notif/create",
+        "url": "http://localhost:4000/api/notification/create",
         "method": "POST",
         "header": [
           {

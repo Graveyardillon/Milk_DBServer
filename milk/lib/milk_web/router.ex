@@ -118,10 +118,10 @@ defmodule MilkWeb.Router do
     post "/send_email", ConfNumController, :send_email
     post "/conf_email", ConfNumController, :conf_email
 
-    get  "/notif/get_list", NotifController, :get_list
-    post "/notif/create", NotifController, :create
-    post "/notif_log/create", NotifLogController, :create
-    delete "/notif/:id", NotifController, :delete
+    get  "/notification/list", NotifController, :get_list
+    post "/notification/create", NotifController, :create
+    post "/notification_log/create", NotifLogController, :create
+    delete "/notification/:id", NotifController, :delete
   end
 
   scope "/api", MilkWeb do
