@@ -861,6 +861,13 @@ defmodule Milk.Tournaments do
   end
 
   @doc """
+  Get lose a player.
+  """
+  def get_lose(match_list, loser) do
+    Tournamex.renew_match_list_with_loser(match_list, loser)
+  end
+
+  @doc """
   Generate a matchlist.
   """
   def generate_matchlist(list) do
@@ -1200,6 +1207,14 @@ defmodule Milk.Tournaments do
   """
   def data_for_brackets(match_list) do
     {:ok, brackets} = Tournamex.brackets(match_list)
+    brackets
+  end
+
+  @doc """
+  Returns data with fight result for tournament brackets.
+  """
+  def data_with_fight_result_for_brackets(match_list) do
+    {:ok, brackets} = Tournamex.brackets_with_fight_result(match_list)
     brackets
   end
 end
