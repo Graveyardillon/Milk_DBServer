@@ -882,6 +882,13 @@ defmodule Milk.Tournaments do
   end
 
   @doc """
+  Put value on brackets.
+  """
+  def put_value_on_brackets(match_list, key, value) do
+    Tournamex.put_value_on_brackets(match_list, key, value)
+  end
+
+  @doc """
   Returns the list of assistant.
 
   ## Examples

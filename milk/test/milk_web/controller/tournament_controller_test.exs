@@ -55,7 +55,6 @@ defmodule MilkWeb.TournamentControllerTest do
       conn = post(conn, Routes.tournament_path(conn, :start), tournament: %{"master_id" => tournament.master_id, "tournament_id" => tournament.id})
       IO.inspect(json_response(conn, 200))
       conn = post(conn, Routes.tournament_path(conn, :delete_loser), tournament: %{"tournament_id" => tournament.id, "loser_list" => [entrant.user_id]})
-      IO.inspect(json_response(conn, 200))
       conn = post(conn, Routes.tournament_path(conn, :finish), %{"tournament_id" => tournament.id, "user_id" => tournament.master_id})
       conn = get(conn, Routes.tournament_path(conn, :show), %{"tournament_id" => tournament.id})
 
