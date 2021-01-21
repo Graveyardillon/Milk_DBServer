@@ -339,7 +339,7 @@ defmodule Milk.TournamentsTest do
       assert %Entrant{} = Tournaments.get_entrant_including_logs(entrant.id)
     end
 
-    test "get_entrant_including_logs/1 does not work with an invalid data", %{entrant: entrant} do
+    test "get_entrant_including_logs/1 does not work with an invalid data", %{entrant: _entrant} do
       assert nil == Tournaments.get_entrant_including_logs(-1)
     end
   end
@@ -930,6 +930,93 @@ defmodule Milk.TournamentsTest do
     test "data_for_brackets/1 works fine with valid list data of size 9" do
       match_list = [[[1, 2], [3, 4]], [[5, 6], [7, [8, 9]]]]
       assert Tournaments.data_for_brackets(match_list) == [[9, 8], [nil, 7], [6, 5], [4, 3], [2, 1]]
+    end
+  end
+
+  describe "data with fight result for brackets" do
+    test "data_with_fight_result_for_brackets/1 works fine with valid list data of size 3" do
+      match_list = [%{"user_id" => 3, "is_loser" => false},
+      [%{"user_id" => 1, "is_loser" => false}, %{"user_id" => 2, "is_loser" => false}]]
+      assert Tournaments.data_with_fight_result_for_brackets(match_list) == [
+        [%{"user_id" => 2, "is_loser" => false}, %{"user_id" => 1, "is_loser" => false}],
+        [nil, %{"user_id" => 3, "is_loser" => false}]]
+    end
+
+    test "data_with_fight_result_for_brackets/1 works fine with valid list data of size 4" do
+      match_list = [[%{"user_id" => 1, "is_loser" => false}, %{"user_id" => 2, "is_loser" => false}],
+      [%{"user_id" => 3, "is_loser" => false}, %{"user_id" => 4, "is_loser" => false}]]
+      assert Tournaments.data_with_fight_result_for_brackets(match_list) == [
+        [%{"user_id" => 4, "is_loser" => false}, %{"user_id" => 3, "is_loser" => false}],
+        [%{"user_id" => 2, "is_loser" => false}, %{"user_id" => 1, "is_loser" => false}]]
+    end
+
+    test "data_with_fight_result_for_brackets/1 works fine with valid list data of size 5" do
+      match_list = [
+        [%{"user_id" => 1, "is_loser" => false}, %{"user_id" => 2, "is_loser" => false}],
+        [%{"user_id" => 3, "is_loser" => false},
+        [%{"user_id" => 4, "is_loser" => false}, %{"user_id" => 5, "is_loser" => false}]]]
+      assert Tournaments.data_with_fight_result_for_brackets(match_list) == [
+        [%{"user_id" => 5, "is_loser" => false}, %{"user_id" => 4, "is_loser" => false}],
+        [nil, %{"user_id" => 3, "is_loser" => false}],
+        [%{"user_id" => 2, "is_loser" => false}, %{"user_id" => 1, "is_loser" => false}]]
+    end
+
+    test "data_with_fight_result_for_brackets/1 works fine with valid list data of size 6" do
+      match_list = [
+        [%{"user_id" => 1, "is_loser" => false},
+        [%{"user_id" => 2, "is_loser" => false}, %{"user_id" => 3, "is_loser" => false}]],
+        [%{"user_id" => 4, "is_loser" => false},
+        [%{"user_id" => 5, "is_loser" => false}, %{"user_id" => 6, "is_loser" => false}]]
+      ]
+      assert Tournaments.data_with_fight_result_for_brackets(match_list) == [
+        [%{"user_id" => 6, "is_loser" => false}, %{"user_id" => 5, "is_loser" => false}],
+        [nil, %{"user_id" => 4, "is_loser" => false}],
+        [%{"user_id" => 3, "is_loser" => false}, %{"user_id" => 2, "is_loser" => false}],
+        [nil, %{"user_id" => 1, "is_loser" => false}]]
+    end
+
+    test "data_with_fight_result_for_brackets/1 works fine with valid list data of size 7" do
+      match_list = [
+        [%{"user_id" => 1, "is_loser" => false},
+        [%{"user_id" => 2, "is_loser" => false}, %{"user_id" => 3, "is_loser" => false}]],
+        [[%{"user_id" => 4, "is_loser" => false}, %{"user_id" => 5, "is_loser" => false}],
+        [%{"user_id" => 6, "is_loser" => false}, %{"user_id" => 7, "is_loser" => false}]]
+      ]
+      assert Tournaments.data_with_fight_result_for_brackets(match_list) == [
+        [%{"user_id" => 7, "is_loser" => false}, %{"user_id" => 6, "is_loser" => false}],
+        [%{"user_id" => 5, "is_loser" => false}, %{"user_id" => 4, "is_loser" => false}],
+        [%{"user_id" => 3, "is_loser" => false}, %{"user_id" => 2, "is_loser" => false}],
+        [nil, %{"user_id" => 1, "is_loser" => false}]]
+    end
+
+    test "data_for_brackets/1 works fine with valid list data of size 8" do
+      match_list = [
+        [[%{"user_id" => 1, "is_loser" => false}, %{"user_id" => 2, "is_loser" => false}],
+        [%{"user_id" => 3, "is_loser" => false}, %{"user_id" => 4, "is_loser" => false}]],
+        [[%{"user_id" => 5, "is_loser" => false}, %{"user_id" => 6, "is_loser" => false}],
+        [%{"user_id" => 7, "is_loser" => false}, %{"user_id" => 8, "is_loser" => false}]]
+      ]
+      assert Tournaments.data_with_fight_result_for_brackets(match_list) == [
+        [%{"user_id" => 8, "is_loser" => false}, %{"user_id" => 7, "is_loser" => false}],
+        [%{"user_id" => 6, "is_loser" => false}, %{"user_id" => 5, "is_loser" => false}],
+        [%{"user_id" => 4, "is_loser" => false}, %{"user_id" => 3, "is_loser" => false}],
+        [%{"user_id" => 2, "is_loser" => false}, %{"user_id" => 1, "is_loser" => false}]]
+    end
+
+    test "data_for_brackets/1 works fine with valid list data of size 9" do
+      match_list = [
+        [[%{"user_id" => 1, "is_loser" => false}, %{"user_id" => 2, "is_loser" => false}],
+        [%{"user_id" => 3, "is_loser" => false}, %{"user_id" => 4, "is_loser" => false}]],
+        [[%{"user_id" => 5, "is_loser" => false}, %{"user_id" => 6, "is_loser" => false}],
+        [%{"user_id" => 7, "is_loser" => false},
+        [%{"user_id" => 8, "is_loser" => false}, %{"user_id" => 9, "is_loser" => false}]]]
+      ]
+      assert Tournaments.data_with_fight_result_for_brackets(match_list) == [
+        [%{"user_id" => 9, "is_loser" => false}, %{"user_id" => 8, "is_loser" => false}],
+        [nil, %{"user_id" => 7, "is_loser" => false}],
+        [%{"user_id" => 6, "is_loser" => false}, %{"user_id" => 5, "is_loser" => false}],
+        [%{"user_id" => 4, "is_loser" => false}, %{"user_id" => 3, "is_loser" => false}],
+        [%{"user_id" => 2, "is_loser" => false}, %{"user_id" => 1, "is_loser" => false}]]
     end
   end
 end
