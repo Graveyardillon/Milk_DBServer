@@ -23,6 +23,7 @@ jobs:
     working_directory: ~/repo
     steps:
       - checkout
+      - workdir: milk
 
       - run: mix local.hex --force
       - run: mix local.rebar --force
