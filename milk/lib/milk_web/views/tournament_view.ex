@@ -153,7 +153,6 @@ defmodule MilkWeb.TournamentView do
   end
 
   def render("create.json", %{tournament: tournament}) do
-
     %{
       data: %{
         id: tournament.id,
@@ -183,8 +182,13 @@ defmodule MilkWeb.TournamentView do
     }
   end
 
-  def render("match.json", %{list: list}) do
-    %{data: %{match_list: list}}
+  def render("match.json", %{match_list: list, match_list_with_fight_result: list2}) do
+    %{
+      data: %{
+        match_list: list,
+        match_list_with_fight_result: list2
+      }
+    }
   end
 
   def render("loser.json", %{list: list}) do

@@ -935,88 +935,88 @@ defmodule Milk.TournamentsTest do
 
   describe "data with fight result for brackets" do
     test "data_with_fight_result_for_brackets/1 works fine with valid list data of size 3" do
-      match_list = [%{"user_id" => 3, "is_loser" => false},
-      [%{"user_id" => 1, "is_loser" => false}, %{"user_id" => 2, "is_loser" => false}]]
+      match_list = [%{"user_id" => 3, "is_loser" => false, "name" => "testname", "win_count" => 0},
+      [%{"user_id" => 1, "is_loser" => false, "name" => "testname", "win_count" => 0}, %{"user_id" => 2, "is_loser" => false, "name" => "testname", "win_count" => 0}]]
       assert Tournaments.data_with_fight_result_for_brackets(match_list) == [
-        [%{"user_id" => 2, "is_loser" => false}, %{"user_id" => 1, "is_loser" => false}],
-        [nil, %{"user_id" => 3, "is_loser" => false}]]
+        [%{"user_id" => 2, "is_loser" => false, "name" => "testname", "win_count" => 0}, %{"user_id" => 1, "is_loser" => false, "name" => "testname", "win_count" => 0}],
+        [nil, %{"user_id" => 3, "is_loser" => false, "name" => "testname", "win_count" => 0}]]
     end
 
     test "data_with_fight_result_for_brackets/1 works fine with valid list data of size 4" do
-      match_list = [[%{"user_id" => 1, "is_loser" => false}, %{"user_id" => 2, "is_loser" => false}],
-      [%{"user_id" => 3, "is_loser" => false}, %{"user_id" => 4, "is_loser" => false}]]
+      match_list = [[%{"user_id" => 1, "is_loser" => false, "name" => "testname", "win_count" => 0}, %{"user_id" => 2, "is_loser" => false, "name" => "testname", "win_count" => 0}],
+      [%{"user_id" => 3, "is_loser" => false, "name" => "testname", "win_count" => 0}, %{"user_id" => 4, "is_loser" => false, "name" => "testname", "win_count" => 0}]]
       assert Tournaments.data_with_fight_result_for_brackets(match_list) == [
-        [%{"user_id" => 4, "is_loser" => false}, %{"user_id" => 3, "is_loser" => false}],
-        [%{"user_id" => 2, "is_loser" => false}, %{"user_id" => 1, "is_loser" => false}]]
+        [%{"user_id" => 4, "is_loser" => false, "name" => "testname", "win_count" => 0}, %{"user_id" => 3, "is_loser" => false, "name" => "testname", "win_count" => 0}],
+        [%{"user_id" => 2, "is_loser" => false, "name" => "testname", "win_count" => 0}, %{"user_id" => 1, "is_loser" => false, "name" => "testname", "win_count" => 0}]]
     end
 
     test "data_with_fight_result_for_brackets/1 works fine with valid list data of size 5" do
       match_list = [
-        [%{"user_id" => 1, "is_loser" => false}, %{"user_id" => 2, "is_loser" => false}],
-        [%{"user_id" => 3, "is_loser" => false},
-        [%{"user_id" => 4, "is_loser" => false}, %{"user_id" => 5, "is_loser" => false}]]]
+        [%{"user_id" => 1, "is_loser" => false, "name" => "testname", "win_count" => 0}, %{"user_id" => 2, "is_loser" => false, "name" => "testname", "win_count" => 0}],
+        [%{"user_id" => 3, "is_loser" => false, "name" => "testname", "win_count" => 0},
+        [%{"user_id" => 4, "is_loser" => false, "name" => "testname", "win_count" => 0}, %{"user_id" => 5, "is_loser" => false, "name" => "testname", "win_count" => 0}]]]
       assert Tournaments.data_with_fight_result_for_brackets(match_list) == [
-        [%{"user_id" => 5, "is_loser" => false}, %{"user_id" => 4, "is_loser" => false}],
-        [nil, %{"user_id" => 3, "is_loser" => false}],
-        [%{"user_id" => 2, "is_loser" => false}, %{"user_id" => 1, "is_loser" => false}]]
+        [%{"user_id" => 5, "is_loser" => false, "name" => "testname", "win_count" => 0}, %{"user_id" => 4, "is_loser" => false, "name" => "testname", "win_count" => 0}],
+        [nil, %{"user_id" => 3, "is_loser" => false, "name" => "testname", "win_count" => 0}],
+        [%{"user_id" => 2, "is_loser" => false, "name" => "testname", "win_count" => 0}, %{"user_id" => 1, "is_loser" => false, "name" => "testname", "win_count" => 0}]]
     end
 
     test "data_with_fight_result_for_brackets/1 works fine with valid list data of size 6" do
       match_list = [
-        [%{"user_id" => 1, "is_loser" => false},
-        [%{"user_id" => 2, "is_loser" => false}, %{"user_id" => 3, "is_loser" => false}]],
-        [%{"user_id" => 4, "is_loser" => false},
-        [%{"user_id" => 5, "is_loser" => false}, %{"user_id" => 6, "is_loser" => false}]]
+        [%{"user_id" => 1, "is_loser" => false, "name" => "testname", "win_count" => 0},
+        [%{"user_id" => 2, "is_loser" => false, "name" => "testname", "win_count" => 0}, %{"user_id" => 3, "is_loser" => false, "name" => "testname", "win_count" => 0}]],
+        [%{"user_id" => 4, "is_loser" => false, "name" => "testname", "win_count" => 0},
+        [%{"user_id" => 5, "is_loser" => false, "name" => "testname", "win_count" => 0}, %{"user_id" => 6, "is_loser" => false, "name" => "testname", "win_count" => 0}]]
       ]
       assert Tournaments.data_with_fight_result_for_brackets(match_list) == [
-        [%{"user_id" => 6, "is_loser" => false}, %{"user_id" => 5, "is_loser" => false}],
-        [nil, %{"user_id" => 4, "is_loser" => false}],
-        [%{"user_id" => 3, "is_loser" => false}, %{"user_id" => 2, "is_loser" => false}],
-        [nil, %{"user_id" => 1, "is_loser" => false}]]
+        [%{"user_id" => 6, "is_loser" => false, "name" => "testname", "win_count" => 0}, %{"user_id" => 5, "is_loser" => false, "name" => "testname", "win_count" => 0}],
+        [nil, %{"user_id" => 4, "is_loser" => false, "name" => "testname", "win_count" => 0}],
+        [%{"user_id" => 3, "is_loser" => false, "name" => "testname", "win_count" => 0}, %{"user_id" => 2, "is_loser" => false, "name" => "testname", "win_count" => 0}],
+        [nil, %{"user_id" => 1, "is_loser" => false, "name" => "testname", "win_count" => 0}]]
     end
 
     test "data_with_fight_result_for_brackets/1 works fine with valid list data of size 7" do
       match_list = [
-        [%{"user_id" => 1, "is_loser" => false},
-        [%{"user_id" => 2, "is_loser" => false}, %{"user_id" => 3, "is_loser" => false}]],
-        [[%{"user_id" => 4, "is_loser" => false}, %{"user_id" => 5, "is_loser" => false}],
-        [%{"user_id" => 6, "is_loser" => false}, %{"user_id" => 7, "is_loser" => false}]]
+        [%{"user_id" => 1, "is_loser" => false, "name" => "testname", "win_count" => 0},
+        [%{"user_id" => 2, "is_loser" => false, "name" => "testname", "win_count" => 0}, %{"user_id" => 3, "is_loser" => false, "name" => "testname", "win_count" => 0}]],
+        [[%{"user_id" => 4, "is_loser" => false, "name" => "testname", "win_count" => 0}, %{"user_id" => 5, "is_loser" => false, "name" => "testname", "win_count" => 0}],
+        [%{"user_id" => 6, "is_loser" => false, "name" => "testname", "win_count" => 0}, %{"user_id" => 7, "is_loser" => false, "name" => "testname", "win_count" => 0}]]
       ]
       assert Tournaments.data_with_fight_result_for_brackets(match_list) == [
-        [%{"user_id" => 7, "is_loser" => false}, %{"user_id" => 6, "is_loser" => false}],
-        [%{"user_id" => 5, "is_loser" => false}, %{"user_id" => 4, "is_loser" => false}],
-        [%{"user_id" => 3, "is_loser" => false}, %{"user_id" => 2, "is_loser" => false}],
-        [nil, %{"user_id" => 1, "is_loser" => false}]]
+        [%{"user_id" => 7, "is_loser" => false, "name" => "testname", "win_count" => 0}, %{"user_id" => 6, "is_loser" => false, "name" => "testname", "win_count" => 0}],
+        [%{"user_id" => 5, "is_loser" => false, "name" => "testname", "win_count" => 0}, %{"user_id" => 4, "is_loser" => false, "name" => "testname", "win_count" => 0}],
+        [%{"user_id" => 3, "is_loser" => false, "name" => "testname", "win_count" => 0}, %{"user_id" => 2, "is_loser" => false, "name" => "testname", "win_count" => 0}],
+        [nil, %{"user_id" => 1, "is_loser" => false, "name" => "testname", "win_count" => 0}]]
     end
 
     test "data_for_brackets/1 works fine with valid list data of size 8" do
       match_list = [
-        [[%{"user_id" => 1, "is_loser" => false}, %{"user_id" => 2, "is_loser" => false}],
-        [%{"user_id" => 3, "is_loser" => false}, %{"user_id" => 4, "is_loser" => false}]],
-        [[%{"user_id" => 5, "is_loser" => false}, %{"user_id" => 6, "is_loser" => false}],
-        [%{"user_id" => 7, "is_loser" => false}, %{"user_id" => 8, "is_loser" => false}]]
+        [[%{"user_id" => 1, "is_loser" => false, "name" => "testname", "win_count" => 0}, %{"user_id" => 2, "is_loser" => false, "name" => "testname", "win_count" => 0}],
+        [%{"user_id" => 3, "is_loser" => false, "name" => "testname", "win_count" => 0}, %{"user_id" => 4, "is_loser" => false, "name" => "testname", "win_count" => 0}]],
+        [[%{"user_id" => 5, "is_loser" => false, "name" => "testname", "win_count" => 0}, %{"user_id" => 6, "is_loser" => false, "name" => "testname", "win_count" => 0}],
+        [%{"user_id" => 7, "is_loser" => false, "name" => "testname", "win_count" => 0}, %{"user_id" => 8, "is_loser" => false, "name" => "testname", "win_count" => 0}]]
       ]
       assert Tournaments.data_with_fight_result_for_brackets(match_list) == [
-        [%{"user_id" => 8, "is_loser" => false}, %{"user_id" => 7, "is_loser" => false}],
-        [%{"user_id" => 6, "is_loser" => false}, %{"user_id" => 5, "is_loser" => false}],
-        [%{"user_id" => 4, "is_loser" => false}, %{"user_id" => 3, "is_loser" => false}],
-        [%{"user_id" => 2, "is_loser" => false}, %{"user_id" => 1, "is_loser" => false}]]
+        [%{"user_id" => 8, "is_loser" => false, "name" => "testname", "win_count" => 0}, %{"user_id" => 7, "is_loser" => false, "name" => "testname", "win_count" => 0}],
+        [%{"user_id" => 6, "is_loser" => false, "name" => "testname", "win_count" => 0}, %{"user_id" => 5, "is_loser" => false, "name" => "testname", "win_count" => 0}],
+        [%{"user_id" => 4, "is_loser" => false, "name" => "testname", "win_count" => 0}, %{"user_id" => 3, "is_loser" => false, "name" => "testname", "win_count" => 0}],
+        [%{"user_id" => 2, "is_loser" => false, "name" => "testname", "win_count" => 0}, %{"user_id" => 1, "is_loser" => false, "name" => "testname", "win_count" => 0}]]
     end
 
     test "data_for_brackets/1 works fine with valid list data of size 9" do
       match_list = [
-        [[%{"user_id" => 1, "is_loser" => false}, %{"user_id" => 2, "is_loser" => false}],
-        [%{"user_id" => 3, "is_loser" => false}, %{"user_id" => 4, "is_loser" => false}]],
-        [[%{"user_id" => 5, "is_loser" => false}, %{"user_id" => 6, "is_loser" => false}],
-        [%{"user_id" => 7, "is_loser" => false},
-        [%{"user_id" => 8, "is_loser" => false}, %{"user_id" => 9, "is_loser" => false}]]]
+        [[%{"user_id" => 1, "is_loser" => false, "name" => "testname", "win_count" => 0}, %{"user_id" => 2, "is_loser" => false, "name" => "testname", "win_count" => 0}],
+        [%{"user_id" => 3, "is_loser" => false, "name" => "testname", "win_count" => 0}, %{"user_id" => 4, "is_loser" => false, "name" => "testname", "win_count" => 0}]],
+        [[%{"user_id" => 5, "is_loser" => false, "name" => "testname", "win_count" => 0}, %{"user_id" => 6, "is_loser" => false, "name" => "testname", "win_count" => 0}],
+        [%{"user_id" => 7, "is_loser" => false, "name" => "testname", "win_count" => 0},
+        [%{"user_id" => 8, "is_loser" => false, "name" => "testname", "win_count" => 0}, %{"user_id" => 9, "is_loser" => false, "name" => "testname", "win_count" => 0}]]]
       ]
       assert Tournaments.data_with_fight_result_for_brackets(match_list) == [
-        [%{"user_id" => 9, "is_loser" => false}, %{"user_id" => 8, "is_loser" => false}],
-        [nil, %{"user_id" => 7, "is_loser" => false}],
-        [%{"user_id" => 6, "is_loser" => false}, %{"user_id" => 5, "is_loser" => false}],
-        [%{"user_id" => 4, "is_loser" => false}, %{"user_id" => 3, "is_loser" => false}],
-        [%{"user_id" => 2, "is_loser" => false}, %{"user_id" => 1, "is_loser" => false}]]
+        [%{"user_id" => 9, "is_loser" => false, "name" => "testname", "win_count" => 0}, %{"user_id" => 8, "is_loser" => false, "name" => "testname", "win_count" => 0}],
+        [nil, %{"user_id" => 7, "is_loser" => false, "name" => "testname", "win_count" => 0}],
+        [%{"user_id" => 6, "is_loser" => false, "name" => "testname", "win_count" => 0}, %{"user_id" => 5, "is_loser" => false, "name" => "testname", "win_count" => 0}],
+        [%{"user_id" => 4, "is_loser" => false, "name" => "testname", "win_count" => 0}, %{"user_id" => 3, "is_loser" => false, "name" => "testname", "win_count" => 0}],
+        [%{"user_id" => 2, "is_loser" => false, "name" => "testname", "win_count" => 0}, %{"user_id" => 1, "is_loser" => false, "name" => "testname", "win_count" => 0}]]
     end
   end
 end

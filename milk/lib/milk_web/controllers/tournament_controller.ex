@@ -366,11 +366,26 @@ defmodule MilkWeb.TournamentController do
         |> Tournaments.initialize_rank(count, tournament_id)
         match_list
         |> Ets.insert_match_list(tournament_id)
-        match_list
-        |> match_list_with_fight_result()
-        |> IO.inspect(label: :matchlist)
-        |> Ets.insert_match_list_with_fight_result(tournament_id)
-        render(conn, "match.json", list: match_list)
+
+        list_with_fight_result =
+          match_list
+          |> match_list_with_fight_result()
+
+        lis =
+          list_with_fight_result
+          |> Tournamex.match_list_to_list()
+
+        complete_list =
+          Enum.reduce(lis, list_with_fight_result, fn x, acc ->
+            user = Accounts.get_user(x["user_id"])
+
+            acc
+            |> Tournaments.put_value_on_brackets(user.id, %{"name" => user.name})
+            |> Tournaments.put_value_on_brackets(user.id, %{"win_count" => 0})
+          end)
+          |> Ets.insert_match_list_with_fight_result(tournament_id)
+
+        render(conn, "match.json", %{match_list: match_list, match_list_with_fight_result: complete_list})
     else
       {:error, error} -> render(conn, "error.json", error: error)
     end
@@ -413,9 +428,10 @@ defmodule MilkWeb.TournamentController do
   end
 
   defp get_lose(tournament_id, _match_list, [loser]) do
-    {_, match_list} = Ets.get_match_list_with_fight_result(tournament_id)
+    {_, match_list} =
+      tournament_id
+      |> Ets.get_match_list_with_fight_result()
       |> hd()
-      |> IO.inspect()
     _updated_match_list = Tournaments.get_lose(match_list, loser)
     Ets.delete_match_list_with_fight_result(tournament_id)
     Ets.insert_match_list_with_fight_result(match_list, tournament_id)
@@ -677,7 +693,6 @@ defmodule MilkWeb.TournamentController do
   def brackets_with_fight_result(conn, %{"tournament_id" => tournament_id}) do
     tournament_id = Tools.to_integer_as_needed(tournament_id)
     list = Ets.get_match_list_with_fight_result(tournament_id)
-      |> IO.inspect(label: :get_match_list_with_fight_result)
     list = unless list == [], do: hd(list)
 
     case list do
