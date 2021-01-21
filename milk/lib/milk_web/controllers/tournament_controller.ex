@@ -354,7 +354,6 @@ defmodule MilkWeb.TournamentController do
     end
   end
 
-  # FIXME: 関数名適当
   defp make_matches(conn, tournament_id) do
     with {:ok, match_list} <-
       Tournaments.get_entrants(tournament_id)
@@ -369,6 +368,7 @@ defmodule MilkWeb.TournamentController do
         |> Ets.insert_match_list(tournament_id)
         match_list
         |> match_list_with_fight_result()
+        |> IO.inspect(label: :matchlist)
         |> Ets.insert_match_list_with_fight_result(tournament_id)
         render(conn, "match.json", list: match_list)
     else
@@ -413,7 +413,9 @@ defmodule MilkWeb.TournamentController do
   end
 
   defp get_lose(tournament_id, _match_list, [loser]) do
-    {_, match_list} = Ets.get_match_list_with_fight_result(loser)
+    {_, match_list} = Ets.get_match_list_with_fight_result(tournament_id)
+      |> hd()
+      |> IO.inspect()
     _updated_match_list = Tournaments.get_lose(match_list, loser)
     Ets.delete_match_list_with_fight_result(tournament_id)
     Ets.insert_match_list_with_fight_result(match_list, tournament_id)
@@ -675,6 +677,7 @@ defmodule MilkWeb.TournamentController do
   def brackets_with_fight_result(conn, %{"tournament_id" => tournament_id}) do
     tournament_id = Tools.to_integer_as_needed(tournament_id)
     list = Ets.get_match_list_with_fight_result(tournament_id)
+      |> IO.inspect(label: :get_match_list_with_fight_result)
     list = unless list == [], do: hd(list)
 
     case list do

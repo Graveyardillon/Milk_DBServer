@@ -28,7 +28,7 @@ defmodule MilkWeb.EntrantControllerTest do
     "type" => 0,
     "url" => "some url",
     "master_id" => 1,
-    "platform" => 1,
+    "platform_id" => 1,
     "is_started" => true
   }
 

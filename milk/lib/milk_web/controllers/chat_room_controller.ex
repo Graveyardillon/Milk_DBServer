@@ -29,7 +29,7 @@ defmodule MilkWeb.ChatRoomController do
     id = Tools.to_integer_as_needed(id)
 
     chat_room = Chat.get_chat_room(id)
-    if (chat_room) do
+    if chat_room do
       render(conn, "show.json", chat_room: chat_room)
     else
       render(conn, "error.json", error: nil)
@@ -58,7 +58,7 @@ defmodule MilkWeb.ChatRoomController do
   """
   def delete(conn, %{"id" => id}) do
     chat_room = Chat.get_all_chat(id)
-    if (chat_room) do
+    if chat_room do
       with {:ok, %ChatRoom{}} <- Chat.delete_chat_room(chat_room) do
         send_resp(conn, :no_content, "")
       end

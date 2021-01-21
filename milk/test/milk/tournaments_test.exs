@@ -27,7 +27,7 @@ defmodule Milk.TournamentsTest do
     "type" => 0,
     "url" => "some url",
     "master_id" => 1,
-    "platform" => 1,
+    "platform_id" => 1,
     "is_started" => true
   }
   @update_attrs %{
@@ -48,7 +48,7 @@ defmodule Milk.TournamentsTest do
     "type" => nil,
     "url" => nil,
     "master_id" => 1,
-    "platform" => 1
+    "platform_id" => 1
   }
   @entrant_create_attrs %{
     "rank" => 42,
@@ -611,7 +611,7 @@ defmodule Milk.TournamentsTest do
     {:ok, chat_room} = Chat.create_chat_room(%{"name" => "name"})
 
     {:ok, topic} =
-      %{"topic_name" => "name", "tournament_id" => tournament.id, "chat_room_id" => chat_room.id}
+      %{"topic_name" => "name", "tournament_id" => tournament.id, "chat_room_id" => chat_room.id, "tab_index" => 1}
       |> Tournaments.create_tournament_chat_topic()
 
     topic
