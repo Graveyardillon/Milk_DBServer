@@ -95,10 +95,13 @@ defmodule Milk.Accounts do
   Creates a user.
   """
   @spec create_user(map) :: tuple()
-  def create_user(without_id_attrs \\ %{}) do
-    attrs = Map.put(without_id_attrs, "id_for_show", generate_id_for_show())
+  def create_user(without_id_attrs) do
 
-    User.changeset(%User{}, attrs)
+    attrs =
+      case without_id_attrs do
+        %{"id_for_show" => id} -> %{without_id_attrs | "id_for_show" => generate_id_for_show(id)}
+        _ -> Map.put(without_id_attrs, "id_for_show", generate_id_for_show())
+      end
 
     Multi.new
     |> Multi.insert(:user, User.changeset(%User{}, attrs))
@@ -118,7 +121,7 @@ defmodule Milk.Accounts do
     Enum.random(0..999999)
     |> generate_id_for_show()
   end
-  defp generate_id_for_show(tmp_id) when tmp_id > 999999 do
+  defp generate_id_for_show(1000000) do
     generate_id_for_show(0)
   end
   defp generate_id_for_show(tmp_id) do
@@ -206,7 +209,7 @@ defmodule Milk.Accounts do
 
       Repo.delete(user)
     else
-      {:error, nil}
+      {:error, user}
     end
   end
 
@@ -309,9 +312,7 @@ defmodule Milk.Accounts do
   # end
 
   def login_forced(user) do
-    password = Auth.create_pass(user["password"])
-
-    user = Repo.one(from u in User, join: a in assoc(u, :auth), where: a.email == ^user["email"] and a.password == ^password, preload: [auth: a])
+    user = get_valid_user(%{"email_or_username" => user["email"]}, user["password"], :email)
     if(user) do
       user
       |> User.changeset(%{logout_fl: false})
@@ -347,11 +348,11 @@ defmodule Milk.Accounts do
       {:error, %Ecto.Changeset{}}
 
   """
-  def create_auth(attrs \\ %{}) do
-    %Auth{}
-    |> Auth.changeset(attrs)
-    |> Repo.insert()
-  end
+  # def create_auth(attrs \\ %{}) do
+  #   %Auth{}
+  #   |> Auth.changeset(attrs)
+  #   |> Repo.insert()
+  # end
 
   @doc """
   Updates a auth.
@@ -365,11 +366,11 @@ defmodule Milk.Accounts do
       {:error, %Ecto.Changeset{}}
 
   """
-  def update_auth(%Auth{} = auth, attrs) do
-    auth
-    |> Auth.changeset(attrs)
-    |> Repo.update()
-  end
+  # def update_auth(%Auth{} = auth, attrs) do
+  #   auth
+  #   |> Auth.changeset(attrs)
+  #   |> Repo.update()
+  # end
 
   @doc """
   Deletes a auth.
@@ -383,7 +384,7 @@ defmodule Milk.Accounts do
       {:error, %Ecto.Changeset{}}
 
   """
-  def delete_auth(%Auth{} = auth) do
-    Repo.delete(auth)
-  end
+  # def delete_auth(%Auth{} = auth) do
+  #   Repo.delete(auth)
+  # end
 end
