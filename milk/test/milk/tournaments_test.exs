@@ -14,6 +14,7 @@ defmodule Milk.TournamentsTest do
     Entrant,
     TournamentChatTopic
   }
+  alias Milk.Log.EntrantLog
   alias Milk.Accounts.User
 
   # 外部キーが二つ以上の場合は %{"capacity" => 42} のようにしなければいけない
@@ -26,7 +27,7 @@ defmodule Milk.TournamentsTest do
     "type" => 0,
     "url" => "some url",
     "master_id" => 1,
-    "platform" => 1,
+    "platform_id" => 1,
     "is_started" => true
   }
   @update_attrs %{
@@ -47,7 +48,7 @@ defmodule Milk.TournamentsTest do
     "type" => nil,
     "url" => nil,
     "master_id" => 1,
-    "platform" => 1
+    "platform_id" => 1
   }
   @entrant_create_attrs %{
     "rank" => 42,
@@ -136,7 +137,7 @@ defmodule Milk.TournamentsTest do
       entrant = fixture(:entrant)
       _tournament = Tournaments.get_tournament(entrant.tournament_id)
 
-      assert tournaments = Tournaments.get_participating_tournaments!(entrant.user_id)
+      assert tournaments = Tournaments.get_participating_tournaments(entrant.user_id, 0)
       assert is_list(tournaments)
       Enum.each(tournaments, fn tournament ->
         assert %Tournament{} = tournament
@@ -151,6 +152,32 @@ defmodule Milk.TournamentsTest do
       Enum.each(users, fn user ->
         assert %User{} = user
       end)
+    end
+
+    test "get_tournament_including_logs/1 with valid data gets tournament from log" do
+      user = fixture(:user)
+      {:ok, tournament} =
+        @valid_attrs
+        |> Map.put("master_id", user.id)
+        |> Tournaments.create_tournament()
+
+      Tournaments.finish(tournament.id, user.id)
+
+      assert {:ok, _tournament} = Tournaments.get_tournament_including_logs(tournament.id)
+    end
+
+    test "get_tournament_including_logs/1 with valid data gets tournament" do
+      user = fixture(:user)
+      {:ok, tournament} =
+        @valid_attrs
+        |> Map.put("master_id", user.id)
+        |> Tournaments.create_tournament()
+
+      assert {:ok, _tournament} = Tournaments.get_tournament_including_logs(tournament.id)
+    end
+
+    test "get_tournament_including_logs/1 with invalid data does not get tournament" do
+      assert {:error, _} = Tournaments.get_tournament_including_logs(-1)
     end
   end
 
@@ -296,6 +323,25 @@ defmodule Milk.TournamentsTest do
         assert %Entrant{} = entrant
       end)
     end
+
+    test "get_entrant_including_logs/1 gets tournament log with a valid data", %{entrant: entrant} do
+      num = 7
+      create_entrants(num, entrant.tournament_id)
+      Tournaments.finish(entrant.tournament_id, entrant.id)
+
+      assert %EntrantLog{} = Tournaments.get_entrant_including_logs(entrant.id)
+    end
+
+    test "get_entrant_including_logs/1 gets tournament with a valid data", %{entrant: entrant} do
+      num = 7
+      create_entrants(num, entrant.tournament_id)
+
+      assert %Entrant{} = Tournaments.get_entrant_including_logs(entrant.id)
+    end
+
+    test "get_entrant_including_logs/1 does not work with an invalid data", %{entrant: _entrant} do
+      assert nil == Tournaments.get_entrant_including_logs(-1)
+    end
   end
 
   describe "create entrant" do
@@ -329,12 +375,12 @@ defmodule Milk.TournamentsTest do
     setup [:create_entrant]
 
     test "delete_entrant/2 works fine with a valid data", %{entrant: entrant} do
-      assert {:ok, _entrant} = Tournaments.delete_entrant(entrant.tournament_id, entrant.user_id)
+      assert {:ok, %Entrant{} = entrant} = Tournaments.delete_entrant(entrant.tournament_id, entrant.user_id)
       assert %Ecto.NoResultsError{} = catch_error(Tournaments.get_entrant!(entrant.id))
     end
 
     test "delete_entrant/1 works fine with a valid data", %{entrant: entrant} do
-      assert {:ok, _entrant} = Tournaments.delete_entrant(entrant)
+      assert {:ok, %Entrant{} = entrant} = Tournaments.delete_entrant(entrant)
       assert %Ecto.NoResultsError{} = catch_error(Tournaments.get_entrant!(entrant.id))
     end
   end
@@ -394,9 +440,14 @@ defmodule Milk.TournamentsTest do
   describe "tournament flow functions" do
     setup [:create_tournament_for_flow]
 
-    test "start/2 with valid data works fine", %{tournament: tournament} do
-      assert {:ok, _tournament} = Tournaments.start(tournament.master_id, tournament.id)
-      assert {:error, _} = Tournaments.start(tournament.master_id, tournament.id)
+    # FIXME: startのテストを増やしたほうがいい
+    # test "start/2 with valid data works fine", %{tournament: tournament} do
+    #   assert {:ok, _tournament} = Tournaments.start(tournament.master_id, tournament.id)
+    #   assert {:error, _} = Tournaments.start(tournament.master_id, tournament.id)
+    # end
+
+    test "start/2 with only one entrant does not work", %{tournament: tournament} do
+      assert {:error, "too few entrants"} = Tournaments.start(tournament.master_id, tournament.id)
     end
 
     test "start/2 with invalid data does not work", %{tournament: _tournament} do
@@ -560,7 +611,7 @@ defmodule Milk.TournamentsTest do
     {:ok, chat_room} = Chat.create_chat_room(%{"name" => "name"})
 
     {:ok, topic} =
-      %{"topic_name" => "name", "tournament_id" => tournament.id, "chat_room_id" => chat_room.id}
+      %{"topic_name" => "name", "tournament_id" => tournament.id, "chat_room_id" => chat_room.id, "tab_index" => 1}
       |> Tournaments.create_tournament_chat_topic()
 
     topic
@@ -629,6 +680,37 @@ defmodule Milk.TournamentsTest do
     end
   end
 
+  describe "has_lost?" do
+    setup [:create_entrant]
+
+    test "has_lost?/3 returns true with a lost match list", %{entrant: entrant} do
+      num = 7
+
+      {_, match_list} =
+        create_entrants(num, entrant.tournament_id)
+        |> Enum.map(fn x -> %{x | rank: num + 1} end)
+        |> Kernel.++([%{entrant | rank: num + 1}])
+        |> Enum.map(fn entrant -> entrant.user_id end)
+        |> Tournaments.generate_matchlist()
+
+      match_list = Tournaments.delete_loser(match_list, entrant.user_id)
+      assert Tournaments.has_lost?(match_list, entrant.user_id)
+    end
+
+    test "has_lost?/3 returns false with a just generated match list", %{entrant: entrant} do
+      num = 7
+
+      {_, match_list} =
+        create_entrants(num, entrant.tournament_id)
+        |> Enum.map(fn x -> %{x | rank: num + 1} end)
+        |> Kernel.++([%{entrant | rank: num + 1}])
+        |> Enum.map(fn entrant -> entrant.user_id end)
+        |> Tournaments.generate_matchlist()
+
+      refute Tournaments.has_lost?(match_list, entrant.user_id)
+    end
+  end
+
   describe "promote rank" do
     setup [:create_entrant]
 
@@ -646,13 +728,12 @@ defmodule Milk.TournamentsTest do
         create_entrants(num, entrant.tournament_id)
         |> Enum.map(fn x -> %{x | rank: num + 1} end)
         |> Kernel.++([%{entrant | rank: num + 1}])
+        |> Enum.map(fn entrant -> entrant.user_id end)
         |> Tournaments.generate_matchlist()
 
       Ets.insert_match_list(match_list, entrant.tournament_id)
 
       assert {:ok, promoted} = Tournaments.promote_rank(attrs)
-      # assert promoted.user_id  == entrant.user_id
-      # assert promoted.rank == 4
     end
 
     test "promote_rank/1 returns error with invalid attrs(tournament_id)", %{entrant: entrant} do
@@ -714,6 +795,105 @@ defmodule Milk.TournamentsTest do
 
       assert {:error, "undefined user"} = Tournaments.promote_rank(attrs)
     end
+
+    test "run promote_rank/1 in a row with 8 entrants", %{entrant: entrant} do
+      attrs =
+        %{
+          "tournament_id" => entrant.tournament_id,
+          "user_id" => entrant.user_id
+        }
+
+      # numは生成する参加者の数で後に一人追加するので8 - 1 = 7
+      num = 7
+      # 参加者作成，マッチリストを生成してEtsに登録
+      {:ok, match_list} =
+        create_entrants(num, entrant.tournament_id)
+        |> Enum.map(fn x -> %{x | rank: num + 1} end)
+        |> Kernel.++([%{entrant | rank: num + 1}])
+        |> Enum.map(fn entrant -> entrant.user_id end)
+        |> Tournaments.generate_matchlist()
+
+      Ets.insert_match_list(match_list, entrant.tournament_id)
+
+      assert {:ok, _promoted} = Tournaments.promote_rank(attrs)
+      assert Tournaments.get_rank(entrant.tournament_id, entrant.user_id) == 4
+
+      {:ok, opponent} =
+        match_list
+        |> Tournaments.find_match(entrant.user_id)
+        |> Tournaments.get_opponent(entrant.user_id)
+
+      Ets.delete_match_list(entrant.tournament_id)
+      updated = Tournaments.delete_loser(match_list, opponent["id"])
+
+      Ets.insert_match_list(updated, entrant.tournament_id)
+
+      assert {:wait, nil} = Tournaments.promote_rank(attrs)
+    end
+
+    test "run promote_rank/1 in a row with 4 entrants", %{entrant: entrant} do
+      attrs =
+        %{
+          "tournament_id" => entrant.tournament_id,
+          "user_id" => entrant.user_id
+        }
+
+      num = 3
+      {:ok, match_list} =
+        create_entrants(num, entrant.tournament_id)
+        |> Enum.map(fn x -> %{x | rank: num + 1} end)
+        |> Kernel.++([%{entrant | rank: num + 1}])
+        |> Enum.map(fn entrant -> entrant.user_id end)
+        |> Tournaments.generate_matchlist()
+
+      Ets.insert_match_list(match_list, entrant.tournament_id)
+
+      assert {:ok, _promoted} = Tournaments.promote_rank(attrs)
+      assert Tournaments.get_rank(entrant.tournament_id, entrant.user_id) == 2
+
+      {:ok, opponent} =
+        match_list
+        |> Tournaments.find_match(entrant.user_id)
+        |> Tournaments.get_opponent(entrant.user_id)
+
+      Ets.delete_match_list(entrant.tournament_id)
+      updated = Tournaments.delete_loser(match_list, opponent["id"])
+
+      Ets.insert_match_list(updated, entrant.tournament_id)
+
+      assert {:wait, nil} = Tournaments.promote_rank(attrs)
+    end
+
+    test "run promote_rank/1 in a row with 2 entrants", %{entrant: entrant} do
+      attrs =
+        %{
+          "tournament_id" => entrant.tournament_id,
+          "user_id" => entrant.user_id
+        }
+
+      num = 1
+      {:ok, match_list} =
+        create_entrants(num, entrant.tournament_id)
+        |> Enum.map(fn x -> %{x | rank: num + 1} end)
+        |> Kernel.++([%{entrant | rank: num + 1}])
+        |> Enum.map(fn entrant -> entrant.user_id end)
+        |> Tournaments.generate_matchlist()
+
+      Ets.insert_match_list(match_list, entrant.tournament_id)
+
+      assert {:ok, _promoted} = Tournaments.promote_rank(attrs)
+      assert Tournaments.get_rank(entrant.tournament_id, entrant.user_id) == 1
+
+      {:ok, opponent} =
+        match_list
+        |> Tournaments.find_match(entrant.user_id)
+        |> Tournaments.get_opponent(entrant.user_id)
+
+      Ets.delete_match_list(entrant.tournament_id)
+      updated = Tournaments.delete_loser(match_list, opponent["id"])
+
+      Ets.insert_match_list(updated, entrant.tournament_id)
+    end
   end
 
   describe "data for brackets" do
@@ -750,6 +930,93 @@ defmodule Milk.TournamentsTest do
     test "data_for_brackets/1 works fine with valid list data of size 9" do
       match_list = [[[1, 2], [3, 4]], [[5, 6], [7, [8, 9]]]]
       assert Tournaments.data_for_brackets(match_list) == [[9, 8], [nil, 7], [6, 5], [4, 3], [2, 1]]
+    end
+  end
+
+  describe "data with fight result for brackets" do
+    test "data_with_fight_result_for_brackets/1 works fine with valid list data of size 3" do
+      match_list = [%{"user_id" => 3, "is_loser" => false, "name" => "testname", "win_count" => 0},
+      [%{"user_id" => 1, "is_loser" => false, "name" => "testname", "win_count" => 0}, %{"user_id" => 2, "is_loser" => false, "name" => "testname", "win_count" => 0}]]
+      assert Tournaments.data_with_fight_result_for_brackets(match_list) == [
+        [%{"user_id" => 2, "is_loser" => false, "name" => "testname", "win_count" => 0}, %{"user_id" => 1, "is_loser" => false, "name" => "testname", "win_count" => 0}],
+        [nil, %{"user_id" => 3, "is_loser" => false, "name" => "testname", "win_count" => 0}]]
+    end
+
+    test "data_with_fight_result_for_brackets/1 works fine with valid list data of size 4" do
+      match_list = [[%{"user_id" => 1, "is_loser" => false, "name" => "testname", "win_count" => 0}, %{"user_id" => 2, "is_loser" => false, "name" => "testname", "win_count" => 0}],
+      [%{"user_id" => 3, "is_loser" => false, "name" => "testname", "win_count" => 0}, %{"user_id" => 4, "is_loser" => false, "name" => "testname", "win_count" => 0}]]
+      assert Tournaments.data_with_fight_result_for_brackets(match_list) == [
+        [%{"user_id" => 4, "is_loser" => false, "name" => "testname", "win_count" => 0}, %{"user_id" => 3, "is_loser" => false, "name" => "testname", "win_count" => 0}],
+        [%{"user_id" => 2, "is_loser" => false, "name" => "testname", "win_count" => 0}, %{"user_id" => 1, "is_loser" => false, "name" => "testname", "win_count" => 0}]]
+    end
+
+    test "data_with_fight_result_for_brackets/1 works fine with valid list data of size 5" do
+      match_list = [
+        [%{"user_id" => 1, "is_loser" => false, "name" => "testname", "win_count" => 0}, %{"user_id" => 2, "is_loser" => false, "name" => "testname", "win_count" => 0}],
+        [%{"user_id" => 3, "is_loser" => false, "name" => "testname", "win_count" => 0},
+        [%{"user_id" => 4, "is_loser" => false, "name" => "testname", "win_count" => 0}, %{"user_id" => 5, "is_loser" => false, "name" => "testname", "win_count" => 0}]]]
+      assert Tournaments.data_with_fight_result_for_brackets(match_list) == [
+        [%{"user_id" => 5, "is_loser" => false, "name" => "testname", "win_count" => 0}, %{"user_id" => 4, "is_loser" => false, "name" => "testname", "win_count" => 0}],
+        [nil, %{"user_id" => 3, "is_loser" => false, "name" => "testname", "win_count" => 0}],
+        [%{"user_id" => 2, "is_loser" => false, "name" => "testname", "win_count" => 0}, %{"user_id" => 1, "is_loser" => false, "name" => "testname", "win_count" => 0}]]
+    end
+
+    test "data_with_fight_result_for_brackets/1 works fine with valid list data of size 6" do
+      match_list = [
+        [%{"user_id" => 1, "is_loser" => false, "name" => "testname", "win_count" => 0},
+        [%{"user_id" => 2, "is_loser" => false, "name" => "testname", "win_count" => 0}, %{"user_id" => 3, "is_loser" => false, "name" => "testname", "win_count" => 0}]],
+        [%{"user_id" => 4, "is_loser" => false, "name" => "testname", "win_count" => 0},
+        [%{"user_id" => 5, "is_loser" => false, "name" => "testname", "win_count" => 0}, %{"user_id" => 6, "is_loser" => false, "name" => "testname", "win_count" => 0}]]
+      ]
+      assert Tournaments.data_with_fight_result_for_brackets(match_list) == [
+        [%{"user_id" => 6, "is_loser" => false, "name" => "testname", "win_count" => 0}, %{"user_id" => 5, "is_loser" => false, "name" => "testname", "win_count" => 0}],
+        [nil, %{"user_id" => 4, "is_loser" => false, "name" => "testname", "win_count" => 0}],
+        [%{"user_id" => 3, "is_loser" => false, "name" => "testname", "win_count" => 0}, %{"user_id" => 2, "is_loser" => false, "name" => "testname", "win_count" => 0}],
+        [nil, %{"user_id" => 1, "is_loser" => false, "name" => "testname", "win_count" => 0}]]
+    end
+
+    test "data_with_fight_result_for_brackets/1 works fine with valid list data of size 7" do
+      match_list = [
+        [%{"user_id" => 1, "is_loser" => false, "name" => "testname", "win_count" => 0},
+        [%{"user_id" => 2, "is_loser" => false, "name" => "testname", "win_count" => 0}, %{"user_id" => 3, "is_loser" => false, "name" => "testname", "win_count" => 0}]],
+        [[%{"user_id" => 4, "is_loser" => false, "name" => "testname", "win_count" => 0}, %{"user_id" => 5, "is_loser" => false, "name" => "testname", "win_count" => 0}],
+        [%{"user_id" => 6, "is_loser" => false, "name" => "testname", "win_count" => 0}, %{"user_id" => 7, "is_loser" => false, "name" => "testname", "win_count" => 0}]]
+      ]
+      assert Tournaments.data_with_fight_result_for_brackets(match_list) == [
+        [%{"user_id" => 7, "is_loser" => false, "name" => "testname", "win_count" => 0}, %{"user_id" => 6, "is_loser" => false, "name" => "testname", "win_count" => 0}],
+        [%{"user_id" => 5, "is_loser" => false, "name" => "testname", "win_count" => 0}, %{"user_id" => 4, "is_loser" => false, "name" => "testname", "win_count" => 0}],
+        [%{"user_id" => 3, "is_loser" => false, "name" => "testname", "win_count" => 0}, %{"user_id" => 2, "is_loser" => false, "name" => "testname", "win_count" => 0}],
+        [nil, %{"user_id" => 1, "is_loser" => false, "name" => "testname", "win_count" => 0}]]
+    end
+
+    test "data_for_brackets/1 works fine with valid list data of size 8" do
+      match_list = [
+        [[%{"user_id" => 1, "is_loser" => false, "name" => "testname", "win_count" => 0}, %{"user_id" => 2, "is_loser" => false, "name" => "testname", "win_count" => 0}],
+        [%{"user_id" => 3, "is_loser" => false, "name" => "testname", "win_count" => 0}, %{"user_id" => 4, "is_loser" => false, "name" => "testname", "win_count" => 0}]],
+        [[%{"user_id" => 5, "is_loser" => false, "name" => "testname", "win_count" => 0}, %{"user_id" => 6, "is_loser" => false, "name" => "testname", "win_count" => 0}],
+        [%{"user_id" => 7, "is_loser" => false, "name" => "testname", "win_count" => 0}, %{"user_id" => 8, "is_loser" => false, "name" => "testname", "win_count" => 0}]]
+      ]
+      assert Tournaments.data_with_fight_result_for_brackets(match_list) == [
+        [%{"user_id" => 8, "is_loser" => false, "name" => "testname", "win_count" => 0}, %{"user_id" => 7, "is_loser" => false, "name" => "testname", "win_count" => 0}],
+        [%{"user_id" => 6, "is_loser" => false, "name" => "testname", "win_count" => 0}, %{"user_id" => 5, "is_loser" => false, "name" => "testname", "win_count" => 0}],
+        [%{"user_id" => 4, "is_loser" => false, "name" => "testname", "win_count" => 0}, %{"user_id" => 3, "is_loser" => false, "name" => "testname", "win_count" => 0}],
+        [%{"user_id" => 2, "is_loser" => false, "name" => "testname", "win_count" => 0}, %{"user_id" => 1, "is_loser" => false, "name" => "testname", "win_count" => 0}]]
+    end
+
+    test "data_for_brackets/1 works fine with valid list data of size 9" do
+      match_list = [
+        [[%{"user_id" => 1, "is_loser" => false, "name" => "testname", "win_count" => 0}, %{"user_id" => 2, "is_loser" => false, "name" => "testname", "win_count" => 0}],
+        [%{"user_id" => 3, "is_loser" => false, "name" => "testname", "win_count" => 0}, %{"user_id" => 4, "is_loser" => false, "name" => "testname", "win_count" => 0}]],
+        [[%{"user_id" => 5, "is_loser" => false, "name" => "testname", "win_count" => 0}, %{"user_id" => 6, "is_loser" => false, "name" => "testname", "win_count" => 0}],
+        [%{"user_id" => 7, "is_loser" => false, "name" => "testname", "win_count" => 0},
+        [%{"user_id" => 8, "is_loser" => false, "name" => "testname", "win_count" => 0}, %{"user_id" => 9, "is_loser" => false, "name" => "testname", "win_count" => 0}]]]
+      ]
+      assert Tournaments.data_with_fight_result_for_brackets(match_list) == [
+        [%{"user_id" => 9, "is_loser" => false, "name" => "testname", "win_count" => 0}, %{"user_id" => 8, "is_loser" => false, "name" => "testname", "win_count" => 0}],
+        [nil, %{"user_id" => 7, "is_loser" => false, "name" => "testname", "win_count" => 0}],
+        [%{"user_id" => 6, "is_loser" => false, "name" => "testname", "win_count" => 0}, %{"user_id" => 5, "is_loser" => false, "name" => "testname", "win_count" => 0}],
+        [%{"user_id" => 4, "is_loser" => false, "name" => "testname", "win_count" => 0}, %{"user_id" => 3, "is_loser" => false, "name" => "testname", "win_count" => 0}],
+        [%{"user_id" => 2, "is_loser" => false, "name" => "testname", "win_count" => 0}, %{"user_id" => 1, "is_loser" => false, "name" => "testname", "win_count" => 0}]]
     end
   end
 end

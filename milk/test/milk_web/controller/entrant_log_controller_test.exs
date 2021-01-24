@@ -5,6 +5,7 @@ defmodule MilkWeb.EntrantLogControllerTest do
   alias Milk.Log.EntrantLog
 
   @create_attrs %{
+    entrant_id: 42,
     tournament_id: 42,
     user_id: 42,
     rank: 1,
@@ -12,6 +13,7 @@ defmodule MilkWeb.EntrantLogControllerTest do
     update_time: ~U[2020-12-20 16:29:01.100311Z]
   }
   @update_attrs %{
+    entrant_id: 42,
     tournament_id: 43,
     user_id: 43,
     rank: 1

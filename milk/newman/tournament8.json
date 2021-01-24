@@ -1,0 +1,190 @@
+{
+  "info": {
+    "name": "Tournament of size 8"
+  },
+  "item": [
+    {
+      "name": "Tournament create request",
+      "request": {
+        "url": "http://localhost:4000/api/tournament",
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "multipart/form-data"          
+          }
+        ],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+             {
+               "key": "image",
+               "type": "file",
+               "enabled": true,
+               "src": "img/inu.png"
+             },
+             {
+               "key": "tournament",
+               "type": "text",
+               "enabled": true,
+               "value": "{\"name\": \"STARTED TOURNEY SIZE 8\",\"game_name\": \"Clash of Clans\",\"event_date\": \"2050-04-17T14:00:00Z\",\"deadline\": \"2050-04-17T14:00:00Z\",\"type\": 1,\"capacity\": 50,\"password\": \"1234\",\"live\": \"false\",\"join\": \"true\",\"description\": \"My Awesome Tournament\",\"url\": \"http://myurl.com\",\"master_id\": 2, \"platform\": 1, \"start_recruiting\": \"2020-04-17T14:00:00Z\"}"
+             }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Enter tournament request",
+      "request": {
+        "url": "http://localhost:4000/api/entrant",
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"entrant\":{\"user_id\":1,\"tournament_id\":9}}"
+        }
+      }
+    },
+    {
+      "name": "Enter tournament request",
+      "request": {
+        "url": "http://localhost:4000/api/entrant",
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"entrant\":{\"user_id\":2,\"tournament_id\":9}}"
+        }
+      }
+    },
+    {
+      "name": "Enter tournament request",
+      "request": {
+        "url": "http://localhost:4000/api/entrant",
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"entrant\":{\"user_id\":3,\"tournament_id\":9}}"
+        }
+      }
+    },
+    {
+      "name": "Enter tournament request",
+      "request": {
+        "url": "http://localhost:4000/api/entrant",
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"entrant\":{\"user_id\":4,\"tournament_id\":9}}"
+        }
+      }
+    },
+    {
+      "name": "Enter tournament request",
+      "request": {
+        "url": "http://localhost:4000/api/entrant",
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"entrant\":{\"user_id\":5,\"tournament_id\":9}}"
+        }
+      }
+    },
+    {
+      "name": "Enter tournament request",
+      "request": {
+        "url": "http://localhost:4000/api/entrant",
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"entrant\":{\"user_id\":6,\"tournament_id\":9}}"
+        }
+      }
+    },
+    {
+      "name": "Enter tournament request",
+      "request": {
+        "url": "http://localhost:4000/api/entrant",
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"entrant\":{\"user_id\":7,\"tournament_id\":9}}"
+        }
+      }
+    },
+    {
+      "name": "Enter tournament request",
+      "request": {
+        "url": "http://localhost:4000/api/entrant",
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"entrant\":{\"user_id\":8,\"tournament_id\":9}}"
+        }
+      }
+    },
+    {
+      "name": "Start tournament request",
+      "request": {
+        "url": "http://localhost:4000/api/tournament/start",
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"tournament\": {\"master_id\": 2,\"tournament_id\": 9}}"
+        }
+      }
+    }
+  ]
+}

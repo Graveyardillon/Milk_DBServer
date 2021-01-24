@@ -3,7 +3,6 @@ defmodule MilkWeb.TournamentView do
 
   alias MilkWeb.TournamentView
   alias MilkWeb.UserView
-  alias Milk.{Accounts, Tournaments}
 
   def render("users.json", %{users: users}) do
     if users != [] do
@@ -78,7 +77,9 @@ defmodule MilkWeb.TournamentView do
             bio: user.bio
           }
         end)
-      }
+      },
+      is_log: false,
+      result: true
     }
   end
 
@@ -96,7 +97,9 @@ defmodule MilkWeb.TournamentView do
         name: tournament_log.name,
         url: tournament_log.url,
         type: tournament_log.type
-      }
+      },
+      is_log: true,
+      result: true
     }
   end
 
@@ -150,7 +153,6 @@ defmodule MilkWeb.TournamentView do
   end
 
   def render("create.json", %{tournament: tournament}) do
-
     %{
       data: %{
         id: tournament.id,
@@ -180,8 +182,13 @@ defmodule MilkWeb.TournamentView do
     }
   end
 
-  def render("match.json", %{list: list}) do
-    %{data: %{match_list: list}}
+  def render("match.json", %{match_list: list, match_list_with_fight_result: list2}) do
+    %{
+      data: %{
+        match_list: list,
+        match_list_with_fight_result: list2
+      }
+    }
   end
 
   def render("loser.json", %{list: list}) do
@@ -219,7 +226,7 @@ defmodule MilkWeb.TournamentView do
 
   #def render("error.json", %{error: error, msg: "Creating tournament failed"}) do
   def render("error.json", %{error: error}) do
-    if(error) do
+    if error do
       %{result: false, error: error, data: nil}
     else
       %{result: false, error: nil, data: nil}

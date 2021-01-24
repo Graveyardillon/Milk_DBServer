@@ -11,6 +11,7 @@ defmodule MilkWeb.UserController do
   def check_username_duplication(conn, %{"name" => name}) do
     case Accounts.check_duplication?(name) do
       true ->
+        # FIXME: snake_case
         json(conn, %{isUnique: false})
       false ->
         json(conn, %{isUnique: true})
@@ -96,7 +97,8 @@ defmodule MilkWeb.UserController do
   def login(conn, %{"user" => user_params}) do
     user = Accounts.login(user_params)
     case user do
-      {:ok, _user, _token} -> render(conn, "login.json", %{user: user.user})
+      {:ok, user} -> render(conn, "login.json", %{user: user})
+      {:ok, user, _token} -> render(conn, "login.json", %{user: user})
       {:error, nil, nil} -> render(conn, "error.json", error_code: 104)
       _ -> render(conn, "error.json", error_code: 104)
      end
@@ -111,7 +113,7 @@ defmodule MilkWeb.UserController do
   Logout process.
   """
   def logout(conn, %{"id" => id, "token" => token}) do
-    result = Accounts.logout id
+    result = Accounts.logout(id)
 
     Guardian.revoke(token)
     json(conn, %{result: result})

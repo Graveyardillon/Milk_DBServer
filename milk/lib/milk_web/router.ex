@@ -28,11 +28,11 @@ defmodule MilkWeb.Router do
     get  "/user/get", UserController, :show
     get  "/user/in_touch", UserController, :users_in_touch
     post "/user/update", UserController, :update
-    get "/user/get_all", UserController, :index
+    get  "/user/get_all", UserController, :index
     post "/user/get", UserController, :show
     post "/user/in_touch", UserController, :get_users_in_touch
     post "/user/signup", UserController, :create
-    post "/user/login", UserController, :login
+    post "/user/signin", UserController, :login
     post "/user/login_forced", UserController, :login_forced
     post "/user/logout", UserController, :logout
 
@@ -50,7 +50,8 @@ defmodule MilkWeb.Router do
     delete "/chat", ChatsController, :delete
     post "/chat/create_dialogue", ChatsController, :create_dialogue
 
-    resources "/chat_room", ChatRoomController, except: [:new, :edit, :index]
+    resources "/chat_room", ChatRoomController, except: [:new, :edit, :index, :show]
+    get  "/chat_room", ChatRoomController, :show
     get  "/chat_room/private_rooms", ChatRoomController, :private_rooms
     get  "/chat_room/private_room", ChatRoomController, :private_room
 
@@ -75,28 +76,32 @@ defmodule MilkWeb.Router do
     get  "/tournament/masters", TournamentController, :get_game_masters
     get  "/tournament/members", TournamentController, :get_match_members
     get  "/tournament/find_match", TournamentController, :find_match
-    get  "/tournament_log/index", TournamentLogController, :index
+    get  "/tournament/get_all", TournamentController, :index
+    get  "/tournament/check_pending", TournamentController, :check_pending
+    get  "/tournament/brackets", TournamentController, :brackets_with_fight_result
+    get  "/tournament/is_user_win", TournamentController, :is_user_win
+    get  "/tournament/relevant", TournamentController, :relevant
+    get  "/tournament/has_lost", TournamentController, :has_lost?
     post "/tournament/start", TournamentController, :start
     post "/tournament/deleteloser", TournamentController, :delete_loser
+    # FIXME: このgetはpostメソッドなので消したほうがいい
     post "/tournament/get", TournamentController, :show
-    get  "/tournament/get_all", TournamentController, :index
     post "/tournament/get_by_master_id", TournamentController, :get_tournaments_by_master_id
     post "/tournament/get_planned", TournamentController, :get_ongoing_tournaments_by_master_id
     post "/tournament/get_game", TournamentController, :get_game
     post "/tournament/get_opponent", TournamentController, :get_opponent
     post "/tournament/delete", TournamentController, :delete
+    post "/tournament/update_tabs", TournamentController, :tournament_update_topics
     post "/tournament/publish_url", TournamentController, :publish_url
-    post "/tournament_log/add", TournamentLogController, :create
     post "/tournament/start_match", TournamentController, :start_match
     post "/tournament/claim_win", TournamentController, :claim_win
     post "/tournament/claim_lose", TournamentController, :claim_lose
-    get  "/tournament/check_pending", TournamentController, :check_pending
-    get  "/tournament/brackets", TournamentController, :brackets
-    get  "/tournament/is_user_win", TournamentController, :is_user_win
-    get  "/tournament/relevant", TournamentController, :relevant
     post "/tournament/finish", TournamentController, :finish
+    get  "/tournament_log/index", TournamentLogController, :index
+    post "/tournament_log/add", TournamentLogController, :create
 
     resources "/entrant", EntrantController, except: [:new, :edit, :delete]
+    # FIXME: GETのパラメータの渡し方を統一したい
     get  "/entrant/rank/:tournament_id/:user_id", EntrantController, :show_rank
     delete "/entrant/delete", EntrantController, :delete
     resources "/entrant_log", EntrantLogController
@@ -113,10 +118,10 @@ defmodule MilkWeb.Router do
     post "/send_email", ConfNumController, :send_email
     post "/conf_email", ConfNumController, :conf_email
 
-    get  "/notif/get_list", NotifController, :get_list
-    post "/notif/create", NotifController, :create
-    post "/notif_log/create", NotifLogController, :create
-    delete "/notif/:id", NotifController, :delete
+    get  "/notification/list", NotifController, :get_list
+    post "/notification/create", NotifController, :create
+    post "/notification_log/create", NotifLogController, :create
+    delete "/notification/:id", NotifController, :delete
   end
 
   scope "/api", MilkWeb do

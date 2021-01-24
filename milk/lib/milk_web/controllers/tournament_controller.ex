@@ -28,7 +28,7 @@ defmodule MilkWeb.TournamentController do
   def get_users_for_add_assistant(conn, %{"user_id" => user_id}) do
     following_users = Relations.get_following_list(user_id)
     follower_users = Relations.get_followers_list(user_id)
-    users = Enum.uniq_by(follower_users ++ follower_users, fn user -> user.id end)
+    users = Enum.uniq_by(following_users ++ follower_users, fn user -> user.id end)
     render(conn,"users.json", users: users)
   end
 
@@ -64,6 +64,7 @@ defmodule MilkWeb.TournamentController do
 
   @doc """
   Get a game of a specific tournament.
+  FIXME: 引数をidに対応させたい
   """
   def get_game(conn, %{"tournament" => params}) do
     tournament = Tournaments.game_tournament(params)
@@ -120,7 +121,7 @@ defmodule MilkWeb.TournamentController do
   def show(conn, %{"tournament_id" => id}) do
     id = Tools.to_integer_as_needed(id)
 
-    tournament = Tournaments.get_tournament!(id)
+    tournament = Tournaments.get_tournament(id)
     tournament_log = Log.get_tournament_log_by_tournament_id(id)
 
     if tournament do
@@ -195,7 +196,6 @@ defmodule MilkWeb.TournamentController do
   # end
 
   def home(conn, %{"date_offset" => date_offset, "offset" => offset}) do
-
     tournaments =
     Tournaments.home_tournament(date_offset, offset)
     |> Enum.map(fn tournament ->
@@ -238,7 +238,8 @@ defmodule MilkWeb.TournamentController do
   """
   def delete(conn, %{"tournament_id" => id}) do
     with {:ok, %Tournament{}} <- Tournaments.delete_tournament(id) do
-      send_resp(conn, :no_content, "")
+      #send_resp(conn, :no_content, "")
+      json(conn, %{result: true})
     else
       _ -> render(conn, "error.json", error: nil)
     end
@@ -326,6 +327,19 @@ defmodule MilkWeb.TournamentController do
     render(conn, "tournament_topics.json", topics: tabs)
   end
 
+  def tournament_update_topics(conn, %{"tournament_id" => tournament_id, "tabs" => tabs}) do
+    tournament = Tournaments.get_tournament(tournament_id)
+    if tournament do
+      current_tabs = Tournaments.get_tabs_by_tournament_id(tournament_id)
+      Tournaments.update_topic(tournament, current_tabs, tabs)
+
+      tabs = Tournaments.get_tabs_by_tournament_id(tournament_id)
+      render(conn, "tournament_topics.json", topics: tabs)
+    else
+      render(conn, "error.json", error: "tournament not found")
+    end
+  end
+
   @doc """
   Start a tournament.
   """
@@ -334,53 +348,93 @@ defmodule MilkWeb.TournamentController do
     tournament_id = Tools.to_integer_as_needed(tournament_id)
 
     with {:ok, _} <- Tournaments.start(master_id, tournament_id) do
-      # マッチングリストを生成
-      with {:ok, match_list} <-
-        Tournaments.get_entrants(tournament_id)
-        |> Enum.map(fn x -> x.user_id end)
-        |> Tournaments.generate_matchlist() do
-          count =
-            Tournaments.get_tournament(tournament_id)
-            |> Map.get(:count)
-          match_list
-          |> Tournaments.initialize_rank(count, tournament_id)
-          match_list
-          |> Ets.insert_match_list(tournament_id)
-          Ets.get_match_list(tournament_id)
-          render(conn, "match.json", list: match_list)
-      else
-        {:error, error} -> render(conn, "error.json", error: error)
-      end
-      else
+      make_matches(conn, tournament_id)
+    else
       _ -> json(conn, %{error: "error"})
     end
   end
 
+  defp make_matches(conn, tournament_id) do
+    with {:ok, match_list} <-
+      Tournaments.get_entrants(tournament_id)
+      |> Enum.map(fn x -> x.user_id end)
+      |> Tournaments.generate_matchlist() do
+        count =
+          Tournaments.get_tournament(tournament_id)
+          |> Map.get(:count)
+        match_list
+        |> Tournaments.initialize_rank(count, tournament_id)
+        match_list
+        |> Ets.insert_match_list(tournament_id)
+
+        list_with_fight_result =
+          match_list
+          |> match_list_with_fight_result()
+
+        lis =
+          list_with_fight_result
+          |> Tournamex.match_list_to_list()
+
+        complete_list =
+          Enum.reduce(lis, list_with_fight_result, fn x, acc ->
+            user = Accounts.get_user(x["user_id"])
+
+            acc
+            |> Tournaments.put_value_on_brackets(user.id, %{"name" => user.name})
+            |> Tournaments.put_value_on_brackets(user.id, %{"win_count" => 0})
+          end)
+          |> Ets.insert_match_list_with_fight_result(tournament_id)
+
+        render(conn, "match.json", %{match_list: match_list, match_list_with_fight_result: complete_list})
+    else
+      {:error, error} -> render(conn, "error.json", error: error)
+    end
+  end
+
+  defp match_list_with_fight_result(match_list) do
+    Tournaments.initialize_match_list_with_fight_result(match_list)
+  end
+
   @doc """
   Delete losers of a loser list.
+  FIXME: loserをリストじゃなくて整数で入力できるようにしたほうが良さそう
   """
-  # FIXME: loserをリストじゃなくて整数で入力できるようにしたほうが良さそう
   def delete_loser(conn, %{"tournament" => %{"tournament_id" => tournament_id, "loser_list" => loser_list}}) do
     tournament_id = Tools.to_integer_as_needed(tournament_id)
+    loser_list = Enum.map(loser_list, fn loser ->
+      Tools.to_integer_as_needed(loser)
+    end)
     {_, match_list} = hd(Ets.get_match_list(tournament_id))
-    # FIXME: ここのリストが空だったときのエラー処理どうやってやろうかな
-    # match_list = unless match_list == [] do
-    #   hd(match_list)
-    # end
 
     match_list
     |> Tournaments.find_match(hd(loser_list))
     |> Enum.each(fn user_id ->
-      Ets.delete_match_pending_list(user_id)
-      Ets.delete_fight_result(user_id)
+      Ets.delete_match_pending_list({user_id, tournament_id})
+      Ets.delete_fight_result({user_id, tournament_id})
     end)
 
+    updated_match_list = renew_match_list(tournament_id, match_list, loser_list)
+    get_lose(tournament_id, match_list, loser_list)
+
+    render(conn, "loser.json", list: updated_match_list)
+  end
+
+  defp renew_match_list(tournament_id, match_list, loser_list) do
+    Tournaments.promote_winners_by_loser(tournament_id, match_list, loser_list)
     updated_match_list = Tournaments.delete_loser(match_list, loser_list)
     Ets.delete_match_list(tournament_id)
     Ets.insert_match_list(updated_match_list, tournament_id)
-    Ets.get_match_list(tournament_id)
+    updated_match_list
+  end
 
-    render(conn, "loser.json", list: updated_match_list)
+  defp get_lose(tournament_id, _match_list, [loser]) do
+    {_, match_list} =
+      tournament_id
+      |> Ets.get_match_list_with_fight_result()
+      |> hd()
+    _updated_match_list = Tournaments.get_lose(match_list, loser)
+    Ets.delete_match_list_with_fight_result(tournament_id)
+    Ets.insert_match_list_with_fight_result(match_list, tournament_id)
   end
 
   @doc """
@@ -438,12 +492,13 @@ defmodule MilkWeb.TournamentController do
     user_id = Tools.to_integer_as_needed(user_id)
     tournament_id = Tools.to_integer_as_needed(tournament_id)
 
-    case Ets.get_match_pending_list(user_id) do
-      [] ->
-        Ets.insert_match_pending_list_table(tournament_id, user_id)
-        json(conn, %{result: true})
-      _ ->
-        json(conn, %{result: false})
+    pending_list = Ets.get_match_pending_list({user_id, tournament_id})
+
+    if pending_list == [] do
+      Ets.insert_match_pending_list_table({user_id, tournament_id})
+      json(conn, %{result: true})
+    else
+      json(conn, %{result: false})
     end
   end
 
@@ -455,27 +510,49 @@ defmodule MilkWeb.TournamentController do
     user_id = Tools.to_integer_as_needed(user_id)
 
     {_, match_list} = hd(Ets.get_match_list(tournament_id))
-    match = Tournaments.find_match(match_list, user_id)
-    with {:ok, opponent} <- Tournaments.get_opponent(match, user_id) do
-      json(conn, %{result: true, opponent: opponent})
+
+    unless is_integer(match_list) do
+      match = Tournaments.find_match(match_list, user_id)
+      with {:ok, opponent} <- Tournaments.get_opponent(match, user_id) do
+        json(conn, %{result: true, opponent: opponent})
+      else
+        {:wait, _} -> json(conn, %{result: false, opponent: nil})
+        _ -> render(conn, "error.json", error: nil)
+      end
     else
-      {:wait, _} -> json(conn, %{result: false, opponent: nil})
-      _ -> render(conn, "error.json", error: nil)
+      json(conn, %{result: false})
     end
   end
 
   @doc """
   Check if the user has already matching.
   """
-  def check_pending(conn, %{"user_id" => user_id}) do
+  def check_pending(conn, %{"user_id" => user_id, "tournament_id" => tournament_id}) do
     user_id = Tools.to_integer_as_needed(user_id)
+    tournament_id = Tools.to_integer_as_needed(tournament_id)
 
-    pending_list = Ets.get_match_pending_list(user_id)
+    pending_list = Ets.get_match_pending_list({user_id, tournament_id})
+
     unless pending_list == [] do
-      json(conn, %{result: true})
+      {{_, id}} = hd(pending_list)
+      json(conn, %{result: true, tournament_id: id})
     else
       json(conn, %{result: false})
     end
+  end
+
+  @doc """
+  Check if the user has already lost.
+  """
+  def has_lost?(conn, %{"user_id" => user_id, "tournament_id" => tournament_id}) do
+    user_id = Tools.to_integer_as_needed(user_id)
+    tournament_id = Tools.to_integer_as_needed(tournament_id)
+
+    {_, match_list} = hd(Ets.get_match_list(tournament_id))
+
+    has_lost = Tournaments.has_lost?(match_list, user_id)
+
+    json(conn, %{has_lost: has_lost})
   end
 
   @doc """
@@ -486,13 +563,16 @@ defmodule MilkWeb.TournamentController do
     user_id = Tools.to_integer_as_needed(user_id)
     tournament_id = Tools.to_integer_as_needed(tournament_id)
 
-    case Ets.get_fight_result(opponent_id) do
+    case Ets.get_fight_result({opponent_id, tournament_id}) do
       [] ->
-        Ets.insert_fight_result_table(user_id, true)
+        if Ets.get_fight_result({user_id, tournament_id}) != [] do
+          Ets.delete_fight_result({user_id, tournament_id})
+        end
+        Ets.insert_fight_result_table({user_id, tournament_id}, true)
         json(conn, %{validated: true, completed: false})
 
       result_list ->
-        {_, is_win} = hd(result_list)
+        {{_, _tournament_id}, is_win} = hd(result_list)
 
         if is_win do
           Chat.notify_game_masters(tournament_id)
@@ -512,12 +592,16 @@ defmodule MilkWeb.TournamentController do
     user_id = Tools.to_integer_as_needed(user_id)
     tournament_id = Tools.to_integer_as_needed(tournament_id)
 
-    case Ets.get_fight_result(opponent_id) do
+    case Ets.get_fight_result({opponent_id, tournament_id}) do
       [] ->
-        Ets.insert_fight_result_table(user_id, false)
+        if Ets.get_fight_result({user_id, tournament_id}) != [] do
+          Ets.delete_fight_result({user_id, tournament_id})
+        end
+        Ets.insert_fight_result_table({user_id, tournament_id}, false)
         json(conn, %{validated: true, completed: false})
+
       result_list ->
-        {_, is_win} = hd(result_list)
+        {{_, _tournament_id}, is_win} = hd(result_list)
 
         unless is_win do
           Chat.notify_game_masters(tournament_id)
@@ -531,15 +615,16 @@ defmodule MilkWeb.TournamentController do
   @doc """
   Get a result of fight.
   """
-  def is_user_win(conn, %{"user_id" => user_id}) do
+  def is_user_win(conn, %{"user_id" => user_id, "tournament_id" => tournament_id}) do
     user_id = Tools.to_integer_as_needed(user_id)
-    case Ets.get_fight_result(user_id) do
+    tournament_id = Tools.to_integer_as_needed(tournament_id)
+    case Ets.get_fight_result({user_id, tournament_id}) do
       [] ->
         json(conn, %{is_win: nil, is_claimed: false})
       result_list ->
-        {_, is_win} = hd(result_list)
+        {{_, tournament_id}, is_win} = hd(result_list)
 
-        json(conn, %{is_win: is_win, is_claimed: true})
+        json(conn, %{is_win: is_win, tournament_id: tournament_id, is_claimed: true})
     end
   end
 
@@ -600,6 +685,26 @@ defmodule MilkWeb.TournamentController do
     result = Tournaments.finish(tournament_id, user_id)
 
     json(conn, %{result: result})
+  end
+
+  @doc """
+  Get data with fight result for presenting tournament brackets.
+  """
+  def brackets_with_fight_result(conn, %{"tournament_id" => tournament_id}) do
+    tournament_id = Tools.to_integer_as_needed(tournament_id)
+    list = Ets.get_match_list_with_fight_result(tournament_id)
+    list = unless list == [], do: hd(list)
+
+    case list do
+      {_, match_list} ->
+        brackets = Tournaments.data_with_fight_result_for_brackets(match_list)
+        count = Enum.count(brackets)*2
+        num_for_brackets = Tournamex.Number.closest_number_to_power_of_two(count)
+
+        json(conn, %{data: brackets, result: true, count: num_for_brackets})
+      _ ->
+        json(conn, %{data: nil, result: false, count: nil})
+    end
   end
 
   @doc """

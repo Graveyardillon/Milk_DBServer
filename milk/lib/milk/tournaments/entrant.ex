@@ -16,6 +16,5 @@ defmodule Milk.Tournaments.Entrant do
   def changeset(entrant, attrs) do
     entrant
     |> cast(attrs, [:rank])
-    # |> validate_required([:rank])
   end
 end

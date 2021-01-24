@@ -1,7 +1,7 @@
 defmodule MilkWeb.EntrantControllerTest do
   use MilkWeb.ConnCase
 
-  alias Milk.{Tournaments, Accounts,Ets}
+  alias Milk.{Tournaments, Accounts, Ets}
   alias Milk.Tournaments.Entrant
 
   @entrant_create_attrs %{
@@ -28,7 +28,7 @@ defmodule MilkWeb.EntrantControllerTest do
     "type" => 0,
     "url" => "some url",
     "master_id" => 1,
-    "platform" => 1,
+    "platform_id" => 1,
     "is_started" => true
   }
 
@@ -149,6 +149,7 @@ defmodule MilkWeb.EntrantControllerTest do
         create_entrants(num, entrant.tournament_id)
         |> Enum.map(fn x -> %{x | rank: num + 1} end)
         |> Kernel.++([%{entrant | rank: num + 1}])
+        |> Enum.map(fn entrant -> entrant.user_id end)
         |> Tournaments.generate_matchlist()
 
       Ets.insert_match_list(matchlist, entrant.tournament_id)
