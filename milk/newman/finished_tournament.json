@@ -69,6 +69,23 @@
       }
     },
     {
+      "name": "Start tournament",
+      "request": {
+        "url": "http://localhost:4000/api/tournament/start",
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"tournament\": {\"master_id\": 1, \"tournament_id\": 10}}"
+        }
+      }
+    },
+    {
       "name": "Delete loser request",
       "request": {
         "url": "http://localhost:4000/api/tournament/deleteloser",
@@ -81,7 +98,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\"tournament_id\":10, \"loser_list\": [2]}"
+          "raw": "{\"tournament\": {\"tournament_id\":10, \"loser_list\": [2]}}"
         }
       }
     },

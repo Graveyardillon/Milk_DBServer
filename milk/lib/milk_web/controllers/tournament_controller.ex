@@ -382,6 +382,7 @@ defmodule MilkWeb.TournamentController do
             acc
             |> Tournaments.put_value_on_brackets(user.id, %{"name" => user.name})
             |> Tournaments.put_value_on_brackets(user.id, %{"win_count" => 0})
+            |> Tournaments.put_value_on_brackets(user.id, %{"icon_path" => user.icon_path})
           end)
           |> Ets.insert_match_list_with_fight_result(tournament_id)
 
