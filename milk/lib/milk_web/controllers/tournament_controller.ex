@@ -415,7 +415,7 @@ defmodule MilkWeb.TournamentController do
     end)
 
     updated_match_list = renew_match_list(tournament_id, match_list, loser_list)
-    get_lose(tournament_id, match_list, loser_list)
+    get_lost(tournament_id, match_list, loser_list)
 
     render(conn, "loser.json", list: updated_match_list)
   end
@@ -428,14 +428,15 @@ defmodule MilkWeb.TournamentController do
     updated_match_list
   end
 
-  defp get_lose(tournament_id, _match_list, [loser]) do
+  defp get_lost(tournament_id, _match_list, [loser]) do
     {_, match_list} =
       tournament_id
       |> Ets.get_match_list_with_fight_result()
       |> hd()
-    _updated_match_list = Tournaments.get_lose(match_list, loser)
+    updated_match_list = Tournaments.get_lost(match_list, loser)
+      |> IO.inspect(label: :updated_match_list_with_fight_result)
     Ets.delete_match_list_with_fight_result(tournament_id)
-    Ets.insert_match_list_with_fight_result(match_list, tournament_id)
+    Ets.insert_match_list_with_fight_result(updated_match_list, tournament_id)
   end
 
   @doc """
@@ -695,6 +696,8 @@ defmodule MilkWeb.TournamentController do
     tournament_id = Tools.to_integer_as_needed(tournament_id)
     list = Ets.get_match_list_with_fight_result(tournament_id)
     list = unless list == [], do: hd(list)
+
+    IO.inspect(list, label: :list)
 
     case list do
       {_, match_list} ->
