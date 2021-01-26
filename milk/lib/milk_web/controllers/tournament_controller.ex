@@ -434,7 +434,6 @@ defmodule MilkWeb.TournamentController do
       |> Ets.get_match_list_with_fight_result()
       |> hd()
     updated_match_list = Tournaments.get_lost(match_list, loser)
-      |> IO.inspect(label: :updated_match_list_with_fight_result)
     Ets.delete_match_list_with_fight_result(tournament_id)
     Ets.insert_match_list_with_fight_result(updated_match_list, tournament_id)
   end
@@ -696,8 +695,6 @@ defmodule MilkWeb.TournamentController do
     tournament_id = Tools.to_integer_as_needed(tournament_id)
     list = Ets.get_match_list_with_fight_result(tournament_id)
     list = unless list == [], do: hd(list)
-
-    IO.inspect(list, label: :list)
 
     case list do
       {_, match_list} ->
