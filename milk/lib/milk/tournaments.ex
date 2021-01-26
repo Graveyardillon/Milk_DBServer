@@ -863,7 +863,7 @@ defmodule Milk.Tournaments do
   @doc """
   Get lose a player.
   """
-  def get_lose(match_list, loser) do
+  def get_lost(match_list, loser) do
     Tournamex.renew_match_list_with_loser(match_list, loser)
   end
 
