@@ -38,6 +38,21 @@ defmodule MilkWeb.Router do
 
     post "/user_report", ReportController, :create
 
+    post "/profile", ProfileController, :get_profile
+    post "/profile/update", ProfileController, :update
+    post "/profile/update_icon", ProfileController, :update_icon
+    get  "/profile/get_icon", ProfileController, :get_icon
+    
+    get  "/game/list", GameController, :list
+    post "/game/add", GameController, :create
+
+    post "/achievement/list", AchievementController, :show
+    post "/achievement", AchievementController, :create
+    post "/achievement/update", AchievementController, :update
+    get "/achievement/index", AchievementController, :index
+    delete "/achievement/delete", AchievementController, :delete
+    post "/achievement/show_one", AchievementController, :show_one
+
     resources "/relation", RelationController, except: [:new, :edit, :index, :show, :delete]
     get  "/relation/following_list", RelationController, :following_list
     get  "/relation/following_id_list", RelationController, :following_id_list
@@ -122,23 +137,6 @@ defmodule MilkWeb.Router do
     post "/notification/create", NotifController, :create
     post "/notification_log/create", NotifLogController, :create
     delete "/notification/:id", NotifController, :delete
-  end
-
-  scope "/api", MilkWeb do
-    # post "/signup", UserController, :create
-    # post "/signin", UserController, :login
-    post "/profile", ProfileController, :get_profile
-    post "/profile/update", ProfileController, :update
-    post "/profile/update_icon", ProfileController, :update_icon
-    get  "/profile/get_icon", ProfileController, :get_icon
-    get  "/game/list", GameController, :list
-    post "/game/add", GameController, :create
-    post "/achievement/list", AchievementController, :show
-    post "/achievement", AchievementController, :create
-    post "/achievement/update", AchievementController, :update
-    get "/achievement/index", AchievementController, :index
-    delete "/achievement/delete", AchievementController, :delete
-    post "/achievement/show_one", AchievementController, :show_one
   end
 
   scope "/debug", MilkWeb do
