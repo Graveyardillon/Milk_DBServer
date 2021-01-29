@@ -14,12 +14,12 @@ defmodule MilkWeb.AchievementController do
   end
 
   def show_one(conn, %{"id" => id}) do
-    achievement = Achievements.get_achievement!(id)
+    achievement = Achievements.get_achievement_by_id(id)
     conn |> render("show.json", achievement: achievement)
   end
 
   def create(conn, %{"achievement" => achievement_params}) do
-    
+
       case achievement_params["user_id"] do
         nil -> render(conn, "error.json",list: ["user does not exist"])
         id ->
@@ -32,7 +32,7 @@ defmodule MilkWeb.AchievementController do
   end
 
   def update(conn, params) do
-      Achievements.get_achievement!(params["id"])
+      Achievements.get_achievement_by_id(params["id"])
       |> Achievements.update_achievement(params["attrs"])
       |> case do
         {:ok, updated} -> render(conn, "show.json",achievement: updated)

@@ -14,16 +14,13 @@ defmodule Milk.AccountsTest do
     Relation
   }
   alias Milk.Chat.Chats
+
   @user_valid_attrs %{"icon_path" => "some icon_path", "language" => "some language", "name" => "some name", "notification_number" => 42, "point" => 42, "email" => "some@email.com", "logout_fl" => true, "password" => "S1ome password"}
   defp fixture(:user) do
     {:ok, user} =
       %{}
       |> Enum.into(@user_valid_attrs)
       |> Accounts.create_user()
-
-    Accounts.get_user(user.id)
-    |> Map.get(:auth)
-    |> Map.get(:password)
 
     Accounts.get_user(user.id)
   end
