@@ -39,6 +39,36 @@
       }
     },
     {
+      "name": "Update Profile Icon",
+      "request": {
+        "url": "http://localhost:4000/api/profile/update_icon",
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "multipart/form-data"
+          }
+        ],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "image",
+              "type": "file",
+              "enabled": true,
+              "src": "img/am.jpg"
+            },
+            {
+              "key": "user_id",
+              "type": "text",
+              "enabled": true,
+              "value": "2"
+            }
+          ]
+        }
+      }
+    },
+    {
       "name": "Signup post request",
       "request": {
         "url": "http://localhost:4000/api/user/signup",

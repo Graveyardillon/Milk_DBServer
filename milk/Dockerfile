@@ -32,7 +32,8 @@ RUN apk update \
   && chmod +x /usr/local/bin/cloud_sql_proxy \
   && mkdir -p /tmp/cloudsql
 
-ENV PORT=8080 GCLOUD_PROJECT_ID=${project_id} REPLACE_OS_VARS=true
+#ENV PORT=8080 GCLOUD_PROJECT_ID=${project_id} REPLACE_OS_VARS=true
+ENV PORT=8080 GCLOUD_PROJECT_ID=e-players6814 REPLACE_OS_VARS=true
 EXPOSE ${PORT}
 WORKDIR /opt/app
 COPY --from=0 /opt/release .
