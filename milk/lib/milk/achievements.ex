@@ -16,14 +16,14 @@ defmodule Milk.Achievements do
 
   ## Examples
 
-      iex> get_achievement_by_id(123)
+      iex> get_achievement!(123)
       %Achievement{}
 
-      iex> get_achievement_by_id(456)
+      iex> get_achievement!(456)
       ** (Ecto.NoResultsError)
 
   """
-  def get_achievement_by_id(id), do: Repo.get!(Achievement, id)
+  def get_achievement!(id), do: Repo.get!(Achievement, id)
 
   @doc """
   Creates a achievement.

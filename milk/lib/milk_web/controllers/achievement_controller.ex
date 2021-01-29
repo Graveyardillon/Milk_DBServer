@@ -14,7 +14,7 @@ defmodule MilkWeb.AchievementController do
   end
 
   def show_one(conn, %{"id" => id}) do
-    achievement = Achievements.get_achievement_by_id(id)
+    achievement = Achievements.get_achievement!(id)
     conn |> render("show.json", achievement: achievement)
   end
 
@@ -32,7 +32,7 @@ defmodule MilkWeb.AchievementController do
   end
 
   def update(conn, params) do
-      Achievements.get_achievement_by_id(params["id"])
+      Achievements.get_achievement!(params["id"])
       |> Achievements.update_achievement(params["attrs"])
       |> case do
         {:ok, updated} -> render(conn, "show.json",achievement: updated)
