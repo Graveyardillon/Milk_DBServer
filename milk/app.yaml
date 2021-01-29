@@ -1,4 +1,5 @@
 env: flex
+service: dbserver
 runtime: custom
 runtime_config:
   release_app: milk

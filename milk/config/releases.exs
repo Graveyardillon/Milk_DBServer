@@ -14,8 +14,8 @@ import Config
 config :milk, Milk.Repo,
   username: "postgres",
   password: "postgres",
-  database: "milkdb-test",
-  socket_dir: "/cloudsql/e-players6814:asia-northeast1:milkdb-test",
+  database: "milkdb",
+  socket_dir: "/tmp/cloudsql/e-players6814:asia-northeast1:milkdb",
   pool_size: 10
 
 #secret_key_base =
