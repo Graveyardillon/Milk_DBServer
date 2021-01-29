@@ -5,7 +5,8 @@ defmodule Milk.AccountsTest do
     Accounts,
     Profiles,
     Relations,
-    Chat
+    Chat,
+    Repo
   }
   alias Milk.Accounts.{
     User,
@@ -13,40 +14,45 @@ defmodule Milk.AccountsTest do
     Relation
   }
   alias Milk.Chat.Chats
-
-  defp user_fixture(attrs \\ %{}) do
-    user_valid_attrs = %{"icon_path" => "some icon_path", "language" => "some language", "name" => "some name", "notification_number" => 42, "point" => 42, "email" => "some@email.com", "logout_fl" => true, "password" => "S1ome password"}
-
+  @user_valid_attrs %{"icon_path" => "some icon_path", "language" => "some language", "name" => "some name", "notification_number" => 42, "point" => 42, "email" => "some@email.com", "logout_fl" => true, "password" => "S1ome password"}
+  defp fixture(:user) do
     {:ok, user} =
-      attrs
-      |> Enum.into(user_valid_attrs)
+      %{}
+      |> Enum.into(@user_valid_attrs)
       |> Accounts.create_user()
+
+    Accounts.get_user(user.id)
+    |> Map.get(:auth)
+    |> Map.get(:password)
 
     Accounts.get_user(user.id)
   end
 
+  defp fixture(:chat_member) do
+    %{"id" => user_id} = fixture(:user)
+    attrs = %{"user_id" => user_id}
+    {:ok, chat_member} = Chat.create_chat_member(attrs)
+  end
+
   describe "users get" do
-    @user_valid_attrs %{"icon_path" => "some icon_path", "language" => "some language", "name" => "some name", "notification_number" => 42, "point" => 42, "email" => "some@email.com", "logout_fl" => true, "password" => "S1ome password"}
+    setup [:create_user]
     @user2_valid_attrs %{"icon_path" => "some icon_path", "language" => "some language", "name" => "some name2", "notification_number" => 42, "point" => 42, "email" => "some2@email.com", "logout_fl" => true, "password" => "S1ome password"}
     @invalid_attrs %{"icon_path" => nil, "language" => nil, "name" => nil, "notification_number" => nil, "point" => nil, "email" => nil, "password" => nil}
 
-    test "get_user/1 gets a user" do
-      user = user_fixture()
+    test "get_user/1 gets a user", %{user: user} do
       assert user.id == Accounts.get_user(user.id).id
     end
 
     test "check_duplication?/1 checks given name is already taken" do
-      _user = user_fixture()
       assert Accounts.check_duplication?("some name")
       refute Accounts.check_duplication?("not taken name")
     end
 
-    test "get_users_in_touch/1 gets users in touch" do
-      {:ok, %User{} = user1} = Accounts.create_user(@user_valid_attrs)
+    test "get_users_in_touch/1 gets users in touch", %{user: user} do
       {:ok, %User{} = user2} = Accounts.create_user(@user2_valid_attrs)
-      {:ok, %Chats{} = _chat} = Chat.dialogue(%{"user_id" => user1.id, "partner_id" => user2.id, "word" => "Hello"})
+      {:ok, %Chats{} = _chat} = Chat.dialogue(%{"user_id" => user.id, "partner_id" => user2.id, "word" => "Hello"})
       user =
-        Accounts.get_users_in_touch(user1.id)
+        Accounts.get_users_in_touch(user.id)
         |> hd()
       assert user2.id == user.id
     end
@@ -62,16 +68,34 @@ defmodule Milk.AccountsTest do
       assert user.point == 42
     end
 
+    test "create_user/1 with valid data creates a user when id is max" do
+      %{@user_valid_attrs | "name" => "same", "email" => "gmreio@kogre.com"}
+      |> Map.put("id_for_show", 0)
+      |> Accounts.create_user()
+      assert {:ok, %User{} = user} =
+        Map.put(@user_valid_attrs, "id_for_show", 1000000)
+        |> Accounts.create_user()
+      assert user.id_for_show == 1
+      assert user.icon_path == "some icon_path"
+      assert user.language == "some language"
+      assert user.name == "some name"
+      assert user.notification_number == 42
+      assert user.point == 42
+    end
+
     test "create_user/1 with invalid data returns error changeset" do
       assert {:error, error} = Accounts.create_user(@invalid_attrs)
     end
   end
 
+  defp create_user(_) do
+    %{user: fixture(:user)}
+  end
+
   describe "users update" do
     @update_attrs %{icon_path: "some updated icon_path", language: "some updated language", name: "some updated name", notification_number: 43, point: 43,  email: "some updated email", logout_fl: false, password: "S1ome updated password"}
-
-    test "update_user/2 with valid data updates the user" do
-      user = user_fixture()
+    setup [:create_user]
+    test "update_user/2 with valid data updates the user", %{user: user} do
       assert {:ok, %User{} = user} = Accounts.update_user(user, @update_attrs)
       assert user.icon_path == "some updated icon_path"
       assert user.language == "some updated language"
@@ -79,13 +103,20 @@ defmodule Milk.AccountsTest do
       assert user.notification_number == 43
       assert user.point == 43
     end
+    # test "update_user/2 with invalid data returns error", %{user: user} do
+    #   Accounts.create_user(%{@user_valid_attrs | "name" => "same", "email" => "gmreio@kogre.com"})
+    #   debug = Accounts.update_user(user, Map.put(@update_attrs, :name, "same"))
+    #   assert Repo.all(User)
+    #   assert {:error, error} = debug
+
+    # end
   end
 
   describe "users delete" do
+    setup [:create_user]
     @user_valid_attrs %{"icon_path" => "some icon_path", "language" => "some language", "name" => "some name", "notification_number" => 42, "point" => 42, "email" => "some@email.com", "logout_fl" => true, "password" => "S1ome password"}
 
-    test "delete_user/1 deletes the user" do
-      user = user_fixture()
+    test "delete_user/1 deletes the user", %{user: user}do
       login_params = %{
         "password" => @user_valid_attrs["password"],
         "email_or_username" => user.name
@@ -94,13 +125,23 @@ defmodule Milk.AccountsTest do
       assert {:ok, _} = Accounts.delete_user(user.id, @user_valid_attrs["password"], user.auth.email, token)
       assert !Accounts.get_user(user.id)
     end
+
+    test "delete_user/1 with invalid token returns errors", %{user: user} do
+      login_params = %{
+        "password" => @user_valid_attrs["password"],
+        "email_or_username" => user.name
+      }
+      assert {:ok, %User{}, token} = Accounts.login(login_params)
+      assert {:error, "That token is not exist"} = Accounts.delete_user(user.id, @user_valid_attrs["password"], user.auth.email, "a")
+      assert Accounts.get_user(user.id)
+    end
   end
 
   describe "login" do
+    setup [:create_user]
     @user_valid_attrs %{"icon_path" => "some icon_path", "language" => "some language", "name" => "some name", "notification_number" => 42, "point" => 42, "email" => "some@email.com", "logout_fl" => true, "password" => "S1ome password"}
 
-    test "login/1 can login user by email" do
-      user = user_fixture()
+    test "login/1 can login user by email", %{user: user} do
       login_params = %{
         "password" => @user_valid_attrs["password"],
         "email_or_username" => user.auth.email
@@ -108,8 +149,7 @@ defmodule Milk.AccountsTest do
       assert {:ok, %User{}, _token} = Accounts.login(login_params)
     end
 
-    test "login/1 can login user by username" do
-      user = user_fixture()
+    test "login/1 can login user by username", %{user: user} do
       login_params = %{
         "password" => @user_valid_attrs["password"],
         "email_or_username" => user.name
@@ -117,8 +157,7 @@ defmodule Milk.AccountsTest do
       assert {:ok, %User{}, _token} = Accounts.login(login_params)
     end
 
-    test "login/1 can't login user by invalid username" do
-      user_fixture()
+    test "login/1 can't login user by invalid username", %{user: user} do
       login_params = %{
         "password" => @user_valid_attrs["password"],
         "email_or_username" => "invalid"
@@ -126,8 +165,7 @@ defmodule Milk.AccountsTest do
       assert {:error, nil, nil} ==  Accounts.login(login_params)
     end
 
-    test "login/1 can't login user by invalid email" do
-      user_fixture()
+    test "login/1 can't login user by invalid email", %{user: user} do
       login_params = %{
         "password" => @user_valid_attrs["password"],
         "email_or_username" => "invalid@a.com"
@@ -135,21 +173,27 @@ defmodule Milk.AccountsTest do
       assert {:error, nil, nil} == Accounts.login(login_params)
     end
 
-    test "login/1 can't login user by invalid password" do
-      user = user_fixture()
+    test "login/1 can't login user by invalid password", %{user: user} do
       login_params = %{
         "password" => "powd",
         "email_or_username" => user.auth.email
       }
       assert {:error, nil, nil} == Accounts.login(login_params)
     end
+
+    test "login_forced/1 logins user", %{user: user} do
+      assert user ==
+        %{"email" => @user_valid_attrs["email"],
+        "password" => @user_valid_attrs["password"]}
+        |> Accounts.login_forced()
+    end
   end
 
   describe "logout" do
+    setup [:create_user]
     @user_valid_attrs %{"icon_path" => "some icon_path", "language" => "some language", "name" => "some name", "notification_number" => 42, "point" => 42, "email" => "some@email.com", "logout_fl" => true, "password" => "S1ome password"}
 
-    test "logout/1 can logout user by id" do
-      user = user_fixture()
+    test "logout/1 can logout user by id", %{user: user} do
       login_params = %{
         "password" => @user_valid_attrs["password"],
         "email_or_username" => user.auth.email
@@ -277,5 +321,21 @@ defmodule Milk.AccountsTest do
       assert {:ok, %Relation{}} = Relations.delete_relation(relation)
       assert_raise Ecto.NoResultsError, fn -> Relations.get_relation!(relation.id) end
     end
+  end
+  # describe "private_rooms" do
+  #   setup [:create_chat_member]
+  #   test "get_private_rooms/1 returns　user's private chat rooms" do
+  #   end
+  # end
+
+  describe "icon_path" do
+    setup [:create_user]
+    test "update_icon_path/2 updates icon path", %{user: user} do
+      assert Accounts.update_icon_path(user, "icon_path")
+    end
+  end
+
+  defp create_chat_member(_) do
+    %{chat_member: fixture(:chat_member)}
   end
 end
