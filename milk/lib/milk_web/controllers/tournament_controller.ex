@@ -557,6 +557,18 @@ defmodule MilkWeb.TournamentController do
   end
 
   @doc """
+  Check state of user in tournament.
+  """
+  def state(conn, %{"tournament_id" => tournament_id, "user_id" => user_id}) do
+    user_id = Tools.to_integer_as_needed(user_id)
+    tournament_id = Tools.to_integer_as_needed(tournament_id)
+
+    state = Tournaments.state!(tournament_id, user_id)
+
+    json(conn, %{result: true, state: state})
+  end
+
+  @doc """
   Claim win of the user.
   """
   def claim_win(conn, %{"opponent_id" => opponent_id, "user_id" => user_id, "tournament_id" => tournament_id}) do
