@@ -433,9 +433,9 @@ defmodule Milk.Tournaments do
     |> insert()
     |> case do
         {:ok, entrant} -> join_tournament_chat_room(entrant, attrs)
-        {:error,_, error, _data} when is_bitstring(error) -> {:error, error}
+        {:error, _, error, _data} when is_bitstring(error) -> {:error, error}
         {:error, _, error, _data} -> {:multierror, error.errors}
-        {:error,error} -> {:error,error}
+        {:error, error} -> {:error,error}
         _ -> {:error, nil}
     end
   end
@@ -443,22 +443,22 @@ defmodule Milk.Tournaments do
   defp user_exist_check(attrs) do
     with :false <- is_nil(attrs["user_id"]),
     :true <- Repo.exists?(from u in User, where: u.id == ^attrs["user_id"]) do
-      {:ok,attrs}
+      {:ok, attrs}
     else
       _ -> {:error,"undefined user"}
     end
   end
 
-  defp not_entrant_check({:ok, attrs})do
+  defp not_entrant_check({:ok, attrs}) do
     unless Repo.exists?(from e in Entrant, where: e.tournament_id == ^attrs["tournament_id"] and e.user_id == ^attrs["user_id"]) do
       {:ok, attrs}
     else
-      {:error,"Already joined"}
+      {:error, "Already joined"}
     end
   end
 
   defp not_entrant_check({:error, error})do
-    {:error,error}
+    {:error, error}
   end
 
   defp tournament_exist_check({:ok, attrs}) do
@@ -469,11 +469,11 @@ defmodule Milk.Tournaments do
     end
   end
 
-  defp tournament_exist_check({:error,error})do
-    {:error,error}
+  defp tournament_exist_check({:error, error})do
+    {:error, error}
   end
 
-  defp insert({:ok,attrs}) do
+  defp insert({:ok, attrs}) do
     user_id = if is_binary(attrs["user_id"]) do
       String.to_integer(attrs["user_id"])
     else
@@ -503,8 +503,8 @@ defmodule Milk.Tournaments do
     |> Repo.transaction()
   end
 
-  defp insert({:error,error})do
-    {:error,error}
+  defp insert({:error, error})do
+    {:error, error}
   end
 
   # TODO: リファクタリングできそう
@@ -1207,6 +1207,54 @@ defmodule Milk.Tournaments do
   end
   def initialize_rank(match_list, number_of_entrant, tournament_id, count) do
     Enum.map(match_list, fn x -> initialize_rank(x, number_of_entrant, tournament_id, count *2) end)
+  end
+
+  @doc """
+  Checks tournament state.
+  """
+  def state!(tournament_id, user_id) do
+    tournament = get_tournament!(tournament_id)
+
+    unless tournament.is_started do
+      "IsNotStarted"
+    else
+      check_has_lost?(tournament.id, user_id)
+    end
+  end
+
+  defp check_has_lost?(tournament_id, user_id) do
+    {_, match_list} =
+      Ets.get_match_list(tournament_id)
+      |> hd()
+
+    if has_lost?(match_list, user_id) do
+      "IsLoser"
+    else
+      check_is_alone?(tournament_id, user_id)
+    end
+  end
+
+  defp check_is_alone?(tournament_id, user_id) do
+    {_, match_list} =
+      Ets.get_match_list(tournament_id)
+      |> hd()
+    match = find_match(match_list, user_id)
+
+    if is_alone?(match) do
+      "IsAlone"
+    else
+      check_is_pending?(tournament_id, user_id)
+    end
+  end
+
+  defp check_is_pending?(tournament_id, user_id) do
+    pending_list = Ets.get_match_pending_list({user_id, tournament_id})
+
+    unless pending_list == [] do
+      "IsPending"
+    else
+      "IsMatch"
+    end
   end
 
   @doc """
