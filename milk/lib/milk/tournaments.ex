@@ -1253,7 +1253,7 @@ defmodule Milk.Tournaments do
     unless pending_list == [] do
       "IsPending"
     else
-      "IsMatch"
+      "IsInMatch"
     end
   end
 

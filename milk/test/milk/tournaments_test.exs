@@ -572,7 +572,7 @@ defmodule Milk.TournamentsTest do
 
     end
 
-    test "state!2 returns IsMatch" do
+    test "state!2 returns IsInMatch" do
 
     end
   end
