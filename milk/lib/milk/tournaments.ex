@@ -144,7 +144,16 @@ defmodule Milk.Tournaments do
   def get_tournament!(id), do: Repo.get!(Tournament, id)
 
   @doc """
-  Gets a single tournament or tournament log.
+  Gets single tournament by url.
+  """
+  def get_tournament_by_url(url) do
+    Tournament
+    |> where([t], t.url == ^url)
+    |> Repo.one()
+  end
+
+  @doc """
+  Gets single tournament or tournament log.
   If tournament does not exist in the table, it checks log table.
   """
   def get_tournament_including_logs(id) do
