@@ -525,6 +525,23 @@
         ],
         "body": {
           "mode": "raw",
+          "raw": "{\"entrant\":{\"user_id\":2,\"tournament_id\":5}}"
+        }
+      }
+    },
+    {
+      "name": "Enter tournament request",
+      "request": {
+        "url": "http://localhost:4000/api/entrant",
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
           "raw": "{\"entrant\":{\"user_id\":3,\"tournament_id\":5}}"
         }
       }

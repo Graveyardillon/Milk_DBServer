@@ -67,6 +67,7 @@ defmodule MilkWeb.Router do
     get  "/tournament/get_by_master_id", TournamentController, :get_tournaments_by_master_id
     get  "/tournament/get_planned", TournamentController, :get_ongoing_tournaments_by_master_id
     get  "/tournament/get_game", TournamentController, :get_game
+    get  "/tournament/by_url", TournamentController, :get_tournament_by_url
     get  "/tournament/get_opponent", TournamentController, :get_opponent
     get  "/tournament/get_participating_tournaments", TournamentController, :participating_tournaments
     get  "/tournament/participating", TournamentController, :participating_tournaments

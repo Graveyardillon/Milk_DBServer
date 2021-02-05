@@ -25,7 +25,7 @@ defmodule Milk.TournamentsTest do
     "event_date" => "2010-04-17T14:00:00Z",
     "name" => "some name",
     "type" => 0,
-    "url" => "some url",
+    "url" => "somesomeurl",
     "master_id" => 1,
     "platform_id" => 1,
     "is_started" => true
@@ -190,7 +190,7 @@ defmodule Milk.TournamentsTest do
       assert tournament.event_date == "2010-04-17T14:00:00Z"
       assert tournament.name == "some name"
       assert tournament.type == 0
-      assert tournament.url == "some url"
+      assert tournament.url == "somesomeurl"
     end
 
     test "create_tournament/1 with invalid data returns error changeset" do
@@ -277,6 +277,14 @@ defmodule Milk.TournamentsTest do
     test "home_tournament_plan/1 fails to return user's tournaments" do
       tournament = fixture(:tournament)
       assert length(Tournaments.home_tournament_plan(tournament.master_id)) == 0
+    end
+  end
+
+  describe "get tournament by url" do
+    test "get_tournament_by_url/1 works with valid data" do
+      tournament = fixture(:tournament)
+      t = Tournaments.get_tournament_by_url(tournament.url)
+      assert tournament.id == t.id
     end
   end
 

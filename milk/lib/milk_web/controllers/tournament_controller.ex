@@ -626,6 +626,14 @@ defmodule MilkWeb.TournamentController do
   end
 
   @doc """
+  Get a tournament by url.
+  """
+  def get_tournament_by_url(conn, %{"url" => url}) do
+    tournament = Tournaments.get_tournament_by_url(url)
+    render(conn, "tournament_info.json", tournament: tournament, entrants: [])
+  end
+
+  @doc """
   Get a result of fight.
   """
   def is_user_win(conn, %{"user_id" => user_id, "tournament_id" => tournament_id}) do
@@ -647,7 +655,7 @@ defmodule MilkWeb.TournamentController do
   def publish_url(conn, _params) do
     url = SecureRandom.urlsafe_base64()
 
-    json(conn, %{url: "http://localhost:4000/tournament/"<>url})
+    json(conn, %{url: "e-players://e-players/tournament/"<>url})
   end
 
   @doc """
