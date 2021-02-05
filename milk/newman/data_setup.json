@@ -224,7 +224,7 @@
                "key": "tournament",
                "type": "text",
                "enabled": true,
-               "value": "{\"name\": \"MY TOURNEY20\",\"game_name\": \"Rocket League\",\"event_date\": \"2050-04-17T14:00:00Z\",\"deadline\": \"2050-04-17T14:00:00Z\",\"type\": 1,\"capacity\": 50,\"password\": \"1234\",\"live\": \"false\",\"join\": \"true\",\"description\": \"My Awesome Tournament\",\"url\": \"http://myurl.com\",\"master_id\": 1, \"platform\": 1, \"start_recruiting\": \"2050-04-17T14:00:00Z\"}"
+               "value": "{\"name\": \"MY TOURNEY20\",\"game_name\": \"Rocket League\",\"event_date\": \"2050-04-17T14:00:00Z\",\"deadline\": \"2050-04-17T14:00:00Z\",\"type\": 1,\"capacity\": 50,\"password\": \"1234\",\"live\": \"false\",\"join\": \"true\",\"description\": \"My Awesome Tournament\",\"url\": \"e-players://myurl.com\",\"master_id\": 1, \"platform\": 1, \"start_recruiting\": \"2050-04-17T14:00:00Z\"}"
              }
           ]
         }
