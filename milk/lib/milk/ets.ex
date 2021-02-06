@@ -1,5 +1,4 @@
 defmodule Milk.Ets do
-  # FIXME: 引数を(value, key)に揃える
   def create_match_list_table() do
     :ets.new(:match_list, [:set, :public, :named_table])
   end
@@ -16,9 +15,25 @@ defmodule Milk.Ets do
     :ets.new(:fight_result, [:set, :public, :named_table])
   end
 
-# FIXME:引数の順番をこの関数に合わせる
+  defp conn() do
+    host = Application.get_env(:milk, :redix_host)
+      |> IO.inspect()
+    port = Application.get_env(:milk, :redix_port)
+      |> IO.inspect()
+    {:ok, conn} = Redix.start_link(host: host, port: port)
+    conn
+  end
+
   def insert_match_list(match_list, tournament_id) do
-    :ets.insert_new(:match_list, {tournament_id, match_list})
+    #:ets.insert_new(:match_list, {tournament_id, match_list})
+    conn = conn()
+    bin = inspect(match_list)
+
+    with {:ok, _} <- Redix.command(conn, ["SET", tournament_id, bin])|>IO.inspect() do
+      true
+    else
+      _ -> false
+    end
   end
 
   def insert_match_list_with_fight_result(match_list, tournament_id) do
