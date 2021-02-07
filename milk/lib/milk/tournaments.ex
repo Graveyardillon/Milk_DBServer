@@ -676,7 +676,8 @@ defmodule Milk.Tournaments do
   @doc """
   Finds a 1v1 match of given id and match list.
   """
-  def find_match(list, id, result \\ []) do
+  def find_match(v, _) when is_integer(v), do: []
+  def find_match(list, id, result \\ []) when is_list(list) do
     Enum.reduce(list, result, fn x, acc ->
       y = process_entrant(x)
 
@@ -1222,12 +1223,16 @@ defmodule Milk.Tournaments do
   Checks tournament state.
   """
   def state!(tournament_id, user_id) do
-    tournament = get_tournament!(tournament_id)
+    tournament = get_tournament(tournament_id)
 
-    unless tournament.is_started do
-      "IsNotStarted"
+    unless tournament do
+      "IsFinished"
     else
-      check_has_lost?(tournament.id, user_id)
+      unless tournament.is_started do
+        "IsNotStarted"
+      else
+        check_has_lost?(tournament.id, user_id)
+      end
     end
   end
 

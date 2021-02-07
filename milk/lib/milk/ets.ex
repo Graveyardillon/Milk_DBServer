@@ -76,10 +76,14 @@ defmodule Milk.Ets do
 
     with {:ok, _} <- Redix.command(conn, ["SELECT", 1]),
     {:ok, value} <- Redix.command(conn, ["GET", tournament_id]) do
-      {match_list, _} = Code.eval_string(value)
-      [{tournament_id, match_list}]
+      if value do
+        {match_list, _} = Code.eval_string(value)
+        [{tournament_id, match_list}]
+      else
+        []
+      end
     else
-      _ -> nil
+      _ -> []
     end
   end
 
@@ -88,10 +92,14 @@ defmodule Milk.Ets do
 
     with {:ok, _} <- Redix.command(conn, ["SELECT", 2]),
     {:ok, value} <- Redix.command(conn, ["GET", tournament_id]) do
-      {match_list, _} = Code.eval_string(value)
-      [{tournament_id, match_list}]
+      if value do
+        {match_list, _} = Code.eval_string(value)
+        [{tournament_id, match_list}]
+      else
+        []
+      end
     else
-      _ -> nil
+      _ -> []
     end
   end
 
@@ -101,9 +109,9 @@ defmodule Milk.Ets do
     with {:ok, _} <- Redix.command(conn, ["SELECT", 3]),
     {:ok, value} <- Redix.command(conn, ["HGET", tournament_id, user_id]) do
       {b, _} = Code.eval_string(value)
-      if b, do: [{{user_id, tournament_id}}], else: nil
+      if b, do: [{{user_id, tournament_id}}], else: []
     else
-      _ -> nil
+      _ -> []
     end
   end
 
@@ -112,10 +120,14 @@ defmodule Milk.Ets do
 
     with {:ok, _} <- Redix.command(conn, ["SELECT", 4]),
     {:ok, value} <- Redix.command(conn, ["HGET", tournament_id, user_id]) do
-      {is_win, _} = Code.eval_string(value)
-      [{{user_id, tournament_id}, is_win}]
+      if value do
+        {is_win, _} = Code.eval_string(value)
+        [{{user_id, tournament_id}, is_win}]
+      else
+        []
+      end
     else
-      _ -> nil
+      _ -> []
     end
   end
 
@@ -155,7 +167,7 @@ defmodule Milk.Ets do
   def delete_fight_result({user_id, tournament_id}) do
     conn = conn()
 
-    with {:ok, _} <- Redix.command(conn, ["SELECT", 3]),
+    with {:ok, _} <- Redix.command(conn, ["SELECT", 4]),
     {:ok, _} <- Redix.command(conn, ["HDEL", tournament_id, user_id]) do
       true
     else

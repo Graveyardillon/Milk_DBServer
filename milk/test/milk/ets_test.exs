@@ -61,14 +61,12 @@ defmodule Milk.EtsTest do
     end
 
     test "get_fight_result/1 works fine false" do
-      IO.inspect("get_fight_result/1 works fine false")
       Ets.insert_fight_result_table({2, 2}, false)
       assert {_, r} = Ets.get_fight_result({2, 2})|>hd()
       refute r
     end
 
     test "delete_fight_result/1 works fine" do
-      IO.inspect("delete_fight_result/1 works fine")
       Ets.insert_fight_result_table({1, 3}, true)
       assert r = Ets.delete_fight_result({1, 3})
       assert is_boolean(r)

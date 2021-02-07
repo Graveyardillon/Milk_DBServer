@@ -445,15 +445,17 @@ defmodule MilkWeb.TournamentController do
     tournament_id = Tools.to_integer_as_needed(tournament_id)
     user_id = Tools.to_integer_as_needed(user_id)
 
-    {_, match_list} =
-      tournament_id
-      |> Ets.get_match_list()
-      |> hd()
+    case Ets.get_match_list(tournament_id) do
+      [] -> json(conn, %{result: false, match: nil})
+      list when is_list(list) ->
+        IO.inspect(list, label: :list)
+        {_, match_list} = hd(list)
+        match = Tournaments.find_match(match_list, user_id)
+        result = Tournaments.is_alone?(match)
 
-    match = Tournaments.find_match(match_list, user_id)
-    result = Tournaments.is_alone?(match)
-
-    json(conn, %{result: result, match: match})
+        json(conn, %{result: result, match: match})
+      value -> json(conn, %{result: false, match: nil})
+    end
   end
 
   @doc """
@@ -592,6 +594,10 @@ defmodule MilkWeb.TournamentController do
           json(conn, %{validated: false, completed: false})
         else
           # マッチングが正常に終了している
+          Ets.delete_match_pending_list({user_id, tournament_id})
+          Ets.delete_match_pending_list({opponent_id, tournament_id})
+          Ets.delete_fight_result({user_id, tournament_id})
+          Ets.delete_fight_result({opponent_id, tournament_id})
           json(conn, %{validated: true, completed: true})
         end
     end
@@ -620,6 +626,10 @@ defmodule MilkWeb.TournamentController do
           Chat.notify_game_masters(tournament_id)
           json(conn, %{validated: false, completed: false})
         else
+          Ets.delete_match_pending_list({user_id, tournament_id})
+          Ets.delete_match_pending_list({opponent_id, tournament_id})
+          Ets.delete_fight_result({user_id, tournament_id})
+          Ets.delete_fight_result({opponent_id, tournament_id})
           json(conn, %{validated: true, completed: true})
         end
     end
@@ -639,6 +649,7 @@ defmodule MilkWeb.TournamentController do
   def is_user_win(conn, %{"user_id" => user_id, "tournament_id" => tournament_id}) do
     user_id = Tools.to_integer_as_needed(user_id)
     tournament_id = Tools.to_integer_as_needed(tournament_id)
+
     case Ets.get_fight_result({user_id, tournament_id}) do
       [] ->
         json(conn, %{is_win: nil, is_claimed: false})
