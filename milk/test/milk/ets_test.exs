@@ -43,7 +43,7 @@ defmodule Milk.EtsTest do
 
     test "delete_match_pending_list" do
       Ets.insert_match_pending_list_table({1, 3})
-      assert r = Ets.delete_match_pending_list({1, 3})|>hd()
+      assert r = Ets.delete_match_pending_list({1, 3})
       assert is_boolean(r)
     end
   end
@@ -64,6 +64,12 @@ defmodule Milk.EtsTest do
       Ets.insert_fight_result_table({2, 2}, false)
       assert {_, r} = Ets.get_fight_result({2, 2})|>hd()
       refute r
+    end
+
+    test "delete_fight_result/1 works fine" do
+      Ets.insert_fight_result_table({1, 3}, true)
+      assert r = Ets.delete_fight_result({1, 3})
+      assert is_boolean(r)
     end
   end
 

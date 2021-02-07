@@ -17,19 +17,20 @@ defmodule Milk.Ets do
 
   defp conn() do
     host = Application.get_env(:milk, :redix_host)
-      |> IO.inspect()
     port = Application.get_env(:milk, :redix_port)
-      |> IO.inspect()
-    {:ok, conn} = Redix.start_link(host: host, port: port)
-    conn
+    with {:ok, conn} <- Redix.start_link(host: host, port: port) do
+      conn
+    else
+      error -> error
+    end
   end
 
   def insert_match_list(match_list, tournament_id) do
-    #:ets.insert_new(:match_list, {tournament_id, match_list})
     conn = conn()
     bin = inspect(match_list)
 
-    with {:ok, _} <- Redix.command(conn, ["SET", tournament_id, bin])|>IO.inspect() do
+    with {:ok, _} <- Redix.command(conn, ["SELECT", 1]),
+    {:ok, _} <- Redix.command(conn, ["SET", tournament_id, bin]) do
       true
     else
       _ -> false
@@ -37,7 +38,15 @@ defmodule Milk.Ets do
   end
 
   def insert_match_list_with_fight_result(match_list, tournament_id) do
-    :ets.insert_new(:match_list_with_fight_result, {tournament_id, match_list})
+    conn = conn()
+    bin = inspect(match_list)
+
+    with {:ok, _} <- Redix.command(conn, ["SELECT", 2]),
+    {:ok, _} <- Redix.command(conn, ["SET", tournament_id, bin]) do
+      true
+    else
+      _ -> false
+    end
   end
 
   def insert_match_pending_list_table({user_id, tournament_id}) do
@@ -49,11 +58,27 @@ defmodule Milk.Ets do
   end
 
   def get_match_list(tournament_id) do
-    :ets.lookup(:match_list, tournament_id)
+    conn = conn()
+
+    with {:ok, _} <- Redix.command(conn, ["SELECT", 1]),
+    {:ok, value} <- Redix.command(conn, ["GET", tournament_id]) do
+      {match_list, _} = Code.eval_string(value)
+      [{tournament_id, match_list}]
+    else
+      _ -> nil
+    end
   end
 
   def get_match_list_with_fight_result(tournament_id) do
-    :ets.lookup(:match_list_with_fight_result, tournament_id)
+    conn = conn()
+
+    with {:ok, _} <- Redix.command(conn, ["SELECT", 2]),
+    {:ok, value} <- Redix.command(conn, ["GET", tournament_id]) do
+      {match_list, _} = Code.eval_string(value)
+      [{tournament_id, match_list}]
+    else
+      _ -> nil
+    end
   end
 
   def get_match_pending_list({user_id, tournament_id}) do
