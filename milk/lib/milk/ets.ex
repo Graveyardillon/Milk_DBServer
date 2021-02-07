@@ -120,18 +120,46 @@ defmodule Milk.Ets do
   end
 
   def delete_match_list(tournament_id) do
-    :ets.delete(:match_list, tournament_id)
+    conn = conn()
+
+    with {:ok, _} <- Redix.command(conn, ["SELECT", 1]),
+    {:ok, _} <- Redix.command(conn, ["DEL", tournament_id]) do
+      true
+    else
+      _ -> false
+    end
   end
 
   def delete_match_list_with_fight_result(tournament_id) do
-    :ets.delete(:match_list_with_fight_result, tournament_id)
+    conn = conn()
+
+    with {:ok, _} <- Redix.command(conn, ["SELECT", 2]),
+    {:ok, _} <- Redix.command(conn, ["DEL", tournament_id]) do
+      true
+    else
+      _ -> false
+    end
   end
 
   def delete_match_pending_list({user_id, tournament_id}) do
-    :ets.delete(:match_pending_list, {user_id, tournament_id})
+    conn = conn()
+
+    with {:ok, _} <- Redix.command(conn, ["SELECT", 3]),
+    {:ok, _} <- Redix.command(conn, ["HDEL", tournament_id, user_id]) do
+      true
+    else
+      _ -> false
+    end
   end
 
   def delete_fight_result({user_id, tournament_id}) do
-    :ets.delete(:fight_result, {user_id, tournament_id})
+    conn = conn()
+
+    with {:ok, _} <- Redix.command(conn, ["SELECT", 3]),
+    {:ok, _} <- Redix.command(conn, ["HDEL", tournament_id, user_id]) do
+      true
+    else
+      _ -> false
+    end
   end
 end
