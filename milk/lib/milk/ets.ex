@@ -50,11 +50,25 @@ defmodule Milk.Ets do
   end
 
   def insert_match_pending_list_table({user_id, tournament_id}) do
-    :ets.insert_new(:match_pending_list, {{user_id, tournament_id}})
+    conn = conn()
+
+    with {:ok, _} <- Redix.command(conn, ["SELECT", 3]),
+    {:ok, _} <- Redix.command(conn, ["HSET", tournament_id, user_id, true]) do
+      true
+    else
+      _ -> false
+    end
   end
 
   def insert_fight_result_table({user_id, tournament_id}, is_win) do
-    :ets.insert_new(:fight_result, {{user_id, tournament_id}, is_win})
+    conn = conn()
+
+    with {:ok, _} <- Redix.command(conn, ["SELECT", 4]),
+    {:ok, _} <- Redix.command(conn, ["HSET", tournament_id, user_id, is_win]) do
+      true
+    else
+      _ -> false
+    end
   end
 
   def get_match_list(tournament_id) do
@@ -82,11 +96,27 @@ defmodule Milk.Ets do
   end
 
   def get_match_pending_list({user_id, tournament_id}) do
-    :ets.lookup(:match_pending_list, {user_id, tournament_id})
+    conn = conn()
+
+    with {:ok, _} <- Redix.command(conn, ["SELECT", 3]),
+    {:ok, value} <- Redix.command(conn, ["HGET", tournament_id, user_id]) do
+      {b, _} = Code.eval_string(value)
+      if b, do: [{{user_id, tournament_id}}], else: nil
+    else
+      _ -> nil
+    end
   end
 
   def get_fight_result({user_id, tournament_id}) do
-    :ets.lookup(:fight_result, {user_id, tournament_id})
+    conn = conn()
+
+    with {:ok, _} <- Redix.command(conn, ["SELECT", 4]),
+    {:ok, value} <- Redix.command(conn, ["HGET", tournament_id, user_id]) do
+      {is_win, _} = Code.eval_string(value)
+      [{{user_id, tournament_id}, is_win}]
+    else
+      _ -> nil
+    end
   end
 
   def delete_match_list(tournament_id) do
