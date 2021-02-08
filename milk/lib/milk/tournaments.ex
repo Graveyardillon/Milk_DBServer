@@ -1237,14 +1237,15 @@ defmodule Milk.Tournaments do
   end
 
   defp check_has_lost?(tournament_id, user_id) do
-    {_, match_list} =
-      Ets.get_match_list(tournament_id)
-      |> hd()
-
-    if has_lost?(match_list, user_id) do
-      "IsLoser"
-    else
-      check_is_alone?(tournament_id, user_id)
+    case Ets.get_match_list(tournament_id) do
+      [] ->
+        "IsFinished"
+      [{_, match_list}] ->
+        if has_lost?(match_list, user_id) do
+          "IsLoser"
+        else
+          check_is_alone?(tournament_id, user_id)
+        end
     end
   end
 
