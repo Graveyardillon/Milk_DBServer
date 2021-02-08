@@ -50,4 +50,3 @@ config :milk, Milk.UserManager.Guardian,
   retries: 1,
   no_mx_lookups: false, # can be `true`
   auth: :if_available
-

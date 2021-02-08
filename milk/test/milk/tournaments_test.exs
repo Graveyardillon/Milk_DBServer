@@ -487,7 +487,7 @@ defmodule Milk.TournamentsTest do
 
     test "find_match/3 with invalid data does not work" do
       invalid_data = 3
-      assert catch_error(Tournaments.find_match(invalid_data, 3)) == %Protocol.UndefinedError{description: "", protocol: Enumerable, value: 3}
+      assert Tournaments.find_match(invalid_data, 3) == []
     end
 
     test "get_opponent/2 with valid data works fine", %{tournament: tournament} do
@@ -581,7 +581,11 @@ defmodule Milk.TournamentsTest do
     end
 
     test "state!2 returns IsInMatch" do
-
+      %{tournament: tournament} = create_tournament_for_flow(nil)
+      create_entrants(7, tournament.id)
+      Tournaments.create_entrant(%{"user_id" => tournament.master_id, "tournament_id" => tournament.id})
+      start(tournament.master_id, tournament.id)
+      assert "IsInMatch" == Tournaments.state!(tournament.id, tournament.master_id)
     end
   end
 

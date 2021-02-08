@@ -76,7 +76,8 @@ defmodule Milk.MixProject do
       {:ex_crypto, "~> 0.10.0"},
       {:tournamex, "~> 0.1.9"},
       {:dialyxir, "~> 1.0", only: [:dev], runtime: false},
-      {:excoveralls, "~> 0.10", only: :test}
+      {:excoveralls, "~> 0.10", only: :test},
+      {:redix, ">= 0.0.0"}
     ]
   end
 
