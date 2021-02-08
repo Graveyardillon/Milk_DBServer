@@ -67,3 +67,6 @@ config :milk, Milk.Repo, migration_timestamps: [type: :timestamptz, inserted_at:
 # Finally import the config/prod.secret.exs which loads secrets
 # and configuration from environment variables.
 # import_config "prod.secret.exs"
+
+config :milk, :redix_host, "10.29.102.179"
+config :milk, :redix_port, 6379
