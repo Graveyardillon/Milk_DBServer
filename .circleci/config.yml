@@ -15,6 +15,10 @@ jobs:
           POSTGRES_USER: postgres
           POSTGRES_DB: milk_test
           POSTGRES_PASSWORD: postgres
+      - image: redis:latest
+        environment:
+          ports:
+            - 6380:6379
       # Specify service dependencies here if necessary
       # CircleCI maintains a library of pre-built images
       # documented at https://circleci.com/docs/2.0/circleci-images/
