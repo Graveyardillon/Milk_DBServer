@@ -19,7 +19,7 @@ defmodule MilkWeb.AchievementController do
   end
 
   def create(conn, %{"achievement" => achievement_params}) do
-    
+
       case achievement_params["user_id"] do
         nil -> render(conn, "error.json",list: ["user does not exist"])
         id ->

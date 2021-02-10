@@ -434,7 +434,6 @@ defmodule MilkWeb.TournamentController do
       |> Ets.get_match_list_with_fight_result()
       |> hd()
     updated_match_list = Tournaments.get_lost(match_list, loser)
-      |> IO.inspect(label: :updated_match_list_with_fight_result)
     Ets.delete_match_list_with_fight_result(tournament_id)
     Ets.insert_match_list_with_fight_result(updated_match_list, tournament_id)
   end
@@ -446,15 +445,17 @@ defmodule MilkWeb.TournamentController do
     tournament_id = Tools.to_integer_as_needed(tournament_id)
     user_id = Tools.to_integer_as_needed(user_id)
 
-    {_, match_list} =
-      tournament_id
-      |> Ets.get_match_list()
-      |> hd()
+    case Ets.get_match_list(tournament_id) do
+      [] -> json(conn, %{result: false, match: nil})
+      list when is_list(list) ->
+        IO.inspect(list, label: :list)
+        {_, match_list} = hd(list)
+        match = Tournaments.find_match(match_list, user_id)
+        result = Tournaments.is_alone?(match)
 
-    match = Tournaments.find_match(match_list, user_id)
-    result = Tournaments.is_alone?(match)
-
-    json(conn, %{result: result, match: match})
+        json(conn, %{result: result, match: match})
+      value -> json(conn, %{result: false, match: nil})
+    end
   end
 
   @doc """
@@ -477,9 +478,9 @@ defmodule MilkWeb.TournamentController do
     tournament_id = Tools.to_integer_as_needed(tournament_id)
 
     list = Ets.get_match_list(tournament_id)
-    list = unless list == [] do
-      hd(list)
-    end
+    # list = unless list == [] do
+    #   hd(list)
+    # end
 
     case list do
       {_, match_list} -> json(conn, %{match_list: match_list, result: true})
@@ -558,6 +559,18 @@ defmodule MilkWeb.TournamentController do
   end
 
   @doc """
+  Check state of user in tournament.
+  """
+  def state(conn, %{"tournament_id" => tournament_id, "user_id" => user_id}) do
+    user_id = Tools.to_integer_as_needed(user_id)
+    tournament_id = Tools.to_integer_as_needed(tournament_id)
+
+    state = Tournaments.state!(tournament_id, user_id)
+
+    json(conn, %{result: true, state: state})
+  end
+
+  @doc """
   Claim win of the user.
   """
   def claim_win(conn, %{"opponent_id" => opponent_id, "user_id" => user_id, "tournament_id" => tournament_id}) do
@@ -581,6 +594,10 @@ defmodule MilkWeb.TournamentController do
           json(conn, %{validated: false, completed: false})
         else
           # マッチングが正常に終了している
+          Ets.delete_match_pending_list({user_id, tournament_id})
+          Ets.delete_match_pending_list({opponent_id, tournament_id})
+          Ets.delete_fight_result({user_id, tournament_id})
+          Ets.delete_fight_result({opponent_id, tournament_id})
           json(conn, %{validated: true, completed: true})
         end
     end
@@ -609,9 +626,21 @@ defmodule MilkWeb.TournamentController do
           Chat.notify_game_masters(tournament_id)
           json(conn, %{validated: false, completed: false})
         else
+          Ets.delete_match_pending_list({user_id, tournament_id})
+          Ets.delete_match_pending_list({opponent_id, tournament_id})
+          Ets.delete_fight_result({user_id, tournament_id})
+          Ets.delete_fight_result({opponent_id, tournament_id})
           json(conn, %{validated: true, completed: true})
         end
     end
+  end
+
+  @doc """
+  Get a tournament by url.
+  """
+  def get_tournament_by_url(conn, %{"url" => url}) do
+    tournament = Tournaments.get_tournament_by_url(url)
+    render(conn, "tournament_info.json", tournament: tournament, entrants: [])
   end
 
   @doc """
@@ -620,6 +649,7 @@ defmodule MilkWeb.TournamentController do
   def is_user_win(conn, %{"user_id" => user_id, "tournament_id" => tournament_id}) do
     user_id = Tools.to_integer_as_needed(user_id)
     tournament_id = Tools.to_integer_as_needed(tournament_id)
+
     case Ets.get_fight_result({user_id, tournament_id}) do
       [] ->
         json(conn, %{is_win: nil, is_claimed: false})
@@ -636,7 +666,7 @@ defmodule MilkWeb.TournamentController do
   def publish_url(conn, _params) do
     url = SecureRandom.urlsafe_base64()
 
-    json(conn, %{url: "http://localhost:4000/tournament/"<>url})
+    json(conn, %{url: "e-players://e-players/tournament/"<>url})
   end
 
   @doc """
@@ -696,8 +726,6 @@ defmodule MilkWeb.TournamentController do
     tournament_id = Tools.to_integer_as_needed(tournament_id)
     list = Ets.get_match_list_with_fight_result(tournament_id)
     list = unless list == [], do: hd(list)
-
-    IO.inspect(list, label: :list)
 
     case list do
       {_, match_list} ->

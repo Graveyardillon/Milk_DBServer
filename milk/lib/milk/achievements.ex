@@ -10,19 +10,6 @@ defmodule Milk.Achievements do
   alias Milk.Achievements.Achievement
 
   @doc """
-  Returns the list of achievements.
-
-  ## Examples
-
-      iex> list_achievements()
-      [%Achievement{}, ...]
-
-  """
-  def list_achievements do
-    Repo.all(Achievement)
-  end
-
-  @doc """
   Gets a single achievement.
 
   Raises `Ecto.NoResultsError` if the Achievement does not exist.
@@ -88,19 +75,6 @@ defmodule Milk.Achievements do
   """
   def delete_achievement(%Achievement{} = achievement) do
     Repo.delete(achievement)
-  end
-
-  @doc """
-  Returns an `%Ecto.Changeset{}` for tracking achievement changes.
-
-  ## Examples
-
-      iex> change_achievement(achievement)
-      %Ecto.Changeset{data: %Achievement{}}
-
-  """
-  def change_achievement(%Achievement{} = achievement, attrs \\ %{}) do
-    Achievement.changeset(achievement, attrs)
   end
 
   def add_achievement(user, attrs \\ %{}) do

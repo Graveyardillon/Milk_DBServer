@@ -53,7 +53,6 @@ defmodule MilkWeb.TournamentControllerTest do
       entrant = hd(entrants)
 
       conn = post(conn, Routes.tournament_path(conn, :start), tournament: %{"master_id" => tournament.master_id, "tournament_id" => tournament.id})
-      IO.inspect(json_response(conn, 200))
       conn = post(conn, Routes.tournament_path(conn, :delete_loser), tournament: %{"tournament_id" => tournament.id, "loser_list" => [entrant.user_id]})
       conn = post(conn, Routes.tournament_path(conn, :finish), %{"tournament_id" => tournament.id, "user_id" => tournament.master_id})
       conn = get(conn, Routes.tournament_path(conn, :show), %{"tournament_id" => tournament.id})
@@ -64,6 +63,16 @@ defmodule MilkWeb.TournamentControllerTest do
     test "cannot get a tournament which does not exist", %{conn: conn, tournament: _tournament} do
       conn = get(conn, Routes.tournament_path(conn, :show), %{"tournament_id" => -1})
       refute json_response(conn, 200)["result"]
+    end
+  end
+
+  describe "get tournament by url" do
+    setup [:create_tournament]
+
+    test "get tournament by url", %{conn: conn, tournament: tournament} do
+      conn = get(conn, Routes.tournament_path(conn, :get_tournament_by_url), %{url: tournament.url})
+      t = json_response(conn, 200)["data"]
+      assert t["id"] == tournament.id
     end
   end
 

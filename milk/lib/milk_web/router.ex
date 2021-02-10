@@ -82,7 +82,9 @@ defmodule MilkWeb.Router do
     get  "/tournament/get_by_master_id", TournamentController, :get_tournaments_by_master_id
     get  "/tournament/get_planned", TournamentController, :get_ongoing_tournaments_by_master_id
     get  "/tournament/get_game", TournamentController, :get_game
+    get  "/tournament/by_url", TournamentController, :get_tournament_by_url
     get  "/tournament/get_opponent", TournamentController, :get_opponent
+    get  "/tournament/get_participating_tournaments", TournamentController, :participating_tournaments
     get  "/tournament/participating", TournamentController, :participating_tournaments
     get  "/tournament/get_tabs", TournamentController, :tournament_topics
     get  "/tournament/get_thumbnail", TournamentController, :get_thumbnail_image
@@ -97,6 +99,7 @@ defmodule MilkWeb.Router do
     get  "/tournament/is_user_win", TournamentController, :is_user_win
     get  "/tournament/relevant", TournamentController, :relevant
     get  "/tournament/has_lost", TournamentController, :has_lost?
+    get  "/tournament/state", TournamentController, :state
     post "/tournament/start", TournamentController, :start
     post "/tournament/deleteloser", TournamentController, :delete_loser
     # FIXME: このgetはpostメソッドなので消したほうがいい

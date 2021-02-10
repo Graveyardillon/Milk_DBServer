@@ -25,7 +25,7 @@ defmodule Milk.TournamentsTest do
     "event_date" => "2010-04-17T14:00:00Z",
     "name" => "some name",
     "type" => 0,
-    "url" => "some url",
+    "url" => "somesomeurl",
     "master_id" => 1,
     "platform_id" => 1,
     "is_started" => true
@@ -190,7 +190,7 @@ defmodule Milk.TournamentsTest do
       assert tournament.event_date == "2010-04-17T14:00:00Z"
       assert tournament.name == "some name"
       assert tournament.type == 0
-      assert tournament.url == "some url"
+      assert tournament.url == "somesomeurl"
     end
 
     test "create_tournament/1 with invalid data returns error changeset" do
@@ -277,6 +277,14 @@ defmodule Milk.TournamentsTest do
     test "home_tournament_plan/1 fails to return user's tournaments" do
       tournament = fixture(:tournament)
       assert length(Tournaments.home_tournament_plan(tournament.master_id)) == 0
+    end
+  end
+
+  describe "get tournament by url" do
+    test "get_tournament_by_url/1 works with valid data" do
+      tournament = fixture(:tournament)
+      t = Tournaments.get_tournament_by_url(tournament.url)
+      assert tournament.id == t.id
     end
   end
 
@@ -479,7 +487,7 @@ defmodule Milk.TournamentsTest do
 
     test "find_match/3 with invalid data does not work" do
       invalid_data = 3
-      assert catch_error(Tournaments.find_match(invalid_data, 3)) == %Protocol.UndefinedError{description: "", protocol: Enumerable, value: 3}
+      assert Tournaments.find_match(invalid_data, 3) == []
     end
 
     test "get_opponent/2 with valid data works fine", %{tournament: tournament} do
@@ -546,6 +554,109 @@ defmodule Milk.TournamentsTest do
     test "get_rank/2 returns error with invalid params" do
       assert Tournaments.get_rank(-1, -1) == {:error, "entrant is not found"}
     end
+  end
+
+  describe "state!" do
+    test "state!/2 returns IsNotStarted" do
+      %{tournament: tournament} = create_tournament_for_flow(nil)
+      assert "IsNotStarted" == Tournaments.state!(tournament.id, tournament.master_id)
+    end
+
+    test "state!/2 returns IsLoser" do
+      %{tournament: tournament} = create_tournament_for_flow(nil)
+      create_entrants(7, tournament.id)
+      Tournaments.create_entrant(%{"user_id" => tournament.master_id, "tournament_id" => tournament.id})
+      start(tournament.master_id, tournament.id)
+      delete_loser(tournament.id, [tournament.master_id])
+      assert "IsLoser" == Tournaments.state!(tournament.id, tournament.master_id)
+    end
+
+    # FIXME: 良いテストの仕方が思いつかない
+    test "state!/2 returns IsAlone" do
+
+    end
+
+    test "state!/2 returns IsPending" do
+
+    end
+
+    test "state!2 returns IsInMatch" do
+      %{tournament: tournament} = create_tournament_for_flow(nil)
+      create_entrants(7, tournament.id)
+      Tournaments.create_entrant(%{"user_id" => tournament.master_id, "tournament_id" => tournament.id})
+      start(tournament.master_id, tournament.id)
+      assert "IsInMatch" == Tournaments.state!(tournament.id, tournament.master_id)
+    end
+  end
+
+  defp start(master_id, tournament_id) do
+    Tournaments.start(master_id, tournament_id)
+
+    {:ok, match_list} =
+      Tournaments.get_entrants(tournament_id)
+      |> Enum.map(fn x -> x.user_id end)
+      |> Tournaments.generate_matchlist
+
+    count =
+      Tournaments.get_tournament(tournament_id)
+      |> Map.get(:count)
+    match_list
+    |> Tournaments.initialize_rank(count, tournament_id)
+    match_list
+    |> Ets.insert_match_list(tournament_id)
+
+    list_with_fight_result =
+      match_list
+      |> match_list_with_fight_result()
+
+    lis =
+      list_with_fight_result
+      |> Tournamex.match_list_to_list()
+
+    Enum.reduce(lis, list_with_fight_result, fn x, acc ->
+      user = Accounts.get_user(x["user_id"])
+
+      acc
+      |> Tournaments.put_value_on_brackets(user.id, %{"name" => user.name})
+      |> Tournaments.put_value_on_brackets(user.id, %{"win_count" => 0})
+      |> Tournaments.put_value_on_brackets(user.id, %{"icon_path" => user.icon_path})
+    end)
+    |> Ets.insert_match_list_with_fight_result(tournament_id)
+  end
+
+  defp match_list_with_fight_result(match_list) do
+    Tournaments.initialize_match_list_with_fight_result(match_list)
+  end
+
+  defp delete_loser(tournament_id, loser_list) do
+    {_, match_list} = hd(Ets.get_match_list(tournament_id))
+
+    match_list
+    |> Tournaments.find_match(hd(loser_list))
+    |> Enum.each(fn user_id ->
+      Ets.delete_match_pending_list({user_id, tournament_id})
+      Ets.delete_fight_result({user_id, tournament_id})
+    end)
+
+    renew_match_list(tournament_id, match_list, loser_list)
+    get_lost(tournament_id, match_list, loser_list)
+  end
+
+  defp renew_match_list(tournament_id, match_list, loser_list) do
+    Tournaments.promote_winners_by_loser(tournament_id, match_list, loser_list)
+    updated_match_list = Tournaments.delete_loser(match_list, loser_list)
+    Ets.delete_match_list(tournament_id)
+    Ets.insert_match_list(updated_match_list, tournament_id)
+  end
+
+  defp get_lost(tournament_id, _match_list, [loser]) do
+    {_, match_list} =
+      tournament_id
+      |> Ets.get_match_list_with_fight_result()
+      |> hd()
+    updated_match_list = Tournaments.get_lost(match_list, loser)
+    Ets.delete_match_list_with_fight_result(tournament_id)
+    Ets.insert_match_list_with_fight_result(updated_match_list, tournament_id)
   end
 
   defp create_tournament_for_flow(_) do
