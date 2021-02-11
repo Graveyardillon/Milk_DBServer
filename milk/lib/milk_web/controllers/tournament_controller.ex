@@ -457,7 +457,6 @@ defmodule MilkWeb.TournamentController do
     case Ets.get_match_list(tournament_id) do
       [] -> json(conn, %{result: false, match: nil})
       list when is_list(list) ->
-        IO.inspect(list, label: :list)
         {_, match_list} = hd(list)
         match = Tournaments.find_match(match_list, user_id)
         result = Tournaments.is_alone?(match)

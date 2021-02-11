@@ -45,3 +45,4 @@ config :milk, MilkWeb.Endpoint,
 
 config :milk, :redix_host, "10.231.150.131"
 config :milk, :redix_port, 6379
+config :milk, :environment, :prod
