@@ -22,3 +22,4 @@ config :logger, level: :warn
 config :milk, :redix_host, "localhost"
 config :milk, :redix_port, 6379
 config :milk, Milk.Repo, migration_timestamps: [type: :timestamptz, inserted_at: :create_time, updated_at: :update_time]
+config :milk, :environment, :test

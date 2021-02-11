@@ -3,6 +3,8 @@ ARG app_name=milk
 ARG phoenix_subdir=.
 ARG build_env=prod
 ENV MIX_ENV=${build_env} TERM=xterm
+ENV GOOGLE_APPLICATION_CREDENTIALS=e-players6814-41b52d33988e.json
+ENV GOOGLE_PROJECT_ID=e-players6814
 
 WORKDIR /opt/app
 RUN apk update \
