@@ -77,7 +77,9 @@ defmodule Milk.MixProject do
       {:tournamex, "~> 0.1.9"},
       {:dialyxir, "~> 1.0", only: [:dev], runtime: false},
       {:excoveralls, "~> 0.10", only: :test},
-      {:redix, ">= 0.0.0"}
+      {:redix, ">= 0.0.0"},
+      {:google_api_storage, "~> 0.28.0"},
+      {:goth, "~> 1.2.0"}
     ]
   end
 

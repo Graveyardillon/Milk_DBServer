@@ -10,6 +10,7 @@ jobs:
       - image: circleci/elixir:1.9
         environment:
           MIX_ENV: test
+          GOOGLE_APPLICATION_CREDENTIALS: e-players6814-41b52d33988e.json
       - image: circleci/postgres:10.1-alpine
         environment:
           POSTGRES_USER: postgres
