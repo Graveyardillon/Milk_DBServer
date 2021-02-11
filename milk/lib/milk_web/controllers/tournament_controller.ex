@@ -8,6 +8,8 @@ defmodule MilkWeb.TournamentController do
   alias Milk.Relations
   alias Milk.Tournaments
   alias Milk.Tournaments.Tournament
+  alias Milk.CloudStorage.Objects
+  alias Milk.Media.Image
   alias Common.Tools
 
   @doc """
@@ -81,11 +83,19 @@ defmodule MilkWeb.TournamentController do
   def create(conn, %{"tournament" => tournament_params, "file" => file}) do
     create(conn, %{"tournament" => tournament_params, "image" => file})
   end
+
   def create(conn, %{"tournament" => tournament_params, "image" => image}) do
     thumbnail_path = if image != "" do
       uuid = SecureRandom.uuid()
       File.cp(image.path, "./static/image/tournament_thumbnail/#{uuid}.jpg")
-      uuid
+      case Application.get_env(:milk, :environment) do
+        :dev -> uuid
+        :test -> uuid
+        _ ->
+          object = Milk.CloudStorage.Objects.upload("./static/image/tournament_thumbnail/#{uuid}.jpg")
+          File.rm("./static/image/tournament_thumbnail/#{uuid}.jpg")
+          object.name
+      end
     else
       nil
     end
@@ -105,8 +115,7 @@ defmodule MilkWeb.TournamentController do
             tournament
             |> Map.put(:followers, Relations.get_followers(tournament.master_id))
 
-          conn
-          |> render("create.json", tournament: t)
+          render(conn, "create.json", tournament: t)
         {:error, error} ->
           render(conn, "error.json", error: error)
         _ ->
@@ -462,12 +471,32 @@ defmodule MilkWeb.TournamentController do
   Get a thumbnail image of a tournament.
   """
   def get_thumbnail_image(conn, %{"thumbnail_path" => path}) do
-    case File.read("./static/image/tournament_thumbnail/#{path}.jpg") do
+    map = case Application.get_env(:milk, :environment) do
+      :dev -> read_thumbnail(path)
+      :test -> read_thumbnail(path)
+      _ -> read_thumbnail_prod(path)
+    end
+    json(conn, map)
+  end
+
+  defp read_thumbnail(name) do
+    case File.read("./static/image/tournament_thumbnail/#{name}.jpg") do
       {:ok, file} ->
         b64 = Base.encode64(file)
-        json(conn, %{b64: b64})
+        %{b64: b64}
       {:error, _} ->
-        json(conn, %{error: "image not found"})
+        %{error: "image not found"}
+    end
+  end
+
+  defp read_thumbnail_prod(name) do
+    object = Objects.get(name)
+    case Image.get(object.mediaLink) do
+      {:ok, file} ->
+        b64 = Base.encode64(file)
+        %{b64: b64}
+      _ ->
+        %{error: "image not found"}
     end
   end
 
