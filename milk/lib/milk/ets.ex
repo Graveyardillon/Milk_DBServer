@@ -1,4 +1,6 @@
 defmodule Milk.Ets do
+  require Logger
+
   def create_match_list_table() do
     :ets.new(:match_list, [:set, :public, :named_table])
   end
@@ -25,6 +27,11 @@ defmodule Milk.Ets do
     end
   end
 
+  def flushall() do
+    conn = conn()
+    Redix.command(conn, ["FLUSHALL"])
+  end
+
   def insert_match_list(match_list, tournament_id) do
     conn = conn()
     bin = inspect(match_list)
@@ -33,7 +40,12 @@ defmodule Milk.Ets do
     {:ok, _} <- Redix.command(conn, ["SET", tournament_id, bin]) do
       true
     else
-      _ -> false
+      {:error, %Redix.Error{message: message}} ->
+        Logger.error(message)
+        false
+      _ ->
+        Logger.error("Could not insert match list")
+        false
     end
   end
 

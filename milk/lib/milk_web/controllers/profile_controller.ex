@@ -3,6 +3,7 @@ defmodule MilkWeb.ProfileController do
 
   alias Milk.Accounts
   alias Milk.Profiles
+  alias Milk.CloudStorage.Objects
 
   action_fallback MilkWeb.FallbackController
 
@@ -42,12 +43,27 @@ defmodule MilkWeb.ProfileController do
       uuid = SecureRandom.uuid()
 
       File.cp(image.path, "./static/image/profile_icon/#{uuid}.png")
-
-      Accounts.update_icon_path(user, "./static/image/profile_icon/#{uuid}.png")
-      json(conn, %{local_path: uuid})
+      local_path = case Application.get_env(:milk, :environment) do
+        :dev -> update_account(user, uuid)
+        :test -> update_account(user, uuid)
+        _ -> update_account_prod(user, uuid)
+      end
+      json(conn, %{local_path: local_path})
     else
       json(conn, %{error: "user not found"})
     end
+  end
+
+  defp update_account(user, uuid) do
+    Accounts.update_icon_path(user, "./static/image/profile_icon/#{uuid}.png")
+    uuid
+  end
+
+  defp update_account_prod(user, uuid) do
+    object = Objects.upload("./static/image/profile_icon/#{uuid}.png")
+    File.rm("./static/image/profile_icon/#{uuid}.png")
+    Accounts.update_icon_path(user, object)
+    object.name
   end
 
   def get_icon(conn, %{"path" => path}) do

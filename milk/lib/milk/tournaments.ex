@@ -754,7 +754,8 @@ defmodule Milk.Tournaments do
   @doc """
   Checks whether the user has already lost.
   """
-  def has_lost?(match_list, user_id, result \\ true) do
+  def has_lost?(v, _) when is_integer(v), do: false
+  def has_lost?(match_list, user_id, result \\ true) when is_list(match_list) do
     Enum.reduce(match_list, result, fn x, acc ->
       case x do
         x when is_list(x) -> has_lost?(x, user_id, acc)
@@ -1237,14 +1238,15 @@ defmodule Milk.Tournaments do
   end
 
   defp check_has_lost?(tournament_id, user_id) do
-    {_, match_list} =
-      Ets.get_match_list(tournament_id)
-      |> hd()
-
-    if has_lost?(match_list, user_id) do
-      "IsLoser"
-    else
-      check_is_alone?(tournament_id, user_id)
+    case Ets.get_match_list(tournament_id) do
+      [] ->
+        "IsFinished"
+      [{_, match_list}] ->
+        if has_lost?(match_list, user_id) do
+          "IsLoser"
+        else
+          check_is_alone?(tournament_id, user_id)
+        end
     end
   end
 
