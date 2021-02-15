@@ -506,9 +506,9 @@ defmodule MilkWeb.TournamentController do
     tournament_id = Tools.to_integer_as_needed(tournament_id)
 
     list = Ets.get_match_list(tournament_id)
-    # list = unless list == [] do
-    #   hd(list)
-    # end
+    list = unless list == [] do
+      hd(list)
+    end
 
     case list do
       {_, match_list} -> json(conn, %{match_list: match_list, result: true})
