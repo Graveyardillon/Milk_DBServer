@@ -139,7 +139,7 @@ defmodule MilkWeb.Router do
     get  "/notification/list", NotifController, :get_list
     post "/notification/create", NotifController, :create
     post "/notification_log/create", NotifLogController, :create
-    delete "/notification/:id", NotifController, :delete
+    delete "/notification/delete", NotifController, :delete
   end
 
   scope "/debug", MilkWeb do
