@@ -9,6 +9,7 @@ defmodule Milk.ChatTest do
     @valid_attrs %{count: 42, last_chat: "some last_chat", name: "some name"}
     @update_attrs %{count: 43, last_chat: "some updated last_chat", name: "some updated name"}
     @invalid_attrs %{count: nil, last_chat: nil, name: "aa"}
+    @user_valid_attrs %{"icon_path" => "some icon_path", "language" => "some language", "name" => "some name", "notification_number" => 42, "point" => 42, "email" => "some@email.com", "logout_fl" => true, "password" => "S1ome password"}
 
     def chat_room_fixture(attrs \\ %{}) do
       {:ok, chat_room} =
@@ -17,6 +18,17 @@ defmodule Milk.ChatTest do
         |> Chat.create_chat_room()
 
       Chat.get_chat_room(chat_room.id)
+    end
+
+    defp user_fixture(name \\ "name", email \\ "email") do
+      {:ok, user} =
+        %{}
+        |> Enum.into(@user_valid_attrs)
+        |> Map.put("name", name)
+        |> Map.put("email", email)
+        |> Accounts.create_user()
+
+      Accounts.get_user(user.id)
     end
 
     test "get_chat_room/1 returns the chat_room with given id" do
@@ -154,10 +166,14 @@ defmodule Milk.ChatTest do
       assert {:ok, %Chats{}} = Chat.delete_chats(chats)
       assert nil == Chat.get_chat(chats.chat_room_id, chats.index)
     end
+  end
 
-    # test "change_chats/1 returns a chats changeset" do
-    #   chats = chats_fixture()
-    #   assert %Ecto.Changeset{} = Chat.change_chats(chats)
-    # end
+  describe "get_private_chat_room" do
+    test "get_private_chat_room works fine" do
+      user1 = user_fixture("user1", "user1@gmail.com")
+      user2 = user_fixture("user2", "user2@gmail.com")
+      room = Chat.get_private_chat_room(user1.id, user2.id)
+      IO.inspect(room)
+    end
   end
 end
