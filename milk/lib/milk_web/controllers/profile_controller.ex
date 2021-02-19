@@ -62,7 +62,7 @@ defmodule MilkWeb.ProfileController do
   defp update_account_prod(user, uuid) do
     object = Objects.upload("./static/image/profile_icon/#{uuid}.png")
     File.rm("./static/image/profile_icon/#{uuid}.png")
-    Accounts.update_icon_path(user, object)
+    Accounts.update_icon_path(user, object.name)
     object.name
   end
 
