@@ -46,12 +46,12 @@ defmodule MilkWeb.Router do
     get  "/game/list", GameController, :list
     post "/game/add", GameController, :create
 
-    post "/achievement/list", AchievementController, :show
-    post "/achievement", AchievementController, :create
-    post "/achievement/update", AchievementController, :update
-    get "/achievement/index", AchievementController, :index
-    delete "/achievement/delete", AchievementController, :delete
-    post "/achievement/show_one", AchievementController, :show_one
+    post "/achievement/list", AchievementController, :list
+    # post "/achievement", AchievementController, :create
+    # post "/achievement/update", AchievementController, :update
+    # get "/achievement/index", AchievementController, :index
+    # delete "/achievement/delete", AchievementController, :delete
+    # post "/achievement/show_one", AchievementController, :show_one
 
     resources "/relation", RelationController, except: [:new, :edit, :index, :show, :delete]
     get  "/relation/following_list", RelationController, :following_list

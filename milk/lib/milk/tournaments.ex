@@ -1288,4 +1288,13 @@ defmodule Milk.Tournaments do
     {:ok, brackets} = Tournamex.brackets_with_fight_result(match_list)
     brackets
   end
+
+
+  def get_all_tournament_rank(user_id) do
+    user_id = Tools.to_integer_as_needed(user_id)
+    Entrant
+    |> where([e], e.user_id == ^user_id)
+    |> Repo.all()
+    |> Repo.preload(:tournament)
+  end
 end

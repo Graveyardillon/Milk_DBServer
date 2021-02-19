@@ -8,6 +8,7 @@ defmodule Milk.Profiles do
   alias Milk.Games.Game
   alias Milk.Achievements.Achievement
   alias Milk.Accounts.Profile
+  alias Milk.Tournaments.Entrant
 
   @doc """
   Returns the list of profiles.
@@ -120,16 +121,17 @@ defmodule Milk.Profiles do
     |> Repo.all()
     |> Enum.map(& &1.content_id)
 
-    Achievement
-    |> where([a], a.id in ^ids)
-    |> Repo.all
+    Entrant
+    |> where([e], e.tournament_id in ^ids and e.user_id == ^user.id)
+    |> Repo.all()
+    |> Repo.preload(:tournament)
   end
 
   def update_profile(%User{} = user, name, bio, gameList, achievementList) do
     Repo.update(Ecto.Changeset.change user, name: name, bio: bio)
-    # Profile
-    # |> where([p], p.user_id == ^user.id)
-    # |> Repo.delete_all()
+    Profile
+    |> where([p], p.user_id == ^user.id)
+    |> Repo.delete_all()
 
     Enum.each(gameList, fn game ->
       %Profile{}
