@@ -3,6 +3,7 @@ defmodule MilkWeb.ProfileController do
 
   alias Milk.Accounts
   alias Milk.Profiles
+  alias Milk.Media.Image
   alias Milk.CloudStorage.Objects
 
   action_fallback MilkWeb.FallbackController
@@ -68,7 +69,12 @@ defmodule MilkWeb.ProfileController do
 
   def get_icon(conn, %{"path" => path}) do
     if path != "" do
-      case File.read(path) do
+      case Application.get_env(:milk, :environment) do
+        :dev -> get_image(path)
+        :test -> get_image(path)
+        _ -> get_image_prod(path)
+      end
+      |> case do
         {:ok, file} ->
           b64 = Base.encode64(file)
           json(conn, %{b64: b64})
@@ -78,5 +84,14 @@ defmodule MilkWeb.ProfileController do
     else
       json(conn, %{error: "path nil"})
     end
+  end
+
+  defp get_image(path) do
+    File.read(path)
+  end
+
+  defp get_image_prod(name) do
+    object = Objects.get(name)
+    Image.get(object.mediaLink)
   end
 end
