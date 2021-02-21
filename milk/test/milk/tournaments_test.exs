@@ -4,7 +4,7 @@ defmodule Milk.TournamentsTest do
   alias Milk.{
     Tournaments,
     Accounts,
-    Ets,
+    TournamentProgress,
     Relations,
     Games,
     Chat
@@ -603,7 +603,7 @@ defmodule Milk.TournamentsTest do
     match_list
     |> Tournaments.initialize_rank(count, tournament_id)
     match_list
-    |> Ets.insert_match_list(tournament_id)
+    |> TournamentProgress.insert_match_list(tournament_id)
 
     list_with_fight_result =
       match_list
@@ -621,7 +621,7 @@ defmodule Milk.TournamentsTest do
       |> Tournaments.put_value_on_brackets(user.id, %{"win_count" => 0})
       |> Tournaments.put_value_on_brackets(user.id, %{"icon_path" => user.icon_path})
     end)
-    |> Ets.insert_match_list_with_fight_result(tournament_id)
+    |> TournamentProgress.insert_match_list_with_fight_result(tournament_id)
   end
 
   defp match_list_with_fight_result(match_list) do
@@ -629,13 +629,13 @@ defmodule Milk.TournamentsTest do
   end
 
   defp delete_loser(tournament_id, loser_list) do
-    {_, match_list} = hd(Ets.get_match_list(tournament_id))
+    {_, match_list} = hd(TournamentProgress.get_match_list(tournament_id))
 
     match_list
     |> Tournaments.find_match(hd(loser_list))
     |> Enum.each(fn user_id ->
-      Ets.delete_match_pending_list({user_id, tournament_id})
-      Ets.delete_fight_result({user_id, tournament_id})
+      TournamentProgress.delete_match_pending_list({user_id, tournament_id})
+      TournamentProgress.delete_fight_result({user_id, tournament_id})
     end)
 
     renew_match_list(tournament_id, match_list, loser_list)
@@ -645,18 +645,18 @@ defmodule Milk.TournamentsTest do
   defp renew_match_list(tournament_id, match_list, loser_list) do
     Tournaments.promote_winners_by_loser(tournament_id, match_list, loser_list)
     updated_match_list = Tournaments.delete_loser(match_list, loser_list)
-    Ets.delete_match_list(tournament_id)
-    Ets.insert_match_list(updated_match_list, tournament_id)
+    TournamentProgress.delete_match_list(tournament_id)
+    TournamentProgress.insert_match_list(updated_match_list, tournament_id)
   end
 
   defp get_lost(tournament_id, _match_list, [loser]) do
     {_, match_list} =
       tournament_id
-      |> Ets.get_match_list_with_fight_result()
+      |> TournamentProgress.get_match_list_with_fight_result()
       |> hd()
     updated_match_list = Tournaments.get_lost(match_list, loser)
-    Ets.delete_match_list_with_fight_result(tournament_id)
-    Ets.insert_match_list_with_fight_result(updated_match_list, tournament_id)
+    TournamentProgress.delete_match_list_with_fight_result(tournament_id)
+    TournamentProgress.insert_match_list_with_fight_result(updated_match_list, tournament_id)
   end
 
   defp create_tournament_for_flow(_) do
@@ -834,7 +834,7 @@ defmodule Milk.TournamentsTest do
 
       # numは生成する参加者の数で後に一人追加するので8 - 1 = 7
       num = 7
-      # 参加者作成，マッチリストを生成してEtsに登録
+      # 参加者作成，マッチリストを生成してTournamentProgressに登録
       {_, match_list} =
         create_entrants(num, entrant.tournament_id)
         |> Enum.map(fn x -> %{x | rank: num + 1} end)
@@ -842,7 +842,7 @@ defmodule Milk.TournamentsTest do
         |> Enum.map(fn entrant -> entrant.user_id end)
         |> Tournaments.generate_matchlist()
 
-      Ets.insert_match_list(match_list, entrant.tournament_id)
+      TournamentProgress.insert_match_list(match_list, entrant.tournament_id)
 
       assert {:ok, promoted} = Tournaments.promote_rank(attrs)
     end
@@ -857,12 +857,12 @@ defmodule Milk.TournamentsTest do
 
       # numは生成する参加者の数で後に一人追加するので8 - 1 = 7
       num = 7
-      # 参加者作成，マッチリストを生成してEtsに登録
+      # 参加者作成，マッチリストを生成してTournamentProgressに登録
       create_entrants(num, entrant.tournament_id)
       |> Enum.map(fn x -> %{x | rank: num + 1} end)
       |> Kernel.++([%{entrant | rank: num + 1}])
       |> Tournaments.generate_matchlist()
-      |> Ets.insert_match_list(entrant.tournament_id)
+      |> TournamentProgress.insert_match_list(entrant.tournament_id)
 
       assert {:error, "undefined tournament"} = Tournaments.promote_rank(attrs)
     end
@@ -877,12 +877,12 @@ defmodule Milk.TournamentsTest do
 
       # numは生成する参加者の数で後に一人追加するので8 - 1 = 7
       num = 7
-      # 参加者作成，マッチリストを生成してEtsに登録
+      # 参加者作成，マッチリストを生成してTournamentProgressに登録
       create_entrants(num, entrant.tournament_id)
       |> Enum.map(fn x -> %{x | rank: num + 1} end)
       |> Kernel.++([%{entrant | rank: num + 1}])
       |> Tournaments.generate_matchlist()
-      |> Ets.insert_match_list(entrant.tournament_id)
+      |> TournamentProgress.insert_match_list(entrant.tournament_id)
 
       assert {:error, "undefined user"} = Tournaments.promote_rank(attrs)
     end
@@ -897,12 +897,12 @@ defmodule Milk.TournamentsTest do
 
       # numは生成する参加者の数で後に一人追加するので8 - 1 = 7
       num = 7
-      # 参加者作成，マッチリストを生成してEtsに登録
+      # 参加者作成，マッチリストを生成してTournamentProgressに登録
       create_entrants(num, entrant.tournament_id)
       |> Enum.map(fn x -> %{x | rank: num + 1} end)
       |> Kernel.++([%{entrant | rank: num + 1}])
       |> Tournaments.generate_matchlist()
-      |> Ets.insert_match_list(entrant.tournament_id)
+      |> TournamentProgress.insert_match_list(entrant.tournament_id)
 
       assert {:error, "undefined user"} = Tournaments.promote_rank(attrs)
     end
@@ -916,7 +916,7 @@ defmodule Milk.TournamentsTest do
 
       # numは生成する参加者の数で後に一人追加するので8 - 1 = 7
       num = 7
-      # 参加者作成，マッチリストを生成してEtsに登録
+      # 参加者作成，マッチリストを生成してTournamentProgressに登録
       {:ok, match_list} =
         create_entrants(num, entrant.tournament_id)
         |> Enum.map(fn x -> %{x | rank: num + 1} end)
@@ -924,7 +924,7 @@ defmodule Milk.TournamentsTest do
         |> Enum.map(fn entrant -> entrant.user_id end)
         |> Tournaments.generate_matchlist()
 
-      Ets.insert_match_list(match_list, entrant.tournament_id)
+      TournamentProgress.insert_match_list(match_list, entrant.tournament_id)
 
       assert {:ok, _promoted} = Tournaments.promote_rank(attrs)
       assert Tournaments.get_rank(entrant.tournament_id, entrant.user_id) == 4
@@ -934,10 +934,10 @@ defmodule Milk.TournamentsTest do
         |> Tournaments.find_match(entrant.user_id)
         |> Tournaments.get_opponent(entrant.user_id)
 
-      Ets.delete_match_list(entrant.tournament_id)
+      TournamentProgress.delete_match_list(entrant.tournament_id)
       updated = Tournaments.delete_loser(match_list, opponent["id"])
 
-      Ets.insert_match_list(updated, entrant.tournament_id)
+      TournamentProgress.insert_match_list(updated, entrant.tournament_id)
 
       assert {:wait, nil} = Tournaments.promote_rank(attrs)
     end
@@ -957,7 +957,7 @@ defmodule Milk.TournamentsTest do
         |> Enum.map(fn entrant -> entrant.user_id end)
         |> Tournaments.generate_matchlist()
 
-      Ets.insert_match_list(match_list, entrant.tournament_id)
+      TournamentProgress.insert_match_list(match_list, entrant.tournament_id)
 
       assert {:ok, _promoted} = Tournaments.promote_rank(attrs)
       assert Tournaments.get_rank(entrant.tournament_id, entrant.user_id) == 2
@@ -967,10 +967,10 @@ defmodule Milk.TournamentsTest do
         |> Tournaments.find_match(entrant.user_id)
         |> Tournaments.get_opponent(entrant.user_id)
 
-      Ets.delete_match_list(entrant.tournament_id)
+      TournamentProgress.delete_match_list(entrant.tournament_id)
       updated = Tournaments.delete_loser(match_list, opponent["id"])
 
-      Ets.insert_match_list(updated, entrant.tournament_id)
+      TournamentProgress.insert_match_list(updated, entrant.tournament_id)
 
       assert {:wait, nil} = Tournaments.promote_rank(attrs)
     end
@@ -990,7 +990,7 @@ defmodule Milk.TournamentsTest do
         |> Enum.map(fn entrant -> entrant.user_id end)
         |> Tournaments.generate_matchlist()
 
-      Ets.insert_match_list(match_list, entrant.tournament_id)
+      TournamentProgress.insert_match_list(match_list, entrant.tournament_id)
 
       assert {:ok, _promoted} = Tournaments.promote_rank(attrs)
       assert Tournaments.get_rank(entrant.tournament_id, entrant.user_id) == 1
@@ -1000,10 +1000,10 @@ defmodule Milk.TournamentsTest do
         |> Tournaments.find_match(entrant.user_id)
         |> Tournaments.get_opponent(entrant.user_id)
 
-      Ets.delete_match_list(entrant.tournament_id)
+      TournamentProgress.delete_match_list(entrant.tournament_id)
       updated = Tournaments.delete_loser(match_list, opponent["id"])
 
-      Ets.insert_match_list(updated, entrant.tournament_id)
+      TournamentProgress.insert_match_list(updated, entrant.tournament_id)
     end
   end
 

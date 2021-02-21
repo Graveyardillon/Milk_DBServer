@@ -173,7 +173,7 @@ defmodule Milk.ChatTest do
       user1 = user_fixture("user1", "user1@gmail.com")
       user2 = user_fixture("user2", "user2@gmail.com")
       room = Chat.get_private_chat_room(user1.id, user2.id)
-      IO.inspect(room)
+      assert room == {:error, :notfound}
     end
   end
 end

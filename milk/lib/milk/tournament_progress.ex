@@ -1,21 +1,5 @@
-defmodule Milk.Ets do
+defmodule Milk.TournamentProgress do
   require Logger
-
-  def create_match_list_table() do
-    :ets.new(:match_list, [:set, :public, :named_table])
-  end
-
-  def create_match_list_with_fight_result_table() do
-    :ets.new(:match_list_with_fight_result, [:set, :public, :named_table])
-  end
-
-  def create_match_pending_list_table() do
-    :ets.new(:match_pending_list, [:set, :public, :named_table])
-  end
-
-  def create_fight_result_table() do
-    :ets.new(:fight_result, [:set, :public, :named_table])
-  end
 
   defp conn() do
     host = Application.get_env(:milk, :redix_host)
