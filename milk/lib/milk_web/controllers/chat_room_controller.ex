@@ -127,7 +127,6 @@ defmodule MilkWeb.ChatRoomController do
           icon_path: user.icon_path
         }
     end
-    |> IO.inspect()
 
     render(conn, "chat_room_with_user.json", %{info: info})
   end
