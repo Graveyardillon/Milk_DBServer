@@ -3,6 +3,8 @@ defmodule MilkWeb.ChatsController do
 
   alias Milk.Chat
   alias Milk.Chat.Chats
+  alias Milk.Media.Image
+  alias Milk.CloudStorage.Objects
 
   @doc """
   Create a new chat.
@@ -55,6 +57,62 @@ defmodule MilkWeb.ChatsController do
       with {:ok, %Chats{}} <- Chat.delete_chats(chats) do
         send_resp(conn, :no_content, "")
       end
+    end
+  end
+
+  @doc """
+  Upload a image.
+  FIXME: chatディレクトリがない場合は作成の処理入れたいな
+  """
+  def upload_image(conn, %{"image" => image}) do
+    image_path = if image != "" do
+      uuid = SecureRandom.uuid()
+      File.cp(image.path, "./static/image/chat/#{uuid}.jpg")
+      case Application.get_env(:milk, :environment) do
+        :dev -> uuid
+        :test -> uuid
+        _ ->
+          object = Milk.CloudStorage.Objects.upload("./static/image/chat/#{uuid}.jpg")
+          File.rm("./static/image/chat/#{uuid}.jpg")
+          object.name
+      end
+    else
+      nil
+    end
+    json(conn, %{local_path: image_path})
+  end
+
+  @doc """
+  Load image.
+  """
+  def load_image(conn, %{"id" => id, "path" => name}) do
+    map = case Application.get_env(:milk, :environment) do
+      :dev -> loadimg(name)
+      :test -> loadimg(name)
+      _ -> loadimg_prod(name)
+    end
+    
+    json(conn, map)
+  end
+
+  defp loadimg(name) do
+    case File.read("./static/image/chat/#{name}.jpg") do
+      {:ok, file} ->
+        b64 = Base.encode64(file)
+        %{b64: b64}
+      {:error, _} ->
+        %{error: "image not found"}
+    end
+  end
+
+  defp loadimg_prod(name) do
+    object = Objects.get(name)
+    case Image.get(object.mediaLink) do
+      {:ok, file} ->
+        b64 = Base.encode64(file)
+        %{b64: b64}
+      _ ->
+        %{error: "image not found"}
     end
   end
 
