@@ -49,6 +49,8 @@ defmodule MilkWeb.Router do
     resources "/chat", ChatsController, except: [:new, :edit, :index, :delete]
     delete "/chat", ChatsController, :delete
     post "/chat/create_dialogue", ChatsController, :create_dialogue
+    post "/chat/upload/image", ChatsController, :upload_image
+    get  "/chat/load/image", ChatsController, :load_image
 
     resources "/chat_room", ChatRoomController, except: [:new, :edit, :index, :show]
     get  "/chat_room", ChatRoomController, :show
