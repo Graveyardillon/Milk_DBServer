@@ -5,16 +5,18 @@ defmodule MilkWeb.ProfileController do
   alias Milk.Profiles
   alias Milk.Media.Image
   alias Milk.CloudStorage.Objects
+  alias Milk.Tournaments
 
   action_fallback MilkWeb.FallbackController
 
   def get_profile(conn, %{"user_id" => user_id}) do
     user = Accounts.get_user(user_id)
+
     if user do
       games = Profiles.get_game_list(user)
-      achievements = Profiles.get_achievement_list(user)
+      records = Profiles.get_all_records(user)
 
-      render(conn, "profile.json", user: user, games: games, achievements: achievements)
+      render(conn, "profile.json", user: user, games: games, records: records)
     else
       json(conn, %{result: false, error: "user not found"})
     end
@@ -29,9 +31,9 @@ defmodule MilkWeb.ProfileController do
       name = Map.get(profile_params, "name")
       bio = Map.get(profile_params, "bio")
       gameList = Map.get(profile_params, "gameList")
-      achievementList = Map.get(profile_params, "achievementList")
+      records = Map.get(profile_params, "records")
 
-      Profiles.update_profile(user, name, bio, gameList, achievementList)
+      Profiles.update_profile(user, name, bio, gameList, records)
       json(conn, %{result: true})
     else
       json(conn, %{result: false, error: "user not found"})
@@ -89,9 +91,13 @@ defmodule MilkWeb.ProfileController do
   defp get_image(path) do
     File.read(path)
   end
-
   defp get_image_prod(name) do
     object = Objects.get(name)
     Image.get(object.mediaLink)
+  end
+
+  def records(conn, %{"user_id" => user_id}) do
+    records = Tournaments.get_all_tournament_records(user_id)
+    render(conn, "records.json", records: records)
   end
 end

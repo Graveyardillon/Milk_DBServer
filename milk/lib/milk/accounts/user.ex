@@ -6,7 +6,6 @@ defmodule Milk.Accounts.User do
   alias Milk.Chat.ChatMember
   alias Milk.Chat.ChatRoom
   alias Milk.Lives.Live
-  alias Milk.Achievements.Achievement
   alias Milk.Tournaments.{Tournament, Entrant, Assistant}
   alias Milk.Notif.Notification
 
@@ -26,7 +25,6 @@ defmodule Milk.Accounts.User do
     has_many :chat, Chats
     many_to_many :chat_room, ChatRoom, join_through: "chat_member"
     has_many :chat_member, ChatMember
-    has_many :achievements, Achievement
     has_many :tournament, Tournament, foreign_key: :master_id
     has_many :entrant, Entrant
     has_many :assistant, Assistant
