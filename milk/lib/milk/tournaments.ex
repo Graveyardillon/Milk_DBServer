@@ -1293,7 +1293,7 @@ defmodule Milk.Tournaments do
   def get_all_tournament_records(user_id) do
     user_id = Tools.to_integer_as_needed(user_id)
     Entrant
-    |> where([e], e.user_id == ^user_id)
+    |> where([e], e.user_id == ^user_id and e.rank != 0)
     |> Repo.all()
     |> Repo.preload(:tournament)
   end
