@@ -2,7 +2,6 @@ defmodule MilkWeb.ProfileView do
   use MilkWeb, :view
   alias MilkWeb.ProfileView
   alias MilkWeb.GameView
-  # alias MilkWeb.AchievementView
   alias MilkWeb.TournamentView
 
   def render("index.json", %{profiles: profiles}) do

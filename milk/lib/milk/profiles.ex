@@ -6,7 +6,6 @@ defmodule Milk.Profiles do
   alias Milk.Accounts.User
 
   alias Milk.Games.Game
-  alias Milk.Achievements.Achievement
   alias Milk.Accounts.Profile
   alias Milk.Tournaments.Entrant
 
