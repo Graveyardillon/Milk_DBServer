@@ -115,9 +115,9 @@ defmodule Milk.Profiles do
     |> Repo.all
   end
 
-  def get_achievement_list(user) do
+  def get_all_records(user) do
     ids = Profile
-    |> where([p], p.user_id == ^user.id and p.content_type == "achievement")
+    |> where([p], p.user_id == ^user.id and p.content_type == "record")
     |> Repo.all()
     |> Enum.map(& &1.content_id)
 
@@ -127,7 +127,7 @@ defmodule Milk.Profiles do
     |> Repo.preload(:tournament)
   end
 
-  def update_profile(%User{} = user, name, bio, gameList, achievementList) do
+  def update_profile(%User{} = user, name, bio, gameList, records) do
     Repo.update(Ecto.Changeset.change user, name: name, bio: bio)
     Profile
     |> where([p], p.user_id == ^user.id)
@@ -138,9 +138,9 @@ defmodule Milk.Profiles do
       |> Profile.changeset(%{user_id: user.id, content_id: game, content_type: "game"})
       |> Repo.insert()
     end)
-    Enum.each(achievementList, fn achievement ->
+    Enum.each(records, fn record ->
       %Profile{}
-      |> Profile.changeset(%{user_id: user.id, content_id: achievement, content_type: "achievement"})
+      |> Profile.changeset(%{user_id: user.id, content_id: record, content_type: "record"})
       |> Repo.insert()
     end)
   end
