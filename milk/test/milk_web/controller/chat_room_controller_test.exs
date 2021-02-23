@@ -1,24 +1,27 @@
 defmodule MilkWeb.ChatRoomControllerTest do
   use MilkWeb.ConnCase
 
-  alias Milk.Chat
+  alias Milk.{
+    Chat,
+    Accounts
+  }
   alias Milk.Chat.ChatRoom
 
-  @create_attrs %{
-    count: 42,
-    last_chat: "some last_chat",
-    name: "some name"
-  }
-  @update_attrs %{
-    count: 43,
-    last_chat: "some updated last_chat",
-    name: "some updated name"
-  }
+  @create_attrs %{count: 42, last_chat: "some last_chat", name: "some name"}
+  @update_attrs %{count: 43, last_chat: "some updated last_chat",name: "some updated name"}
   @invalid_attrs %{count: nil, last_chat: nil, name: nil}
 
   def fixture(:chat_room) do
     {:ok, chat_room} = Chat.create_chat_room(@create_attrs)
     chat_room
+  end
+
+  defp fixture(:user, name) do
+    {:ok, user} =
+      %{"icon_path" => "iconpath", "language" => "somelang", "name" => name, "notification_number" => 42, "point" => 42, "email" => name<>"@email.com", "logout_fl" => true, "password" => "S1ome password"}
+      |> Accounts.create_user()
+
+    Accounts.get_user(user.id)
   end
 
   setup %{conn: conn} do
@@ -78,6 +81,18 @@ defmodule MilkWeb.ChatRoomControllerTest do
 
       # conn = get(conn, Routes.chat_room_path(conn, :show, chat_room))
       # refute json_response(conn, 200)["result"]
+    end
+  end
+
+  describe "private_room" do
+    setup [:create_chat_room]
+
+    test "private_room works fine with valid data", %{conn: conn, chat_room: _chat_room} do
+      user1 = fixture(:user, "user1")
+      user2 = fixture(:user, "user2")
+
+      conn = get(conn, Routes.chat_room_path(conn, :private_room, %{"my_id" => user1.id, "partner_id" => user2.id}))
+      assert response(conn, 200)
     end
   end
 

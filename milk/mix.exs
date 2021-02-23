@@ -92,7 +92,7 @@ defmodule Milk.MixProject do
   defp aliases do
     [
       "ecto.setup": ["ecto.create", "ecto.migrate"],
-      "ecto.reset": ["ecto.drop", "ecto.setup"],
+      "ecto.reset": ["ecto.drop", "ecto.setup", "run -e Milk.TournamentProgress.flushall"],
       test: ["ecto.create --quiet", "ecto.migrate", "test"]
     ]
   end

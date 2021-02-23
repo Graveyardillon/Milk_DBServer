@@ -16,7 +16,7 @@ defmodule MilkWeb.ChatsControllerTest do
   @invalid_attrs %{"index" => nil, "word" => nil}
 
   defp fixture(:chats) do
-    user = fixture(:user)
+    user = fixture(:user, "fixture")
     chat_room = fixture(:chat_room)
     Chat.create_chat_member(%{"user_id" => user.id, "chat_room_id" => chat_room.id})
 
@@ -28,8 +28,8 @@ defmodule MilkWeb.ChatsControllerTest do
     chats
   end
 
-  defp fixture(:user) do
-    user_valid_attrs = %{"icon_path" => "some icon_path", "language" => "some language", "name" => "some name", "notification_number" => 42, "point" => 42, "email" => "some@email.com", "logout_fl" => true, "password" => "S1ome password"}
+  defp fixture(:user, name) do
+    user_valid_attrs = %{"icon_path" => "some icon_path", "language" => "some language", "name" => "some name"<>name, "notification_number" => 42, "point" => 42, "email" => "some#{name}@email.com", "logout_fl" => true, "password" => "S1ome password"}
     {:ok, user} =
       user_valid_attrs
       |> Accounts.create_user()
@@ -49,7 +49,7 @@ defmodule MilkWeb.ChatsControllerTest do
 
   describe "create chats" do
     test "renders chats when data is valid", %{conn: conn} do
-      user = fixture(:user)
+      user = fixture(:user, "createchat")
       chat_room = fixture(:chat_room)
       Chat.create_chat_member(%{"user_id" => user.id, "chat_room_id" => chat_room.id})
       attrs =
@@ -103,10 +103,6 @@ defmodule MilkWeb.ChatsControllerTest do
     test "deletes chosen chats", %{conn: conn, chats: chats} do
       conn = delete(conn, Routes.chats_path(conn, :delete, %{chat_room_id: chats.chat_room_id, index: chats.index}))
       assert response(conn, 204)
-
-      # assert_error_sent 404, fn ->
-      #   get(conn, Routes.chats_path(conn, :show, chats))
-      # end
     end
   end
 

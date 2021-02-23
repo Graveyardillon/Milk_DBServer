@@ -7,7 +7,7 @@ defmodule Milk.Tournaments do
 
   use Timex
 
-  alias Milk.Ets
+  alias Milk.TournamentProgress
   alias Milk.Repo
   alias Ecto.Multi
 
@@ -1102,7 +1102,7 @@ defmodule Milk.Tournaments do
           |> get_entrant_by_user_id_and_tournament_id(attrs["tournament_id"])
         {_num, match_list} =
           attrs["tournament_id"]
-          |> Ets.get_match_list()
+          |> TournamentProgress.get_match_list()
           |> hd()
         # 対戦相手
         match_list
@@ -1238,7 +1238,7 @@ defmodule Milk.Tournaments do
   end
 
   defp check_has_lost?(tournament_id, user_id) do
-    case Ets.get_match_list(tournament_id) do
+    case TournamentProgress.get_match_list(tournament_id) do
       [] ->
         "IsFinished"
       [{_, match_list}] ->
@@ -1252,7 +1252,7 @@ defmodule Milk.Tournaments do
 
   defp check_is_alone?(tournament_id, user_id) do
     {_, match_list} =
-      Ets.get_match_list(tournament_id)
+      TournamentProgress.get_match_list(tournament_id)
       |> hd()
     match = find_match(match_list, user_id)
 
@@ -1264,7 +1264,7 @@ defmodule Milk.Tournaments do
   end
 
   defp check_is_pending?(tournament_id, user_id) do
-    pending_list = Ets.get_match_pending_list({user_id, tournament_id})
+    pending_list = TournamentProgress.get_match_pending_list({user_id, tournament_id})
 
     unless pending_list == [] do
       "IsPending"
