@@ -69,12 +69,7 @@ defmodule MilkWeb.ChatRoomController do
   Get private rooms of a specific user.
   """
   def private_rooms(conn, %{"user_id" => id}) do
-    user_id =
-      if is_binary(id) do
-        String.to_integer(id)
-      else
-        id
-      end
+    user_id = Tools.to_integer_as_needed(id)
 
     chat_with_user =
       Chat.get_private_chat_rooms(user_id)
@@ -100,33 +95,38 @@ defmodule MilkWeb.ChatRoomController do
   end
 
   def private_room(conn, %{"my_id" => my_id, "partner_id" => partner_id}) do
-    my_id =
-      if is_binary(my_id) do
-        String.to_integer(my_id)
-      else
-        my_id
-      end
-
-    partner_id =
-      if is_binary(partner_id) do
-        String.to_integer(partner_id)
-      else
-        partner_id
-      end
-
-    room = Chat.get_private_chat_room(my_id, partner_id)
+    my_id = Tools.to_integer_as_needed(my_id)
+    partner_id = Tools.to_integer_as_needed(partner_id)
     user = Accounts.get_user(partner_id)
 
-    info = %{
-      id: user.id,
-      room_id: room.id,
-      name: user.name,
-      email: user.auth.email,
-      last_chat: room.last_chat,
-      count: room.count,
-      is_private: room.is_private,
-      icon_path: user.icon_path
-    }
+    info = case Chat.get_private_chat_room(my_id, partner_id) do
+      {:ok, room} ->
+        %{
+          id: user.id,
+          room_id: room.id,
+          name: user.name,
+          email: user.auth.email,
+          last_chat: room.last_chat,
+          count: room.count,
+          is_private: room.is_private,
+          icon_path: user.icon_path
+        }
+      {:error, _} ->
+        {:ok, room} = Chat.create_chat_room(%{name: "%user%", member_count: 2, is_private: 2})
+        Chat.create_chat_member(%{"user_id" => my_id, "chat_room_id" => room.id})
+        Chat.create_chat_member(%{"user_id" => partner_id, "chat_room_id" => room.id})
+
+        %{
+          id: user.id,
+          room_id: room.id,
+          name: user.name,
+          email: user.auth.email,
+          last_chat: room.last_chat,
+          count: room.count,
+          is_private: room.is_private,
+          icon_path: user.icon_path
+        }
+    end
 
     render(conn, "chat_room_with_user.json", %{info: info})
   end

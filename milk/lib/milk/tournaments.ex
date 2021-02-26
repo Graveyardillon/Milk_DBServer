@@ -7,7 +7,7 @@ defmodule Milk.Tournaments do
 
   use Timex
 
-  alias Milk.Ets
+  alias Milk.TournamentProgress
   alias Milk.Repo
   alias Ecto.Multi
 
@@ -144,7 +144,16 @@ defmodule Milk.Tournaments do
   def get_tournament!(id), do: Repo.get!(Tournament, id)
 
   @doc """
-  Gets a single tournament or tournament log.
+  Gets single tournament by url.
+  """
+  def get_tournament_by_url(url) do
+    Tournament
+    |> where([t], t.url == ^url)
+    |> Repo.one()
+  end
+
+  @doc """
+  Gets single tournament or tournament log.
   If tournament does not exist in the table, it checks log table.
   """
   def get_tournament_including_logs(id) do
@@ -433,9 +442,9 @@ defmodule Milk.Tournaments do
     |> insert()
     |> case do
         {:ok, entrant} -> join_tournament_chat_room(entrant, attrs)
-        {:error,_, error, _data} when is_bitstring(error) -> {:error, error}
+        {:error, _, error, _data} when is_bitstring(error) -> {:error, error}
         {:error, _, error, _data} -> {:multierror, error.errors}
-        {:error,error} -> {:error,error}
+        {:error, error} -> {:error,error}
         _ -> {:error, nil}
     end
   end
@@ -443,22 +452,22 @@ defmodule Milk.Tournaments do
   defp user_exist_check(attrs) do
     with :false <- is_nil(attrs["user_id"]),
     :true <- Repo.exists?(from u in User, where: u.id == ^attrs["user_id"]) do
-      {:ok,attrs}
+      {:ok, attrs}
     else
       _ -> {:error,"undefined user"}
     end
   end
 
-  defp not_entrant_check({:ok, attrs})do
+  defp not_entrant_check({:ok, attrs}) do
     unless Repo.exists?(from e in Entrant, where: e.tournament_id == ^attrs["tournament_id"] and e.user_id == ^attrs["user_id"]) do
       {:ok, attrs}
     else
-      {:error,"Already joined"}
+      {:error, "Already joined"}
     end
   end
 
   defp not_entrant_check({:error, error})do
-    {:error,error}
+    {:error, error}
   end
 
   defp tournament_exist_check({:ok, attrs}) do
@@ -469,11 +478,11 @@ defmodule Milk.Tournaments do
     end
   end
 
-  defp tournament_exist_check({:error,error})do
-    {:error,error}
+  defp tournament_exist_check({:error, error})do
+    {:error, error}
   end
 
-  defp insert({:ok,attrs}) do
+  defp insert({:ok, attrs}) do
     user_id = if is_binary(attrs["user_id"]) do
       String.to_integer(attrs["user_id"])
     else
@@ -503,8 +512,8 @@ defmodule Milk.Tournaments do
     |> Repo.transaction()
   end
 
-  defp insert({:error,error})do
-    {:error,error}
+  defp insert({:error, error})do
+    {:error, error}
   end
 
   # TODO: リファクタリングできそう
@@ -667,7 +676,8 @@ defmodule Milk.Tournaments do
   @doc """
   Finds a 1v1 match of given id and match list.
   """
-  def find_match(list, id, result \\ []) do
+  def find_match(v, _) when is_integer(v), do: []
+  def find_match(list, id, result \\ []) when is_list(list) do
     Enum.reduce(list, result, fn x, acc ->
       y = process_entrant(x)
 
@@ -744,7 +754,8 @@ defmodule Milk.Tournaments do
   @doc """
   Checks whether the user has already lost.
   """
-  def has_lost?(match_list, user_id, result \\ true) do
+  def has_lost?(v, _) when is_integer(v), do: false
+  def has_lost?(match_list, user_id, result \\ true) when is_list(match_list) do
     Enum.reduce(match_list, result, fn x, acc ->
       case x do
         x when is_list(x) -> has_lost?(x, user_id, acc)
@@ -1091,7 +1102,7 @@ defmodule Milk.Tournaments do
           |> get_entrant_by_user_id_and_tournament_id(attrs["tournament_id"])
         {_num, match_list} =
           attrs["tournament_id"]
-          |> Ets.get_match_list()
+          |> TournamentProgress.get_match_list()
           |> hd()
         # 対戦相手
         match_list
@@ -1210,6 +1221,59 @@ defmodule Milk.Tournaments do
   end
 
   @doc """
+  Checks tournament state.
+  """
+  def state!(tournament_id, user_id) do
+    tournament = get_tournament(tournament_id)
+
+    unless tournament do
+      "IsFinished"
+    else
+      unless tournament.is_started do
+        "IsNotStarted"
+      else
+        check_has_lost?(tournament.id, user_id)
+      end
+    end
+  end
+
+  defp check_has_lost?(tournament_id, user_id) do
+    case TournamentProgress.get_match_list(tournament_id) do
+      [] ->
+        "IsFinished"
+      [{_, match_list}] ->
+        if has_lost?(match_list, user_id) do
+          "IsLoser"
+        else
+          check_is_alone?(tournament_id, user_id)
+        end
+    end
+  end
+
+  defp check_is_alone?(tournament_id, user_id) do
+    {_, match_list} =
+      TournamentProgress.get_match_list(tournament_id)
+      |> hd()
+    match = find_match(match_list, user_id)
+
+    if is_alone?(match) do
+      "IsAlone"
+    else
+      check_is_pending?(tournament_id, user_id)
+    end
+  end
+
+  defp check_is_pending?(tournament_id, user_id) do
+    pending_list = TournamentProgress.get_match_pending_list({user_id, tournament_id})
+
+    unless pending_list == [] do
+      "IsPending"
+    else
+      "IsInMatch"
+    end
+  end
+
+  @doc """
   Returns data for tournament brackets.
   """
   def data_for_brackets(match_list) do
@@ -1223,5 +1287,14 @@ defmodule Milk.Tournaments do
   def data_with_fight_result_for_brackets(match_list) do
     {:ok, brackets} = Tournamex.brackets_with_fight_result(match_list)
     brackets
+  end
+
+
+  def get_all_tournament_records(user_id) do
+    user_id = Tools.to_integer_as_needed(user_id)
+    Entrant
+    |> where([e], e.user_id == ^user_id and e.rank != 0)
+    |> Repo.all()
+    |> Repo.preload(:tournament)
   end
 end

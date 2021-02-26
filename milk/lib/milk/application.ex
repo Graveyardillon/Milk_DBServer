@@ -19,11 +19,8 @@ defmodule Milk.Application do
 
     # See https://hexdocs.pm/elixir/Supervisor.html
     # for other strategies and supported options
-    Milk.Ets.create_match_list_table()
-    Milk.Ets.create_match_list_with_fight_result_table()
-    Milk.Ets.create_match_pending_list_table()
-    Milk.Ets.create_fight_result_table()
     opts = [strategy: :one_for_one, name: Milk.Supervisor]
+    Milk.TournamentProgress.flushall()
     Supervisor.start_link(children, opts)
   end
 

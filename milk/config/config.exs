@@ -51,3 +51,7 @@ config :milk, Milk.UserManager.Guardian,
   no_mx_lookups: false, # can be `true`
   auth: :if_available
 
+config :goth,
+  json: "e-players6814-41b52d33988e.json" |> File.read!
+
+config :milk, :storage_bucket_id, "milk-image"

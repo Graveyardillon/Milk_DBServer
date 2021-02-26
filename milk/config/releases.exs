@@ -42,3 +42,7 @@ config :milk, MilkWeb.Endpoint,
 #
 # Then you can assemble a release by calling `mix release`.
 # See `mix help release` for more information.
+
+config :milk, :redix_host, "10.231.150.131"
+config :milk, :redix_port, 6379
+config :milk, :environment, :prod

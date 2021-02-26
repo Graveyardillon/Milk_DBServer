@@ -72,6 +72,7 @@ defmodule Milk.ChatTest do
   describe "chat_room" do
     @update_attrs %{count: 43, last_chat: "some updated last_chat", name: "some updated name"}
     @invalid_attrs %{count: nil, last_chat: nil, name: "aa"}
+    @user_valid_attrs %{"icon_path" => "some icon_path", "language" => "some language", "name" => "some name", "notification_number" => 42, "point" => 42, "email" => "some@email.com", "logout_fl" => true, "password" => "S1ome password"}
 
     setup [:create_chat_room]
     setup [:create_chat_member]
@@ -203,6 +204,7 @@ defmodule Milk.ChatTest do
       assert {:ok, %Chats{}} = Chat.delete_chats(chats)
       assert nil == Chat.get_chat(chats.chat_room_id, chats.index)
     end
+  end
 
     test "sync/1 gets all chats from user_id", %{chat: chats, user_id: user_id} do
       assert [%{"data" => chat_list, "room_id" => room_id}] = Chat.sync(user_id)

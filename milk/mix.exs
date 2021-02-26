@@ -76,7 +76,10 @@ defmodule Milk.MixProject do
       {:ex_crypto, "~> 0.10.0"},
       {:tournamex, "~> 0.1.9"},
       {:dialyxir, "~> 1.0", only: [:dev], runtime: false},
-      {:excoveralls, "~> 0.10", only: :test}
+      {:excoveralls, "~> 0.10", only: :test},
+      {:redix, ">= 0.0.0"},
+      {:google_api_storage, "~> 0.28.0"},
+      {:goth, "~> 1.2.0"}
     ]
   end
 
@@ -89,7 +92,7 @@ defmodule Milk.MixProject do
   defp aliases do
     [
       "ecto.setup": ["ecto.create", "ecto.migrate"],
-      "ecto.reset": ["ecto.drop", "ecto.setup"],
+      "ecto.reset": ["ecto.drop", "ecto.setup", "run -e Milk.TournamentProgress.flushall"],
       test: ["ecto.create --quiet", "ecto.migrate", "test"]
     ]
   end

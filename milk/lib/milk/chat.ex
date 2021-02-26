@@ -184,7 +184,10 @@ defmodule Milk.Chat do
       |> where([cr], cr.id == ^m.chat_room_id)
       |> Repo.one()
     end)
-    |> hd()
+    |> case do
+      [] -> {:error, :notfound}
+      rooms -> {:ok, hd(rooms)}
+    end
   end
 
   def get_private_chat_rooms(user_id) do

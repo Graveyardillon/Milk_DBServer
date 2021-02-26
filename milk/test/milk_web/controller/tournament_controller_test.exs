@@ -66,6 +66,16 @@ defmodule MilkWeb.TournamentControllerTest do
     end
   end
 
+  describe "get tournament by url" do
+    setup [:create_tournament]
+
+    test "get tournament by url", %{conn: conn, tournament: tournament} do
+      conn = get(conn, Routes.tournament_path(conn, :get_tournament_by_url), %{url: tournament.url})
+      t = json_response(conn, 200)["data"]
+      assert t["id"] == tournament.id
+    end
+  end
+
   describe "create tournament" do
     test "renders tournament when data is valid", %{conn: conn} do
       {:ok, user} = fixture(:user)

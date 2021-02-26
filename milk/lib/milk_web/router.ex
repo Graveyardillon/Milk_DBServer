@@ -38,6 +38,15 @@ defmodule MilkWeb.Router do
 
     post "/user_report", ReportController, :create
 
+    post "/profile", ProfileController, :get_profile
+    post "/profile/update", ProfileController, :update
+    post "/profile/update_icon", ProfileController, :update_icon
+    get  "/profile/get_icon", ProfileController, :get_icon
+    get "/profile/records", ProfileController, :records
+    
+    get  "/game/list", GameController, :list
+    post "/game/add", GameController, :create
+
     resources "/relation", RelationController, except: [:new, :edit, :index, :show, :delete]
     get  "/relation/following_list", RelationController, :following_list
     get  "/relation/following_id_list", RelationController, :following_id_list
@@ -49,10 +58,13 @@ defmodule MilkWeb.Router do
     resources "/chat", ChatsController, except: [:new, :edit, :index, :delete]
     delete "/chat", ChatsController, :delete
     post "/chat/create_dialogue", ChatsController, :create_dialogue
+    post "/chat/upload/image", ChatsController, :upload_image
+    get  "/chat/load/image", ChatsController, :load_image
 
     resources "/chat_room", ChatRoomController, except: [:new, :edit, :index, :show]
     get  "/chat_room", ChatRoomController, :show
     get  "/chat_room/private_rooms", ChatRoomController, :private_rooms
+    # FIXME: 副作用があるのでpostにしたほうがいい
     get  "/chat_room/private_room", ChatRoomController, :private_room
 
     resources "/chat_room_log", ChatRoomLogController, except: [:new, :edit]
@@ -67,7 +79,9 @@ defmodule MilkWeb.Router do
     get  "/tournament/get_by_master_id", TournamentController, :get_tournaments_by_master_id
     get  "/tournament/get_planned", TournamentController, :get_ongoing_tournaments_by_master_id
     get  "/tournament/get_game", TournamentController, :get_game
+    get  "/tournament/by_url", TournamentController, :get_tournament_by_url
     get  "/tournament/get_opponent", TournamentController, :get_opponent
+    get  "/tournament/get_participating_tournaments", TournamentController, :participating_tournaments
     get  "/tournament/participating", TournamentController, :participating_tournaments
     get  "/tournament/get_tabs", TournamentController, :tournament_topics
     get  "/tournament/get_thumbnail", TournamentController, :get_thumbnail_image
@@ -82,6 +96,7 @@ defmodule MilkWeb.Router do
     get  "/tournament/is_user_win", TournamentController, :is_user_win
     get  "/tournament/relevant", TournamentController, :relevant
     get  "/tournament/has_lost", TournamentController, :has_lost?
+    get  "/tournament/state", TournamentController, :state
     post "/tournament/start", TournamentController, :start
     post "/tournament/deleteloser", TournamentController, :delete_loser
     # FIXME: このgetはpostメソッドなので消したほうがいい
@@ -121,24 +136,7 @@ defmodule MilkWeb.Router do
     get  "/notification/list", NotifController, :get_list
     post "/notification/create", NotifController, :create
     post "/notification_log/create", NotifLogController, :create
-    delete "/notification/:id", NotifController, :delete
-  end
-
-  scope "/api", MilkWeb do
-    # post "/signup", UserController, :create
-    # post "/signin", UserController, :login
-    post "/profile", ProfileController, :get_profile
-    post "/profile/update", ProfileController, :update
-    post "/profile/update_icon", ProfileController, :update_icon
-    get  "/profile/get_icon", ProfileController, :get_icon
-    get  "/game/list", GameController, :list
-    post "/game/add", GameController, :create
-    post "/achievement/list", AchievementController, :show
-    post "/achievement", AchievementController, :create
-    post "/achievement/update", AchievementController, :update
-    get "/achievement/index", AchievementController, :index
-    delete "/achievement/delete", AchievementController, :delete
-    post "/achievement/show_one", AchievementController, :show_one
+    delete "/notification/delete", NotifController, :delete
   end
 
   scope "/debug", MilkWeb do

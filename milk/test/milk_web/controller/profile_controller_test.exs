@@ -11,7 +11,7 @@ defmodule MilkWeb.ProfileControllerTest do
     "content_type" => "42",
     "bio" => "some bio",
     "gameList" => [],
-    "achievementList" => []
+    "records" => []
   }
   @update_attrs %{
     "name" => "some name",
@@ -19,7 +19,7 @@ defmodule MilkWeb.ProfileControllerTest do
     "content_type" => "42",
     "bio" => "some bio",
     "gameList" => [],
-    "achievementList" => []
+    "records" => []
   }
   @invalid_attrs %{content_id: nil, content_type: nil, user_id: nil}
 

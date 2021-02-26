@@ -14,6 +14,7 @@ defmodule Milk.Accounts do
   alias Milk.Accounts.{User, Auth}
   alias Milk.Chat.{ChatRoom, ChatMember}
   alias Milk.Log.{ChatMemberLog, AssistantLog, EntrantLog}
+  alias Milk.CloudStorage.Objects
 
   @typedoc """
   User changeset structure.
@@ -167,10 +168,22 @@ defmodule Milk.Accounts do
   def update_icon_path(user, icon_path) do
     old_icon_path = Repo.one(from u in User, where: u.id == ^user.id, select: u.icon_path)
     unless is_nil(old_icon_path) do
-      File.rm("./static/image/profile_icon/#{old_icon_path}.png")
+      case Application.get_env(:milk, :environment) do
+        :dev -> rm(old_icon_path)
+        :test -> rm(old_icon_path)
+        _ -> rm_prod(old_icon_path)
+      end
     end
 
     Repo.update(Ecto.Changeset.change user, icon_path: icon_path)
+  end
+
+  defp rm(old_icon_path) do
+    File.rm("./static/image/profile_icon/#{old_icon_path}.png")
+  end
+
+  defp rm_prod(old_icon_path) do
+    Objects.delete(old_icon_path)
   end
 
   @doc """
@@ -335,56 +348,4 @@ defmodule Milk.Accounts do
       false
     end
   end
-
-  @doc """
-  Creates a auth.
-
-  ## Examples
-
-      iex> create_auth(%{field: value})
-      {:ok, %Auth{}}
-
-      iex> create_auth(%{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
-  """
-  # def create_auth(attrs \\ %{}) do
-  #   %Auth{}
-  #   |> Auth.changeset(attrs)
-  #   |> Repo.insert()
-  # end
-
-  @doc """
-  Updates a auth.
-
-  ## Examples
-
-      iex> update_auth(auth, %{field: new_value})
-      {:ok, %Auth{}}
-
-      iex> update_auth(auth, %{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
-  """
-  # def update_auth(%Auth{} = auth, attrs) do
-  #   auth
-  #   |> Auth.changeset(attrs)
-  #   |> Repo.update()
-  # end
-
-  @doc """
-  Deletes a auth.
-
-  ## Examples
-
-      iex> delete_auth(auth)
-      {:ok, %Auth{}}
-
-      iex> delete_auth(auth)
-      {:error, %Ecto.Changeset{}}
-
-  """
-  # def delete_auth(%Auth{} = auth) do
-  #   Repo.delete(auth)
-  # end
 end

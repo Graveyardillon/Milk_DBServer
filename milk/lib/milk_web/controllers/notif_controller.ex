@@ -18,7 +18,7 @@ defmodule MilkWeb.NotifController do
   def delete(conn, %{"id" => id}) do
     notif = Notif.get_notification!(id)
     with {:ok, %Notification{}} <- Notif.delete_notification(notif) do
-      send_resp(conn, :no_content, "")
+      json(conn, %{result: true})
     end
   end
 end
