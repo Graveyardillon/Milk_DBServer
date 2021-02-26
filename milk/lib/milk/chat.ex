@@ -20,21 +20,6 @@ defmodule Milk.Chat do
 
   require Logger
 
-  @doc """
-  Returns the list of chat_room.
-
-  ## Examples
-
-      iex> list_chat_room()
-      [%ChatRoom{}, ...]
-
-  """
-  def list_chat_room do
-    Repo.all(from cr in ChatRoom,
-    left_join: c in assoc(cr, :chat),
-    preload: [:chat])
-  end
-
   def get_all_chat(id) do
     Repo.one(from cr in ChatRoom,
     left_join: cm in assoc(cr, :chat_member),
@@ -118,18 +103,17 @@ defmodule Milk.Chat do
     chat =
       if is_list(chat_room.chat) do
         Enum.map(
-          chat_room.chat,
-          fn x ->
-            %{chat_room_id: x.chat_room_id, word: x.word, user_id: x.user_id, index: x.index, create_time: x.create_time, update_time: x.update_time}
-        end)
+          chat_room.chat,&(%{chat_room_id: &1.chat_room_id, word: &1.word, user_id: &1.user_id, index: &1.index, create_time: &1.create_time, update_time: &1.update_time
+          })
+        )
       else
         nil
       end
     if chat, do: Repo.insert_all(ChatsLog, chat)
     member =
       if is_list(chat_room.chat_member) do
-        Enum.map(chat_room.chat_member, fn x ->
-          %{chat_room_id: x.chat_room_id, user_id: x.user_id, authority: x.authority, create_time: x.create_time, update_time: x.update_time} end
+        Enum.map(
+          chat_room.chat_member, &(%{chat_room_id: &1.chat_room_id,user_id: &1.user_id, authority: &1.authority,create_time: &1.create_time,update_time: &1.update_time})
         )
       else
         nil
@@ -141,19 +125,6 @@ defmodule Milk.Chat do
     |> Repo.insert()
 
     Repo.delete(chat_room)
-  end
-
-  @doc """
-  Returns an `%Ecto.Changeset{}` for tracking chat_room changes.
-
-  ## Examples
-
-      iex> change_chat_room(chat_room)
-      %Ecto.Changeset{data: %ChatRoom{}}
-
-  """
-  def change_chat_room(%ChatRoom{} = chat_room, attrs \\ %{}) do
-    ChatRoom.changeset(chat_room, attrs)
   end
 
   @doc """
@@ -169,16 +140,16 @@ defmodule Milk.Chat do
   end
 
   @doc """
-  Get a ChatRoom by chat member id
+  Get a ChatRoom by chat member
   """
-  def get_chat_room_by_chat_member_id(chat_member) do
+  def get_chat_room_by_chat_member(chat_member) do
     ChatRoom
     |> where([cr], cr.id == ^chat_member.chat_room_id)
     |> Repo.one()
   end
 
   @doc """
-  Get ChatRooms by user id
+  Get ChatRooms by user
   """
   def get_chat_rooms_by_user_id(user_id) do
     ChatMember
@@ -236,45 +207,12 @@ defmodule Milk.Chat do
     |> hd()
   end
 
-  @doc """
-  Returns the list of chat_member.
-
-  ## Examples
-
-      iex> list_chat_member()
-      [%ChatMember{}, ...]
-
-  """
-  def list_chat_member(params) do
-    Repo.all(from cm in ChatMember,
-      join: u in assoc(cm, :user),
-      join: cr in assoc(cm, :chat_room),
-      order_by: u.create_time, preload: [chat_room: cr, user: u],
-      where: cm.chat_room_id == ^params["chat_room_id"])
-  end
-
-  @doc """
-  Gets a single chat_member.
-
-  Raises `Ecto.NoResultsError` if the Chat member does not exist.
-
-  ## Examples
-
-      iex> get_chat_member!(123)
-      %ChatMember{}
-
-      iex> get_chat_member!(456)
-      ** (Ecto.NoResultsError)
-
-  """
-  def get_chat_member!(id), do: Repo.get(ChatMember, id)
-
   def get_member(chat_room_id, user_id), do: Repo.one(from cm in ChatMember, where: cm.chat_room_id == ^chat_room_id and cm.user_id == ^user_id)
 
   @doc """
   Gets all chatmember data by user_id.
   """
-  def get_chat_member_by_user_id(user_id) do
+  defp get_chat_member_by_user_id(user_id) do
     ChatMember
     |> where([cm], cm.user_id == ^user_id)
     |> Repo.all()
@@ -381,19 +319,6 @@ defmodule Milk.Chat do
     |> Repo.all()
   end
 
-  @doc """
-  Returns an `%Ecto.Changeset{}` for tracking chat_member changes.
-
-  ## Examples
-
-      iex> change_chat_member(chat_member)
-      %Ecto.Changeset{data: %ChatMember{}}
-
-  """
-  def change_chat_member(%ChatMember{} = chat_member, attrs \\ %{}) do
-    ChatMember.changeset(chat_member, attrs)
-  end
-
   alias Milk.Chat.Chats
 
   @doc """
@@ -456,7 +381,6 @@ defmodule Milk.Chat do
     can_create? =
       !Tools.is_all_map_elements_nil?(attrs)
       |> Kernel.and(Repo.exists?(from cm in ChatMember, where: cm.user_id == ^attrs["user_id"] and cm.chat_room_id == ^attrs["chat_room_id"]))
-
     if can_create? do
       case Multi.new()
       |> Multi.run(:chat_room, fn repo, _ ->
@@ -518,26 +442,13 @@ defmodule Milk.Chat do
     Repo.delete(chats)
   end
 
-  @doc """
-  Returns an `%Ecto.Changeset{}` for tracking chats changes.
-
-  ## Examples
-
-      iex> change_chats(chats)
-      %Ecto.Changeset{data: %Chats{}}
-
-  """
-  def change_chats(%Chats{} = chats, attrs \\ %{}) do
-    Chats.changeset(chats, attrs)
-  end
-
   # 個人チャット用の関数
-  def dialogue(attrs = %{"user_id" => user_id, "partner_id" => partner_id, "word" => _word}) do
+  def dialogue(attrs = %{"user_id" => user_id, "partner_id" => partner_id, "word" => word}) do
     user_id = Tools.to_integer_as_needed(user_id)
     partner_id = Tools.to_integer_as_needed(partner_id)
 
     if Repo.exists?(from u in User, where: u.id == ^user_id)
-      and Repo.exists?(from u in User, where: u.id == ^partner_id) do
+    and Repo.exists?(from u in User, where: u.id == ^partner_id) do
 
       cr = Repo.one(from cr in ChatRoom, join: c1 in ChatMember, join: c2 in ChatMember, where: cr.member_count == 2
         and cr.id == c1.chat_room_id
@@ -550,6 +461,7 @@ defmodule Milk.Chat do
       if cr do
         attrs
         |> Map.put("chat_room_id", cr.id)
+        |> Map.put("word", word)
         |> create_chats()
       else
         {:ok, chat_room} = %ChatRoom{name: "%user%", member_count: 2, is_private: true}
@@ -569,12 +481,12 @@ defmodule Milk.Chat do
 
   # グループチャット用の関数
   # TODO: チャットメンバーのユーザーのidをすべて返すようにする
-  def dialogue(attrs = %{"user_id" => user_id, "chat_room_id" => chat_room_id, "word" => _word, "datetime" => _datetime}) do
+  def dialogue(attrs = %{"user_id" => user_id, "chat_room_id" => chat_room_id}) do
     user_id = Tools.to_integer_as_needed(user_id)
     chat_room_id = Tools.to_integer_as_needed(chat_room_id)
 
     if Repo.exists?(from u in User, where: u.id == ^user_id)
-      and Repo.exists?(from cr in ChatRoom, where: cr.id == ^chat_room_id) do
+    and Repo.exists?(from cr in ChatRoom, where: cr.id == ^chat_room_id) do
 
       _ = Repo.one(from cr in ChatRoom, where: cr.id == ^chat_room_id)
 
@@ -592,7 +504,7 @@ defmodule Milk.Chat do
     user_id
     |> get_chat_member_by_user_id()
     |> Enum.map(fn member ->
-      get_chat_room_by_chat_member_id(member)
+      get_chat_room_by_chat_member(member)
     end)
     |> Enum.filter(fn room ->
       room != nil
