@@ -332,6 +332,7 @@ defmodule MilkWeb.TournamentController do
 
   @doc """
   Start a tournament.
+  FIXME: 可読性の向上
   """
   def start(conn, %{"tournament" => %{"master_id" => master_id, "tournament_id" => tournament_id}}) do
     master_id = Tools.to_integer_as_needed(master_id)
