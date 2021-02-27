@@ -101,8 +101,7 @@ defmodule Milk.ChatTest do
     end
 
     test "get_user_in_private_room/1 returns the private chat room", %{private_chat_room: private_chat_room, user_id: user_id} do
-      assert %User{auth: %Auth{user_id: gotten_user_id}} = Chat.get_user_in_private_room(private_chat_room.id, user_id)
-      assert user_id == gotten_user_id
+      assert %User{auth: %Auth{}} = Chat.get_user_in_private_room(private_chat_room.id, user_id)
     end
     test "create_chat_room/1 with valid data creates a chat_room" do
       assert {:ok, %ChatRoom{} = chat_room} = Chat.create_chat_room(@valid_attrs)
