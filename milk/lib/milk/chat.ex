@@ -103,7 +103,7 @@ defmodule Milk.Chat do
     chat =
       if is_list(chat_room.chat) do
         Enum.map(
-          chat_room.chat,&(%{chat_room_id: &1.chat_room_id, word: &1.word, user_id: &1.user_id, index: &1.index, create_time: &1.create_time, update_time: &1.update_time
+          chat_room.chat, &(%{chat_room_id: &1.chat_room_id, word: &1.word, user_id: &1.user_id, index: &1.index, create_time: &1.create_time, update_time: &1.update_time
           })
         )
       else
