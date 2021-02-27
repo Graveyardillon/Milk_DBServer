@@ -149,7 +149,7 @@ defmodule Milk.Chat do
   end
 
   @doc """
-  Get ChatRooms by user
+  Get ChatRooms by user id.
   """
   def get_chat_rooms_by_user_id(user_id) do
     ChatMember
