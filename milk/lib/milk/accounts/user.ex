@@ -10,16 +10,15 @@ defmodule Milk.Accounts.User do
   alias Milk.Notif.Notification
 
   schema "users" do
-    field :icon_path, :string
-    field :logout_fl, :boolean, default: false
-    field :id_for_show, :integer
-    field :language, :string, default: "japan"
-
-    field :name, :string
     field :bio, :string, default: nil
+    field :icon_path, :string
+    field :id_for_show, :integer
+    field :name, :string
     field :notification_number, :integer, default: 0
     field :point, :integer, default: 0
     field :win_count, :integer, default: 0
+    field :logout_fl, :boolean, default: false
+    field :language, :string, default: "japan"
 
     has_one :auth, Auth
     has_many :chat, Chats

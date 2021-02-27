@@ -19,11 +19,11 @@ defmodule Milk.ConfNum do
   def handle_cast({:delete, email}, state), do: {:noreply, Map.delete(state, email)}
 
   def setConfNum(num) do
-      GenServer.cast(ConfNum, {:set, num})
+    GenServer.cast(ConfNum, {:set, num})
   end
 
   def getConfNum() do
-      GenServer.call(ConfNum, :get)
+    GenServer.call(ConfNum, :get)
   end
 
   def deleteConfNum(email) do
