@@ -4,6 +4,7 @@ defmodule Milk.ChatTest do
   alias Milk.Chat
   alias Milk.Accounts
   alias Milk.Chat.{ChatRoom, Chats}
+  alias Milk.Accounts.{Auth, User}
 
   @valid_attrs %{count: 42, last_chat: "some last_chat", name: "some name"}
   @room_attrs %{count: 42, last_chat: "some last_chat", name: "some name"}
@@ -48,7 +49,8 @@ defmodule Milk.ChatTest do
     {:ok, user2} = Accounts.create_user(%{@user_attrs | "name" => "mgrfewke", "email" => "mgrke@mfewif.com"})
 
     Chat.dialogue(%{"user_id" => user1.id,"partner_id" => user2.id, "word" => "fneijk"})
-    %{private_chat_room: Chat.get_private_chat_room(user1.id, user2.id), user_id: user1.id, partner_id: user2.id}
+    {:ok, priv_chat_room} = Chat.get_private_chat_room(user1.id, user2.id)
+    %{private_chat_room: priv_chat_room, user_id: user1.id, partner_id: user2.id}
   end
 
   def create_chat(_) do
@@ -99,7 +101,8 @@ defmodule Milk.ChatTest do
     end
 
     test "get_user_in_private_room/1 returns the private chat room", %{private_chat_room: private_chat_room, user_id: user_id} do
-      assert Chat.get_user_in_private_room(private_chat_room.id, user_id)
+      assert %User{auth: %Auth{user_id: gotten_user_id}} = Chat.get_user_in_private_room(private_chat_room.id, user_id)
+      assert user_id == gotten_user_id
     end
     test "create_chat_room/1 with valid data creates a chat_room" do
       assert {:ok, %ChatRoom{} = chat_room} = Chat.create_chat_room(@valid_attrs)
@@ -204,8 +207,6 @@ defmodule Milk.ChatTest do
       assert {:ok, %Chats{}} = Chat.delete_chats(chats)
       assert nil == Chat.get_chat(chats.chat_room_id, chats.index)
     end
-  end
-
     test "sync/1 gets all chats from user_id", %{chat: chats, user_id: user_id} do
       assert [%{"data" => chat_list, "room_id" => room_id}] = Chat.sync(user_id)
     end
@@ -213,7 +214,6 @@ defmodule Milk.ChatTest do
     test "get_latest_chat gets a latest chat", %{chat: chats, user_id: user_id, chat_room_id: chat_room_id} do
       assert Chat.get_latest_chat(chat_room_id) == [chats]
     end
-
     # test "change_chats/1 returns a chats changeset" do
     #   chats = chats_fixture()
     #   assert %Ecto.Changeset{} = Chat.change_chats(chats)
