@@ -21,8 +21,8 @@ defmodule Milk.Tournaments.Tournament do
     field :game_name, :string
     field :is_started, :boolean, default: false
     field :start_recruiting, EctoDate
+    
     belongs_to :platform, Platform
-
     belongs_to :game, Game
     belongs_to :master, User
     has_many :lives, Live
