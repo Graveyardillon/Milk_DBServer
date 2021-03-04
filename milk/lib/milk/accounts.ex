@@ -162,6 +162,21 @@ defmodule Milk.Accounts do
   end
 
   @doc """
+  Change a password.
+  """
+  def change_password_by_email(email, new_password) do
+    user = get_user_by_email(email)
+  end
+
+  def get_user_by_email(email) do
+    User
+    |> join(:inner, [u], a in assoc(u, :auth))
+    |> where([u, a], a.email == ^email)
+    |> preload([u, a], [auth: a])
+    |> Repo.one()
+  end
+
+  @doc """
   Updates an icon.
   """
   @spec update_icon_path(Accounts.t, binary) :: tuple()
@@ -243,7 +258,7 @@ defmodule Milk.Accounts do
       {:error, :token_expired} ->
         Guardian.signout(token)
         |> if do
-          "That token is out of time"
+          "That token is expired"
         else
           "That token is not exist"
         end
@@ -282,16 +297,16 @@ defmodule Milk.Accounts do
   end
 
   defp where_mode(query, :email, user) do
-    where(query, [u,a], a.email == ^user["email_or_username"])
+    where(query, [u, a], a.email == ^user["email_or_username"])
   end
   defp where_mode(query, :username, user) do
-    where(query, [u,a], u.name == ^user["email_or_username"])
+    where(query, [u, a], u.name == ^user["email_or_username"])
   end
   defp get_valid_user(user, password, mode) do
     User
     |> join(:inner, [u], a in assoc(u, :auth))
     |> where_mode(mode, user)
-    |> preload([u,a], [auth: a])
+    |> preload([u, a], [auth: a])
     |> Repo.one()
     |> case do
       %User{} = userinfo ->

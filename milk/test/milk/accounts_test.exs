@@ -53,6 +53,12 @@ defmodule Milk.AccountsTest do
         |> hd()
       assert user2.id == user.id
     end
+
+    test "get_user_by_email/1 gets user by given email", %{user: user} do
+      u = Accounts.get_user_by_email(user.auth.email)
+      assert u.name == user.name
+      assert u.auth.email == user.auth.email
+    end
   end
 
   describe "users create" do
