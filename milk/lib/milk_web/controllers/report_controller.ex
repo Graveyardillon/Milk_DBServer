@@ -1,7 +1,7 @@
 defmodule MilkWeb.ReportController do
   use MilkWeb, :controller
 
-  alias Milk.Reports 
+  alias Milk.Reports
 
   def create(conn, %{"report" => report_params}) do
     case Reports.create(report_params) do
