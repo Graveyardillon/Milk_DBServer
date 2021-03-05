@@ -31,12 +31,12 @@ defmodule MilkWeb.ConfNumController do
   @doc """
   Verify email by sent number.
   """
-  def conf_email(conn, %{"email" => email, "num" => num}) do
+  def conf_email(conn, %{"email" => email, "code" => code}) do
     number = 
       ConfNum.get_conf_num()
       |> Map.get(email)
 
-    if number == num do
+    if number == code do
       ConfNum.delete_conf_num(email)
       # ワンタイムパスワードの役割をするトークン
       token = publish_token_by_email(email)
