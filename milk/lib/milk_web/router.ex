@@ -131,8 +131,8 @@ defmodule MilkWeb.Router do
 
     post "/sync", SyncController, :sync
 
-    post "/send_email", ConfNumController, :send_email
-    post "/conf_email", ConfNumController, :conf_email
+    post "/conf/send_email", ConfNumController, :send_email
+    post "/conf/conf_email", ConfNumController, :conf_email
 
     get  "/notification/list", NotifController, :get_list
     post "/notification/create", NotifController, :create
