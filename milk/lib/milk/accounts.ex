@@ -97,7 +97,6 @@ defmodule Milk.Accounts do
   """
   @spec create_user(map) :: tuple()
   def create_user(without_id_attrs) do
-
     attrs =
       case without_id_attrs do
         %{"id_for_show" => id} -> %{without_id_attrs | "id_for_show" => generate_id_for_show(id)}
@@ -166,6 +165,10 @@ defmodule Milk.Accounts do
   """
   def change_password_by_email(email, new_password) do
     user = get_user_by_email(email)
+
+    user.auth
+    |> Auth.changeset(%{password: new_password})
+    |> Repo.update()
   end
 
   def get_user_by_email(email) do
@@ -190,7 +193,9 @@ defmodule Milk.Accounts do
       end
     end
 
-    Repo.update(Ecto.Changeset.change user, icon_path: icon_path)
+    user
+    |> Ecto.Changeset.change()
+    |> Repo.update(icon_path: icon_path)
   end
 
   defp rm(old_icon_path) do

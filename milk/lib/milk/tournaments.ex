@@ -12,9 +12,22 @@ defmodule Milk.Tournaments do
   alias Ecto.Multi
 
   alias Milk.Accounts
-  alias Milk.Accounts.{User, Relation}
-  alias Milk.Tournaments.{Tournament, Entrant, Assistant, TournamentChatTopic}
-  alias Milk.Log.{TournamentLog, EntrantLog, AssistantLog, TournamentChatTopicLog}
+  alias Milk.Accounts.{
+    User, 
+    Relation
+  }
+  alias Milk.Tournaments.{
+    Tournament, 
+    Entrant, 
+    Assistant, 
+    TournamentChatTopic
+  }
+  alias Milk.Log.{
+    TournamentLog, 
+    EntrantLog, 
+    AssistantLog, 
+    TournamentChatTopicLog
+  }
   alias Milk.Games.Game
   alias Milk.Chat
   alias Milk.Chat.ChatRoom
@@ -308,9 +321,10 @@ defmodule Milk.Tournaments do
   """
   def update_tournament(%Tournament{} = tournament, attrs) do
     if (!attrs["game_id"] or Repo.exists?(from g in Game, where: g.id == ^attrs["game_id"])) do
-      case tournament
+      tournament
       |> Tournament.changeset(attrs)
-      |> Repo.update() do
+      |> Repo.update()
+      |> case do
         {:ok, tournament} ->
           {:ok, tournament}
         {:error, error} ->

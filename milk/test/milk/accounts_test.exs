@@ -115,6 +115,17 @@ defmodule Milk.AccountsTest do
     # end
   end
 
+  describe "change password" do
+    setup [:create_user]
+
+    test "change_password_by_email/2 changes password", %{user: user} do
+      new_password = "newPassword123"
+      assert {:ok, _} = Accounts.change_password_by_email(user.auth.email, new_password)
+      user = Accounts.get_user(user.id)
+      assert Argon2.verify_pass(new_password, user.auth.password)
+    end
+  end
+
   describe "users delete" do
     setup [:create_user]
     @user_valid_attrs %{"icon_path" => "some icon_path", "language" => "some language", "name" => "some name", "notification_number" => 42, "point" => 42, "email" => "some@email.com", "logout_fl" => true, "password" => "S1ome password"}
