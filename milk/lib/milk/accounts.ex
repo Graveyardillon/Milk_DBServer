@@ -97,7 +97,6 @@ defmodule Milk.Accounts do
   """
   @spec create_user(map) :: tuple()
   def create_user(without_id_attrs) do
-
     attrs =
       case without_id_attrs do
         %{"id_for_show" => id} -> %{without_id_attrs | "id_for_show" => generate_id_for_show(id)}
@@ -162,6 +161,25 @@ defmodule Milk.Accounts do
   end
 
   @doc """
+  Change a password.
+  """
+  def change_password_by_email(email, new_password) do
+    user = get_user_by_email(email)
+
+    user.auth
+    |> Auth.changeset(%{password: new_password})
+    |> Repo.update()
+  end
+
+  def get_user_by_email(email) do
+    User
+    |> join(:inner, [u], a in assoc(u, :auth))
+    |> where([u, a], a.email == ^email)
+    |> preload([u, a], [auth: a])
+    |> Repo.one()
+  end
+
+  @doc """
   Updates an icon.
   """
   @spec update_icon_path(Accounts.t, binary) :: tuple()
@@ -175,7 +193,9 @@ defmodule Milk.Accounts do
       end
     end
 
-    Repo.update(Ecto.Changeset.change user, icon_path: icon_path)
+    user
+    |> Ecto.Changeset.change()
+    |> Repo.update(icon_path: icon_path)
   end
 
   defp rm(old_icon_path) do
@@ -243,7 +263,7 @@ defmodule Milk.Accounts do
       {:error, :token_expired} ->
         Guardian.signout(token)
         |> if do
-          "That token is out of time"
+          "That token is expired"
         else
           "That token is not exist"
         end
@@ -282,16 +302,16 @@ defmodule Milk.Accounts do
   end
 
   defp where_mode(query, :email, user) do
-    where(query, [u,a], a.email == ^user["email_or_username"])
+    where(query, [u, a], a.email == ^user["email_or_username"])
   end
   defp where_mode(query, :username, user) do
-    where(query, [u,a], u.name == ^user["email_or_username"])
+    where(query, [u, a], u.name == ^user["email_or_username"])
   end
   defp get_valid_user(user, password, mode) do
     User
     |> join(:inner, [u], a in assoc(u, :auth))
     |> where_mode(mode, user)
-    |> preload([u,a], [auth: a])
+    |> preload([u, a], [auth: a])
     |> Repo.one()
     |> case do
       %User{} = userinfo ->

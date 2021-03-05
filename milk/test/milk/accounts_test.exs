@@ -53,6 +53,12 @@ defmodule Milk.AccountsTest do
         |> hd()
       assert user2.id == user.id
     end
+
+    test "get_user_by_email/1 gets user by given email", %{user: user} do
+      u = Accounts.get_user_by_email(user.auth.email)
+      assert u.name == user.name
+      assert u.auth.email == user.auth.email
+    end
   end
 
   describe "users create" do
@@ -107,6 +113,17 @@ defmodule Milk.AccountsTest do
     #   assert {:error, error} = debug
 
     # end
+  end
+
+  describe "change password" do
+    setup [:create_user]
+
+    test "change_password_by_email/2 changes password", %{user: user} do
+      new_password = "newPassword123"
+      assert {:ok, _} = Accounts.change_password_by_email(user.auth.email, new_password)
+      user = Accounts.get_user(user.id)
+      assert Argon2.verify_pass(new_password, user.auth.password)
+    end
   end
 
   describe "users delete" do
