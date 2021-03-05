@@ -15,6 +15,7 @@ defmodule Milk.Application do
       {Phoenix.PubSub, [name: Milk.PubSub, adapter: Phoenix.PubSub.PG2]},
       {Task, fn -> Milk.setup_platform() end},
       Milk.ConfNum,
+      Milk.Email.Auth
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

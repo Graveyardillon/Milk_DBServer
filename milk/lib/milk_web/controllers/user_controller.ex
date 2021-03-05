@@ -118,4 +118,23 @@ defmodule MilkWeb.UserController do
     Guardian.revoke(token)
     json(conn, %{result: result})
   end
+
+  @doc """
+  Change password with email and given token.
+  """
+  def change_password(conn, %{"email" => email, "token" => token, "new_password" => new_password}) do
+    gotten_token =
+      Milk.Email.Auth.get_token()
+      |> Map.get(email)
+
+    if gotten_token == token do
+      Accounts.change_password_by_email(email, new_password)
+    else
+      {:error, "token does not match"}
+    end
+    |> case do
+      {:ok, _} -> json(conn, %{result: true})
+      _ -> json(conn, %{result: false})
+    end
+  end
 end

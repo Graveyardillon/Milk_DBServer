@@ -35,6 +35,7 @@ defmodule MilkWeb.Router do
     post "/user/signin", UserController, :login
     post "/user/login_forced", UserController, :login_forced
     post "/user/logout", UserController, :logout
+    post "/user/change_password", UserController, :change_password
 
     post "/user_report", ReportController, :create
 

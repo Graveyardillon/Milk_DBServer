@@ -94,6 +94,45 @@ defmodule MilkWeb.UserControllerTest do
     end
   end
 
+  describe "change password" do
+    test "changes password with valid request", %{conn: conn} do
+      email = "e@mail.com"
+      password = "Password123"
+      new_password = "321passworD"
+
+      {:ok, user} = Accounts.create_user(%{"name" => "name", "email" => email, "password" => password, "logout_fl" => true})
+      # トークンを取得するためにconf_num_controllerの中の処理を直接行う
+      token = 
+        :crypto.strong_rand_bytes(10)
+        |> Base.encode32()
+        |> binary_part(0, 10)
+      Milk.Email.Auth.set_token(%{email => token})
+
+      conn = post(conn, Routes.user_path(conn, :change_password), %{"email" => email, "token" => token, "new_password" => new_password})
+      assert json_response(conn, 200)["result"]
+      user = Accounts.get_user(user.id)
+      assert Argon2.verify_pass(new_password, user.auth.password)
+    end
+
+    test "cannot change password with invalid request", %{conn: conn} do
+      email = "e@mail.com"
+      password = "Password123"
+      new_password = "321passworD"
+
+      {:ok, user} = Accounts.create_user(%{"name" => "name", "email" => email, "password" => password, "logout_fl" => true})
+      # トークンを取得するためにconf_num_controllerの中の処理を直接行う
+      token = 
+        :crypto.strong_rand_bytes(10)
+        |> Base.encode32()
+        |> binary_part(0, 10)
+      Milk.Email.Auth.set_token(%{email => token})
+
+      wrong_token = "invalid"
+      conn = post(conn, Routes.user_path(conn, :change_password), %{"email" => email, "token" => wrong_token, "new_password" => new_password})
+      refute json_response(conn, 200)["result"]
+    end
+  end
+
   defp create_user(_) do
     user = fixture(:user)
     {:ok, user: user}
