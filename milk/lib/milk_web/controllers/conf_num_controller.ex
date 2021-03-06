@@ -30,10 +30,16 @@ defmodule MilkWeb.ConfNumController do
         
         ConfNum.delete_conf_num(email)
         ConfNum.set_conf_num(%{email => number})
+        Task.async(fn -> expire_conf_num(email) end)
       end)
     end
 
     json(conn, %{result: exists?})
+  end
+
+  defp expire_conf_num(email) do
+    :timer.sleep(1000*60*10)
+    ConfNum.delete_conf_num(email)
   end
 
   @doc """
