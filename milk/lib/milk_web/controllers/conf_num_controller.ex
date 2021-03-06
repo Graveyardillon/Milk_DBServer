@@ -15,16 +15,19 @@ defmodule MilkWeb.ConfNumController do
       |> Integer.to_string()
       |> String.pad_leading(4, "0")
 
-    new_email(
-      to: email,
-      from: "adhisuabeba@gmail.com",
-      subject: "confirmation number",
-      text_body: number
-    )
-    |> Milk.Mailer.deliver_now
-    
-    ConfNum.delete_conf_num(email)
-    ConfNum.set_conf_num(%{email => number})
+    Task.start_link(fn -> 
+      new_email(
+        to: email,
+        from: "adhisuabeba@gmail.com",
+        subject: "confirmation number",
+        text_body: number
+      )
+      |> Milk.Mailer.deliver_now
+      
+      ConfNum.delete_conf_num(email)
+      ConfNum.set_conf_num(%{email => number})
+    end)
+
     json(conn, %{result: true})
   end
 
