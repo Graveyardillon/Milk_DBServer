@@ -4,38 +4,47 @@ defmodule MilkWeb.ConfNumController do
   import Bamboo.Email
   alias Milk.ConfNum
   alias Milk.Email.Auth
+  alias Milk.Accounts
 
   @doc """
   Send an email for verification.
+  FIXME: emailのexist確認
   """
   def send_email(conn, %{"email" => email}) do
-    number =
-      :rand.uniform(9999)
-      |> Integer.to_string()
-      |> String.pad_leading(4, "0")
+    exists? = Accounts.is_email_exists?(email)
 
-    new_email(
-      to: email,
-      from: "adhisuabeba@gmail.com",
-      subject: "confirmation number",
-      text_body: number
-    )
-    |> Milk.Mailer.deliver_now
-    
-    ConfNum.delete_conf_num(email)
-    ConfNum.set_conf_num(%{email => number})
-    json(conn, %{result: true})
+    if exists? do
+      number =
+        :rand.uniform(9999)
+        |> Integer.to_string()
+        |> String.pad_leading(4, "0")
+
+      Task.start_link(fn -> 
+        new_email(
+          to: email,
+          from: "adhisuabeba@gmail.com",
+          subject: "confirmation number",
+          text_body: number
+        )
+        |> Milk.Mailer.deliver_now
+        
+        ConfNum.delete_conf_num(email)
+        ConfNum.set_conf_num(%{email => number})
+      end)
+    end
+
+    json(conn, %{result: exists?})
   end
 
   @doc """
   Verify email by sent number.
   """
-  def conf_email(conn, %{"email" => email, "num" => num}) do
+  def conf_email(conn, %{"email" => email, "code" => code}) do
     number = 
       ConfNum.get_conf_num()
       |> Map.get(email)
 
-    if number == num do
+    if number == code do
       ConfNum.delete_conf_num(email)
       # ワンタイムパスワードの役割をするトークン
       token = publish_token_by_email(email)

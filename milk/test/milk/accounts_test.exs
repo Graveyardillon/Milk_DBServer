@@ -126,6 +126,18 @@ defmodule Milk.AccountsTest do
     end
   end
 
+  describe "is email exists?" do
+    setup [:create_user]
+
+    test "is_email_exists? returns true with created user", %{user: user} do
+      assert Accounts.is_email_exists?(user.auth.email)
+    end
+
+    test "is_email_exists? returns false", %{user: _} do
+      refute Accounts.is_email_exists?("asdf")
+    end
+  end
+
   describe "users delete" do
     setup [:create_user]
     @user_valid_attrs %{"icon_path" => "some icon_path", "language" => "some language", "name" => "some name", "notification_number" => 42, "point" => 42, "email" => "some@email.com", "logout_fl" => true, "password" => "S1ome password"}
