@@ -93,6 +93,13 @@ defmodule Milk.Accounts do
   end
 
   @doc """
+  Checks if given email address exists.
+  """
+  def is_email_exists?(email) do
+    Repo.exists?(from a in Auth, where: a.email == ^email)
+  end
+
+  @doc """
   Creates a user.
   """
   @spec create_user(map) :: tuple()
