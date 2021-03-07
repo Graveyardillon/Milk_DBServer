@@ -928,6 +928,8 @@ defmodule Milk.Tournaments do
   """
   def get_assistant!(id), do: Repo.get!(Assistant, id)
 
+  def get_assistant(id), do: Repo.get(Assistant, id)
+
   def get_assistants(id) do
     Assistant
     |> where([a], a.tournament_id == ^id)
