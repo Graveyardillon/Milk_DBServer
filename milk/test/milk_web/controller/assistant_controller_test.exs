@@ -56,6 +56,34 @@ defmodule MilkWeb.AssistantControllerTest do
       assert %{"id" => _id} = json_response(conn, 200)["data"]
     end
 
+    test "renders not_found_user", %{conn: conn} do
+      tournament = fixture(:tournament)
+      user = fixture(:user)
+
+      conn = post(conn, Routes.assistant_path(conn, :create), %{"assistant" => %{"tournament_id" => tournament.id, "user_id" => [-1]}})
+      assert "[-1] not found" == json_response(conn, 200)["error"]
+
+      conn = post(conn, Routes.assistant_path(conn, :show, %{"id" => -1}))
+
+      assert json_response(conn, 200)["error"]|> is_nil()
+    end
+
+    test "renders not_found_tournament", %{conn: conn} do
+      tournament = fixture(:tournament)
+      user = fixture(:user)
+
+      conn = post(conn, Routes.assistant_path(conn, :create), %{"assistant" => %{"tournament_id" => -1, "user_id" => [user.id]}})
+      assert "tournament not found" == json_response(conn, 200)["error"]
+    end
+
+    # test "renders error when data is invalid", %{conn: conn} do
+    #   tournament = fixture(:tournament)
+    #   user = fixture(:user)
+
+    #   conn = post(conn, Routes.assistant_path(conn, :create), %{"assistant" => %{"tournament_id" => tournament.id, "usner_id" => [user.id]}})
+    #   assert json_response(conn, 200)["error"] == "invalid request parameters"
+    # end
+
     test "renders errors when data is invalid", %{conn: conn} do
       conn = post(conn, Routes.assistant_path(conn, :create), %{"assistant" => @invalid_attrs})
       assert %{"data" => _, "error" => _, "result" => false} = json_response(conn, 200)

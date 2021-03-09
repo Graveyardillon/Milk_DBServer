@@ -11,11 +11,13 @@ defmodule MilkWeb.AssistantController do
   """
   def index(conn, _params) do
     assistant = Tournaments.list_assistant()
-    if(assistant) do
-      render(conn, "index.json", assistant: assistant)
-    else
-      render(conn, "error.json", error: nil)
-    end
+    render(conn, "index.json", assistant: assistant)
+    # いらない気がしたのでコメントアウトしました
+    # if(assistant) do
+    #   render(conn, "index.json", assistant: assistant)
+    # else
+    #   render(conn, "error.json", error: nil)
+    # end
   end
 
   @doc """
@@ -34,8 +36,6 @@ defmodule MilkWeb.AssistantController do
 
         {:error, :tournament_not_found} ->
           render(conn, "error_string.json", data: %{data: nil, error: "tournament not found"})
-        _ ->
-          render(conn, "error_string.json", data: %{data: nil, error: "invalid request parameters"})
       end
     else
       render(conn, "error_string.json", data: %{data: nil, error: "invalid request parameters"})
@@ -43,7 +43,7 @@ defmodule MilkWeb.AssistantController do
   end
 
   def show(conn, %{"id" => id}) do
-    assistant = Tournaments.get_assistant!(id)
+    assistant = Tournaments.get_assistant(id)
     if(assistant) do
       render(conn, "show.json", assistant: assistant)
     else
