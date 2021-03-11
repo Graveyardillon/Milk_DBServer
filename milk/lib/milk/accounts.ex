@@ -201,8 +201,8 @@ defmodule Milk.Accounts do
     end
 
     user
-    |> Ecto.Changeset.change()
-    |> Repo.update(icon_path: icon_path)
+    |> User.changeset(%{icon_path: icon_path})
+    |> Repo.update()
   end
 
   defp rm(old_icon_path) do
@@ -353,7 +353,7 @@ defmodule Milk.Accounts do
 
   def login_forced(user) do
     user = get_valid_user(%{"email_or_username" => user["email"]}, user["password"], :email)
-    if(user) do
+    if user do
       user
       |> User.changeset(%{logout_fl: false})
       |> Repo.update
@@ -366,7 +366,7 @@ defmodule Milk.Accounts do
   """
   def logout(id) do
     user = Repo.one(from u in User,where: u.id ==  ^id and not u.logout_fl)
-    if(user) do
+    if user do
       user
       |> User.changeset(%{logout_fl: true})
       |> Repo.update()
