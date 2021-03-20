@@ -12,9 +12,9 @@ defmodule MilkWeb.UserController do
     case Accounts.check_duplication?(name) do
       true ->
         # FIXME: snake_case
-        json(conn, %{isUnique: false})
+        json(conn, %{is_unique: false})
       false ->
-        json(conn, %{isUnique: true})
+        json(conn, %{is_unique: true})
     end
   end
 
@@ -33,7 +33,7 @@ defmodule MilkWeb.UserController do
           _ -> render(conn, "error.json", error: error)
         end
       _ ->
-        render(conn, "show.json",user: nil)
+        render(conn, "show.json", user: nil)
     end
   end
 

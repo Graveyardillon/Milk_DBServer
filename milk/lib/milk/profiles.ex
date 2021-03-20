@@ -1,5 +1,5 @@
 defmodule Milk.Profiles do
-  
+
   import Ecto.Query, warn: false
   alias Milk.Repo
 
@@ -114,6 +114,9 @@ defmodule Milk.Profiles do
     |> Repo.all
   end
 
+  @doc """
+  Get all records of the user.
+  """
   def get_all_records(user) do
     ids = Profile
     |> where([p], p.user_id == ^user.id and p.content_type == "record")
