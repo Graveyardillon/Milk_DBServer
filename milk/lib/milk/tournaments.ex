@@ -1290,7 +1290,7 @@ defmodule Milk.Tournaments do
     opponent_pending_list = TournamentProgress.get_match_pending_list({opponent["id"], tournament_id})
 
     cond do
-      pending_list == [] && opponent_pending_list == [] ->
+      pending_list == [] ->
         "IsInMatch"
       pending_list != [] && opponent_pending_list == [] ->
         "IsWaitingForStart"
