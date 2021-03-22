@@ -571,7 +571,6 @@ defmodule Milk.TournamentsTest do
       assert "IsLoser" == Tournaments.state!(tournament.id, tournament.master_id)
     end
 
-    # FIXME: 良いテストの仕方が思いつかない
     test "state!/2 returns IsAlone" do
       %{tournament: tournament} = create_tournament_for_flow(nil)
       create_entrants(7, tournament.id)
@@ -589,8 +588,30 @@ defmodule Milk.TournamentsTest do
       assert "IsAlone" == Tournaments.state!(tournament.id, tournament.master_id)
     end
 
+    # FIXME: 良いテストの仕方が思いつかない
     test "state!/2 returns IsPending" do
+      %{tournament: tournament} = create_tournament_for_flow(nil)
+      create_entrants(7, tournament.id)
+      Tournaments.create_entrant(%{"user_id" => tournament.master_id, "tournament_id" => tournament.id})
+      start(tournament.master_id, tournament.id)
 
+      {_, match_list} =
+        tournament.id
+        |> TournamentProgress.get_match_list()
+        |> hd()
+      match = Tournaments.find_match(match_list, tournament.master_id)
+      {:ok, opponent} = Tournaments.get_opponent(match, tournament.master_id)
+
+      pending_list = TournamentProgress.get_match_pending_list({tournament.master_id, tournament.id})
+      assert pending_list == []
+
+      opponent_pending_list = TournamentProgress.get_match_pending_list({opponent["id"], tournament.id})
+      assert opponent_pending_list == []
+
+      TournamentProgress.insert_match_pending_list_table({tournament.master_id, tournament.id})
+      TournamentProgress.insert_match_pending_list_table({opponent["id"], tournament.id})
+
+      assert "IsPending" == Tournaments.state!(tournament.id, tournament.master_id)
     end
 
     test "state!/2 returns IsWaitingForStart" do
