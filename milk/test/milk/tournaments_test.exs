@@ -573,10 +573,27 @@ defmodule Milk.TournamentsTest do
 
     # FIXME: 良いテストの仕方が思いつかない
     test "state!/2 returns IsAlone" do
+      %{tournament: tournament} = create_tournament_for_flow(nil)
+      create_entrants(7, tournament.id)
+      Tournaments.create_entrant(%{"user_id" => tournament.master_id, "tournament_id" => tournament.id})
+      start(tournament.master_id, tournament.id)
 
+      {_, match_list} =
+        tournament.id
+        |> TournamentProgress.get_match_list()
+        |> hd()
+      match = Tournaments.find_match(match_list, tournament.master_id)
+      {:ok, opponent} = Tournaments.get_opponent(match, tournament.master_id)
+
+      delete_loser(tournament.id, [opponent["id"]])
+      assert "IsAlone" == Tournaments.state!(tournament.id, tournament.master_id)
     end
 
     test "state!/2 returns IsPending" do
+
+    end
+
+    test "state!/2 returns IsWaitingForStart" do
 
     end
 
