@@ -23,7 +23,10 @@ defmodule MilkWeb.Router do
   scope "/api", MilkWeb do
     pipe_through :api
 
+    get "/check/connection", ConnectionCheckController, :connection_check
+
     resources "/user", UserController, except: [:new, :edit, :index, :show, :create, :update]
+
     post  "/user/check_username_duplication", UserController, :check_username_duplication
     get  "/user/get", UserController, :show
     get  "/user/in_touch", UserController, :users_in_touch
@@ -44,7 +47,7 @@ defmodule MilkWeb.Router do
     post "/profile/update_icon", ProfileController, :update_icon
     get  "/profile/get_icon", ProfileController, :get_icon
     get "/profile/records", ProfileController, :records
-    
+
     get  "/game/list", GameController, :list
     post "/game/add", GameController, :create
 
