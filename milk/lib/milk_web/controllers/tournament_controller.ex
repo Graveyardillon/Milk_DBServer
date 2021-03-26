@@ -78,6 +78,18 @@ defmodule MilkWeb.TournamentController do
   end
 
   @doc """
+  Get a pid of a spacific tournament.
+  """
+  def get_pid(conn, %{"tournament_id" => tournament_id}) do
+    pid =
+      tournament_id
+      |> Tournaments.get_tournament!()
+      |> Map.get(:start_notification_pid)
+
+    json(conn, %{pid: pid})
+  end
+
+  @doc """
   Create a tournament.
   """
   def create(conn, %{"tournament" => tournament_params, "file" => file}) do
