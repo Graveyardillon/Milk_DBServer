@@ -769,6 +769,24 @@ defmodule MilkWeb.TournamentController do
     end
   end
 
+  @doc """
+  Registers PID of start notification.
+  The notification is handled in Web Server, so the pid does not belong to this server.
+  """
+  def register_pid_of_start_notification(conn, %{"tournament_id" => tournament_id, "pid" => pid}) do
+    tournament_id = Tools.to_integer_as_needed(tournament_id)
+
+    # FIXME: エラーハンドリング
+    tournament_id
+    |> Tournaments.get_tournament!()
+    |> Tournaments.update_tournament(%{"start_notification_pid" => pid})
+    |> case do
+      {:ok, _tournament} -> json(conn, %{result: true})
+      {:error, nil} ->  json(conn, %{result: false})
+      {:error, _error} ->  json(conn, %{result: false})
+    end
+  end
+
   # DEBUG
   # def debug_match_list(conn, %{"tournament_id" => _tournament_id}) do
   #   json(conn, %{match_list: [[1, 2], [[3, 4], [5, 6]]], result: true})
