@@ -19,15 +19,15 @@ defmodule MilkWeb.ConfNumController do
         |> Integer.to_string()
         |> String.pad_leading(4, "0")
 
-      Task.start_link(fn -> 
+      Task.start_link(fn ->
         new_email(
           to: email,
-          from: "adhisuabeba@gmail.com",
+          from: "kunosoichiro@gmail.com",
           subject: "confirmation number",
           text_body: number
         )
         |> Milk.Mailer.deliver_now
-        
+
         ConfNum.delete_conf_num(email)
         ConfNum.set_conf_num(%{email => number})
         Task.async(fn -> expire_conf_num(email) end)
@@ -46,7 +46,7 @@ defmodule MilkWeb.ConfNumController do
   Verify email by sent number.
   """
   def conf_email(conn, %{"email" => email, "code" => code}) do
-    number = 
+    number =
       ConfNum.get_conf_num()
       |> Map.get(email)
 
@@ -61,11 +61,11 @@ defmodule MilkWeb.ConfNumController do
   end
 
   defp publish_token_by_email(email) do
-    token = 
+    token =
       :crypto.strong_rand_bytes(10)
       |> Base.encode32()
       |> binary_part(0, 10)
-    
+
     Auth.set_token(%{email => token})
     token
   end
