@@ -103,7 +103,7 @@ defmodule MilkWeb.Router do
     get  "/tournament/state", TournamentController, :state
     get  "/tournament/pid", TournamentController, :get_pid
     post "/tournament/start", TournamentController, :start
-    post "/tournament/resgister/pid", TournamentController, :register_pid_of_start_notification
+    post "/tournament/register/pid", TournamentController, :register_pid_of_start_notification
     post "/tournament/deleteloser", TournamentController, :delete_loser
     # FIXME: このgetはpostメソッドなので消したほうがいい
     post "/tournament/get", TournamentController, :show
