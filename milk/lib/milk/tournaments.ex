@@ -13,19 +13,19 @@ defmodule Milk.Tournaments do
 
   alias Milk.Accounts
   alias Milk.Accounts.{
-    User, 
+    User,
     Relation
   }
   alias Milk.Tournaments.{
-    Tournament, 
-    Entrant, 
-    Assistant, 
+    Tournament,
+    Entrant,
+    Assistant,
     TournamentChatTopic
   }
   alias Milk.Log.{
-    TournamentLog, 
-    EntrantLog, 
-    AssistantLog, 
+    TournamentLog,
+    EntrantLog,
+    AssistantLog,
     TournamentChatTopicLog
   }
   alias Milk.Games.Game
@@ -1275,19 +1275,39 @@ defmodule Milk.Tournaments do
     if is_alone?(match) do
       "IsAlone"
     else
-      check_is_pending?(tournament_id, user_id)
+      check_wait_state?(tournament_id, user_id)
     end
   end
 
-  defp check_is_pending?(tournament_id, user_id) do
+  defp check_wait_state?(tournament_id, user_id) do
+    {_, match_list} =
+      TournamentProgress.get_match_list(tournament_id)
+      |> hd()
+    match = find_match(match_list, user_id)
+    # FIXME: エラーハンドリング
+    {:ok, opponent} = get_opponent(match, user_id)
     pending_list = TournamentProgress.get_match_pending_list({user_id, tournament_id})
+    opponent_pending_list = TournamentProgress.get_match_pending_list({opponent["id"], tournament_id})
 
-    unless pending_list == [] do
-      "IsPending"
-    else
-      "IsInMatch"
+    cond do
+      pending_list == [] ->
+        "IsInMatch"
+      pending_list != [] && opponent_pending_list == [] ->
+        "IsWaitingForStart"
+      true ->
+        "IsPending"
     end
   end
+
+  # defp check_is_pending?(tournament_id, user_id) do
+  #   pending_list = TournamentProgress.get_match_pending_list({user_id, tournament_id})
+
+  #   unless pending_list == [] do
+  #     "IsPending"
+  #   else
+  #     "IsInMatch"
+  #   end
+  # end
 
   @doc """
   Returns data for tournament brackets.
