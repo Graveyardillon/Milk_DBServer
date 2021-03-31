@@ -94,22 +94,20 @@ defmodule Milk.TournamentsTest do
     game
   end
 
-  defp fixture(:user) do
-    {:ok, user} = Accounts.create_user(
-      %{
-        "name" => "name1",
-        "email" => "e1@mail.com",
-        "password" => "Password123"
-      }
-    )
-    user
-  end
+  defp fixture_user(opts \\ []) do
+    num_str =
+      opts[:num]
+      |> is_nil()
+      |> unless do
+        to_string(opts[:num])
+      else
+        "1"
+      end
 
-  defp fixture(:user, num) do
     {:ok, user} = Accounts.create_user(
       %{
-        "name" => "name" <> to_string(num),
-        "email" => "e" <> to_string(num) <> "@gmail.com",
+        "name" => "name" <> num_str,
+        "email" => "e1"<> num_str <> "mail.com",
         "password" => "Password123"
       }
     )
@@ -153,7 +151,7 @@ defmodule Milk.TournamentsTest do
     end
 
     test "get_tournaments_by_master_id/1 fails to return tournaments of a user" do
-      user = fixture(:user)
+      user = fixture_user()
       _tournament = fixture_tournament()
       assert length(Tournaments.get_tournaments_by_master_id(user.id)) == 0
     end
@@ -197,7 +195,7 @@ defmodule Milk.TournamentsTest do
     end
 
     test "get_tournament_including_logs/1 with valid data gets tournament from log" do
-      user = fixture(:user)
+      user = fixture_user()
       {:ok, tournament} =
         @valid_attrs
         |> Map.put("master_id", user.id)
@@ -209,7 +207,7 @@ defmodule Milk.TournamentsTest do
     end
 
     test "get_tournament_including_logs/1 with valid data gets tournament" do
-      user = fixture(:user)
+      user = fixture_user()
       {:ok, tournament} =
         @valid_attrs
         |> Map.put("master_id", user.id)
@@ -267,7 +265,7 @@ defmodule Milk.TournamentsTest do
     end
 
     test "delete_tournament/1 of map works fine with a valid data" do
-      user = fixture(:user)
+      user = fixture_user()
       {:ok, tournament} =
         @valid_attrs
         |> Map.put("master_id", user.id)
@@ -296,7 +294,7 @@ defmodule Milk.TournamentsTest do
     end
 
     test "home_tournament_fav/1 returns tournaments which is filtered by favorite users for home screen" do
-      user1 = fixture(:user)
+      user1 = fixture_user()
       tournament = fixture_tournament()
       {:ok, _} = Tournaments.update_tournament(tournament, @home_attrs)
       Relations.create_relation(%{"follower_id" => user1.id, "followee_id" => tournament.master_id})
@@ -333,7 +331,7 @@ defmodule Milk.TournamentsTest do
   describe "game" do
     test "game_tournament/1 returns game of the tournament" do
       game = fixture(:game)
-      user = fixture(:user)
+      user = fixture_user()
 
       @valid_attrs
       |> Map.put("game_id", game.id)
@@ -396,7 +394,7 @@ defmodule Milk.TournamentsTest do
 
   describe "create entrant" do
     test "create_entrant/1 with a valid data works fine" do
-      user = fixture(:user)
+      user = fixture_user()
       tournament = fixture_tournament()
       {:ok, entrant} =
         @entrant_create_attrs
@@ -568,7 +566,7 @@ defmodule Milk.TournamentsTest do
     end
 
     test "finish/2 works fine with valid data" do
-      user = fixture(:user)
+      user = fixture_user()
       {:ok, tournament} =
         @valid_attrs
         |> Map.put("master_id", user.id)
@@ -775,7 +773,7 @@ defmodule Milk.TournamentsTest do
   end
 
   defp fixture(:assistant) do
-    user = fixture(:user)
+    user = fixture_user()
     {:ok, tournament} =
       @valid_attrs
       |> Map.put("master_id", user.id)
@@ -1234,7 +1232,7 @@ defmodule Milk.TournamentsTest do
     defp setup_tournament_having_participants(tournament_id) do
       1..7
       |> Enum.map(fn n ->
-        fixture(:user, n)
+        fixture_user(num: n)
       end)
       |> Enum.map(fn user ->
 
