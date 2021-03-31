@@ -60,22 +60,31 @@ defmodule Milk.TournamentsTest do
     "tournament_id" => nil
   }
 
-  defp fixture(:tournament) do
-    {:ok, user} = Accounts.create_user(%{"name" => "name", "email" => "e@mail.com", "password" => "Password123"})
+  defp fixture_tournament(opts \\ []) do
+    # FIXME: ここのデフォルト値は本当はfalseのほうがよさそう
+    is_started =
+      opts[:is_started]
+      |> is_nil()
+      |> unless do
+        opts[:is_started]
+      else
+        true
+      end
+
+    user_id =
+      opts[:user_id]
+      |> is_nil()
+      |> unless do
+        opts.user_id
+      else
+        {:ok, user} = Accounts.create_user(%{"name" => "name", "email" => "e@mail.com", "password" => "Password123"})
+        user.id
+      end
+
     {:ok, tournament} =
       @valid_attrs
-      |> Map.put("master_id", user.id)
-      |> Tournaments.create_tournament()
-    tournament
-  end
-
-  defp fixture(:tournament, :is_not_started) do
-    {:ok, user} = Accounts.create_user(%{"name" => "name", "email" => "e@mail.com", "password" => "Password123"})
-    {:ok, tournament} =
-      %{}
-      |> Enum.into(@valid_attrs)
-      |> Map.put("master_id", user.id)
-      |> Map.put("is_started", false)
+      |> Map.put("is_started", is_started)
+      |> Map.put("master_id", user_id)
       |> Tournaments.create_tournament()
     tournament
   end
@@ -86,55 +95,88 @@ defmodule Milk.TournamentsTest do
   end
 
   defp fixture(:user) do
-    {:ok, user} = Accounts.create_user(%{"name" => "name1", "email" => "e1@mail.com", "password" => "Password123"})
+    {:ok, user} = Accounts.create_user(
+      %{
+        "name" => "name1",
+        "email" => "e1@mail.com",
+        "password" => "Password123"
+      }
+    )
     user
   end
 
-  defp fixture(:entrant) do
-    tournament = fixture(:tournament)
+  defp fixture(:user, num) do
+    {:ok, user} = Accounts.create_user(
+      %{
+        "name" => "name" <> to_string(num),
+        "email" => "e" <> to_string(num) <> "@gmail.com",
+        "password" => "Password123"
+      }
+    )
+    user
+  end
+
+  defp fixture_entrant(opts \\ %{}) do
+    tournament =
+      opts["tournament_id"]
+      |> is_nil()
+      |> unless do
+        Tournaments.get_tournament!(opts["tournament_id"])
+      else
+        fixture_tournament()
+      end
+
+    user_id =
+      opts["user_id"]
+      |> is_nil()
+      |> unless do
+        opts["user_id"]
+      else
+        tournament.master_id
+      end
 
     {:ok, entrant} =
-      %{@entrant_create_attrs | "tournament_id" => tournament.id, "user_id" => tournament.master_id}
+      %{@entrant_create_attrs | "tournament_id" => tournament.id, "user_id" => user_id}
       |> Tournaments.create_entrant()
     entrant
   end
 
   describe "get tournament" do
     test "list_tournament/0 returns all tournament" do
-      _ = fixture(:tournament)
+      _ = fixture_tournament()
       refute length(Tournaments.list_tournament()) == 0
     end
 
     test "get_tournaments_by_master_id/1 returns tournaments of a user" do
-      tournament = fixture(:tournament)
+      tournament = fixture_tournament()
       refute length(Tournaments.get_tournaments_by_master_id(tournament.master_id)) == 0
     end
 
     test "get_tournaments_by_master_id/1 fails to return tournaments of a user" do
       user = fixture(:user)
-      _tournament = fixture(:tournament)
+      _tournament = fixture_tournament()
       assert length(Tournaments.get_tournaments_by_master_id(user.id)) == 0
     end
 
     test "get_ongoing_tournaments_by_master_id/1 fails to return user's ongoing tournaments" do
-      tournament = fixture(:tournament)
+      tournament = fixture_tournament()
       assert length(Tournaments.get_ongoing_tournaments_by_master_id(tournament.master_id)) == 0
     end
 
     test "get_tournament/1 with valid data works fine" do
-      tournament = fixture(:tournament)
+      tournament = fixture_tournament()
       assert %Tournament{} = obtained_tournament = Tournaments.get_tournament(tournament.id)
       assert obtained_tournament.id == tournament.id
     end
 
     test "get_tournament!/1 with valid data works fine" do
-      tournament = fixture(:tournament)
+      tournament = fixture_tournament()
       assert %Tournament{} = obtained_tournament = Tournaments.get_tournament!(tournament.id)
       assert obtained_tournament.id == tournament.id
     end
 
     test "get_participating_tournaments!/1 with valid data works fine" do
-      entrant = fixture(:entrant)
+      entrant = fixture_entrant()
       _tournament = Tournaments.get_tournament(entrant.tournament_id)
 
       assert tournaments = Tournaments.get_participating_tournaments(entrant.user_id, 0)
@@ -145,7 +187,7 @@ defmodule Milk.TournamentsTest do
     end
 
     test "get_masters/1 with valid data works fine" do
-      tournament = fixture(:tournament)
+      tournament = fixture_tournament()
 
       assert users = Tournaments.get_masters(tournament.id)
       assert is_list(users)
@@ -183,7 +225,7 @@ defmodule Milk.TournamentsTest do
 
   describe "create tournament" do
     test "create_tournament/1 with valid data creates a tournament" do
-      tournament = fixture(:tournament)
+      tournament = fixture_tournament()
       assert tournament.capacity == 42
       assert tournament.deadline == "2010-04-17T14:00:00Z"
       assert tournament.description == "some description"
@@ -200,7 +242,7 @@ defmodule Milk.TournamentsTest do
 
   describe "update tournament" do
     test "update_tournament/2 with valid data updates the tournament" do
-      tournament = fixture(:tournament)
+      tournament = fixture_tournament()
       assert {:ok, %Tournament{} = tournament} = Tournaments.update_tournament(tournament, @update_attrs)
       assert tournament.capacity == 43
       assert tournament.deadline == "2011-05-18T15:01:01Z"
@@ -212,14 +254,14 @@ defmodule Milk.TournamentsTest do
     end
 
     test "update_tournament/2 with invalid data returns error changeset" do
-      tournament = fixture(:tournament)
+      tournament = fixture_tournament()
       assert {:error, _} = Tournaments.update_tournament(tournament, @invalid_attrs)
     end
   end
 
   describe "delete tournament" do
     test "delete_tournament/1 of Tournament structure works fine with a valid data" do
-      tournament = fixture(:tournament)
+      tournament = fixture_tournament()
       assert {:ok, %Tournament{}} = Tournaments.delete_tournament(tournament)
       refute Tournaments.get_tournament(tournament.id)
     end
@@ -235,7 +277,7 @@ defmodule Milk.TournamentsTest do
     end
 
     test "delete_tournament/1 of id works fine with a valid data" do
-      tournament = fixture(:tournament)
+      tournament = fixture_tournament()
       assert {:ok, %Tournament{}} = Tournaments.delete_tournament(tournament.id)
       refute Tournaments.get_tournament(tournament.id)
     end
@@ -248,14 +290,14 @@ defmodule Milk.TournamentsTest do
     }
 
     test "home_tournament()/0 returns tournaments for home screen" do
-      tournament = fixture(:tournament)
+      tournament = fixture_tournament()
       {:ok, _} = Tournaments.update_tournament(tournament, @home_attrs)
       refute length(Tournaments.home_tournament()) == 0
     end
 
     test "home_tournament_fav/1 returns tournaments which is filtered by favorite users for home screen" do
       user1 = fixture(:user)
-      tournament = fixture(:tournament)
+      tournament = fixture_tournament()
       {:ok, _} = Tournaments.update_tournament(tournament, @home_attrs)
       Relations.create_relation(%{"follower_id" => user1.id, "followee_id" => tournament.master_id})
 
@@ -263,26 +305,26 @@ defmodule Milk.TournamentsTest do
     end
 
     test "home_tournament_fav/1 fails to return tournaments which is filtered by favorite users for home screen" do
-      tournament = fixture(:tournament)
+      tournament = fixture_tournament()
       {:ok, _} = Tournaments.update_tournament(tournament, @home_attrs)
       assert length(Tournaments.home_tournament_fav(tournament.master_id)) == 0
     end
 
     test "home_tournament_plan/1 returns user's tournaments" do
-      tournament = fixture(:tournament)
+      tournament = fixture_tournament()
       {:ok, _} = Tournaments.update_tournament(tournament, @home_attrs)
       refute length(Tournaments.home_tournament_plan(tournament.master_id)) == 0
     end
 
     test "home_tournament_plan/1 fails to return user's tournaments" do
-      tournament = fixture(:tournament)
+      tournament = fixture_tournament()
       assert length(Tournaments.home_tournament_plan(tournament.master_id)) == 0
     end
   end
 
   describe "get tournament by url" do
     test "get_tournament_by_url/1 works with valid data" do
-      tournament = fixture(:tournament)
+      tournament = fixture_tournament()
       t = Tournaments.get_tournament_by_url(tournament.url)
       assert tournament.id == t.id
     end
@@ -355,7 +397,7 @@ defmodule Milk.TournamentsTest do
   describe "create entrant" do
     test "create_entrant/1 with a valid data works fine" do
       user = fixture(:user)
-      tournament = fixture(:tournament)
+      tournament = fixture_tournament()
       {:ok, entrant} =
         @entrant_create_attrs
         |> Map.put("tournament_id", tournament.id)
@@ -706,7 +748,7 @@ defmodule Milk.TournamentsTest do
   end
 
   defp create_tournament_for_flow(_) do
-    tournament = fixture(:tournament, :is_not_started)
+    tournament = fixture_tournament(is_started: false)
     %{tournament: tournament}
   end
 
@@ -728,7 +770,7 @@ defmodule Milk.TournamentsTest do
 
   # setup用
   defp create_entrant(_) do
-    entrant = fixture(:entrant)
+    entrant = fixture_entrant()
     %{entrant: entrant}
   end
 
@@ -764,7 +806,7 @@ defmodule Milk.TournamentsTest do
   end
 
   defp fixture(:tournament_chat_topic) do
-    tournament = fixture(:tournament)
+    tournament = fixture_tournament()
     {:ok, chat_room} = Chat.create_chat_room(%{"name" => "name"})
 
     {:ok, topic} =
@@ -826,7 +868,7 @@ defmodule Milk.TournamentsTest do
 
   describe "initialize rank" do
     test "initialize_rank works fine with valid data" do
-      tournament = fixture(:tournament)
+      tournament = fixture_tournament()
       entrants = create_entrants(6, tournament.id)
       id_list = Enum.map(entrants, fn entrant -> entrant.user_id end)
       {:ok, match_list} = Tournaments.generate_matchlist(id_list)
@@ -1174,6 +1216,29 @@ defmodule Milk.TournamentsTest do
         [%{"user_id" => 6, "is_loser" => false, "name" => "testname", "win_count" => 0}, %{"user_id" => 5, "is_loser" => false, "name" => "testname", "win_count" => 0}],
         [%{"user_id" => 4, "is_loser" => false, "name" => "testname", "win_count" => 0}, %{"user_id" => 3, "is_loser" => false, "name" => "testname", "win_count" => 0}],
         [%{"user_id" => 2, "is_loser" => false, "name" => "testname", "win_count" => 0}, %{"user_id" => 1, "is_loser" => false, "name" => "testname", "win_count" => 0}]]
+    end
+  end
+
+  describe "get all tournament records" do
+    setup [:create_entrant]
+
+    test "get_all_tournament_records/1 works fine with valid data", %{entrant: entrant} do
+      user_id = entrant.user_id
+      Tournaments.get_all_tournament_records(user_id)
+      |> IO.inspect(label: :one)
+
+
+    end
+
+    # add 7 people
+    defp setup_tournament_having_participants(tournament_id) do
+      1..7
+      |> Enum.map(fn n ->
+        fixture(:user, n)
+      end)
+      |> Enum.map(fn user ->
+
+      end)
     end
   end
 end
