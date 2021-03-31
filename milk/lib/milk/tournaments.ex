@@ -1344,9 +1344,11 @@ defmodule Milk.Tournaments do
     EntrantLog
     |> where([el], el.user_id == ^user_id and el.rank != 0)
     |> Repo.all()
-    |> Repo.preload(:tournament)
-    |> Enum.map(fn log ->
-      IO.inspect(log)
+    |> Enum.map(fn entrant_log ->
+      TournamentLog
+      |> where([tl], tl.tournament_id == ^entrant_log.tournament_id)
+      |> Repo.one()
     end)
+    |> IO.inspect()
   end
 end

@@ -14,7 +14,10 @@ defmodule Milk.TournamentsTest do
     Entrant,
     TournamentChatTopic
   }
-  alias Milk.Log.EntrantLog
+  alias Milk.Log.{
+    EntrantLog,
+    TournamentLog
+  }
   alias Milk.Accounts.User
 
   # 外部キーが二つ以上の場合は %{"capacity" => 42} のようにしなければいけない
@@ -71,11 +74,11 @@ defmodule Milk.TournamentsTest do
         true
       end
 
-    user_id =
-      opts[:user_id]
+    master_id =
+      opts[:master_id]
       |> is_nil()
       |> unless do
-        opts.user_id
+        opts[:master_id]
       else
         {:ok, user} = Accounts.create_user(%{"name" => "name", "email" => "e@mail.com", "password" => "Password123"})
         user.id
@@ -84,7 +87,7 @@ defmodule Milk.TournamentsTest do
     {:ok, tournament} =
       @valid_attrs
       |> Map.put("is_started", is_started)
-      |> Map.put("master_id", user_id)
+      |> Map.put("master_id", master_id)
       |> Tournaments.create_tournament()
     tournament
   end
@@ -1222,10 +1225,28 @@ defmodule Milk.TournamentsTest do
 
     test "get_all_tournament_records/1 works fine with valid data", %{entrant: entrant} do
       user_id = entrant.user_id
-      Tournaments.get_all_tournament_records(user_id)
-      |> IO.inspect(label: :one)
 
+      user_id
+      |> Tournaments.get_all_tournament_records()
+      |> length()
+      |> (fn records_length ->
+        assert records_length == 0
+      end).()
 
+      setup_tournament_having_participants(entrant.tournament_id)
+      Tournaments.finish(entrant.tournament_id, user_id)
+
+      user_id
+      |> Tournaments.get_all_tournament_records()
+      |> Enum.map(fn record ->
+        assert %TournamentLog{} = record
+        assert record.tournament_id == entrant.tournament_id
+        record
+      end)
+      |> length()
+      |> (fn records_length ->
+        assert records_length == 1
+      end).()
     end
 
     # add 7 people
@@ -1235,7 +1256,8 @@ defmodule Milk.TournamentsTest do
         fixture_user(num: n)
       end)
       |> Enum.map(fn user ->
-
+        %{"tournament_id" => tournament_id, "user_id" => user.id}
+        |> Tournaments.create_entrant()
       end)
     end
   end
