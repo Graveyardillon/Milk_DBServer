@@ -91,6 +91,7 @@ defmodule MilkWeb.ProfileController do
   defp get_image(path) do
     File.read(path)
   end
+
   defp get_image_prod(name) do
     object = Objects.get(name)
     Image.get(object.mediaLink)

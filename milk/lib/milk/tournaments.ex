@@ -800,6 +800,7 @@ defmodule Milk.Tournaments do
   #   end
   # end
 
+  # FIXME: 引数の順序がfinishと逆
   def start(master_id, tournament_id) do
     unless is_nil(master_id) or is_nil(tournament_id) do
       unless number_of_entrants(tournament_id) <= 1 do
@@ -1335,11 +1336,13 @@ defmodule Milk.Tournaments do
     EntrantLog
     |> where([el], el.user_id == ^user_id and el.rank != 0)
     |> Repo.all()
-    # |> Enum.map(fn entrant_log ->
-    #   TournamentLog
-    #   |> where([tl], tl.tournament_id == ^entrant_log.tournament_id)
-    #   |> Repo.one()
-    # end)
-    # |> IO.inspect()
+    |> Enum.map(fn entrant_log ->
+      tlog =
+        TournamentLog
+        |> where([tl], tl.tournament_id == ^entrant_log.tournament_id)
+        |> Repo.one()
+
+      Map.put(entrant_log, :tournament_log, tlog)
+    end)
   end
 end
