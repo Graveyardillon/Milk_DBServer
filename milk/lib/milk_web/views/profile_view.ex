@@ -37,12 +37,11 @@ defmodule MilkWeb.ProfileView do
   def render("records.json", %{records: records}) do
     %{data: render_many(records, ProfileView, "rank.json", as: :rank)}
   end
-  
+
   def render("rank.json", %{rank: rank}) do
     %{
       tournament: render_one(rank.tournament, TournamentView, "tournament.json"),
       rank: rank.rank
     }
   end
-
 end

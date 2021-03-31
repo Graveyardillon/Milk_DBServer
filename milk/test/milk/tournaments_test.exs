@@ -1239,7 +1239,7 @@ defmodule Milk.TournamentsTest do
       user_id
       |> Tournaments.get_all_tournament_records()
       |> Enum.map(fn record ->
-        assert %TournamentLog{} = record
+        assert %EntrantLog{} = record
         assert record.tournament_id == entrant.tournament_id
         record
       end)
