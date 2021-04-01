@@ -4,7 +4,11 @@ defmodule Milk.Tournaments.Tournament do
   alias Milk.Games.Game
   alias Milk.Accounts.User
   alias Milk.Lives.Live
-  alias Milk.Tournaments.{Entrant, Assistant, TournamentChatTopic}
+  alias Milk.Tournaments.{
+    Entrant,
+    Assistant,
+    TournamentChatTopic
+  }
   alias Milk.Platforms.Platform
 
   schema "tournament" do
