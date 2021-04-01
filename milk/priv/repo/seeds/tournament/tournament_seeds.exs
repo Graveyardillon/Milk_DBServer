@@ -1,6 +1,5 @@
 use Timex
 
-alias Milk.Tournaments
 alias Milk.Tournaments.Tournament
 alias Milk.Accounts.User
 alias Milk.Repo

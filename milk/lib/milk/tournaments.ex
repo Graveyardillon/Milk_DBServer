@@ -33,6 +33,7 @@ defmodule Milk.Tournaments do
   alias Milk.Chat.ChatRoom
   alias Milk.Log
   alias Common.Tools
+
   require Integer
   require Logger
 
