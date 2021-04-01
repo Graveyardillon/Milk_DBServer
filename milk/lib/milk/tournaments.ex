@@ -786,29 +786,31 @@ defmodule Milk.Tournaments do
   FIXME: リファクタリング
   """
   def start(master_id, tournament_id) do
-    unless is_nil(master_id) or is_nil(tournament_id) do
-      unless number_of_entrants(tournament_id) <= 1 do
-        tournament =
-          Tournament
-          |> where([t], t.master_id == ^master_id and t.id == ^tournament_id)
-          |> Repo.one()
-        unless is_nil(tournament) do
-          unless tournament.is_started do
-            tournament
-            |> Tournament.changeset(%{is_started: true})
-            |> Repo.update()
-          else
-            {:error, "tournament is already started"}
-          end
-        else
-          {:error, "cannot find tournament"}
-        end
-      else
-        delete_tournament(tournament_id)
-        {:error, "too few entrants"}
-      end
+    nil_check_on_start?(master_id, tournament_id)
+    |> check_entrant(tournament_id)
+    |> check_tournament_for_start(master_id, tournament_id)
+    |> check_tournament_has_started()
+  end
+
+  defp nil_check_on_start?(master_id, tournament_id) do
+    if !is_nil(master_id) and !is_nil(tournament_id) do
+      {:ok, nil}
     else
       {:error, "master_id or tournament_id is nil"}
+    end
+  end
+
+  defp check_entrant(check, tournament_id) do
+    case check do
+      {:ok, _} ->
+        if number_of_entrants(tournament_id) > 1 do
+          {:ok, nil}
+        else
+          delete_tournament(tournament_id)
+          {:error, "too few entrants"}
+        end
+      {:error, reason} ->
+        {:error, reason}
     end
   end
 
@@ -818,6 +820,65 @@ defmodule Milk.Tournaments do
     |> Repo.all()
     |> length()
   end
+
+  defp check_tournament_for_start(check, master_id, tournament_id) do
+    case check do
+      {:ok, nil} ->
+        tournament =
+          Tournament
+          |> where([t], t.master_id == ^master_id and t.id == ^tournament_id)
+          |> Repo.one()
+        unless is_nil(tournament) do
+          {:ok, tournament}
+        else
+          {:error, "cannot find tournament"}
+        end
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  defp check_tournament_has_started(check) do
+    case check do
+      {:ok, tournament} ->
+        unless tournament.is_started do
+          tournament
+          |> Tournament.changeset(%{is_started: true})
+          |> Repo.update()
+        else
+          {:error, "tournament is already started"}
+        end
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  # def start(master_id, tournament_id) do
+  #   unless is_nil(master_id) or is_nil(tournament_id) do
+  #     unless number_of_entrants(tournament_id) <= 1 do
+  #       tournament =
+  #         Tournament
+  #         |> where([t], t.master_id == ^master_id and t.id == ^tournament_id)
+  #         |> Repo.one()
+  #       unless is_nil(tournament) do
+  #         unless tournament.is_started do
+  #           tournament
+  #           |> Tournament.changeset(%{is_started: true})
+  #           |> Repo.update()
+  #         else
+  #           {:error, "tournament is already started"}
+  #         end
+  #       else
+  #         {:error, "cannot find tournament"}
+  #       end
+  #     else
+  #       delete_tournament(tournament_id)
+  #       {:error, "too few entrants"}
+  #     end
+  #   else
+  #     {:error, "master_id or tournament_id is nil"}
+  #   end
+  # end
 
   @doc """
   Finish a tournament.
