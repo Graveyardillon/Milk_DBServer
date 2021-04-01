@@ -853,33 +853,6 @@ defmodule Milk.Tournaments do
     end
   end
 
-  # def start(master_id, tournament_id) do
-  #   unless is_nil(master_id) or is_nil(tournament_id) do
-  #     unless number_of_entrants(tournament_id) <= 1 do
-  #       tournament =
-  #         Tournament
-  #         |> where([t], t.master_id == ^master_id and t.id == ^tournament_id)
-  #         |> Repo.one()
-  #       unless is_nil(tournament) do
-  #         unless tournament.is_started do
-  #           tournament
-  #           |> Tournament.changeset(%{is_started: true})
-  #           |> Repo.update()
-  #         else
-  #           {:error, "tournament is already started"}
-  #         end
-  #       else
-  #         {:error, "cannot find tournament"}
-  #       end
-  #     else
-  #       delete_tournament(tournament_id)
-  #       {:error, "too few entrants"}
-  #     end
-  #   else
-  #     {:error, "master_id or tournament_id is nil"}
-  #   end
-  # end
-
   @doc """
   Finish a tournament.
   トーナメントを終了させ、終了したトーナメントをログの方に移行して削除する

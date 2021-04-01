@@ -491,18 +491,26 @@ defmodule Milk.TournamentsTest do
   describe "tournament flow functions" do
     setup [:create_tournament_for_flow]
 
-    # FIXME: startのテストを増やしたほうがいい
-    # test "start/2 with valid data works fine", %{tournament: tournament} do
-    #   assert {:ok, _tournament} = Tournaments.start(tournament.master_id, tournament.id)
-    #   assert {:error, _} = Tournaments.start(tournament.master_id, tournament.id)
-    # end
-
-    test "start/2 with only one entrant does not work", %{tournament: tournament} do
-      assert {:error, "too few entrants"} = Tournaments.start(tournament.master_id, tournament.id)
+    test "start/2 with valid data works fine", %{tournament: tournament} do
+      fixture_entrant(%{"tournament_id" => tournament.id})
+      user = fixture_user()
+      fixture_entrant(%{"tournament_id" => tournament.id, "user_id" => user.id})
+      assert {:ok, _tournament} = Tournaments.start(tournament.master_id, tournament.id)
+      assert {:error, "tournament is already started"} == Tournaments.start(tournament.master_id, tournament.id)
     end
 
-    test "start/2 with invalid data does not work", %{tournament: _tournament} do
-      assert {:error, _tournament} = Tournaments.start(nil, nil)
+    test "start/2 with only one entrant returns too few entrants error.", %{tournament: tournament} do
+      assert {:error, "too few entrants"} == Tournaments.start(tournament.master_id, tournament.id)
+    end
+
+    test "start/2 with nil returns master_id or tournament_id is nil error", %{tournament: _tournament} do
+      assert {:error, "master_id or tournament_id is nil"} == Tournaments.start(nil, nil)
+      assert {:error, "master_id or tournament_id is nil"} == Tournaments.start(1, nil)
+      assert {:error, "master_id or tournament_id is nil"} == Tournaments.start(nil, 1)
+    end
+
+    test "start/2 with undefined tournament returns cannot find tournament error", %{tournament: tournament} do
+      # FIXME: ここには来ない
     end
 
     test "generate_matchlist/1 with valid data works fine", %{tournament: _tournament} do
