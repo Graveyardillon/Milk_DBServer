@@ -7,6 +7,7 @@ alias Milk.Tournaments.{
   Tournament
 }
 alias Milk.Repo
+alias Milk.Tournaments
 
 import Ecto.Query, only: [from: 2]
 
@@ -34,3 +35,5 @@ end)
     user_id: user.id
   }
 end)
+
+Tournaments.start(tournament.master_id, tournament.id)

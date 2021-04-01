@@ -782,26 +782,9 @@ defmodule Milk.Tournaments do
 
   @doc """
   Starts a tournament.
+  FIXME: 引数の順序がfinishと逆
+  FIXME: リファクタリング
   """
-  # def start(master_id, tournament_id) do
-  #   with :false <- is_nil(master_id) or is_nil(tournament_id),
-  #   tournament <- Tournament
-  #     |> where([t], t.master_id == ^master_id and t.id == ^tournament_id)
-  #     |> Repo.one(),
-  #     :false <- is_nil(tournament) do
-  #     unless tournament.is_started do
-  #       tournament
-  #       |> Tournament.changeset(%{is_started: true})
-  #       |> Repo.update()
-  #     else
-  #       {:error, nil}
-  #     end
-  #   else
-  #     _ -> {:error, "unexpected error"}
-  #   end
-  # end
-
-  # FIXME: 引数の順序がfinishと逆
   def start(master_id, tournament_id) do
     unless is_nil(master_id) or is_nil(tournament_id) do
       unless number_of_entrants(tournament_id) <= 1 do
