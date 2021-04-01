@@ -1,7 +1,10 @@
 use Timex
 
 alias Milk.Tournaments.Tournament
-alias Milk.Accounts.User
+alias Milk.Accounts.{
+  Auth,
+  User
+}
 alias Milk.Repo
 
 user = Repo.insert! %User{
@@ -9,6 +12,11 @@ user = Repo.insert! %User{
   icon_path: nil,
   id_for_show: -1,
   name: "Test tournament holder"
+}
+Repo.insert! %Auth{
+  user_id: user.id,
+  email: user.name <> "@mail.com",
+  password: "LookAtMePW"
 }
 
 now = Timex.now()

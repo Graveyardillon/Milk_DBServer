@@ -1,4 +1,7 @@
-alias Milk.Accounts.User
+alias Milk.Accounts.{
+  User,
+  Auth
+}
 alias Milk.Tournaments.{
   Entrant,
   Tournament
@@ -16,6 +19,13 @@ tournament = Repo.one(from t in Tournament, where: t.capacity == 4)
     icon_path: nil,
     id_for_show: n,
     name: "TestEntrantOfSize4Tournament" <> to_string(n)
+  }
+end)
+|> Enum.map(fn user ->
+  Repo.insert! %Auth{
+    user_id: user.id,
+    email: user.name <> "@mail.com",
+    password: "thisisaSECURITYHOLE"
   }
 end)
 |> Enum.each(fn user ->

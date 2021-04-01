@@ -167,51 +167,51 @@ defmodule MilkWeb.TournamentController do
   """
   def home(conn, %{"filter" => "fav", "user_id" => user_id}) do
     tournaments =
-    Tournaments.home_tournament_fav(user_id)
-    |> Enum.map(fn tournament ->
-      entrants =
-        Tournaments.get_entrants(tournament.id)
-        |> Enum.map(fn entrant ->
-          Accounts.get_user(entrant.user_id)
-        end)
+      Tournaments.home_tournament_fav(user_id)
+      |> Enum.map(fn tournament ->
+        entrants =
+          Tournaments.get_entrants(tournament.id)
+          |> Enum.map(fn entrant ->
+            Accounts.get_user(entrant.user_id)
+          end)
 
-      %{tournament: tournament, entrants: entrants}
-    end)
+        %{tournament: tournament, entrants: entrants}
+      end)
 
     render(conn, "home.json", tournaments_info: tournaments)
   end
 
   def home(conn, %{"filter" => "plan", "user_id" => user_id}) do
     tournaments =
-    Tournaments.home_tournament_plan(user_id)
-    |> Enum.map(fn tournament ->
-      entrants =
-        Tournaments.get_entrants(tournament.id)
-        |> Enum.map(fn entrant ->
-          Accounts.get_user(entrant.user_id)
-        end)
+      Tournaments.home_tournament_plan(user_id)
+      |> Enum.map(fn tournament ->
+        entrants =
+          Tournaments.get_entrants(tournament.id)
+          |> Enum.map(fn entrant ->
+            Accounts.get_user(entrant.user_id)
+          end)
 
-      %{tournament: tournament, entrants: entrants}
-    end)
+        %{tournament: tournament, entrants: entrants}
+      end)
 
     render(conn, "home.json", tournaments_info: tournaments)
   end
 
   def home(conn, %{"date_offset" => date_offset, "offset" => offset}) do
     tournaments =
-    Tournaments.home_tournament(date_offset, offset)
-    |> Enum.map(fn tournament ->
-      entrants =
-        Tournaments.get_entrants(tournament.id)
-        |> Enum.map(fn entrant ->
-          Accounts.get_user(entrant.user_id)
-        end)
+      Tournaments.home_tournament(date_offset, offset)
+      |> Enum.map(fn tournament ->
+        entrants =
+          Tournaments.get_entrants(tournament.id)
+          |> Enum.map(fn entrant ->
+            Accounts.get_user(entrant.user_id)
+          end)
 
-      %{
-        tournament: tournament,
-        entrants: entrants
-      }
-    end)
+        %{
+          tournament: tournament,
+          entrants: entrants
+        }
+      end)
 
     render(conn, "home.json", tournaments_info: tournaments)
   end
