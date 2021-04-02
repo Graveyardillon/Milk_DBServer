@@ -23,7 +23,7 @@ tournament = Repo.one(from t in Tournament, where: t.capacity == 4)
     bio: "Test user for filling size 4 tournament.",
     icon_path: nil,
     id_for_show: n,
-    name: "TestEntrantOfSize4Tournament" <> to_string(n)
+    name: to_string(n) <> "TestEntrantOfSize4Tournament"
   }
 end)
 |> Enum.map(fn user ->
