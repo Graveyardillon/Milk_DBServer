@@ -40,13 +40,14 @@ defmodule MilkWeb.EntrantControllerTest do
       |> Tournaments.create_entrant()
     entrant
   end
+
   def fixture(:tournament) do
-      {:ok, user} = Accounts.create_user(%{"name" => "name", "email" => "e@mail.com", "password" => "Password123"})
-      %{}
-      |> Enum.into(@tournament_valid_attrs)
-      |> Map.put("master_id", user.id)
-      |> Tournaments.create_tournament()
-    end
+    {:ok, user} = Accounts.create_user(%{"name" => "name", "email" => "e@mail.com", "password" => "Password123"})
+    %{}
+    |> Enum.into(@tournament_valid_attrs)
+    |> Map.put("master_id", user.id)
+    |> Tournaments.create_tournament()
+  end
 
   setup %{conn: conn} do
     {:ok, conn: put_req_header(conn, "accept", "application/json")}
