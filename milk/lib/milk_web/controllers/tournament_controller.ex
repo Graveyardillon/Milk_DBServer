@@ -1,6 +1,8 @@
 defmodule MilkWeb.TournamentController do
   use MilkWeb, :controller
 
+  require Logger
+
   alias Milk.{
     Accounts,
     Chat,
@@ -450,15 +452,24 @@ defmodule MilkWeb.TournamentController do
     tournament_id = Tools.to_integer_as_needed(tournament_id)
     user_id = Tools.to_integer_as_needed(user_id)
 
+    Logger.info("Gonna get match list")
     case TournamentProgress.get_match_list(tournament_id) do
-      [] -> json(conn, %{result: false, match: nil})
+      [] ->
+        Logger.info("result false")
+        json(conn, %{result: false, match: nil})
       list when is_list(list) ->
+        Logger.info("result true")
         {_, match_list} = hd(list)
+        Logger.info("after hd list")
         match = Tournaments.find_match(match_list, user_id)
+        Logger.info("after finding match")
         result = Tournaments.is_alone?(match)
+        Logger.info("got result")
 
         json(conn, %{result: result, match: match})
-      value -> json(conn, %{result: false, match: nil})
+      _value ->
+        Logger.info("nil no yatsu")
+        json(conn, %{result: false, match: nil})
     end
   end
 
