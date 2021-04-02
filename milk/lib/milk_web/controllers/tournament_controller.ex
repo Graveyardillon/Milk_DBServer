@@ -1,14 +1,16 @@
 defmodule MilkWeb.TournamentController do
   use MilkWeb, :controller
 
-  alias Milk.TournamentProgress
-  alias Milk.Accounts
-  alias Milk.Chat
-  alias Milk.Log
-  alias Milk.Relations
-  alias Milk.Tournaments
-  alias Milk.Tournaments.Tournament
+  alias Milk.{
+    Accounts,
+    Chat,
+    Log,
+    Relations,
+    TournamentProgress,
+    Tournaments
+  }
   alias Milk.CloudStorage.Objects
+  alias Milk.Tournaments.Tournament
   alias Milk.Media.Image
   alias Common.Tools
 

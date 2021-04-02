@@ -6,12 +6,16 @@ defmodule Milk.Tournaments do
   import Ecto.Query, warn: false
 
   use Timex
-
-  alias Milk.TournamentProgress
-  alias Milk.Repo
   alias Ecto.Multi
+  alias Common.Tools
 
-  alias Milk.Accounts
+  alias Milk.{
+    Accounts,
+    Chat,
+    Log,
+    TournamentProgress,
+    Repo
+  }
   alias Milk.Accounts.{
     User,
     Relation
@@ -29,10 +33,7 @@ defmodule Milk.Tournaments do
     TournamentChatTopicLog
   }
   alias Milk.Games.Game
-  alias Milk.Chat
   alias Milk.Chat.ChatRoom
-  alias Milk.Log
-  alias Common.Tools
 
   require Integer
   require Logger
@@ -1257,6 +1258,7 @@ defmodule Milk.Tournaments do
 
   @doc """
   Checks tournament state.
+  # FIXME: 大会には参加していない主催者のstateを追加する
   """
   def state!(tournament_id, user_id) do
     tournament = get_tournament(tournament_id)
@@ -1317,16 +1319,6 @@ defmodule Milk.Tournaments do
         "IsPending"
     end
   end
-
-  # defp check_is_pending?(tournament_id, user_id) do
-  #   pending_list = TournamentProgress.get_match_pending_list({user_id, tournament_id})
-
-  #   unless pending_list == [] do
-  #     "IsPending"
-  #   else
-  #     "IsInMatch"
-  #   end
-  # end
 
   @doc """
   Returns data for tournament brackets.

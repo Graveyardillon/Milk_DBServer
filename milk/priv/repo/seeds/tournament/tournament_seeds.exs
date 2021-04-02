@@ -1,22 +1,22 @@
 use Timex
 
+alias Milk.Repo
 alias Milk.Tournaments.Tournament
 alias Milk.Accounts.{
   Auth,
   User
 }
-alias Milk.Repo
 
 user = Repo.insert! %User{
   bio: "Test user which has many tournaments.",
   icon_path: nil,
   id_for_show: -1,
-  name: "Test tournament holder"
+  name: "TestTournamentHolder"
 }
 Repo.insert! %Auth{
   user_id: user.id,
   email: user.name <> "@mail.com",
-  password: "LookAtMePW"
+  password: Argon2.hash_pwd_salt("LookAtMePW")
 }
 
 now = Timex.now()
