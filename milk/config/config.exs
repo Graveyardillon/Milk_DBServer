@@ -43,7 +43,7 @@ config :milk, Milk.Mailer,
   hostname: "gmail.com",
   port: 587,
   username: "kunosoichiro@gmail.com",
-  password: "1am4rk3nDr1cK",
+  password: "zdmxmmkhbdvxrsgb",
   tls: :if_available, # can be `:always` or `:never`
   allowed_tls_versions: [:"tlsv1.1", :"tlsv1.2"], # or {:system, "ALLOWED_TLS_VERSIONS"} w/ comma seprated values (e.g. "tlsv1.1,tlsv1.2")
   ssl: false, # can be `true`
