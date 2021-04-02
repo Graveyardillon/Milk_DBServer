@@ -18,4 +18,10 @@ https://superuser.com/questions/433746/is-there-a-fix-for-the-too-many-open-file
 
 ### MacOS
 
-`/etc/sysctl.conf`を作成する
+`/etc/sysctl.conf`を作成する。
+
+```
+ulimit -S -n 2048 # or whatever number you choose
+```
+を実行する。
+
