@@ -4,7 +4,11 @@ defmodule Milk.Tournaments.Tournament do
   alias Milk.Games.Game
   alias Milk.Accounts.User
   alias Milk.Lives.Live
-  alias Milk.Tournaments.{Entrant, Assistant, TournamentChatTopic}
+  alias Milk.Tournaments.{
+    Entrant,
+    Assistant,
+    TournamentChatTopic
+  }
   alias Milk.Platforms.Platform
 
   schema "tournament" do
@@ -21,7 +25,8 @@ defmodule Milk.Tournaments.Tournament do
     field :game_name, :string
     field :is_started, :boolean, default: false
     field :start_recruiting, EctoDate
-    
+    field :start_notification_pid, :string
+
     belongs_to :platform, Platform
     belongs_to :game, Game
     belongs_to :master, User
@@ -36,7 +41,7 @@ defmodule Milk.Tournaments.Tournament do
   @doc false
   def changeset(tournament, attrs) do
     tournament
-    |> cast(attrs, [:name, :event_date, :capacity, :description, :deadline, :game_name, :thumbnail_path, :password, :type, :url, :count, :is_started, :start_recruiting])
+    |> cast(attrs, [:name, :event_date, :capacity, :description, :deadline, :game_name, :thumbnail_path, :password, :type, :url, :count, :is_started, :start_recruiting, :start_notification_pid])
     |> validate_required([:name, :event_date, :capacity, :deadline])
   end
 end

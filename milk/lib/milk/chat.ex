@@ -103,14 +103,14 @@ defmodule Milk.Chat do
     chat =
       if is_list(chat_room.chat) do
         Enum.map(
-          chat_room.chat, 
+          chat_room.chat,
           &(
             %{
-              chat_room_id: &1.chat_room_id, 
-              word: &1.word, 
-              user_id: &1.user_id, 
-              index: &1.index, 
-              create_time: &1.create_time, 
+              chat_room_id: &1.chat_room_id,
+              word: &1.word,
+              user_id: &1.user_id,
+              index: &1.index,
+              create_time: &1.create_time,
               update_time: &1.update_time
             }
           )
@@ -122,11 +122,11 @@ defmodule Milk.Chat do
     member =
       if is_list(chat_room.chat_member) do
         Enum.map(
-          chat_room.chat_member, 
+          chat_room.chat_member,
           &(
             %{
               chat_room_id: &1.chat_room_id,
-              user_id: &1.user_id, 
+              user_id: &1.user_id,
               authority: &1.authority,
               create_time: &1.create_time,
               update_time: &1.update_time
@@ -232,9 +232,6 @@ defmodule Milk.Chat do
     Repo.one(from cm in ChatMember, where: cm.chat_room_id == ^chat_room_id and cm.user_id == ^user_id)
   end
 
-  @doc """
-  Gets all chatmember data by user_id.
-  """
   defp get_chat_member_by_user_id(user_id) do
     ChatMember
     |> where([cm], cm.user_id == ^user_id)

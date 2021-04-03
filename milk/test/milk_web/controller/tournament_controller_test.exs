@@ -76,6 +76,18 @@ defmodule MilkWeb.TournamentControllerTest do
     end
   end
 
+  describe "get tournament pid by tournament id" do
+    setup [:create_tournament]
+
+    test "get tournament pid by tournament id works fine with valid data", %{conn: conn, tournament: tournament} do
+      pid = "0.111.0"
+      conn = post(conn, Routes.tournament_path(conn, :register_pid_of_start_notification), %{tournament_id: tournament.id, pid: pid})
+      conn = get(conn, Routes.tournament_path(conn, :get_pid), %{tournament_id: tournament.id})
+
+      assert json_response(conn, 200)["pid"] == pid
+    end
+  end
+
   describe "create tournament" do
     test "renders tournament when data is valid", %{conn: conn} do
       {:ok, user} = fixture(:user)
@@ -132,6 +144,21 @@ defmodule MilkWeb.TournamentControllerTest do
       conn = get(conn, Routes.tournament_path(conn, :get_opponent), %{"tournament_id" => tournament.id, "user_id" => hd(entrants).user_id})
 
       assert json_response(conn, 200)
+    end
+  end
+
+  describe "register pid of start notification" do
+    setup [:create_tournament]
+
+    test "register pid of start notification with valid data", %{conn: conn, tournament: tournament} do
+      pid = "0.100.0"
+      conn = post(conn, Routes.tournament_path(conn, :register_pid_of_start_notification), %{tournament_id: tournament.id, pid: pid})
+      assert json_response(conn, 200)
+      assert json_response(conn, 200)["result"]
+
+      # Check tournament pid has been stored
+      t = Tournaments.get_tournament!(tournament.id)
+      assert t.start_notification_pid == pid
     end
   end
 

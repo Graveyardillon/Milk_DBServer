@@ -13,19 +13,19 @@ defmodule Milk.Tournaments do
 
   alias Milk.Accounts
   alias Milk.Accounts.{
-    User, 
+    User,
     Relation
   }
   alias Milk.Tournaments.{
-    Tournament, 
-    Entrant, 
-    Assistant, 
+    Tournament,
+    Entrant,
+    Assistant,
     TournamentChatTopic
   }
   alias Milk.Log.{
-    TournamentLog, 
-    EntrantLog, 
-    AssistantLog, 
+    TournamentLog,
+    EntrantLog,
+    AssistantLog,
     TournamentChatTopicLog
   }
   alias Milk.Games.Game
@@ -800,6 +800,7 @@ defmodule Milk.Tournaments do
   #   end
   # end
 
+  # FIXME: 引数の順序がfinishと逆
   def start(master_id, tournament_id) do
     unless is_nil(master_id) or is_nil(tournament_id) do
       unless number_of_entrants(tournament_id) <= 1 do
@@ -1275,19 +1276,39 @@ defmodule Milk.Tournaments do
     if is_alone?(match) do
       "IsAlone"
     else
-      check_is_pending?(tournament_id, user_id)
+      check_wait_state?(tournament_id, user_id)
     end
   end
 
-  defp check_is_pending?(tournament_id, user_id) do
+  defp check_wait_state?(tournament_id, user_id) do
+    {_, match_list} =
+      TournamentProgress.get_match_list(tournament_id)
+      |> hd()
+    match = find_match(match_list, user_id)
+    # FIXME: エラーハンドリング
+    {:ok, opponent} = get_opponent(match, user_id)
     pending_list = TournamentProgress.get_match_pending_list({user_id, tournament_id})
+    opponent_pending_list = TournamentProgress.get_match_pending_list({opponent["id"], tournament_id})
 
-    unless pending_list == [] do
-      "IsPending"
-    else
-      "IsInMatch"
+    cond do
+      pending_list == [] ->
+        "IsInMatch"
+      pending_list != [] && opponent_pending_list == [] ->
+        "IsWaitingForStart"
+      true ->
+        "IsPending"
     end
   end
+
+  # defp check_is_pending?(tournament_id, user_id) do
+  #   pending_list = TournamentProgress.get_match_pending_list({user_id, tournament_id})
+
+  #   unless pending_list == [] do
+  #     "IsPending"
+  #   else
+  #     "IsInMatch"
+  #   end
+  # end
 
   @doc """
   Returns data for tournament brackets.
@@ -1306,11 +1327,22 @@ defmodule Milk.Tournaments do
   end
 
 
+  @doc """
+  Returns tournament records.
+  """
   def get_all_tournament_records(user_id) do
     user_id = Tools.to_integer_as_needed(user_id)
-    Entrant
-    |> where([e], e.user_id == ^user_id and e.rank != 0)
+
+    EntrantLog
+    |> where([el], el.user_id == ^user_id and el.rank != 0)
     |> Repo.all()
-    |> Repo.preload(:tournament)
+    |> Enum.map(fn entrant_log ->
+      tlog =
+        TournamentLog
+        |> where([tl], tl.tournament_id == ^entrant_log.tournament_id)
+        |> Repo.one()
+
+      Map.put(entrant_log, :tournament_log, tlog)
+    end)
   end
 end

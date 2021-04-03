@@ -78,6 +78,18 @@ defmodule MilkWeb.TournamentController do
   end
 
   @doc """
+  Get a pid of a spacific tournament.
+  """
+  def get_pid(conn, %{"tournament_id" => tournament_id}) do
+    pid =
+      tournament_id
+      |> Tournaments.get_tournament!()
+      |> Map.get(:start_notification_pid)
+
+    json(conn, %{pid: pid})
+  end
+
+  @doc """
   Create a tournament.
   """
   def create(conn, %{"tournament" => tournament_params, "file" => file}) do
@@ -766,6 +778,24 @@ defmodule MilkWeb.TournamentController do
         json(conn, %{data: brackets, result: true, count: num_for_brackets})
       _ ->
         json(conn, %{data: nil, result: false, count: nil})
+    end
+  end
+
+  @doc """
+  Registers PID of start notification.
+  The notification is handled in Web Server, so the pid does not belong to this server.
+  """
+  def register_pid_of_start_notification(conn, %{"tournament_id" => tournament_id, "pid" => pid}) do
+    tournament_id = Tools.to_integer_as_needed(tournament_id)
+
+    # FIXME: エラーハンドリング
+    tournament_id
+    |> Tournaments.get_tournament!()
+    |> Tournaments.update_tournament(%{"start_notification_pid" => pid})
+    |> case do
+      {:ok, _tournament} -> json(conn, %{result: true})
+      {:error, nil} ->  json(conn, %{result: false})
+      {:error, _error} ->  json(conn, %{result: false})
     end
   end
 
