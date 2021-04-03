@@ -8,5 +8,7 @@ defmodule Milk.EmailTest do
     return = Email.hello_email(email)
 
     assert return.to == email
+    assert return.subject == "Welcome!"
+    assert return.text_body =~ "Welcome to My App!!"
   end
 end
