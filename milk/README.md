@@ -25,3 +25,11 @@ ulimit -S -n 2048 # or whatever number you choose
 ```
 を実行する。
 
+## excoveralls
+```
+MIX_ENV=test mix coveralls
+
+MIX_ENV=test mix coveralls.detail --filter general.ex
+
+MIX_ENV=test mix coveralls.html
+```

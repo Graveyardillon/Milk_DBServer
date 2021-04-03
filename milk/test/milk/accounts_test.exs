@@ -106,13 +106,14 @@ defmodule Milk.AccountsTest do
       assert user.notification_number == 43
       assert user.point == 43
     end
-    # test "update_user/2 with invalid data returns error", %{user: user} do
-    #   Accounts.create_user(%{@user_valid_attrs | "name" => "same", "email" => "gmreio@kogre.com"})
-    #   debug = Accounts.update_user(user, Map.put(@update_attrs, :name, "same"))
-    #   assert Repo.all(User)
-    #   assert {:error, error} = debug
 
-    # end
+    test "update_user/2 with invalid data returns error", %{user: user} do
+      Accounts.create_user(%{@user_valid_attrs | "name" => "same", "email" => "gmreio@kogre.com"})
+      # debug = Accounts.update_user(user, Map.put(@update_attrs, :name, "same"))
+      # assert Repo.all(User)
+      # assert {:error, error} = debug
+      assert catch_error Accounts.update_user(user, Map.put(@update_attrs, :name, "same"))
+    end
   end
 
   describe "change password" do
