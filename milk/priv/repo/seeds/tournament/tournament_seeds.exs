@@ -119,3 +119,22 @@ Repo.insert! %Tournament{
   platform_id: 1,
   game_id: nil
 }
+
+File.cp("./priv/repo/seeds/image/solid_state_survivor.jpg", "./static/image/tournament_thumbnail/solid_state_survivor.jpg")
+Repo.insert! %Tournament{
+  capacity: 32,
+  deadline: tomorrow,
+  description: "test tournament of size 32.",
+  event_date: tomorrow,
+  name: "test tournament size 32",
+  type: 1,
+  url: nil,
+  thumbnail_path: "solid_state_survivor",
+  password: nil,
+  game_name: "my awesome name",
+  start_recruiting: now,
+  start_notification_pid: nil,
+  master_id: user.id,
+  platform_id: 1,
+  game_id: nil
+}

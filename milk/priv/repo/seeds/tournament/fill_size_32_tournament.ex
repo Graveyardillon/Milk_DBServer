@@ -15,15 +15,15 @@ alias Milk.Tournaments.{
 
 import Ecto.Query, only: [from: 2]
 
-tournament = Repo.one(from t in Tournament, where: t.capacity == 4)
+tournament = Repo.one(from t in Tournament, where: t.capacity == 32)
 
-1..4
+1..32
 |> Enum.map(fn n ->
   Repo.insert! %User{
-    bio: "Test user for filling size 4 tournament.",
+    bio: "Test user for filling size 32 tournament.",
     icon_path: nil,
-    id_for_show: n,
-    name: to_string(n) <> "TestEntrantOfSize4Tournament"
+    id_for_show: n*10,
+    name: to_string(n) <> "TestEntrantOfSize32Tournament"
   }
 end)
 |> Enum.map(fn user ->
