@@ -36,4 +36,12 @@ defmodule MilkWeb.AssistantLogControllerTest do
       refute json_response(conn, 200)["result"]
     end
   end
+
+  describe "show assistant_log" do
+    test "renders assistant_log when data is valid", %{conn: conn} do
+      conn = get(conn, Routes.assistant_log_path(conn, :show, 0))
+      assert json_response(conn, 200)["result"]
+    end
+
+  end
 end
