@@ -1163,6 +1163,7 @@ defmodule Milk.Tournaments do
                 rank when rank < opponents_rank -> update_entrant(user, %{rank: opponents_rank})
                 _ ->
               end
+
             {bool, rank} =
               opponent
               |> Map.get(:rank)
@@ -1172,8 +1173,7 @@ defmodule Milk.Tournaments do
               |> if do
                 div(rank, 2)
               else
-                rank
-                |> find_num_closest_exponentiation_of_two()
+                find_num_closest_exponentiation_of_two(rank)
               end
             entrant
             |> update_entrant(%{rank: updated})
@@ -1186,6 +1186,7 @@ defmodule Milk.Tournaments do
     end
   end
 
+  defp find_num_closest_exponentiation_of_two(0), do: 1
   defp find_num_closest_exponentiation_of_two(1), do: 1
   defp find_num_closest_exponentiation_of_two(2), do: 1
   defp find_num_closest_exponentiation_of_two(num) do
@@ -1202,6 +1203,10 @@ defmodule Milk.Tournaments do
     else
       div(acc, 2)
     end
+  end
+
+  defp check_exponentiation_of_two(num, base) when num == 0 do
+    {true, base}
   end
 
   defp check_exponentiation_of_two(num, base) when num == 1 do

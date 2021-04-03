@@ -146,7 +146,8 @@ defmodule Milk.TournamentProgress do
     {:ok, _} <- Redix.command(conn, ["DEL", tournament_id]) do
       true
     else
-      _ -> false
+      error ->
+        false
     end
   end
 
@@ -157,7 +158,8 @@ defmodule Milk.TournamentProgress do
     {:ok, _} <- Redix.command(conn, ["HDEL", tournament_id, user_id]) do
       true
     else
-      _ -> false
+      error ->
+        false
     end
   end
 
