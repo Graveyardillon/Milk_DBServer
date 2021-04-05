@@ -6,12 +6,16 @@ defmodule Milk.Tournaments do
   import Ecto.Query, warn: false
 
   use Timex
-
-  alias Milk.TournamentProgress
-  alias Milk.Repo
   alias Ecto.Multi
+  alias Common.Tools
 
-  alias Milk.Accounts
+  alias Milk.{
+    Accounts,
+    Chat,
+    Log,
+    TournamentProgress,
+    Repo
+  }
   alias Milk.Accounts.{
     User,
     Relation
@@ -29,10 +33,8 @@ defmodule Milk.Tournaments do
     TournamentChatTopicLog
   }
   alias Milk.Games.Game
-  alias Milk.Chat
   alias Milk.Chat.ChatRoom
-  alias Milk.Log
-  alias Common.Tools
+
   require Integer
   require Logger
 
@@ -781,50 +783,35 @@ defmodule Milk.Tournaments do
 
   @doc """
   Starts a tournament.
+  FIXME: 引数の順序がfinishと逆
+  FIXME: リファクタリング
   """
-  # def start(master_id, tournament_id) do
-  #   with :false <- is_nil(master_id) or is_nil(tournament_id),
-  #   tournament <- Tournament
-  #     |> where([t], t.master_id == ^master_id and t.id == ^tournament_id)
-  #     |> Repo.one(),
-  #     :false <- is_nil(tournament) do
-  #     unless tournament.is_started do
-  #       tournament
-  #       |> Tournament.changeset(%{is_started: true})
-  #       |> Repo.update()
-  #     else
-  #       {:error, nil}
-  #     end
-  #   else
-  #     _ -> {:error, "unexpected error"}
-  #   end
-  # end
-
-  # FIXME: 引数の順序がfinishと逆
   def start(master_id, tournament_id) do
-    unless is_nil(master_id) or is_nil(tournament_id) do
-      unless number_of_entrants(tournament_id) <= 1 do
-        tournament =
-          Tournament
-          |> where([t], t.master_id == ^master_id and t.id == ^tournament_id)
-          |> Repo.one()
-        unless is_nil(tournament) do
-          unless tournament.is_started do
-            tournament
-            |> Tournament.changeset(%{is_started: true})
-            |> Repo.update()
-          else
-            {:error, "tournament is already started"}
-          end
-        else
-          {:error, "cannot find tournament"}
-        end
-      else
-        delete_tournament(tournament_id)
-        {:error, "too few entrants"}
-      end
+    nil_check_on_start?(master_id, tournament_id)
+    |> check_entrant(tournament_id)
+    |> check_tournament_for_start(master_id, tournament_id)
+    |> check_tournament_has_started()
+  end
+
+  defp nil_check_on_start?(master_id, tournament_id) do
+    if !is_nil(master_id) and !is_nil(tournament_id) do
+      {:ok, nil}
     else
       {:error, "master_id or tournament_id is nil"}
+    end
+  end
+
+  defp check_entrant(check, tournament_id) do
+    case check do
+      {:ok, _} ->
+        if number_of_entrants(tournament_id) > 1 do
+          {:ok, nil}
+        else
+          delete_tournament(tournament_id)
+          {:error, "too few entrants"}
+        end
+      {:error, reason} ->
+        {:error, reason}
     end
   end
 
@@ -833,6 +820,38 @@ defmodule Milk.Tournaments do
     |> where([e], e.tournament_id == ^tournament_id)
     |> Repo.all()
     |> length()
+  end
+
+  defp check_tournament_for_start(check, master_id, tournament_id) do
+    case check do
+      {:ok, nil} ->
+        tournament =
+          Tournament
+          |> where([t], t.master_id == ^master_id and t.id == ^tournament_id)
+          |> Repo.one()
+        unless is_nil(tournament) do
+          {:ok, tournament}
+        else
+          {:error, "cannot find tournament"}
+        end
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  defp check_tournament_has_started(check) do
+    case check do
+      {:ok, tournament} ->
+        unless tournament.is_started do
+          tournament
+          |> Tournament.changeset(%{is_started: true})
+          |> Repo.update()
+        else
+          {:error, "tournament is already started"}
+        end
+      {:error, reason} ->
+        {:error, reason}
+    end
   end
 
   @doc """
@@ -1144,6 +1163,7 @@ defmodule Milk.Tournaments do
                 rank when rank < opponents_rank -> update_entrant(user, %{rank: opponents_rank})
                 _ ->
               end
+
             {bool, rank} =
               opponent
               |> Map.get(:rank)
@@ -1153,8 +1173,7 @@ defmodule Milk.Tournaments do
               |> if do
                 div(rank, 2)
               else
-                rank
-                |> find_num_closest_exponentiation_of_two()
+                find_num_closest_exponentiation_of_two(rank)
               end
             entrant
             |> update_entrant(%{rank: updated})
@@ -1167,6 +1186,7 @@ defmodule Milk.Tournaments do
     end
   end
 
+  defp find_num_closest_exponentiation_of_two(0), do: 1
   defp find_num_closest_exponentiation_of_two(1), do: 1
   defp find_num_closest_exponentiation_of_two(2), do: 1
   defp find_num_closest_exponentiation_of_two(num) do
@@ -1183,6 +1203,10 @@ defmodule Milk.Tournaments do
     else
       div(acc, 2)
     end
+  end
+
+  defp check_exponentiation_of_two(num, base) when num == 0 do
+    {true, base}
   end
 
   defp check_exponentiation_of_two(num, base) when num == 1 do
@@ -1239,6 +1263,7 @@ defmodule Milk.Tournaments do
 
   @doc """
   Checks tournament state.
+  # FIXME: 大会には参加していない主催者のstateを追加する
   """
   def state!(tournament_id, user_id) do
     tournament = get_tournament(tournament_id)
@@ -1299,16 +1324,6 @@ defmodule Milk.Tournaments do
         "IsPending"
     end
   end
-
-  # defp check_is_pending?(tournament_id, user_id) do
-  #   pending_list = TournamentProgress.get_match_pending_list({user_id, tournament_id})
-
-  #   unless pending_list == [] do
-  #     "IsPending"
-  #   else
-  #     "IsInMatch"
-  #   end
-  # end
 
   @doc """
   Returns data for tournament brackets.
