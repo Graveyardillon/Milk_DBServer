@@ -52,6 +52,7 @@ config :milk, Milk.Mailer,
   auth: :if_available
 
 config :goth,
-  json: "e-players6814-41b52d33988e.json" |> File.read!
+  json: "e-players6814-8e8eac82841c.json"
+    |> File.read!
 
 config :milk, :storage_bucket_id, "milk-image"
