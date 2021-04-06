@@ -1274,8 +1274,23 @@ defmodule Milk.Tournaments do
       unless tournament.is_started do
         "IsNotStarted"
       else
-        check_has_lost?(tournament.id, user_id)
+        check_is_manager?(tournament, user_id)
       end
+    end
+  end
+
+  defp check_is_manager?(tournament, user_id) do
+    is_manager = tournament.master_id == user_id
+    is_not_entrant =
+      tournament.id
+      |> get_entrants()
+      |> Enum.filter(fn entrant -> entrant.user_id == user_id end)
+      |> (fn list -> list == [] end).()
+
+    if is_manager && is_not_entrant do
+      "IsManager"
+    else
+      check_has_lost?(tournament.id, user_id)
     end
   end
 

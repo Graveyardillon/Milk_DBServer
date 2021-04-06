@@ -613,6 +613,13 @@ defmodule Milk.TournamentsTest do
       assert "IsNotStarted" == Tournaments.state!(tournament.id, tournament.master_id)
     end
 
+    test "state!/2 returns IsManager" do
+      %{tournament: tournament} = create_tournament_for_flow(nil)
+      create_entrants(8, tournament.id)
+      start(tournament.master_id, tournament.id)
+      assert "IsManager" == Tournaments.state!(tournament.id, tournament.master_id)
+    end
+
     test "state!/2 returns IsLoser" do
       %{tournament: tournament} = create_tournament_for_flow(nil)
       create_entrants(7, tournament.id)
