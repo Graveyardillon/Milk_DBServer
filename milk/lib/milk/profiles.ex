@@ -8,6 +8,8 @@ defmodule Milk.Profiles do
   alias Milk.Games.Game
   alias Milk.Accounts.Profile
   alias Milk.Tournaments.Entrant
+  alias Milk.Log.EntrantLog
+  alias Milk.Log.TournamentLog
 
   @doc """
   Returns the list of profiles.
@@ -115,18 +117,27 @@ defmodule Milk.Profiles do
   end
 
   @doc """
-  Get all records of the user.
+  Get added records of the user.
   """
-  def get_all_records(user) do
+  def get_records(user) do
     ids = Profile
     |> where([p], p.user_id == ^user.id and p.content_type == "record")
     |> Repo.all()
     |> Enum.map(& &1.content_id)
 
-    Entrant
-    |> where([e], e.tournament_id in ^ids and e.user_id == ^user.id)
+    EntrantLog
+    |> where([el], el.tournament_id in ^ids and el.user_id == ^user.id)
     |> Repo.all()
-    |> Repo.preload(:tournament)
+    |> Enum.map(fn entrant_log ->
+      tlog =
+        TournamentLog
+        |> where([tl], tl.tournament_id == ^entrant_log.tournament_id)
+        |> Repo.one()
+        
+      Map.put(entrant_log, :tournament_log, tlog)
+    end)
+    |> Enum.filter(fn entrant_log -> entrant_log.tournament_log != nil end)
+
   end
 
   def update_profile(%User{} = user, name, bio, gameList, records) do

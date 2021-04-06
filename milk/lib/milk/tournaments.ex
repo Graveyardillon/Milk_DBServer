@@ -1356,8 +1356,9 @@ defmodule Milk.Tournaments do
         TournamentLog
         |> where([tl], tl.tournament_id == ^entrant_log.tournament_id)
         |> Repo.one()
-
+        
       Map.put(entrant_log, :tournament_log, tlog)
     end)
+    |> Enum.filter(fn entrant_log -> entrant_log.tournament_log != nil end)
   end
 end
