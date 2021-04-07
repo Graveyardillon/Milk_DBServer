@@ -970,10 +970,33 @@ defmodule Milk.Tournaments do
     |> Repo.all()
   end
 
+  @doc """
+  Get user information of an assistant.
+  """
   def get_user_info_of_assistant(%Assistant{} = assistant) do
     User
     |> where([u], u.id == ^assistant.user_id)
     |> Repo.one()
+  end
+
+  @doc """
+  Get fighting users.
+  """
+  def get_fighting_users(tournament_id) do
+    get_entrants(tournament_id)
+    |> Enum.filter(fn entrant ->
+      TournamentProgress.get_match_pending_list({entrant.user_id, tournament_id}) != []
+    end)
+    |> Enum.map(fn entrant ->
+      Accounts.get_user(entrant.user_id)
+    end)
+  end
+
+  @doc """
+  Get users waiting for fighting ones.
+  """
+  def get_waiting_users(tournament_id) do
+
   end
 
   @doc """
@@ -1240,6 +1263,7 @@ defmodule Milk.Tournaments do
       {:error, "tournament is not started"}
     end
   end
+
   defp tournament_start_check({:error, error}) do
     {:error, error}
   end
