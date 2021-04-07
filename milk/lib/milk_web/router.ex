@@ -85,6 +85,7 @@ defmodule MilkWeb.Router do
     get  "/tournament/get_game", TournamentController, :get_game
     get  "/tournament/by_url", TournamentController, :get_tournament_by_url
     get  "/tournament/get_opponent", TournamentController, :get_opponent
+    get  "/tournament/fighting_users", TournamentController, :get_fighting_users
     get  "/tournament/get_participating_tournaments", TournamentController, :participating_tournaments
     get  "/tournament/participating", TournamentController, :participating_tournaments
     get  "/tournament/get_tabs", TournamentController, :tournament_topics
