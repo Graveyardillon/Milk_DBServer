@@ -970,10 +970,41 @@ defmodule Milk.Tournaments do
     |> Repo.all()
   end
 
+  @doc """
+  Get user information of an assistant.
+  """
   def get_user_info_of_assistant(%Assistant{} = assistant) do
     User
     |> where([u], u.id == ^assistant.user_id)
     |> Repo.one()
+  end
+
+  @doc """
+  Get fighting users.
+  """
+  def get_fighting_users(tournament_id) do
+    get_entrants(tournament_id)
+    |> Enum.filter(fn entrant ->
+      TournamentProgress.get_match_pending_list({entrant.user_id, tournament_id}) != []
+    end)
+    |> Enum.map(fn entrant ->
+      Accounts.get_user(entrant.user_id)
+    end)
+  end
+
+  @doc """
+  Get users waiting for fighting ones.
+  """
+  def get_waiting_users(tournament_id) do
+    fighting_users = get_fighting_users(tournament_id)
+    tournament_id
+    |> get_entrants()
+    |> Enum.map(fn entrant ->
+      Accounts.get_user(entrant.user_id)
+    end)
+    |> Enum.filter(fn user ->
+      !Enum.member?(fighting_users, user)
+    end)
   end
 
   @doc """
@@ -1240,6 +1271,7 @@ defmodule Milk.Tournaments do
       {:error, "tournament is not started"}
     end
   end
+
   defp tournament_start_check({:error, error}) do
     {:error, error}
   end
@@ -1274,8 +1306,23 @@ defmodule Milk.Tournaments do
       unless tournament.is_started do
         "IsNotStarted"
       else
-        check_has_lost?(tournament.id, user_id)
+        check_is_manager?(tournament, user_id)
       end
+    end
+  end
+
+  defp check_is_manager?(tournament, user_id) do
+    is_manager = tournament.master_id == user_id
+    is_not_entrant =
+      tournament.id
+      |> get_entrants()
+      |> Enum.filter(fn entrant -> entrant.user_id == user_id end)
+      |> (fn list -> list == [] end).()
+
+    if is_manager && is_not_entrant do
+      "IsManager"
+    else
+      check_has_lost?(tournament.id, user_id)
     end
   end
 

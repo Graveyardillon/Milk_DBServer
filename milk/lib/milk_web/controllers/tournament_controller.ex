@@ -540,7 +540,10 @@ defmodule MilkWeb.TournamentController do
     tournament_id = Tools.to_integer_as_needed(tournament_id)
     user_id = Tools.to_integer_as_needed(user_id)
 
-    {_, match_list} = hd(TournamentProgress.get_match_list(tournament_id))
+    {_, match_list} =
+      tournament_id
+      |> TournamentProgress.get_match_list()
+      |> hd()
 
     unless is_integer(match_list) do
       match = Tournaments.find_match(match_list, user_id)
@@ -552,6 +555,32 @@ defmodule MilkWeb.TournamentController do
       end
     else
       json(conn, %{result: false})
+    end
+  end
+
+  @doc """
+  Get fighting users.
+  """
+  def get_fighting_users(conn, %{"tournament_id" => tournament_id}) do
+    tournament_id
+    |> Tools.to_integer_as_needed()
+    |> Tournaments.get_fighting_users()
+    |> case do
+      [] -> json(conn, %{data: [], result: true})
+      users -> render(conn, "users.json", users: users)
+    end
+  end
+
+  @doc """
+  Get waiting users for fighting ones.
+  """
+  def get_waiting_users(conn, %{"tournament_id" => tournament_id}) do
+    tournament_id
+    |> Tools.to_integer_as_needed()
+    |> Tournaments.get_waiting_users()
+    |> case do
+      [] -> json(conn, %{data: [], result: true})
+      users -> render(conn, "users.json", users: users)
     end
   end
 
