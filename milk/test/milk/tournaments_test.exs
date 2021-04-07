@@ -1283,12 +1283,32 @@ defmodule Milk.TournamentsTest do
       start(tournament.master_id, tournament.id)
 
       assert Tournaments.get_fighting_users(tournament.id) == []
+
       TournamentProgress.insert_match_pending_list_table({tournament.master_id, tournament.id})
       users = Tournaments.get_fighting_users(tournament.id)
       assert length(users) == 1
       Enum.each(users, fn user ->
         user.id == tournament.master_id
       end)
+
+      {_, match_list} =
+        tournament.id
+        |> TournamentProgress.get_match_list()
+        |> hd()
+      match = Tournaments.find_match(match_list, tournament.master_id)
+      {:ok, opponent} = Tournaments.get_opponent(match, tournament.master_id)
+
+      TournamentProgress.insert_match_pending_list_table({opponent["id"], tournament.id})
+      users = Tournaments.get_fighting_users(tournament.id)
+      assert length(users) == 2
+
+      TournamentProgress.delete_match_pending_list({tournament.master_id, tournament.id})
+      users = Tournaments.get_fighting_users(tournament.id)
+      assert length(users) == 1
+
+      TournamentProgress.delete_match_pending_list({opponent["id"], tournament.id})
+      users = Tournaments.get_fighting_users(tournament.id)
+      assert length(users) == 0
     end
   end
 end
