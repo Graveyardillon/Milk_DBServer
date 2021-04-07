@@ -171,12 +171,49 @@ defmodule MilkWeb.TournamentControllerTest do
       assert json_response(conn, 200)["result"]
       conn = get(conn, Routes.tournament_path(conn, :get_fighting_users), tournament_id: tournament.id)
       assert length(json_response(conn, 200)["data"]) == 2
-      json_response(conn, 200)["data"]
 
       conn = post(conn, Routes.tournament_path(conn, :claim_win), opponent_id: opponent["id"], user_id: player.user_id, tournament_id: tournament.id)
       conn = post(conn, Routes.tournament_path(conn, :claim_lose), opponent_id: player.user_id, user_id: opponent["id"], tournament_id: tournament.id)
       conn = get(conn, Routes.tournament_path(conn, :get_fighting_users), tournament_id: tournament.id)
       assert length(json_response(conn, 200)["data"]) == 0
+    end
+  end
+
+  describe "get waiting users" do
+    setup [:create_tournament]
+
+    test "get waiting users", %{conn: conn, tournament: tournament} do
+      entrants = create_entrants(8, tournament.id)
+      player = hd(entrants)
+
+      conn =
+        conn
+        |> post(Routes.tournament_path(conn, :start), tournament: %{"master_id" => tournament.master_id, "tournament_id" => tournament.id})
+        |> get(Routes.tournament_path(conn, :get_opponent), %{"tournament_id" => tournament.id, "user_id" => player.user_id})
+
+      opponent = json_response(conn, 200)["opponent"]
+      conn = get(conn, Routes.tournament_path(conn, :get_waiting_users), tournament_id: tournament.id)
+      json_response(conn, 200)
+      |> Map.get("data")
+      |> length()
+      |> (fn len ->
+        assert len == length(entrants)
+      end).()
+
+      conn = post(conn, Routes.tournament_path(conn, :start_match), user_id: player.user_id, tournament_id: tournament.id)
+      assert json_response(conn, 200)["result"]
+      conn = get(conn, Routes.tournament_path(conn, :get_waiting_users), tournament_id: tournament.id)
+      assert length(json_response(conn, 200)["data"]) == length(entrants) - 1
+
+      conn = post(conn, Routes.tournament_path(conn, :start_match), user_id: opponent["id"], tournament_id: tournament.id)
+      assert json_response(conn, 200)["result"]
+      conn = get(conn, Routes.tournament_path(conn, :get_waiting_users), tournament_id: tournament.id)
+      assert length(json_response(conn, 200)["data"]) == length(entrants) - 2
+
+      conn = post(conn, Routes.tournament_path(conn, :claim_win), opponent_id: opponent["id"], user_id: player.user_id, tournament_id: tournament.id)
+      conn = post(conn, Routes.tournament_path(conn, :claim_lose), opponent_id: player.user_id, user_id: opponent["id"], tournament_id: tournament.id)
+      conn = get(conn, Routes.tournament_path(conn, :get_waiting_users), tournament_id: tournament.id)
+      assert length(json_response(conn, 200)["data"]) == length(entrants)
     end
   end
 

@@ -572,6 +572,19 @@ defmodule MilkWeb.TournamentController do
   end
 
   @doc """
+  Get waiting users for fighting ones.
+  """
+  def get_waiting_users(conn, %{"tournament_id" => tournament_id}) do
+    tournament_id
+    |> Tools.to_integer_as_needed()
+    |> Tournaments.get_waiting_users()
+    |> case do
+      [] -> json(conn, %{data: [], result: true})
+      users -> render(conn, "users.json", users: users)
+    end
+  end
+
+  @doc """
   Check if the user has already matching.
   """
   def check_pending(conn, %{"user_id" => user_id, "tournament_id" => tournament_id}) do
