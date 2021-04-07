@@ -1311,4 +1311,46 @@ defmodule Milk.TournamentsTest do
       assert length(users) == 0
     end
   end
+
+  describe "get waiting users" do
+    test "get_waiting_users/1 returns valid data" do
+      tournament = fixture_tournament(is_started: false)
+      entrants = create_entrants(7, tournament.id)
+      {:ok, entrant} = Tournaments.create_entrant(%{"user_id" => tournament.master_id, "tournament_id" => tournament.id})
+      entrants = entrants ++ [entrant]
+      start(tournament.master_id, tournament.id)
+
+      entrant_id_list = Enum.map(entrants, fn entrant -> entrant.user_id end)
+      users = Tournaments.get_waiting_users(tournament.id)
+
+      Enum.each(users, fn user ->
+        assert Enum.member?(entrant_id_list, user.id)
+      end)
+
+      assert length(users) == length(entrants)
+
+      TournamentProgress.insert_match_pending_list_table({tournament.master_id, tournament.id})
+      users = Tournaments.get_waiting_users(tournament.id)
+      assert length(users) == length(entrants) - 1
+
+      {_, match_list} =
+        tournament.id
+        |> TournamentProgress.get_match_list()
+        |> hd()
+      match = Tournaments.find_match(match_list, tournament.master_id)
+      {:ok, opponent} = Tournaments.get_opponent(match, tournament.master_id)
+
+      TournamentProgress.insert_match_pending_list_table({opponent["id"], tournament.id})
+      users = Tournaments.get_waiting_users(tournament.id)
+      assert length(users) == length(entrants) - 2
+
+      TournamentProgress.delete_match_pending_list({tournament.master_id, tournament.id})
+      users = Tournaments.get_waiting_users(tournament.id)
+      assert length(users) == length(entrants) - 1
+
+      TournamentProgress.delete_match_pending_list({opponent["id"], tournament.id})
+      users = Tournaments.get_waiting_users(tournament.id)
+      assert length(users) == length(entrants)
+    end
+  end
 end

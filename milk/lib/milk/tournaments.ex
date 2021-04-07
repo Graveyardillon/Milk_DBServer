@@ -996,7 +996,15 @@ defmodule Milk.Tournaments do
   Get users waiting for fighting ones.
   """
   def get_waiting_users(tournament_id) do
-
+    fighting_users = get_fighting_users(tournament_id)
+    tournament_id
+    |> get_entrants()
+    |> Enum.map(fn entrant ->
+      Accounts.get_user(entrant.user_id)
+    end)
+    |> Enum.filter(fn user ->
+      !Enum.member?(fighting_users, user)
+    end)
   end
 
   @doc """
