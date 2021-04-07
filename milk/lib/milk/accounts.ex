@@ -194,9 +194,11 @@ defmodule Milk.Accounts do
     old_icon_path = Repo.one(from u in User, where: u.id == ^user.id, select: u.icon_path)
     unless is_nil(old_icon_path) do
       case Application.get_env(:milk, :environment) do
+        # coveralls-ignore-start
         :dev -> rm(old_icon_path)
         :test -> rm(old_icon_path)
         _ -> rm_prod(old_icon_path)
+        # coveralls-ignore-stop
       end
     end
 
@@ -210,7 +212,9 @@ defmodule Milk.Accounts do
   end
 
   defp rm_prod(old_icon_path) do
+    # coveralls-ignore-start
     Objects.delete(old_icon_path)
+    # coveralls-ignore-stop
   end
 
   @doc """

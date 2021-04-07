@@ -1,15 +1,22 @@
 use Timex
 
-alias Milk.Tournaments
-alias Milk.Tournaments.Tournament
-alias Milk.Accounts.User
 alias Milk.Repo
+alias Milk.Tournaments.Tournament
+alias Milk.Accounts.{
+  Auth,
+  User
+}
 
 user = Repo.insert! %User{
   bio: "Test user which has many tournaments.",
   icon_path: nil,
   id_for_show: -1,
-  name: "Test tournament holder"
+  name: "TestTournamentHolder"
+}
+Repo.insert! %Auth{
+  user_id: user.id,
+  email: user.name <> "@mail.com",
+  password: Argon2.hash_pwd_salt("LookAtMePW")
 }
 
 now = Timex.now()
@@ -104,6 +111,25 @@ Repo.insert! %Tournament{
   type: 1,
   url: nil,
   thumbnail_path: "nevermind",
+  password: nil,
+  game_name: "my awesome name",
+  start_recruiting: now,
+  start_notification_pid: nil,
+  master_id: user.id,
+  platform_id: 1,
+  game_id: nil
+}
+
+File.cp("./priv/repo/seeds/image/solid_state_survivor.jpg", "./static/image/tournament_thumbnail/solid_state_survivor.jpg")
+Repo.insert! %Tournament{
+  capacity: 32,
+  deadline: tomorrow,
+  description: "test tournament of size 32.",
+  event_date: tomorrow,
+  name: "test tournament size 32",
+  type: 1,
+  url: nil,
+  thumbnail_path: "solid_state_survivor",
   password: nil,
   game_name: "my awesome name",
   start_recruiting: now,
