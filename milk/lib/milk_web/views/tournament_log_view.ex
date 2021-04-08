@@ -11,15 +11,19 @@ defmodule MilkWeb.TournamentLogView do
   end
 
   def render("tournament_log.json", %{tournament_log: tournament_log}) do
-    %{id: tournament_log.id,
+    %{
+      id: tournament_log.id,
       name: tournament_log.name,
       game_id: tournament_log.game_id,
+      game_name: tournament_log.game_name,
       event_date: tournament_log.event_date,
       capacity: tournament_log.capacity,
       description: tournament_log.description,
       master_id: tournament_log.master_id,
       deadline: tournament_log.deadline,
       type: tournament_log.type,
-      url: tournament_log.url}
+      url: tournament_log.url,
+      thumbnail_path: tournament_log.thumbnail_path
+    }
   end
 end

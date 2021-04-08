@@ -68,6 +68,16 @@ defmodule MilkWeb.TournamentController do
     render(conn, "index.json", tournament: tournaments)
   end
 
+
+  @doc """
+    ユーザーの開催予定の大会と、logから今まで開催した大会のデータを取得
+  """
+  def get_planned_tournaments_by_master_id(conn, %{"user_id" => user_id}) do
+    tournaments = Tournaments.get_ongoing_tournaments_by_master_id(user_id)
+    tournament_log = Tournaments.get_tournamentlogs_by_master_id(user_id)
+    render(conn, "tournament_include_log.json", tournaments: tournaments, tournament_log: tournament_log)
+  end
+
   @doc """
   Get a game of a specific tournament.
   FIXME: 引数をidに対応させたい
