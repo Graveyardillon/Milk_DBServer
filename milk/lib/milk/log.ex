@@ -463,6 +463,15 @@ defmodule Milk.Log do
   end
 
   @doc """
+  Get entrant logs by tournament id.
+  """
+  def get_entrant_logs_by_tournament_id(tournament_id) do
+    EntrantLog
+    |> where([e], e.tournament_id == ^tournament_id)
+    |> Repo.all()
+  end
+
+  @doc """
   Creates a entrant_log.
 
   ## Examples

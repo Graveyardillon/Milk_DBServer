@@ -28,7 +28,7 @@ defmodule MilkWeb.ProfileView do
         bio: user.bio,
         win_count: user.win_count,
         gameList: render_many(games, GameView, "game.json"),
-        records: render_many(records, ProfileView, "rank.json", as: :rank)
+        records: render_many(records, ProfileView, "rank.json", as: :record)
       },
       result: true
     }
@@ -42,11 +42,13 @@ defmodule MilkWeb.ProfileView do
     %{
       tournament: %{
         capacity: record.tournament_log.capacity,
-        game_id: record.tournament_log.game_id,
+        description: record.tournament_log.description,
+        event_date: record.tournament_log.event_date,
         master_id: record.tournament_log.master_id,
         name: record.tournament_log.name,
         tournament_id: record.tournament_log.tournament_id,
-        description: record.tournament_log.description,
+        type: record.tournament_log.type,
+        url: record.tournament_log.url,
         winner_id: record.tournament_log.winner_id
       },
       rank: record.rank

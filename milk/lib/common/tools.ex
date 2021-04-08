@@ -1,4 +1,11 @@
 defmodule Common.Tools do
+  @moduledoc """
+  Common tool functions.
+  """
+
+  @doc """
+  string to integer if possible.
+  """
   def to_integer_as_needed(data) do
     if is_binary(data) do
       String.to_integer(data)

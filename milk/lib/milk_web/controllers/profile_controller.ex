@@ -14,7 +14,7 @@ defmodule MilkWeb.ProfileController do
 
     if user do
       games = Profiles.get_game_list(user)
-      records = Profiles.get_all_records(user)
+      records = Profiles.get_records(user)
 
       render(conn, "profile.json", user: user, games: games, records: records)
     else

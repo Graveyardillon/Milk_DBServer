@@ -134,6 +134,25 @@ defmodule MilkWeb.TournamentControllerTest do
     end
   end
 
+  describe "get entrants" do
+    setup [:create_tournament]
+
+    test "get entrants", %{conn: conn, tournament: tournament} do
+      entrants = create_entrants(8, tournament.id)
+      entrant_id_list = Enum.map(entrants, fn entrant -> entrant.id end)
+      conn = get(conn, Routes.tournament_path(conn, :get_entrants), tournament_id: tournament.id)
+
+      json_response(conn, 200)["data"]
+      |> Enum.map(fn entrant ->
+        assert Enum.member?(entrant_id_list, entrant["id"])
+      end)
+      |> length()
+      |> (fn len ->
+        assert len == length(entrants)
+      end).()
+    end
+  end
+
   describe "get opponent" do
     setup [:create_tournament]
 

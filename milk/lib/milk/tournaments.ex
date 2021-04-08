@@ -123,22 +123,33 @@ defmodule Milk.Tournaments do
     Repo.all(from t in Tournament, where: t.master_id == ^user_id)
   end
 
+  def get_tournamentlogs_by_master_id(user_id) do
+    Repo.all(from tl in TournamentLog, where: tl.master_id == ^user_id)
+    TournamentLog
+    |> where([tl], tl.master_id == ^user_id)
+    |> order_by([tl], asc: :event_date)
+    |> Repo.all
+    |> Enum.filter(fn tournament_log -> tournament_log.tournament_id != nil end)
+    
+    |> Enum.map(fn tournament_log ->
+      entrants = 
+        EntrantLog
+        |> where([el], el.tournament_id == ^tournament_log.tournament_id)
+        |> Repo.all()
+
+      Map.put(tournament_log, :entrant, entrants)
+    end)
+  end
+
   @doc """
   Returns ongoing tournaments of certain user.
   """
   def get_ongoing_tournaments_by_master_id(user_id) do
-    Repo.all(from t in Tournament, where: t.master_id == ^user_id)
-    |> Enum.filter(fn tournament ->
-      date =
-        tournament.event_date
-        |> DateTime.to_unix()
-
-      now =
-        DateTime.utc_now()
-        |> DateTime.to_unix()
-
-      now < date
-    end)
+    Tournament
+    |> where([t], t.event_date > ^Timex.now and t.master_id == ^user_id)
+    |> order_by([t], asc: :event_date)
+    |> Repo.all()
+    |> Repo.preload(:entrant)
   end
 
   @doc """
@@ -372,8 +383,8 @@ defmodule Milk.Tournaments do
     update_time: x.update_time, create_time: x.create_time} end)
     if assistant, do: Repo.insert_all(AssistantLog, assistant)
 
-    TournamentLog.changeset(%TournamentLog{}, Map.from_struct(tournament))
-    |> Repo.insert()
+    # TournamentLog.changeset(%TournamentLog{}, Map.from_struct(tournament))
+    # |> Repo.insert()
 
     Repo.delete(tournament)
   end
@@ -892,6 +903,7 @@ defmodule Milk.Tournaments do
 
   defp atom_tournament_map_to_string_map(%Tournament{} = tournament, winner_id) do
     %{
+      "master_id" => tournament.master_id,
       "tournament_id" => tournament.id,
       "name" => tournament.name,
       "type" => tournament.type,
@@ -900,8 +912,11 @@ defmodule Milk.Tournaments do
       "description" => tournament.description,
       "event_date" => tournament.event_date,
       "game_id" => tournament.game_id,
+      "game_name" => tournament.game_name,
       "winner_id" => winner_id,
-      "capacity" => tournament.capacity
+      "capacity" => tournament.capacity,
+      "thumbnail_path" => tournament.thumbnail_path,
+      "entrant" => tournament.entrant
     }
   end
 
@@ -1403,8 +1418,9 @@ defmodule Milk.Tournaments do
         TournamentLog
         |> where([tl], tl.tournament_id == ^entrant_log.tournament_id)
         |> Repo.one()
-
+        
       Map.put(entrant_log, :tournament_log, tlog)
     end)
+    |> Enum.filter(fn entrant_log -> entrant_log.tournament_log != nil end)
   end
 end
