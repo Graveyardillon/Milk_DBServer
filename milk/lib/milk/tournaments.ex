@@ -353,17 +353,28 @@ defmodule Milk.Tournaments do
   @doc """
   Renew match list as needed.
   """
-  def renew_match_list_as_needed(tournament_id) do
-    match_list =
+  def trim_match_list_as_needed(tournament_id) do
+    match_list_len =
       tournament_id
       |> TournamentProgress.get_match_list()
       |> match_list_length()
+
+    match_list_with_fight_result_len =
+      tournament_id
+      |> TournamentProgress.get_match_list_with_fight_result()
+      |> match_list_length()
+
+    if match_list_with_fight_result_len > 16 and match_list_len < 16 do
+      new_list = TournamentProgress.get_match_list(tournament_id)
+      TournamentProgress.delete_match_list_with_fight_result(tournament_id)
+      TournamentProgress.insert_match_list_with_fight_result(new_list, tournament_id)
+    end
   end
 
   def match_list_length(matchlist, n \\ 0) do
     Enum.reduce(matchlist, n, fn x, acc ->
       case x do
-        x when is_list(x) -> match_list_length(x, n)
+        x when is_list(x) -> acc + match_list_length(x, n)
         _ -> acc + 1
       end
     end)
@@ -725,7 +736,7 @@ defmodule Milk.Tournaments do
   def find_match(v, _) when is_integer(v), do: []
   def find_match(list, id, result \\ []) when is_list(list) do
     Enum.reduce(list, result, fn x, acc ->
-      y = process_entrant(x)
+      y = pick_user_id_as_needed(x)
 
       case y do
         y when is_list(y) -> find_match(y, id, acc)
@@ -735,13 +746,12 @@ defmodule Milk.Tournaments do
     end)
   end
 
-  # FIXME: 名前が微妙
-  defp process_entrant(%Entrant{} = map) do
+  defp pick_user_id_as_needed(%Entrant{} = map) do
     inspect(map)
     map.user_id
   end
 
-  defp process_entrant(id), do: id
+  defp pick_user_id_as_needed(id), do: id
 
   @doc """
   Get an opponent of tournament match.
