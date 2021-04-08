@@ -669,6 +669,7 @@ defmodule MilkWeb.TournamentController do
           TournamentProgress.delete_match_pending_list({opponent_id, tournament_id})
           TournamentProgress.delete_fight_result({user_id, tournament_id})
           TournamentProgress.delete_fight_result({opponent_id, tournament_id})
+          Tournaments.renew_match_list_as_needed(tournament_id)
           json(conn, %{validated: true, completed: true})
         end
     end
@@ -701,6 +702,7 @@ defmodule MilkWeb.TournamentController do
           TournamentProgress.delete_match_pending_list({opponent_id, tournament_id})
           TournamentProgress.delete_fight_result({user_id, tournament_id})
           TournamentProgress.delete_fight_result({opponent_id, tournament_id})
+          Tournaments.renew_match_list_as_needed(tournament_id)
           json(conn, %{validated: true, completed: true})
         end
     end

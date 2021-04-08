@@ -130,9 +130,9 @@ defmodule Milk.Tournaments do
     |> order_by([tl], asc: :event_date)
     |> Repo.all
     |> Enum.filter(fn tournament_log -> tournament_log.tournament_id != nil end)
-    
+
     |> Enum.map(fn tournament_log ->
-      entrants = 
+      entrants =
         EntrantLog
         |> where([el], el.tournament_id == ^tournament_log.tournament_id)
         |> Repo.all()
@@ -348,6 +348,25 @@ defmodule Milk.Tournaments do
     else
       {:error, nil}
     end
+  end
+
+  @doc """
+  Renew match list as needed.
+  """
+  def renew_match_list_as_needed(tournament_id) do
+    match_list =
+      tournament_id
+      |> TournamentProgress.get_match_list()
+      |> match_list_length()
+  end
+
+  def match_list_length(matchlist, n \\ 0) do
+    Enum.reduce(matchlist, n, fn x, acc ->
+      case x do
+        x when is_list(x) -> match_list_length(x, n)
+        _ -> acc + 1
+      end
+    end)
   end
 
   @doc """
@@ -1418,7 +1437,7 @@ defmodule Milk.Tournaments do
         TournamentLog
         |> where([tl], tl.tournament_id == ^entrant_log.tournament_id)
         |> Repo.one()
-        
+
       Map.put(entrant_log, :tournament_log, tlog)
     end)
     |> Enum.filter(fn entrant_log -> entrant_log.tournament_log != nil end)
