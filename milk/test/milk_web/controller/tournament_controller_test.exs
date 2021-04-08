@@ -1,7 +1,13 @@
 defmodule MilkWeb.TournamentControllerTest do
   use MilkWeb.ConnCase
 
-  alias Milk.{Accounts, Tournaments}
+  alias Milk.{
+    Accounts,
+    TournamentProgress,
+    Tournaments
+  }
+
+  require Logger
 
   @entrant_create_attrs %{
     "rank" => 42,
@@ -248,6 +254,55 @@ defmodule MilkWeb.TournamentControllerTest do
       # Check tournament pid has been stored
       t = Tournaments.get_tournament!(tournament.id)
       assert t.start_notification_pid == pid
+    end
+  end
+
+  describe "test trim of players" do
+    setup [:create_tournament]
+
+    test "trim of players", %{conn: conn, tournament: tournament} do
+      entrants = create_entrants(17, tournament.id)
+      player = hd(entrants)
+
+      conn = post(conn, Routes.tournament_path(conn, :start), tournament: %{"master_id" => tournament.master_id, "tournament_id" => tournament.id})
+      match_list = json_response(conn, 200)["data"]["match_list"]
+
+      tournament.id
+      |> TournamentProgress.get_match_list_with_fight_result()
+      |> hd()
+      |> elem(1)
+      |> Tournaments.match_list_length()
+      |> (fn len ->
+        assert len == 17
+      end).()
+      conn = get(conn, Routes.tournament_path(conn, :get_opponent), %{"tournament_id" => tournament.id, "user_id" => player.user_id})
+
+      response = json_response(conn, 200)
+      cond do
+        !is_nil(response["opponent"]) -> true
+        is_nil(response["opponent"]) and !is_nil(response["wait"]) -> false
+        true -> assert false, "it must not be true"
+      end
+      |> if do
+        opponent = response["opponent"]
+        conn = post(conn, Routes.tournament_path(conn, :start_match), user_id: player.user_id, tournament_id: tournament.id)
+        conn = post(conn, Routes.tournament_path(conn, :start_match), user_id: opponent["id"], tournament_id: tournament.id)
+        conn = post(conn, Routes.tournament_path(conn, :claim_win), opponent_id: opponent["id"], user_id: player.user_id, tournament_id: tournament.id)
+        conn = post(conn, Routes.tournament_path(conn, :claim_lose), opponent_id: player.user_id, user_id: opponent["id"], tournament_id: tournament.id)
+        conn = post(conn, Routes.tournament_path(conn, :delete_loser), tournament: %{"tournament_id" => tournament.id, "loser_list" => [opponent["id"]]})
+
+        tournament.id
+        |> TournamentProgress.get_match_list_with_fight_result()
+        |> hd()
+        |> elem(1)
+        |> IO.inspect()
+        |> Tournaments.match_list_length()
+        |> (fn len ->
+          assert len == 16
+        end).()
+      else
+        Logger.warn("opponent is nil in 'test trim of players'")
+      end
     end
   end
 

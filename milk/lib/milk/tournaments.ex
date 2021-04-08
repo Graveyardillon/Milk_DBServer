@@ -357,15 +357,21 @@ defmodule Milk.Tournaments do
     match_list_len =
       tournament_id
       |> TournamentProgress.get_match_list()
+      |> hd()
+      |> elem(1)
       |> match_list_length()
+      |> IO.inspect(label: :mllen)
 
     match_list_with_fight_result_len =
       tournament_id
       |> TournamentProgress.get_match_list_with_fight_result()
+      |> hd()
+      |> elem(1)
       |> match_list_length()
+      |> IO.inspect(label: :mlwfrlen)
 
-    if match_list_with_fight_result_len > 16 and match_list_len < 16 do
-      new_list = TournamentProgress.get_match_list(tournament_id)
+    if match_list_with_fight_result_len > 16 and match_list_len <= 16 do
+      [{_, new_list}] = TournamentProgress.get_match_list(tournament_id)
       TournamentProgress.delete_match_list_with_fight_result(tournament_id)
       TournamentProgress.insert_match_list_with_fight_result(new_list, tournament_id)
     end
