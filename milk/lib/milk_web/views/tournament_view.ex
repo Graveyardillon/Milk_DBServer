@@ -152,7 +152,7 @@ defmodule MilkWeb.TournamentView do
         url: tournament_log.url,
         type: tournament_log.type,
         thumbnail_path: tournament_log.thumbnail_path,
-        entrants: Enum.map(tournament_log.entrant, fn user ->
+        entrants: Enum.map(tournament_log.entrants, fn user ->
           %{
             user_id: user.user_id,
           }

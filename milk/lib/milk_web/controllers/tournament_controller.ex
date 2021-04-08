@@ -168,6 +168,10 @@ defmodule MilkWeb.TournamentController do
       render(conn, "tournament_info.json", tournament: tournament, entrants: entrants)
     else
       if tournament_log do
+        entrants = Log.get_entrant_logs_by_tournament_id(tournament_log.tournament_id)
+        tournament_log = Map.put(tournament_log, :entrants, entrants)
+          |> IO.inspect()
+
         render(conn, "tournament_log.json", tournament_log: tournament_log)
       else
         render(conn, "error.json", error: nil)
