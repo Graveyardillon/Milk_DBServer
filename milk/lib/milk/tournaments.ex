@@ -77,6 +77,7 @@ defmodule Milk.Tournaments do
     |> offset(^offset)
     |> limit(5)
     |> Repo.all()
+    |> Repo.preload(:entrant)
   end
 
   @doc """

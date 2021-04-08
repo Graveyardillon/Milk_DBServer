@@ -51,10 +51,7 @@ defmodule MilkWeb.TournamentController do
           Accounts.get_user(entrant.user_id)
         end)
 
-      %{
-        tournament: tournament,
-        entrants: entrants
-      }
+        Map.put(tournament, :entrants, entrants)
     end)
 
     render(conn, "home.json", tournaments_info: tournaments)
@@ -73,7 +70,19 @@ defmodule MilkWeb.TournamentController do
     ユーザーの開催予定の大会と、logから今まで開催した大会のデータを取得
   """
   def get_planned_tournaments_by_master_id(conn, %{"user_id" => user_id}) do
-    tournaments = Tournaments.get_ongoing_tournaments_by_master_id(user_id)
+    tournaments = 
+      user_id
+      |> Tournaments.get_ongoing_tournaments_by_master_id()
+      |> Enum.map(fn tournament ->
+        entrants =
+        tournament.id
+        |> Tournaments.get_entrants()
+        |> Enum.map(fn entrant ->
+          Accounts.get_user(entrant.user_id)
+        end)
+        Map.put(tournament, :entrants, entrants)
+      end)
+
     tournament_log = Tournaments.get_tournamentlogs_by_master_id(user_id)
     render(conn, "tournament_include_log.json", tournaments: tournaments, tournament_log: tournament_log)
   end
@@ -188,8 +197,7 @@ defmodule MilkWeb.TournamentController do
           |> Enum.map(fn entrant ->
             Accounts.get_user(entrant.user_id)
           end)
-
-        %{tournament: tournament, entrants: entrants}
+        Map.put(tournament, :entrants, entrants)
       end)
 
     render(conn, "home.json", tournaments_info: tournaments)
@@ -204,8 +212,7 @@ defmodule MilkWeb.TournamentController do
           |> Enum.map(fn entrant ->
             Accounts.get_user(entrant.user_id)
           end)
-
-        %{tournament: tournament, entrants: entrants}
+        Map.put(tournament, :entrants, entrants)
       end)
 
     render(conn, "home.json", tournaments_info: tournaments)
@@ -220,11 +227,7 @@ defmodule MilkWeb.TournamentController do
           |> Enum.map(fn entrant ->
             Accounts.get_user(entrant.user_id)
           end)
-
-        %{
-          tournament: tournament,
-          entrants: entrants
-        }
+        Map.put(tournament, :entrants, entrants)
       end)
 
     render(conn, "home.json", tournaments_info: tournaments)
