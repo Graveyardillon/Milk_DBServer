@@ -915,7 +915,8 @@ defmodule Milk.Tournaments do
       "game_name" => tournament.game_name,
       "winner_id" => winner_id,
       "capacity" => tournament.capacity,
-      "thumbnail_path" => tournament.thumbnail_path
+      "thumbnail_path" => tournament.thumbnail_path,
+      "entrant" => tournament.entrant
     }
   end
 

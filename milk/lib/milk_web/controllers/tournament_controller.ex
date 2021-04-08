@@ -73,15 +73,8 @@ defmodule MilkWeb.TournamentController do
     ユーザーの開催予定の大会と、logから今まで開催した大会のデータを取得
   """
   def get_planned_tournaments_by_master_id(conn, %{"user_id" => user_id}) do
-
-        # entrants = Tournaments.get_entrants(tournament.id)
-        # |> Enum.map(fn entrant ->
-        #   Accounts.get_user(entrant.user_id)
-        # end)
     tournaments = Tournaments.get_ongoing_tournaments_by_master_id(user_id)
-    # IO.inspect(tournaments)
     tournament_log = Tournaments.get_tournamentlogs_by_master_id(user_id)
-    IO.inspect(tournament_log)
     render(conn, "tournament_include_log.json", tournaments: tournaments, tournament_log: tournament_log)
   end
 
