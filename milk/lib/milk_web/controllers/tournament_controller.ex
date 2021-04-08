@@ -170,7 +170,6 @@ defmodule MilkWeb.TournamentController do
       if tournament_log do
         entrants = Log.get_entrant_logs_by_tournament_id(tournament_log.tournament_id)
         tournament_log = Map.put(tournament_log, :entrants, entrants)
-          |> IO.inspect()
 
         render(conn, "tournament_log.json", tournament_log: tournament_log)
       else
@@ -436,7 +435,11 @@ defmodule MilkWeb.TournamentController do
     end)
 
     updated_match_list = renew_match_list(tournament_id, match_list, loser_list)
+      |> IO.inspect(label: :updated_match_list)
     get_lost(tournament_id, match_list, loser_list)
+    unless is_integer(updated_match_list) do
+      Tournaments.trim_match_list_as_needed(tournament_id)
+    end
 
     render(conn, "loser.json", list: updated_match_list)
   end
@@ -564,7 +567,8 @@ defmodule MilkWeb.TournamentController do
       with {:ok, opponent} <- Tournaments.get_opponent(match, user_id) do
         json(conn, %{result: true, opponent: opponent})
       else
-        {:wait, _} -> json(conn, %{result: false, opponent: nil})
+        # FIXME: waitのマップの作り方微妙
+        {:wait, _} -> json(conn, %{result: false, opponent: nil, wait: true})
         _ -> render(conn, "error.json", error: nil)
       end
     else

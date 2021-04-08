@@ -1233,6 +1233,43 @@ defmodule Milk.TournamentsTest do
     end
   end
 
+  describe "match list length" do
+    test "match_list_length/1 returns number of players : 3" do
+      match_list = [3, [1, 2]]
+      assert Tournaments.match_list_length(match_list) == 3
+    end
+
+    test "match_list_length/1 returns number of players : 4" do
+      match_list = [[1, 2], [3, 4]]
+      assert Tournaments.match_list_length(match_list) == 4
+    end
+
+    test "match_list_length/1 returns number of players : 5" do
+      match_list = [[1, 2], [3, [4, 5]]]
+      assert Tournaments.match_list_length(match_list) == 5
+    end
+
+    test "match_list_length/1 returns number of players : 6" do
+      match_list = [[1, [2, 3]], [4, [5, 6]]]
+      assert Tournaments.match_list_length(match_list) == 6
+    end
+
+    test "match_list_length/1 returns number of players : 7" do
+      match_list = [[1, [2, 3]], [[4, 5], [6, 7]]]
+      assert Tournaments.match_list_length(match_list) == 7
+    end
+
+    test "match_list_length/1 returns number of players : 8" do
+      match_list = [[[1, 2], [3, 4]], [[5, 6], [7, 8]]]
+      assert Tournaments.match_list_length(match_list) == 8
+    end
+
+    test "match_list_length/1 returns number of players : 9" do
+      match_list = [[[1, 2], [3, 4]], [[5, 6], [7, [8, 9]]]]
+      assert Tournaments.match_list_length(match_list) == 9
+    end
+  end
+
   describe "get all tournament records" do
     setup [:create_entrant]
 
