@@ -83,6 +83,13 @@ defmodule MilkWeb.TournamentView do
     }
   end
 
+  def render("tournament_include_log.json", %{tournaments: tournaments, tournament_log: tournament_log}) do
+    %{
+      tournaments: render_many(tournaments, TournamentView, "tournament_info.json"),
+      tournament_logs: render_many(tournament_log, TournamentView, "tournament_log.json", as: :tournament_log)
+    }
+  end
+
   def render("tournament_log.json", %{tournament_log: tournament_log}) do
     %{
       data: %{
@@ -91,12 +98,14 @@ defmodule MilkWeb.TournamentView do
         description: tournament_log.description,
         event_date: tournament_log.event_date,
         game_id: tournament_log.game_id,
+        game_name: tournament_log.game_name,
         tournament_id: tournament_log.tournament_id,
         winner_id: tournament_log.winner_id,
         master_id: tournament_log.master_id,
         name: tournament_log.name,
         url: tournament_log.url,
-        type: tournament_log.type
+        type: tournament_log.type,
+        thumbnail_path: tournament_log.thumbnail_path
       },
       is_log: true,
       result: true
@@ -237,4 +246,5 @@ defmodule MilkWeb.TournamentView do
   def create_message(error) do
     Enum.reduce(error, "",fn {key, value}, acc -> to_string(key) <> " "<> elem(value,0) <> ", "<> acc end)
   end
+
 end
