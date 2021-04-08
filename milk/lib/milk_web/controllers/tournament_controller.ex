@@ -770,7 +770,10 @@ defmodule MilkWeb.TournamentController do
   Get tournament entrants.
   """
   def get_entrants(conn, %{"tournament_id" => tournament_id}) do
-    entrants = Tournaments.get_entrants(tournament_id)
+    entrants =
+      tournament_id
+      |> Tools.to_integer_as_needed()
+      |> Tournaments.get_entrants()
     render(conn, "entrants.json", entrants: entrants)
   end
 
