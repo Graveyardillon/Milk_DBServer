@@ -3,6 +3,7 @@ defmodule MilkWeb.AssistantLogController do
 
   alias Milk.Log
   alias Milk.Log.AssistantLog
+  alias Common.Tools
 
   #action_fallback MilkWeb.FallbackController
 
@@ -13,7 +14,7 @@ defmodule MilkWeb.AssistantLogController do
 
   def create(conn, %{"data" => assistant_log_params}) do
     with [ok: %AssistantLog{} = assistant_log] <- Log.create_assistant_log(assistant_log_params) do
-      json(conn, %{result: true})
+      render(conn, "show.json", assistant_log: assistant_log)
     else
       _ -> json(conn, %{result: false})
     end
@@ -29,6 +30,7 @@ defmodule MilkWeb.AssistantLogController do
   # end
 
   def show(conn, %{"id" => id}) do
+    id = Tools.to_integer_as_needed(id)
     assistant_log = Log.get_assistant_log!(id)
     render(conn, "show.json", assistant_log: assistant_log)
   end
