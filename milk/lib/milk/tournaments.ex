@@ -131,9 +131,9 @@ defmodule Milk.Tournaments do
     |> order_by([tl], asc: :event_date)
     |> Repo.all
     |> Enum.filter(fn tournament_log -> tournament_log.tournament_id != nil end)
-    
+
     |> Enum.map(fn tournament_log ->
-      entrants = 
+      entrants =
         EntrantLog
         |> where([el], el.tournament_id == ^tournament_log.tournament_id)
         |> Repo.all()
@@ -349,6 +349,42 @@ defmodule Milk.Tournaments do
     else
       {:error, nil}
     end
+  end
+
+  @doc """
+  Renew match list as needed.
+  """
+  def trim_match_list_as_needed(tournament_id) do
+    match_list_len =
+      tournament_id
+      |> TournamentProgress.get_match_list()
+      |> hd()
+      |> elem(1)
+      |> match_list_length()
+      |> IO.inspect(label: :mllen)
+
+    match_list_with_fight_result_len =
+      tournament_id
+      |> TournamentProgress.get_match_list_with_fight_result()
+      |> hd()
+      |> elem(1)
+      |> match_list_length()
+      |> IO.inspect(label: :mlwfrlen)
+
+    if match_list_with_fight_result_len > 16 and match_list_len <= 16 do
+      [{_, new_list}] = TournamentProgress.get_match_list(tournament_id)
+      TournamentProgress.delete_match_list_with_fight_result(tournament_id)
+      TournamentProgress.insert_match_list_with_fight_result(new_list, tournament_id)
+    end
+  end
+
+  def match_list_length(matchlist, n \\ 0) do
+    Enum.reduce(matchlist, n, fn x, acc ->
+      case x do
+        x when is_list(x) -> acc + match_list_length(x, n)
+        _ -> acc + 1
+      end
+    end)
   end
 
   @doc """
@@ -707,7 +743,7 @@ defmodule Milk.Tournaments do
   def find_match(v, _) when is_integer(v), do: []
   def find_match(list, id, result \\ []) when is_list(list) do
     Enum.reduce(list, result, fn x, acc ->
-      y = process_entrant(x)
+      y = pick_user_id_as_needed(x)
 
       case y do
         y when is_list(y) -> find_match(y, id, acc)
@@ -717,13 +753,12 @@ defmodule Milk.Tournaments do
     end)
   end
 
-  # FIXME: 名前が微妙
-  defp process_entrant(%Entrant{} = map) do
+  defp pick_user_id_as_needed(%Entrant{} = map) do
     inspect(map)
     map.user_id
   end
 
-  defp process_entrant(id), do: id
+  defp pick_user_id_as_needed(id), do: id
 
   @doc """
   Get an opponent of tournament match.
@@ -1419,7 +1454,7 @@ defmodule Milk.Tournaments do
         TournamentLog
         |> where([tl], tl.tournament_id == ^entrant_log.tournament_id)
         |> Repo.one()
-        
+
       Map.put(entrant_log, :tournament_log, tlog)
     end)
     |> Enum.filter(fn entrant_log -> entrant_log.tournament_log != nil end)

@@ -1,8 +1,10 @@
 defmodule MilkWeb.TournamentView do
   use MilkWeb, :view
 
-  alias MilkWeb.TournamentView
-  alias MilkWeb.UserView
+  alias MilkWeb.{
+    TournamentView,
+    UserView
+  }
 
   def render("users.json", %{users: users}) do
     if users != [] do
@@ -19,6 +21,19 @@ defmodule MilkWeb.TournamentView do
   def render("show.json", %{tournament: tournament}) do
     %{data: render_one(tournament, TournamentView, "tournament.json",
     msg: "Tournament was created!")}
+  end
+
+  def render("entrants.json", %{entrants: entrants}) do
+    %{
+      data: Enum.map(entrants, fn entrant ->
+        %{
+          id: entrant.id,
+          rank: entrant.rank,
+          tournament_id: entrant.tournament_id,
+          user_id: entrant.user_id
+        }
+      end)
+    }
   end
 
   def render("tournament.json", %{tournament: tournament}) do
@@ -137,7 +152,7 @@ defmodule MilkWeb.TournamentView do
         url: tournament_log.url,
         type: tournament_log.type,
         thumbnail_path: tournament_log.thumbnail_path,
-        entrants: Enum.map(tournament_log.entrant, fn user ->
+        entrants: Enum.map(tournament_log.entrants, fn user ->
           %{
             user_id: user.user_id,
           }
