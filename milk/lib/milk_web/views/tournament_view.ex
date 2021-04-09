@@ -118,7 +118,7 @@ defmodule MilkWeb.TournamentView do
         create_time: tournament.create_time,
         update_time: tournament.update_time,
         is_started: tournament.is_started,
-        entrants: Enum.map(tournament.entrant, fn user ->
+        entrants: Enum.map(tournament.entrants, fn user ->
           %{
             user_id: user.user_id,
           }
@@ -152,7 +152,7 @@ defmodule MilkWeb.TournamentView do
         url: tournament_log.url,
         type: tournament_log.type,
         thumbnail_path: tournament_log.thumbnail_path,
-        entrants: Enum.map(tournament_log.entrant, fn user ->
+        entrants: Enum.map(tournament_log.entrants, fn user ->
           %{
             user_id: user.user_id,
           }

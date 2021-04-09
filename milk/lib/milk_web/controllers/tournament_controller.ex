@@ -82,8 +82,8 @@ defmodule MilkWeb.TournamentController do
         end)
         Map.put(tournament, :entrants, entrants)
       end)
-
-    tournament_log = Tournaments.get_tournamentlogs_by_master_id(user_id)
+      
+    tournament_log = Tournaments.get_tournament_logs_by_master_id(user_id)
     render(conn, "tournament_include_log.json", tournaments: tournaments, tournament_log: tournament_log)
   end
 
