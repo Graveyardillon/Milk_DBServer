@@ -14,6 +14,7 @@ defmodule Milk.TournamentProgress do
   def flushall() do
     conn = conn()
     Redix.command(conn, ["FLUSHALL"])
+    Logger.info("Redis has been flushed all")
   end
 
   def insert_match_list(match_list, tournament_id) do
@@ -145,7 +146,8 @@ defmodule Milk.TournamentProgress do
     {:ok, _} <- Redix.command(conn, ["DEL", tournament_id]) do
       true
     else
-      _ -> false
+      error ->
+        false
     end
   end
 
@@ -156,7 +158,8 @@ defmodule Milk.TournamentProgress do
     {:ok, _} <- Redix.command(conn, ["HDEL", tournament_id, user_id]) do
       true
     else
-      _ -> false
+      error ->
+        false
     end
   end
 

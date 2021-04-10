@@ -6,12 +6,16 @@ defmodule Milk.Tournaments do
   import Ecto.Query, warn: false
 
   use Timex
-
-  alias Milk.TournamentProgress
-  alias Milk.Repo
   alias Ecto.Multi
+  alias Common.Tools
 
-  alias Milk.Accounts
+  alias Milk.{
+    Accounts,
+    Chat,
+    Log,
+    TournamentProgress,
+    Repo
+  }
   alias Milk.Accounts.{
     User,
     Relation
@@ -29,10 +33,8 @@ defmodule Milk.Tournaments do
     TournamentChatTopicLog
   }
   alias Milk.Games.Game
-  alias Milk.Chat
   alias Milk.Chat.ChatRoom
-  alias Milk.Log
-  alias Common.Tools
+
   require Integer
   require Logger
 
@@ -121,22 +123,33 @@ defmodule Milk.Tournaments do
     Repo.all(from t in Tournament, where: t.master_id == ^user_id)
   end
 
+  def get_tournamentlogs_by_master_id(user_id) do
+    Repo.all(from tl in TournamentLog, where: tl.master_id == ^user_id)
+    TournamentLog
+    |> where([tl], tl.master_id == ^user_id)
+    |> order_by([tl], asc: :event_date)
+    |> Repo.all
+    |> Enum.filter(fn tournament_log -> tournament_log.tournament_id != nil end)
+
+    |> Enum.map(fn tournament_log ->
+      entrants =
+        EntrantLog
+        |> where([el], el.tournament_id == ^tournament_log.tournament_id)
+        |> Repo.all()
+
+      Map.put(tournament_log, :entrant, entrants)
+    end)
+  end
+
   @doc """
   Returns ongoing tournaments of certain user.
   """
   def get_ongoing_tournaments_by_master_id(user_id) do
-    Repo.all(from t in Tournament, where: t.master_id == ^user_id)
-    |> Enum.filter(fn tournament ->
-      date =
-        tournament.event_date
-        |> DateTime.to_unix()
-
-      now =
-        DateTime.utc_now()
-        |> DateTime.to_unix()
-
-      now < date
-    end)
+    Tournament
+    |> where([t], t.event_date > ^Timex.now and t.master_id == ^user_id)
+    |> order_by([t], asc: :event_date)
+    |> Repo.all()
+    |> Repo.preload(:entrant)
   end
 
   @doc """
@@ -338,6 +351,42 @@ defmodule Milk.Tournaments do
   end
 
   @doc """
+  Renew match list as needed.
+  """
+  def trim_match_list_as_needed(tournament_id) do
+    match_list_len =
+      tournament_id
+      |> TournamentProgress.get_match_list()
+      |> hd()
+      |> elem(1)
+      |> match_list_length()
+      |> IO.inspect(label: :mllen)
+
+    match_list_with_fight_result_len =
+      tournament_id
+      |> TournamentProgress.get_match_list_with_fight_result()
+      |> hd()
+      |> elem(1)
+      |> match_list_length()
+      |> IO.inspect(label: :mlwfrlen)
+
+    if match_list_with_fight_result_len > 16 and match_list_len <= 16 do
+      [{_, new_list}] = TournamentProgress.get_match_list(tournament_id)
+      TournamentProgress.delete_match_list_with_fight_result(tournament_id)
+      TournamentProgress.insert_match_list_with_fight_result(new_list, tournament_id)
+    end
+  end
+
+  def match_list_length(matchlist, n \\ 0) do
+    Enum.reduce(matchlist, n, fn x, acc ->
+      case x do
+        x when is_list(x) -> acc + match_list_length(x, n)
+        _ -> acc + 1
+      end
+    end)
+  end
+
+  @doc """
   Deletes a tournament.
 
   ## Examples
@@ -370,8 +419,8 @@ defmodule Milk.Tournaments do
     update_time: x.update_time, create_time: x.create_time} end)
     if assistant, do: Repo.insert_all(AssistantLog, assistant)
 
-    TournamentLog.changeset(%TournamentLog{}, Map.from_struct(tournament))
-    |> Repo.insert()
+    # TournamentLog.changeset(%TournamentLog{}, Map.from_struct(tournament))
+    # |> Repo.insert()
 
     Repo.delete(tournament)
   end
@@ -693,7 +742,7 @@ defmodule Milk.Tournaments do
   def find_match(v, _) when is_integer(v), do: []
   def find_match(list, id, result \\ []) when is_list(list) do
     Enum.reduce(list, result, fn x, acc ->
-      y = process_entrant(x)
+      y = pick_user_id_as_needed(x)
 
       case y do
         y when is_list(y) -> find_match(y, id, acc)
@@ -703,13 +752,12 @@ defmodule Milk.Tournaments do
     end)
   end
 
-  # FIXME: 名前が微妙
-  defp process_entrant(%Entrant{} = map) do
+  defp pick_user_id_as_needed(%Entrant{} = map) do
     inspect(map)
     map.user_id
   end
 
-  defp process_entrant(id), do: id
+  defp pick_user_id_as_needed(id), do: id
 
   @doc """
   Get an opponent of tournament match.
@@ -781,50 +829,35 @@ defmodule Milk.Tournaments do
 
   @doc """
   Starts a tournament.
+  FIXME: 引数の順序がfinishと逆
+  FIXME: リファクタリング
   """
-  # def start(master_id, tournament_id) do
-  #   with :false <- is_nil(master_id) or is_nil(tournament_id),
-  #   tournament <- Tournament
-  #     |> where([t], t.master_id == ^master_id and t.id == ^tournament_id)
-  #     |> Repo.one(),
-  #     :false <- is_nil(tournament) do
-  #     unless tournament.is_started do
-  #       tournament
-  #       |> Tournament.changeset(%{is_started: true})
-  #       |> Repo.update()
-  #     else
-  #       {:error, nil}
-  #     end
-  #   else
-  #     _ -> {:error, "unexpected error"}
-  #   end
-  # end
-
-  # FIXME: 引数の順序がfinishと逆
   def start(master_id, tournament_id) do
-    unless is_nil(master_id) or is_nil(tournament_id) do
-      unless number_of_entrants(tournament_id) <= 1 do
-        tournament =
-          Tournament
-          |> where([t], t.master_id == ^master_id and t.id == ^tournament_id)
-          |> Repo.one()
-        unless is_nil(tournament) do
-          unless tournament.is_started do
-            tournament
-            |> Tournament.changeset(%{is_started: true})
-            |> Repo.update()
-          else
-            {:error, "tournament is already started"}
-          end
-        else
-          {:error, "cannot find tournament"}
-        end
-      else
-        delete_tournament(tournament_id)
-        {:error, "too few entrants"}
-      end
+    nil_check_on_start?(master_id, tournament_id)
+    |> check_entrant(tournament_id)
+    |> check_tournament_for_start(master_id, tournament_id)
+    |> check_tournament_has_started()
+  end
+
+  defp nil_check_on_start?(master_id, tournament_id) do
+    if !is_nil(master_id) and !is_nil(tournament_id) do
+      {:ok, nil}
     else
       {:error, "master_id or tournament_id is nil"}
+    end
+  end
+
+  defp check_entrant(check, tournament_id) do
+    case check do
+      {:ok, _} ->
+        if number_of_entrants(tournament_id) > 1 do
+          {:ok, nil}
+        else
+          delete_tournament(tournament_id)
+          {:error, "too few entrants"}
+        end
+      {:error, reason} ->
+        {:error, reason}
     end
   end
 
@@ -833,6 +866,38 @@ defmodule Milk.Tournaments do
     |> where([e], e.tournament_id == ^tournament_id)
     |> Repo.all()
     |> length()
+  end
+
+  defp check_tournament_for_start(check, master_id, tournament_id) do
+    case check do
+      {:ok, nil} ->
+        tournament =
+          Tournament
+          |> where([t], t.master_id == ^master_id and t.id == ^tournament_id)
+          |> Repo.one()
+        unless is_nil(tournament) do
+          {:ok, tournament}
+        else
+          {:error, "cannot find tournament"}
+        end
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  defp check_tournament_has_started(check) do
+    case check do
+      {:ok, tournament} ->
+        unless tournament.is_started do
+          tournament
+          |> Tournament.changeset(%{is_started: true})
+          |> Repo.update()
+        else
+          {:error, "tournament is already started"}
+        end
+      {:error, reason} ->
+        {:error, reason}
+    end
   end
 
   @doc """
@@ -873,6 +938,7 @@ defmodule Milk.Tournaments do
 
   defp atom_tournament_map_to_string_map(%Tournament{} = tournament, winner_id) do
     %{
+      "master_id" => tournament.master_id,
       "tournament_id" => tournament.id,
       "name" => tournament.name,
       "type" => tournament.type,
@@ -881,8 +947,11 @@ defmodule Milk.Tournaments do
       "description" => tournament.description,
       "event_date" => tournament.event_date,
       "game_id" => tournament.game_id,
+      "game_name" => tournament.game_name,
       "winner_id" => winner_id,
-      "capacity" => tournament.capacity
+      "capacity" => tournament.capacity,
+      "thumbnail_path" => tournament.thumbnail_path,
+      "entrant" => tournament.entrant
     }
   end
 
@@ -951,10 +1020,41 @@ defmodule Milk.Tournaments do
     |> Repo.all()
   end
 
+  @doc """
+  Get user information of an assistant.
+  """
   def get_user_info_of_assistant(%Assistant{} = assistant) do
     User
     |> where([u], u.id == ^assistant.user_id)
     |> Repo.one()
+  end
+
+  @doc """
+  Get fighting users.
+  """
+  def get_fighting_users(tournament_id) do
+    get_entrants(tournament_id)
+    |> Enum.filter(fn entrant ->
+      TournamentProgress.get_match_pending_list({entrant.user_id, tournament_id}) != []
+    end)
+    |> Enum.map(fn entrant ->
+      Accounts.get_user(entrant.user_id)
+    end)
+  end
+
+  @doc """
+  Get users waiting for fighting ones.
+  """
+  def get_waiting_users(tournament_id) do
+    fighting_users = get_fighting_users(tournament_id)
+    tournament_id
+    |> get_entrants()
+    |> Enum.map(fn entrant ->
+      Accounts.get_user(entrant.user_id)
+    end)
+    |> Enum.filter(fn user ->
+      !Enum.member?(fighting_users, user)
+    end)
   end
 
   @doc """
@@ -1144,6 +1244,7 @@ defmodule Milk.Tournaments do
                 rank when rank < opponents_rank -> update_entrant(user, %{rank: opponents_rank})
                 _ ->
               end
+
             {bool, rank} =
               opponent
               |> Map.get(:rank)
@@ -1153,8 +1254,7 @@ defmodule Milk.Tournaments do
               |> if do
                 div(rank, 2)
               else
-                rank
-                |> find_num_closest_exponentiation_of_two()
+                find_num_closest_exponentiation_of_two(rank)
               end
             entrant
             |> update_entrant(%{rank: updated})
@@ -1167,6 +1267,7 @@ defmodule Milk.Tournaments do
     end
   end
 
+  defp find_num_closest_exponentiation_of_two(0), do: 1
   defp find_num_closest_exponentiation_of_two(1), do: 1
   defp find_num_closest_exponentiation_of_two(2), do: 1
   defp find_num_closest_exponentiation_of_two(num) do
@@ -1183,6 +1284,10 @@ defmodule Milk.Tournaments do
     else
       div(acc, 2)
     end
+  end
+
+  defp check_exponentiation_of_two(num, base) when num == 0 do
+    {true, base}
   end
 
   defp check_exponentiation_of_two(num, base) when num == 1 do
@@ -1216,6 +1321,7 @@ defmodule Milk.Tournaments do
       {:error, "tournament is not started"}
     end
   end
+
   defp tournament_start_check({:error, error}) do
     {:error, error}
   end
@@ -1239,6 +1345,7 @@ defmodule Milk.Tournaments do
 
   @doc """
   Checks tournament state.
+  # FIXME: 大会には参加していない主催者のstateを追加する
   """
   def state!(tournament_id, user_id) do
     tournament = get_tournament(tournament_id)
@@ -1249,8 +1356,23 @@ defmodule Milk.Tournaments do
       unless tournament.is_started do
         "IsNotStarted"
       else
-        check_has_lost?(tournament.id, user_id)
+        check_is_manager?(tournament, user_id)
       end
+    end
+  end
+
+  defp check_is_manager?(tournament, user_id) do
+    is_manager = tournament.master_id == user_id
+    is_not_entrant =
+      tournament.id
+      |> get_entrants()
+      |> Enum.filter(fn entrant -> entrant.user_id == user_id end)
+      |> (fn list -> list == [] end).()
+
+    if is_manager && is_not_entrant do
+      "IsManager"
+    else
+      check_has_lost?(tournament.id, user_id)
     end
   end
 
@@ -1300,16 +1422,6 @@ defmodule Milk.Tournaments do
     end
   end
 
-  # defp check_is_pending?(tournament_id, user_id) do
-  #   pending_list = TournamentProgress.get_match_pending_list({user_id, tournament_id})
-
-  #   unless pending_list == [] do
-  #     "IsPending"
-  #   else
-  #     "IsInMatch"
-  #   end
-  # end
-
   @doc """
   Returns data for tournament brackets.
   """
@@ -1344,5 +1456,6 @@ defmodule Milk.Tournaments do
 
       Map.put(entrant_log, :tournament_log, tlog)
     end)
+    |> Enum.filter(fn entrant_log -> entrant_log.tournament_log != nil end)
   end
 end

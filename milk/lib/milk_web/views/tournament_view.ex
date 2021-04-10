@@ -1,8 +1,10 @@
 defmodule MilkWeb.TournamentView do
   use MilkWeb, :view
 
-  alias MilkWeb.TournamentView
-  alias MilkWeb.UserView
+  alias MilkWeb.{
+    TournamentView,
+    UserView
+  }
 
   def render("users.json", %{users: users}) do
     if users != [] do
@@ -19,6 +21,19 @@ defmodule MilkWeb.TournamentView do
   def render("show.json", %{tournament: tournament}) do
     %{data: render_one(tournament, TournamentView, "tournament.json",
     msg: "Tournament was created!")}
+  end
+
+  def render("entrants.json", %{entrants: entrants}) do
+    %{
+      data: Enum.map(entrants, fn entrant ->
+        %{
+          id: entrant.id,
+          rank: entrant.rank,
+          tournament_id: entrant.tournament_id,
+          user_id: entrant.user_id
+        }
+      end)
+    }
   end
 
   def render("tournament.json", %{tournament: tournament}) do
@@ -82,6 +97,44 @@ defmodule MilkWeb.TournamentView do
       result: true
     }
   end
+    def render("tournament_info.json", %{tournament: tournament}) do
+    %{
+      data: %{
+        id: tournament.id,
+        name: tournament.name,
+        thumbnail_path: tournament.thumbnail_path,
+        game_id: tournament.game_id,
+        game_name: tournament.game_name,
+        event_date: tournament.event_date,
+        start_recruiting: tournament.start_recruiting,
+        deadline: tournament.deadline,
+        type: tournament.type,
+        platform: tournament.platform_id,
+        capacity: tournament.capacity,
+        password: tournament.password,
+        description: tournament.description,
+        master_id: tournament.master_id,
+        url: tournament.url,
+        create_time: tournament.create_time,
+        update_time: tournament.update_time,
+        is_started: tournament.is_started,
+        entrants: Enum.map(tournament.entrant, fn user ->
+          %{
+            user_id: user.user_id,
+          }
+        end)
+      },
+      is_log: false,
+      result: true
+    }
+  end
+
+  def render("tournament_include_log.json", %{tournaments: tournaments, tournament_log: tournament_log}) do
+    %{
+      tournaments: render_many(tournaments, TournamentView, "tournament_info.json"),
+      tournament_logs: render_many(tournament_log, TournamentView, "tournament_log.json", as: :tournament_log)
+    }
+  end
 
   def render("tournament_log.json", %{tournament_log: tournament_log}) do
     %{
@@ -91,12 +144,19 @@ defmodule MilkWeb.TournamentView do
         description: tournament_log.description,
         event_date: tournament_log.event_date,
         game_id: tournament_log.game_id,
+        game_name: tournament_log.game_name,
         tournament_id: tournament_log.tournament_id,
         winner_id: tournament_log.winner_id,
         master_id: tournament_log.master_id,
         name: tournament_log.name,
         url: tournament_log.url,
-        type: tournament_log.type
+        type: tournament_log.type,
+        thumbnail_path: tournament_log.thumbnail_path,
+        entrants: Enum.map(tournament_log.entrants, fn user ->
+          %{
+            user_id: user.user_id,
+          }
+        end)
       },
       is_log: true,
       result: true
@@ -237,4 +297,5 @@ defmodule MilkWeb.TournamentView do
   def create_message(error) do
     Enum.reduce(error, "",fn {key, value}, acc -> to_string(key) <> " "<> elem(value,0) <> ", "<> acc end)
   end
+
 end

@@ -46,7 +46,7 @@ defmodule MilkWeb.Router do
     post "/profile/update", ProfileController, :update
     post "/profile/update_icon", ProfileController, :update_icon
     get  "/profile/get_icon", ProfileController, :get_icon
-    get "/profile/records", ProfileController, :records
+    get  "/profile/records", ProfileController, :records
 
     get  "/game/list", GameController, :list
     post "/game/add", GameController, :create
@@ -81,10 +81,14 @@ defmodule MilkWeb.Router do
     get  "/tournament/users_for_add_assistant", TournamentController, :get_users_for_add_assistant
     get  "/tournament/get", TournamentController, :show
     get  "/tournament/get_by_master_id", TournamentController, :get_tournaments_by_master_id
-    get  "/tournament/get_planned", TournamentController, :get_ongoing_tournaments_by_master_id
+    get  "/tournament/get_planned", TournamentController, :get_planned_tournaments_by_master_id
+    # get  "/tournament/get_planned", TournamentController, :get_ongoing_tournaments_by_master_id
     get  "/tournament/get_game", TournamentController, :get_game
+    get  "/tournament/get_entrants", TournamentController, :get_entrants
     get  "/tournament/by_url", TournamentController, :get_tournament_by_url
     get  "/tournament/get_opponent", TournamentController, :get_opponent
+    get  "/tournament/fighting_users", TournamentController, :get_fighting_users
+    get  "/tournament/waiting_users", TournamentController, :get_waiting_users
     get  "/tournament/get_participating_tournaments", TournamentController, :participating_tournaments
     get  "/tournament/participating", TournamentController, :participating_tournaments
     get  "/tournament/get_tabs", TournamentController, :tournament_topics

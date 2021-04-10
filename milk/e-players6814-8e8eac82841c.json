@@ -1,0 +1,12 @@
+{
+  "type": "service_account",
+  "project_id": "e-players6814",
+  "private_key_id": "8e8eac82841cd971f200389f04a0ac3d2041d1c4",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDIcAQzwrMh+SyE\ncnxO62BhvqcAGbfho3ENMsK6PTZYD2nXKAyR+AEHgyO3TjgAdkHoWhhO9XXvRixE\nkIyXElDfYQwI2Y4pQotvKLpt6QOy3CbN1U3dn1SS4uNEKk8XuLDHyr2DZfespo9B\nIoUYZv0PAS3w2xukaQB7bkU3ZJTZK/iltCa46Omo6lHSTK6VWuSJgp+R/eUuZSHL\nn3Jx0ZcdG9puQ9vlQtYNL6jIaVPAHgrqGEiQ3fojEugO9TAfEv5fnT7ZgvHzIZWZ\nhtVgfpXQF1F9400ryzVwX0VLbyr/dlyGHWD8RwjfjaKJ85n7Boe4SzCGezeGf8SZ\nLD5Z5YLHAgMBAAECggEAASwS6RMOrPt+8OPS/Aqw3j8ucaWuwsakOYnYGVoy6Jzh\nUe65DKrpUFgNS/d9fjVLN85gynFreAXrS7xmq8sGRVY/vVDX0YlVWb/OP99MhnPk\nVJVNWnBGT9eYEssAdAc6KmLZ4LrE85NoWtKo4Zl8NJBIOdqT5AUt2LWcQlkTQg3E\nkvmOQuMZDebX2eiwgQ/aetRlPj0n6rVjdDTAMq3jgvgSvphx0TQsLjZfG616BR5D\nKQvSCV1+joEGk+3ZtJ6OifWnC4btHwvfWJQ2E3hOGeVsLGKdC1fvtO1RlqAOzvmi\nTly4MMBAO+5Vz4CFDJi2nXKwm0TbWao9W8MG9ul+2QKBgQDxIEM+MKnklOeujWhb\nPDa4pDiMm0/1k6L1irrdAmqT/LCzDcIGVq6eV/oA5U4baLO9XE0qDjPQJCY/E4Eh\nGafGGSkEC313uUm9M3XfLQDeUciPcA/GWZXx7hiOFVvTn5XJLkc4f9kzvNbx9gk2\nYpj9HvhNoLI0C5wz5vh74aDEzwKBgQDUzTj+HqkzElRTFvueZ3xspOI09IlJFs8r\nPHJA2+LuxQcSs3H9K0ioTXOf7y8kemfHcIst4GE4AgjFSfxHQrHuyiq4YwJrmNbm\nPEf2z8qYTJvoVcoMJ1pVTQOXnc/4ZGaEvwSPvGaPBb0czJDx4vvE23hJdJuj+vbK\n+1Lf+szQiQKBgCDZJE/0kTBymJ1O5kiHi2zb8lg1UE9ELY8Fty8khSBj7C54UVZL\nuL4ZfhVhJ6LUQKgrStfP138jbZJqNc0skY6LHutOJWmJ9GGyAPzGRLgErC3eNkfv\nLF4o8W9puXi65MzjYRBxWkWSFDYiLl8aT30sGud4XM56Rm1Lqc42jpBBAoGAFiyQ\nTMKLJPw69zGE5Jup9nQz8gqtJ4WN7tZsnV+MRQ8YzpUOQrA48PipHLhCtE1g9QJA\nLnacCscDfPNZq19CxTwhuXbvsKCLfBA5+3jphnctI8eUtzF+kzbkMe9K1Xo4yIpT\nAltCYJLbgt26GMprK7cm0JirAypKfxozJ42tu+kCgYEA6WA7C5mV/kQ45Hb+PC1m\nktQfsQTt1LprwRA4WUfFGJVflySaYxpmZhd9O10exefEGZjt+KVeBu6iYMuJPbiN\nYBe9YzR1b4/VLEydw8sKXzKKDgXtBT/jWMlK7G8LT+PGdlwelfE+JDV712EBNLJd\nlaRNg059sf7kAJJ1syAFrP4=\n-----END PRIVATE KEY-----\n",
+  "client_email": "milk-eplayers@e-players6814.iam.gserviceaccount.com",
+  "client_id": "108741034334450271546",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/milk-eplayers%40e-players6814.iam.gserviceaccount.com"
+}
