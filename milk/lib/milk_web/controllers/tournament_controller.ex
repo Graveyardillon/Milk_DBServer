@@ -178,7 +178,6 @@ defmodule MilkWeb.TournamentController do
     end
   end
 
-  # FIXME: フィルタの仕方変えたほうがよさそう
   @doc """
   Gets tournament info list for home screen.
   """

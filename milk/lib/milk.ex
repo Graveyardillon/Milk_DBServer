@@ -63,14 +63,13 @@ defmodule Milk do
   #   end
   # end
 
-  # # FIXME: 差分は検知しないので、とりあえずuserテーブルのデータを全部返す実装になっちゃってる
   # defp send_user_data(socket) do
   #   Accounts.list_users()
   #   |> Enum.each(fn user ->
   #     id = Integer.to_string(user.id)
   #     Logger.info(id)
   #     :gen_tcp.send(socket, id)
-  #     # FIXME: sendの文字列が連結されちゃうからこうしたけど処理方法が絶対適切でない。
+  #     # sendの文字列が連結されちゃうからこうしたけど処理方法が絶対適切でない。
   #     :timer.sleep(1)
   #   end)
   # end
