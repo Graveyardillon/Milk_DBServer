@@ -434,7 +434,6 @@ defmodule MilkWeb.TournamentController do
     end)
 
     updated_match_list = renew_match_list(tournament_id, match_list, loser_list)
-      |> IO.inspect(label: :updated_match_list)
     get_lost(tournament_id, match_list, loser_list)
     unless is_integer(updated_match_list) do
       Tournaments.trim_match_list_as_needed(tournament_id)

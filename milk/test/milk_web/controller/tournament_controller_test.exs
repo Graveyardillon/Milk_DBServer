@@ -296,7 +296,6 @@ defmodule MilkWeb.TournamentControllerTest do
         conn
         |> get(Routes.tournament_path(conn, :get_duplicate_claim_members), tournament_id: tournament.id)
         |> json_response(200)
-        |> IO.inspect(label: :res)
         |> Map.get("data")
         |> Enum.each(fn user ->
           user.id
@@ -350,7 +349,6 @@ defmodule MilkWeb.TournamentControllerTest do
         |> TournamentProgress.get_match_list_with_fight_result()
         |> hd()
         |> elem(1)
-        |> IO.inspect()
         |> Tournaments.match_list_length()
         |> (fn len ->
           assert len == 16

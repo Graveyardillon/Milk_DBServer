@@ -360,7 +360,6 @@ defmodule Milk.Tournaments do
       |> hd()
       |> elem(1)
       |> match_list_length()
-      |> IO.inspect(label: :mllen)
 
     match_list_with_fight_result_len =
       tournament_id
@@ -368,7 +367,6 @@ defmodule Milk.Tournaments do
       |> hd()
       |> elem(1)
       |> match_list_length()
-      |> IO.inspect(label: :mlwfrlen)
 
     if match_list_with_fight_result_len > 16 and match_list_len <= 16 do
       [{_, new_list}] = TournamentProgress.get_match_list(tournament_id)
