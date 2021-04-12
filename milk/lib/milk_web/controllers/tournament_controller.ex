@@ -768,6 +768,20 @@ defmodule MilkWeb.TournamentController do
   end
 
   @doc """
+  Get duplicate members.
+  """
+  def get_duplicate_claim_members(conn, %{"tournament_id" => tournament_id}) do
+    users =
+      tournament_id
+      |> TournamentProgress.get_duplicate_users()
+      |> Enum.map(fn user_id ->
+        Accounts.get_user(user_id)
+      end)
+
+      render(conn, "users.json", users: users)
+  end
+
+  @doc """
   Get game masters.
   """
   def get_game_masters(conn, %{"tournament_id" => tournament_id}) do
