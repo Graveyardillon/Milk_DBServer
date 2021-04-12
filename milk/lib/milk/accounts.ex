@@ -11,9 +11,19 @@ defmodule Milk.Accounts do
   alias Ecto.Multi
   alias Milk.Accounts
   alias Milk.UserManager.Guardian
-  alias Milk.Accounts.{User, Auth}
-  alias Milk.Chat.{ChatRoom, ChatMember}
-  alias Milk.Log.{ChatMemberLog, AssistantLog, EntrantLog}
+  alias Milk.Accounts.{
+    User,
+    Auth
+  }
+  alias Milk.Chat.{
+    ChatRoom,
+    ChatMember
+  }
+  alias Milk.Log.{
+    ChatMemberLog,
+    AssistantLog,
+    EntrantLog
+  }
   alias Milk.CloudStorage.Objects
 
   @typedoc """

@@ -64,6 +64,7 @@ defmodule MilkWeb.TournamentControllerTest do
       conn = get(conn, Routes.tournament_path(conn, :show), %{"tournament_id" => tournament.id})
 
       assert json_response(conn, 200)["result"]
+      assert TournamentProgress.get_duplicate_users(tournament.id) == []
     end
 
     test "cannot get a tournament which does not exist", %{conn: conn, tournament: _tournament} do

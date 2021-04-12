@@ -68,6 +68,19 @@ defmodule Milk.TournamentProgress do
     end
   end
 
+  def add_duplicate_user_id(tournament_id, user_id) do
+    conn = conn()
+
+    with {:ok, _} <- Redix.command(conn, ["MULTI"]),
+    {:ok, _} <- Redix.command(conn, ["SELECT", 5]),
+    {:ok, _} <- Redix.command(conn, ["SADD", tournament_id, user_id]),
+    {:ok, _} <- Redix.command(conn, ["EXEC"]) do
+      true
+    else
+      _ -> false
+    end
+  end
+
   def get_match_list(tournament_id) do
     conn = conn()
 
@@ -128,6 +141,17 @@ defmodule Milk.TournamentProgress do
     end
   end
 
+  def get_duplicate_users(tournament_id) do
+    conn = conn()
+
+    with {:ok, _} <- Redix.command(conn, ["SELECT", 5]),
+    {:ok, value} <- Redix.command(conn, ["SMEMBERS", tournament_id]) do
+      value
+    else
+      _v -> []
+    end
+  end
+
   def delete_match_list(tournament_id) do
     conn = conn()
 
@@ -146,7 +170,7 @@ defmodule Milk.TournamentProgress do
     {:ok, _} <- Redix.command(conn, ["DEL", tournament_id]) do
       true
     else
-      error ->
+      _error ->
         false
     end
   end
@@ -158,7 +182,7 @@ defmodule Milk.TournamentProgress do
     {:ok, _} <- Redix.command(conn, ["HDEL", tournament_id, user_id]) do
       true
     else
-      error ->
+      _error ->
         false
     end
   end
@@ -168,6 +192,35 @@ defmodule Milk.TournamentProgress do
 
     with {:ok, _} <- Redix.command(conn, ["SELECT", 4]),
     {:ok, _} <- Redix.command(conn, ["HDEL", tournament_id, user_id]) do
+      true
+    else
+      _ -> false
+    end
+  end
+
+  def delete_duplicate_user(tournament_id, user_id) do
+    conn = conn()
+
+    with {:ok, _} <- Redix.command(conn, ["SELECT", 5]),
+    {:ok, n} <- Redix.command(conn, ["SCARD", tournament_id]),
+    {:ok, got_user_id_list} <- Redix.command(conn, ["SPOP", tournament_id, n]) do
+      Enum.each(got_user_id_list, fn got_user_id ->
+        unless got_user_id == to_string(user_id) do
+          Redix.command(conn, ["SADD", tournament_id, got_user_id])
+        end
+      end)
+      true
+    else
+      _ -> false
+    end
+  end
+
+  def delete_duplicate_users_all(tournament_id) do
+    conn = conn()
+
+    with {:ok, _} <- Redix.command(conn, ["SELECT", 5]),
+    {:ok, n} <- Redix.command(conn, ["SCARD", tournament_id]),
+    {:ok, _} <- Redix.command(conn, ["SPOP", tournament_id, n]) do
       true
     else
       _ -> false
