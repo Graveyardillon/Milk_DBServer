@@ -70,7 +70,7 @@ defmodule MilkWeb.TournamentController do
     ユーザーの開催予定の大会と、logから今まで開催した大会のデータを取得
   """
   def get_planned_tournaments_by_master_id(conn, %{"user_id" => user_id}) do
-    tournaments = 
+    tournaments =
       user_id
       |> Tournaments.get_ongoing_tournaments_by_master_id()
       |> Enum.map(fn tournament ->
@@ -82,7 +82,7 @@ defmodule MilkWeb.TournamentController do
         end)
         Map.put(tournament, :entrants, entrants)
       end)
-      
+
     tournament_log = Tournaments.get_tournament_logs_by_master_id(user_id)
     render(conn, "tournament_include_log.json", tournaments: tournaments, tournament_log: tournament_log)
   end
@@ -688,7 +688,6 @@ defmodule MilkWeb.TournamentController do
         {{_, _tournament_id}, is_win} = hd(result_list)
 
         if is_win do
-          Chat.notify_game_masters(tournament_id)
           json(conn, %{validated: false, completed: false})
         else
           # マッチングが正常に終了している
@@ -721,7 +720,6 @@ defmodule MilkWeb.TournamentController do
         {{_, _tournament_id}, is_win} = hd(result_list)
 
         unless is_win do
-          Chat.notify_game_masters(tournament_id)
           json(conn, %{validated: false, completed: false})
         else
           TournamentProgress.delete_match_pending_list({user_id, tournament_id})
