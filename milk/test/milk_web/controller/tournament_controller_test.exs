@@ -298,9 +298,9 @@ defmodule MilkWeb.TournamentControllerTest do
         |> json_response(200)
         |> Map.get("data")
         |> Enum.each(fn user ->
-          user.id
+          user["id"]
           |> Kernel.==(player.user_id)
-          |> Kernel.||(user.id == opponent["id"])
+          |> Kernel.||(user["id"] == opponent["id"])
           |> (fn bool ->
             assert bool
           end).()
