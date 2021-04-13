@@ -187,6 +187,7 @@ defmodule MilkWeb.TournamentController do
     end
   end
 
+  # FIXME: フィルタの仕方変えたほうがよさそう
   @doc """
   Gets tournament info list for home screen.
   """
@@ -218,6 +219,26 @@ defmodule MilkWeb.TournamentController do
       end)
 
     render(conn, "home.json", tournaments_info: tournaments)
+  end
+
+  def home(conn, %{"filter" => "entry", "user_id" => user_id}) do
+    tournaments =
+      Tournaments.get_participating_tournaments(user_id)
+      |> Enum.map(fn tournament ->
+        entrants =
+          Tournaments.get_entrants(tournament.id)
+          |> Enum.map(fn entrant ->
+            Accounts.get_user(entrant.user_id)
+          end)
+
+        Map.put(tournament, :entrants, entrants)
+      end)
+
+      if tournaments do
+        render(conn, "home.json", tournaments_info: tournaments)
+      else
+        render(conn, "error.json", error: nil)
+      end
   end
 
   def home(conn, %{"date_offset" => date_offset, "offset" => offset}) do
@@ -280,51 +301,51 @@ defmodule MilkWeb.TournamentController do
   @doc """
   Get tournaments which a user is participating in.
   """
-  def participating_tournaments(conn, %{"user_id" => user_id, "offset" => offset}) do
-    tournaments =
-      Tournaments.get_participating_tournaments(user_id, offset)
-      |> Enum.map(fn tournament ->
-        entrants =
-          Tournaments.get_entrants(tournament.id)
-          |> Enum.map(fn entrant ->
-            Accounts.get_user(entrant.user_id)
-          end)
+  # def participating_tournaments(conn, %{"user_id" => user_id, "offset" => offset}) do
+  #   tournaments =
+  #     Tournaments.get_participating_tournaments(user_id, offset)
+  #     |> Enum.map(fn tournament ->
+  #       entrants =
+  #         Tournaments.get_entrants(tournament.id)
+  #         |> Enum.map(fn entrant ->
+  #           Accounts.get_user(entrant.user_id)
+  #         end)
 
-        %{
-          tournament: tournament,
-          entrants: entrants
-        }
-      end)
+  #       %{
+  #         tournament: tournament,
+  #         entrants: entrants
+  #       }
+  #     end)
 
-    if tournaments do
-      render(conn, "home.json", tournaments_info: tournaments)
-    else
-      render(conn, "error.json", error: nil)
-    end
-  end
+  #   if tournaments do
+  #     render(conn, "home.json", tournaments_info: tournaments)
+  #   else
+  #     render(conn, "error.json", error: nil)
+  #   end
+  # end
 
-  def participating_tournaments(conn, %{"user_id" => user_id}) do
-    tournaments =
-      Tournaments.get_participating_tournaments(user_id)
-      |> Enum.map(fn tournament ->
-        entrants =
-          Tournaments.get_entrants(tournament.id)
-          |> Enum.map(fn entrant ->
-            Accounts.get_user(entrant.user_id)
-          end)
+  # def participating_tournaments(conn, %{"user_id" => user_id}) do
+  #   tournaments =
+  #     Tournaments.get_participating_tournaments(user_id)
+  #     |> Enum.map(fn tournament ->
+  #       entrants =
+  #         Tournaments.get_entrants(tournament.id)
+  #         |> Enum.map(fn entrant ->
+  #           Accounts.get_user(entrant.user_id)
+  #         end)
 
-        %{
-          tournament: tournament,
-          entrants: entrants
-        }
-      end)
+  #       %{
+  #         tournament: tournament,
+  #         entrants: entrants
+  #       }
+  #     end)
 
-      if tournaments do
-        render(conn, "home.json", tournaments_info: tournaments)
-      else
-        render(conn, "error.json", error: nil)
-      end
-  end
+  #     if tournaments do
+  #       render(conn, "home.json", tournaments_info: tournaments)
+  #     else
+  #       render(conn, "error.json", error: nil)
+  #     end
+  # end
 
   @doc """
   Get relevant tournaments.
@@ -437,6 +458,7 @@ defmodule MilkWeb.TournamentController do
     end)
 
     updated_match_list = renew_match_list(tournament_id, match_list, loser_list)
+      |> IO.inspect(label: :updated_match_list)
     get_lost(tournament_id, match_list, loser_list)
     unless is_integer(updated_match_list) do
       Tournaments.trim_match_list_as_needed(tournament_id)
@@ -666,8 +688,7 @@ defmodule MilkWeb.TournamentController do
         {{_, _tournament_id}, is_win} = hd(result_list)
 
         if is_win do
-          TournamentProgress.add_duplicate_user_id(tournament_id, user_id)
-          TournamentProgress.add_duplicate_user_id(tournament_id, opponent_id)
+          Chat.notify_game_masters(tournament_id)
           json(conn, %{validated: false, completed: false})
         else
           # マッチングが正常に終了している
@@ -770,20 +791,6 @@ defmodule MilkWeb.TournamentController do
   end
 
   @doc """
-  Get duplicate members.
-  """
-  def get_duplicate_claim_members(conn, %{"tournament_id" => tournament_id}) do
-    users =
-      tournament_id
-      |> TournamentProgress.get_duplicate_users()
-      |> Enum.map(fn user_id ->
-        Accounts.get_user(user_id)
-      end)
-
-      render(conn, "users.json", users: users)
-  end
-
-  @doc """
   Get game masters.
   """
   def get_game_masters(conn, %{"tournament_id" => tournament_id}) do
@@ -816,7 +823,6 @@ defmodule MilkWeb.TournamentController do
   """
   def finish(conn, %{"tournament_id" => tournament_id, "user_id" => user_id}) do
     result = Tournaments.finish(tournament_id, user_id)
-    TournamentProgress.delete_duplicate_users_all(1)
 
     json(conn, %{result: result})
   end
@@ -865,12 +871,13 @@ defmodule MilkWeb.TournamentController do
   Registers PID of start notification.
   The notification is handled in Web Server, so the pid does not belong to this server.
   """
-  def register_pid_of_start_notification(conn, %{"tournament_id" => tournament_id, "pid" => pid_str}) do
+  def register_pid_of_start_notification(conn, %{"tournament_id" => tournament_id, "pid" => pid}) do
     tournament_id = Tools.to_integer_as_needed(tournament_id)
 
+    # FIXME: エラーハンドリング
     tournament_id
     |> Tournaments.get_tournament!()
-    |> Tournaments.update_tournament(%{"start_notification_pid" => pid_str})
+    |> Tournaments.update_tournament(%{"start_notification_pid" => pid})
     |> case do
       {:ok, _tournament} -> json(conn, %{result: true})
       {:error, nil} ->  json(conn, %{result: false})
