@@ -64,6 +64,7 @@ defmodule MilkWeb.TournamentControllerTest do
       conn = get(conn, Routes.tournament_path(conn, :show), %{"tournament_id" => tournament.id})
 
       assert json_response(conn, 200)["result"]
+      assert TournamentProgress.get_duplicate_users(tournament.id) == []
     end
 
     test "cannot get a tournament which does not exist", %{conn: conn, tournament: _tournament} do
@@ -257,6 +258,59 @@ defmodule MilkWeb.TournamentControllerTest do
     end
   end
 
+  describe "test duplicate claim members" do
+    setup [:create_tournament]
+
+    test "get duplicate claim members", %{conn: conn, tournament: tournament} do
+      entrants = create_entrants(17, tournament.id)
+      player = hd(entrants)
+
+      conn = post(conn, Routes.tournament_path(conn, :start), tournament: %{"master_id" => tournament.master_id, "tournament_id" => tournament.id})
+      conn = get(conn, Routes.tournament_path(conn, :get_opponent), %{"tournament_id" => tournament.id, "user_id" => player.user_id})
+
+      response = json_response(conn, 200)
+      cond do
+        !is_nil(response["opponent"]) -> true
+        is_nil(response["opponent"]) and !is_nil(response["wait"]) -> false
+        true -> assert false, "it must not be true"
+      end
+      |> if do
+        opponent = response["opponent"]
+        conn = post(conn, Routes.tournament_path(conn, :start_match), user_id: player.user_id, tournament_id: tournament.id)
+        conn = post(conn, Routes.tournament_path(conn, :start_match), user_id: opponent["id"], tournament_id: tournament.id)
+        conn = post(conn, Routes.tournament_path(conn, :claim_win), opponent_id: opponent["id"], user_id: player.user_id, tournament_id: tournament.id)
+        conn = post(conn, Routes.tournament_path(conn, :claim_win), opponent_id: player.user_id, user_id: opponent["id"], tournament_id: tournament.id)
+
+        tournament.id
+        |> TournamentProgress.get_duplicate_users()
+        |> Kernel.==([opponent["id"], player.user_id])
+        |> Kernel.||(
+          tournament.id
+          |> TournamentProgress.get_duplicate_users()
+          |> Kernel.==([player.user_id, opponent["id"]])
+        )
+        |> (fn bool ->
+          assert bool
+        end).()
+
+        conn
+        |> get(Routes.tournament_path(conn, :get_duplicate_claim_members), tournament_id: tournament.id)
+        |> json_response(200)
+        |> Map.get("data")
+        |> Enum.each(fn user ->
+          user["id"]
+          |> Kernel.==(player.user_id)
+          |> Kernel.||(user["id"] == opponent["id"])
+          |> (fn bool ->
+            assert bool
+          end).()
+        end)
+      else
+        Logger.info("opponent is nil in 'test duplicate claim members'")
+      end
+    end
+  end
+
   describe "test trim of players" do
     setup [:create_tournament]
 
@@ -295,7 +349,6 @@ defmodule MilkWeb.TournamentControllerTest do
         |> TournamentProgress.get_match_list_with_fight_result()
         |> hd()
         |> elem(1)
-        |> IO.inspect()
         |> Tournaments.match_list_length()
         |> (fn len ->
           assert len == 16

@@ -12,10 +12,8 @@ defmodule Milk.Repo.Migrations.CreateTournamentLog do
       add :url, :string
       add :tournament_id, :integer
       add :game_id, :integer
-      add :game_name, :string
       add :master_id, :integer
       add :winner_id, :integer
-      add :thumbnail_path, :string
       add :is_deleted, :boolean, default: false
       add :is_started, :boolean, default: false
 
