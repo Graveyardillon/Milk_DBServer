@@ -434,7 +434,6 @@ defmodule MilkWeb.TournamentController do
     end)
 
     updated_match_list = renew_match_list(tournament_id, match_list, loser_list)
-      |> IO.inspect(label: :updated_match_list)
     get_lost(tournament_id, match_list, loser_list)
     unless is_integer(updated_match_list) do
       Tournaments.trim_match_list_as_needed(tournament_id)
@@ -664,7 +663,8 @@ defmodule MilkWeb.TournamentController do
         {{_, _tournament_id}, is_win} = hd(result_list)
 
         if is_win do
-          Chat.notify_game_masters(tournament_id)
+          TournamentProgress.add_duplicate_user_id(tournament_id, user_id)
+          TournamentProgress.add_duplicate_user_id(tournament_id, opponent_id)
           json(conn, %{validated: false, completed: false})
         else
           # マッチングが正常に終了している
@@ -767,6 +767,20 @@ defmodule MilkWeb.TournamentController do
   end
 
   @doc """
+  Get duplicate members.
+  """
+  def get_duplicate_claim_members(conn, %{"tournament_id" => tournament_id}) do
+    users =
+      tournament_id
+      |> TournamentProgress.get_duplicate_users()
+      |> Enum.map(fn user_id ->
+        Accounts.get_user(user_id)
+      end)
+
+      render(conn, "users.json", users: users)
+  end
+
+  @doc """
   Get game masters.
   """
   def get_game_masters(conn, %{"tournament_id" => tournament_id}) do
@@ -799,6 +813,7 @@ defmodule MilkWeb.TournamentController do
   """
   def finish(conn, %{"tournament_id" => tournament_id, "user_id" => user_id}) do
     result = Tournaments.finish(tournament_id, user_id)
+    TournamentProgress.delete_duplicate_users_all(1)
 
     json(conn, %{result: result})
   end
