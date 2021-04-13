@@ -77,6 +77,7 @@ defmodule Milk.Tournaments do
     |> offset(^offset)
     |> limit(5)
     |> Repo.all()
+    |> Repo.preload(:entrant)
   end
 
   @doc """
@@ -123,7 +124,7 @@ defmodule Milk.Tournaments do
     Repo.all(from t in Tournament, where: t.master_id == ^user_id)
   end
 
-  def get_tournamentlogs_by_master_id(user_id) do
+  def get_tournament_logs_by_master_id(user_id) do
     Repo.all(from tl in TournamentLog, where: tl.master_id == ^user_id)
     TournamentLog
     |> where([tl], tl.master_id == ^user_id)
@@ -136,8 +137,8 @@ defmodule Milk.Tournaments do
         EntrantLog
         |> where([el], el.tournament_id == ^tournament_log.tournament_id)
         |> Repo.all()
-
-      Map.put(tournament_log, :entrant, entrants)
+        
+      Map.put(tournament_log, :entrants, entrants)
     end)
   end
 

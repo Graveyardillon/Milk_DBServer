@@ -118,7 +118,7 @@ defmodule MilkWeb.TournamentView do
         create_time: tournament.create_time,
         update_time: tournament.update_time,
         is_started: tournament.is_started,
-        entrants: Enum.map(tournament.entrant, fn user ->
+        entrants: Enum.map(tournament.entrants, fn user ->
           %{
             user_id: user.user_id,
           }
@@ -131,7 +131,7 @@ defmodule MilkWeb.TournamentView do
 
   def render("tournament_include_log.json", %{tournaments: tournaments, tournament_log: tournament_log}) do
     %{
-      tournaments: render_many(tournaments, TournamentView, "tournament_info.json"),
+      tournaments: render_many(tournaments, TournamentView, "tournament_info_include_entrants.json", as: :tournament_info),
       tournament_logs: render_many(tournament_log, TournamentView, "tournament_log.json", as: :tournament_log)
     }
   end
@@ -174,28 +174,32 @@ defmodule MilkWeb.TournamentView do
   end
 
   def render("home.json", %{tournaments_info: tournaments_info}) do
-    %{
-      data: Enum.map(tournaments_info, fn info ->
+  %{
+    data: render_many(tournaments_info, TournamentView, "tournament_info_include_entrants.json", as: :tournament_info)
+  }
+  end
+
+    def render("tournament_info_include_entrants.json", %{tournament_info: tournament}) do
         %{
-          id: info.tournament.id,
-          name: info.tournament.name,
-          thumbnail_path: info.tournament.thumbnail_path,
-          game_id: info.tournament.game_id,
-          game_name: info.tournament.game_name,
-          event_date: info.tournament.event_date,
-          start_recruiting: info.tournament.start_recruiting,
-          deadline: info.tournament.deadline,
-          type: info.tournament.type,
-          platform: info.tournament.platform_id,
-          capacity: info.tournament.capacity,
-          password: info.tournament.password,
-          description: info.tournament.description,
-          master_id: info.tournament.master_id,
-          url: info.tournament.url,
-          create_time: info.tournament.create_time,
-          update_time: info.tournament.update_time,
-          is_started: info.tournament.is_started,
-          entrants: Enum.map(info.entrants, fn user ->
+          id: tournament.id,
+          name: tournament.name,
+          thumbnail_path: tournament.thumbnail_path,
+          game_id: tournament.game_id,
+          game_name: tournament.game_name,
+          event_date: tournament.event_date,
+          start_recruiting: tournament.start_recruiting,
+          deadline: tournament.deadline,
+          type: tournament.type,
+          platform: tournament.platform_id,
+          capacity: tournament.capacity,
+          password: tournament.password,
+          description: tournament.description,
+          master_id: tournament.master_id,
+          url: tournament.url,
+          create_time: tournament.create_time,
+          update_time: tournament.update_time,
+          is_started: tournament.is_started,
+          entrants: Enum.map(tournament.entrants, fn user ->
             %{
               id: user.id,
               name: user.name,
@@ -208,8 +212,6 @@ defmodule MilkWeb.TournamentView do
             }
           end)
         }
-      end)
-    }
   end
 
   def render("create.json", %{tournament: tournament}) do
