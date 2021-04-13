@@ -7,7 +7,11 @@ defmodule Milk.Chat do
 
   alias Milk.Repo
   alias Milk.Accounts
-  alias Milk.Chat.{ChatRoom, Chats, ChatMember}
+  alias Milk.Chat.{
+    ChatRoom,
+    Chats,
+    ChatMember
+  }
   alias Milk.Accounts.User
   alias Milk.Tournaments.TournamentChatTopic
   alias Milk.Log.{
@@ -513,10 +517,6 @@ defmodule Milk.Chat do
       attrs
       |> create_chats()
     end
-  end
-
-  def notify_game_masters(_tournament_id) do
-
   end
 
   # user_idに関連するチャットを全て取り出す
