@@ -458,24 +458,6 @@ defmodule MilkWeb.TournamentController do
     render(conn, "loser.json", list: updated_match_list)
   end
 
-  defp renew_match_list(tournament_id, match_list, loser_list) do
-    Tournaments.promote_winners_by_loser(tournament_id, match_list, loser_list)
-    updated_match_list = Tournaments.delete_loser(match_list, loser_list)
-    TournamentProgress.delete_match_list(tournament_id)
-    TournamentProgress.insert_match_list(updated_match_list, tournament_id)
-    updated_match_list
-  end
-
-  defp get_lost(tournament_id, _match_list, [loser]) do
-    {_, match_list} =
-      tournament_id
-      |> TournamentProgress.get_match_list_with_fight_result()
-      |> hd()
-    updated_match_list = Tournaments.get_lost(match_list, loser)
-    TournamentProgress.delete_match_list_with_fight_result(tournament_id)
-    TournamentProgress.insert_match_list_with_fight_result(updated_match_list, tournament_id)
-  end
-
   @doc """
   Find a match of a specific tournament.
   """

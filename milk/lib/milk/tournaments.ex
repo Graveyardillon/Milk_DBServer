@@ -708,10 +708,12 @@ defmodule Milk.Tournaments do
   end
 
   @doc """
-
+  Delete loser.
   """
   def delete_loser_process(tournament_id, loser_list) do
+    IO.inspect(tournament_id, label: :tournament_id_in_delete_loser_process)
     [{_, match_list}] = TournamentProgress.get_match_list(tournament_id)
+      |> IO.inspect(label: :asdf)
 
     match_list
     |> find_match(hd(loser_list))
@@ -720,8 +722,8 @@ defmodule Milk.Tournaments do
       TournamentProgress.delete_fight_result({user_id, tournament_id})
     end)
 
-    updated_match_list = renew_match_list(tournament_id, match_list, loser_list)
     get_user_lost(tournament_id, match_list, loser_list)
+    updated_match_list = renew_match_list(tournament_id, match_list, loser_list)
     unless is_integer(updated_match_list) do
       trim_match_list_as_needed(tournament_id)
     end
@@ -730,7 +732,10 @@ defmodule Milk.Tournaments do
   end
 
   defp renew_match_list(tournament_id, match_list, loser_list) do
-    promote_winners_by_loser(tournament_id, match_list, loser_list)
+    unless is_nil(match_list) do
+      promote_winners_by_loser(tournament_id, match_list, loser_list)
+    end
+
     updated_match_list = delete_loser(match_list, loser_list)
     TournamentProgress.delete_match_list(tournament_id)
     TournamentProgress.insert_match_list(updated_match_list, tournament_id)
@@ -738,10 +743,14 @@ defmodule Milk.Tournaments do
   end
 
   defp get_user_lost(tournament_id, _match_list, [loser]) do
+    tournament_id = Tools.to_integer_as_needed(tournament_id)
     {_, match_list} =
       tournament_id
+      |> IO.inspect(label: :tid)
       |> TournamentProgress.get_match_list_with_fight_result()
+      |> IO.inspect(label: :before_list)
       |> hd()
+      |> IO.inspect(label: :match_list)
     updated_match_list = get_lost(match_list, loser)
     TournamentProgress.delete_match_list_with_fight_result(tournament_id)
     TournamentProgress.insert_match_list_with_fight_result(updated_match_list, tournament_id)
@@ -1264,6 +1273,7 @@ defmodule Milk.Tournaments do
         {_num, match_list} =
           attrs["tournament_id"]
           |> TournamentProgress.get_match_list()
+          |> IO.inspect(label: :get_match_list_in_promote_rank)
           |> hd()
         # 対戦相手
         match_list

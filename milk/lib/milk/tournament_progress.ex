@@ -7,6 +7,8 @@ defmodule Milk.TournamentProgress do
   5. duplicate_users
   6. absence_process
   """
+  alias Milk.Tournaments
+
   require Logger
 
   defp conn() do
@@ -112,14 +114,12 @@ defmodule Milk.TournamentProgress do
 
     with {:ok, _} <- Redix.command(conn, ["SELECT", 2]),
     {:ok, value} <- Redix.command(conn, ["GET", tournament_id]) do
-      if value do
-        {match_list, _} = Code.eval_string(value)
-        [{tournament_id, match_list}]
-      else
-        []
-      end
+      {match_list, _} = Code.eval_string(value)
+      [{tournament_id, match_list}]
     else
-      _ -> []
+      e ->
+        IO.inspect(e, label: :e)
+        []
     end
   end
 
@@ -290,13 +290,21 @@ defmodule Milk.TournamentProgress do
   end
 
   defp get_lost(user_id, tournament_id) do
+    IO.inspect(user_id, label: :user_id)
+    IO.inspect(tournament_id, label: :tournament_id)
+
     # 敗北のプロセスを生成
     pid_str =
       Task.async(fn ->
-        DateTime.utc_now()
-        |> DateTime.to_unix()
+        5
+        |> Kernel.*(60)
         |> Kernel.*(1000)
         |> Process.sleep()
+
+        # 敗北処理
+        IO.inspect(tournament_id, label: :after_sleep)
+        #Logger.info("will get lost" <> to_string(user_id))
+        Tournaments.delete_loser_process(tournament_id, [user_id])
       end)
       |> case do
         %Task{pid: pid} ->
