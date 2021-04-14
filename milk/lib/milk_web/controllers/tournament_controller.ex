@@ -390,10 +390,14 @@ defmodule MilkWeb.TournamentController do
     master_id = Tools.to_integer_as_needed(master_id)
     tournament_id = Tools.to_integer_as_needed(tournament_id)
 
-    with {:ok, _} <- Tournaments.start(master_id, tournament_id) do
-      make_matches(conn, tournament_id)
+    with {:ok, _} <- Tournaments.start(master_id, tournament_id),
+    {:ok, match_list, match_list_with_fight_result} <- make_matches(conn, tournament_id) do
+      render(conn, "match.json", %{match_list: match_list, match_list_with_fight_result: match_list_with_fight_result})
     else
-      _ -> json(conn, %{error: "error"})
+      {:error, error, nil} ->
+        render(conn, "error.json", error: error)
+      _ ->
+        json(conn, %{error: "error"})
     end
   end
 
@@ -429,9 +433,10 @@ defmodule MilkWeb.TournamentController do
           end)
           |> TournamentProgress.insert_match_list_with_fight_result(tournament_id)
 
-        render(conn, "match.json", %{match_list: match_list, match_list_with_fight_result: complete_list})
+        {:ok, match_list, complete_list}
     else
-      {:error, error} -> render(conn, "error.json", error: error)
+      {:error, error} ->
+        {:error, error, nil}
     end
   end
 
@@ -448,7 +453,7 @@ defmodule MilkWeb.TournamentController do
     loser_list = Enum.map(loser_list, fn loser ->
       Tools.to_integer_as_needed(loser)
     end)
-    {_, match_list} = hd(TournamentProgress.get_match_list(tournament_id))
+    [{_, match_list}] = TournamentProgress.get_match_list(tournament_id)
 
     match_list
     |> Tournaments.find_match(hd(loser_list))

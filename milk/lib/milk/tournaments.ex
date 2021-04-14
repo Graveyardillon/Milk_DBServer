@@ -267,7 +267,6 @@ defmodule Milk.Tournaments do
 
   # TODO: エラーハンドリング
   def update_topic(tournament, current_tabs, new_tabs) do
-
     currentIds = Enum.map(current_tabs, fn tab ->
         tab.chat_room_id
     end)

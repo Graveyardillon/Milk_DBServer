@@ -3,8 +3,12 @@ defmodule Milk.TournamentProgressTest do
   Redisが使えるときのみコメントアウトを解除する
   """
   use Milk.DataCase
+  use Timex
 
-  alias Milk.TournamentProgress
+  alias Milk.{
+    TournamentProgress,
+    Tournaments
+  }
 
   describe "match list table" do
     test "insert_match_list/2 works fine" do
@@ -109,6 +113,14 @@ defmodule Milk.TournamentProgressTest do
       assert TournamentProgress.get_duplicate_users(1) == [2, 3]
       assert TournamentProgress.delete_duplicate_users_all(1)
       assert TournamentProgress.get_duplicate_users(1) == []
+    end
+  end
+
+  describe "set_timelimit" do
+    test "set_timelimit_on_all_entrants/1 works fine" do
+      match_list = [[1, 2], 3]
+      TournamentProgress.set_time_limit_on_all_entrants(match_list, 1)
+
     end
   end
 end
