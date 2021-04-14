@@ -685,6 +685,8 @@ defmodule MilkWeb.TournamentController do
 
       result_list ->
         {{_, _tournament_id}, is_win} = hd(result_list)
+        TournamentProgress.delete_fight_result({user_id, tournament_id})
+        TournamentProgress.delete_fight_result({opponent_id, tournament_id})
 
         if is_win do
           TournamentProgress.add_duplicate_user_id(tournament_id, user_id)
@@ -694,8 +696,8 @@ defmodule MilkWeb.TournamentController do
           # マッチングが正常に終了している
           TournamentProgress.delete_match_pending_list({user_id, tournament_id})
           TournamentProgress.delete_match_pending_list({opponent_id, tournament_id})
-          TournamentProgress.delete_fight_result({user_id, tournament_id})
-          TournamentProgress.delete_fight_result({opponent_id, tournament_id})
+          TournamentProgress.delete_duplicate_user(tournament_id, user_id)
+          TournamentProgress.delete_duplicate_user(tournament_id, opponent_id)
           json(conn, %{validated: true, completed: true})
         end
     end

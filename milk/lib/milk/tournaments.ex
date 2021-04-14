@@ -137,7 +137,7 @@ defmodule Milk.Tournaments do
         EntrantLog
         |> where([el], el.tournament_id == ^tournament_log.tournament_id)
         |> Repo.all()
-        
+
       Map.put(tournament_log, :entrants, entrants)
     end)
   end
@@ -1046,12 +1046,18 @@ defmodule Milk.Tournaments do
   """
   def get_waiting_users(tournament_id) do
     fighting_users = get_fighting_users(tournament_id)
+
     tournament_id
     |> get_entrants()
+    |> Enum.filter(fn entrant ->
+      [{_, match_list}] = TournamentProgress.get_match_list(tournament_id)
+      !has_lost?(match_list, entrant.user_id)
+    end)
     |> Enum.map(fn entrant ->
       Accounts.get_user(entrant.user_id)
     end)
     |> Enum.filter(fn user ->
+      # match_pending_listに入っていないユーザー
       !Enum.member?(fighting_users, user)
     end)
   end
