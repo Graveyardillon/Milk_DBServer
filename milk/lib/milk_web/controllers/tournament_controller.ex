@@ -453,20 +453,7 @@ defmodule MilkWeb.TournamentController do
     loser_list = Enum.map(loser_list, fn loser ->
       Tools.to_integer_as_needed(loser)
     end)
-    [{_, match_list}] = TournamentProgress.get_match_list(tournament_id)
-
-    match_list
-    |> Tournaments.find_match(hd(loser_list))
-    |> Enum.each(fn user_id ->
-      TournamentProgress.delete_match_pending_list({user_id, tournament_id})
-      TournamentProgress.delete_fight_result({user_id, tournament_id})
-    end)
-
-    updated_match_list = renew_match_list(tournament_id, match_list, loser_list)
-    get_lost(tournament_id, match_list, loser_list)
-    unless is_integer(updated_match_list) do
-      Tournaments.trim_match_list_as_needed(tournament_id)
-    end
+    updated_match_list = Tournaments.delete_loser_process(tournament_id, loser_list)
 
     render(conn, "loser.json", list: updated_match_list)
   end

@@ -708,6 +708,46 @@ defmodule Milk.Tournaments do
   end
 
   @doc """
+
+  """
+  def delete_loser_process(tournament_id, loser_list) do
+    [{_, match_list}] = TournamentProgress.get_match_list(tournament_id)
+
+    match_list
+    |> find_match(hd(loser_list))
+    |> Enum.each(fn user_id ->
+      TournamentProgress.delete_match_pending_list({user_id, tournament_id})
+      TournamentProgress.delete_fight_result({user_id, tournament_id})
+    end)
+
+    updated_match_list = renew_match_list(tournament_id, match_list, loser_list)
+    get_user_lost(tournament_id, match_list, loser_list)
+    unless is_integer(updated_match_list) do
+      trim_match_list_as_needed(tournament_id)
+    end
+
+    updated_match_list
+  end
+
+  defp renew_match_list(tournament_id, match_list, loser_list) do
+    promote_winners_by_loser(tournament_id, match_list, loser_list)
+    updated_match_list = delete_loser(match_list, loser_list)
+    TournamentProgress.delete_match_list(tournament_id)
+    TournamentProgress.insert_match_list(updated_match_list, tournament_id)
+    updated_match_list
+  end
+
+  defp get_user_lost(tournament_id, _match_list, [loser]) do
+    {_, match_list} =
+      tournament_id
+      |> TournamentProgress.get_match_list_with_fight_result()
+      |> hd()
+    updated_match_list = get_lost(match_list, loser)
+    TournamentProgress.delete_match_list_with_fight_result(tournament_id)
+    TournamentProgress.insert_match_list_with_fight_result(updated_match_list, tournament_id)
+  end
+
+  @doc """
   Delete a loser in a matchlist
   """
   def delete_loser(list, loser) do
