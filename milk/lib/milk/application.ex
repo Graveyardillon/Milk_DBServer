@@ -6,6 +6,10 @@ defmodule Milk.Application do
   use Application
 
   def start(_type, _args) do
+
+    credentials = "e-players6814-8e8eac82841c.json" |> File.read! |> Jason.decode!()
+    source = {:service_account, credentials, []}
+
     # List all child processes to be supervised
     children = [
       # Start the Ecto repository
@@ -15,7 +19,8 @@ defmodule Milk.Application do
       {Phoenix.PubSub, [name: Milk.PubSub, adapter: Phoenix.PubSub.PG2]},
       {Task, fn -> Milk.setup_platform() end},
       Milk.ConfNum,
-      Milk.Email.Auth
+      Milk.Email.Auth,
+      {Goth, name: Milk.Goth, source: source}
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

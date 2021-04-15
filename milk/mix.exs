@@ -72,14 +72,16 @@ defmodule Milk.MixProject do
       {:distillery, "~> 2.0"},
       {:bamboo, "~> 1.6"},
       {:bamboo_smtp, "~> 3.0.0"},
-      {:argon2_elixir, "~> 2.3.0"},
+      # {:argon2_elixir, "~> 2.3.0"},
       {:ex_crypto, "~> 0.10.0"},
       {:tournamex, "~> 0.1.9"},
       {:dialyxir, "~> 1.0", only: [:dev], runtime: false},
       {:excoveralls, "~> 0.10", only: :test},
       {:redix, ">= 0.0.0"},
       {:google_api_storage, "~> 0.28.0"},
-      {:goth, "~> 1.2.0"}
+      # {:goth, "~> 1.2.0"}
+      {:goth, "~> 1.3-rc"},
+      {:hackney, "~> 1.17"}
     ]
   end
 
