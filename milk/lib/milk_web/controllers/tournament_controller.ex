@@ -32,10 +32,13 @@ defmodule MilkWeb.TournamentController do
   Get users for assistant.
   """
   def get_users_for_add_assistant(conn, %{"user_id" => user_id}) do
+    user_id = Tools.to_integer_as_needed(user_id)
+
     following_users = Relations.get_following_list(user_id)
     follower_users = Relations.get_followers_list(user_id)
     users = Enum.uniq_by(following_users ++ follower_users, fn user -> user.id end)
-    render(conn,"users.json", users: users)
+      |> IO.inspect()
+    render(conn, "users.json", users: users)
   end
 
   @doc """

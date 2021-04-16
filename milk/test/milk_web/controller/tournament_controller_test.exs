@@ -29,6 +29,7 @@ defmodule MilkWeb.TournamentControllerTest do
   @invalid_attrs %{"capacity" => nil, "deadline" => nil, "description" => nil, "event_date" => nil, "game_id" => nil, "master_id" => nil, "name" => nil, "type" => nil, "url" => nil, }
 
   @create_user_attrs %{"icon_path" => "some icon_path", "language" => "some language", "name" => "some name", "notification_number" => 42, "point" => 42, "email" => "some2@email.com", "logout_fl" => true, "password" => "S1ome password"}
+  @create_user_attrs2 %{"icon_path" => "some icon_path", "language" => "some language", "name" => "some sname", "notification_number" => 42, "point" => 42, "email" => "somes2@email.com", "logout_fl" => true, "password" => "S1ome password"}
 
   def fixture(:tournament) do
     {:ok, user} =
@@ -42,8 +43,47 @@ defmodule MilkWeb.TournamentControllerTest do
     {:ok, _user} = Accounts.create_user(@create_user_attrs)
   end
 
+  # FIXME: てきとう
+  def fixture(:user2) do
+    {:ok, _user} = Accounts.create_user(@create_user_attrs2)
+  end
+
   setup %{conn: conn} do
     {:ok, conn: put_req_header(conn, "accept", "application/json")}
+  end
+
+  describe "index" do
+    setup [:create_tournament]
+
+    test "index with valid data", %{conn: conn, tournament: tournament} do
+      conn = get(conn, Routes.tournament_path(conn, :index))
+      assert length(json_response(conn, 200)["data"]) == 1
+    end
+  end
+
+  describe "get users for add assistant" do
+    setup [:create_tournament]
+
+    test "get_users_for_add_assistant/2 with valid data", %{conn: conn, tournament: tournament} do
+      {:ok, user2} = fixture(:user)
+      {:ok, user3} = fixture(:user2)
+      inspect(user2)
+      inspect(user3)
+      user2_id = user2.id
+      user3_id = user3.id
+
+      conn = post(conn, Routes.relation_path(conn, :create), %{"relation" => %{"followee_id" => user2_id, "follower_id" => tournament.master_id}})
+      assert json_response(conn, 200)["result"]
+      conn = post(conn, Routes.relation_path(conn, :create), %{"relation" => %{"followee_id" => user3_id, "follower_id" => tournament.master_id}})
+      assert json_response(conn, 200)["result"]
+
+      conn = get(conn, Routes.tournament_path(conn, :get_users_for_add_assistant), user_id: tournament.master_id)
+      assert json_response(conn, 200)["result"]
+      json_response(conn, 200)["data"]
+      |> Enum.each(fn user ->
+        assert user["id"] == user2_id || user["id"] == user3_id
+      end)
+    end
   end
 
   describe "get tournament" do
