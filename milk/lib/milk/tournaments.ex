@@ -357,16 +357,18 @@ defmodule Milk.Tournaments do
     match_list_len =
       tournament_id
       |> TournamentProgress.get_match_list()
-      |> hd()
-      |> elem(1)
-      |> match_list_length()
+      |> case do
+        [] -> []
+        [{_, match_list}] -> match_list_length(match_list)
+      end
 
     match_list_with_fight_result_len =
       tournament_id
       |> TournamentProgress.get_match_list_with_fight_result()
-      |> hd()
-      |> elem(1)
-      |> match_list_length()
+      |> case do
+        [] -> []
+        [{_, match_list}] -> match_list_length(match_list)
+      end
 
     if match_list_with_fight_result_len > 16 and match_list_len <= 16 do
       [{_, new_list}] = TournamentProgress.get_match_list(tournament_id)
@@ -515,7 +517,7 @@ defmodule Milk.Tournaments do
     :true <- Repo.exists?(from u in User, where: u.id == ^attrs["user_id"]) do
       {:ok, attrs}
     else
-      _ -> {:error,"undefined user"}
+      _ -> {:error, "undefined user"}
     end
   end
 
@@ -711,9 +713,7 @@ defmodule Milk.Tournaments do
   Delete loser.
   """
   def delete_loser_process(tournament_id, loser_list) do
-    IO.inspect(tournament_id, label: :tournament_id_in_delete_loser_process)
     [{_, match_list}] = TournamentProgress.get_match_list(tournament_id)
-      |> IO.inspect(label: :asdf)
 
     match_list
     |> find_match(hd(loser_list))
@@ -731,6 +731,40 @@ defmodule Milk.Tournaments do
     updated_match_list
   end
 
+  defp get_user_lost(tournament_id, _match_list, [loser]) do
+    tournament_id = Tools.to_integer_as_needed(tournament_id)
+
+    tournament_id
+    |> TournamentProgress.get_match_list_with_fight_result()
+    |> case do
+      [] ->
+        Logger.warn("unexpectedlly got nil in get_user_lost/3")
+        {:error, nil}
+      list ->
+        tup = hd(list)
+        inspect(tup)
+        tup
+    end
+    |> case do
+      {:error, v} ->
+        {:error, v}
+      {_, match_list} ->
+        updated_match_list = get_lost(match_list, loser)
+        {:ok, updated_match_list}
+    end
+    |> case do
+      {:ok, match_list} ->
+        # 同時に更新処理がかかってしまっている疑惑
+        IO.inspect(match_list, label: :match_list)
+        TournamentProgress.delete_match_list_with_fight_result(tournament_id)
+        |> IO.inspect(label: :deletion)
+        TournamentProgress.insert_match_list_with_fight_result(match_list, tournament_id)
+        |> IO.inspect(label: :insertion)
+      {:error, _v} ->
+        false
+    end
+  end
+
   defp renew_match_list(tournament_id, match_list, loser_list) do
     unless is_nil(match_list) do
       promote_winners_by_loser(tournament_id, match_list, loser_list)
@@ -740,20 +774,6 @@ defmodule Milk.Tournaments do
     TournamentProgress.delete_match_list(tournament_id)
     TournamentProgress.insert_match_list(updated_match_list, tournament_id)
     updated_match_list
-  end
-
-  defp get_user_lost(tournament_id, _match_list, [loser]) do
-    tournament_id = Tools.to_integer_as_needed(tournament_id)
-    {_, match_list} =
-      tournament_id
-      |> IO.inspect(label: :tid)
-      |> TournamentProgress.get_match_list_with_fight_result()
-      |> IO.inspect(label: :before_list)
-      |> hd()
-      |> IO.inspect(label: :match_list)
-    updated_match_list = get_lost(match_list, loser)
-    TournamentProgress.delete_match_list_with_fight_result(tournament_id)
-    TournamentProgress.insert_match_list_with_fight_result(updated_match_list, tournament_id)
   end
 
   @doc """
@@ -1003,9 +1023,11 @@ defmodule Milk.Tournaments do
   end
 
   @doc """
-  Get lose a player.
+  Get lost a player.
   """
   def get_lost(match_list, loser) do
+    # IO.inspect(match_list, label: :match_list_in_get_lost)
+    # IO.inspect(loser, label: :loser_in_get_lost)
     Tournamex.renew_match_list_with_loser(match_list, loser)
   end
 
@@ -1261,63 +1283,80 @@ defmodule Milk.Tournaments do
   勝った人のランクが上がるやつ
   """
   def promote_rank(attrs \\ %{}) do
+    user_id = attrs["user_id"]
+    tournament_id = attrs["tournament_id"]
+
     attrs
     |> user_exist_check()
     |> tournament_exist_check()
     |> tournament_start_check()
     |> case do
       {:ok, attrs} ->
-        entrant =
-          attrs["user_id"]
-          |> get_entrant_by_user_id_and_tournament_id(attrs["tournament_id"])
-        {_num, match_list} =
-          attrs["tournament_id"]
-          |> TournamentProgress.get_match_list()
-          |> IO.inspect(label: :get_match_list_in_promote_rank)
-          |> hd()
-        # 対戦相手
-        match_list
-        |> find_match(attrs["user_id"])
-        |> get_opponent(attrs["user_id"])
-        |> case do
-          {:ok, opponent} ->
-            opponent =
-              opponent
-              |> Map.get("id")
-              |> get_entrant_by_user_id_and_tournament_id(attrs["tournament_id"])
-            opponents_rank = Map.get(opponent, :rank)
-
-            user =
-              attrs["user_id"]
-              |> get_entrant_by_user_id_and_tournament_id(attrs["tournament_id"])
-
-              user
-              |> Map.get(:rank)
-              |> case do
-                rank when rank > opponents_rank -> update_entrant(opponent, %{rank: rank})
-                rank when rank < opponents_rank -> update_entrant(user, %{rank: opponents_rank})
-                _ ->
-              end
-
-            {bool, rank} =
-              opponent
-              |> Map.get(:rank)
-              |> check_exponentiation_of_two()
-            updated =
-              bool
-              |> if do
-                div(rank, 2)
-              else
-                find_num_closest_exponentiation_of_two(rank)
-              end
-            entrant
-            |> update_entrant(%{rank: updated})
-          {:wait, nil} ->
-            {:wait, nil}
-          {:error, _} ->
-            {:error, nil}
-        end
+        get_match_list_if_possible(tournament_id)
+      {:error, error} ->
+        {:error, error}
+    end
+    |> case do
+      {:ok, match_list} -> update_rank(match_list, user_id, tournament_id)
       {:error, error} -> {:error, error}
+    end
+  end
+
+  defp get_match_list_if_possible(tournament_id) do
+    tournament_id
+    |> TournamentProgress.get_match_list()
+    |> case do
+      [] ->
+        {:error, nil}
+      list ->
+        [{_, match_list}] = list
+        {:ok, match_list}
+    end
+  end
+
+  defp update_rank(match_list, user_id, tournament_id) do
+    # 対戦相手
+    match_list
+    |> find_match(user_id)
+    |> get_opponent(user_id)
+    |> case do
+      {:ok, opponent} ->
+        opponent =
+          opponent
+          |> Map.get("id")
+          |> get_entrant_by_user_id_and_tournament_id(tournament_id)
+        opponents_rank = Map.get(opponent, :rank)
+
+        user =
+          user_id
+          |> get_entrant_by_user_id_and_tournament_id(tournament_id)
+
+          user
+          |> Map.get(:rank)
+          |> case do
+            rank when rank > opponents_rank -> update_entrant(opponent, %{rank: rank})
+            rank when rank < opponents_rank -> update_entrant(user, %{rank: opponents_rank})
+            _ ->
+          end
+
+        {bool, rank} =
+          opponent
+          |> Map.get(:rank)
+          |> check_exponentiation_of_two()
+        updated =
+          bool
+          |> if do
+            div(rank, 2)
+          else
+            find_num_closest_exponentiation_of_two(rank)
+          end
+        entrant = get_entrant_by_user_id_and_tournament_id(user_id, tournament_id)
+        entrant
+        |> update_entrant(%{rank: updated})
+      {:wait, nil} ->
+        {:wait, nil}
+      {:error, _} ->
+        {:error, nil}
     end
   end
 

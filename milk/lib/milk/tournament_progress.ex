@@ -40,8 +40,10 @@ defmodule Milk.TournamentProgress do
     conn = conn()
     bin = inspect(match_list)
 
-    with {:ok, _} <- Redix.command(conn, ["SELECT", 1]),
-    {:ok, _} <- Redix.command(conn, ["SET", tournament_id, bin]) do
+    with {:ok, _} <- Redix.command(conn, ["MULTI"]),
+    {:ok, _} <- Redix.command(conn, ["SELECT", 1]),
+    {:ok, _} <- Redix.command(conn, ["SET", tournament_id, bin]),
+    {:ok, _} <- Redix.command(conn, ["EXEC"]) do
       true
     else
       {:error, %Redix.Error{message: message}} ->
@@ -72,8 +74,10 @@ defmodule Milk.TournamentProgress do
   def delete_match_list(tournament_id) do
     conn = conn()
 
-    with {:ok, _} <- Redix.command(conn, ["SELECT", 1]),
-    {:ok, _} <- Redix.command(conn, ["DEL", tournament_id]) do
+    with {:ok, _} <- Redix.command(conn, ["MULTI"]),
+    {:ok, _} <- Redix.command(conn, ["SELECT", 1]),
+    {:ok, _} <- Redix.command(conn, ["DEL", tournament_id]),
+    {:ok, _} <- Redix.command(conn, ["EXEC"]) do
       true
     else
       _ -> false
@@ -101,8 +105,10 @@ defmodule Milk.TournamentProgress do
     conn = conn()
     bin = inspect(match_list)
 
-    with {:ok, _} <- Redix.command(conn, ["SELECT", 2]),
-    {:ok, _} <- Redix.command(conn, ["SET", tournament_id, bin]) do
+    with {:ok, _} <- Redix.command(conn, ["MULTI"]),
+    {:ok, _} <- Redix.command(conn, ["SELECT", 2]),
+    {:ok, _} <- Redix.command(conn, ["SET", tournament_id, bin]),
+    {:ok, _} <- Redix.command(conn, ["EXEC"]) do
       true
     else
       _ -> false
@@ -117,8 +123,7 @@ defmodule Milk.TournamentProgress do
       {match_list, _} = Code.eval_string(value)
       [{tournament_id, match_list}]
     else
-      e ->
-        IO.inspect(e, label: :e)
+      _ ->
         []
     end
   end
@@ -126,8 +131,10 @@ defmodule Milk.TournamentProgress do
   def delete_match_list_with_fight_result(tournament_id) do
     conn = conn()
 
-    with {:ok, _} <- Redix.command(conn, ["SELECT", 2]),
-    {:ok, _} <- Redix.command(conn, ["DEL", tournament_id]) do
+    with {:ok, _} <- Redix.command(conn, ["MULTI"]),
+    {:ok, _} <- Redix.command(conn, ["SELECT", 2]),
+    {:ok, _} <- Redix.command(conn, ["DEL", tournament_id]),
+    {:ok, _} <- Redix.command(conn, ["EXEC"]) do
       true
     else
       _error ->
@@ -144,8 +151,10 @@ defmodule Milk.TournamentProgress do
   def insert_match_pending_list_table({user_id, tournament_id}) do
     conn = conn()
 
-    with {:ok, _} <- Redix.command(conn, ["SELECT", 3]),
-    {:ok, _} <- Redix.command(conn, ["HSET", tournament_id, user_id, true]) do
+    with {:ok, _} <- Redix.command(conn, ["MULTI"]),
+    {:ok, _} <- Redix.command(conn, ["SELECT", 3]),
+    {:ok, _} <- Redix.command(conn, ["HSET", tournament_id, user_id, true]),
+    {:ok, _} <- Redix.command(conn, ["EXEC"]) do
       true
     else
       _ -> false
@@ -167,8 +176,10 @@ defmodule Milk.TournamentProgress do
   def delete_match_pending_list({user_id, tournament_id}) do
     conn = conn()
 
-    with {:ok, _} <- Redix.command(conn, ["SELECT", 3]),
-    {:ok, _} <- Redix.command(conn, ["HDEL", tournament_id, user_id]) do
+    with {:ok, _} <- Redix.command(conn, ["MULTI"]),
+    {:ok, _} <- Redix.command(conn, ["SELECT", 3]),
+    {:ok, _} <- Redix.command(conn, ["HDEL", tournament_id, user_id]),
+    {:ok, _} <- Redix.command(conn, ["EXEC"]) do
       true
     else
       _error ->
@@ -183,8 +194,10 @@ defmodule Milk.TournamentProgress do
   def insert_fight_result_table({user_id, tournament_id}, is_win) do
     conn = conn()
 
-    with {:ok, _} <- Redix.command(conn, ["SELECT", 4]),
-    {:ok, _} <- Redix.command(conn, ["HSET", tournament_id, user_id, is_win]) do
+    with {:ok, _} <- Redix.command(conn, ["MULTI"]),
+    {:ok, _} <- Redix.command(conn, ["SELECT", 4]),
+    {:ok, _} <- Redix.command(conn, ["HSET", tournament_id, user_id, is_win]),
+    {:ok, _} <- Redix.command(conn, ["EXEC"]) do
       true
     else
       _ -> false
@@ -210,8 +223,10 @@ defmodule Milk.TournamentProgress do
   def delete_fight_result({user_id, tournament_id}) do
     conn = conn()
 
-    with {:ok, _} <- Redix.command(conn, ["SELECT", 4]),
-    {:ok, _} <- Redix.command(conn, ["HDEL", tournament_id, user_id]) do
+    with {:ok, _} <- Redix.command(conn, ["MULTI"]),
+    {:ok, _} <- Redix.command(conn, ["SELECT", 4]),
+    {:ok, _} <- Redix.command(conn, ["HDEL", tournament_id, user_id]),
+    {:ok, _} <- Redix.command(conn, ["EXEC"]) do
       true
     else
       _ -> false
@@ -286,13 +301,14 @@ defmodule Milk.TournamentProgress do
   end
 
   def set_time_limit_on_all_entrants(match_list, tournament_id) do
-    Milk.Enum.creep(match_list, fn v -> get_lost(v, tournament_id) end)
+    match_list
+    |> List.flatten()
+    |> Enum.each(fn v ->
+      get_lost(v, tournament_id)
+    end)
   end
 
   defp get_lost(user_id, tournament_id) do
-    IO.inspect(user_id, label: :user_id)
-    IO.inspect(tournament_id, label: :tournament_id)
-
     # 敗北のプロセスを生成
     pid_str =
       Task.async(fn ->
@@ -302,8 +318,6 @@ defmodule Milk.TournamentProgress do
         |> Process.sleep()
 
         # 敗北処理
-        IO.inspect(tournament_id, label: :after_sleep)
-        #Logger.info("will get lost" <> to_string(user_id))
         Tournaments.delete_loser_process(tournament_id, [user_id])
       end)
       |> case do

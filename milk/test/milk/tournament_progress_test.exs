@@ -138,9 +138,6 @@ defmodule Milk.TournamentProgressTest do
       |> Tournaments.put_value_on_brackets(user.id, %{"icon_path" => user.icon_path})
     end)
     |> TournamentProgress.insert_match_list_with_fight_result(tournament_id)
-
-    IO.inspect(tournament_id, label: :tid_in_start)
-    IO.inspect("binary", label: :binary)
   end
 
   defp match_list_with_fight_result(match_list) do
