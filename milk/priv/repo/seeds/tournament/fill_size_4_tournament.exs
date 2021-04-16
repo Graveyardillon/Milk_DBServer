@@ -1,12 +1,12 @@
 alias Milk.{
+  Accounts,
   Repo,
-  Tournaments,
   TournamentProgress,
-  Accounts
+  Tournaments
 }
 alias Milk.Accounts.{
-  User,
-  Auth
+  Auth,
+  User
 }
 alias Milk.Tournaments.{
   Entrant,

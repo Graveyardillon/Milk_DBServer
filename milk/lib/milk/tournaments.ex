@@ -77,6 +77,7 @@ defmodule Milk.Tournaments do
     |> offset(^offset)
     |> limit(5)
     |> Repo.all()
+    |> Repo.preload(:entrant)
   end
 
   @doc """
@@ -123,22 +124,33 @@ defmodule Milk.Tournaments do
     Repo.all(from t in Tournament, where: t.master_id == ^user_id)
   end
 
+  def get_tournament_logs_by_master_id(user_id) do
+    Repo.all(from tl in TournamentLog, where: tl.master_id == ^user_id)
+    TournamentLog
+    |> where([tl], tl.master_id == ^user_id)
+    |> order_by([tl], asc: :event_date)
+    |> Repo.all
+    |> Enum.filter(fn tournament_log -> tournament_log.tournament_id != nil end)
+
+    |> Enum.map(fn tournament_log ->
+      entrants =
+        EntrantLog
+        |> where([el], el.tournament_id == ^tournament_log.tournament_id)
+        |> Repo.all()
+        
+      Map.put(tournament_log, :entrants, entrants)
+    end)
+  end
+
   @doc """
   Returns ongoing tournaments of certain user.
   """
   def get_ongoing_tournaments_by_master_id(user_id) do
-    Repo.all(from t in Tournament, where: t.master_id == ^user_id)
-    |> Enum.filter(fn tournament ->
-      date =
-        tournament.event_date
-        |> DateTime.to_unix()
-
-      now =
-        DateTime.utc_now()
-        |> DateTime.to_unix()
-
-      now < date
-    end)
+    Tournament
+    |> where([t], t.event_date > ^Timex.now and t.master_id == ^user_id)
+    |> order_by([t], asc: :event_date)
+    |> Repo.all()
+    |> Repo.preload(:entrant)
   end
 
   @doc """
@@ -340,6 +352,40 @@ defmodule Milk.Tournaments do
   end
 
   @doc """
+  Renew match list as needed.
+  """
+  def trim_match_list_as_needed(tournament_id) do
+    match_list_len =
+      tournament_id
+      |> TournamentProgress.get_match_list()
+      |> hd()
+      |> elem(1)
+      |> match_list_length()
+
+    match_list_with_fight_result_len =
+      tournament_id
+      |> TournamentProgress.get_match_list_with_fight_result()
+      |> hd()
+      |> elem(1)
+      |> match_list_length()
+
+    if match_list_with_fight_result_len > 16 and match_list_len <= 16 do
+      [{_, new_list}] = TournamentProgress.get_match_list(tournament_id)
+      TournamentProgress.delete_match_list_with_fight_result(tournament_id)
+      TournamentProgress.insert_match_list_with_fight_result(new_list, tournament_id)
+    end
+  end
+
+  def match_list_length(matchlist, n \\ 0) do
+    Enum.reduce(matchlist, n, fn x, acc ->
+      case x do
+        x when is_list(x) -> acc + match_list_length(x, n)
+        _ -> acc + 1
+      end
+    end)
+  end
+
+  @doc """
   Deletes a tournament.
 
   ## Examples
@@ -372,8 +418,8 @@ defmodule Milk.Tournaments do
     update_time: x.update_time, create_time: x.create_time} end)
     if assistant, do: Repo.insert_all(AssistantLog, assistant)
 
-    TournamentLog.changeset(%TournamentLog{}, Map.from_struct(tournament))
-    |> Repo.insert()
+    # TournamentLog.changeset(%TournamentLog{}, Map.from_struct(tournament))
+    # |> Repo.insert()
 
     Repo.delete(tournament)
   end
@@ -695,7 +741,7 @@ defmodule Milk.Tournaments do
   def find_match(v, _) when is_integer(v), do: []
   def find_match(list, id, result \\ []) when is_list(list) do
     Enum.reduce(list, result, fn x, acc ->
-      y = process_entrant(x)
+      y = pick_user_id_as_needed(x)
 
       case y do
         y when is_list(y) -> find_match(y, id, acc)
@@ -705,13 +751,12 @@ defmodule Milk.Tournaments do
     end)
   end
 
-  # FIXME: 名前が微妙
-  defp process_entrant(%Entrant{} = map) do
+  defp pick_user_id_as_needed(%Entrant{} = map) do
     inspect(map)
     map.user_id
   end
 
-  defp process_entrant(id), do: id
+  defp pick_user_id_as_needed(id), do: id
 
   @doc """
   Get an opponent of tournament match.
@@ -892,6 +937,7 @@ defmodule Milk.Tournaments do
 
   defp atom_tournament_map_to_string_map(%Tournament{} = tournament, winner_id) do
     %{
+      "master_id" => tournament.master_id,
       "tournament_id" => tournament.id,
       "name" => tournament.name,
       "type" => tournament.type,
@@ -900,8 +946,11 @@ defmodule Milk.Tournaments do
       "description" => tournament.description,
       "event_date" => tournament.event_date,
       "game_id" => tournament.game_id,
+      "game_name" => tournament.game_name,
       "winner_id" => winner_id,
-      "capacity" => tournament.capacity
+      "capacity" => tournament.capacity,
+      "thumbnail_path" => tournament.thumbnail_path,
+      "entrant" => tournament.entrant
     }
   end
 
@@ -970,10 +1019,41 @@ defmodule Milk.Tournaments do
     |> Repo.all()
   end
 
+  @doc """
+  Get user information of an assistant.
+  """
   def get_user_info_of_assistant(%Assistant{} = assistant) do
     User
     |> where([u], u.id == ^assistant.user_id)
     |> Repo.one()
+  end
+
+  @doc """
+  Get fighting users.
+  """
+  def get_fighting_users(tournament_id) do
+    get_entrants(tournament_id)
+    |> Enum.filter(fn entrant ->
+      TournamentProgress.get_match_pending_list({entrant.user_id, tournament_id}) != []
+    end)
+    |> Enum.map(fn entrant ->
+      Accounts.get_user(entrant.user_id)
+    end)
+  end
+
+  @doc """
+  Get users waiting for fighting ones.
+  """
+  def get_waiting_users(tournament_id) do
+    fighting_users = get_fighting_users(tournament_id)
+    tournament_id
+    |> get_entrants()
+    |> Enum.map(fn entrant ->
+      Accounts.get_user(entrant.user_id)
+    end)
+    |> Enum.filter(fn user ->
+      !Enum.member?(fighting_users, user)
+    end)
   end
 
   @doc """
@@ -1240,6 +1320,7 @@ defmodule Milk.Tournaments do
       {:error, "tournament is not started"}
     end
   end
+
   defp tournament_start_check({:error, error}) do
     {:error, error}
   end
@@ -1274,8 +1355,23 @@ defmodule Milk.Tournaments do
       unless tournament.is_started do
         "IsNotStarted"
       else
-        check_has_lost?(tournament.id, user_id)
+        check_is_manager?(tournament, user_id)
       end
+    end
+  end
+
+  defp check_is_manager?(tournament, user_id) do
+    is_manager = tournament.master_id == user_id
+    is_not_entrant =
+      tournament.id
+      |> get_entrants()
+      |> Enum.filter(fn entrant -> entrant.user_id == user_id end)
+      |> (fn list -> list == [] end).()
+
+    if is_manager && is_not_entrant do
+      "IsManager"
+    else
+      check_has_lost?(tournament.id, user_id)
     end
   end
 
@@ -1359,5 +1455,6 @@ defmodule Milk.Tournaments do
 
       Map.put(entrant_log, :tournament_log, tlog)
     end)
+    |> Enum.filter(fn entrant_log -> entrant_log.tournament_log != nil end)
   end
 end

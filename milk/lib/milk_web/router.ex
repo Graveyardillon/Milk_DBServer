@@ -81,10 +81,14 @@ defmodule MilkWeb.Router do
     get  "/tournament/users_for_add_assistant", TournamentController, :get_users_for_add_assistant
     get  "/tournament/get", TournamentController, :show
     get  "/tournament/get_by_master_id", TournamentController, :get_tournaments_by_master_id
-    get  "/tournament/get_planned", TournamentController, :get_ongoing_tournaments_by_master_id
+    get  "/tournament/get_planned", TournamentController, :get_planned_tournaments_by_master_id
+    # get  "/tournament/get_planned", TournamentController, :get_ongoing_tournaments_by_master_id
     get  "/tournament/get_game", TournamentController, :get_game
+    get  "/tournament/get_entrants", TournamentController, :get_entrants
     get  "/tournament/by_url", TournamentController, :get_tournament_by_url
     get  "/tournament/get_opponent", TournamentController, :get_opponent
+    get  "/tournament/fighting_users", TournamentController, :get_fighting_users
+    get  "/tournament/waiting_users", TournamentController, :get_waiting_users
     get  "/tournament/get_participating_tournaments", TournamentController, :participating_tournaments
     get  "/tournament/participating", TournamentController, :participating_tournaments
     get  "/tournament/get_tabs", TournamentController, :tournament_topics
@@ -97,13 +101,14 @@ defmodule MilkWeb.Router do
     get  "/tournament/get_all", TournamentController, :index
     get  "/tournament/check_pending", TournamentController, :check_pending
     get  "/tournament/brackets", TournamentController, :brackets_with_fight_result
+    get  "/tournament/duplicate_claims", TournamentController, :get_duplicate_claim_members
     get  "/tournament/is_user_win", TournamentController, :is_user_win
     get  "/tournament/relevant", TournamentController, :relevant
     get  "/tournament/has_lost", TournamentController, :has_lost?
     get  "/tournament/state", TournamentController, :state
     get  "/tournament/pid", TournamentController, :get_pid
     post "/tournament/start", TournamentController, :start
-    post "/tournament/resgister/pid", TournamentController, :register_pid_of_start_notification
+    post "/tournament/register/pid", TournamentController, :register_pid_of_start_notification
     post "/tournament/deleteloser", TournamentController, :delete_loser
     # FIXME: このgetはpostメソッドなので消したほうがいい
     post "/tournament/get", TournamentController, :show

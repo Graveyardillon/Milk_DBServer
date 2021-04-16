@@ -1,7 +1,13 @@
 defmodule MilkWeb.TournamentControllerTest do
   use MilkWeb.ConnCase
 
-  alias Milk.{Accounts, Tournaments}
+  alias Milk.{
+    Accounts,
+    TournamentProgress,
+    Tournaments
+  }
+
+  require Logger
 
   @entrant_create_attrs %{
     "rank" => 42,
@@ -58,6 +64,7 @@ defmodule MilkWeb.TournamentControllerTest do
       conn = get(conn, Routes.tournament_path(conn, :show), %{"tournament_id" => tournament.id})
 
       assert json_response(conn, 200)["result"]
+      assert TournamentProgress.get_duplicate_users(tournament.id) == []
     end
 
     test "cannot get a tournament which does not exist", %{conn: conn, tournament: _tournament} do
@@ -134,16 +141,105 @@ defmodule MilkWeb.TournamentControllerTest do
     end
   end
 
+  describe "get entrants" do
+    setup [:create_tournament]
+
+    test "get entrants", %{conn: conn, tournament: tournament} do
+      entrants = create_entrants(8, tournament.id)
+      entrant_id_list = Enum.map(entrants, fn entrant -> entrant.id end)
+      conn = get(conn, Routes.tournament_path(conn, :get_entrants), tournament_id: tournament.id)
+
+      json_response(conn, 200)["data"]
+      |> Enum.map(fn entrant ->
+        assert Enum.member?(entrant_id_list, entrant["id"])
+      end)
+      |> length()
+      |> (fn len ->
+        assert len == length(entrants)
+      end).()
+    end
+  end
+
   describe "get opponent" do
     setup [:create_tournament]
 
     test "get an opponent of a started tournament with valid data", %{conn: conn, tournament: tournament} do
-      entrants = create_entrants(12, tournament.id)
+      entrants = create_entrants(8, tournament.id)
 
       conn = post(conn, Routes.tournament_path(conn, :start), tournament: %{"master_id" => tournament.master_id, "tournament_id" => tournament.id})
       conn = get(conn, Routes.tournament_path(conn, :get_opponent), %{"tournament_id" => tournament.id, "user_id" => hd(entrants).user_id})
 
-      assert json_response(conn, 200)
+      assert json_response(conn, 200)["result"]
+      assert json_response(conn, 200)["opponent"]
+    end
+  end
+
+  describe "get fighting users" do
+    setup [:create_tournament]
+
+    test "get fighting users", %{conn: conn, tournament: tournament} do
+      entrants = create_entrants(8, tournament.id)
+      player = hd(entrants)
+
+      conn = post(conn, Routes.tournament_path(conn, :start), tournament: %{"master_id" => tournament.master_id, "tournament_id" => tournament.id})
+      conn = get(conn, Routes.tournament_path(conn, :get_opponent), %{"tournament_id" => tournament.id, "user_id" => player.user_id})
+
+      opponent = json_response(conn, 200)["opponent"]
+      conn = get(conn, Routes.tournament_path(conn, :get_fighting_users), tournament_id: tournament.id)
+      assert json_response(conn, 200)["data"] == []
+
+      conn = post(conn, Routes.tournament_path(conn, :start_match), user_id: player.user_id, tournament_id: tournament.id)
+      assert json_response(conn, 200)["result"]
+      conn = get(conn, Routes.tournament_path(conn, :get_fighting_users), tournament_id: tournament.id)
+      assert length(json_response(conn, 200)["data"]) == 1
+
+      conn = post(conn, Routes.tournament_path(conn, :start_match), user_id: opponent["id"], tournament_id: tournament.id)
+      assert json_response(conn, 200)["result"]
+      conn = get(conn, Routes.tournament_path(conn, :get_fighting_users), tournament_id: tournament.id)
+      assert length(json_response(conn, 200)["data"]) == 2
+
+      conn = post(conn, Routes.tournament_path(conn, :claim_win), opponent_id: opponent["id"], user_id: player.user_id, tournament_id: tournament.id)
+      conn = post(conn, Routes.tournament_path(conn, :claim_lose), opponent_id: player.user_id, user_id: opponent["id"], tournament_id: tournament.id)
+      conn = get(conn, Routes.tournament_path(conn, :get_fighting_users), tournament_id: tournament.id)
+      assert length(json_response(conn, 200)["data"]) == 0
+    end
+  end
+
+  describe "get waiting users" do
+    setup [:create_tournament]
+
+    test "get waiting users", %{conn: conn, tournament: tournament} do
+      entrants = create_entrants(8, tournament.id)
+      player = hd(entrants)
+
+      conn =
+        conn
+        |> post(Routes.tournament_path(conn, :start), tournament: %{"master_id" => tournament.master_id, "tournament_id" => tournament.id})
+        |> get(Routes.tournament_path(conn, :get_opponent), %{"tournament_id" => tournament.id, "user_id" => player.user_id})
+
+      opponent = json_response(conn, 200)["opponent"]
+      conn = get(conn, Routes.tournament_path(conn, :get_waiting_users), tournament_id: tournament.id)
+      json_response(conn, 200)
+      |> Map.get("data")
+      |> length()
+      |> (fn len ->
+        assert len == length(entrants)
+      end).()
+
+      conn = post(conn, Routes.tournament_path(conn, :start_match), user_id: player.user_id, tournament_id: tournament.id)
+      assert json_response(conn, 200)["result"]
+      conn = get(conn, Routes.tournament_path(conn, :get_waiting_users), tournament_id: tournament.id)
+      assert length(json_response(conn, 200)["data"]) == length(entrants) - 1
+
+      conn = post(conn, Routes.tournament_path(conn, :start_match), user_id: opponent["id"], tournament_id: tournament.id)
+      assert json_response(conn, 200)["result"]
+      conn = get(conn, Routes.tournament_path(conn, :get_waiting_users), tournament_id: tournament.id)
+      assert length(json_response(conn, 200)["data"]) == length(entrants) - 2
+
+      conn = post(conn, Routes.tournament_path(conn, :claim_win), opponent_id: opponent["id"], user_id: player.user_id, tournament_id: tournament.id)
+      conn = post(conn, Routes.tournament_path(conn, :claim_lose), opponent_id: player.user_id, user_id: opponent["id"], tournament_id: tournament.id)
+      conn = get(conn, Routes.tournament_path(conn, :get_waiting_users), tournament_id: tournament.id)
+      assert length(json_response(conn, 200)["data"]) == length(entrants)
     end
   end
 
@@ -159,6 +255,107 @@ defmodule MilkWeb.TournamentControllerTest do
       # Check tournament pid has been stored
       t = Tournaments.get_tournament!(tournament.id)
       assert t.start_notification_pid == pid
+    end
+  end
+
+  describe "test duplicate claim members" do
+    setup [:create_tournament]
+
+    test "get duplicate claim members", %{conn: conn, tournament: tournament} do
+      entrants = create_entrants(17, tournament.id)
+      player = hd(entrants)
+
+      conn = post(conn, Routes.tournament_path(conn, :start), tournament: %{"master_id" => tournament.master_id, "tournament_id" => tournament.id})
+      conn = get(conn, Routes.tournament_path(conn, :get_opponent), %{"tournament_id" => tournament.id, "user_id" => player.user_id})
+
+      response = json_response(conn, 200)
+      cond do
+        !is_nil(response["opponent"]) -> true
+        is_nil(response["opponent"]) and !is_nil(response["wait"]) -> false
+        true -> assert false, "it must not be true"
+      end
+      |> if do
+        opponent = response["opponent"]
+        conn = post(conn, Routes.tournament_path(conn, :start_match), user_id: player.user_id, tournament_id: tournament.id)
+        conn = post(conn, Routes.tournament_path(conn, :start_match), user_id: opponent["id"], tournament_id: tournament.id)
+        conn = post(conn, Routes.tournament_path(conn, :claim_win), opponent_id: opponent["id"], user_id: player.user_id, tournament_id: tournament.id)
+        conn = post(conn, Routes.tournament_path(conn, :claim_win), opponent_id: player.user_id, user_id: opponent["id"], tournament_id: tournament.id)
+
+        tournament.id
+        |> TournamentProgress.get_duplicate_users()
+        |> Kernel.==([opponent["id"], player.user_id])
+        |> Kernel.||(
+          tournament.id
+          |> TournamentProgress.get_duplicate_users()
+          |> Kernel.==([player.user_id, opponent["id"]])
+        )
+        |> (fn bool ->
+          assert bool
+        end).()
+
+        conn
+        |> get(Routes.tournament_path(conn, :get_duplicate_claim_members), tournament_id: tournament.id)
+        |> json_response(200)
+        |> Map.get("data")
+        |> Enum.each(fn user ->
+          user["id"]
+          |> Kernel.==(player.user_id)
+          |> Kernel.||(user["id"] == opponent["id"])
+          |> (fn bool ->
+            assert bool
+          end).()
+        end)
+      else
+        Logger.info("opponent is nil in 'test duplicate claim members'")
+      end
+    end
+  end
+
+  describe "test trim of players" do
+    setup [:create_tournament]
+
+    test "trim of players", %{conn: conn, tournament: tournament} do
+      entrants = create_entrants(17, tournament.id)
+      player = hd(entrants)
+
+      conn = post(conn, Routes.tournament_path(conn, :start), tournament: %{"master_id" => tournament.master_id, "tournament_id" => tournament.id})
+      match_list = json_response(conn, 200)["data"]["match_list"]
+
+      tournament.id
+      |> TournamentProgress.get_match_list_with_fight_result()
+      |> hd()
+      |> elem(1)
+      |> Tournaments.match_list_length()
+      |> (fn len ->
+        assert len == 17
+      end).()
+      conn = get(conn, Routes.tournament_path(conn, :get_opponent), %{"tournament_id" => tournament.id, "user_id" => player.user_id})
+
+      response = json_response(conn, 200)
+      cond do
+        !is_nil(response["opponent"]) -> true
+        is_nil(response["opponent"]) and !is_nil(response["wait"]) -> false
+        true -> assert false, "it must not be true"
+      end
+      |> if do
+        opponent = response["opponent"]
+        conn = post(conn, Routes.tournament_path(conn, :start_match), user_id: player.user_id, tournament_id: tournament.id)
+        conn = post(conn, Routes.tournament_path(conn, :start_match), user_id: opponent["id"], tournament_id: tournament.id)
+        conn = post(conn, Routes.tournament_path(conn, :claim_win), opponent_id: opponent["id"], user_id: player.user_id, tournament_id: tournament.id)
+        conn = post(conn, Routes.tournament_path(conn, :claim_lose), opponent_id: player.user_id, user_id: opponent["id"], tournament_id: tournament.id)
+        conn = post(conn, Routes.tournament_path(conn, :delete_loser), tournament: %{"tournament_id" => tournament.id, "loser_list" => [opponent["id"]]})
+
+        tournament.id
+        |> TournamentProgress.get_match_list_with_fight_result()
+        |> hd()
+        |> elem(1)
+        |> Tournaments.match_list_length()
+        |> (fn len ->
+          assert len == 16
+        end).()
+      else
+        Logger.warn("opponent is nil in 'test trim of players'")
+      end
     end
   end
 
