@@ -7,7 +7,8 @@ defmodule Milk.Application do
 
   def start(_type, _args) do
 
-    credentials = "e-players6814-8e8eac82841c.json" |> File.read! |> Jason.decode!()
+    # credentials = "e-players6814-8e8eac82841c.json" |> File.read! |> Jason.decode!()
+    credentials = Application.get_env(:milk, :json_file) |> Jason.decode!()
     source = {:service_account, credentials, []}
 
     # List all child processes to be supervised
