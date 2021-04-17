@@ -127,7 +127,9 @@ defmodule MilkWeb.TournamentController do
         :dev -> uuid
         :test -> uuid
         _ ->
+          Logger.info("start to upload image")
           object = Milk.CloudStorage.Objects.upload("./static/image/tournament_thumbnail/#{uuid}.jpg")
+          Logger.info("finish uploading image")
           File.rm("./static/image/tournament_thumbnail/#{uuid}.jpg")
           object.name
       end
