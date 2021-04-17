@@ -722,16 +722,14 @@ defmodule Milk.Tournaments do
       TournamentProgress.delete_fight_result({user_id, tournament_id})
     end)
 
-    get_user_lost(tournament_id, match_list, loser_list)
     updated_match_list = renew_match_list(tournament_id, match_list, loser_list)
-    unless is_integer(updated_match_list) do
-      trim_match_list_as_needed(tournament_id)
-    end
+    renew_match_list_with_fight_result(tournament_id, loser_list)
+    unless is_integer(updated_match_list), do: trim_match_list_as_needed(tournament_id)
 
     updated_match_list
   end
 
-  defp get_user_lost(tournament_id, _match_list, [loser]) do
+  defp renew_match_list_with_fight_result(tournament_id, [loser]) do
     tournament_id = Tools.to_integer_as_needed(tournament_id)
 
     tournament_id
@@ -749,17 +747,16 @@ defmodule Milk.Tournaments do
       {:error, v} ->
         {:error, v}
       {_, match_list} ->
-        updated_match_list = get_lost(match_list, loser)
-        {:ok, updated_match_list}
+        # updated_match_list = get_lost(match_list, loser)
+        #   |> IO.inspect(label: :get_lost_in_case)
+        {:ok, match_list}
     end
     |> case do
       {:ok, match_list} ->
-        # 同時に更新処理がかかってしまっている疑惑
-        IO.inspect(match_list, label: :match_list)
-        TournamentProgress.delete_match_list_with_fight_result(tournament_id)
-        |> IO.inspect(label: :deletion)
-        TournamentProgress.insert_match_list_with_fight_result(match_list, tournament_id)
-        |> IO.inspect(label: :insertion)
+        # TODO: 同時に更新処理がかかってしまっている疑惑
+        match_list
+        |> IO.inspect(label: :match_list_in_get_user_lost)
+        |> TournamentProgress.renew_match_list_with_fight_result(tournament_id)
       {:error, _v} ->
         false
     end
@@ -770,17 +767,16 @@ defmodule Milk.Tournaments do
       promote_winners_by_loser(tournament_id, match_list, loser_list)
     end
 
-    updated_match_list = delete_loser(match_list, loser_list)
-    TournamentProgress.delete_match_list(tournament_id)
-    TournamentProgress.insert_match_list(updated_match_list, tournament_id)
-    updated_match_list
+    loser_list
+    |> hd()
+    |> TournamentProgress.renew_match_list(tournament_id)
   end
 
   @doc """
   Delete a loser in a matchlist
   """
-  def delete_loser(list, loser) do
-    Tournamex.delete_loser(list, loser)
+  def delete_loser(match_list, loser) do
+    Tournamex.delete_loser(match_list, loser)
   end
 
   def promote_winners_by_loser(tournament_id, match_list, losers) when is_list(losers) do

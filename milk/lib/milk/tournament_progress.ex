@@ -84,6 +84,23 @@ defmodule Milk.TournamentProgress do
     end
   end
 
+  def renew_match_list(loser, tournament_id) do
+    # 更新は正常にできている
+    conn = conn()
+    IO.inspect(loser, label: :loser)
+
+    {:ok, _} = Redix.command(conn, ["MULTI"])
+    {:ok, _} = Redix.command(conn, ["SELECT", 1])
+    {:ok, value} = Redix.command(conn, ["GET", tournament_id])
+    {match_list, _} = Code.eval_string(value)
+    match_list = Tournamex.delete_loser(match_list, loser)
+    bin = inspect(match_list)
+    {:ok, _} = Redix.command(conn, ["DEL", tournament_id])
+    {:ok, _} = Redix.command(conn, ["SET", tournament_id, bin])
+    {:ok, _} = Redix.command(conn, ["EXEC"])
+    true
+  end
+
   @moduledoc """
   2. match_list_with_fight_result
   Manages match list with fight result.
@@ -140,6 +157,21 @@ defmodule Milk.TournamentProgress do
       _error ->
         false
     end
+  end
+
+  def renew_match_list_with_fight_result(loser, tournament_id) do
+    conn = conn()
+
+    {:ok, _} = Redix.command(conn, ["MULTI"])
+    {:ok, _} = Redix.command(conn, ["SELECT", 2])
+    {:ok, value} = Redix.command(conn, ["GET", tournament_id])
+    {match_list, _} = Code.eval_string(value)
+    match_list = Tournamex.renew_match_list_with_loser(match_list, loser)
+    bin = inspect(match_list)
+    {:ok, _} = Redix.command(conn, ["DEL", tournament_id])
+    {:ok, _} = Redix.command(conn, ["SET", tournament_id, bin])
+    {:ok, _} = Redix.command(conn, ["EXEC"])
+    true
   end
 
   @moduledoc """
