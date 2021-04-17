@@ -78,7 +78,7 @@ defmodule Milk.MixProject do
       {:dialyxir, "~> 1.0", only: [:dev], runtime: false},
       {:excoveralls, "~> 0.10", only: :test},
       {:redix, ">= 0.0.0"},
-      {:google_api_storage, "~> 0.28.0"},
+      {:google_api_storage, "~> 0.29"},
       # {:goth, "~> 1.2.0"}
       {:goth, "~> 1.3-rc"},
       {:hackney, "~> 1.17"}
