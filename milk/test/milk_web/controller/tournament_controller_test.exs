@@ -352,8 +352,9 @@ defmodule MilkWeb.TournamentControllerTest do
 
       conn = post(conn, Routes.tournament_path(conn, :claim_win), opponent_id: opponent["id"], user_id: player.user_id, tournament_id: tournament.id)
       conn = post(conn, Routes.tournament_path(conn, :claim_lose), opponent_id: player.user_id, user_id: opponent["id"], tournament_id: tournament.id)
+      conn = post(conn, Routes.tournament_path(conn, :delete_loser), tournament: %{tournament_id: tournament.id, loser_list: [opponent["id"]]})
       conn = get(conn, Routes.tournament_path(conn, :get_waiting_users), tournament_id: tournament.id)
-      assert length(json_response(conn, 200)["data"]) == length(entrants)
+      assert length(json_response(conn, 200)["data"]) == length(entrants) - 1
     end
   end
 
