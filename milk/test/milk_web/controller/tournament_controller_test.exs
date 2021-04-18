@@ -86,6 +86,22 @@ defmodule MilkWeb.TournamentControllerTest do
     end
   end
 
+  describe "get tournaments by master id" do
+    setup [:create_tournament]
+
+    test "get_tournaments_by_master_id", %{conn: conn, tournament: tournament} do
+      conn = get(conn, Routes.tournament_path(conn, :get_tournaments_by_master_id), %{user_id: tournament.master_id})
+      json_response(conn, 200)
+      |> Map.get("data")
+      |> Enum.map(fn t ->
+        assert t["id"] == tournament.id
+      end)
+      |> (fn list ->
+        assert length(list) == 1
+      end).()
+    end
+  end
+
   describe "get tournament" do
     setup [:create_tournament]
 
