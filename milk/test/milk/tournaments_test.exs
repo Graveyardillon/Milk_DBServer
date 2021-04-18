@@ -484,7 +484,7 @@ defmodule Milk.TournamentsTest do
     test "delete_loser/2 does not work with an invalid data of 1 player" do
       list = [1]
 
-      assert catch_error(Tournaments.delete_loser(list, 1)) == %RuntimeError{message: "Bad Argument"}
+      assert Tournaments.delete_loser(list, 1) == []
     end
   end
 

@@ -84,21 +84,31 @@ defmodule Milk.TournamentProgress do
     end
   end
 
+  @doc """
+  FIXME: 排他ロックするための処理を記述する
+  排他処理用のテーブルは0番テーブルとする。
+  """
   def renew_match_list(loser, tournament_id) do
     # 更新は正常にできている
     conn = conn()
-    IO.inspect(loser, label: :loser)
-
-    {:ok, _} = Redix.command(conn, ["MULTI"])
     {:ok, _} = Redix.command(conn, ["SELECT", 1])
-    {:ok, value} = Redix.command(conn, ["GET", tournament_id])
-    {match_list, _} = Code.eval_string(value)
-    match_list = Tournamex.delete_loser(match_list, loser)
-    bin = inspect(match_list)
-    {:ok, _} = Redix.command(conn, ["DEL", tournament_id])
-    {:ok, _} = Redix.command(conn, ["SET", tournament_id, bin])
-    {:ok, _} = Redix.command(conn, ["EXEC"])
-    true
+    {:ok, value} = Redix.command(conn, ["SETNX", -tournament_id, 1])
+
+    if value == 1 do
+      {:ok, _} = Redix.command(conn, ["EXPIRE", -tournament_id, 20])
+      {:ok, _} = Redix.command(conn, ["SELECT", 1])
+      {:ok, value} = Redix.command(conn, ["GET", tournament_id])
+      {match_list, _} = Code.eval_string(value)
+      match_list = Tournamex.delete_loser(match_list, loser)
+        |> IO.inspect(label: :match_list)
+      bin = inspect(match_list)
+      {:ok, _} = Redix.command(conn, ["DEL", tournament_id])
+      {:ok, _} = Redix.command(conn, ["SET", tournament_id, bin])
+      {:ok, _} = Redix.command(conn, ["DEL", -tournament_id])
+      true
+    else
+      false
+    end
   end
 
   @moduledoc """
@@ -162,16 +172,23 @@ defmodule Milk.TournamentProgress do
   def renew_match_list_with_fight_result(loser, tournament_id) do
     conn = conn()
 
-    {:ok, _} = Redix.command(conn, ["MULTI"])
     {:ok, _} = Redix.command(conn, ["SELECT", 2])
-    {:ok, value} = Redix.command(conn, ["GET", tournament_id])
-    {match_list, _} = Code.eval_string(value)
-    match_list = Tournamex.renew_match_list_with_loser(match_list, loser)
-    bin = inspect(match_list)
-    {:ok, _} = Redix.command(conn, ["DEL", tournament_id])
-    {:ok, _} = Redix.command(conn, ["SET", tournament_id, bin])
-    {:ok, _} = Redix.command(conn, ["EXEC"])
-    true
+    {:ok, value} = Redix.command(conn, ["SETNX", -tournament_id, 2])
+
+    if value == 1 do
+      {:ok, _} = Redix.command(conn, ["EXPIRE", -tournament_id, 20])
+      {:ok, _} = Redix.command(conn, ["SELECT", 2])
+      {:ok, value} = Redix.command(conn, ["GET", tournament_id])
+      {match_list, _} = Code.eval_string(value)
+      match_list = Tournamex.renew_match_list_with_loser(match_list, loser)
+      bin = inspect(match_list)
+      {:ok, _} = Redix.command(conn, ["DEL", tournament_id])
+      {:ok, _} = Redix.command(conn, ["SET", tournament_id, bin])
+      {:ok, _} = Redix.command(conn, ["DEL", -tournament_id])
+      true
+    else
+      false
+    end
   end
 
   @moduledoc """

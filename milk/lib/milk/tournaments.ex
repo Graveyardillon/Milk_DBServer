@@ -358,16 +358,16 @@ defmodule Milk.Tournaments do
       tournament_id
       |> TournamentProgress.get_match_list()
       |> case do
-        [] -> []
-        [{_, match_list}] -> match_list_length(match_list)
+        [{_, match_list}] when is_list(match_list) -> match_list_length(match_list)
+        _ -> 0
       end
 
     match_list_with_fight_result_len =
       tournament_id
       |> TournamentProgress.get_match_list_with_fight_result()
       |> case do
-        [] -> []
-        [{_, match_list}] -> match_list_length(match_list)
+        [{_, match_list}] when is_list(match_list) -> match_list_length(match_list)
+        _ -> 0
       end
 
     if match_list_with_fight_result_len > 16 and match_list_len <= 16 do
@@ -732,34 +732,7 @@ defmodule Milk.Tournaments do
   defp renew_match_list_with_fight_result(tournament_id, [loser]) do
     tournament_id = Tools.to_integer_as_needed(tournament_id)
 
-    tournament_id
-    |> TournamentProgress.get_match_list_with_fight_result()
-    |> case do
-      [] ->
-        Logger.warn("unexpectedlly got nil in get_user_lost/3")
-        {:error, nil}
-      list ->
-        tup = hd(list)
-        inspect(tup)
-        tup
-    end
-    |> case do
-      {:error, v} ->
-        {:error, v}
-      {_, match_list} ->
-        # updated_match_list = get_lost(match_list, loser)
-        #   |> IO.inspect(label: :get_lost_in_case)
-        {:ok, match_list}
-    end
-    |> case do
-      {:ok, match_list} ->
-        # TODO: 同時に更新処理がかかってしまっている疑惑
-        match_list
-        |> IO.inspect(label: :match_list_in_get_user_lost)
-        |> TournamentProgress.renew_match_list_with_fight_result(tournament_id)
-      {:error, _v} ->
-        false
-    end
+    TournamentProgress.renew_match_list_with_fight_result(loser, tournament_id)
   end
 
   defp renew_match_list(tournament_id, match_list, loser_list) do
@@ -767,9 +740,18 @@ defmodule Milk.Tournaments do
       promote_winners_by_loser(tournament_id, match_list, loser_list)
     end
 
+    # loser_list
+    # |> TournamentProgress.renew_match_list(tournament_id)
+    renew(loser_list, tournament_id)
+  end
+
+  defp renew(loser_list, tournament_id) do
     loser_list
-    |> hd()
     |> TournamentProgress.renew_match_list(tournament_id)
+    |> unless do
+      Process.sleep(100)
+      renew(loser_list, tournament_id)
+    end
   end
 
   @doc """
@@ -1022,8 +1004,6 @@ defmodule Milk.Tournaments do
   Get lost a player.
   """
   def get_lost(match_list, loser) do
-    # IO.inspect(match_list, label: :match_list_in_get_lost)
-    # IO.inspect(loser, label: :loser_in_get_lost)
     Tournamex.renew_match_list_with_loser(match_list, loser)
   end
 
