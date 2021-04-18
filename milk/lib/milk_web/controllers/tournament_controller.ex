@@ -68,9 +68,8 @@ defmodule MilkWeb.TournamentController do
     render(conn, "index.json", tournament: tournaments)
   end
 
-
   @doc """
-    ユーザーの開催予定の大会と、logから今まで開催した大会のデータを取得
+  ユーザーの開催予定の大会と、logから今まで開催した大会のデータを取得
   """
   def get_planned_tournaments_by_master_id(conn, %{"user_id" => user_id}) do
     tournaments =

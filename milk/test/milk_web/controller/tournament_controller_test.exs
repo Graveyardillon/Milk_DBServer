@@ -26,6 +26,18 @@ defmodule MilkWeb.TournamentControllerTest do
     "url" => "some url",
     "platform_id" => 1
   }
+  @create_incoming_attrs %{
+    "capacity" => 42,
+    "deadline" => "2100-04-17T14:00:00Z",
+    "description" => "some description",
+    "event_date" => "2100-04-17T14:00:00Z",
+    "master_id" => 42,
+    "name" => "some name",
+    "type" => 42,
+    "join" => "true",
+    "url" => "some url",
+    "platform_id" => 1
+  }
   @invalid_attrs %{"capacity" => nil, "deadline" => nil, "description" => nil, "event_date" => nil, "game_id" => nil, "master_id" => nil, "name" => nil, "type" => nil, "url" => nil, }
 
   @create_user_attrs %{"icon_path" => "some icon_path", "language" => "some language", "name" => "some name", "notification_number" => 42, "point" => 42, "email" => "some2@email.com", "logout_fl" => true, "password" => "S1ome password"}
@@ -36,6 +48,14 @@ defmodule MilkWeb.TournamentControllerTest do
       %{"name" => "name", "email" => "e@mail.com", "password" => "Password123"}
       |> Accounts.create_user()
     {:ok, tournament} = Tournaments.create_tournament(%{@create_attrs|"master_id" => user.id})
+    tournament
+  end
+
+  def fixture_tournament_incoming() do
+    {:ok, user} =
+      %{"name" => "name", "email" => "e@mail.com", "password" => "Password123"}
+      |> Accounts.create_user()
+    {:ok, tournament} = Tournaments.create_tournament(%{@create_incoming_attrs|"master_id" => user.id})
     tournament
   end
 
@@ -104,25 +124,39 @@ defmodule MilkWeb.TournamentControllerTest do
   end
 
   describe "get ongoing tournaments by master id" do
-    setup [:create_tournament]
 
-    test "get_ongoing_tournaments_by_master_id", %{conn: conn, tournament: tournament} do
-      conn = post(conn, Routes.tournament_path(conn, :get_ongoing_tournaments_by_master_id), %{user_id: tournament.master_id})
-      assert json_response(conn, 200)["data"] == []
-      conn = post(conn, Routes.tournament_path(conn, :start), tournament: %{master_id: tournament.master_id, tournament_id: tournament.id})
+    test "get_ongoing_tournaments_by_master_id", %{conn: conn} do
+      tournament = fixture_tournament_incoming()
       conn = post(conn, Routes.tournament_path(conn, :get_ongoing_tournaments_by_master_id), %{user_id: tournament.master_id})
 
       assert json_response(conn, 200)["result"]
       json_response(conn, 200)
+      |> Map.get("data")
+      |> Enum.map(fn t ->
+        assert t["id"] == tournament.id
+      end)
+      |> length()
+      |> (fn len ->
+        assert len == 1
+      end).()
+    end
+  end
+
+  describe "get planned tournaments by master id" do
+
+    test "get_planned_tournaments_by_master_id", %{conn: conn} do
+      tournament = fixture_tournament_incoming()
+      conn = get(conn, Routes.tournament_path(conn, :get_planned_tournaments_by_master_id), user_id: tournament.master_id)
+      json_response(conn, 200)
       |> IO.inspect()
-      # |> Map.get("data")
-      # |> Enum.map(fn t ->
-      #   assert t.id == tournament.id
-      # end)
-      # |> length()
-      # |> (fn len ->
-      #   assert len == 1
-      # end)
+      |> Map.get("tournaments")
+      |> Enum.map(fn t ->
+        assert t["id"] == tournament.id
+      end)
+      |> length()
+      |> (fn len ->
+        assert len == 1
+      end).()
     end
   end
 
