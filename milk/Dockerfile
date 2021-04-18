@@ -20,7 +20,7 @@ RUN mix release ${app_name} \
   && mv _build/${build_env}/rel/${app_name} /opt/release \
   && mv /opt/release/bin/${app_name} /opt/release/bin/start_server
 
-RUN mkdir /opt/release/static
+RUN mkdir -p /opt/release/static/image/tournament_thumbnail
 COPY ./static /opt/release/static
 RUN chmod 777 /opt/release/static
 RUN ls /opt/release
