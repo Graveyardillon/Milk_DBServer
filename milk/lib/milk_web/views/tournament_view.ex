@@ -15,7 +15,7 @@ defmodule MilkWeb.TournamentView do
   end
 
   def render("index.json", %{tournament: tournament}) do
-    %{data: render_many(tournament, TournamentView, "tournament.json")}
+    %{data: render_many(tournament, TournamentView, "tournament.json"), result: true}
   end
 
   def render("show.json", %{tournament: tournament}) do
