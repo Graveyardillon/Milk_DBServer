@@ -15,6 +15,7 @@ RUN apk update \
 
 COPY . .
 RUN mix do deps.get, compile
+RUN mix deps.update certifi
 RUN mix release ${app_name} \
   && mv _build/${build_env}/rel/${app_name} /opt/release \
   && mv /opt/release/bin/${app_name} /opt/release/bin/start_server
