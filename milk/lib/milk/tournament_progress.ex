@@ -100,7 +100,6 @@ defmodule Milk.TournamentProgress do
       {:ok, value} = Redix.command(conn, ["GET", tournament_id])
       {match_list, _} = Code.eval_string(value)
       match_list = Tournamex.delete_loser(match_list, loser)
-        |> IO.inspect(label: :match_list)
       bin = inspect(match_list)
       {:ok, _} = Redix.command(conn, ["DEL", tournament_id])
       {:ok, _} = Redix.command(conn, ["SET", tournament_id, bin])
@@ -346,14 +345,14 @@ defmodule Milk.TournamentProgress do
   The process manages users who did not press 'start' button for 5 mins.
   """
   def set_time_limit_on_entrant(user_id, tournament_id) do
-
+    get_lost(user_id, tournament_id)
   end
 
   def set_time_limit_on_all_entrants(match_list, tournament_id) do
     match_list
     |> List.flatten()
-    |> Enum.each(fn v ->
-      get_lost(v, tournament_id)
+    |> Enum.each(fn user_id ->
+      get_lost(user_id, tournament_id)
     end)
   end
 
@@ -366,6 +365,11 @@ defmodule Milk.TournamentProgress do
         |> Kernel.*(1000)
         |> Process.sleep()
 
+        user_id
+        |> to_string()
+        |> Kernel.<>(" will lose due to absence.")
+        |> IO.inspect(label: :wait_millisecond)
+        |> Logger.info()
         # 敗北処理
         Tournaments.delete_loser_process(tournament_id, [user_id])
       end)

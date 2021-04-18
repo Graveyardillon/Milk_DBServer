@@ -263,7 +263,11 @@ defmodule Milk.TournamentProgressTest do
       [{_, match_list}] = TournamentProgress.get_match_list(tournament.id)
       refute Tournaments.has_lost?(match_list, tournament.master_id)
 
-      Process.sleep(1000*62*5)
+      5
+      |> Kernel.*(61)
+      |> Kernel.*(1000)
+      |> Process.sleep()
+
       [{_, match_list}] = TournamentProgress.get_match_list(tournament.id)
       assert Tournaments.has_lost?(match_list, tournament.master_id)
     end

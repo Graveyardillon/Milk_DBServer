@@ -146,11 +146,11 @@ defmodule MilkWeb.TournamentController do
             Tournaments.create_entrant(params)
           end
 
-          t =
+          tournament =
             tournament
             |> Map.put(:followers, Relations.get_followers(tournament.master_id))
 
-          render(conn, "create.json", tournament: t)
+          render(conn, "create.json", tournament: tournament)
         {:error, error} ->
           render(conn, "error.json", error: error)
         _ ->
@@ -386,6 +386,10 @@ defmodule MilkWeb.TournamentController do
 
     with {:ok, _} <- Tournaments.start(master_id, tournament_id),
     {:ok, match_list, match_list_with_fight_result} <- make_matches(conn, tournament_id) do
+      # with [{_, match_list}] <- TournamentProgress.get_match_list(tournament_id) do
+      #   Logger.info("Set time limit on all entrants")
+      #   TournamentProgress.set_time_limit_on_all_entrants(match_list, tournament_id)
+      # end
       render(conn, "match.json", %{match_list: match_list, match_list_with_fight_result: match_list_with_fight_result})
     else
       {:error, error, nil} ->
