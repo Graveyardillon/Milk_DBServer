@@ -9,8 +9,7 @@ alias Milk.Accounts.{
   User
 }
 alias Milk.Tournaments.{
-  Entrant,
-  Tournament
+  Entrant
 }
 
 import Ecto.Query, only: [from: 2]
@@ -74,7 +73,6 @@ end)
 |> TournamentProgress.insert_match_list_with_fight_result(tournament.id)
 
 with [{_, match_list}] <- TournamentProgress.get_match_list(tournament.id) do
-  IO.inspect(match_list, label: :match_list_in_fill_size_4_tournament)
   Logger.info("Set time limit on all entrants")
   TournamentProgress.set_time_limit_on_all_entrants(match_list, tournament.id)
 end

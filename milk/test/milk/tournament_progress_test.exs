@@ -2,7 +2,7 @@ defmodule Milk.TournamentProgressTest do
   @moduledoc """
   Redisが使えるときのみコメントアウトを解除する
   """
-  use Milk.DataCase
+  use Milk.DataCase, async: true
   use Timex
 
   alias Milk.{
@@ -250,7 +250,7 @@ defmodule Milk.TournamentProgressTest do
     end
   end
 
-  describe "set_timelimit" do
+  describe "absence" do
     test "set_timelimit_on_all_entrants/1 works fine" do
       tournament = fixture_tournament(is_started: false)
       entrants = create_entrants(7, tournament.id)
@@ -270,6 +270,26 @@ defmodule Milk.TournamentProgressTest do
 
       [{_, match_list}] = TournamentProgress.get_match_list(tournament.id)
       assert Tournaments.has_lost?(match_list, tournament.master_id)
+    end
+
+    test "cancel_lose/2 works fine" do
+      tournament = fixture_tournament(is_started: false)
+      entrants = create_entrants(7, tournament.id)
+      {:ok, entrant} = Tournaments.create_entrant(%{"user_id" => tournament.master_id, "tournament_id" => tournament.id})
+      entrants = entrants ++ [entrant]
+      start(tournament.master_id, tournament.id)
+
+      [{_, match_list}] = TournamentProgress.get_match_list(tournament.id)
+      TournamentProgress.set_time_limit_on_all_entrants(match_list, tournament.id)
+      TournamentProgress.cancel_lose(tournament.id, tournament.master_id)
+
+      5
+      |> Kernel.*(61)
+      |> Kernel.*(1000)
+      |> Process.sleep()
+
+      [{_, match_list}] = TournamentProgress.get_match_list(tournament.id)
+      refute Tournaments.has_lost?(match_list, tournament.master_id)
     end
   end
 end
