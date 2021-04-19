@@ -107,6 +107,8 @@ defmodule MilkWeb.TournamentController do
     thumbnail_path = if image != "" do
       uuid = SecureRandom.uuid()
       File.cp(image.path, "./static/image/tournament_thumbnail/#{uuid}.jpg")
+      |> IO.inspect(label: :cp_image)
+      Logger.info("copy_image")
       case Application.get_env(:milk, :environment) do
         # coveralls-ignore-start
         :dev -> uuid
@@ -114,7 +116,9 @@ defmodule MilkWeb.TournamentController do
         :test -> uuid
         # coveralls-ignore-start
         _ ->
+          Logger.info("start to upload image")
           object = Milk.CloudStorage.Objects.upload("./static/image/tournament_thumbnail/#{uuid}.jpg")
+          Logger.info("finish uploading image")
           File.rm("./static/image/tournament_thumbnail/#{uuid}.jpg")
           object.name
         # coveralls-ignore-stop
