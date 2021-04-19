@@ -353,10 +353,7 @@ defmodule Milk.TournamentProgress do
     match_list
     |> List.flatten()
     |> Enum.each(fn user_id ->
-      # debug
-      if user_id != 2 do
-        get_lost(user_id, tournament_id)
-      end
+      get_lost(user_id, tournament_id)
     end)
   end
 
