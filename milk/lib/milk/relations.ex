@@ -1,8 +1,13 @@
 defmodule Milk.Relations do
-  alias Milk.Accounts.Relation
-  alias Milk.Accounts.User
-  alias Milk.Repo
-  alias Milk.Accounts
+  alias Milk.{
+    Repo,
+    Accounts
+  }
+  alias Milk.Accounts.{
+    Relation,
+    User
+  }
+  alias Common.Tools
 
   import Ecto.Query, warn: false
 
@@ -55,16 +60,13 @@ defmodule Milk.Relations do
   Get relation list of a specific user.
   """
   def get_following_list(user_id) do
-    id = if is_binary(user_id) do
-      String.to_integer(user_id)
-    else
-      user_id
-    end
+    user_id = Tools.to_integer_as_needed(user_id)
 
     Relation
-    |> where([r], r.follower_id == ^id)
+    |> where([r], r.follower_id == ^user_id)
     |> Repo.all()
     |> Enum.map(fn relation ->
+      IO.inspect(relation)
       Repo.one(
         from u in User,
         join: a in assoc(u, :auth),
@@ -77,27 +79,34 @@ defmodule Milk.Relations do
 
  # NOTE: ユーザーの詳細な情報は必要ないのでフォローしているIDリストを返す
   def get_following_id_list(user_id) do
-    id = if is_binary(user_id) do
-      String.to_integer(user_id)
-    else
-      user_id
-    end
+    user_id = Tools.to_integer_as_needed(user_id)
 
     Relation
-    |> where([r], r.follower_id == ^id)
+    |> where([r], r.follower_id == ^user_id)
     |> select([r], r.followee_id)
     |> Repo.all()
   end
 
+  @doc """
+  Get followers
+  """
+  def get_followers(user_id) do
+    Relation
+    |> where([r], r.followee_id == ^user_id)
+    |> Repo.all()
+    |> Enum.map(fn relation ->
+      Accounts.get_user(relation.follower_id)
+    end)
+  end
+
+  @doc """
+  Get Followers
+  """
   def get_followers_list(user_id) do
-    id = if is_binary(user_id) do
-      String.to_integer(user_id)
-    else
-      user_id
-    end
+    user_id = Tools.to_integer_as_needed(user_id)
 
     Relation
-    |> where([r], r.followee_id == ^id)
+    |> where([r], r.followee_id == ^user_id)
     |> Repo.all()
     |> Enum.map(fn relation ->
       Repo.one(
@@ -110,14 +119,10 @@ defmodule Milk.Relations do
   end
 
   def get_followers_id_list(user_id) do
-    id = if is_binary(user_id) do
-      String.to_integer(user_id)
-    else
-      user_id
-    end
+    user_id = Tools.to_integer_as_needed(user_id)
 
     Relation
-    |> where([r], r.followee_id == ^id)
+    |> where([r], r.followee_id == ^user_id)
     |> select([r], r.follower_id)
     |> Repo.all()
   end
@@ -137,19 +142,11 @@ defmodule Milk.Relations do
   # TODO: エラーハンドリング
   # TODO: Multiを使ったほうがいいかもしれない
   def create_relation(attrs \\ %{}) do
-    follower_id = if is_binary(attrs["follower_id"]) do
-      String.to_integer(attrs["follower_id"])
-    else
-      attrs["follower_id"]
-    end
+    follower_id = Tools.to_integer_as_needed(attrs["follower_id"])
+    followee_id = Tools.to_integer_as_needed(attrs["followee_id"])
 
-    followee_id = if is_binary(attrs["followee_id"]) do
-      String.to_integer(attrs["followee_id"])
-    else
-      attrs["followee_id"]
-    end
-
-    if get_relation_by_ids(follower_id, followee_id) |> is_nil() do
+    get_relation_by_ids(follower_id, followee_id)
+    |> unless do
       %Relation{follower_id: follower_id, followee_id: followee_id}
       |> Relation.changeset(attrs)
       |> Repo.insert()
@@ -229,17 +226,5 @@ defmodule Milk.Relations do
   """
   def change_relation(%Relation{} = relation, attrs \\ %{}) do
     Relation.changeset(relation, attrs)
-  end
-
-  @doc """
-  Get followers
-  """
-  def get_followers(user_id) do
-    Relation
-    |> where([r], r.followee_id == ^user_id)
-    |> Repo.all()
-    |> Enum.map(fn relation ->
-      Accounts.get_user(relation.follower_id)
-    end)
   end
 end
