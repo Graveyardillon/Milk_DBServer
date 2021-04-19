@@ -66,7 +66,6 @@ defmodule Milk.Relations do
     |> where([r], r.follower_id == ^user_id)
     |> Repo.all()
     |> Enum.map(fn relation ->
-      IO.inspect(relation)
       Repo.one(
         from u in User,
         join: a in assoc(u, :auth),
