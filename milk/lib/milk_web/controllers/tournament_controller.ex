@@ -104,20 +104,17 @@ defmodule MilkWeb.TournamentController do
   end
 
   def create(conn, %{"tournament" => tournament_params, "image" => image}) do
+    # coveralls-ignore-start
     thumbnail_path = if image != "" do
       uuid = SecureRandom.uuid()
       File.cp(image.path, "./static/image/tournament_thumbnail/#{uuid}.jpg")
-      Logger.info("copy_image")
       case Application.get_env(:milk, :environment) do
-        # coveralls-ignore-start
         :dev -> uuid
         # coveralls-ignore-stop
         :test -> uuid
         # coveralls-ignore-start
         _ ->
-          Logger.info("start to upload image")
           object = Milk.CloudStorage.Objects.upload("./static/image/tournament_thumbnail/#{uuid}.jpg")
-          Logger.info("finish uploading image")
           File.rm("./static/image/tournament_thumbnail/#{uuid}.jpg")
           object.name
         # coveralls-ignore-stop
@@ -133,8 +130,8 @@ defmodule MilkWeb.TournamentController do
       case Tournaments.create_tournament(tournament_params, thumbnail_path) do
         {:ok, %Tournament{} = tournament} ->
           if tournament_params["join"] == "true" do
-            params = %{"user_id" => tournament.master_id, "tournament_id" => tournament.id}
-            Tournaments.create_entrant(params)
+            %{"user_id" => tournament.master_id, "tournament_id" => tournament.id}
+            |> Tournaments.create_entrant()
           end
 
           tournament =

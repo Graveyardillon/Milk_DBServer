@@ -38,7 +38,7 @@ defmodule MilkWeb.TournamentControllerTest do
     "url" => "some url",
     "platform_id" => 1
   }
-  @invalid_attrs %{"capacity" => nil, "deadline" => nil, "description" => nil, "event_date" => nil, "game_id" => nil, "master_id" => nil, "name" => nil, "type" => nil, "url" => nil, }
+  @invalid_attrs %{"capacity" => nil, "deadline" => nil, "description" => nil, "event_date" => nil, "game_id" => nil, "master_id" => nil, "name" => nil, "type" => nil, "url" => nil}
 
   @create_user_attrs %{"icon_path" => "some icon_path", "language" => "some language", "name" => "some name", "notification_number" => 42, "point" => 42, "email" => "some2@email.com", "logout_fl" => true, "password" => "S1ome password"}
   @create_user_attrs2 %{"icon_path" => "some icon_path", "language" => "some language", "name" => "some sname", "notification_number" => 42, "point" => 42, "email" => "somes2@email.com", "logout_fl" => true, "password" => "S1ome password"}
@@ -250,9 +250,28 @@ defmodule MilkWeb.TournamentControllerTest do
       assert _tournament = json_response(conn, 200)["data"]
     end
 
-    test "renders errors when data is invalid", %{conn: conn} do
+    test "renders errors when data is mostly nil", %{conn: conn} do
       conn = post(conn, Routes.tournament_path(conn, :create), tournament: @invalid_attrs, file: "")
       assert json_response(conn, 200)["error"] == "join parameter is nil"
+      refute json_response(conn, 200)["result"]
+    end
+
+    test "renders error when data is invalid", %{conn: conn} do
+      attrs = %{
+        "capacity" => 42,
+        "deadline" => "2010-04-17T14:00:00Z",
+        "description" => "some description",
+        "event_date" => "2010-04-17T14:00:00Z",
+        "master_id" => -1,
+        "name" => "some name",
+        "type" => 42,
+        "join" => "true",
+        "url" => "some url",
+        "platform_id" => 1
+      }
+      conn = post(conn, Routes.tournament_path(conn, :create), tournament: attrs, file: "")
+      assert json_response(conn, 200)["error"] == "Undefined User"
+      refute json_response(conn, 200)["result"]
     end
   end
 
