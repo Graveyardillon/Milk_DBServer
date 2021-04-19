@@ -217,6 +217,27 @@ defmodule MilkWeb.TournamentControllerTest do
     end
   end
 
+  describe "get pid" do
+    setup [:create_tournament]
+
+    test "get pid", %{conn: conn, tournament: _tournament} do
+      {:ok, user} =
+        %{"name" => "namasdfe", "email" => "easdf@mail.com", "password" => "Password123"}
+        |> Accounts.create_user()
+
+      pid = "0.111.0"
+
+      {:ok, tournament} =
+        @create_attrs
+        |> Map.put("master_id", user.id)
+        |> Map.put("start_notification_pid", pid)
+        |> Tournaments.create_tournament()
+
+      conn = get(conn, Routes.tournament_path(conn, :get_pid), %{tournament_id: tournament.id})
+      assert json_response(conn, 200)["pid"] == pid
+    end
+  end
+
   describe "create tournament" do
     test "renders tournament when data is valid", %{conn: conn} do
       {:ok, user} = fixture(:user)
