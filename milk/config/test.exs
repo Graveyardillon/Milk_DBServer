@@ -8,7 +8,9 @@ config :milk, Milk.Repo,
   hostname: "localhost",
   show_sensitive_data_on_connection_error: true,
   pool_size: 10,
-  pool: Ecto.Adapters.SQL.Sandbox
+  pool: Ecto.Adapters.SQL.Sandbox,
+  ownership_timeout: :infinity,
+  timeout: :infinity
 
 # We don't run a server during test. If one is required,
 # you can enable the server option below.

@@ -15,6 +15,8 @@ alias Milk.Tournaments.{
 
 import Ecto.Query, only: [from: 2]
 
+require Logger
+
 tournament = Repo.one(from t in Tournament, where: t.capacity == 4)
 
 1..4
@@ -70,3 +72,9 @@ Enum.reduce(lis, list_with_fight_result, fn x, acc ->
   |> Tournaments.put_value_on_brackets(user.id, %{"icon_path" => user.icon_path})
 end)
 |> TournamentProgress.insert_match_list_with_fight_result(tournament.id)
+
+with [{_, match_list}] <- TournamentProgress.get_match_list(tournament.id) do
+  IO.inspect(match_list, label: :match_list_in_fill_size_4_tournament)
+  Logger.info("Set time limit on all entrants")
+  TournamentProgress.set_time_limit_on_all_entrants(match_list, tournament.id)
+end
