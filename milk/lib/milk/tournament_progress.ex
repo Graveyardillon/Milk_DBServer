@@ -344,10 +344,18 @@ defmodule Milk.TournamentProgress do
   6. absence_process
   The process manages users who did not press 'start' button for 5 mins.
   """
+
+  @doc """
+  Set a time limit on entrant.
+  When the time limit becomes due, the user gets lost.
+  """
   def set_time_limit_on_entrant(user_id, tournament_id) do
     get_lost(user_id, tournament_id)
   end
 
+  @doc """
+
+  """
   def set_time_limit_on_all_entrants(match_list, tournament_id) do
     Logger.info("Set time limit on all entrants")
     match_list
@@ -358,7 +366,7 @@ defmodule Milk.TournamentProgress do
   end
 
   defp get_lost(user_id, tournament_id) do
-    # 敗北のプロセスを生成
+    # Generate a process which makes a user lost
     pid_str =
       Task.async(fn ->
         IO.inspect(user_id)
@@ -374,9 +382,8 @@ defmodule Milk.TournamentProgress do
       end)
       |> case do
         %Task{pid: pid} ->
-          IO.inspect(pid)
-          IO.inspect("losing process is generated")
           pid
+          |> IO.inspect(label: :pid)
           |> :erlang.pid_to_list()
           |> inspect()
       end
@@ -391,15 +398,20 @@ defmodule Milk.TournamentProgress do
     end
   end
 
-  # 敗北処理をキャンセル
+  @doc """
+  Cancel a process which makes a user lost.
+  """
   def cancel_lose(tournament_id, user_id) do
     conn = conn()
 
     with {:ok, _} <- Redix.command(conn, ["SELECT", 6]),
     {:ok, value} <- Redix.command(conn, ["HGET", tournament_id, user_id]) do
       if value do
-        {_, _, pid_str} = value
-        pid = Code.eval_string(pid_str)
+        value
+        |> Code.eval_string()
+        |> IO.inspect(label: :eval_string)
+        |> :erlang.list_to_pid()
+        |> Process.exit(:kill)
       else
         nil
       end
