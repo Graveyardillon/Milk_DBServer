@@ -1,9 +1,15 @@
 defmodule Milk.CloudStorage.Objects do
+  require Logger
+
   @bucket_id Application.get_env(:milk, :storage_bucket_id)
 
   def upload(file_path) do
-    {:ok, token} = Goth.Token.for_scope("https://www.googleapis.com/auth/cloud-platform")
+    {:ok, token} = Goth.fetch(Milk.Goth)
+      |> IO.inspect(label: :goth_token)
+    Logger.info("got goth.token")
     conn = GoogleApi.Storage.V1.Connection.new(token.token)
+      |> IO.inspect(label: :connection_new)
+    Logger.info("new connection")
 
     {:ok, object} = GoogleApi.Storage.V1.Api.Objects.storage_objects_insert_simple(
       conn,
@@ -12,12 +18,14 @@ defmodule Milk.CloudStorage.Objects do
       %{name: Path.basename(file_path)},
       file_path
     )
+    |> IO.inspect(label: :upload)
+    Logger.info("uploaded")
 
     object
   end
 
   def get(obj_name) do
-    {:ok, token} = Goth.Token.for_scope("https://www.googleapis.com/auth/cloud-platform")
+    {:ok, token} = Goth.fetch(Milk.Goth)
     conn = GoogleApi.Storage.V1.Connection.new(token.token)
 
     {:ok, object} = GoogleApi.Storage.V1.Api.Objects.storage_objects_get(
@@ -30,7 +38,7 @@ defmodule Milk.CloudStorage.Objects do
   end
 
   def delete(obj_name) do
-    {:ok, token} = Goth.Token.for_scope("https://www.googleapis.com/auth/cloud-platform")
+    {:ok, token} = Goth.fetch(Milk.Goth)
     conn = GoogleApi.Storage.V1.Connection.new(token.token)
 
     {:ok, object} = GoogleApi.Storage.V1.Api.Objects.storage_objects_delete(
