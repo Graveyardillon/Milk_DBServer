@@ -147,8 +147,16 @@ defmodule MilkWeb.TournamentControllerTest do
     test "get_planned_tournaments_by_master_id", %{conn: conn} do
       tournament = fixture_tournament_incoming()
       conn = get(conn, Routes.tournament_path(conn, :get_planned_tournaments_by_master_id), user_id: tournament.master_id)
+
+      {:ok, user} = fixture(:user)
+      %{
+        "rank" => 0,
+        "tournament_id" => tournament.id,
+        "user_id" => user.id
+      }
+      |> Tournaments.create_entrant()
+
       json_response(conn, 200)
-      |> IO.inspect()
       |> Map.get("tournaments")
       |> Enum.map(fn t ->
         assert t["id"] == tournament.id
