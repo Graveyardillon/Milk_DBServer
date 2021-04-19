@@ -107,7 +107,6 @@ defmodule MilkWeb.TournamentController do
     thumbnail_path = if image != "" do
       uuid = SecureRandom.uuid()
       File.cp(image.path, "./static/image/tournament_thumbnail/#{uuid}.jpg")
-      |> IO.inspect(label: :cp_image)
       Logger.info("copy_image")
       case Application.get_env(:milk, :environment) do
         # coveralls-ignore-start

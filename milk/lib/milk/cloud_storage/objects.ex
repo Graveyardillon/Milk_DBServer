@@ -5,11 +5,7 @@ defmodule Milk.CloudStorage.Objects do
 
   def upload(file_path) do
     {:ok, token} = Goth.fetch(Milk.Goth)
-      |> IO.inspect(label: :goth_token)
-    Logger.info("got goth.token")
     conn = GoogleApi.Storage.V1.Connection.new(token.token)
-      |> IO.inspect(label: :connection_new)
-    Logger.info("new connection")
 
     {:ok, object} = GoogleApi.Storage.V1.Api.Objects.storage_objects_insert_simple(
       conn,
@@ -18,8 +14,6 @@ defmodule Milk.CloudStorage.Objects do
       %{name: Path.basename(file_path)},
       file_path
     )
-    |> IO.inspect(label: :upload)
-    Logger.info("uploaded")
 
     object
   end

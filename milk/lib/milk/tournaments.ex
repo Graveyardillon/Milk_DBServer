@@ -713,7 +713,6 @@ defmodule Milk.Tournaments do
   Delete loser.
   """
   def delete_loser_process(tournament_id, loser_list) do
-    IO.inspect("delete_loser_process is called up")
     [{_, match_list}] = TournamentProgress.get_match_list(tournament_id)
 
     match_list
