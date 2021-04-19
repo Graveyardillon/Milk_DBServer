@@ -368,7 +368,7 @@ defmodule Milk.TournamentProgress do
   defp get_lost(user_id, tournament_id) do
     # Generate a process which makes a user lost
     pid_str =
-      Task.async(fn ->
+      Task.start(fn ->
         IO.inspect(user_id)
         IO.inspect("get_lost is called")
         5
@@ -381,7 +381,7 @@ defmodule Milk.TournamentProgress do
         Tournaments.delete_loser_process(tournament_id, [user_id])
       end)
       |> case do
-        %Task{pid: pid} ->
+        {:ok, pid} ->
           pid
           |> IO.inspect(label: :pid)
           |> :erlang.pid_to_list()
@@ -409,8 +409,9 @@ defmodule Milk.TournamentProgress do
       if value do
         value
         |> Code.eval_string()
-        |> IO.inspect(label: :eval_string)
+        |> elem(0)
         |> :erlang.list_to_pid()
+        |> IO.inspect(label: :exit)
         |> Process.exit(:kill)
       else
         nil
