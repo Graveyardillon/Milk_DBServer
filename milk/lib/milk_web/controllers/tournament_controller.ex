@@ -21,11 +21,7 @@ defmodule MilkWeb.TournamentController do
   """
   def index(conn,  _params) do
     tournament = Tournaments.list_tournament()
-    if(tournament) do
-      render(conn, "index.json", tournament: tournament)
-    else
-      render(conn, "error.json", error: nil)
-    end
+    render(conn, "index.json", tournament: tournament)
   end
 
   @doc """
@@ -37,7 +33,6 @@ defmodule MilkWeb.TournamentController do
     following_users = Relations.get_following_list(user_id)
     follower_users = Relations.get_followers_list(user_id)
     users = Enum.uniq_by(following_users ++ follower_users, fn user -> user.id end)
-      |> IO.inspect()
     render(conn, "users.json", users: users)
   end
 
@@ -90,19 +85,6 @@ defmodule MilkWeb.TournamentController do
   end
 
   @doc """
-  Get a game of a specific tournament.
-  FIXME: 引数をidに対応させたい
-  """
-  def get_game(conn, %{"tournament" => params}) do
-    tournament = Tournaments.game_tournament(params)
-    if(tournament) do
-      render(conn, "index.json", tournament: tournament)
-    else
-      render(conn, "error.json", error: nil)
-    end
-  end
-
-  @doc """
   Get a pid of a spacific tournament.
   """
   def get_pid(conn, %{"tournament_id" => tournament_id}) do
@@ -126,12 +108,16 @@ defmodule MilkWeb.TournamentController do
       uuid = SecureRandom.uuid()
       File.cp(image.path, "./static/image/tournament_thumbnail/#{uuid}.jpg")
       case Application.get_env(:milk, :environment) do
+        # coveralls-ignore-start
         :dev -> uuid
+        # coveralls-ignore-stop
         :test -> uuid
+        # coveralls-ignore-start
         _ ->
           object = Milk.CloudStorage.Objects.upload("./static/image/tournament_thumbnail/#{uuid}.jpg")
           File.rm("./static/image/tournament_thumbnail/#{uuid}.jpg")
           object.name
+        # coveralls-ignore-stop
       end
     else
       nil
