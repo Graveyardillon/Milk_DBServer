@@ -349,10 +349,14 @@ defmodule Milk.TournamentProgress do
   end
 
   def set_time_limit_on_all_entrants(match_list, tournament_id) do
+    Logger.info("Set time limit on all entrants")
     match_list
     |> List.flatten()
     |> Enum.each(fn user_id ->
-      get_lost(user_id, tournament_id)
+      # debug
+      if user_id != 2 do
+        get_lost(user_id, tournament_id)
+      end
     end)
   end
 
@@ -360,21 +364,21 @@ defmodule Milk.TournamentProgress do
     # 敗北のプロセスを生成
     pid_str =
       Task.async(fn ->
+        IO.inspect(user_id)
+        IO.inspect("get_lost is called")
         5
         |> Kernel.*(60)
         |> Kernel.*(1000)
         |> Process.sleep()
 
-        user_id
-        |> to_string()
-        |> Kernel.<>(" will lose due to absence.")
-        |> IO.inspect(label: :wait_millisecond)
-        |> Logger.info()
-        # 敗北処理
+        IO.inspect("#{user_id} loses")
+
         Tournaments.delete_loser_process(tournament_id, [user_id])
       end)
       |> case do
         %Task{pid: pid} ->
+          IO.inspect(pid)
+          IO.inspect("losing process is generated")
           pid
           |> :erlang.pid_to_list()
           |> inspect()

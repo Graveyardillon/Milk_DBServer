@@ -9,8 +9,7 @@ alias Milk.Accounts.{
   User
 }
 alias Milk.Tournaments.{
-  Entrant,
-  Tournament
+  Entrant
 }
 
 import Ecto.Query, only: [from: 2]
