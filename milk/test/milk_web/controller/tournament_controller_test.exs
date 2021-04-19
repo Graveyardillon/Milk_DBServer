@@ -168,33 +168,6 @@ defmodule MilkWeb.TournamentControllerTest do
     end
   end
 
-  describe "get tournament" do
-    setup [:create_tournament]
-
-    test "get tournament with valid data", %{conn: conn, tournament: tournament} do
-      conn = get(conn, Routes.tournament_path(conn, :show), %{"tournament_id" => tournament.id})
-      assert json_response(conn, 200)["result"]
-    end
-
-    test "get finished tournament", %{conn: conn, tournament: tournament} do
-      entrants = create_entrants(2, tournament.id)
-      entrant = hd(entrants)
-
-      conn = post(conn, Routes.tournament_path(conn, :start), tournament: %{"master_id" => tournament.master_id, "tournament_id" => tournament.id})
-      conn = post(conn, Routes.tournament_path(conn, :delete_loser), tournament: %{"tournament_id" => tournament.id, "loser_list" => [entrant.user_id]})
-      conn = post(conn, Routes.tournament_path(conn, :finish), %{"tournament_id" => tournament.id, "user_id" => tournament.master_id})
-      conn = get(conn, Routes.tournament_path(conn, :show), %{"tournament_id" => tournament.id})
-
-      assert json_response(conn, 200)["result"]
-      assert TournamentProgress.get_duplicate_users(tournament.id) == []
-    end
-
-    test "cannot get a tournament which does not exist", %{conn: conn, tournament: _tournament} do
-      conn = get(conn, Routes.tournament_path(conn, :show), %{"tournament_id" => -1})
-      refute json_response(conn, 200)["result"]
-    end
-  end
-
   describe "get tournament by url" do
     setup [:create_tournament]
 
@@ -273,6 +246,69 @@ defmodule MilkWeb.TournamentControllerTest do
       assert json_response(conn, 200)["error"] == "Undefined User"
       refute json_response(conn, 200)["result"]
     end
+  end
+
+  describe "get tournament" do
+    setup [:create_tournament]
+
+    test "get tournament with valid data", %{conn: conn, tournament: tournament} do
+      conn = get(conn, Routes.tournament_path(conn, :show), %{"tournament_id" => tournament.id})
+      assert json_response(conn, 200)["result"]
+    end
+
+    test "get finished tournament", %{conn: conn, tournament: tournament} do
+      entrants = create_entrants(2, tournament.id)
+      entrant = hd(entrants)
+
+      conn = post(conn, Routes.tournament_path(conn, :start), tournament: %{"master_id" => tournament.master_id, "tournament_id" => tournament.id})
+      conn = post(conn, Routes.tournament_path(conn, :delete_loser), tournament: %{"tournament_id" => tournament.id, "loser_list" => [entrant.user_id]})
+      conn = post(conn, Routes.tournament_path(conn, :finish), %{"tournament_id" => tournament.id, "user_id" => tournament.master_id})
+      conn = get(conn, Routes.tournament_path(conn, :show), %{"tournament_id" => tournament.id})
+
+      assert json_response(conn, 200)["result"]
+      assert TournamentProgress.get_duplicate_users(tournament.id) == []
+    end
+
+    test "cannot get a tournament which does not exist", %{conn: conn, tournament: _tournament} do
+      conn = get(conn, Routes.tournament_path(conn, :show), %{"tournament_id" => -1})
+      refute json_response(conn, 200)["result"]
+    end
+  end
+
+  describe "home" do
+    test "normal home", %{conn: conn} do
+      {:ok, user} = fixture(:user)
+      attrs = %{
+        "capacity" => 42,
+        "deadline" => "2040-04-17T14:00:00Z",
+        "description" => "some description",
+        "event_date" => "2040-04-17T14:00:00Z",
+        "master_id" => user.id,
+        "name" => "some name",
+        "type" => 42,
+        "join" => "true",
+        "url" => "some url",
+        "platform_id" => 1
+      }
+      conn = post(conn, Routes.tournament_path(conn, :create), tournament: attrs, file: "")
+      id = json_response(conn, 200)["data"]["id"]
+      date_offset =
+        Timex.now()
+        |> Timex.add(Timex.Duration.from_days(1))
+
+      conn = get(conn, Routes.tournament_path(conn, :home), date_offset: date_offset, offset: 0)
+      json_response(conn, 200)
+      |> Map.get("data")
+      |> Enum.map(fn tournament ->
+        assert tournament["id"] == id
+      end)
+      |> length()
+      |> (fn len ->
+        assert len == 1
+      end).()
+    end
+
+
   end
 
   describe "delete tournament" do
