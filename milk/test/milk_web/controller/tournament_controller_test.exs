@@ -3,6 +3,7 @@ defmodule MilkWeb.TournamentControllerTest do
 
   alias Milk.{
     Accounts,
+    Relations,
     TournamentProgress,
     Tournaments
   }
@@ -296,8 +297,8 @@ defmodule MilkWeb.TournamentControllerTest do
         Timex.now()
         |> Timex.add(Timex.Duration.from_days(1))
 
-      conn = get(conn, Routes.tournament_path(conn, :home), date_offset: date_offset, offset: 0)
-      json_response(conn, 200)
+      get(conn, Routes.tournament_path(conn, :home), date_offset: date_offset, offset: 0)
+      |> json_response(200)
       |> Map.get("data")
       |> Enum.map(fn tournament ->
         assert tournament["id"] == id
@@ -308,7 +309,36 @@ defmodule MilkWeb.TournamentControllerTest do
       end).()
     end
 
+    test "fav filtered", %{conn: conn} do
+      {:ok, user1} = fixture(:user)
+      {:ok, user2} = fixture(:user2)
+      attrs = %{
+        "capacity" => 42,
+        "deadline" => "2040-04-17T14:00:00Z",
+        "description" => "some description",
+        "event_date" => "2040-04-17T14:00:00Z",
+        "master_id" => user1.id,
+        "name" => "some name",
+        "type" => 42,
+        "join" => "true",
+        "url" => "some url",
+        "platform_id" => 1
+      }
+      conn = post(conn, Routes.tournament_path(conn, :create), tournament: attrs, file: "")
+      id = json_response(conn, 200)["data"]["id"]
+      Relations.create_relation(%{"follower_id" => user2.id, "followee_id" => user1.id})
 
+      get(conn, Routes.tournament_path(conn, :home), filter: "fav", user_id: user2.id)
+      |> json_response(200)
+      |> Map.get("data")
+      |> Enum.map(fn tournament ->
+        assert tournament["id"] == id
+      end)
+      |> length()
+      |> (fn len ->
+        assert len == 1
+      end).()
+    end
   end
 
   describe "delete tournament" do
