@@ -13,7 +13,7 @@ defmodule Milk.Accounts.Relation do
   def changeset(relation, attrs) do
     relation
     |> cast(attrs, [])
-    |> validate_required([])
+    |> validate_required([:followee_id, :follower_id])
     |> foreign_key_constraint(:followee_id)
     |> foreign_key_constraint(:follower_id)
   end
