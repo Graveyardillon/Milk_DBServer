@@ -723,6 +723,7 @@ defmodule Milk.Tournaments do
 
   @doc """
   Delete loser.
+  TODO: エラーハンドリング
   """
   def delete_loser_process(tournament_id, loser_list) do
     [{_, match_list}] = TournamentProgress.get_match_list(tournament_id)
@@ -736,14 +737,7 @@ defmodule Milk.Tournaments do
 
     renew_match_list(tournament_id, match_list, loser_list)
     [{_, updated_match_list}] = TournamentProgress.get_match_list(tournament_id)
-    IO.inspect(match_list, label: :match_list)
-    IO.inspect(updated_match_list, label: :updated_match_list)
     renew_match_list_with_fight_result(tournament_id, loser_list)
-    |> if do
-      IO.inspect("worked")
-    else
-      IO.inspect("not worked")
-    end
     unless is_integer(updated_match_list), do: trim_match_list_as_needed(tournament_id)
 
     updated_match_list
