@@ -39,6 +39,10 @@ defmodule MilkWeb.TournamentControllerTest do
     "url" => "some url",
     "platform_id" => 1
   }
+  @update_attrs %{
+    "capacity" => 4200,
+    "url" => "updated url"
+  }
   @invalid_attrs %{"capacity" => nil, "deadline" => nil, "description" => nil, "event_date" => nil, "game_id" => nil, "master_id" => nil, "name" => nil, "type" => nil, "url" => nil}
 
   @create_user_attrs %{"icon_path" => "some icon_path", "language" => "some language", "name" => "some name", "notification_number" => 42, "point" => 42, "email" => "some2@email.com", "logout_fl" => true, "password" => "S1ome password"}
@@ -395,6 +399,19 @@ defmodule MilkWeb.TournamentControllerTest do
       |> length()
       |> (fn len ->
         assert len == 1
+      end).()
+    end
+  end
+
+  describe "update tournament" do
+    setup [:create_tournament]
+
+    test "update tournament", %{conn: conn, tournament: tournament} do
+      conn = put(conn, Routes.tournament_path(conn, :update), %{"tournament_id" => tournament.id, "tournament" => @update_attrs})
+      json_response(conn, 200)
+      |> Map.get("data")
+      |> (fn t ->
+        assert t["id"] == tournament.id
       end).()
     end
   end

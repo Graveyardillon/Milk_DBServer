@@ -248,7 +248,7 @@ defmodule MilkWeb.TournamentController do
   """
   def update(conn, %{"tournament_id" => id, "tournament" => tournament_params}) do
     tournament = Tournaments.get_tournament!(id)
-    if(tournament) do
+    if tournament do
       case Tournaments.update_tournament(tournament, tournament_params) do
         {:ok, %Tournament{} = tournament} ->
           render(conn, "show.json", tournament: tournament)
