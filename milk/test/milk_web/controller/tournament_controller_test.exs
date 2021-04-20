@@ -921,13 +921,24 @@ defmodule MilkWeb.TournamentControllerTest do
       opponent1_id = json_response(conn, 200)["opponent"]["id"]
 
       conn = post(conn, Routes.tournament_path(conn, :claim_win), opponent_id: opponent1_id, user_id: user1_id, tournament_id: tournament.id)
-      conn = post(conn, Routes.tournament_path(conn, :claim_lose), opponent_id: user1_id, user_id: opponent1_id, tournament_id: tournament.id)
-      conn = post(conn, Routes.tournament_path(conn, :delete_loser), tournament: %{"tournament_id" => tournament.id, "loser_list" => [opponent1_id]})
       conn = get(conn, Routes.tournament_path(conn, :is_user_win), user_id: user1_id, tournament_id: tournament.id)
       assert json_response(conn, 200)["is_win"]
 
       conn = get(conn, Routes.tournament_path(conn, :is_user_win), user_id: opponent1_id, tournament_id: tournament.id)
       refute json_response(conn, 200)["is_win"]
+    end
+  end
+
+  describe "publish url" do
+    test "works", %{conn: conn} do
+      conn = post(conn, Routes.tournament_path(conn, :publish_url))
+      assert json_response(conn, 200)["result"]
+      json_response(conn, 200)
+      |> Map.get("url")
+      |> is_binary()
+      |> (fn bool ->
+        assert bool
+      end).()
     end
   end
 

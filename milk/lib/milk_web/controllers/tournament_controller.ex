@@ -728,7 +728,7 @@ defmodule MilkWeb.TournamentController do
   def publish_url(conn, _params) do
     url = SecureRandom.urlsafe_base64()
 
-    json(conn, %{url: "e-players://e-players/tournament/"<>url})
+    json(conn, %{url: "e-players://e-players/tournament/"<>url, result: true})
   end
 
   @doc """
