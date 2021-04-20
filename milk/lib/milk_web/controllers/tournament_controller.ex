@@ -276,6 +276,7 @@ defmodule MilkWeb.TournamentController do
 
   @doc """
   Send an image as a response.
+  FIXME: GCS対応
   """
   def image(conn, %{"filename" => filename}) do
     path = "./static/image/tournament_thumbnail/#{filename}.jpg"

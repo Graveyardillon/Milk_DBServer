@@ -48,6 +48,20 @@ defmodule MilkWeb.TournamentControllerTest do
   @create_user_attrs %{"icon_path" => "some icon_path", "language" => "some language", "name" => "some name", "notification_number" => 42, "point" => 42, "email" => "some2@email.com", "logout_fl" => true, "password" => "S1ome password"}
   @create_user_attrs2 %{"icon_path" => "some icon_path", "language" => "some language", "name" => "some sname", "notification_number" => 42, "point" => 42, "email" => "somes2@email.com", "logout_fl" => true, "password" => "S1ome password"}
 
+  defp fixture_tournaments(num) do
+    1..num
+    |> Enum.map(fn n ->
+      {:ok, user} =
+        Map.new()
+        |> Map.put("name", to_string(n) <> "name")
+        |> Map.put("email", to_string(n) <> "@email.com")
+        |> Map.put("password", "Password123")
+        |> Accounts.create_user()
+      {:ok, tournament} = Tournaments.create_tournament(%{@create_attrs|"master_id" => user.id})
+      tournament
+    end)
+  end
+
   def fixture(:tournament) do
     {:ok, user} =
       %{"name" => "name", "email" => "e@mail.com", "password" => "Password123"}
@@ -426,6 +440,12 @@ defmodule MilkWeb.TournamentControllerTest do
 
       conn = get(conn, Routes.tournament_path(conn, :show, %{"tournament_id" => tournament.id}))
       assert response(conn, 200)
+    end
+  end
+
+  describe "participating tournaments" do
+    test "works", %{conn: conn} do
+      fixture_tournaments(3)
     end
   end
 
