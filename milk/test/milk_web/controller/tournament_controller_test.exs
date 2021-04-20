@@ -568,11 +568,30 @@ defmodule MilkWeb.TournamentControllerTest do
     setup [:create_tournament]
 
     test "works", %{conn: conn, tournament: tournament} do
-      conn = get(conn, Routes.tournament_path(conn, :tournament_topics), tournament_id: tournament.id)
-      tabs = json_response(conn, 200)["data"]
-      tabs = tabs ++ [%{"chat_room_id" => nil, "tab_index" => length(tabs), "topic_name" => "test_topic"}]
+      tabs = [
+        %{
+          "chat_room_id" => nil,
+          "tab_index" => 0,
+          "topic_name" => "test_topic1"
+        },
+        %{
+          "chat_room_id" => nil,
+          "tab_index" => 1,
+          "topic_name" => "test_topic2"
+        }
+      ]
+      tab_name_list = Enum.map(tabs, fn tab -> tab["topic_name"] end)
 
-      #conn = post(conn, )
+      conn = post(conn, Routes.tournament_path(conn, :tournament_update_topics), tournament_id: tournament.id, tabs: tabs)
+      json_response(conn, 200)
+      |> Map.get("data")
+      |> Enum.map(fn tab ->
+        assert Enum.member?(tab_name_list, tab["topic_name"])
+      end)
+      |> length()
+      |> (fn len ->
+        assert len == 2
+      end).()
     end
   end
 

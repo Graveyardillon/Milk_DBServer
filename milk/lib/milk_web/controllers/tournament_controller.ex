@@ -347,10 +347,12 @@ defmodule MilkWeb.TournamentController do
   def tournament_topics(conn, %{"tournament_id" => tournament_id}) do
     tabs = Tournaments.get_tabs_by_tournament_id(tournament_id)
 
-    # TODO: tournament_topics.jsonのrenderを直接呼び出すのではなくshow.jsonからrender_manyをする方がよさそう
     render(conn, "tournament_topics.json", topics: tabs)
   end
 
+  @doc """
+  Update tournament topics.
+  """
   def tournament_update_topics(conn, %{"tournament_id" => tournament_id, "tabs" => tabs}) do
     tournament = Tournaments.get_tournament(tournament_id)
     if tournament do
