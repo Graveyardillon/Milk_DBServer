@@ -848,6 +848,47 @@ defmodule MilkWeb.TournamentControllerTest do
     end
   end
 
+  describe "state" do
+    setup [:create_tournament]
+
+    test "works", %{conn: conn, tournament: tournament} do
+      entrants = create_entrants(8, tournament.id)
+      user1_id = hd(entrants).user_id
+
+      conn = get(conn, Routes.tournament_path(conn, :state), tournament_id: tournament.id, user_id: user1_id)
+      assert json_response(conn, 200)["result"]
+      assert json_response(conn, 200)["state"] == "IsNotStarted"
+
+      conn = post(conn, Routes.tournament_path(conn, :start), tournament: %{"master_id" => tournament.master_id, "tournament_id" => tournament.id})
+      conn = get(conn, Routes.tournament_path(conn, :state), tournament_id: tournament.id, user_id: user1_id)
+      assert json_response(conn, 200)["result"]
+      assert json_response(conn, 200)["state"] == "IsInMatch"
+
+      conn = get(conn, Routes.tournament_path(conn, :state), tournament_id: tournament.id, user_id: tournament.master_id)
+      assert json_response(conn, 200)["result"]
+      assert json_response(conn, 200)["state"] == "IsManager"
+
+      conn = get(conn, Routes.tournament_path(conn, :get_opponent), tournament_id: tournament.id, user_id: user1_id)
+      opponent1_id = json_response(conn, 200)["opponent"]["id"]
+      conn = post(conn, Routes.tournament_path(conn, :start_match), user_id: user1_id, tournament_id: tournament.id)
+      conn = get(conn, Routes.tournament_path(conn, :state), tournament_id: tournament.id, user_id: user1_id)
+      assert json_response(conn, 200)["result"]
+      assert json_response(conn, 200)["state"] == "IsWaitingForStart"
+
+      conn = post(conn, Routes.tournament_path(conn, :start_match), user_id: opponent1_id, tournament_id: tournament.id)
+      conn = get(conn, Routes.tournament_path(conn, :state), tournament_id: tournament.id, user_id: user1_id)
+      assert json_response(conn, 200)["result"]
+      assert json_response(conn, 200)["state"] == "IsPending"
+
+      conn = post(conn, Routes.tournament_path(conn, :claim_win), opponent_id: opponent1_id, user_id: user1_id, tournament_id: tournament.id)
+      conn = post(conn, Routes.tournament_path(conn, :claim_lose), opponent_id: user1_id, user_id: opponent1_id, tournament_id: tournament.id)
+      conn = post(conn, Routes.tournament_path(conn, :delete_loser), tournament: %{"tournament_id" => tournament.id, "loser_list" => [opponent1_id]})
+      conn = get(conn, Routes.tournament_path(conn, :state), tournament_id: tournament.id, user_id: user1_id)
+      assert json_response(conn, 200)["result"]
+      assert json_response(conn, 200)["state"] == "IsAlone"
+    end
+  end
+
   describe "get entrants" do
     setup [:create_tournament]
 
