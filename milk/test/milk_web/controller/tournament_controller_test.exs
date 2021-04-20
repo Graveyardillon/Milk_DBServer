@@ -406,12 +406,13 @@ defmodule MilkWeb.TournamentControllerTest do
   describe "update tournament" do
     setup [:create_tournament]
 
-    test "update tournament", %{conn: conn, tournament: tournament} do
+    test "works", %{conn: conn, tournament: tournament} do
       conn = put(conn, Routes.tournament_path(conn, :update), %{"tournament_id" => tournament.id, "tournament" => @update_attrs})
       json_response(conn, 200)
       |> Map.get("data")
       |> (fn t ->
         assert t["id"] == tournament.id
+        assert t["capacity"] == @update_attrs["capacity"]
       end).()
     end
   end
