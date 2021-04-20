@@ -550,7 +550,7 @@ defmodule MilkWeb.TournamentController do
       with {:ok, opponent} <- Tournaments.get_opponent(match, user_id) do
         json(conn, %{result: true, opponent: opponent})
       else
-        # FIXME: waitのマップの作り方微妙
+        # FIXME: waitのタプルの作り方微妙
         {:wait, _} -> json(conn, %{result: false, opponent: nil, wait: true})
         _ -> render(conn, "error.json", error: nil)
       end

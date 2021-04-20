@@ -694,6 +694,34 @@ defmodule MilkWeb.TournamentControllerTest do
     end
   end
 
+  describe "start match" do
+    setup [:create_tournament]
+
+    test "works", %{conn: conn, tournament: tournament} do
+      entrants = create_entrants(8, tournament.id)
+      conn = post(conn, Routes.tournament_path(conn, :start), tournament: %{"master_id" => tournament.master_id, "tournament_id" => tournament.id})
+
+      user1_id = hd(entrants).user_id
+      conn = post(conn, Routes.tournament_path(conn, :start_match), user_id: user1_id, tournament_id: tournament.id)
+      assert json_response(conn, 200)["result"]
+      conn = get(conn, Routes.tournament_path(conn, :get_opponent), tournament_id: tournament.id, user_id: user1_id)
+      opponent1_id = json_response(conn, 200)["opponent"]["id"]
+
+      conn = post(conn, Routes.tournament_path(conn, :start_match), user_id: opponent1_id, tournament_id: tournament.id)
+      assert json_response(conn, 200)["result"]
+
+      gotten_id_list =
+        tournament.id
+        |> TournamentProgress.get_match_pending_list_of_tournament()
+        |> Enum.map(fn id_str ->
+          String.to_integer(id_str)
+        end)
+
+      assert user1_id in gotten_id_list
+      assert opponent1_id in gotten_id_list
+    end
+  end
+
   describe "get entrants" do
     setup [:create_tournament]
 
