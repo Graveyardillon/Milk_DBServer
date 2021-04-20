@@ -722,25 +722,6 @@ defmodule MilkWeb.TournamentControllerTest do
     end
   end
 
-  describe "get entrants" do
-    setup [:create_tournament]
-
-    test "get entrants", %{conn: conn, tournament: tournament} do
-      entrants = create_entrants(8, tournament.id)
-      entrant_id_list = Enum.map(entrants, fn entrant -> entrant.id end)
-      conn = get(conn, Routes.tournament_path(conn, :get_entrants), tournament_id: tournament.id)
-
-      json_response(conn, 200)["data"]
-      |> Enum.map(fn entrant ->
-        assert Enum.member?(entrant_id_list, entrant["id"])
-      end)
-      |> length()
-      |> (fn len ->
-        assert len == length(entrants)
-      end).()
-    end
-  end
-
   describe "get opponent" do
     setup [:create_tournament]
 
@@ -822,6 +803,44 @@ defmodule MilkWeb.TournamentControllerTest do
       conn = post(conn, Routes.tournament_path(conn, :delete_loser), tournament: %{tournament_id: tournament.id, loser_list: [opponent["id"]]})
       conn = get(conn, Routes.tournament_path(conn, :get_waiting_users), tournament_id: tournament.id)
       assert length(json_response(conn, 200)["data"]) == length(entrants) - 1
+    end
+  end
+
+  describe "check pending" do
+    setup [:create_tournament]
+
+    test "works", %{conn: conn, tournament: tournament} do
+      entrants = create_entrants(8, tournament.id)
+      conn = post(conn, Routes.tournament_path(conn, :start), tournament: %{"master_id" => tournament.master_id, "tournament_id" => tournament.id})
+
+      user1_id = hd(entrants).id
+
+      conn = get(conn, Routes.tournament_path(conn, :check_pending), user_id: user1_id, tournament_id: tournament.id)
+      refute json_response(conn, 200)["result"]
+
+      conn = post(conn, Routes.tournament_path(conn, :start_match), user_id: user1_id, tournament_id: tournament.id)
+      conn = get(conn, Routes.tournament_path(conn, :check_pending), user_id: user1_id, tournament_id: tournament.id)
+
+      assert json_response(conn, 200)["result"]
+    end
+  end
+
+  describe "get entrants" do
+    setup [:create_tournament]
+
+    test "get entrants", %{conn: conn, tournament: tournament} do
+      entrants = create_entrants(8, tournament.id)
+      entrant_id_list = Enum.map(entrants, fn entrant -> entrant.id end)
+      conn = get(conn, Routes.tournament_path(conn, :get_entrants), tournament_id: tournament.id)
+
+      json_response(conn, 200)["data"]
+      |> Enum.map(fn entrant ->
+        assert Enum.member?(entrant_id_list, entrant["id"])
+      end)
+      |> length()
+      |> (fn len ->
+        assert len == length(entrants)
+      end).()
     end
   end
 
