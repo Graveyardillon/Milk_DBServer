@@ -368,6 +368,35 @@ defmodule MilkWeb.TournamentControllerTest do
         assert len == 1
       end).()
     end
+
+    test "entry filtered", %{conn: conn} do
+      {:ok, user} = fixture(:user)
+      attrs = %{
+        "capacity" => 42,
+        "deadline" => "2040-04-17T14:00:00Z",
+        "description" => "some description",
+        "event_date" => "2040-04-17T14:00:00Z",
+        "master_id" => user.id,
+        "name" => "some name",
+        "type" => 42,
+        "join" => "true",
+        "url" => "some url",
+        "platform_id" => 1
+      }
+      conn = post(conn, Routes.tournament_path(conn, :create), tournament: attrs, file: "")
+      id = json_response(conn, 200)["data"]["id"]
+
+      get(conn, Routes.tournament_path(conn, :home), filter: "entry", user_id: user.id)
+      |> json_response(200)
+      |> Map.get("data")
+      |> Enum.map(fn tournament ->
+        assert tournament["id"] == id
+      end)
+      |> length()
+      |> (fn len ->
+        assert len == 1
+      end).()
+    end
   end
 
   describe "delete tournament" do
