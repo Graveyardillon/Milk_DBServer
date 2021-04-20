@@ -942,6 +942,42 @@ defmodule MilkWeb.TournamentControllerTest do
     end
   end
 
+  describe "get match members" do
+    setup [:create_tournament]
+
+    test "works", %{conn: conn, tournament: tournament} do
+      entrants = create_entrants(8, tournament.id)
+      conn = post(conn, Routes.tournament_path(conn, :start), tournament: %{"master_id" => tournament.master_id, "tournament_id" => tournament.id})
+
+      conn = get(conn, Routes.tournament_path(conn, :get_match_members), tournament_id: tournament.id)
+      response = json_response(conn, 200)
+
+      response
+      |> Map.get("data")
+      |> Map.get("assistants")
+      |> length()
+      |> (fn len ->
+        assert len == 0
+      end).()
+
+      response
+      |> Map.get("data")
+      |> Map.get("entrants")
+      |> length()
+      |> (fn len ->
+        assert len == 8
+      end).()
+
+      response
+      |> Map.get("data")
+      |> Map.get("master")
+      |> Map.get("data")
+      |> (fn user ->
+        assert user["id"] == tournament.master_id
+      end).()
+    end
+  end
+
   describe "register pid of start notification" do
     setup [:create_tournament]
 
