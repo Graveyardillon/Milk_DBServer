@@ -1,7 +1,10 @@
 use Timex
 
-alias Milk.Repo
-alias Milk.Tournaments
+alias Milk.{
+  Platforms,
+  Repo,
+  Tournaments
+}
 alias Milk.Tournaments.Tournament
 alias Milk.Accounts.{
   Auth,
@@ -19,6 +22,8 @@ Repo.insert! %Auth{
   email: user.name <> "@mail.com",
   password: Argon2.hash_pwd_salt("LookAtMePW")
 }
+
+Platforms.create_basic_platforms()
 
 now = Timex.now()
 tomorrow =
@@ -41,10 +46,12 @@ attrs = %{
   "start_recruiting" => now,
   "start_notification_pid" => nil,
   "master_id" => user.id,
-  "platform_id" => 1,
+  "platform" => 1,
   "game_id" => nil
 }
+|> IO.inspect(label: :attrs)
 Tournaments.create_tournament(attrs, attrs["thumbnail_path"])
+|> IO.inspect(label: :forgetmetoo)
 
 File.cp("./priv/repo/seeds/image/damn.jpg", "./static/image/tournament_thumbnail/damn.jpg")
 attrs = %{

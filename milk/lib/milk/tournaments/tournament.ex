@@ -1,15 +1,17 @@
 defmodule Milk.Tournaments.Tournament do
   use Milk.Schema
+
   import Ecto.Changeset
-  alias Milk.Games.Game
+
   alias Milk.Accounts.User
+  alias Milk.Games.Game
   alias Milk.Lives.Live
+  alias Milk.Platforms.Platform
   alias Milk.Tournaments.{
     Entrant,
     Assistant,
     TournamentChatTopic
   }
-  alias Milk.Platforms.Platform
 
   schema "tournament" do
     field :capacity, :integer

@@ -3,6 +3,7 @@ defmodule MilkWeb.TournamentControllerTest do
 
   alias Milk.{
     Accounts,
+    Platforms,
     Relations,
     TournamentProgress,
     Tournaments
@@ -25,7 +26,7 @@ defmodule MilkWeb.TournamentControllerTest do
     "type" => 42,
     "join" => "true",
     "url" => "some url",
-    "platform_id" => 1
+    "platform" => 1
   }
   @create_incoming_attrs %{
     "capacity" => 42,
@@ -63,6 +64,7 @@ defmodule MilkWeb.TournamentControllerTest do
   end
 
   def fixture(:tournament) do
+    Platforms.create_basic_platforms()
     {:ok, user} =
       %{"name" => "name", "email" => "e@mail.com", "password" => "Password123"}
       |> Accounts.create_user()
