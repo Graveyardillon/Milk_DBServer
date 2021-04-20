@@ -978,6 +978,23 @@ defmodule MilkWeb.TournamentControllerTest do
     end
   end
 
+  describe "get game masters" do
+    setup [:create_tournament]
+
+    test "get game masters", %{conn: conn, tournament: tournament} do
+      conn = get(conn, Routes.tournament_path(conn, :get_game_masters), tournament_id: tournament.id)
+      json_response(conn, 200)
+      |> Map.get("data")
+      |> Enum.map(fn user ->
+        assert user["id"] == tournament.master_id
+      end)
+      |> length()
+      |> (fn len ->
+        assert len == 1
+      end).()
+    end
+  end
+
   describe "register pid of start notification" do
     setup [:create_tournament]
 
