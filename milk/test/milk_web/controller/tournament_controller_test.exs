@@ -427,6 +427,21 @@ defmodule MilkWeb.TournamentControllerTest do
       |> (fn t ->
         assert t["id"] == tournament.id
         assert t["capacity"] == @update_attrs["capacity"]
+        assert t["url"] == @update_attrs["url"]
+      end).()
+    end
+
+    test "works with foreign key", %{conn: conn, tournament: tournament} do
+      attrs = %{
+        "platform_id" => 2
+      }
+      conn = put(conn, Routes.tournament_path(conn, :update), %{"tournament_id" => tournament.id, "tournament" => attrs})
+      json_response(conn, 200)
+      |> Map.get("data")
+      |> (fn t ->
+        IO.inspect(t)
+        assert t["platform"] == attrs["platform_id"]
+        assert t["id"] == tournament.id
       end).()
     end
   end
@@ -545,6 +560,18 @@ defmodule MilkWeb.TournamentControllerTest do
       |> (fn len ->
         assert len == 3
       end).()
+    end
+  end
+
+  describe "update tournament topic" do
+    setup [:create_tournament]
+
+    test "works", %{conn: conn, tournament: tournament} do
+      conn = get(conn, Routes.tournament_path(conn, :tournament_topics), tournament_id: tournament.id)
+      tabs = json_response(conn, 200)["data"]
+      tabs = tabs ++ [%{"chat_room_id" => nil, "tab_index" => length(tabs), "topic_name" => "test_topic"}]
+
+      #conn = post(conn, )
     end
   end
 
