@@ -68,7 +68,7 @@ attrs = %{
   "start_recruiting" => now,
   "start_notification_pid" => nil,
   "master_id" => user.id,
-  "platform_id" => 1,
+  "platform" => 1,
   "game_id" => nil
 }
 Tournaments.create_tournament(attrs, attrs["thumbnail_path"])
@@ -88,7 +88,7 @@ attrs = %{
   "start_recruiting" => now,
   "start_notification_pid" => nil,
   "master_id" => user.id,
-  "platform_id" => 1,
+  "platform" => 1,
   "game_id" => nil
 }
 Tournaments.create_tournament(attrs, attrs["thumbnail_path"])
@@ -108,7 +108,7 @@ attrs = %{
   "start_recruiting" => now,
   "start_notification_pid" => nil,
   "master_id" => user.id,
-  "platform_id" => 1,
+  "platform" => 1,
   "game_id" => nil
 }
 Tournaments.create_tournament(attrs, attrs["thumbnail_path"])
@@ -128,7 +128,7 @@ attrs = %{
   "start_recruiting" => now,
   "start_notification_pid" => nil,
   "master_id" => user.id,
-  "platform_id" => 1,
+  "platform" => 1,
   "game_id" => nil
 }
 Tournaments.create_tournament(attrs, attrs["thumbnail_path"])
@@ -148,7 +148,7 @@ attrs = %{
   "start_recruiting" => now,
   "start_notification_pid" => nil,
   "master_id" => user.id,
-  "platform_id" => 1,
+  "platform" => 1,
   "game_id" => nil
 }
 Tournaments.create_tournament(attrs, attrs["thumbnail_path"])
