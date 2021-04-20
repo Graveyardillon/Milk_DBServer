@@ -104,20 +104,17 @@ defmodule MilkWeb.TournamentController do
   end
 
   def create(conn, %{"tournament" => tournament_params, "image" => image}) do
+    # coveralls-ignore-start
     thumbnail_path = if image != "" do
       uuid = SecureRandom.uuid()
       File.cp(image.path, "./static/image/tournament_thumbnail/#{uuid}.jpg")
-      Logger.info("copy_image")
       case Application.get_env(:milk, :environment) do
-        # coveralls-ignore-start
         :dev -> uuid
         # coveralls-ignore-stop
         :test -> uuid
         # coveralls-ignore-start
         _ ->
-          Logger.info("start to upload image")
           object = Milk.CloudStorage.Objects.upload("./static/image/tournament_thumbnail/#{uuid}.jpg")
-          Logger.info("finish uploading image")
           File.rm("./static/image/tournament_thumbnail/#{uuid}.jpg")
           object.name
         # coveralls-ignore-stop
@@ -133,8 +130,8 @@ defmodule MilkWeb.TournamentController do
       case Tournaments.create_tournament(tournament_params, thumbnail_path) do
         {:ok, %Tournament{} = tournament} ->
           if tournament_params["join"] == "true" do
-            params = %{"user_id" => tournament.master_id, "tournament_id" => tournament.id}
-            Tournaments.create_entrant(params)
+            %{"user_id" => tournament.master_id, "tournament_id" => tournament.id}
+            |> Tournaments.create_entrant()
           end
 
           tournament =
@@ -178,10 +175,24 @@ defmodule MilkWeb.TournamentController do
     end
   end
 
-  # FIXME: フィルタの仕方変えたほうがよさそう
   @doc """
   Gets tournament info list for home screen.
   """
+  def home(conn, %{"date_offset" => date_offset, "offset" => offset}) do
+    tournaments =
+      Tournaments.home_tournament(date_offset, offset)
+      |> Enum.map(fn tournament ->
+        entrants =
+          Tournaments.get_entrants(tournament.id)
+          |> Enum.map(fn entrant ->
+            Accounts.get_user(entrant.user_id)
+          end)
+        Map.put(tournament, :entrants, entrants)
+      end)
+
+    render(conn, "home.json", tournaments_info: tournaments)
+  end
+
   def home(conn, %{"filter" => "fav", "user_id" => user_id}) do
     tournaments =
       Tournaments.home_tournament_fav(user_id)
@@ -232,27 +243,12 @@ defmodule MilkWeb.TournamentController do
       end
   end
 
-  def home(conn, %{"date_offset" => date_offset, "offset" => offset}) do
-    tournaments =
-      Tournaments.home_tournament(date_offset, offset)
-      |> Enum.map(fn tournament ->
-        entrants =
-          Tournaments.get_entrants(tournament.id)
-          |> Enum.map(fn entrant ->
-            Accounts.get_user(entrant.user_id)
-          end)
-        Map.put(tournament, :entrants, entrants)
-      end)
-
-    render(conn, "home.json", tournaments_info: tournaments)
-  end
-
   @doc """
   Update a tournament.
   """
   def update(conn, %{"tournament_id" => id, "tournament" => tournament_params}) do
     tournament = Tournaments.get_tournament!(id)
-    if(tournament) do
+    if tournament do
       case Tournaments.update_tournament(tournament, tournament_params) do
         {:ok, %Tournament{} = tournament} ->
           render(conn, "show.json", tournament: tournament)
@@ -280,6 +276,7 @@ defmodule MilkWeb.TournamentController do
 
   @doc """
   Send an image as a response.
+  FIXME: GCS対応
   """
   def image(conn, %{"filename" => filename}) do
     path = "./static/image/tournament_thumbnail/#{filename}.jpg"

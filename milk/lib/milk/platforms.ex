@@ -12,8 +12,8 @@ defmodule Milk.Platforms do
     platform_names =
       Platform
       |> where([p], p.name == "pc" or p.name == "mobile")
-      |> Repo.all
-      |> Enum.map(fn platform -> 
+      |> Repo.all()
+      |> Enum.map(fn platform ->
         platform.name
       end)
 
