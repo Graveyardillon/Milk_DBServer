@@ -668,6 +668,32 @@ defmodule MilkWeb.TournamentControllerTest do
     end
   end
 
+  # TODO: redisの確認もしておきたい
+  describe "get match list" do
+    setup [:create_tournament]
+
+    test "works", %{conn: conn, tournament: tournament} do
+      entrants = create_entrants(8, tournament.id)
+      conn = post(conn, Routes.tournament_path(conn, :start), tournament: %{"master_id" => tournament.master_id, "tournament_id" => tournament.id})
+
+      user_id_list = Enum.map(entrants, fn entrant -> entrant.user_id end)
+
+      conn = get(conn, Routes.tournament_path(conn, :get_match_list), tournament_id: tournament.id)
+      assert json_response(conn, 200)["result"]
+      json_response(conn, 200)
+      |> Map.get("match_list")
+      |> List.flatten()
+      |> Enum.map(fn user_id ->
+        assert user_id in user_id_list
+        user_id
+      end)
+      |> length()
+      |> (fn len ->
+        assert len == length(user_id_list)
+      end).()
+    end
+  end
+
   describe "get entrants" do
     setup [:create_tournament]
 
