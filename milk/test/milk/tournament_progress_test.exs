@@ -20,7 +20,7 @@ defmodule Milk.TournamentProgressTest do
     "type" => 0,
     "url" => "somesomeurl",
     "master_id" => 1,
-    "platform_id" => 1,
+    "platform" => 1,
     "is_started" => true
   }
   @entrant_create_attrs %{

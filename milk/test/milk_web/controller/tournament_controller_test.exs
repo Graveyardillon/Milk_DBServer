@@ -38,7 +38,7 @@ defmodule MilkWeb.TournamentControllerTest do
     "type" => 42,
     "join" => "true",
     "url" => "some url",
-    "platform_id" => 1
+    "platform" => 1
   }
   @update_attrs %{
     "capacity" => 4200,
@@ -261,7 +261,7 @@ defmodule MilkWeb.TournamentControllerTest do
         "type" => 42,
         "join" => "true",
         "url" => "some url",
-        "platform_id" => 1
+        "platform" => 1
       }
       conn = post(conn, Routes.tournament_path(conn, :create), tournament: attrs, file: "")
       assert json_response(conn, 200)["error"] == "Undefined User"
@@ -309,7 +309,7 @@ defmodule MilkWeb.TournamentControllerTest do
         "type" => 42,
         "join" => "true",
         "url" => "some url",
-        "platform_id" => 1
+        "platform" => 1
       }
       conn = post(conn, Routes.tournament_path(conn, :create), tournament: attrs, file: "")
       id = json_response(conn, 200)["data"]["id"]
@@ -342,7 +342,7 @@ defmodule MilkWeb.TournamentControllerTest do
         "type" => 42,
         "join" => "true",
         "url" => "some url",
-        "platform_id" => 1
+        "platform" => 1
       }
       conn = post(conn, Routes.tournament_path(conn, :create), tournament: attrs, file: "")
       id = json_response(conn, 200)["data"]["id"]
@@ -372,7 +372,7 @@ defmodule MilkWeb.TournamentControllerTest do
         "type" => 42,
         "join" => "true",
         "url" => "some url",
-        "platform_id" => 1
+        "platform" => 1
       }
       conn = post(conn, Routes.tournament_path(conn, :create), tournament: attrs, file: "")
       id = json_response(conn, 200)["data"]["id"]
@@ -401,7 +401,7 @@ defmodule MilkWeb.TournamentControllerTest do
         "type" => 42,
         "join" => "true",
         "url" => "some url",
-        "platform_id" => 1
+        "platform" => 1
       }
       conn = post(conn, Routes.tournament_path(conn, :create), tournament: attrs, file: "")
       id = json_response(conn, 200)["data"]["id"]
@@ -435,7 +435,7 @@ defmodule MilkWeb.TournamentControllerTest do
 
     test "works with foreign key", %{conn: conn, tournament: tournament} do
       attrs = %{
-        "platform_id" => 2
+        "platform" => 2
       }
       conn = put(conn, Routes.tournament_path(conn, :update), %{"tournament_id" => tournament.id, "tournament" => attrs})
       json_response(conn, 200)
