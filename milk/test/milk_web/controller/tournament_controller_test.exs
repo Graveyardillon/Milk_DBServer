@@ -445,7 +445,53 @@ defmodule MilkWeb.TournamentControllerTest do
 
   describe "participating tournaments" do
     test "works", %{conn: conn} do
-      fixture_tournaments(3)
+      {:ok, user} = fixture(:user)
+
+      tournaments = fixture_tournaments(3)
+      Enum.each(tournaments, fn tournament ->
+        Map.new()
+        |> Map.put("rank", 0)
+        |> Map.put("tournament_id", tournament.id)
+        |> Map.put("user_id", user.id)
+        |> Tournaments.create_entrant()
+      end)
+      tournament_id_list =
+        Enum.map(tournaments, fn tournament ->
+          tournament.id
+        end)
+
+      conn = get(conn, Routes.tournament_path(conn, :participating_tournaments, %{"user_id" => user.id, "offset" => 0}))
+      json_response(conn, 200)
+      |> Map.get("data")
+      |> Enum.map(fn tournament ->
+        assert Enum.member?(tournament_id_list, tournament["id"])
+      end)
+      |> length()
+      |> (fn len ->
+        assert len == 3
+      end).()
+
+      conn = get(conn, Routes.tournament_path(conn, :participating_tournaments, %{"user_id" => user.id}))
+      json_response(conn, 200)
+      |> Map.get("data")
+      |> Enum.map(fn tournament ->
+        assert Enum.member?(tournament_id_list, tournament["id"])
+      end)
+      |> length()
+      |> (fn len ->
+        assert len == 3
+      end).()
+
+      conn = get(conn, Routes.tournament_path(conn, :participating_tournaments, %{"user_id" => user.id, "offset" => 1}))
+      json_response(conn, 200)
+      |> Map.get("data")
+      |> Enum.map(fn tournament ->
+        assert Enum.member?(tournament_id_list, tournament["id"])
+      end)
+      |> length()
+      |> (fn len ->
+        assert len == 2
+      end).()
     end
   end
 
