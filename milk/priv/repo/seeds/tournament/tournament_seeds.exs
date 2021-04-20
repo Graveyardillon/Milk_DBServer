@@ -49,9 +49,7 @@ attrs = %{
   "platform" => 1,
   "game_id" => nil
 }
-|> IO.inspect(label: :attrs)
 Tournaments.create_tournament(attrs, attrs["thumbnail_path"])
-|> IO.inspect(label: :forgetmetoo)
 
 File.cp("./priv/repo/seeds/image/damn.jpg", "./static/image/tournament_thumbnail/damn.jpg")
 attrs = %{

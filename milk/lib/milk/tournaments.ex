@@ -167,8 +167,13 @@ defmodule Milk.Tournaments do
       ** (Ecto.NoResultsError)
 
   """
-  def get_tournament(id), do: Repo.get(Tournament, id)
-  def get_tournament!(id), do: Repo.get!(Tournament, id)
+  def get_tournament(id) do
+    Repo.get(Tournament, id)
+  end
+
+  def get_tournament!(id) do
+    Repo.get!(Tournament, id)
+  end
 
   @doc """
   Gets single tournament by url.
@@ -333,7 +338,15 @@ defmodule Milk.Tournaments do
 
   """
   def update_tournament(%Tournament{} = tournament, attrs) do
-    if (!attrs["game_id"] or Repo.exists?(from g in Game, where: g.id == ^attrs["game_id"])) do
+
+    attrs =
+      unless is_nil(attrs["platform"]) do
+        Map.put(attrs, "platform_id", attrs["platform"])
+      else
+        attrs
+      end
+
+    if !attrs["game_id"] or Repo.exists?(from g in Game, where: g.id == ^attrs["game_id"]) do
       tournament
       |> Tournament.changeset(attrs)
       |> Repo.update()

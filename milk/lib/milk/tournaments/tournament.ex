@@ -43,7 +43,7 @@ defmodule Milk.Tournaments.Tournament do
   @doc false
   def changeset(tournament, attrs) do
     tournament
-    |> cast(attrs, [:name, :event_date, :capacity, :description, :deadline, :game_name, :thumbnail_path, :password, :type, :url, :count, :is_started, :start_recruiting, :start_notification_pid])
+    |> cast(attrs, [:name, :event_date, :capacity, :description, :deadline, :game_name, :thumbnail_path, :password, :type, :url, :platform_id, :master_id, :count, :is_started, :start_recruiting, :start_notification_pid])
     |> validate_required([:name, :event_date, :capacity, :deadline])
     |> foreign_key_constraint(:platform_id)
     |> foreign_key_constraint(:game_id)

@@ -441,8 +441,7 @@ defmodule MilkWeb.TournamentControllerTest do
       json_response(conn, 200)
       |> Map.get("data")
       |> (fn t ->
-        IO.inspect(t)
-        assert t["platform"] == attrs["platform_id"]
+        assert t["platform"] == attrs["platform"]
         assert t["id"] == tournament.id
       end).()
     end
