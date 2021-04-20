@@ -611,6 +611,35 @@ defmodule MilkWeb.TournamentControllerTest do
     end
   end
 
+  describe "delete loser" do
+    setup [:create_tournament]
+
+    test "works", %{conn: conn, tournament: tournament} do
+      entrants = create_entrants(8, tournament.id)
+      conn = post(conn, Routes.tournament_path(conn, :start), tournament: %{"master_id" => tournament.master_id, "tournament_id" => tournament.id})
+      match_list = json_response(conn, 200)["data"]["match_list"]
+
+      # TODO: redisの確認もしておきたい
+      losers = [hd(entrants).user_id]
+      conn = post(conn, Routes.tournament_path(conn, :delete_loser), tournament: %{tournament_id: tournament.id, loser_list: losers})
+      json_response(conn, 200)
+      |> Map.get("updated_match_list")
+      |> IO.inspect(label: :asdf)
+      |> (fn list ->
+        old_len =
+          match_list
+          |> List.flatten()
+          |> length()
+        new_len =
+          list
+          |> List.flatten()
+          |> length()
+
+        assert old_len-1 == new_len
+      end).()
+    end
+  end
+
   describe "get entrants" do
     setup [:create_tournament]
 
