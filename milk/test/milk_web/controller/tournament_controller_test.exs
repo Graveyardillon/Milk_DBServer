@@ -640,6 +640,34 @@ defmodule MilkWeb.TournamentControllerTest do
     end
   end
 
+  describe "find match" do
+    setup [:create_tournament]
+
+    test "works", %{conn: conn, tournament: tournament} do
+      entrants = create_entrants(8, tournament.id)
+      conn = post(conn, Routes.tournament_path(conn, :start), tournament: %{"master_id" => tournament.master_id, "tournament_id" => tournament.id})
+
+      conn = get(conn, Routes.tournament_path(conn, :find_match), tournament_id: tournament.id, user_id: tournament.master_id)
+      json_response(conn, 200)
+      |> Map.get("match")
+      |> (fn match ->
+        assert match == []
+      end).()
+
+      conn = get(conn, Routes.tournament_path(conn, :find_match), tournament_id: tournament.id, user_id: hd(entrants).user_id)
+      json_response(conn, 200)
+      |> Map.get("match")
+      |> (fn match ->
+        assert hd(entrants).user_id in match
+        match
+      end).()
+      |> length()
+      |> (fn len ->
+        assert len == 2
+      end).()
+    end
+  end
+
   describe "get entrants" do
     setup [:create_tournament]
 
