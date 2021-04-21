@@ -84,7 +84,6 @@ defmodule MilkWeb.TournamentControllerTest do
     {:ok, _user} = Accounts.create_user(@create_user_attrs)
   end
 
-  # FIXME: てきとう
   def fixture(:user2) do
     {:ok, _user} = Accounts.create_user(@create_user_attrs2)
   end
