@@ -471,9 +471,13 @@ defmodule MilkWeb.TournamentController do
   """
   def get_thumbnail_image(conn, %{"thumbnail_path" => path}) do
     map = case Application.get_env(:milk, :environment) do
+      # coveralls-ignore-start
       :dev -> read_thumbnail(path)
+      # coveralls-ignore-stop
       :test -> read_thumbnail(path)
+      # coveralls-ignore-start
       _ -> read_thumbnail_prod(path)
+      # coveralls-ignore-stop
     end
     json(conn, map)
   end
@@ -488,6 +492,7 @@ defmodule MilkWeb.TournamentController do
     end
   end
 
+  #  coveralls-ignore-start
   defp read_thumbnail_prod(name) do
     object = Objects.get(name)
     case Image.get(object.mediaLink) do
@@ -498,6 +503,7 @@ defmodule MilkWeb.TournamentController do
         %{error: "image not found"}
     end
   end
+  # coveralls-ignore-stop
 
   @doc """
   Get a match list of a tournament.

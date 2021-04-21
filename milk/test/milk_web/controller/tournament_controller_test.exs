@@ -946,7 +946,7 @@ defmodule MilkWeb.TournamentControllerTest do
     setup [:create_tournament]
 
     test "works", %{conn: conn, tournament: tournament} do
-      entrants = create_entrants(8, tournament.id)
+      _entrants = create_entrants(8, tournament.id)
       conn = post(conn, Routes.tournament_path(conn, :start), tournament: %{"master_id" => tournament.master_id, "tournament_id" => tournament.id})
 
       conn = get(conn, Routes.tournament_path(conn, :get_match_members), tournament_id: tournament.id)
