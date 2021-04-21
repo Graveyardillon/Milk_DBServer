@@ -338,7 +338,6 @@ defmodule Milk.Tournaments do
 
   """
   def update_tournament(%Tournament{} = tournament, attrs) do
-
     attrs =
       unless is_nil(attrs["platform"]) do
         Map.put(attrs, "platform_id", attrs["platform"])
@@ -724,6 +723,7 @@ defmodule Milk.Tournaments do
 
   @doc """
   Delete loser.
+  TODO: エラーハンドリング
   """
   def delete_loser_process(tournament_id, loser_list) do
     [{_, match_list}] = TournamentProgress.get_match_list(tournament_id)
@@ -735,7 +735,8 @@ defmodule Milk.Tournaments do
       TournamentProgress.delete_fight_result({user_id, tournament_id})
     end)
 
-    updated_match_list = renew_match_list(tournament_id, match_list, loser_list)
+    renew_match_list(tournament_id, match_list, loser_list)
+    [{_, updated_match_list}] = TournamentProgress.get_match_list(tournament_id)
     renew_match_list_with_fight_result(tournament_id, loser_list)
     unless is_integer(updated_match_list), do: trim_match_list_as_needed(tournament_id)
 
@@ -753,8 +754,6 @@ defmodule Milk.Tournaments do
       promote_winners_by_loser(tournament_id, match_list, loser_list)
     end
 
-    # loser_list
-    # |> TournamentProgress.renew_match_list(tournament_id)
     renew(loser_list, tournament_id)
   end
 

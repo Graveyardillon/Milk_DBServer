@@ -347,10 +347,12 @@ defmodule MilkWeb.TournamentController do
   def tournament_topics(conn, %{"tournament_id" => tournament_id}) do
     tabs = Tournaments.get_tabs_by_tournament_id(tournament_id)
 
-    # TODO: tournament_topics.jsonのrenderを直接呼び出すのではなくshow.jsonからrender_manyをする方がよさそう
     render(conn, "tournament_topics.json", topics: tabs)
   end
 
+  @doc """
+  Update tournament topics.
+  """
   def tournament_update_topics(conn, %{"tournament_id" => tournament_id, "tabs" => tabs}) do
     tournament = Tournaments.get_tournament(tournament_id)
     if tournament do
@@ -469,9 +471,13 @@ defmodule MilkWeb.TournamentController do
   """
   def get_thumbnail_image(conn, %{"thumbnail_path" => path}) do
     map = case Application.get_env(:milk, :environment) do
+      # coveralls-ignore-start
       :dev -> read_thumbnail(path)
+      # coveralls-ignore-stop
       :test -> read_thumbnail(path)
+      # coveralls-ignore-start
       _ -> read_thumbnail_prod(path)
+      # coveralls-ignore-stop
     end
     json(conn, map)
   end
@@ -486,6 +492,7 @@ defmodule MilkWeb.TournamentController do
     end
   end
 
+  #  coveralls-ignore-start
   defp read_thumbnail_prod(name) do
     object = Objects.get(name)
     case Image.get(object.mediaLink) do
@@ -496,6 +503,7 @@ defmodule MilkWeb.TournamentController do
         %{error: "image not found"}
     end
   end
+  # coveralls-ignore-stop
 
   @doc """
   Get a match list of a tournament.
@@ -548,7 +556,7 @@ defmodule MilkWeb.TournamentController do
       with {:ok, opponent} <- Tournaments.get_opponent(match, user_id) do
         json(conn, %{result: true, opponent: opponent})
       else
-        # FIXME: waitのマップの作り方微妙
+        # FIXME: waitのタプルの作り方微妙
         {:wait, _} -> json(conn, %{result: false, opponent: nil, wait: true})
         _ -> render(conn, "error.json", error: nil)
       end
@@ -726,7 +734,7 @@ defmodule MilkWeb.TournamentController do
   def publish_url(conn, _params) do
     url = SecureRandom.urlsafe_base64()
 
-    json(conn, %{url: "e-players://e-players/tournament/"<>url})
+    json(conn, %{url: "e-players://e-players/tournament/"<>url, result: true})
   end
 
   @doc """
@@ -814,26 +822,6 @@ defmodule MilkWeb.TournamentController do
     case list do
       {_, match_list} ->
         brackets = Tournaments.data_with_fight_result_for_brackets(match_list)
-        count = Enum.count(brackets)*2
-        num_for_brackets = Tournamex.Number.closest_number_to_power_of_two(count)
-
-        json(conn, %{data: brackets, result: true, count: num_for_brackets})
-      _ ->
-        json(conn, %{data: nil, result: false, count: nil})
-    end
-  end
-
-  @doc """
-  Get data for presenting tournament brackets.
-  """
-  def brackets(conn, %{"tournament_id" => tournament_id}) do
-    tournament_id = Tools.to_integer_as_needed(tournament_id)
-    list = TournamentProgress.get_match_list(tournament_id)
-    list = unless list == [], do: hd(list)
-
-    case list do
-      {_, match_list} ->
-        brackets = Tournaments.data_for_brackets(match_list)
         count = Enum.count(brackets)*2
         num_for_brackets = Tournamex.Number.closest_number_to_power_of_two(count)
 
