@@ -891,9 +891,9 @@ defmodule Milk.Tournaments do
   """
   def start(master_id, tournament_id) do
     nil_check_on_start?(master_id, tournament_id)
-    |> check_entrant(tournament_id)
-    |> check_tournament_for_start(master_id, tournament_id)
-    |> check_tournament_has_started()
+    |> check_entrant_number(tournament_id)
+    |> fetch_tournament(master_id, tournament_id)
+    |> start()
   end
 
   defp nil_check_on_start?(master_id, tournament_id) do
@@ -904,7 +904,7 @@ defmodule Milk.Tournaments do
     end
   end
 
-  defp check_entrant(check, tournament_id) do
+  defp check_entrant_number(check, tournament_id) do
     case check do
       {:ok, _} ->
         if number_of_entrants(tournament_id) > 1 do
@@ -925,7 +925,7 @@ defmodule Milk.Tournaments do
     |> length()
   end
 
-  defp check_tournament_for_start(check, master_id, tournament_id) do
+  defp fetch_tournament(check, master_id, tournament_id) do
     case check do
       {:ok, nil} ->
         tournament =
@@ -942,7 +942,7 @@ defmodule Milk.Tournaments do
     end
   end
 
-  defp check_tournament_has_started(check) do
+  defp start(check) do
     case check do
       {:ok, tournament} ->
         unless tournament.is_started do
@@ -962,7 +962,6 @@ defmodule Milk.Tournaments do
   トーナメントを終了させ、終了したトーナメントをログの方に移行して削除する
   """
   def finish(tournament_id, winner_user_id) do
-    # FIXME: user_idを使って認証する処理を書いてない
     case finish_entrants(tournament_id) do
       :ok -> finish_tournament(tournament_id, winner_user_id)
       :error -> false

@@ -146,11 +146,14 @@ defmodule Milk.TournamentProgress do
 
     with {:ok, _} <- Redix.command(conn, ["SELECT", 2]),
     {:ok, value} <- Redix.command(conn, ["GET", tournament_id]) do
-      {match_list, _} = Code.eval_string(value)
-      [{tournament_id, match_list}]
-    else
-      _ ->
+      if value do
+        {match_list, _} = Code.eval_string(value)
+        [{tournament_id, match_list}]
+      else
         []
+      end
+    else
+      e -> []
     end
   end
 
@@ -245,6 +248,21 @@ defmodule Milk.TournamentProgress do
     end
   end
 
+  def delete_match_pending_list_of_tournament(tournament_id) do
+    conn = conn()
+
+    with {:ok, _} <- Redix.command(conn, ["SELECT", 3]),
+    {:ok, value} <- Redix.command(conn, ["HKEYS", tournament_id]) do
+      Enum.each(value, fn key ->
+        key =  String.to_integer(key)
+        Redix.command(conn, ["HDEL", tournament_id, key])
+      end)
+      true
+    else
+      _ -> false
+    end
+  end
+
   @moduledoc """
   4. match_pending_list
   Manages fight result.
@@ -285,6 +303,21 @@ defmodule Milk.TournamentProgress do
     {:ok, _} <- Redix.command(conn, ["SELECT", 4]),
     {:ok, _} <- Redix.command(conn, ["HDEL", tournament_id, user_id]),
     {:ok, _} <- Redix.command(conn, ["EXEC"]) do
+      true
+    else
+      _ -> false
+    end
+  end
+
+  def delete_fight_result_of_tournament(tournament_id) do
+    conn = conn()
+
+    with {:ok, _} <- Redix.command(conn, ["SELECT", 4]),
+    {:ok, value} <- Redix.command(conn, ["HKEYS", tournament_id]) do
+      Enum.each(value, fn key ->
+        key = String.to_integer(key)
+        Redix.command(conn, ["HDEL", tournament_id, key])
+      end)
       true
     else
       _ -> false
@@ -422,6 +455,21 @@ defmodule Milk.TournamentProgress do
       end
     else
       _ -> nil
+    end
+  end
+
+  def delete_lose_processes(tournament_id) do
+    conn = conn()
+
+    with {:ok, _} <- Redix.command(conn, ["SELECT", 6]),
+    {:ok, value} <- Redix.command(conn, ["HKEYS", tournament_id]) do
+      Enum.each(value, fn key ->
+        key = String.to_integer(key)
+        Redix.command(conn, ["HDEL", tournament_id, key])
+      end)
+      true
+    else
+      _ -> false
     end
   end
 end

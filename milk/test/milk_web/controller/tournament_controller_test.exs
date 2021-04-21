@@ -624,7 +624,6 @@ defmodule MilkWeb.TournamentControllerTest do
       conn = post(conn, Routes.tournament_path(conn, :delete_loser), tournament: %{tournament_id: tournament.id, loser_list: losers})
       json_response(conn, 200)
       |> Map.get("updated_match_list")
-      |> IO.inspect(label: :asdf)
       |> (fn list ->
         old_len =
           match_list
@@ -959,6 +958,7 @@ defmodule MilkWeb.TournamentControllerTest do
     end
   end
 
+  # TODO: redisの確認を入れたい
   describe "test duplicate claim members" do
     setup [:create_tournament]
 
@@ -1044,6 +1044,67 @@ defmodule MilkWeb.TournamentControllerTest do
       |> length()
       |> (fn len ->
         assert len == length(entrants)
+      end).()
+    end
+  end
+
+  # TODO: redisの確認とログの確認を入れたい
+  describe "finish" do
+    setup [:create_tournament]
+
+    test "check status of redis and logs", %{conn: conn, tournament: tournament} do
+      [entrant] = create_entrants(1, tournament.id)
+      Map.new()
+      |> Map.put("rank", 0)
+      |> Map.put("tournament_id", tournament.id)
+      |> Map.put("user_id", tournament.master_id)
+      |> Tournaments.create_entrant()
+
+      user1_id = tournament.master_id
+      conn = post(conn, Routes.tournament_path(conn, :start), tournament: %{"master_id" => tournament.master_id, "tournament_id" => tournament.id})
+      conn = get(conn, Routes.tournament_path(conn, :get_opponent), tournament_id: tournament.id, user_id: user1_id)
+      opponent1_id = json_response(conn, 200)["opponent"]["id"]
+
+      conn = post(conn, Routes.tournament_path(conn, :start_match), user_id: user1_id, tournament_id: tournament.id)
+      conn = post(conn, Routes.tournament_path(conn, :start_match), user_id: opponent1_id, tournament_id: tournament.id)
+      conn = post(conn, Routes.tournament_path(conn, :claim_lose), user_id: user1_id, opponent_id: opponent1_id, tournament_id: tournament.id)
+      conn = post(conn, Routes.tournament_path(conn, :claim_win), user_id: opponent1_id, opponent_id: user1_id, tournament_id: tournament.id)
+      conn = post(conn, Routes.tournament_path(conn, :delete_loser), tournament: %{tournament_id: tournament.id, loser_list: [user1_id]})
+      conn = post(conn, Routes.tournament_path(conn, :finish), tournament_id: tournament.id, user_id: opponent1_id)
+      assert json_response(conn, 200)["result"]
+
+      conn = get(conn, Routes.tournament_path(conn, :show), tournament_id: tournament.id)
+      json_response(conn, 200)
+      |> (fn t ->
+        assert t["is_log"]
+        assert t["result"]
+        t
+      end).()
+      |> Map.get("data")
+      |> (fn t ->
+        assert t["tournament_id"] == tournament.id
+        assert t["capacity"] == tournament.capacity
+        assert t["description"] == tournament.description
+        assert t["game_id"] == tournament.game_id
+        assert t["game_name"] == tournament.game_name
+        assert t["winner_id"] == opponent1_id
+        assert t["master_id"] == tournament.master_id
+        assert t["name"] == tournament.name
+        assert t["url"] == tournament.url
+        assert t["type"] == tournament.type
+      end).()
+
+      TournamentProgress.get_match_list(tournament.id)
+      |> (fn list ->
+        assert list == []
+      end).()
+      TournamentProgress.get_match_list_with_fight_result(tournament.id)
+      |> (fn list ->
+        assert list == []
+      end).()
+      TournamentProgress.get_match_pending_list_of_tournament(tournament.id)
+      |> (fn list ->
+        assert list == []
       end).()
     end
   end
