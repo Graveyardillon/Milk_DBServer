@@ -262,6 +262,13 @@ defmodule MilkWeb.TournamentController do
   def update(conn, %{"tournament_id" => id, "tournament" => tournament_params}) do
     tournament = Tournaments.get_tournament!(id)
     if(tournament) do
+      case  tournament_params["join"]  do
+        "true" ->
+          params = %{"user_id" => tournament.master_id, "tournament_id" => tournament.id}
+          Tournaments.create_entrant(params)
+        "false" ->
+          Tournaments.delete_entrant(id, tournament_params["master_id"])
+      end
       case Tournaments.update_tournament(tournament, tournament_params) do
         {:ok, %Tournament{} = tournament} ->
           render(conn, "show.json", tournament: tournament)

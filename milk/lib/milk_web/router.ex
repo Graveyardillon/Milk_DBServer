@@ -78,6 +78,7 @@ defmodule MilkWeb.Router do
     resources "/entrant_log", EntrantLogController
 
     resources "/tournament", TournamentController, except: [:new, :edit, :index, :show, :delete]
+    post "/tournament/edit", TournamentController, :update
     get  "/tournament/users_for_add_assistant", TournamentController, :get_users_for_add_assistant
     get  "/tournament/get", TournamentController, :show
     get  "/tournament/get_by_master_id", TournamentController, :get_tournaments_by_master_id
