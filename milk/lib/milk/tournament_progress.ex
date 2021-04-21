@@ -314,7 +314,7 @@ defmodule Milk.TournamentProgress do
 
     with {:ok, _} <- Redix.command(conn, ["SELECT", 4]),
     {:ok, value} <- Redix.command(conn, ["HKEYS", tournament_id]) do
-      Enum.each(fn key ->
+      Enum.each(value, fn key ->
         key = String.to_integer(key)
         Redix.command(conn, ["HDEL", tournament_id, key])
       end)

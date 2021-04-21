@@ -810,8 +810,9 @@ defmodule MilkWeb.TournamentController do
     TournamentProgress.delete_match_list(tournament_id)
     TournamentProgress.delete_match_list_with_fight_result(tournament_id)
     TournamentProgress.delete_match_pending_list_of_tournament(tournament_id)
-    TournamentProgress.delete_lose_processes(tournament_id)
+    TournamentProgress.delete_fight_result_of_tournament(tournament_id)
     TournamentProgress.delete_duplicate_users_all(tournament_id)
+    TournamentProgress.delete_lose_processes(tournament_id)
 
     json(conn, %{result: result})
   end

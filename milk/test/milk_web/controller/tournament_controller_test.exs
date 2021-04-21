@@ -1070,8 +1070,29 @@ defmodule MilkWeb.TournamentControllerTest do
       conn = post(conn, Routes.tournament_path(conn, :claim_lose), user_id: user1_id, opponent_id: opponent1_id, tournament_id: tournament.id)
       conn = post(conn, Routes.tournament_path(conn, :claim_win), user_id: opponent1_id, opponent_id: user1_id, tournament_id: tournament.id)
       conn = post(conn, Routes.tournament_path(conn, :delete_loser), tournament: %{tournament_id: tournament.id, loser_list: [user1_id]})
-      conn = post(conn, Routes.tournament_path(conn, :finish), tournament_id: tournament.id, user_id: tournament.master_id)
+      conn = post(conn, Routes.tournament_path(conn, :finish), tournament_id: tournament.id, user_id: opponent1_id)
       assert json_response(conn, 200)["result"]
+
+      conn = get(conn, Routes.tournament_path(conn, :show), tournament_id: tournament.id)
+      json_response(conn, 200)
+      |> (fn t ->
+        assert t["is_log"]
+        assert t["result"]
+        t
+      end).()
+      |> Map.get("data")
+      |> (fn t ->
+        assert t["tournament_id"] == tournament.id
+        assert t["capacity"] == tournament.capacity
+        assert t["description"] == tournament.description
+        assert t["game_id"] == tournament.game_id
+        assert t["game_name"] == tournament.game_name
+        assert t["winner_id"] == opponent1_id
+        assert t["master_id"] == tournament.master_id
+        assert t["name"] == tournament.name
+        assert t["url"] == tournament.url
+        assert t["type"] == tournament.type
+      end).()
 
       TournamentProgress.get_match_list(tournament.id)
       |> (fn list ->
