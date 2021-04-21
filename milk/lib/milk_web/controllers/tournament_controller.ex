@@ -834,22 +834,22 @@ defmodule MilkWeb.TournamentController do
   @doc """
   Get data for presenting tournament brackets.
   """
-  def brackets(conn, %{"tournament_id" => tournament_id}) do
-    tournament_id = Tools.to_integer_as_needed(tournament_id)
-    list = TournamentProgress.get_match_list(tournament_id)
-    list = unless list == [], do: hd(list)
+  # def brackets(conn, %{"tournament_id" => tournament_id}) do
+  #   tournament_id = Tools.to_integer_as_needed(tournament_id)
+  #   list = TournamentProgress.get_match_list(tournament_id)
+  #   list = unless list == [], do: hd(list)
 
-    case list do
-      {_, match_list} ->
-        brackets = Tournaments.data_for_brackets(match_list)
-        count = Enum.count(brackets)*2
-        num_for_brackets = Tournamex.Number.closest_number_to_power_of_two(count)
+  #   case list do
+  #     {_, match_list} ->
+  #       brackets = Tournaments.data_for_brackets(match_list)
+  #       count = Enum.count(brackets)*2
+  #       num_for_brackets = Tournamex.Number.closest_number_to_power_of_two(count)
 
-        json(conn, %{data: brackets, result: true, count: num_for_brackets})
-      _ ->
-        json(conn, %{data: nil, result: false, count: nil})
-    end
-  end
+  #       json(conn, %{data: brackets, result: true, count: num_for_brackets})
+  #     _ ->
+  #       json(conn, %{data: nil, result: false, count: nil})
+  #   end
+  # end
 
   @doc """
   Registers PID of start notification.
