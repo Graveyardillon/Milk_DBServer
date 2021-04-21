@@ -889,25 +889,6 @@ defmodule MilkWeb.TournamentControllerTest do
     end
   end
 
-  describe "get entrants" do
-    setup [:create_tournament]
-
-    test "get entrants", %{conn: conn, tournament: tournament} do
-      entrants = create_entrants(8, tournament.id)
-      entrant_id_list = Enum.map(entrants, fn entrant -> entrant.id end)
-      conn = get(conn, Routes.tournament_path(conn, :get_entrants), tournament_id: tournament.id)
-
-      json_response(conn, 200)["data"]
-      |> Enum.map(fn entrant ->
-        assert Enum.member?(entrant_id_list, entrant["id"])
-      end)
-      |> length()
-      |> (fn len ->
-        assert len == length(entrants)
-      end).()
-    end
-  end
-
   describe "is user win" do
     setup [:create_tournament]
 
@@ -978,38 +959,6 @@ defmodule MilkWeb.TournamentControllerTest do
     end
   end
 
-  describe "get game masters" do
-    setup [:create_tournament]
-
-    test "get game masters", %{conn: conn, tournament: tournament} do
-      conn = get(conn, Routes.tournament_path(conn, :get_game_masters), tournament_id: tournament.id)
-      json_response(conn, 200)
-      |> Map.get("data")
-      |> Enum.map(fn user ->
-        assert user["id"] == tournament.master_id
-      end)
-      |> length()
-      |> (fn len ->
-        assert len == 1
-      end).()
-    end
-  end
-
-  describe "register pid of start notification" do
-    setup [:create_tournament]
-
-    test "register pid of start notification with valid data", %{conn: conn, tournament: tournament} do
-      pid = "0.100.0"
-      conn = post(conn, Routes.tournament_path(conn, :register_pid_of_start_notification), %{tournament_id: tournament.id, pid: pid})
-      assert json_response(conn, 200)
-      assert json_response(conn, 200)["result"]
-
-      # Check tournament pid has been stored
-      t = Tournaments.get_tournament!(tournament.id)
-      assert t.start_notification_pid == pid
-    end
-  end
-
   describe "test duplicate claim members" do
     setup [:create_tournament]
 
@@ -1060,6 +1009,107 @@ defmodule MilkWeb.TournamentControllerTest do
       else
         Logger.info("opponent is nil in 'test duplicate claim members'")
       end
+    end
+  end
+
+  describe "get game masters" do
+    setup [:create_tournament]
+
+    test "get game masters", %{conn: conn, tournament: tournament} do
+      conn = get(conn, Routes.tournament_path(conn, :get_game_masters), tournament_id: tournament.id)
+      json_response(conn, 200)
+      |> Map.get("data")
+      |> Enum.map(fn user ->
+        assert user["id"] == tournament.master_id
+      end)
+      |> length()
+      |> (fn len ->
+        assert len == 1
+      end).()
+    end
+  end
+
+  describe "get entrants" do
+    setup [:create_tournament]
+
+    test "get entrants", %{conn: conn, tournament: tournament} do
+      entrants = create_entrants(8, tournament.id)
+      entrant_id_list = Enum.map(entrants, fn entrant -> entrant.id end)
+      conn = get(conn, Routes.tournament_path(conn, :get_entrants), tournament_id: tournament.id)
+
+      json_response(conn, 200)["data"]
+      |> Enum.map(fn entrant ->
+        assert Enum.member?(entrant_id_list, entrant["id"])
+      end)
+      |> length()
+      |> (fn len ->
+        assert len == length(entrants)
+      end).()
+    end
+  end
+
+  describe "brackets with fight result" do
+    setup [:create_tournament]
+
+    test "works", %{conn: conn, tournament: tournament} do
+      entrants = create_entrants(8, tournament.id)
+      conn = post(conn, Routes.tournament_path(conn, :start), tournament: %{"master_id" => tournament.master_id, "tournament_id" => tournament.id})
+      user_id_list = Enum.map(entrants, fn entrant -> entrant.user_id end)
+
+      conn = get(conn, Routes.tournament_path(conn, :brackets_with_fight_result), tournament_id: tournament.id)
+      assert json_response(conn, 200)["count"] == length(entrants)
+      json_response(conn, 200)
+      |> Map.get("data")
+      |> List.flatten()
+      |> Enum.map(fn bracket ->
+        refute bracket["is_loser"]
+        assert bracket["user_id"] in user_id_list
+      end)
+      |> length()
+      |> (fn len ->
+        assert len  == 8
+      end).()
+
+      user1_id = hd(entrants).user_id
+      conn = get(conn, Routes.tournament_path(conn, :get_opponent), tournament_id: tournament.id, user_id: user1_id)
+      opponent1_id = json_response(conn, 200)["opponent"]["id"]
+
+      conn = post(conn, Routes.tournament_path(conn, :claim_win), opponent_id: opponent1_id, user_id: user1_id, tournament_id: tournament.id)
+      conn = post(conn, Routes.tournament_path(conn, :claim_lose), opponent_id: user1_id, user_id: opponent1_id, tournament_id: tournament.id)
+      conn = post(conn, Routes.tournament_path(conn, :delete_loser), tournament: %{"tournament_id" => tournament.id, "loser_list" => [opponent1_id]})
+
+      conn = get(conn, Routes.tournament_path(conn, :brackets_with_fight_result), tournament_id: tournament.id)
+      assert json_response(conn, 200)["count"] == length(entrants)
+      json_response(conn, 200)
+      |> Map.get("data")
+      |> List.flatten()
+      |> Enum.map(fn bracket ->
+        if bracket["user_id"] == opponent1_id do
+          assert bracket["is_loser"]
+        else
+          refute bracket["is_loser"]
+        end
+        assert bracket["user_id"] in user_id_list
+      end)
+      |> length()
+      |> (fn len ->
+        assert len  == 8
+      end).()
+    end
+  end
+
+  describe "register pid of start notification" do
+    setup [:create_tournament]
+
+    test "register pid of start notification with valid data", %{conn: conn, tournament: tournament} do
+      pid = "0.100.0"
+      conn = post(conn, Routes.tournament_path(conn, :register_pid_of_start_notification), %{tournament_id: tournament.id, pid: pid})
+      assert json_response(conn, 200)
+      assert json_response(conn, 200)["result"]
+
+      # Check tournament pid has been stored
+      t = Tournaments.get_tournament!(tournament.id)
+      assert t.start_notification_pid == pid
     end
   end
 
