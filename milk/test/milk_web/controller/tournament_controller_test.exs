@@ -624,7 +624,6 @@ defmodule MilkWeb.TournamentControllerTest do
       conn = post(conn, Routes.tournament_path(conn, :delete_loser), tournament: %{tournament_id: tournament.id, loser_list: losers})
       json_response(conn, 200)
       |> Map.get("updated_match_list")
-      |> IO.inspect(label: :asdf)
       |> (fn list ->
         old_len =
           match_list
@@ -1073,6 +1072,19 @@ defmodule MilkWeb.TournamentControllerTest do
       conn = post(conn, Routes.tournament_path(conn, :delete_loser), tournament: %{tournament_id: tournament.id, loser_list: [user1_id]})
       conn = post(conn, Routes.tournament_path(conn, :finish), tournament_id: tournament.id, user_id: tournament.master_id)
       assert json_response(conn, 200)["result"]
+
+      TournamentProgress.get_match_list(tournament.id)
+      |> (fn list ->
+        assert list == []
+      end).()
+      TournamentProgress.get_match_list_with_fight_result(tournament.id)
+      |> (fn list ->
+        assert list == []
+      end).()
+      TournamentProgress.get_match_pending_list_of_tournament(tournament.id)
+      |> (fn list ->
+        assert list == []
+      end).()
     end
   end
 
