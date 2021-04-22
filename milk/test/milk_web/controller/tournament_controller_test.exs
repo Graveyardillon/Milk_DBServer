@@ -702,6 +702,37 @@ defmodule MilkWeb.TournamentControllerTest do
 
         assert old_len-1 == new_len
       end).()
+
+      assert TournamentProgress.get_fight_result({hd(losers), tournament.id}) == []
+      assert TournamentProgress.get_match_pending_list({hd(losers), tournament.id}) == []
+
+      tournament.id
+      |> TournamentProgress.get_match_list()
+      |> hd()
+      |> elem(1)
+      |> List.flatten()
+      |> Enum.any?(fn user_id ->
+        user_id == hd(losers)
+      end)
+      |> (fn bool ->
+        refute bool
+      end).()
+
+      tournament.id
+      |> TournamentProgress.get_match_list_with_fight_result()
+      |> hd()
+      |> elem(1)
+      |> List.flatten()
+      |> Enum.any?(fn map ->
+        if map["is_loser"] do
+          map["user_id"] == hd(losers)
+        else
+          false
+        end
+      end)
+      |> (fn bool ->
+        assert bool
+      end).()
     end
   end
 
