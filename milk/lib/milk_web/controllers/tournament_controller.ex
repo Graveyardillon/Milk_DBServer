@@ -342,6 +342,36 @@ defmodule MilkWeb.TournamentController do
   end
 
   @doc """
+  Check whether the user can join the tournament.
+  大会キャパシティチェック
+  ユーザーの参加している他の大会との時間帯チェック
+  """
+  def is_able_to_join(conn, %{"user_id" => user_id, "tournament_id" => tournament_id}) do
+    tournament = Tournaments.get_tournament(tournament_id)
+    entrants_len =
+      tournament.id
+      |> Tournaments.get_entrants()
+      |> length()
+
+    result = tournament.capacity > entrants_len
+
+    participatings = Tournaments.get_participating_tournaments(user_id)
+    hostings = Tournaments.get_tournaments_by_master_id(user_id)
+
+    result =
+      participatings
+      |> Kernel.++(hostings)
+      |> Enum.uniq()
+      |> Enum.any?(fn t ->
+        t.event_date == tournament.event_date
+      end)
+      |> Kernel.not()
+      |> Kernel.and(result)
+
+    json(conn, %{result: result})
+  end
+
+  @doc """
   Get tournament topics.
   """
   def tournament_topics(conn, %{"tournament_id" => tournament_id}) do
