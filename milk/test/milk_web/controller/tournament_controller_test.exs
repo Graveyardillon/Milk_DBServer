@@ -26,6 +26,7 @@ defmodule MilkWeb.TournamentControllerTest do
     "type" => 42,
     "join" => "true",
     "url" => "some url",
+    "password" => "Password123",
     "platform" => 1
   }
   @create_incoming_attrs %{
@@ -274,6 +275,25 @@ defmodule MilkWeb.TournamentControllerTest do
     test "get tournament with valid data", %{conn: conn, tournament: tournament} do
       conn = get(conn, Routes.tournament_path(conn, :show), %{"tournament_id" => tournament.id})
       assert json_response(conn, 200)["result"]
+      json_response(conn, 200)
+      |> Map.get("data")
+      |> (fn data ->
+        assert data["id"] == tournament.id
+        assert data["name"] == tournament.name
+        assert data["thumbnail_path"] == tournament.thumbnail_path
+        assert data["game_id"] == tournament.game_id
+        assert data["game_name"] == tournament.game_name
+        # assert data["event_date"] == tournament.event_date
+        # assert data["start_recruiting"] == tournament.start_recruiting
+        # assert data["deadline"] == tournament.deadline
+        assert data["type"] == tournament.type
+        # assert data["platform"] == tournament.platform
+        assert is_nil(data["password"])
+        assert data["capacity"] == tournament.capacity
+        assert data["master_id"] == tournament.master_id
+        assert data["url"] == tournament.url
+        assert data["is_started"] == tournament.is_started
+      end).()
     end
 
     test "get finished tournament", %{conn: conn, tournament: tournament} do
@@ -1253,6 +1273,17 @@ defmodule MilkWeb.TournamentControllerTest do
       |> (fn len ->
         assert len  == 8
       end).()
+    end
+  end
+
+  describe "verify password" do
+    setup [:create_tournament]
+
+    test "works", %{conn: conn, tournament: tournament} do
+      conn = get(conn, Routes.tournament_path(conn, :verify_password), %{tournament_id: tournament.id, password: "Password123"})
+      assert json_response(conn, 200)["result"]
+      conn = get(conn, Routes.tournament_path(conn, :verify_password), %{tournament_id: tournament.id, password: "wrongPassword123"})
+      refute json_response(conn, 200)["result"]
     end
   end
 

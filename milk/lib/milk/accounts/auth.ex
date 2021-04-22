@@ -1,6 +1,8 @@
 defmodule Milk.Accounts.Auth do
   use Milk.Schema
+
   import Ecto.Changeset
+
   alias Milk.Accounts.User
 
   schema "auth" do
@@ -34,7 +36,6 @@ defmodule Milk.Accounts.Auth do
   end
 
   defp put_password_hash(%Ecto.Changeset{valid?: true, changes: %{password: password}} = changeset) do
-
     change(changeset, password: create_pass(password))
   end
 
@@ -43,6 +44,7 @@ defmodule Milk.Accounts.Auth do
   def create_pass(password) do
     Argon2.hash_pwd_salt(password)
   end
+
   # 未完成
   # def not_space(changeset) do
   #   password = get_field(changeset, :password)

@@ -7,10 +7,11 @@ defmodule Milk.Accounts do
 
   require Logger
 
-  alias Milk.Repo
   alias Ecto.Multi
-  alias Milk.Accounts
-  alias Milk.UserManager.Guardian
+  alias Milk.{
+    Repo,
+    Accounts
+  }
   alias Milk.Accounts.{
     User,
     Auth
@@ -24,6 +25,7 @@ defmodule Milk.Accounts do
     AssistantLog,
     EntrantLog
   }
+  alias Milk.UserManager.Guardian
   alias Milk.CloudStorage.Objects
 
   @typedoc """

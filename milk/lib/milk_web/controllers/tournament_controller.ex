@@ -887,4 +887,13 @@ defmodule MilkWeb.TournamentController do
       {:error, _error} ->  json(conn, %{result: false})
     end
   end
+
+  def verify_password(conn, %{"tournament_id" => tournament_id, "password" => password}) do
+    result =
+      tournament_id
+      |> Tools.to_integer_as_needed()
+      |> Tournaments.verify?(password)
+
+    json(conn, result: result)
+  end
 end

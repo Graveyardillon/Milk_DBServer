@@ -107,6 +107,7 @@ defmodule MilkWeb.Router do
     get  "/tournament/has_lost", TournamentController, :has_lost?
     get  "/tournament/state", TournamentController, :state
     get  "/tournament/pid", TournamentController, :get_pid
+    get  "/tournament/verify_password", TournamentController, :verify_password
     post "/tournament/start", TournamentController, :start
     post "/tournament/register/pid", TournamentController, :register_pid_of_start_notification
     post "/tournament/deleteloser", TournamentController, :delete_loser
