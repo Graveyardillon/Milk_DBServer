@@ -587,9 +587,15 @@ defmodule MilkWeb.TournamentControllerTest do
       }
 
       conn = post(conn, Routes.tournament_path(conn, :create), %{tournament: attrs1, file: ""})
+      tournament1 = json_response(conn, 200)["data"]
+      conn = get(conn, Routes.tournament_path(conn, :is_able_to_join), %{user_id: user1.id, tournament_id: tournament1["id"]})
+      assert json_response(conn, 200)["result"]
+
       conn = post(conn, Routes.tournament_path(conn, :create), %{tournament: attrs2, file: ""})
       tournament2 = json_response(conn, 200)["data"]
       conn = get(conn, Routes.tournament_path(conn, :is_able_to_join), %{user_id: user1.id, tournament_id: tournament2["id"]})
+      refute json_response(conn, 200)["result"]
+      conn = get(conn, Routes.tournament_path(conn, :is_able_to_join), %{user_id: user2.id, tournament_id: tournament1["id"]})
       refute json_response(conn, 200)["result"]
 
       conn = post(conn, Routes.tournament_path(conn, :create), %{tournament: attrs3, file: ""})
