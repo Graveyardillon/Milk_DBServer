@@ -84,7 +84,6 @@ defmodule MilkWeb.TournamentControllerTest do
     {:ok, _user} = Accounts.create_user(@create_user_attrs)
   end
 
-  # FIXME: てきとう
   def fixture(:user2) do
     {:ok, _user} = Accounts.create_user(@create_user_attrs2)
   end
@@ -540,6 +539,67 @@ defmodule MilkWeb.TournamentControllerTest do
       |> (fn len ->
         assert len == 4
       end).()
+    end
+  end
+
+  describe "is able to join" do
+    test "works", %{conn: conn} do
+      {:ok, user1} = fixture(:user)
+      {:ok, user2} = fixture(:user2)
+      attrs1 = %{
+        "capacity" => 42,
+        "deadline" => "2100-04-17T14:00:00Z",
+        "description" => "some description",
+        "event_date" => "2100-04-17T14:00:00Z",
+        "master_id" => 42,
+        "name" => "some name",
+        "type" => 42,
+        "join" => "false",
+        "url" => "some url",
+        "platform" => 1,
+        "master_id" => user1.id
+      }
+      attrs2 = %{
+        "capacity" => 42,
+        "deadline" => "2100-04-17T14:00:00Z",
+        "description" => "some description",
+        "event_date" => "2100-04-17T14:00:00Z",
+        "master_id" => 42,
+        "name" => "some name",
+        "type" => 42,
+        "join" => "false",
+        "url" => "some url",
+        "platform" => 1,
+        "master_id" => user2.id
+      }
+      attrs3 = %{
+        "capacity" => 42,
+        "deadline" => "2200-04-17T14:00:00Z",
+        "description" => "some description",
+        "event_date" => "2200-04-17T14:00:00Z",
+        "master_id" => 42,
+        "name" => "some name",
+        "type" => 42,
+        "join" => "false",
+        "url" => "some url",
+        "platform" => 1,
+        "master_id" => user2.id
+      }
+
+      conn = post(conn, Routes.tournament_path(conn, :create), %{tournament: attrs1, file: ""})
+      conn = post(conn, Routes.tournament_path(conn, :create), %{tournament: attrs2, file: ""})
+      tournament2 = json_response(conn, 200)["data"]
+      conn = get(conn, Routes.tournament_path(conn, :is_able_to_join), %{user_id: user1.id, tournament_id: tournament2["id"]})
+      refute json_response(conn, 200)["result"]
+
+      conn = post(conn, Routes.tournament_path(conn, :create), %{tournament: attrs3, file: ""})
+      tournament3 = json_response(conn, 200)["data"]
+      conn = get(conn, Routes.tournament_path(conn, :is_able_to_join), %{user_id: user1.id, tournament_id: tournament3["id"]})
+      assert json_response(conn, 200)["result"]
+
+      create_entrants(tournament3["capacity"], tournament3["id"])
+      conn = get(conn, Routes.tournament_path(conn, :is_able_to_join), %{user_id: user1.id, tournament_id: tournament3["id"]})
+      refute json_response(conn, 200)["result"]
     end
   end
 

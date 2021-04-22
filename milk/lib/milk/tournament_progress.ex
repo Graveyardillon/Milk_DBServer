@@ -85,8 +85,7 @@ defmodule Milk.TournamentProgress do
   end
 
   @doc """
-  FIXME: 排他ロックするための処理を記述する
-  排他処理用のテーブルは0番テーブルとする。
+
   """
   def renew_match_list(loser, tournament_id) do
     # 更新は正常にできている
@@ -437,9 +436,9 @@ defmodule Milk.TournamentProgress do
   end
 
   @doc """
-  Cancel a process which makes a user lost.
+
   """
-  def cancel_lose(tournament_id, user_id) do
+  def get_lost_pid(user_id, tournament_id) do
     conn = conn()
 
     with {:ok, _} <- Redix.command(conn, ["SELECT", 6]),
@@ -449,12 +448,46 @@ defmodule Milk.TournamentProgress do
         |> Code.eval_string()
         |> elem(0)
         |> :erlang.list_to_pid()
-        |> Process.exit(:kill)
       else
         nil
       end
     else
       _ -> nil
+    end
+  end
+
+  @doc """
+  Cancel a process which makes a user lost.
+  TODO: delete処理
+  """
+  def cancel_lose(tournament_id, user_id) do
+    conn = conn()
+
+    with {:ok, _} <- Redix.command(conn, ["SELECT", 6]),
+    {:ok, value} <- Redix.command(conn, ["HGET", tournament_id, user_id]) do
+      if value do
+        pid =
+          value
+          |> Code.eval_string()
+          |> elem(0)
+          |> :erlang.list_to_pid()
+          |> Process.exit(:kill)
+        {:ok, pid}
+      else
+        {:error, nil}
+      end
+    else
+      error -> {:error, error}
+    end
+    |> case do
+      {:ok, pid} ->
+        with {:ok, _} <- Redix.command(conn, ["SELECT", 6]),
+        {:ok, value} <- Redix.command(conn, ["HDEL", tournament_id, user_id]) do
+          true
+        else
+          _ -> false
+        end
+      {:error, _error} -> false
     end
   end
 

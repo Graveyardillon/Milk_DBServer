@@ -270,6 +270,15 @@ defmodule Milk.TournamentProgressTest do
 
       [{_, match_list}] = TournamentProgress.get_match_list(tournament.id)
       assert Tournaments.has_lost?(match_list, tournament.master_id)
+
+      Enum.each(entrants, fn entrant ->
+        entrant
+        |> Map.get(:user_id)
+        |> TournamentProgress.get_lost_pid(tournament.id)
+        |> (fn bool ->
+          assert bool
+        end).()
+      end)
     end
 
     test "cancel_lose/2 works fine" do
