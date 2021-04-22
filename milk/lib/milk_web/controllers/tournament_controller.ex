@@ -345,7 +345,7 @@ defmodule MilkWeb.TournamentController do
   Check whether the user can join the tournament.
   大会キャパシティチェック
   ユーザーの参加している他の大会との時間帯チェック
-  そして自分がすでに参加していないか
+  TODO: そして自分がすでに参加していないか
   """
   def is_able_to_join(conn, %{"user_id" => user_id, "tournament_id" => tournament_id}) do
     tournament_id = Tools.to_integer_as_needed(tournament_id)
