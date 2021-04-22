@@ -325,9 +325,11 @@ defmodule Milk.Accounts do
   defp where_mode(query, :email, user) do
     where(query, [u, a], a.email == ^user["email_or_username"])
   end
+
   defp where_mode(query, :username, user) do
     where(query, [u, a], u.name == ^user["email_or_username"])
   end
+
   defp get_valid_user(user, password, mode) do
     User
     |> join(:inner, [u], a in assoc(u, :auth))
