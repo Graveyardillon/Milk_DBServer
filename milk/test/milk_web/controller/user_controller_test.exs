@@ -126,6 +126,23 @@ defmodule MilkWeb.UserControllerTest do
     end
   end
 
+  describe "update" do
+    test "update", %{conn: conn} do
+      conn = post(conn, Routes.user_path(conn, :create), user: @create_attrs)
+      response = json_response(conn, 200)
+      token = response["token"]
+      user = response["data"]
+
+      attrs = %{"name" => "updated name"}
+      conn = post(conn, Routes.user_path(conn, :update), %{id: user["id"], user: attrs, token: token})
+      json_response(conn, 200)
+      |> Map.get("data")
+      |> (fn updated_user ->
+        assert updated_user["name"] == attrs["name"]
+      end).()
+    end
+  end
+
   describe "change password" do
     test "changes password with valid request", %{conn: conn} do
       email = "e@mail.com"
