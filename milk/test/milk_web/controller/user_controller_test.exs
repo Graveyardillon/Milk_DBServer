@@ -147,6 +147,18 @@ defmodule MilkWeb.UserControllerTest do
     end
   end
 
+  describe "delete user" do
+    test "works", %{conn: conn} do
+      conn = post(conn, Routes.user_path(conn, :create), user: @create_attrs)
+      response = json_response(conn, 200)
+      token = response["token"]
+      user = response["data"]
+
+      conn = delete(conn, Routes.user_path(conn, :delete, user["id"]), %{id: user["id"], password: @create_attrs["password"], email: user["email"], token: token})
+      assert json_response(conn, 200)["result"]
+    end
+  end
+
   describe "change password" do
     test "changes password with valid request", %{conn: conn} do
       email = "e@mail.com"
