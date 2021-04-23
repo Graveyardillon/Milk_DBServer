@@ -309,7 +309,7 @@ defmodule Milk.Tournaments do
         thumbnail_path: thumbnail_path,
         platform_id: platform_id
       }
-      |> Tournament.changeset(attrs)
+      |> Tournament.create_changeset(attrs)
     )
     |> Multi.insert(:group_topic, fn %{tournament: tournament} -> create_topic(tournament, "Group", 0) end)
     |> Multi.insert(:notification_topic, fn %{tournament: tournament} -> create_topic(tournament, "Notification", 1) end)
@@ -323,6 +323,16 @@ defmodule Milk.Tournaments do
       _ ->
         {:error, nil}
     end
+  end
+
+  @doc """
+  Verify password.
+  """
+  def verify?(tournament_id, password) do
+    tournament = get_tournament!(tournament_id)
+    IO.inspect(password, label: :password)
+    IO.inspect(tournament.password, label: :hash)
+    Argon2.verify_pass(password, tournament.password)
   end
 
   @doc """
