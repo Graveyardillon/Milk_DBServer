@@ -113,16 +113,35 @@ defmodule MilkWeb.UserControllerTest do
   end
 
   describe "login user" do
+    test "works", %{conn: conn} do
+      {:ok, user} = Accounts.create_user(%{"name" => "name", "email" => "e@mail.com", "password" => "Password123", "logout_fl" => true})
+      conn = post(conn, Routes.user_path(conn, :login), user: %{"email_or_username" => "e@mail.com", "password" => "Password123"})
+      response = json_response(conn, 200)
+
+      assert response["result"]
+      response
+      |> Map.get("token")
+      |> is_binary()
+      |> (fn bool ->
+        assert bool
+      end).()
+      response
+      |> Map.get("data")
+      |> (fn u ->
+        assert u["email"] == user.auth.email
+      end).()
+    end
+
     test "renders error when invalid email", %{conn: conn} do
       {:ok, user} = Accounts.create_user(%{"name" => "name", "email" => "e@mail.com", "password" => "Password123", "logout_fl" => true})
       conn = post(conn, Routes.user_path(conn, :login), user: %{"email_or_username" => "ew@mail.com", "password" => "Password123"})
-      assert assert json_response(conn, 200)["error_code"] == 104
+      assert json_response(conn, 200)["error_code"] == 104
     end
 
     test "renders error when invalid password", %{conn: conn} do
       {:ok, user} = Accounts.create_user(%{"name" => "name", "email" => "e@mail.com", "password" => "Password123", "logout_fl" => true})
       conn = post(conn, Routes.user_path(conn, :login), user: %{"email_or_username" => "e@mail.com", "password" => "Password1234z"})
-      assert assert json_response(conn, 200)["error_code"] == 104
+      assert json_response(conn, 200)["error_code"] == 104
     end
   end
 
