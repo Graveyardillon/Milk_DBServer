@@ -140,6 +140,10 @@ defmodule MilkWeb.UserControllerTest do
       |> (fn updated_user ->
         assert updated_user["name"] == attrs["name"]
       end).()
+
+      attrs = %{"name" => "shold not work"}
+      conn = post(conn, Routes.user_path(conn, :update), %{id: user["id"], user: attrs})
+      assert json_response(conn, 200)["message"] == "Missing token"
     end
   end
 
