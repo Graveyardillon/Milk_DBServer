@@ -357,6 +357,7 @@ defmodule Milk.Tournaments do
 
     if !attrs["game_id"] or Repo.exists?(from g in Game, where: g.id == ^attrs["game_id"]) do
       tournament
+      |> IO.inspect()
       |> Tournament.changeset(attrs)
       |> Repo.update()
       |> case do
@@ -1149,7 +1150,7 @@ defmodule Milk.Tournaments do
     |> where([a], a.tournament_id == ^tournament_id)
     |> Repo.delete_all()
 
-    if Repo.exists?(from t in Tournament, where: t.id == ^tournament_id) do
+    if Repo.exists?(from t in Tournament, where: t.id == ^tournament_id) and !is_nil(attrs["user_id"]) do
       not_found_users =
         attrs["user_id"]
         |> Enum.map(fn id ->
