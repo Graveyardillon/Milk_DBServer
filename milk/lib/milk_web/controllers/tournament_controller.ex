@@ -894,6 +894,6 @@ defmodule MilkWeb.TournamentController do
       |> Tools.to_integer_as_needed()
       |> Tournaments.verify?(password)
 
-    json(conn, result: result)
+    json(conn, %{result: result})
   end
 end
