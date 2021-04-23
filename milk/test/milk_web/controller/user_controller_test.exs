@@ -31,6 +31,17 @@ defmodule MilkWeb.UserControllerTest do
     {:ok, conn: put_req_header(conn, "accept", "application/json")}
   end
 
+  describe "check username duplication" do
+    test "works", %{conn: conn} do
+      _user = fixture(:user)
+
+      conn = post(conn, Routes.user_path(conn, :check_username_duplication), name: "some name")
+      refute json_response(conn, 200)["is_unique"]
+      conn = post(conn, Routes.user_path(conn, :check_username_duplication), name: "WHATaUNIQUEname")
+      assert json_response(conn, 200)["is_unique"]
+    end
+  end
+
   describe "create user" do
     test "renders user when data is valid", %{conn: conn} do
       conn = post(conn, Routes.user_path(conn, :create), user: @create_attrs)
@@ -102,7 +113,7 @@ defmodule MilkWeb.UserControllerTest do
 
       {:ok, user} = Accounts.create_user(%{"name" => "name", "email" => email, "password" => password, "logout_fl" => true})
       # トークンを取得するためにconf_num_controllerの中の処理を直接行う
-      token = 
+      token =
         :crypto.strong_rand_bytes(10)
         |> Base.encode32()
         |> binary_part(0, 10)
@@ -121,7 +132,7 @@ defmodule MilkWeb.UserControllerTest do
 
       {:ok, user} = Accounts.create_user(%{"name" => "name", "email" => email, "password" => password, "logout_fl" => true})
       # トークンを取得するためにconf_num_controllerの中の処理を直接行う
-      token = 
+      token =
         :crypto.strong_rand_bytes(10)
         |> Base.encode32()
         |> binary_part(0, 10)
