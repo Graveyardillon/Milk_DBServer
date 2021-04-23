@@ -330,8 +330,6 @@ defmodule Milk.Tournaments do
   """
   def verify?(tournament_id, password) do
     tournament = get_tournament!(tournament_id)
-    IO.inspect(password, label: :password)
-    IO.inspect(tournament.password, label: :hash)
     Argon2.verify_pass(password, tournament.password)
   end
 
@@ -357,7 +355,6 @@ defmodule Milk.Tournaments do
 
     if !attrs["game_id"] or Repo.exists?(from g in Game, where: g.id == ^attrs["game_id"]) do
       tournament
-      |> IO.inspect()
       |> Tournament.changeset(attrs)
       |> Repo.update()
       |> case do
