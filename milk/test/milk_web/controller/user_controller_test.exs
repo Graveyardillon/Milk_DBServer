@@ -91,6 +91,27 @@ defmodule MilkWeb.UserControllerTest do
     end
   end
 
+  describe "users in touch" do
+    test "works", %{conn: conn} do
+      {:ok, user1} = Accounts.create_user(%{"name" => "name1", "email" => "e1@mail.com", "password" => "Password123", "logout_fl" => true})
+      {:ok, user2} = Accounts.create_user(%{"name" => "name2", "email" => "e2@mail.com", "password" => "Password123", "logout_fl" => true})
+
+      conn = post(conn, Routes.chats_path(conn, :create_dialogue), chat: %{user_id: user1.id, partner_id: user2.id, word: "Hello"})
+      conn = get(conn, Routes.user_path(conn, :users_in_touch), user_id: user1.id)
+
+      assert json_response(conn, 200)["result"]
+      json_response(conn, 200)
+      |> Map.get("data")
+      |> Enum.map(fn user ->
+        assert user["id"] == user2.id
+      end)
+      |> length()
+      |> (fn len ->
+        assert len == 1
+      end).()
+    end
+  end
+
   describe "login user" do
     test "renders error when invalid email", %{conn: conn} do
       {:ok, user} = Accounts.create_user(%{"name" => "name", "email" => "e@mail.com", "password" => "Password123", "logout_fl" => true})
