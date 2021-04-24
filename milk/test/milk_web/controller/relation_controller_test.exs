@@ -118,4 +118,25 @@ defmodule MilkWeb.RelationControllerTest do
       end).()
     end
   end
+
+  describe "followers id list" do
+    setup [:create_relation]
+
+    test "works", %{conn: conn, user1: user1, user2: user2} do
+      conn = get(conn, Routes.relation_path(conn, :followers_id_list), user_id: user2.id)
+      json_response(conn, 200)
+      |> (fn response ->
+        assert response["result"]
+        response
+      end).()
+      |> Map.get("following")
+      |> Enum.map(fn id ->
+        assert id == user1.id
+      end)
+      |> length()
+      |> (fn len ->
+        assert len == 1
+      end).()
+    end
+  end
 end
