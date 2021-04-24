@@ -51,7 +51,26 @@ defmodule MilkWeb.NotifControllerTest do
 
   describe "create" do
     test "works", %{conn: conn} do
+      user = fixture_user()
+      attrs = %{
+        "content" => "chore",
+        "process_code" => 0,
+        "data" => nil,
+        "user_id" => user.id
+      }
 
+      conn = post(conn, Routes.notif_path(conn, :create), notif: attrs)
+      response = json_response(conn, 200)
+
+      assert response["result"]
+      response
+      |> Map.get("data")
+      |> (fn notification ->
+        assert notification["content"] == attrs["content"]
+        assert notification["process_code"] == attrs["process_code"]
+        assert notification["data"] == attrs["data"]
+        assert notification["user_id"] == attrs["user_id"]
+      end).()
     end
   end
 end
