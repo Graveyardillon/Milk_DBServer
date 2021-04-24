@@ -330,8 +330,6 @@ defmodule Milk.Tournaments do
   """
   def verify?(tournament_id, password) do
     tournament = get_tournament!(tournament_id)
-    IO.inspect(password, label: :password)
-    IO.inspect(tournament.password, label: :hash)
     Argon2.verify_pass(password, tournament.password)
   end
 
@@ -1149,7 +1147,7 @@ defmodule Milk.Tournaments do
     |> where([a], a.tournament_id == ^tournament_id)
     |> Repo.delete_all()
 
-    if Repo.exists?(from t in Tournament, where: t.id == ^tournament_id) do
+    if Repo.exists?(from t in Tournament, where: t.id == ^tournament_id) and !is_nil(attrs["user_id"]) do
       not_found_users =
         attrs["user_id"]
         |> Enum.map(fn id ->

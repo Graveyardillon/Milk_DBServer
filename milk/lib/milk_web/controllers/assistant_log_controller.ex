@@ -13,10 +13,16 @@ defmodule MilkWeb.AssistantLogController do
   end
 
   def create(conn, %{"data" => assistant_log_params}) do
-    with [ok: %AssistantLog{} = assistant_log] <- Log.create_assistant_log(assistant_log_params) do
-      render(conn, "show.json", assistant_log: assistant_log)
+    assistant_log_params
+    |> is_nil()
+    |> unless do
+      with [ok: %AssistantLog{} = assistant_log] <- Log.create_assistant_log(assistant_log_params) do
+        render(conn, "show.json", assistant_log: assistant_log)
+      else
+        _ -> json(conn, %{result: false})
+      end
     else
-      _ -> json(conn, %{result: false})
+      json(conn, %{result: false})
     end
   end
 

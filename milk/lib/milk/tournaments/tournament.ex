@@ -69,5 +69,6 @@ defmodule Milk.Tournaments.Tournament do
     |> foreign_key_constraint(:platform_id)
     |> foreign_key_constraint(:game_id)
     |> foreign_key_constraint(:master_id)
+    |> put_password_hash()
   end
 end

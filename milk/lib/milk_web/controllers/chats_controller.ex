@@ -91,7 +91,7 @@ defmodule MilkWeb.ChatsController do
       :test -> loadimg(name)
       _ -> loadimg_prod(name)
     end
-    
+
     json(conn, map)
   end
 
