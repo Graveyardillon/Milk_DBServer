@@ -26,6 +26,12 @@ defmodule MilkWeb.RelationControllerTest do
     %{user1: user1, user2: user2}
   end
 
+  defp create_relation(_) do
+    %{user1: user1, user2: user2} = create_users(nil)
+    Relations.create_relation(%{"follower_id" => user1.id, "followee_id" => user2.id})
+    %{user1: user1, user2: user2}
+  end
+
   setup %{conn: conn} do
     {:ok, conn: put_req_header(conn, "accept", "application/json")}
   end
@@ -35,6 +41,15 @@ defmodule MilkWeb.RelationControllerTest do
 
     test "works", %{conn: conn, user1: user1, user2: user2} do
       conn = post(conn, Routes.relation_path(conn, :create), relation: %{follower_id: user2.id, followee_id: user1.id})
+      assert json_response(conn, 200)["result"]
+    end
+  end
+
+  describe "delete" do
+    setup [:create_relation]
+
+    test "works", %{conn: conn, user1: user1, user2: user2} do
+      conn = post(conn, Routes.relation_path(conn, :delete), relation: %{follower_id: user1.id, followee_id: user2.id})
       assert json_response(conn, 200)["result"]
     end
   end
