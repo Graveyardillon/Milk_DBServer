@@ -73,4 +73,22 @@ defmodule MilkWeb.NotifControllerTest do
       end).()
     end
   end
+
+  describe "delete" do
+    test "works", %{conn: conn} do
+      user = fixture_user()
+      attrs = %{
+        "content" => "chore",
+        "process_code" => 0,
+        "data" => nil,
+        "user_id" => user.id
+      }
+
+      conn = post(conn, Routes.notif_path(conn, :create), notif: attrs)
+      notification = json_response(conn, 200)["data"]
+
+      conn = delete(conn, Routes.notif_path(conn, :delete), id: notification["id"])
+      assert json_response(conn, 200)["result"]
+    end
+  end
 end
