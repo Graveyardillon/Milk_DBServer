@@ -1,13 +1,13 @@
 steps:
-- name: "gcr.io/cloud-builders/docker"
-  args: [
-    "build",
-         "-t", "gcr.io/$PROJECT_ID/milk:$_TAG",
-         "-f", "dockerfiles/Dockerfile",
-         "--build-arg", "project_id=$PROJECT_ID", 
-         "."
-  ]
-  timeout: 2000s
-- name: "gcr.io/cloud-builders/gcloud"
+  - name: "gcr.io/cloud-builders/gcloud"
   args: ["app", "deploy", "app-staging.yaml"]
+# - name: "gcr.io/cloud-builders/docker"
+#   args: [
+#     "build",
+#          "-t", "gcr.io/$PROJECT_ID/milk:$_TAG",
+#          "-f", "dockerfiles/Dockerfile",
+#          "--build-arg", "project_id=$PROJECT_ID", 
+#          "."
+#   ]
+#   timeout: 2000s
   #images: ["gcr.io/$PROJECT_ID/milk-test:$_TAG"]
