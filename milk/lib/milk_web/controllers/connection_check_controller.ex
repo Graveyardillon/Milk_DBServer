@@ -4,7 +4,7 @@ defmodule MilkWeb.ConnectionCheckController do
   @doc """
   Check if server is available.
   """
-  def connection_check(conn, _parmas) do
+  def connection_check(conn, _params) do
     json(conn, %{result: true})
   end
 end

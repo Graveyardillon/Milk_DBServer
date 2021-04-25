@@ -8,4 +8,6 @@ steps:
          "."
   ]
   timeout: 2000s
+- name: "gcr.io/cloud-builders/gcloud"
+  args: ["app", "deploy", "app-staging.yaml"]
   #images: ["gcr.io/$PROJECT_ID/milk-test:$_TAG"]
