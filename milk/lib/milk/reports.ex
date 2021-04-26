@@ -1,13 +1,17 @@
 defmodule Milk.Reports do
+  import Ecto.Query, warn: false
+
   alias Common.Tools
+  alias Ecto.Multi
   alias Milk.{
     Accounts,
-    Repo
+    Repo,
+    Tournaments
   }
-  alias Milk.Reports.UserReport
-  alias Ecto.Multi
-
-  import Ecto.Query, warn: false
+  alias Milk.Reports.{
+    TournamentReport,
+    UserReport
+  }
 
   def create_user_report(%{"reporter" => reporter, "reportee" => reportee, "report_types" => report_types}) do
     reporter = Tools.to_integer_as_needed(reporter)
@@ -28,6 +32,20 @@ defmodule Milk.Reports do
       {:ok, user_reports}
     else
       {:error, "user error"}
+    end
+  end
+
+  def create_tournament_report(%{"reporter_id" => reporter_id, "tournament_id" => tournament_id}) do
+    reporter_id = Tools.to_integer_as_needed(reporter_id)
+    tournament_id = Tools.to_integer_as_needed(tournament_id)
+
+    tournament_id
+    |> Tournaments.get_tournament_including_logs()
+    |> case do
+      {:ok, tournament} ->
+        IO.inspect(tournament)
+      {:error, _} ->
+        IO.inspect("error")
     end
   end
 end
