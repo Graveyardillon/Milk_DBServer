@@ -1,11 +1,14 @@
 defmodule MilkWeb.ProfileController do
   use MilkWeb, :controller
 
-  alias Milk.Accounts
-  alias Milk.Profiles
+  alias Common.FileUtils
+  alias Milk.{
+    Accounts,
+    Profiles,
+    Tournaments
+  }
   alias Milk.Media.Image
   alias Milk.CloudStorage.Objects
-  alias Milk.Tournaments
 
   action_fallback MilkWeb.FallbackController
 
@@ -45,7 +48,7 @@ defmodule MilkWeb.ProfileController do
     if user do
       uuid = SecureRandom.uuid()
 
-      File.cp(image.path, "./static/image/profile_icon/#{uuid}.png")
+      FileUtils.copy(image.path, "./static/image/profile_icon/#{uuid}.png")
       local_path = case Application.get_env(:milk, :environment) do
         :dev -> update_account(user, uuid)
         :test -> update_account(user, uuid)
