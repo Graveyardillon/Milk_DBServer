@@ -41,6 +41,7 @@ defmodule MilkWeb.Router do
     post "/user/change_password", UserController, :change_password
 
     post "/user_report", ReportController, :create_user_report
+    post "/tournament_report", ReportController, :create_tournament_report
 
     post "/profile", ProfileController, :get_profile
     post "/profile/update", ProfileController, :update

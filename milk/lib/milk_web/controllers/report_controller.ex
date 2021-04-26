@@ -18,4 +18,13 @@ defmodule MilkWeb.ReportController do
         json(conn, %{result: false, error: error})
     end
   end
+
+  def create_tournament_report(conn, %{"report" => report_params}) do
+    case Reports.create_tournament_report(report_params) do
+      {:ok, report} ->
+        json(conn, %{result: true})
+      {:error, error} ->
+        json(conn, %{result: false, error: error})
+    end
+  end
 end
