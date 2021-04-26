@@ -1,29 +1,33 @@
 defmodule Milk.Reports do
-  alias Milk.Accounts.UserReport
-  alias Milk.Accounts.User
-  alias Milk.Repo
-  alias Milk.Accounts
   alias Common.Tools
+  alias Milk.{
+    Accounts,
+    Repo
+  }
+  alias Milk.Accounts.UserReport
   alias Ecto.Multi
-
 
   import Ecto.Query, warn: false
 
-  def create(attrs \\ %{}) do
-    reporter = Tools.to_integer_as_needed(attrs["reporter"])
-    reportee = Tools.to_integer_as_needed(attrs["reportee"])
+  def create(%{"reporter" => reporter, "reportee" => reportee, "report_types" => report_types}) do
+    reporter = Tools.to_integer_as_needed(reporter)
+    reportee = Tools.to_integer_as_needed(reportee)
 
     if Accounts.get_user(reporter) && Accounts.get_user(reportee) && reporter != reportee do
-      Enum.map(attrs["report_type"], fn type ->
-        %UserReport{reporter_id: reporter, reportee_id: reportee}
-          |> UserReport.changeset(%{report_type: type})
-          |> Repo.insert()
-      end)
-      {:ok}
+      user_reports =
+        Enum.map(report_types, fn type ->
+          with {:ok, report} <-
+            %UserReport{reporter_id: reporter, reportee_id: reportee}
+            |> UserReport.changeset(%{report_type: type})
+            |> Repo.insert() do
+            report
+          else
+            _ -> nil
+          end
+        end)
+      {:ok, user_reports}
     else
       {:error, "user error"}
     end
   end
-
-
 end

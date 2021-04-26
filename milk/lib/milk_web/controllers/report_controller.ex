@@ -5,7 +5,7 @@ defmodule MilkWeb.ReportController do
 
   def create(conn, %{"report" => report_params}) do
     case Reports.create(report_params) do
-      {:ok} ->
+      {:ok, _} ->
         json(conn, %{result: true})
       {:error, error} ->
         json(conn, %{result: false, error: error})
