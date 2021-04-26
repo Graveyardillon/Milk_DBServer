@@ -12,13 +12,16 @@ defmodule Milk.ReportsTest do
     "deadline" => "2010-04-17T14:00:00Z",
     "description" => "some description",
     "event_date" => "2010-04-17T14:00:00Z",
-    "name" => "some name",
+    "name" => "some_name",
     "type" => 0,
     "url" => "somesomeurl",
+    "thumbnail_path" => "some path",
     "password" => "passwd",
     "master_id" => 1,
     "platform_id" => 1,
-    "is_started" => true
+    "is_started" => true,
+    "game_name" => "some game",
+    "start_recruiting" => "2010-04-17T14:00:00Z"
   }
 
   defp fixture_user(n \\ 0) do
@@ -77,10 +80,22 @@ defmodule Milk.ReportsTest do
 
       report_attrs = %{
         "reporter_id" => user.id,
+        "report_type" => 1,
         "tournament_id" => tournament.id
       }
-      Reports.create_tournament_report(report_attrs)
-      |> IO.inspect()
+      assert {:ok, report} = Reports.create_tournament_report(report_attrs)
+      assert report.reporter_id == report_attrs["reporter_id"]
+      assert report.report_type == report_attrs["report_type"]
+      assert report.capacity == tournament.capacity
+      # TODO: 日付比較も追加したい
+      #assert report.deadline == tournament.deadline
+      assert report.description == tournament.description
+      assert report.name == tournament.name
+      assert report.type == tournament.type
+      assert report.url == tournament.url
+      assert report.thumbnail_path == tournament.thumbnail_path
+      assert report.count == tournament.count
+      assert report.game_name == tournament.game_name
     end
   end
 end

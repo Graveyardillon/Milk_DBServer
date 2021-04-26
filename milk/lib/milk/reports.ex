@@ -35,17 +35,45 @@ defmodule Milk.Reports do
     end
   end
 
-  def create_tournament_report(%{"reporter_id" => reporter_id, "tournament_id" => tournament_id}) do
+  @doc """
+  Create tournament report
+  FIXME: report_type -> report_types
+  """
+  def create_tournament_report(%{"reporter_id" => reporter_id, "report_type" => report_type, "tournament_id" => tournament_id}) do
     reporter_id = Tools.to_integer_as_needed(reporter_id)
     tournament_id = Tools.to_integer_as_needed(tournament_id)
 
     tournament_id
-    |> Tournaments.get_tournament_including_logs()
+    |> Tournaments.get_tournament()
     |> case do
-      {:ok, tournament} ->
-        IO.inspect(tournament)
-      {:error, _} ->
-        IO.inspect("error")
+      nil ->
+        {:error, nil}
+      tournament ->
+        insert_report_data(reporter_id, report_type, tournament)
     end
+  end
+
+  defp insert_report_data(reporter_id, report_type, tournament) do
+    attrs = %{}
+      |> Map.put("report_type", report_type)
+      |> Map.put("capacity", tournament.capacity)
+      |> Map.put("deadline", tournament.deadline)
+      |> Map.put("description", tournament.description)
+      |> Map.put("event_date", tournament.event_date)
+      |> Map.put("name", tournament.name)
+      |> Map.put("type", tournament.type)
+      |> Map.put("url", tournament.url)
+      |> Map.put("thumbnail_path", tournament.thumbnail_path)
+      |> Map.put("count", tournament.count)
+      |> Map.put("game_name", tournament.game_name)
+      |> Map.put("start_recruiting", tournament.start_recruiting)
+
+    %TournamentReport{
+      reporter_id: reporter_id,
+      master_id: tournament.master_id,
+      platform_id: tournament.platform_id
+    }
+    |> TournamentReport.changeset(attrs)
+    |> Repo.insert()
   end
 end
