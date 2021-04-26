@@ -33,3 +33,12 @@ MIX_ENV=test mix coveralls.detail --filter general.ex
 
 MIX_ENV=test mix coveralls.html
 ```
+
+### debug seed data
+```
+mix ecto.reset && \
+mix run ./priv/repo/seeds/tournament/tournament_seeds.exs && \
+mix run ./priv/repo/seeds/tournament/fill_size_4_tournament.exs && \
+mix run ./priv/repo/seeds/tournament/fill_size_32_tournament.exs && \
+mix run ./priv/repo/seeds/notification/add_all_notification_on_user_1.exs
+```
