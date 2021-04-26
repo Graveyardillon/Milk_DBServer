@@ -1,4 +1,4 @@
-defmodule Milk.Accounts.UserReport do
+defmodule Milk.Reports.UserReport do
   use Milk.Schema
   import Ecto.Changeset
   alias Milk.Accounts.User

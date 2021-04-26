@@ -3,8 +3,8 @@ defmodule MilkWeb.ReportController do
 
   alias Milk.Reports
 
-  def create(conn, %{"report" => report_params}) do
-    case Reports.create(report_params) do
+  def create_user_report(conn, %{"report" => report_params}) do
+    case Reports.create_user_report(report_params) do
       {:ok, reports} ->
         Enum.all?(reports, fn report ->
           !is_nil(reports)

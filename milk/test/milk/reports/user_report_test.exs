@@ -1,6 +1,7 @@
-defmodule Milk.Accounts.UserReportTest do
+defmodule Milk.Reports.UserReportTest do
   use Milk.DataCase
-  alias Milk.Accounts.UserReport
+
+  alias Milk.Reports.UserReport
 
   describe "changeset" do
     test "changeset/2 returns changeset" do

@@ -40,7 +40,7 @@ defmodule MilkWeb.Router do
     post "/user/logout", UserController, :logout
     post "/user/change_password", UserController, :change_password
 
-    post "/user_report", ReportController, :create
+    post "/user_report", ReportController, :create_user_report
 
     post "/profile", ProfileController, :get_profile
     post "/profile/update", ProfileController, :update

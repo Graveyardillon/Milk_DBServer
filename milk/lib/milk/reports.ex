@@ -4,12 +4,12 @@ defmodule Milk.Reports do
     Accounts,
     Repo
   }
-  alias Milk.Accounts.UserReport
+  alias Milk.Reports.UserReport
   alias Ecto.Multi
 
   import Ecto.Query, warn: false
 
-  def create(%{"reporter" => reporter, "reportee" => reportee, "report_types" => report_types}) do
+  def create_user_report(%{"reporter" => reporter, "reportee" => reportee, "report_types" => report_types}) do
     reporter = Tools.to_integer_as_needed(reporter)
     reportee = Tools.to_integer_as_needed(reportee)
 

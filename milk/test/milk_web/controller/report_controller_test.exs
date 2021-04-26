@@ -18,7 +18,7 @@ defmodule MilkWeb.ReportControllerTest do
       reporter = fixture_user(1)
       reportee = fixture_user(2)
 
-      conn = post(conn, Routes.report_path(conn, :create), report: %{reporter: reporter.id, reportee: reportee.id, report_types: [0]})
+      conn = post(conn, Routes.report_path(conn, :create_user_report), report: %{reporter: reporter.id, reportee: reportee.id, report_types: [0]})
       assert json_response(conn, 200)["result"]
     end
   end
