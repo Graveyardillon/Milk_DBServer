@@ -1,0 +1,41 @@
+version: '3'
+
+# cloudbuild用のdocker-compose
+services:
+  db:
+    image: 'postgres:13-alpine'
+    environment: 
+      PGDATA: /var/lib/postgresql/data/pgdata
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_HOST_AUTH_METHOD: trust
+    restart: always
+    ports:
+      - "5432:5432"
+    volumes:
+      - 'pgdata:/var/lib/postgresql/data'
+  app:
+    build: 
+      context: .
+      dockerfile: ./cloudbuild/Dockerfile
+    ports: 
+      - "4000:4000"
+    depends_on: 
+      - db
+      - redis
+    environment: 
+      MIX_ENV: test
+      MILK_TEST_USERNAME: postgres
+      MILK_TEST_PASSWORD: postgres
+      MILK_TEST_DATABASE: milk_test
+      MILK_TEST_HOSTNAME: localhost
+      MILK_TEST_REDISHOST: localhost
+      MILK_TEST_REDISPORT: 6380
+  redis:
+    image: 'redis:latest'
+    ports:
+      - "6380:6379"
+    volumes:
+      - "./data/redis:/data"
+volumes:
+  pgdata:
