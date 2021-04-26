@@ -1,8 +1,10 @@
 defmodule MilkWeb.AssistantControllerTest do
   use MilkWeb.ConnCase
 
-  alias Milk.Tournaments
-  alias Milk.Accounts
+  alias Milk.{
+    Accounts,
+    Tournaments
+  }
 
   @invalid_attrs %{}
   @tournament_create_attrs %{

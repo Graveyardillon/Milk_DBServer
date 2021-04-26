@@ -5,8 +5,15 @@ defmodule MilkWeb.ReportController do
 
   def create(conn, %{"report" => report_params}) do
     case Reports.create(report_params) do
-      {:ok, _} ->
-        json(conn, %{result: true})
+      {:ok, reports} ->
+        Enum.all?(reports, fn report ->
+          !is_nil(reports)
+        end)
+        |> if do
+          json(conn, %{result: true})
+        else
+          json(conn, %{result: false, error: "Could not create report"})
+        end
       {:error, error} ->
         json(conn, %{result: false, error: error})
     end
