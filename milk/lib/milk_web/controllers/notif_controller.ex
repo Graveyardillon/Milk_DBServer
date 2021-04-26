@@ -30,11 +30,13 @@ defmodule MilkWeb.NotifController do
     Accounts.list_user()
     |> Enum.each(fn user ->
       %{}
-      |> Map.put(:user_id, user.id)
-      |> Map.put(:content, text)
-      |> Map.put(:process_code, 0)
-      |> Map.put(:data, "")
+      |> Map.put("user_id", user.id)
+      |> Map.put("content", text)
+      |> Map.put("process_code", 0)
+      |> Map.put("data", "")
       |> Notif.create_notification()
     end)
+
+    json(conn, %{result: true})
   end
 end
