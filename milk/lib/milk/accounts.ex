@@ -36,6 +36,14 @@ defmodule Milk.Accounts do
   @type t :: %User{}
 
   @doc """
+  Lists all users.
+  """
+  def list_user() do
+    User
+    |> Repo.all()
+  end
+
+  @doc """
   Gets a single user.
 
   Raises `Ecto.NoResultsError` if the User does not exist.
