@@ -1,27 +1,48 @@
 defmodule Milk.NotifTest do
   use Milk.DataCase
 
-  alias Milk.Notif
-  alias Milk.Accounts
+  alias Milk.{
+    Notif,
+    Accounts
+  }
+  alias Milk.Notif.Notification
 
-  describe "notification" do
-    alias Milk.Notif.Notification
+  @valid_attrs %{"content" => "some content"}
+  @update_attrs %{ "content" => "some updated content"}
+  @invalid_attrs %{"user_id" => -1, "content" => nil}
 
-    @valid_attrs %{"content" => "some content"}
-    @update_attrs %{ "content" => "some updated content"}
-    @invalid_attrs %{"user_id" => -1, "content" => nil}
+  defp notification_fixture(attrs \\ %{}) do
+    {:ok, user} = Accounts.create_user(%{"name" => "name", "email" => "e@mail.com", "password" => "Password123"})
+    {:ok, notification} =
+      attrs
+      |> Enum.into(@valid_attrs)
+      |> Map.put("user_id", user.id)
+      |> Notif.create_notification()
 
-    def notification_fixture(attrs \\ %{}) do
+    notification
+  end
+
+  describe "list notification" do
+    test "works" do
       {:ok, user} = Accounts.create_user(%{"name" => "name", "email" => "e@mail.com", "password" => "Password123"})
-      {:ok, notification} =
-        attrs
-        |> Enum.into(@valid_attrs)
+      Enum.each(1..4, fn _n ->
+        %{"content" => "some content"}
         |> Map.put("user_id", user.id)
         |> Notif.create_notification()
+      end)
 
-      notification
+      Notif.list_notification(user.id)
+      |> Enum.map(fn notif ->
+        assert notif.user_id == user.id
+      end)
+      |> length()
+      |> (fn len ->
+        assert len == 4
+      end).()
     end
+  end
 
+  describe "notification" do
     test "create_notification/1 with valid data creates a notification" do
       {:ok, user} = Accounts.create_user(%{"name" => "name", "email" => "e@mail.com", "password" => "Password123"})
       assert {:ok, %Notification{} = notification} =

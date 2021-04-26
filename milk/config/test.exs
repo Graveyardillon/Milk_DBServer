@@ -2,13 +2,15 @@ use Mix.Config
 
 # Configure your database
 config :milk, Milk.Repo,
-  username: "postgres",
-  password: "postgres",
-  database: "milk_test",
-  hostname: "localhost",
+  username: System.get_env("MILK_TEST_USERNAME") || "postgres",
+  password: System.get_env("MILK_TEST_PASSWORD") || "postgres",
+  database: System.get_env("MILK_TEST_DATABASE") || "milk_test",
+  hostname: System.get_env("MILK_TEST_HOSTNAME") || "localhost",
   show_sensitive_data_on_connection_error: true,
   pool_size: 10,
-  pool: Ecto.Adapters.SQL.Sandbox
+  pool: Ecto.Adapters.SQL.Sandbox,
+  ownership_timeout: :infinity,
+  timeout: :infinity
 
 # We don't run a server during test. If one is required,
 # you can enable the server option below.
@@ -22,7 +24,7 @@ config :milk, Milk.Mailer,
 # Print only warnings and errors during test
 config :logger, level: :warn
 
-config :milk, :redix_host, "localhost"
-config :milk, :redix_port, 6379
+config :milk, :redix_host, System.get_env("MILK_TEST_REDISHOST") || "localhost"
+config :milk, :redix_port, System.get_env("MILK_TEST_REDISPORT") || 6379
 config :milk, Milk.Repo, migration_timestamps: [type: :timestamptz, inserted_at: :create_time, updated_at: :update_time]
 config :milk, :environment, :test

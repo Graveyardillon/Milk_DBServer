@@ -1,15 +1,17 @@
 defmodule Milk.Tournaments.Tournament do
   use Milk.Schema
+
   import Ecto.Changeset
-  alias Milk.Games.Game
+
   alias Milk.Accounts.User
+  alias Milk.Games.Game
   alias Milk.Lives.Live
+  alias Milk.Platforms.Platform
   alias Milk.Tournaments.{
     Entrant,
     Assistant,
     TournamentChatTopic
   }
-  alias Milk.Platforms.Platform
 
   schema "tournament" do
     field :capacity, :integer
@@ -39,9 +41,34 @@ defmodule Milk.Tournaments.Tournament do
   end
 
   @doc false
+  def create_changeset(tournament, attrs) do
+    tournament
+    |> cast(attrs, [:name, :event_date, :capacity, :description, :deadline, :game_name, :thumbnail_path, :password, :type, :url, :platform_id, :master_id, :count, :is_started, :start_recruiting, :start_notification_pid])
+    |> validate_required([:name, :event_date, :capacity, :deadline])
+    |> foreign_key_constraint(:platform_id)
+    |> foreign_key_constraint(:game_id)
+    |> foreign_key_constraint(:master_id)
+    |> put_password_hash()
+  end
+
+  defp put_password_hash(%Ecto.Changeset{valid?: true, changes: %{password: password}} = changeset) do
+    change(changeset, password: create_pass(password))
+  end
+
+  defp put_password_hash(changeset), do: changeset
+
+  defp create_pass(password) do
+    Argon2.hash_pwd_salt(password)
+  end
+
+  @doc false
   def changeset(tournament, attrs) do
     tournament
-    |> cast(attrs, [:name, :event_date, :capacity, :description, :deadline, :game_name, :thumbnail_path, :password, :type, :url, :count, :is_started, :start_recruiting, :start_notification_pid])
+    |> cast(attrs, [:name, :event_date, :capacity, :description, :deadline, :game_name, :thumbnail_path, :password, :type, :url, :platform_id, :master_id, :count, :is_started, :start_recruiting, :start_notification_pid])
     |> validate_required([:name, :event_date, :capacity, :deadline])
+    |> foreign_key_constraint(:platform_id)
+    |> foreign_key_constraint(:game_id)
+    |> foreign_key_constraint(:master_id)
+    |> put_password_hash()
   end
 end

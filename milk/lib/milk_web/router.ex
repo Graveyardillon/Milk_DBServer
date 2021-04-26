@@ -40,7 +40,8 @@ defmodule MilkWeb.Router do
     post "/user/logout", UserController, :logout
     post "/user/change_password", UserController, :change_password
 
-    post "/user_report", ReportController, :create
+    post "/user_report", ReportController, :create_user_report
+    post "/tournament_report", ReportController, :create_tournament_report
 
     post "/profile", ProfileController, :get_profile
     post "/profile/update", ProfileController, :update
@@ -78,12 +79,12 @@ defmodule MilkWeb.Router do
     resources "/entrant_log", EntrantLogController
 
     resources "/tournament", TournamentController, except: [:new, :edit, :index, :show, :delete]
+    post "/tournament/edit", TournamentController, :update
     get  "/tournament/users_for_add_assistant", TournamentController, :get_users_for_add_assistant
     get  "/tournament/get", TournamentController, :show
     get  "/tournament/get_by_master_id", TournamentController, :get_tournaments_by_master_id
     get  "/tournament/get_planned", TournamentController, :get_planned_tournaments_by_master_id
     # get  "/tournament/get_planned", TournamentController, :get_ongoing_tournaments_by_master_id
-    get  "/tournament/get_game", TournamentController, :get_game
     get  "/tournament/get_entrants", TournamentController, :get_entrants
     get  "/tournament/by_url", TournamentController, :get_tournament_by_url
     get  "/tournament/get_opponent", TournamentController, :get_opponent
@@ -104,9 +105,11 @@ defmodule MilkWeb.Router do
     get  "/tournament/duplicate_claims", TournamentController, :get_duplicate_claim_members
     get  "/tournament/is_user_win", TournamentController, :is_user_win
     get  "/tournament/relevant", TournamentController, :relevant
+    get  "/tournament/is_able_to_join", TournamentController, :is_able_to_join
     get  "/tournament/has_lost", TournamentController, :has_lost?
     get  "/tournament/state", TournamentController, :state
     get  "/tournament/pid", TournamentController, :get_pid
+    get  "/tournament/verify_password", TournamentController, :verify_password
     post "/tournament/start", TournamentController, :start
     post "/tournament/register/pid", TournamentController, :register_pid_of_start_notification
     post "/tournament/deleteloser", TournamentController, :delete_loser
@@ -123,6 +126,7 @@ defmodule MilkWeb.Router do
     post "/tournament/claim_win", TournamentController, :claim_win
     post "/tournament/claim_lose", TournamentController, :claim_lose
     post "/tournament/finish", TournamentController, :finish
+    put  "/tournament/update", TournamentController, :update
     get  "/tournament_log/index", TournamentLogController, :index
     post "/tournament_log/add", TournamentLogController, :create
 

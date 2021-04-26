@@ -1,7 +1,10 @@
 use Timex
 
-alias Milk.Repo
-alias Milk.Tournaments
+alias Milk.{
+  Platforms,
+  Repo,
+  Tournaments
+}
 alias Milk.Tournaments.Tournament
 alias Milk.Accounts.{
   Auth,
@@ -20,10 +23,16 @@ Repo.insert! %Auth{
   password: Argon2.hash_pwd_salt("LookAtMePW")
 }
 
+Platforms.create_basic_platforms()
+
 now = Timex.now()
 tomorrow =
   Timex.now()
   |> Timex.add(Timex.Duration.from_days(1))
+  |> Timex.to_datetime()
+day_after_tomorrow =
+  Timex.now()
+  |> Timex.add(Timex.Duration.from_days(2))
   |> Timex.to_datetime()
 
 File.cp("./priv/repo/seeds/image/2pimp.jpg", "./static/image/tournament_thumbnail/2pimp.jpg")
@@ -41,7 +50,7 @@ attrs = %{
   "start_recruiting" => now,
   "start_notification_pid" => nil,
   "master_id" => user.id,
-  "platform_id" => 1,
+  "platform" => 1,
   "game_id" => nil
 }
 Tournaments.create_tournament(attrs, attrs["thumbnail_path"])
@@ -61,7 +70,7 @@ attrs = %{
   "start_recruiting" => now,
   "start_notification_pid" => nil,
   "master_id" => user.id,
-  "platform_id" => 1,
+  "platform" => 1,
   "game_id" => nil
 }
 Tournaments.create_tournament(attrs, attrs["thumbnail_path"])
@@ -81,7 +90,7 @@ attrs = %{
   "start_recruiting" => now,
   "start_notification_pid" => nil,
   "master_id" => user.id,
-  "platform_id" => 1,
+  "platform" => 1,
   "game_id" => nil
 }
 Tournaments.create_tournament(attrs, attrs["thumbnail_path"])
@@ -89,19 +98,19 @@ Tournaments.create_tournament(attrs, attrs["thumbnail_path"])
 File.cp("./priv/repo/seeds/image/kazemachi.jpg", "./static/image/tournament_thumbnail/kazemachi.jpg")
 attrs = %{
   "capacity" => 7,
-  "deadline" => tomorrow,
+  "deadline" => day_after_tomorrow,
   "description" => "test tournament of size 7.",
-  "event_date" => tomorrow,
+  "event_date" => day_after_tomorrow,
   "name" => "test tournament size 7",
   "type" => 1,
   "url" => nil,
   "thumbnail_path" => "kazemachi",
-  "password" => nil,
+  "password" => "8880",
   "game_name" => "my awesome name",
   "start_recruiting" => now,
   "start_notification_pid" => nil,
   "master_id" => user.id,
-  "platform_id" => 1,
+  "platform" => 1,
   "game_id" => nil
 }
 Tournaments.create_tournament(attrs, attrs["thumbnail_path"])
@@ -121,7 +130,7 @@ attrs = %{
   "start_recruiting" => now,
   "start_notification_pid" => nil,
   "master_id" => user.id,
-  "platform_id" => 1,
+  "platform" => 1,
   "game_id" => nil
 }
 Tournaments.create_tournament(attrs, attrs["thumbnail_path"])
@@ -141,7 +150,7 @@ attrs = %{
   "start_recruiting" => now,
   "start_notification_pid" => nil,
   "master_id" => user.id,
-  "platform_id" => 1,
+  "platform" => 1,
   "game_id" => nil
 }
 Tournaments.create_tournament(attrs, attrs["thumbnail_path"])

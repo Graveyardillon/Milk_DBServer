@@ -15,12 +15,14 @@ defmodule MilkWeb.TournamentView do
   end
 
   def render("index.json", %{tournament: tournament}) do
-    %{data: render_many(tournament, TournamentView, "tournament.json")}
+    %{data: render_many(tournament, TournamentView, "tournament.json"), result: true}
   end
 
   def render("show.json", %{tournament: tournament}) do
-    %{data: render_one(tournament, TournamentView, "tournament.json",
-    msg: "Tournament was created!")}
+    %{
+      data: render_one(tournament, TournamentView, "tournament.json",
+      msg: "Tournament was created!")
+    }
   end
 
   def render("entrants.json", %{entrants: entrants}) do
@@ -49,7 +51,8 @@ defmodule MilkWeb.TournamentView do
       type: tournament.type,
       platform: tournament.platform_id,
       capacity: tournament.capacity,
-      password: tournament.password,
+      #password: tournament.password,
+      has_password: !is_nil(tournament.password),
       description: tournament.description,
       master_id: tournament.master_id,
       url: tournament.url,
@@ -73,7 +76,8 @@ defmodule MilkWeb.TournamentView do
         type: tournament.type,
         platform: tournament.platform_id,
         capacity: tournament.capacity,
-        password: tournament.password,
+        #password: tournament.password,
+        has_password: !is_nil(tournament.password),
         description: tournament.description,
         master_id: tournament.master_id,
         url: tournament.url,
@@ -97,7 +101,8 @@ defmodule MilkWeb.TournamentView do
       result: true
     }
   end
-    def render("tournament_info.json", %{tournament: tournament}) do
+
+  def render("tournament_info.json", %{tournament: tournament}) do
     %{
       data: %{
         id: tournament.id,
@@ -111,7 +116,8 @@ defmodule MilkWeb.TournamentView do
         type: tournament.type,
         platform: tournament.platform_id,
         capacity: tournament.capacity,
-        password: tournament.password,
+        #password: tournament.password,
+        has_password: !is_nil(tournament.password),
         description: tournament.description,
         master_id: tournament.master_id,
         url: tournament.url,
@@ -192,7 +198,8 @@ defmodule MilkWeb.TournamentView do
           type: tournament.type,
           platform: tournament.platform_id,
           capacity: tournament.capacity,
-          password: tournament.password,
+          #password: tournament.password,
+          has_password: !is_nil(tournament.password),
           description: tournament.description,
           master_id: tournament.master_id,
           url: tournament.url,

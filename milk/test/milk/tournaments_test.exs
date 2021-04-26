@@ -29,6 +29,7 @@ defmodule Milk.TournamentsTest do
     "name" => "some name",
     "type" => 0,
     "url" => "somesomeurl",
+    "password" => "passwd",
     "master_id" => 1,
     "platform_id" => 1,
     "is_started" => true
@@ -238,6 +239,14 @@ defmodule Milk.TournamentsTest do
 
     test "create_tournament/1 with invalid data returns error changeset" do
       assert {:error, _} = Tournaments.create_tournament(@invalid_attrs)
+    end
+  end
+
+  describe "verify?" do
+    test "works" do
+      tournament = fixture_tournament()
+      assert Tournaments.verify?(tournament.id, "passwd")
+      refute Tournaments.verify?(tournament.id, "wrong_pw")
     end
   end
 
@@ -484,7 +493,7 @@ defmodule Milk.TournamentsTest do
     test "delete_loser/2 does not work with an invalid data of 1 player" do
       list = [1]
 
-      assert catch_error(Tournaments.delete_loser(list, 1)) == %RuntimeError{message: "Bad Argument"}
+      assert Tournaments.delete_loser(list, 1) == []
     end
   end
 
