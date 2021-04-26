@@ -39,6 +39,25 @@ defmodule Milk.Reports do
   Create tournament report
   FIXME: report_type -> report_types
   """
+  def create_tournament_report(%{"reporter_id" => reporter_id, "report_type" => report_type, "tournament_id" => tournament_id}) when is_list(report_type) do
+    report_type
+    |> Enum.map(fn type ->
+      type = Tools.to_integer_as_needed(type)
+      create_tournament_report(%{"reporter_id" => reporter_id, "report_type" => type, "tournament_id" => tournament_id})
+    end)
+    |> Enum.all?(fn tuple ->
+      case tuple do
+        {:ok, _} -> true
+        _ -> false
+      end
+    end)
+    |> if do
+      {:ok, nil}
+    else
+      {:error, nil}
+    end
+  end
+
   def create_tournament_report(%{"reporter_id" => reporter_id, "report_type" => report_type, "tournament_id" => tournament_id}) do
     reporter_id = Tools.to_integer_as_needed(reporter_id)
     tournament_id = Tools.to_integer_as_needed(tournament_id)
