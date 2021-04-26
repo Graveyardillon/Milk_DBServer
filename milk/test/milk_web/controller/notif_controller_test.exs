@@ -6,10 +6,9 @@ defmodule MilkWeb.NotifControllerTest do
     Notif
   }
 
-  @create_user_attrs %{"icon_path" => "some icon_path", "language" => "some language", "name" => "some name", "notification_number" => 42, "point" => 42, "email" => "some2@email.com", "logout_fl" => true, "password" => "S1ome password"}
-
-  defp fixture_user() do
-    {:ok, user} = Accounts.create_user(@create_user_attrs)
+  defp fixture_user(n \\ 0) do
+    attrs = %{"icon_path" => "some icon_path", "language" => "some language", "name" => to_string(n)<>"some name", "notification_number" => 42, "point" => 42, "email" => to_string(n)<>"some@email.com", "logout_fl" => true, "password" => "S1ome password"}
+    {:ok, user} = Accounts.create_user(attrs)
     user
   end
 
@@ -89,6 +88,43 @@ defmodule MilkWeb.NotifControllerTest do
 
       conn = delete(conn, Routes.notif_path(conn, :delete), id: notification["id"])
       assert json_response(conn, 200)["result"]
+    end
+  end
+
+  describe "notify all" do
+    test "works", %{conn: conn} do
+      user1 = fixture_user(1)
+      user2 = fixture_user(2)
+
+      text = "test notification text"
+      conn = post(conn, Routes.notif_path(conn, :notify_all), text: text)
+      assert json_response(conn, 200)["result"]
+
+      conn = get(conn, Routes.notif_path(conn, :get_list), user_id: user1.id)
+      json_response(conn, 200)
+      |> Map.get("data")
+      |> Enum.map(fn notification ->
+        assert notification["content"] == text
+        assert notification["user_id"] == user1.id
+        assert notification["process_code"] == 0
+      end)
+      |> length()
+      |> (fn len ->
+        assert len == 1
+      end).()
+
+      conn = get(conn, Routes.notif_path(conn, :get_list), user_id: user2.id)
+      json_response(conn, 200)
+      |> Map.get("data")
+      |> Enum.map(fn notification ->
+        assert notification["content"] == text
+        assert notification["user_id"] == user2.id
+        assert notification["process_code"] == 0
+      end)
+      |> length()
+      |> (fn len ->
+        assert len == 1
+      end).()
     end
   end
 end
