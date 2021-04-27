@@ -19,7 +19,11 @@ defmodule MilkWeb.ReportController do
           !is_nil(reports)
         end)
         |> if do
-          notify_user_report(report_params)
+          Application.get_env(:milk, :environment)
+          |> Kernel.==(:test)
+          |> unless do
+            notify_user_report(report_params)
+          end
           json(conn, %{result: true})
         else
           json(conn, %{result: false, error: "Could not create report"})
@@ -52,7 +56,11 @@ defmodule MilkWeb.ReportController do
     |> Reports.create_tournament_report()
     |> case do
       {:ok, report} ->
-        notify_tournament_report(report_params)
+        Application.get_env(:milk, :environment)
+        |> Kernel.==(:test)
+        |> unless do
+          notify_tournament_report(report_params)
+        end
         json(conn, %{result: true})
       {:error, error} ->
         json(conn, %{result: false, error: error})
