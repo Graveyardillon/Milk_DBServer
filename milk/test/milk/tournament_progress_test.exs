@@ -308,6 +308,25 @@ defmodule Milk.TournamentProgressTest do
     end
   end
 
+  describe "get single tournament match logs" do
+    test "works" do
+      user1 = fixture_user(1)
+      user2 = fixture_user(2)
+      tournament = fixture_tournament()
+      str = "just str"
+
+      Map.new()
+      |> Map.put("tournament_id", tournament.id)
+      |> Map.put("winner_id", user1.id)
+      |> Map.put("loser_id", user2.id)
+      |> Map.put("match_list_str", str)
+      |> TournamentProgress.create_single_tournament_match_logs()
+
+      TournamentProgress.get_single_tournament_match_logs(tournament.id, user1.id)
+      |> IO.inspect()
+    end
+  end
+
   describe "create single tournament match log" do
     test "JUST works" do
       user1 = fixture_user(1)

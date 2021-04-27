@@ -7,6 +7,8 @@ defmodule Milk.TournamentProgress do
   5. duplicate_users
   6. absence_process
   """
+  import Ecto.Query, warn: false
+
   alias Milk.{
     Repo,
     Tournaments
@@ -524,9 +526,20 @@ defmodule Milk.TournamentProgress do
   def get_single_tournament_match_log(id), do: Repo.get(SingleTournamentMatchLog, id)
 
   @doc """
+  Get a tournament match log by tournament_id and user_id
+  """
+  def get_single_tournament_match_logs(tournament_id, user_id) do
+    SingleTournamentMatchLog
+    |> where([s], s.tournament_id == ^tournament_id)
+    |> where([s], s.winner_id == ^user_id or s.loser_id == ^user_id)
+    |> Repo.all()
+  end
+
+  @doc """
   Create single tournament match log.
   """
   def create_single_tournament_match_log(attrs \\ %{}) do
+    IO.inspect(attrs)
     %SingleTournamentMatchLog{}
     |> SingleTournamentMatchLog.changeset(attrs)
     |> Repo.insert()
