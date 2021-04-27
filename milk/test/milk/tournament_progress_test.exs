@@ -320,10 +320,31 @@ defmodule Milk.TournamentProgressTest do
       |> Map.put("winner_id", user1.id)
       |> Map.put("loser_id", user2.id)
       |> Map.put("match_list_str", str)
-      |> TournamentProgress.create_single_tournament_match_logs()
+      |> TournamentProgress.create_single_tournament_match_log()
 
       TournamentProgress.get_single_tournament_match_logs(tournament.id, user1.id)
-      |> IO.inspect()
+      |> Enum.map(fn log ->
+        assert log.tournament_id == tournament.id
+        assert log.winner_id == user1.id
+        assert log.loser_id == user2.id
+        assert log.match_list_str == str
+      end)
+      |> length()
+      |> (fn len ->
+        assert len == 1
+      end).()
+
+      TournamentProgress.get_single_tournament_match_logs(tournament.id, user2.id)
+      |> Enum.map(fn log ->
+        assert log.tournament_id == tournament.id
+        assert log.winner_id == user1.id
+        assert log.loser_id == user2.id
+        assert log.match_list_str == str
+      end)
+      |> length()
+      |> (fn len ->
+        assert len == 1
+      end).()
     end
   end
 

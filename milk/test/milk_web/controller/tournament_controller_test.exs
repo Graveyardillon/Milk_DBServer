@@ -720,7 +720,17 @@ defmodule MilkWeb.TournamentControllerTest do
           |> List.flatten()
           |> length()
 
-        assert old_len-1 == new_len
+        assert new_len == old_len-1
+      end).()
+
+      TournamentProgress.get_single_tournament_match_logs(tournament.id, hd(losers))
+      |> Enum.map(fn log ->
+        assert log.loser_id == hd(losers)
+        assert log.tournament_id == tournament.id
+      end)
+      |> length()
+      |> (fn len ->
+        assert len == 1
       end).()
 
       assert TournamentProgress.get_fight_result({hd(losers), tournament.id}) == []

@@ -3,8 +3,8 @@ defmodule Milk.Repo.Migrations.CreateBattleRoyaleLog do
 
   def change do
     create table(:battle_royale_logs) do
-      add :tournament_id, references(:tournament, on_delete: :nothing)
-      add :loser_id, references(:users, on_delete: :nothing)
+      add :tournament_id, :integer
+      add :loser_id, :integer
       add :rank, :integer
 
       timestamps()

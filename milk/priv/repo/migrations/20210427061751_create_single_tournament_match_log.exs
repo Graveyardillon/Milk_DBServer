@@ -3,9 +3,9 @@ defmodule Milk.Repo.Migrations.CreateSingleTournamentMatchLog do
 
   def change do
     create table(:single_tournament_match_logs) do
-      add :tournament_id, references(:tournament, on_delete: :nothing)
-      add :winner_id, references(:users, on_delete: :nothing)
-      add :loser_id, references(:users, on_delete: :nothing)
+      add :tournament_id, :integer
+      add :winner_id, :integer
+      add :loser_id, :integer
       add :match_list_str, :text
 
       timestamps()

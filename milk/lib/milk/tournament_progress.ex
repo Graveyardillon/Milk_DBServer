@@ -539,7 +539,6 @@ defmodule Milk.TournamentProgress do
   Create single tournament match log.
   """
   def create_single_tournament_match_log(attrs \\ %{}) do
-    IO.inspect(attrs)
     %SingleTournamentMatchLog{}
     |> SingleTournamentMatchLog.changeset(attrs)
     |> Repo.insert()

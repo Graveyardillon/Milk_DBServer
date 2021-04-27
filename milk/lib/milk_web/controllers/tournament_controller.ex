@@ -494,22 +494,18 @@ defmodule MilkWeb.TournamentController do
   defp store_single_tournament_match_log(tournament_id, loser_id) when is_integer(loser_id) do
     [{_, match_list}] = TournamentProgress.get_match_list(tournament_id)
 
-    IO.inspect(loser_id, label: :loser_id)
-    {:ok, winner_id} = match_list
-      |> IO.inspect()
+    {:ok, winner} = match_list
       |> Tournaments.find_match(loser_id)
-      |> IO.inspect()
       |> Tournaments.get_opponent(loser_id)
-      |> IO.inspect()
 
     match_list_str = inspect(match_list)
 
     Map.new()
     |> Map.put("tournament_id", tournament_id)
     |> Map.put("loser_id", loser_id)
-    |> Map.put("winner_id", winner_id)
+    |> Map.put("winner_id", winner["id"])
     |> Map.put("match_list_str", match_list_str)
-    TournamentProgress.create_single_tournament_match_log()
+    |> TournamentProgress.create_single_tournament_match_log()
   end
 
   @doc """

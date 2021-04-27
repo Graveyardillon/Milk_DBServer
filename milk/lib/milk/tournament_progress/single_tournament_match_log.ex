@@ -3,13 +3,10 @@ defmodule Milk.TournamentProgress.SingleTournamentMatchLog do
 
   import Ecto.Changeset
 
-  alias Milk.Accounts.User
-  alias Milk.Tournaments.Tournament
-
   schema "single_tournament_match_logs" do
-    belongs_to :tournament, Tournament
-    belongs_to :winner, User
-    belongs_to :loser, User
+    field :tournament_id, :integer
+    field :winner_id, :integer
+    field :loser_id, :integer
 
     field :match_list_str, :string
 
@@ -21,8 +18,5 @@ defmodule Milk.TournamentProgress.SingleTournamentMatchLog do
     single_tournament_match_log
     |> cast(attrs, [:tournament_id, :winner_id, :loser_id, :match_list_str])
     |> validate_required([:tournament_id, :winner_id, :loser_id, :match_list_str])
-    |> foreign_key_constraint(:tournament_id)
-    |> foreign_key_constraint(:winner_id)
-    |> foreign_key_constraint(:loser_id)
   end
 end
