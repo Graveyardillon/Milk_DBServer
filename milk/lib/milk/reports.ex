@@ -45,6 +45,7 @@ defmodule Milk.Reports do
       type = Tools.to_integer_as_needed(type)
       create_tournament_report(%{"reporter_id" => reporter_id, "report_type" => type, "tournament_id" => tournament_id})
     end)
+    |> IO.inspect(label: :before_enum)
     |> Enum.all?(fn tuple ->
       case tuple do
         {:ok, _} -> true
@@ -64,6 +65,7 @@ defmodule Milk.Reports do
 
     tournament_id
     |> Tournaments.get_tournament()
+    |> IO.inspect(label: :get_tournament)
     |> case do
       nil ->
         {:error, nil}

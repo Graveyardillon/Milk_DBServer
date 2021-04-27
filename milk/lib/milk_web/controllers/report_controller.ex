@@ -20,7 +20,11 @@ defmodule MilkWeb.ReportController do
   end
 
   def create_tournament_report(conn, %{"report" => report_params}) do
-    case Reports.create_tournament_report(report_params) do
+    IO.inspect(report_params, label: :report_params)
+    report_params
+    |> Reports.create_tournament_report()
+    |> IO.inspect(label: :create_tournament_report)
+    |> case do
       {:ok, report} ->
         json(conn, %{result: true})
       {:error, error} ->
