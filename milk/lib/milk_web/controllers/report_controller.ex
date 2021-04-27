@@ -5,7 +5,8 @@ defmodule MilkWeb.ReportController do
   alias Milk.{
     Accounts,
     DiscordWebhook,
-    Reports
+    Reports,
+    Tournaments
   }
 
   @doc """
@@ -40,7 +41,7 @@ defmodule MilkWeb.ReportController do
       |> Accounts.get_user()
 
     reportee.name <> "が" <> reporter.name <> "によって通報されました。"
-    |> DiscordWebhook.post_text()
+    |> DiscordWebhook.post_text_to_user_report_channel()
   end
 
   @doc """
@@ -51,9 +52,25 @@ defmodule MilkWeb.ReportController do
     |> Reports.create_tournament_report()
     |> case do
       {:ok, report} ->
+        notify_tournament_report(report_params)
         json(conn, %{result: true})
       {:error, error} ->
         json(conn, %{result: false, error: error})
     end
+  end
+
+  defp notify_tournament_report(report) do
+    reporter =
+      report["reporter_id"]
+      |> Tools.to_integer_as_needed()
+      |> Accounts.get_user()
+
+    tournament =
+      report["tournament_id"]
+      |> Tools.to_integer_as_needed()
+      |> Tournaments.get_tournament()
+
+    tournament.name <> "が" <> reporter.name <> "によって通報されました。"
+    |> DiscordWebhook.post_text_to_tournament_report_channel()
   end
 end
