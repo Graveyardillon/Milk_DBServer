@@ -73,11 +73,19 @@ defmodule MilkWeb.ReportControllerTest do
   end
 
   describe "create tournament report" do
-    test "works", %{conn: conn} do
+    test "works (integer)", %{conn: conn} do
       user = fixture_user()
       tournament = fixture_tournament()
 
       conn = post(conn, Routes.report_path(conn, :create_tournament_report), report: %{reporter_id: user.id, tournament_id: tournament.id, report_type: 0})
+      assert json_response(conn, 200)["result"]
+    end
+
+    test "works (list)", %{conn: conn} do
+      user = fixture_user()
+      tournament = fixture_tournament()
+
+      conn = post(conn, Routes.report_path(conn, :create_tournament_report), report: %{reporter_id: user.id, tournament_id: tournament.id, report_type: [0]})
       assert json_response(conn, 200)["result"]
     end
   end
