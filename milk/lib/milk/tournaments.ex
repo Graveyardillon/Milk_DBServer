@@ -2,13 +2,12 @@ defmodule Milk.Tournaments do
   @moduledoc """
   The Tournaments context.
   """
+  use Timex
 
   import Ecto.Query, warn: false
 
-  use Timex
   alias Ecto.Multi
   alias Common.Tools
-
   alias Milk.{
     Accounts,
     Chat,

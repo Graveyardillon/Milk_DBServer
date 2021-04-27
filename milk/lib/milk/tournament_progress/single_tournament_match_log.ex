@@ -19,7 +19,7 @@ defmodule Milk.TournamentProgress.SingleTournamentMatchLog do
   @doc false
   def changeset(single_tournament_match_log, attrs) do
     single_tournament_match_log
-    |> cast(attrs, [:match_list_str])
+    |> cast(attrs, [:tournament_id, :winner_id, :loser_id, :match_list_str])
     |> validate_required([:tournament_id, :winner_id, :loser_id, :match_list_str])
     |> foreign_key_constraint(:tournament_id)
     |> foreign_key_constraint(:winner_id)

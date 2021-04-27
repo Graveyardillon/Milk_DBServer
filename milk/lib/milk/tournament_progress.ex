@@ -7,7 +7,11 @@ defmodule Milk.TournamentProgress do
   5. duplicate_users
   6. absence_process
   """
-  alias Milk.Tournaments
+  alias Milk.{
+    Repo,
+    Tournaments
+  }
+  alias Milk.TournamentProgress.SingleTournamentMatchLog
 
   require Logger
 
@@ -31,7 +35,7 @@ defmodule Milk.TournamentProgress do
     Logger.info("Redis has been flushed all")
   end
 
-  @moduledoc """
+  """
   1. match_list
   Manages match list which is used in tournament.
   The data form is like `[[2, 1], 3]`.
@@ -109,7 +113,7 @@ defmodule Milk.TournamentProgress do
     end
   end
 
-  @moduledoc """
+  """
   2. match_list_with_fight_result
   Manages match list with fight result.
   The purpose of this list is drawing brackets.
@@ -192,7 +196,7 @@ defmodule Milk.TournamentProgress do
     end
   end
 
-  @moduledoc """
+  """
   3. match_pending_list
   Manages match pending list.
   The list contains user_id of a user who pressed start_match and
@@ -262,7 +266,7 @@ defmodule Milk.TournamentProgress do
     end
   end
 
-  @moduledoc """
+  """
   4. match_pending_list
   Manages fight result.
   """
@@ -323,7 +327,7 @@ defmodule Milk.TournamentProgress do
     end
   end
 
-  @doc """
+  """
   5. duplicate_users
   Manages duplicate users whose claims are same as their opponent.
   """
@@ -382,7 +386,7 @@ defmodule Milk.TournamentProgress do
     end
   end
 
-  @moduledoc """
+  """
   6. absence_process
   The process manages users who did not press 'start' button for 5 mins.
   """
@@ -504,5 +508,27 @@ defmodule Milk.TournamentProgress do
     else
       _ -> false
     end
+  end
+
+  """
+  # Single tournament match log.
+  Single tournament match log stores a progress information.
+
+  We have no idea of presenting this information in iOS,
+  but just storing them in a database.
+  """
+
+  @doc """
+  Get single tournament match log.
+  """
+  def get_single_tournament_match_log(id), do: Repo.get(SingleTournamentMatchLog, id)
+
+  @doc """
+  Create single tournament match log.
+  """
+  def create_single_tournament_match_log(attrs \\ %{}) do
+    %SingleTournamentMatchLog{}
+    |> SingleTournamentMatchLog.changeset(attrs)
+    |> Repo.insert()
   end
 end
