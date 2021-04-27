@@ -1,5 +1,6 @@
 defmodule Milk.Schema do
 
+  # coveralls-ignore-start
   defmacro __using__(opts) do
     _opts = Keyword.merge([default_sort: :inserted_at], opts)
 
@@ -13,7 +14,8 @@ defmodule Milk.Schema do
       import Ecto.Query, only: [from: 1, from: 2]
 
       alias Milk.Repo
-      
+
     end
   end
+  # coveralls-ignore-stop
 end

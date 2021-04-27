@@ -13,6 +13,7 @@ defmodule MilkWeb.ChannelCase do
   of the test unless the test case is marked as async.
   """
 
+  # coveralls-ignore-start
   use ExUnit.CaseTemplate
 
   using do
@@ -34,4 +35,5 @@ defmodule MilkWeb.ChannelCase do
 
     :ok
   end
+  # coveralls-ignore-stop
 end
