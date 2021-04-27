@@ -1,12 +1,20 @@
 defmodule Milk.Accounts.User do
   use Milk.Schema
+
   import Ecto.Changeset
+
   alias Milk.Accounts.Auth
-  alias Milk.Chat.Chats
-  alias Milk.Chat.ChatMember
-  alias Milk.Chat.ChatRoom
+  alias Milk.Chat.{
+    Chats,
+    ChatMember,
+    ChatRoom
+  }
   alias Milk.Lives.Live
-  alias Milk.Tournaments.{Tournament, Entrant, Assistant}
+  alias Milk.Tournaments.{
+    Assistant,
+    Entrant,
+    Tournament,
+  }
   alias Milk.Notif.Notification
 
   schema "users" do

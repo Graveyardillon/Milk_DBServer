@@ -2,13 +2,12 @@ defmodule Milk.Tournaments do
   @moduledoc """
   The Tournaments context.
   """
+  use Timex
 
   import Ecto.Query, warn: false
 
-  use Timex
   alias Ecto.Multi
   alias Common.Tools
-
   alias Milk.{
     Accounts,
     Chat,
@@ -732,6 +731,7 @@ defmodule Milk.Tournaments do
   @doc """
   Delete loser.
   TODO: エラーハンドリング
+  loser_listは一人用になっている
   """
   def delete_loser_process(tournament_id, loser_list) do
     [{_, match_list}] = TournamentProgress.get_match_list(tournament_id)

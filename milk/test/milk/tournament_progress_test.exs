@@ -31,6 +31,12 @@ defmodule Milk.TournamentProgressTest do
 
   @moduletag timeout: :infinity
 
+  defp fixture_user(n \\ 0) do
+    attrs = %{"icon_path" => "some icon_path", "language" => "some language", "name" => to_string(n)<>"some name", "notification_number" => 42, "point" => 42, "email" => to_string(n)<>"some@email.com", "logout_fl" => true, "password" => "S1ome password"}
+    {:ok, user} = Accounts.create_user(attrs)
+    user
+  end
+
   defp fixture_tournament(opts \\ []) do
     # FIXME: ここのデフォルト値は本当はfalseのほうがよさそう
     is_started =
@@ -299,6 +305,79 @@ defmodule Milk.TournamentProgressTest do
 
       [{_, match_list}] = TournamentProgress.get_match_list(tournament.id)
       refute Tournaments.has_lost?(match_list, tournament.master_id)
+    end
+  end
+
+  describe "get single tournament match logs" do
+    test "works" do
+      user1 = fixture_user(1)
+      user2 = fixture_user(2)
+      tournament = fixture_tournament()
+      str = "just str"
+
+      Map.new()
+      |> Map.put("tournament_id", tournament.id)
+      |> Map.put("winner_id", user1.id)
+      |> Map.put("loser_id", user2.id)
+      |> Map.put("match_list_str", str)
+      |> TournamentProgress.create_single_tournament_match_log()
+
+      TournamentProgress.get_single_tournament_match_logs(tournament.id, user1.id)
+      |> Enum.map(fn log ->
+        assert log.tournament_id == tournament.id
+        assert log.winner_id == user1.id
+        assert log.loser_id == user2.id
+        assert log.match_list_str == str
+      end)
+      |> length()
+      |> (fn len ->
+        assert len == 1
+      end).()
+
+      TournamentProgress.get_single_tournament_match_logs(tournament.id, user2.id)
+      |> Enum.map(fn log ->
+        assert log.tournament_id == tournament.id
+        assert log.winner_id == user1.id
+        assert log.loser_id == user2.id
+        assert log.match_list_str == str
+      end)
+      |> length()
+      |> (fn len ->
+        assert len == 1
+      end).()
+    end
+  end
+
+  describe "create single tournament match log" do
+    test "JUST works" do
+      user1 = fixture_user(1)
+      user2 = fixture_user(2)
+      tournament = fixture_tournament()
+      str = "just str"
+
+      id = %{}
+        |> Map.put("tournament_id", tournament.id)
+        |> Map.put("winner_id", user1.id)
+        |> Map.put("loser_id", user2.id)
+        |> Map.put("match_list_str", str)
+        |> TournamentProgress.create_single_tournament_match_log()
+        |> (fn result ->
+          assert {:ok, log} = result
+          assert log.tournament_id == tournament.id
+          assert log.winner_id == user1.id
+          assert log.loser_id == user2.id
+          assert log.match_list_str == str
+          log.id
+        end).()
+
+      TournamentProgress.get_single_tournament_match_log(id)
+      |> (fn log ->
+        assert log.tournament_id == tournament.id
+        assert log.winner_id == user1.id
+        assert log.loser_id == user2.id
+        assert log.match_list_str == str
+        log.id
+      end).()
     end
   end
 end
