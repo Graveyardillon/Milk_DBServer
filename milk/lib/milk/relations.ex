@@ -4,6 +4,7 @@ defmodule Milk.Relations do
     Accounts
   }
   alias Milk.Accounts.{
+    BlockRelation,
     Relation,
     User
   }
@@ -225,5 +226,23 @@ defmodule Milk.Relations do
   """
   def change_relation(%Relation{} = relation, attrs \\ %{}) do
     Relation.changeset(relation, attrs)
+  end
+
+  @doc """
+  Block a user.
+  """
+  def block(user_id, blocked_user_id) do
+    %BlockRelation{block_user_id: user_id, blocked_user_id: blocked_user_id}
+    |> BlockRelation.changeset(%{})
+    |> Repo.insert()
+  end
+
+  @doc """
+  Get blocking users.
+  """
+  def blocking_users(user_id) do
+    BlockRelation
+    |> where([br], br.block_user_id == ^user_id)
+    |> Repo.all()
   end
 end

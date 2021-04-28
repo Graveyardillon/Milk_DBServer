@@ -3,6 +3,7 @@ defmodule MilkWeb.ReportControllerTest do
 
   alias Milk.{
     Accounts,
+    Relations,
     Tournaments
   }
 
@@ -87,6 +88,24 @@ defmodule MilkWeb.ReportControllerTest do
 
       conn = post(conn, Routes.report_path(conn, :create_tournament_report), report: %{reporter_id: user.id, tournament_id: tournament.id, report_type: [0]})
       assert json_response(conn, 200)["result"]
+    end
+
+    test "block", %{conn: conn} do
+      user = fixture_user()
+      tournament = fixture_tournament()
+
+      conn = post(conn, Routes.report_path(conn, :create_tournament_report), report: %{reporter_id: user.id, tournament_id: tournament.id, report_type: [6]})
+      assert json_response(conn, 200)["result"]
+
+      Relations.blocking_users(user.id)
+      |> Enum.map(fn block_relation ->
+        assert block_relation.block_user_id == user.id
+        assert block_relation.blocked_user_id == tournament.master_id
+      end)
+      |> length()
+      |> (fn len ->
+        assert len == 1
+      end).()
     end
   end
 end
