@@ -1,10 +1,13 @@
 defmodule MilkWeb.ReportController do
   use MilkWeb, :controller
 
+  require Logger
+
   alias Common.Tools
   alias Milk.{
     Accounts,
     DiscordWebhook,
+    Relations,
     Reports,
     Tournaments
   }
@@ -34,13 +37,11 @@ defmodule MilkWeb.ReportController do
   end
 
   defp notify_user_report(report) do
-    reporter =
-      report["reporter"]
+    reporter = report["reporter"]
       |> Tools.to_integer_as_needed()
       |> Accounts.get_user()
 
-    reportee =
-      report["reportee"]
+    reportee = report["reportee"]
       |> Tools.to_integer_as_needed()
       |> Accounts.get_user()
 
@@ -61,6 +62,7 @@ defmodule MilkWeb.ReportController do
         |> unless do
           notify_tournament_report(report_params)
         end
+        block_user_as_necessary(report_params)
         json(conn, %{result: true})
       {:error, error} ->
         json(conn, %{result: false, error: error})
@@ -68,17 +70,41 @@ defmodule MilkWeb.ReportController do
   end
 
   defp notify_tournament_report(report) do
-    reporter =
-      report["reporter_id"]
+    reporter = report["reporter_id"]
       |> Tools.to_integer_as_needed()
       |> Accounts.get_user()
 
-    tournament =
-      report["tournament_id"]
+    tournament = report["tournament_id"]
       |> Tools.to_integer_as_needed()
       |> Tournaments.get_tournament()
 
     tournament.name <> "が" <> reporter.name <> "によって通報されました。"
     |> DiscordWebhook.post_text_to_tournament_report_channel()
+  end
+
+
+  defp block_user_as_necessary(report) do
+    reporter_id = report["reporter_id"]
+      |> Tools.to_integer_as_needed()
+
+    reportee_id = report["tournament_id"]
+      |> Tools.to_integer_as_needed()
+      |> Tournaments.get_tournament()
+      |> Map.get(:master_id)
+
+    report["report_type"]
+    |> Enum.map(fn type ->
+      Tools.to_integer_as_needed(type)
+    end)
+    |> Enum.any?(fn type ->
+      type == 6
+    end)
+    |> if do
+      Relations.block(reporter_id, reportee_id)
+    end
+    |> case do
+      {:ok, _} -> Logger.info(to_string(reporter_id) <> " Blocked " <> to_string(reportee_id))
+      _ -> Logger.info(to_string(reporter_id) <> " Did not block " <> to_string(reportee_id) <> "but reported")
+    end
   end
 end
