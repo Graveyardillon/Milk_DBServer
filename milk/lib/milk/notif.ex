@@ -4,12 +4,12 @@ defmodule Milk.Notif do
   """
 
   import Ecto.Query, warn: false
-  alias Milk.Repo
 
-  alias Milk.Notif.Notification
   alias Milk.Accounts
-  alias Milk.Log.NotificationLog
   alias Milk.Accounts.User
+  alias Milk.Log.NotificationLog
+  alias Milk.Repo
+  alias Milk.Notif.Notification
 
   @doc """
   Returns the list of notification.

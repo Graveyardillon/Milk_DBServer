@@ -1,5 +1,6 @@
 defmodule Milk.Log.TournamentChatTopicLog do
   use Milk.Schema
+
   import Ecto.Changeset
 
   schema "tournament_chat_topic_log" do

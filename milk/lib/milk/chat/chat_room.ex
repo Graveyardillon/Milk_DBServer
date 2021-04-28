@@ -1,9 +1,13 @@
 defmodule Milk.Chat.ChatRoom do
   use Milk.Schema
+
   import Ecto.Changeset
-  alias Milk.Chat.Chats
-  alias Milk.Chat.ChatMember
+
   alias Milk.Accounts.User
+  alias Milk.Chat.{
+    ChatMember,
+    Chats
+  }
   alias Milk.Tournaments.TournamentChatTopic
 
   schema "chat_room" do

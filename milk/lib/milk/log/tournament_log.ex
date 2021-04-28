@@ -1,5 +1,6 @@
 defmodule Milk.Log.TournamentLog do
   use Milk.Schema
+
   import Ecto.Changeset
 
   # FIXME: master_idとかは外部キーにしないほうがいいかしっかり検証する
@@ -19,7 +20,7 @@ defmodule Milk.Log.TournamentLog do
     field :thumbnail_path, :string
     field :is_deleted, :boolean
     field :is_started, :boolean
-    
+
     timestamps()
   end
 

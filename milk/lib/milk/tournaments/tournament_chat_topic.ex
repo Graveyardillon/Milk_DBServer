@@ -1,6 +1,8 @@
 defmodule Milk.Tournaments.TournamentChatTopic do
   use Milk.Schema
+
   import Ecto.Changeset
+
   alias Milk.Tournaments.Tournament
   alias Milk.Chat.ChatRoom
 

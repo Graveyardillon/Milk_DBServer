@@ -1,5 +1,6 @@
 defmodule Milk.Log.AssistantLog do
   use Milk.Schema
+
   import Ecto.Changeset
 
   schema "assistant_log" do

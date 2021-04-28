@@ -1,15 +1,17 @@
 defmodule Milk.Profiles do
-
   import Ecto.Query, warn: false
-  alias Milk.Repo
 
-  alias Milk.Accounts.User
-
+  alias Milk.Accounts.{
+    Profile,
+    User
+  }
   alias Milk.Games.Game
-  alias Milk.Accounts.Profile
+  alias Milk.Log.{
+    EntrantLog,
+    TournamentLog
+  }
+  alias Milk.Repo
   alias Milk.Tournaments.Entrant
-  alias Milk.Log.EntrantLog
-  alias Milk.Log.TournamentLog
 
   @doc """
   Returns the list of profiles.
@@ -133,7 +135,7 @@ defmodule Milk.Profiles do
         TournamentLog
         |> where([tl], tl.tournament_id == ^entrant_log.tournament_id)
         |> Repo.one()
-        
+
       Map.put(entrant_log, :tournament_log, tlog)
     end)
     |> Enum.filter(fn entrant_log -> entrant_log.tournament_log != nil end)

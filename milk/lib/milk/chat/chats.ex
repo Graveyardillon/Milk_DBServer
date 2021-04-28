@@ -1,6 +1,8 @@
 defmodule Milk.Chat.Chats do
   use Milk.Schema
+
   import Ecto.Changeset
+
   alias Milk.Accounts.User
   alias Milk.Chat.ChatRoom
 

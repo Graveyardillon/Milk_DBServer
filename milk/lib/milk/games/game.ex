@@ -1,7 +1,8 @@
 defmodule Milk.Games.Game do
-
   use Milk.Schema
+
   import Ecto.Changeset
+
   alias Milk.Tournaments.Tournament
 
   schema "games" do

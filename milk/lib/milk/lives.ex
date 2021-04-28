@@ -4,8 +4,8 @@ defmodule Milk.Lives do
   """
 
   import Ecto.Query, warn: false
-  alias Milk.Repo
 
+  alias Milk.Repo
   alias Milk.Lives.Live
   alias Milk.Relations
 
@@ -109,7 +109,7 @@ defmodule Milk.Lives do
   def home(user_id) do
     user_id
     |> Relations.get_following_list()
-    |> Enum.map(fn user -> 
+    |> Enum.map(fn user ->
       Live
       |> where([l], l.streamer_id == ^user.id)
       |> Repo.all()

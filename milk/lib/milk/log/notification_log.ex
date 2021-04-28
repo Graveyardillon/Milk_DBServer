@@ -1,5 +1,6 @@
 defmodule Milk.Log.NotificationLog do
   use Milk.Schema
+
   import Ecto.Changeset
 
   schema "notification_log" do

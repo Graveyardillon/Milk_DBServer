@@ -1,10 +1,12 @@
 defmodule MilkWeb.GameController do
   use MilkWeb, :controller
 
-  alias Milk.Games
-  alias Milk.Games.Game
   alias Ecto.Multi
-  alias Milk.Repo
+  alias Milk.{
+    Games,
+    Repo
+  }
+  alias Milk.Games.Game
 
   action_fallback MilkWeb.FallbackController
 
@@ -13,7 +15,7 @@ defmodule MilkWeb.GameController do
     render(conn, "list.json", games: games)
   end
 
-  def create(conn, %{"game" => game_params}) do 
+  def create(conn, %{"game" => game_params}) do
     with {:ok, %Game{} = game} <- Games.create_game(game_params) do
       conn
       |> render("show.json", game: game)

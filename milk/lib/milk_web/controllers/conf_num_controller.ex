@@ -2,9 +2,12 @@ defmodule MilkWeb.ConfNumController do
   use MilkWeb, :controller
 
   import Bamboo.Email
-  alias Milk.ConfNum
+
+  alias Milk.{
+    Accounts,
+    ConfNum
+  }
   alias Milk.Email.Auth
-  alias Milk.Accounts
 
   @doc """
   Send an email for verification.

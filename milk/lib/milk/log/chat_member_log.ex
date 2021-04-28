@@ -1,7 +1,9 @@
 defmodule Milk.Log.ChatMemberLog do
   use Milk.Schema
-  alias Milk.EctoDate
+
   import Ecto.Changeset
+
+  alias Milk.EctoDate
 
   schema "chat_member_log" do
     field :authority, :integer
