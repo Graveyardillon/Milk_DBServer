@@ -8,6 +8,5 @@ defmodule Milk.Repo.Migrations.CreateRelations do
 
       timestamps()
     end
-
   end
 end
