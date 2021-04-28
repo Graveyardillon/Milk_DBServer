@@ -93,6 +93,12 @@ defmodule MilkWeb.ReportController do
       |> Map.get(:master_id)
 
     report["report_type"]
+    |> is_integer()
+    |> if do
+      [report["report_type"]]
+    else
+      report["report_type"]
+    end
     |> Enum.map(fn type ->
       Tools.to_integer_as_needed(type)
     end)
