@@ -6,6 +6,7 @@ defmodule Milk.DiscordWebhook do
   @doc """
   Send a webhook notification.
   """
+  # coveralls-ignore-start
   def post_text_to_user_report_channel(text) do
     url = "https://discord.com/api/webhooks/836661276460449862/RjC4AIzBHQiOc3QbXBkAuuMpumEccWxfecbQ545GIH4Y0XJYoux2D1H11_UxMP2CXCSO"
 
@@ -25,4 +26,5 @@ defmodule Milk.DiscordWebhook do
       "Content-Type": "application/json"
     )
   end
+  # coveralls-ignore-stop
 end
