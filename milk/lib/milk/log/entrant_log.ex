@@ -2,7 +2,7 @@ defmodule Milk.Log.EntrantLog do
   use Milk.Schema
   import Ecto.Changeset
 
-  schema "entrant_log" do
+  schema "entrants_log" do
     field :entrant_id, :integer
     field :rank, :integer
     field :tournament_id, :integer

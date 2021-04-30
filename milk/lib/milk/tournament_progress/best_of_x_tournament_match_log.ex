@@ -3,7 +3,7 @@ defmodule Milk.TournamentProgress.BestOfXTournamentMatchLog do
 
   import Ecto.Changeset
 
-  schema "best_of_x_tournament_match_logs" do
+  schema "best_of_x_tournament_match_log" do
     field :tournament_id, :integer
     field :winner_id, :integer
     field :loser_id, :integer

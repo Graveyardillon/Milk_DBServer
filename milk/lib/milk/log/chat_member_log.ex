@@ -3,7 +3,7 @@ defmodule Milk.Log.ChatMemberLog do
   alias Milk.EctoDate
   import Ecto.Changeset
 
-  schema "chat_member_log" do
+  schema "chat_members_log" do
     field :authority, :integer
     field :chat_room_id, :integer
     field :user_id, :integer

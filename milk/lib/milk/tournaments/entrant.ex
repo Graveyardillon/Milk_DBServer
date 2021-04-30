@@ -4,7 +4,7 @@ defmodule Milk.Tournaments.Entrant do
   alias Milk.Tournaments.Tournament
   alias Milk.Accounts.User
 
-  schema "entrant" do
+  schema "entrants" do
     field :rank, :integer, default: 0
     belongs_to :tournament, Tournament
     belongs_to :user, User
