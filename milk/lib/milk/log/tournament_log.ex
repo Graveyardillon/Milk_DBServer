@@ -1,5 +1,6 @@
 defmodule Milk.Log.TournamentLog do
   use Milk.Schema
+
   import Ecto.Changeset
 
   # FIXME: master_idとかは外部キーにしないほうがいいかしっかり検証する

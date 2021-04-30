@@ -1,6 +1,8 @@
 defmodule Milk.Tournaments.Assistant do
   use Milk.Schema
+
   import Ecto.Changeset
+
   alias Milk.Tournaments.Tournament
   alias Milk.Accounts.User
 

@@ -1,5 +1,6 @@
 defmodule Milk.Platforms.Platform do
   use Milk.Schema
+
   import Ecto.Changeset
 
   alias Milk.Tournaments.Tournament

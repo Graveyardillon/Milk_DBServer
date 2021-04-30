@@ -1,6 +1,8 @@
 defmodule Milk.Log.ChatRoomLog do
   use Milk.Schema
+
   import Ecto.Changeset
+
   alias Milk.EctoDate
 
   @primary_key false

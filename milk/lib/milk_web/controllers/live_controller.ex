@@ -4,6 +4,8 @@ defmodule MilkWeb.LiveController do
   alias Milk.Lives.Live
   alias Milk.Lives
 
+  # liveはアプリ内未実装のため考慮せずignore
+  # coveralls-ignore-start
   def home(conn, %{"id" => _id}) do
     lives = Lives.list_lives()
     if lives do
@@ -18,11 +20,12 @@ defmodule MilkWeb.LiveController do
       {:ok, %Live{} = live} ->
         conn
         |> render("show.json", live: live)
-      
+
       {:error, error} ->
         render(conn, "error.json", error: error)
       _ ->
         render(conn, "error.json", error: nil)
     end
   end
+  # coveralls-ignore-stop
 end

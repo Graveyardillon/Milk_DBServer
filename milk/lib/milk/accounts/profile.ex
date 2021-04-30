@@ -1,5 +1,6 @@
 defmodule Milk.Accounts.Profile do
   use Milk.Schema
+
   import Ecto.Changeset
 
   schema "profiles" do

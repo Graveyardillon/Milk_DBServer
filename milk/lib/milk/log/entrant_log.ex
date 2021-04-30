@@ -1,5 +1,6 @@
 defmodule Milk.Log.EntrantLog do
   use Milk.Schema
+
   import Ecto.Changeset
 
   schema "entrants_log" do

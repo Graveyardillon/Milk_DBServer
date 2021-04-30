@@ -5,8 +5,8 @@ defmodule Milk.Platforms do
 
   import Ecto.Query, warn: false
 
-  alias Milk.Repo
   alias Milk.Platforms.Platform
+  alias Milk.Repo
 
   def create_basic_platforms() do
     platform_names =

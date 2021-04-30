@@ -1,5 +1,6 @@
 defmodule Milk.Lives.Live do
   use Milk.Schema
+
   import Ecto.Changeset
 
   alias Milk.Tournaments.Tournament

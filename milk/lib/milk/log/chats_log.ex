@@ -1,6 +1,8 @@
 defmodule Milk.Log.ChatsLog do
   use Milk.Schema
+
   import Ecto.Changeset
+
   alias Milk.EctoDate
 
   schema "chat_log" do
