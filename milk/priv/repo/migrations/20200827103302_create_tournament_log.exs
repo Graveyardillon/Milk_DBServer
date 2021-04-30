@@ -2,7 +2,7 @@ defmodule Milk.Repo.Migrations.CreateTournamentLog do
   use Ecto.Migration
 
   def change do
-    create table(:tournament_log) do
+    create table(:tournaments_log) do
       add :name, :string
       add :event_date, :timestamptz
       add :capacity, :integer

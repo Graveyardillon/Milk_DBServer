@@ -13,7 +13,7 @@ defmodule Milk.Tournaments.Tournament do
     TournamentChatTopic
   }
 
-  schema "tournament" do
+  schema "tournaments" do
     field :capacity, :integer
     field :deadline, EctoDate
     field :description, :string

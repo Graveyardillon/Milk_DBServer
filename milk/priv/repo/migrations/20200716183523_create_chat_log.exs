@@ -13,6 +13,5 @@ defmodule Milk.Repo.Migrations.CreateChatLog do
     end
 
     create unique_index(:chat_log, [:index, :chat_room_id])
-
   end
 end

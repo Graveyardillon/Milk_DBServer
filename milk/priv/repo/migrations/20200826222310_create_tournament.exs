@@ -2,7 +2,7 @@ defmodule Milk.Repo.Migrations.CreateTournament do
   use Ecto.Migration
 
   def change do
-    create table(:tournament) do
+    create table(:tournaments) do
       add :name, :string
       add :event_date, :timestamptz
       add :capacity, :integer
@@ -23,7 +23,7 @@ defmodule Milk.Repo.Migrations.CreateTournament do
       timestamps()
     end
 
-    create index(:tournament, [:game_id])
-    create index(:tournament, [:master_id])
+    create index(:tournaments, [:game_id])
+    create index(:tournaments, [:master_id])
   end
 end

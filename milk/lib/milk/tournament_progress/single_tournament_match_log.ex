@@ -3,7 +3,7 @@ defmodule Milk.TournamentProgress.SingleTournamentMatchLog do
 
   import Ecto.Changeset
 
-  schema "single_tournament_match_logs" do
+  schema "single_tournament_match_log" do
     field :tournament_id, :integer
     field :winner_id, :integer
     field :loser_id, :integer

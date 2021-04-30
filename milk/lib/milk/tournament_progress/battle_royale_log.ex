@@ -3,7 +3,7 @@ defmodule Milk.TournamentProgress.BattleRoyaleLog do
 
   import Ecto.Changeset
 
-  schema "battle_royale_logs" do
+  schema "battle_royale_log" do
     field :tournament_id, :integer
     field :loser_id, :integer
     field :rank, :integer

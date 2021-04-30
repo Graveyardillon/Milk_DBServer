@@ -2,7 +2,7 @@ defmodule Milk.Log.NotificationLog do
   use Milk.Schema
   import Ecto.Changeset
 
-  schema "notification_log" do
+  schema "notifications_log" do
     field :content, :string
     field :user_id, :integer
     field :data, :string
