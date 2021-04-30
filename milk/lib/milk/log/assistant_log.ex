@@ -3,7 +3,7 @@ defmodule Milk.Log.AssistantLog do
 
   import Ecto.Changeset
 
-  schema "assistant_log" do
+  schema "assistants_log" do
     field :tournament_id, :integer
     field :user_id, :integer
 

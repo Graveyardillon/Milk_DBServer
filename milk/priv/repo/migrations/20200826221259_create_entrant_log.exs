@@ -2,7 +2,7 @@ defmodule Milk.Repo.Migrations.CreateEntrantLog do
   use Ecto.Migration
 
   def change do
-    create table(:entrant_log) do
+    create table(:entrants_log) do
       add :entrant_id, :integer
       add :tournament_id, :integer
       add :user_id, :integer

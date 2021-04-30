@@ -6,7 +6,7 @@ defmodule Milk.Tournaments.Assistant do
   alias Milk.Tournaments.Tournament
   alias Milk.Accounts.User
 
-  schema "assistant" do
+  schema "assistants" do
     belongs_to :tournament, Tournament
     belongs_to :user, User
 

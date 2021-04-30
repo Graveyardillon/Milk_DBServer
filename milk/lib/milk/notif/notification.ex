@@ -5,7 +5,7 @@ defmodule Milk.Notif.Notification do
 
   alias Milk.Accounts.User
 
-  schema "notification" do
+  schema "notifications" do
     field :content, :string
     field :process_code, :integer
     field :data, :string

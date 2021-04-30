@@ -6,7 +6,7 @@ defmodule Milk.Log.ChatRoomLog do
   alias Milk.EctoDate
 
   @primary_key false
-  schema "chat_room_log" do
+  schema "chat_rooms_log" do
     field :id, :integer, primary_key: true
     field :count, :integer
     field :last_chat, :string

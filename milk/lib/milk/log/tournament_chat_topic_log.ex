@@ -3,7 +3,7 @@ defmodule Milk.Log.TournamentChatTopicLog do
 
   import Ecto.Changeset
 
-  schema "tournament_chat_topic_log" do
+  schema "tournament_chat_topics_log" do
     field :topic_name, :string
 
     timestamps()

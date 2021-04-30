@@ -6,7 +6,7 @@ defmodule Milk.Chat.ChatMember do
   alias Milk.Accounts.User
   alias Milk.Chat.ChatRoom
 
-  schema "chat_member" do
+  schema "chat_members" do
     field :authority, :integer, default: 0
     belongs_to :user, User
     belongs_to :chat_room, ChatRoom
