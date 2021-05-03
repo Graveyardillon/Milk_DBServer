@@ -5,22 +5,22 @@ defmodule Milk.Chat do
 
   import Ecto.Query, warn: false
 
-  alias Milk.Repo
+  alias Common.Tools
+  alias Ecto.Multi
   alias Milk.Accounts
+  alias Milk.Accounts.User
   alias Milk.Chat.{
     ChatRoom,
     Chats,
     ChatMember
   }
-  alias Milk.Accounts.User
-  alias Milk.Tournaments.TournamentChatTopic
   alias Milk.Log.{
     ChatsLog,
     ChatMemberLog,
     ChatRoomLog
   }
-  alias Ecto.Multi
-  alias Common.Tools
+  alias Milk.Repo
+  alias Milk.Tournaments.TournamentChatTopic
 
   require Logger
 

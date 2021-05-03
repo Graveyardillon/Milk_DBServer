@@ -1,9 +1,11 @@
 defmodule Milk.Notif.Notification do
   use Milk.Schema
+
   import Ecto.Changeset
+
   alias Milk.Accounts.User
 
-  schema "notification" do
+  schema "notifications" do
     field :content, :string
     field :process_code, :integer
     field :data, :string

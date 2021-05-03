@@ -4,8 +4,8 @@ defmodule Milk.Log do
   """
 
   import Ecto.Query, warn: false
-  alias Milk.Repo
 
+  alias Milk.Repo
   alias Milk.Log.{
     ChatRoomLog,
     TournamentChatTopicLog,

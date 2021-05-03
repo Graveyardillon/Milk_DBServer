@@ -1,4 +1,12 @@
 defmodule Milk.Relations do
+  @moduledoc """
+  Module of relations.
+  """
+  import Ecto.Query, warn: false
+
+  require Logger
+
+  alias Common.Tools
   alias Milk.{
     Repo,
     Accounts
@@ -8,11 +16,6 @@ defmodule Milk.Relations do
     Relation,
     User
   }
-  alias Common.Tools
-
-  import Ecto.Query, warn: false
-
-  require Logger
 
   @doc """
   Returns the list of relations.

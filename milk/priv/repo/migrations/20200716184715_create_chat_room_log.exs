@@ -2,7 +2,7 @@ defmodule Milk.Repo.Migrations.CreateChatRoomLog do
   use Ecto.Migration
 
   def change do
-    create table(:chat_room_log, primary_key: false) do
+    create table(:chat_rooms_log, primary_key: false) do
       add :id, :integer, primary_key: true
       add :name, :string
       add :last_chat, :text

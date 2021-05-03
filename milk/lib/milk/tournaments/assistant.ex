@@ -1,10 +1,12 @@
 defmodule Milk.Tournaments.Assistant do
   use Milk.Schema
+
   import Ecto.Changeset
+
   alias Milk.Tournaments.Tournament
   alias Milk.Accounts.User
 
-  schema "assistant" do
+  schema "assistants" do
     belongs_to :tournament, Tournament
     belongs_to :user, User
 

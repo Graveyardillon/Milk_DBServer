@@ -2,7 +2,7 @@ defmodule Milk.Repo.Migrations.CreateNotification do
   use Ecto.Migration
 
   def change do
-    create table(:notification) do
+    create table(:notifications) do
       add :content, :string
       add :process_code, :integer
       add :data, :string
@@ -11,6 +11,6 @@ defmodule Milk.Repo.Migrations.CreateNotification do
       timestamps()
     end
 
-    create index(:notification, [:user_id])
+    create index(:notifications, [:user_id])
   end
 end
