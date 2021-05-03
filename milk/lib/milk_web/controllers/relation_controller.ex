@@ -92,4 +92,18 @@ defmodule MilkWeb.RelationController do
       {:error, _error} -> json(conn, %{result: false})
     end
   end
+
+  @doc """
+  Unblock a user.
+  """
+  def unblock_user(conn, %{"user_id" => user_id, "blocked_user_id" => blocked_user_id}) do
+    user_id = Tools.to_integer_as_needed(user_id)
+    blocked_user_id = Tools.to_integer_as_needed(blocked_user_id)
+
+    Relations.unblock(user_id, blocked_user_id)
+    |> case do
+      {:ok, _relation} -> json(conn, %{result: true})
+      {:error, _error} -> json(conn, %{result: false})
+    end
+  end
 end

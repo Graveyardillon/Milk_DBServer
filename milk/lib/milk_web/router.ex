@@ -61,6 +61,7 @@ defmodule MilkWeb.Router do
     post "/relation/follow", RelationController, :create
     post "/relation/unfollow", RelationController, :delete
     post "/relation/block_user", RelationController, :block_user
+    post "/relation/unblock_user", RelationController, :unblock_user
 
     resources "/chat", ChatsController, except: [:new, :edit, :index, :delete]
     delete "/chat", ChatsController, :delete
