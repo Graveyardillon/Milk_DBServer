@@ -149,6 +149,7 @@ defmodule MilkWeb.RelationControllerTest do
       assert json_response(conn, 200)["result"]
 
       conn = get(conn, Routes.relation_path(conn, :blocked_users), user_id: user1.id)
+      assert json_response(conn, 200)["result"]
       json_response(conn, 200)
       |> Map.get("data")
       |> Enum.map(fn user ->

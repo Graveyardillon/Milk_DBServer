@@ -37,6 +37,6 @@ defmodule MilkWeb.RelationView do
         }
       end)
 
-    %{data: m}
+    %{data: m, result: true}
   end
 end
