@@ -19,7 +19,7 @@ defmodule Milk.RelationsTest do
 
       assert {:ok, _block_relation} = Relations.block(user1.id, user2.id)
 
-      Relations.blocking_users(user1.id)
+      Relations.blocked_users(user1.id)
       |> Enum.map(fn block_relation ->
         assert block_relation.block_user_id == user1.id
         assert block_relation.blocked_user_id == user2.id

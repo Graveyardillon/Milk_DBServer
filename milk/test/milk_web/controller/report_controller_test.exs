@@ -97,7 +97,7 @@ defmodule MilkWeb.ReportControllerTest do
       conn = post(conn, Routes.report_path(conn, :create_tournament_report), report: %{reporter_id: user.id, tournament_id: tournament.id, report_type: [6]})
       assert json_response(conn, 200)["result"]
 
-      Relations.blocking_users(user.id)
+      Relations.blocked_users(user.id)
       |> Enum.map(fn block_relation ->
         assert block_relation.block_user_id == user.id
         assert block_relation.blocked_user_id == tournament.master_id

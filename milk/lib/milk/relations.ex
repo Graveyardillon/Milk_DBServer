@@ -238,9 +238,9 @@ defmodule Milk.Relations do
   end
 
   @doc """
-  Get blocking users.
+  Get blocked users.
   """
-  def blocking_users(user_id) do
+  def blocked_users(user_id) do
     BlockRelation
     |> where([br], br.block_user_id == ^user_id)
     |> Repo.all()

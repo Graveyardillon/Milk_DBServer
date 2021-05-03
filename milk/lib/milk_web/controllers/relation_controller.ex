@@ -1,7 +1,11 @@
 defmodule MilkWeb.RelationController do
   use MilkWeb, :controller
 
-  alias Milk.Relations
+  alias Common.Tools
+  alias Milk.{
+    Accounts,
+    Relations
+  }
 
   @doc """
   Follow a user.
@@ -58,5 +62,34 @@ defmodule MilkWeb.RelationController do
   def followers_id_list(conn, %{"user_id" => user_id}) do
     users = Relations.get_followers_id_list(user_id)
     render(conn, "id_list.json", list: users)
+  end
+
+  @doc """
+  Get blocked users.
+  """
+  def blocked_users(conn, %{"user_id" => user_id}) do
+    user_id = Tools.to_integer_as_needed(user_id)
+
+    users =
+      user_id
+      |> Relations.blocked_users()
+      |> Enum.map(fn relation ->
+        Accounts.get_user(relation.blocked_user_id)
+      end)
+    render(conn, "user.json", users: users)
+  end
+
+  @doc """
+  Block a user.
+  """
+  def block_user(conn, %{"user_id" => user_id, "blocked_user_id" => blocked_user_id}) do
+    user_id = Tools.to_integer_as_needed(user_id)
+    blocked_user_id = Tools.to_integer_as_needed(blocked_user_id)
+
+    Relations.block(user_id, blocked_user_id)
+    |> case do
+      {:ok, _relation} -> json(conn, %{result: true})
+      {:error, _error} -> json(conn, %{result: false})
+    end
   end
 end
