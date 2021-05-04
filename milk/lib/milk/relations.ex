@@ -241,9 +241,19 @@ defmodule Milk.Relations do
   end
 
   @doc """
-  Get blocking users.
+  Unblock a user.
   """
-  def blocking_users(user_id) do
+  def unblock(user_id, blocked_user_id) do
+    BlockRelation
+    |> where([br], br.block_user_id == ^user_id and br.blocked_user_id == ^blocked_user_id)
+    |> Repo.one()
+    |> Repo.delete()
+  end
+
+  @doc """
+  Get blocked users.
+  """
+  def blocked_users(user_id) do
     BlockRelation
     |> where([br], br.block_user_id == ^user_id)
     |> Repo.all()

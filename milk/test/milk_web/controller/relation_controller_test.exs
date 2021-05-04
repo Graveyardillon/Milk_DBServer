@@ -139,4 +139,58 @@ defmodule MilkWeb.RelationControllerTest do
       end).()
     end
   end
+
+  describe "block user and get blocked users" do
+    test "both works", %{conn: conn} do
+      user1 = fixture_user(1)
+      user2 = fixture_user(2)
+
+      conn = post(conn, Routes.relation_path(conn, :block_user), user_id: user1.id, blocked_user_id: user2.id)
+      assert json_response(conn, 200)["result"]
+
+      conn = get(conn, Routes.relation_path(conn, :blocked_users), user_id: user1.id)
+      assert json_response(conn, 200)["result"]
+      json_response(conn, 200)
+      |> Map.get("data")
+      |> Enum.map(fn user ->
+        assert user["id"] == user2.id
+        assert user["email"] == user2.auth.email
+        assert user["icon_path"] == user2.icon_path
+        assert user["bio"] == user2.bio
+        assert user["name"] == user2.name
+        assert user["id_for_show"] == user2.id_for_show
+        assert user["language"] == user2.language
+      end)
+      |> length()
+      |> (fn len ->
+        assert len == 1
+      end).()
+    end
+  end
+
+  describe "unblock user" do
+    test "works", %{conn: conn} do
+      user1 = fixture_user(1)
+      user2 = fixture_user(2)
+
+      conn = post(conn, Routes.relation_path(conn, :block_user), user_id: user1.id, blocked_user_id: user2.id)
+      conn = get(conn, Routes.relation_path(conn, :blocked_users), user_id: user1.id)
+      json_response(conn, 200)
+      |> Map.get("data")
+      |> length()
+      |> (fn len ->
+        assert  len == 1
+      end).()
+
+      conn = post(conn, Routes.relation_path(conn, :unblock_user), user_id: user1.id, blocked_user_id: user2.id)
+      assert json_response(conn, 200)["result"]
+      conn = get(conn, Routes.relation_path(conn, :blocked_users), user_id: user1.id)
+      json_response(conn, 200)
+      |> Map.get("data")
+      |> length()
+      |> (fn len ->
+        assert len == 0
+      end).()
+    end
+  end
 end
