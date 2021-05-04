@@ -102,8 +102,9 @@ defmodule Milk.Notif do
 
   """
   def delete_notification(%Notification{} = notification) do
-    NotificationLog.changeset(%Notification{}, Map.from_struct(notification))
-    |> Repo.insert
+    %NotificationLog{}
+    |> NotificationLog.changeset(Map.from_struct(notification))
+    |> Repo.insert()
     Repo.delete(notification)
   end
 
