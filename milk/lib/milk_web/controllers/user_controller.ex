@@ -1,6 +1,7 @@
 defmodule MilkWeb.UserController do
   use MilkWeb, :controller
 
+  alias Common.Tools
   alias Milk.Accounts
   alias Milk.Accounts.User
   alias Milk.UserManager.Guardian
@@ -80,8 +81,12 @@ defmodule MilkWeb.UserController do
   @doc """
   Deletes a user.
   """
-  def delete(conn, %{"id" => id, "password" => password, "email" => email, "token" => token}) do
-    case Accounts.delete_user(id, password, email, token) do
+  def delete(conn, params = %{"id" => id, "password" => password, "email" => email, "token" => token}) do
+    id = Tools.to_integer_as_needed(id)
+
+    Accounts.delete_user(id, password, email, token)
+    |> IO.inspect()
+    |> case do
       {:ok, _} ->
         Guardian.revoke(token)
         #send_resp(conn, :no_content, "")

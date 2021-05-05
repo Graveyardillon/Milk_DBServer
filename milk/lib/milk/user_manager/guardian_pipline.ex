@@ -1,5 +1,6 @@
-defmodule Milk.UserManager.GuardianPipline do
+defmodule Milk.UserManager.GuardianPipeline do
   use MilkWeb, :controller
+
   import Plug.Conn
 
   alias Milk.UserManager.Guardian
@@ -7,7 +8,9 @@ defmodule Milk.UserManager.GuardianPipline do
   def init(default), do: default
 
   def call(%Plug.Conn{params: %{"token" => token}} = conn, _default) do
-    case Guardian.decode_and_verify(token) do
+    token
+    |> Guardian.decode_and_verify()
+    |> case do
       {:ok, _} ->
         conn
       {:error, :token_expired} ->
@@ -16,14 +19,14 @@ defmodule Milk.UserManager.GuardianPipline do
           json(conn, %{result: false, error: "That token is out of time"})
           halt(conn)
         else
-          json(conn, %{result: false, error: "That token is not exist"})
+          json(conn, %{result: false, error: "That token does not exist"})
           halt(conn)
         end
       {:error, :not_exist} ->
         json(conn, %{resutl: false, error: "That token can't use"})
         halt(conn)
       _ ->
-        json(conn, %{result: false, error: "That token is not exist"})
+        json(conn, %{result: false, error: "That token does not exist"})
         halt(conn)
     end
   end

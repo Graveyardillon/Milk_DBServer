@@ -123,14 +123,17 @@ defmodule Milk.Accounts do
   Creates a user.
   """
   @spec create_user(map) :: tuple()
-  def create_user(without_id_attrs) do
-    attrs =
-      case without_id_attrs do
-        %{"id_for_show" => id} -> %{without_id_attrs | "id_for_show" => generate_id_for_show(id)}
-        _ -> Map.put(without_id_attrs, "id_for_show", generate_id_for_show())
+  def create_user(attrs_without_id_for_show) do
+    attrs = attrs_without_id_for_show
+      |> case do
+        %{"id_for_show" => id} ->
+          %{attrs_without_id_for_show | "id_for_show" => generate_id_for_show(id)}
+        _ ->
+          attrs_without_id_for_show
+          |> Map.put("id_for_show", generate_id_for_show())
       end
 
-    Multi.new
+    Multi.new()
     |> Multi.insert(:user, User.changeset(%User{}, attrs))
     |> Multi.insert(:auth, fn(%{user: user}) ->
       Ecto.build_assoc(user, :auth)
@@ -278,7 +281,9 @@ defmodule Milk.Accounts do
   end
 
   defp get_authorized_user(id, _password, email, token) do
-    case Guardian.decode_and_verify(token) do
+    token
+    |> Guardian.decode_and_verify()
+    |> case do
       {:ok, _} ->
         Repo.one(
           from u in User,
@@ -296,12 +301,17 @@ defmodule Milk.Accounts do
         |> if do
           "That token is expired"
         else
-          "That token is not exist"
+          "That token does not exist"
         end
       {:error, :not_exist} ->
         "That token can't use"
       _ ->
-        "That token is not exist"
+        "That token does not exist"
+    end
+    |> IO.inspect(label: :case)
+    |> case do
+      x when is_binary(x) -> x
+      x -> x
     end
   end
 
