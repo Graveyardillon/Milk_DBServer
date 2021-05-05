@@ -11,7 +11,7 @@ defmodule MilkWeb.Router do
 
   pipeline :api do
     plug :accepts, ["json"]
-    # plug Milk.UserManager.GuardianPipline
+    # plug Milk.UserManager.GuardianPipeline
   end
 
   scope "/", MilkWeb do
@@ -25,7 +25,7 @@ defmodule MilkWeb.Router do
 
     get "/check/connection", ConnectionCheckController, :connection_check
 
-    resources "/user", UserController, except: [:new, :edit, :index, :show, :create, :update]
+    resources "/user", UserController, except: [:new, :edit, :index, :show, :create, :update, :delete]
 
     post  "/user/check_username_duplication", UserController, :check_username_duplication
     get  "/user/get", UserController, :show
@@ -39,6 +39,7 @@ defmodule MilkWeb.Router do
     post "/user/login_forced", UserController, :login_forced
     post "/user/logout", UserController, :logout
     post "/user/change_password", UserController, :change_password
+    delete "/user/delete", UserController, :delete
 
     post "/user_report", ReportController, :create_user_report
     post "/tournament_report", ReportController, :create_tournament_report

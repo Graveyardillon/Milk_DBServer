@@ -1,5 +1,7 @@
 defmodule MilkWeb.ChatRoomView do
   use MilkWeb, :view
+
+  alias Common.Tools
   alias MilkWeb.ChatRoomView
 
   def render("index.json", %{chat_room: chat_room}) do
@@ -22,7 +24,7 @@ defmodule MilkWeb.ChatRoomView do
 
   def render("chat_rooms_with_user.json", %{info: info}) do
     %{
-      data: Enum.map(info, fn i -> 
+      data: Enum.map(info, fn i ->
         %{
           id: i.id,
           room_id: i.room_id,
@@ -54,13 +56,9 @@ defmodule MilkWeb.ChatRoomView do
 
   def render("error.json", %{error: error}) do
     if(error) do
-      %{result: false, error: create_message(error), data: nil}
+      %{result: false, error: Tools.create_error_message(error), data: nil}
     else
       %{result: false, error: nil, data: nil}
     end
-  end
-
-  def create_message(error) do
-    Enum.reduce(error, "",fn {key, value}, acc -> to_string(key) <> " "<> elem(value,0) <> ", "<> acc end)
   end
 end

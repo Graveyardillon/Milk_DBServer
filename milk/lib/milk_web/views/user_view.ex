@@ -1,5 +1,7 @@
 defmodule MilkWeb.UserView do
   use MilkWeb, :view
+
+  alias Common.Tools
   alias MilkWeb.UserView
   alias Milk.UserManager.Guardian
 
@@ -19,16 +21,9 @@ defmodule MilkWeb.UserView do
     end
   end
 
-  def render("login.json", %{user: user}) do
+  def render("login.json", %{user: user, token: token}) do
     if user do
-      case Guardian.encode_and_sign(user) do
-        {:ok, token, _} ->
-          %{data: render_one(user, UserView, "user.json"), result: true, token: token}
-        {:error, error} ->
-          %{result: false, error: create_message(error), data: nil}
-        _ ->
-          %{result: false, data: nil}
-      end
+      %{data: render_one(user, UserView, "user.json"), result: true, token: token}
     else
       %{data: nil, result: false}
     end
@@ -50,15 +45,11 @@ defmodule MilkWeb.UserView do
   end
 
   def render("error.json", %{error: error}) do
-    %{result: false, error: create_message(error), data: nil}
+    %{result: false, error: Tools.create_error_message(error), data: nil}
   end
 
   def render("error.json", %{error_code: num}) do
     %{result: false, error_code: num, data: nil}
-  end
-
-  def create_message(error) do
-    Enum.reduce(error, "",fn {key, value}, acc -> to_string(key) <> " "<> elem(value,0) <> ", "<> acc end)
   end
 
   def render("user.json", %{user: user}) do
