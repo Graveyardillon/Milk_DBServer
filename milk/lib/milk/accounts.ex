@@ -308,7 +308,6 @@ defmodule Milk.Accounts do
       _ ->
         "That token does not exist"
     end
-    |> IO.inspect(label: :case)
     |> case do
       x when is_binary(x) -> x
       x -> x

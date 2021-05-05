@@ -159,7 +159,7 @@ defmodule Milk.AccountsTest do
         "email_or_username" => user.name
       }
       assert {:ok, %User{}, token} = Accounts.login(login_params)
-      assert {:error, "That token is not exist"} = Accounts.delete_user(user.id, @user_valid_attrs["password"], user.auth.email, "a")
+      assert {:error, "That token does not exist"} = Accounts.delete_user(user.id, @user_valid_attrs["password"], user.auth.email, "a")
       assert Accounts.get_user(user.id)
     end
   end

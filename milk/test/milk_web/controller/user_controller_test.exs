@@ -173,7 +173,7 @@ defmodule MilkWeb.UserControllerTest do
       token = response["token"]
       user = response["data"]
 
-      conn = delete(conn, Routes.user_path(conn, :delete, user["id"]), %{id: user["id"], password: @create_attrs["password"], email: user["email"], token: token})
+      conn = delete(conn, Routes.user_path(conn, :delete), %{id: user["id"], password: @create_attrs["password"], email: user["email"], token: token})
       assert json_response(conn, 200)["result"]
     end
   end
