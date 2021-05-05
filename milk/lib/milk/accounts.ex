@@ -334,7 +334,7 @@ defmodule Milk.Accounts do
         user
         |> User.changeset(%{logout_fl: false})
         |> Repo.update()
-      _ -> {:error, nil, nil}
+      _ -> {:error, nil}
     end
   end
 

@@ -53,15 +53,13 @@ defmodule MilkWeb.UserController do
   def login(conn, %{"user" => user_params}) do
     user_params
     |> Accounts.login()
-    |> IO.inspect(label: :login)
     |> case do
       {:ok, %User{} = user} -> generate_token(user)
       x -> x
     end
-    |> IO.inspect(label: :ioinspect)
     |> case do
       {:ok, token, %User{} = user} -> render(conn, "login.json", %{user: user, token: token})
-      {:error, nil, nil} -> render(conn, "error.json", error_code: 104)
+      {:error, nil} -> render(conn, "error.json", error_code: 104)
       {:error, error} -> render(conn, "error.json", error: error)
       _ -> render(conn, "error.json", error_code: 104)
      end
@@ -82,7 +80,7 @@ defmodule MilkWeb.UserController do
       user
       |> Guardian.encode_and_sign()
       |> case do
-        {:ok, token, _} -> {:ok, token, user}
+        {:ok, token, _full_claims} -> {:ok, token, user}
         {:error, error} -> {:error, error}
         _ -> {:error, nil}
       end
