@@ -810,7 +810,7 @@ defmodule Milk.TournamentsTest do
       "user_id" => [user.id]
     }
 
-    :ok = Tournaments.create_assistant(assistant_attrs)
+    :ok = Tournaments.create_assistants(assistant_attrs)
     assistant_attrs
   end
 
@@ -822,8 +822,8 @@ defmodule Milk.TournamentsTest do
     end
   end
 
-  describe "create assistant" do
-    test "create_assistant/1 with valid data works fine" do
+  describe "create assistants" do
+    test "create_assistants/1 with valid data works fine" do
       assert assistant = fixture(:assistant)
     end
   end

@@ -1140,7 +1140,7 @@ defmodule Milk.Tournaments do
 
       FIXME: 戻り値とか
   """
-  def create_assistant(attrs \\ %{}) do
+  def create_assistants(attrs \\ %{}) do
     tournament_id = Tools.to_integer_as_needed(attrs["tournament_id"])
 
     Assistant
