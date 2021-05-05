@@ -280,11 +280,11 @@ defmodule Milk.Accounts do
     end
   end
 
-  defp get_authorized_user(id, _password, email, token) do
+  defp get_authorized_user(id, password, email, token) do
     token
     |> Guardian.decode_and_verify()
     |> case do
-      {:ok, _} ->
+      {:ok, _claims} ->
         Repo.one(
           from u in User,
           join: a in assoc(u, :auth),
@@ -309,7 +309,14 @@ defmodule Milk.Accounts do
         "That token does not exist"
     end
     |> case do
-      x when is_binary(x) -> x
+      %User{} = user ->
+        password
+        |> Argon2.verify_pass(user.auth.password)
+        |> if do
+          user
+        else
+          nil
+        end
       x -> x
     end
   end

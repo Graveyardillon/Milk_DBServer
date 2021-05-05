@@ -145,6 +145,18 @@ defmodule MilkWeb.UserControllerTest do
     end
   end
 
+  describe "logout" do
+    test "works", %{conn: conn} do
+      conn = post(conn, Routes.user_path(conn, :create), user: @create_attrs)
+      response = json_response(conn, 200)
+      token = response["token"]
+      user = response["data"]
+
+      conn = post(conn, Routes.user_path(conn, :logout), id: user["id"], token: token)
+      assert json_response(conn, 200)["result"]
+    end
+  end
+
   describe "update" do
     test "update", %{conn: conn} do
       conn = post(conn, Routes.user_path(conn, :create), user: @create_attrs)

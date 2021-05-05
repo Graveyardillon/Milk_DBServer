@@ -93,10 +93,16 @@ defmodule MilkWeb.UserController do
   Logout process.
   """
   def logout(conn, %{"id" => id, "token" => token}) do
-    result = Accounts.logout(id)
-
-    Guardian.revoke(token)
-    json(conn, %{result: result})
+    token
+    |> Guardian.decode_and_verify()
+    |> IO.inspect(label: :dandv)
+    |> case do
+      {:ok, _claims} ->
+        result = Accounts.logout(id)
+        json(conn, %{result: result})
+      _ ->
+        json(conn, %{result: false})
+    end
   end
 
   @doc """
