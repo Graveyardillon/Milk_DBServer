@@ -331,12 +331,9 @@ defmodule Milk.Accounts do
     end
     |> case do
       %User{} = user ->
-        {:ok, userinfo} =
-          user
-          |> User.changeset(%{logout_fl: false})
-          |> Repo.update()
-        {:ok, token, _} = Guardian.encode_and_sign(userinfo, %{}, token_type: "refresh", ttl: {4, :weeks})
-        {:ok, userinfo, token}
+        user
+        |> User.changeset(%{logout_fl: false})
+        |> Repo.update()
       _ -> {:error, nil, nil}
     end
   end

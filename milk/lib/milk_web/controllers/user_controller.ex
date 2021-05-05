@@ -7,7 +7,7 @@ defmodule MilkWeb.UserController do
   alias Milk.UserManager.Guardian
 
   @doc """
-  Checks username has been already taken.
+  Checks if username has been taken.
   """
   def check_username_duplication(conn, %{"name" => name}) do
     case Accounts.check_duplication?(name) do
@@ -25,8 +25,12 @@ defmodule MilkWeb.UserController do
     user_params
     |> Accounts.create_user()
     |> case do
-      {:ok, %User{} = user} ->
-        render(conn, "login.json", %{user: user})
+      {:ok, %User{} = user} -> generate_token(user)
+      x -> x
+    end
+    |> case do
+      {:ok, token, %User{} = user} ->
+        render(conn, "login.json", %{user: user, token: token})
       {:error, error} ->
         case error do
           [email: {"has already been taken", _ }] ->
@@ -49,10 +53,16 @@ defmodule MilkWeb.UserController do
   def login(conn, %{"user" => user_params}) do
     user_params
     |> Accounts.login()
+    |> IO.inspect(label: :login)
     |> case do
-      {:ok, user} -> render(conn, "login.json", %{user: user})
-      {:ok, user, _token} -> render(conn, "login.json", %{user: user})
+      {:ok, %User{} = user} -> generate_token(user)
+      x -> x
+    end
+    |> IO.inspect(label: :ioinspect)
+    |> case do
+      {:ok, token, %User{} = user} -> render(conn, "login.json", %{user: user, token: token})
       {:error, nil, nil} -> render(conn, "error.json", error_code: 104)
+      {:error, error} -> render(conn, "error.json", error: error)
       _ -> render(conn, "error.json", error_code: 104)
      end
   end
@@ -63,6 +73,22 @@ defmodule MilkWeb.UserController do
   def login_forced(conn, %{"user" => user_params}) do
     user = Accounts.login_forced(user_params)
     render(conn, "login_forced.json", %{user: user})
+  end
+
+  defp generate_token(user) do
+    user
+    |> is_nil()
+    |> unless do
+      user
+      |> Guardian.encode_and_sign()
+      |> case do
+        {:ok, token, _} -> {:ok, token, user}
+        {:error, error} -> {:error, error}
+        _ -> {:error, nil}
+      end
+    else
+      {:error, "user is nil"}
+    end
   end
 
   @doc """

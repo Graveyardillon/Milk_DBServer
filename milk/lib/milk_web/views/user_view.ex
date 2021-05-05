@@ -21,16 +21,9 @@ defmodule MilkWeb.UserView do
     end
   end
 
-  def render("login.json", %{user: user}) do
+  def render("login.json", %{user: user, token: token}) do
     if user do
-      case Guardian.encode_and_sign(user) do
-        {:ok, token, _} ->
-          %{data: render_one(user, UserView, "user.json"), result: true, token: token}
-        {:error, error} ->
-          %{result: false, error: Tools.create_error_message(error), data: nil}
-        _ ->
-          %{result: false, data: nil}
-      end
+      %{data: render_one(user, UserView, "user.json"), result: true, token: token}
     else
       %{data: nil, result: false}
     end
