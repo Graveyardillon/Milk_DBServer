@@ -95,7 +95,6 @@ defmodule MilkWeb.UserController do
   def logout(conn, %{"id" => id, "token" => token}) do
     token
     |> Guardian.decode_and_verify()
-    |> IO.inspect(label: :dandv)
     |> case do
       {:ok, _claims} ->
         result = Accounts.logout(id)
