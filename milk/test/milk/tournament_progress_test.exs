@@ -256,6 +256,7 @@ defmodule Milk.TournamentProgressTest do
     end
   end
 
+  # TODO: 検証が不十分なためコメントアウトしておいた
   # describe "absence" do
   #   test "set_timelimit_on_all_entrants/1 works fine" do
   #     tournament = fixture_tournament(is_started: false)

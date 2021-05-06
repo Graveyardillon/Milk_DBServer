@@ -629,6 +629,15 @@ defmodule Milk.TournamentsTest do
       assert "IsManager" == Tournaments.state!(tournament.id, tournament.master_id)
     end
 
+    test "state!/2 returns IsAssistant" do
+      %{tournament: tournament} = create_tournament_for_flow(nil)
+      entrants = create_entrants(8, tournament.id)
+      assistant_id = fixture_user(num: 10).id
+      Tournaments.create_assistants(%{"tournament_id" => tournament.id, "user_id" => [assistant_id]})
+      start(tournament.master_id, tournament.id)
+      assert "IsAssistant" == Tournaments.state!(tournament.id, assistant_id)
+    end
+
     test "state!/2 returns IsLoser" do
       %{tournament: tournament} = create_tournament_for_flow(nil)
       create_entrants(7, tournament.id)

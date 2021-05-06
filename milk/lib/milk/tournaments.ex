@@ -1078,9 +1078,9 @@ defmodule Milk.Tournaments do
 
   def get_assistant(id), do: Repo.get(Assistant, id)
 
-  def get_assistants(id) do
+  def get_assistants(tournament_id) do
     Assistant
-    |> where([a], a.tournament_id == ^id)
+    |> where([a], a.tournament_id == ^tournament_id)
     |> Repo.all()
   end
 
@@ -1451,16 +1451,22 @@ defmodule Milk.Tournaments do
 
   defp check_is_manager?(tournament, user_id) do
     is_manager = tournament.master_id == user_id
-    is_not_entrant =
-      tournament.id
+    is_assistant = tournament.id
+      |> get_assistants()
+      |> Enum.filter(fn assistant -> assistant.user_id == user_id end)
+      |> (fn list -> list == [] end).()
+    is_not_entrant = tournament.id
       |> get_entrants()
       |> Enum.filter(fn entrant -> entrant.user_id == user_id end)
       |> (fn list -> list == [] end).()
 
-    if is_manager && is_not_entrant do
-      "IsManager"
-    else
-      check_has_lost?(tournament.id, user_id)
+    cond do
+      is_manager && is_not_entrant ->
+        "IsManager"
+      (!is_manager || is_assistant) && is_not_entrant ->
+        "IsAssistant"
+      true ->
+        check_has_lost?(tournament.id, user_id)
     end
   end
 
