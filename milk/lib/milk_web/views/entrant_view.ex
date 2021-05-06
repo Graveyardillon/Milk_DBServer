@@ -1,5 +1,7 @@
 defmodule MilkWeb.EntrantView do
   use MilkWeb, :view
+
+  alias Common.Tools
   alias MilkWeb.EntrantView
 
   def render("index.json", %{entrant: entrant}) do
@@ -29,18 +31,10 @@ defmodule MilkWeb.EntrantView do
   end
 
   def render("multierror.json", %{error: error}) do
-    %{result: false, error: create_message(error), data: nil}
+    %{result: false, error: Tools.create_error_message(error), data: nil}
   end
 
   def render("rank.json", %{rank: rank}) do
-    %{data: 
-      %{
-        rank: rank
-      }
-    }
-  end
-
-  def create_message(error) do
-    Enum.reduce(error, "",fn {key, value}, acc -> to_string(key) <> " "<> elem(value,0) <> ", "<> acc end)
+    %{data: %{rank: rank}}
   end
 end

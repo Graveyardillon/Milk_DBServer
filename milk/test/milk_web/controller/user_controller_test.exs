@@ -145,6 +145,18 @@ defmodule MilkWeb.UserControllerTest do
     end
   end
 
+  describe "logout" do
+    test "works", %{conn: conn} do
+      conn = post(conn, Routes.user_path(conn, :create), user: @create_attrs)
+      response = json_response(conn, 200)
+      token = response["token"]
+      user = response["data"]
+
+      conn = post(conn, Routes.user_path(conn, :logout), id: user["id"], token: token)
+      assert json_response(conn, 200)["result"]
+    end
+  end
+
   describe "update" do
     test "update", %{conn: conn} do
       conn = post(conn, Routes.user_path(conn, :create), user: @create_attrs)
@@ -173,8 +185,37 @@ defmodule MilkWeb.UserControllerTest do
       token = response["token"]
       user = response["data"]
 
-      conn = delete(conn, Routes.user_path(conn, :delete, user["id"]), %{id: user["id"], password: @create_attrs["password"], email: user["email"], token: token})
+      conn = delete(conn, Routes.user_path(conn, :delete), %{id: user["id"], password: @create_attrs["password"], email: user["email"], token: token})
       assert json_response(conn, 200)["result"]
+    end
+
+    test "does not work (invalid password)", %{conn: conn} do
+      conn = post(conn, Routes.user_path(conn, :create), user: @create_attrs)
+      response = json_response(conn, 200)
+      token = response["token"]
+      user = response["data"]
+
+      conn = delete(conn, Routes.user_path(conn, :delete), %{id: user["id"], password: "wrong_passw0rD", email: user["email"], token: token})
+      refute json_response(conn, 200)["result"]
+    end
+
+    test "does not work (invalid token)", %{conn: conn} do
+      conn = post(conn, Routes.user_path(conn, :create), user: @create_attrs)
+      response = json_response(conn, 200)
+      user = response["data"]
+
+      conn = delete(conn, Routes.user_path(conn, :delete), %{id: user["id"], password: @create_attrs["password"], email: user["email"], token: "toooken"})
+      refute json_response(conn, 200)["result"]
+    end
+
+    test "does not work (invalid email)", %{conn: conn} do
+      conn = post(conn, Routes.user_path(conn, :create), user: @create_attrs)
+      response = json_response(conn, 200)
+      token = response["token"]
+      user = response["data"]
+
+      conn = delete(conn, Routes.user_path(conn, :delete), %{id: user["id"], password: @create_attrs["password"], email: "wrong_email@wrong.wng", token: token})
+      refute json_response(conn, 200)["result"]
     end
   end
 

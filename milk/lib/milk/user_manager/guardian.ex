@@ -1,11 +1,16 @@
 defmodule Milk.UserManager.Guardian do
   use Guardian, otp_app: :milk
+
   import Ecto.Query
 
-  alias Milk.Accounts
-  alias Milk.UserManager.GuardianTokens
-  alias Milk.Repo
-  alias Milk.UserManager.Guardian
+  alias Milk.{
+    Accounts,
+    Repo
+  }
+  alias Milk.UserManager.{
+    Guardian,
+    GuardianTokens
+  }
 
   def subject_for_token(user, _claims) do
     id =
@@ -15,7 +20,7 @@ defmodule Milk.UserManager.Guardian do
         userinfo ->
           user.user.id
       end
-      |> to_string
+      |> to_string()
     {:ok, id}
   end
 

@@ -14,6 +14,7 @@ defmodule Milk.AccountsTest do
     Relation
   }
   alias Milk.Chat.Chats
+  alias Milk.UserManager.Guardian
 
   @user_valid_attrs %{"icon_path" => "some icon_path", "language" => "some language", "name" => "some name", "notification_number" => 42, "point" => 42, "email" => "some@email.com", "logout_fl" => true, "password" => "S1ome password"}
   defp fixture(:user) do
@@ -148,7 +149,8 @@ defmodule Milk.AccountsTest do
         "password" => @user_valid_attrs["password"],
         "email_or_username" => user.name
       }
-      assert {:ok, %User{}, token} = Accounts.login(login_params)
+      assert {:ok, %User{} = user} = Accounts.login(login_params)
+      assert {:ok, token, _} = Guardian.encode_and_sign(user)
       assert {:ok, _} = Accounts.delete_user(user.id, @user_valid_attrs["password"], user.auth.email, token)
       assert !Accounts.get_user(user.id)
     end
@@ -158,8 +160,8 @@ defmodule Milk.AccountsTest do
         "password" => @user_valid_attrs["password"],
         "email_or_username" => user.name
       }
-      assert {:ok, %User{}, token} = Accounts.login(login_params)
-      assert {:error, "That token is not exist"} = Accounts.delete_user(user.id, @user_valid_attrs["password"], user.auth.email, "a")
+      assert {:ok, %User{}} = Accounts.login(login_params)
+      assert {:error, "That token does not exist"} = Accounts.delete_user(user.id, @user_valid_attrs["password"], user.auth.email, "a")
       assert Accounts.get_user(user.id)
     end
   end
@@ -173,7 +175,7 @@ defmodule Milk.AccountsTest do
         "password" => @user_valid_attrs["password"],
         "email_or_username" => user.auth.email
       }
-      assert {:ok, %User{}, _token} = Accounts.login(login_params)
+      assert {:ok, %User{}} = Accounts.login(login_params)
     end
 
     test "login/1 can login user by username", %{user: user} do
@@ -181,7 +183,7 @@ defmodule Milk.AccountsTest do
         "password" => @user_valid_attrs["password"],
         "email_or_username" => user.name
       }
-      assert {:ok, %User{}, _token} = Accounts.login(login_params)
+      assert {:ok, %User{}} = Accounts.login(login_params)
     end
 
     test "login/1 can't login user by invalid username", %{user: user} do
@@ -189,7 +191,7 @@ defmodule Milk.AccountsTest do
         "password" => @user_valid_attrs["password"],
         "email_or_username" => "invalid"
       }
-      assert {:error, nil, nil} ==  Accounts.login(login_params)
+      assert {:error, nil} ==  Accounts.login(login_params)
     end
 
     test "login/1 can't login user by invalid email", %{user: user} do
@@ -197,7 +199,7 @@ defmodule Milk.AccountsTest do
         "password" => @user_valid_attrs["password"],
         "email_or_username" => "invalid@a.com"
       }
-      assert {:error, nil, nil} == Accounts.login(login_params)
+      assert {:error, nil} == Accounts.login(login_params)
     end
 
     test "login/1 can't login user by invalid password", %{user: user} do
@@ -205,7 +207,7 @@ defmodule Milk.AccountsTest do
         "password" => "powd",
         "email_or_username" => user.auth.email
       }
-      assert {:error, nil, nil} == Accounts.login(login_params)
+      assert {:error, nil} == Accounts.login(login_params)
     end
 
     test "login_forced/1 logins user", %{user: user} do
@@ -225,7 +227,7 @@ defmodule Milk.AccountsTest do
         "password" => @user_valid_attrs["password"],
         "email_or_username" => user.auth.email
       }
-      {:ok, %User{}, _token} = Accounts.login(login_params)
+      {:ok, %User{}} = Accounts.login(login_params)
       assert Accounts.logout(user.id)
     end
   end

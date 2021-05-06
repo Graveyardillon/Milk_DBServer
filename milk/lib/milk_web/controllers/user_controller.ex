@@ -1,17 +1,17 @@
 defmodule MilkWeb.UserController do
   use MilkWeb, :controller
 
+  alias Common.Tools
   alias Milk.Accounts
   alias Milk.Accounts.User
   alias Milk.UserManager.Guardian
 
   @doc """
-  Checks username has been already taken.
+  Checks if username has been taken.
   """
   def check_username_duplication(conn, %{"name" => name}) do
     case Accounts.check_duplication?(name) do
       true ->
-        # FIXME: snake_case
         json(conn, %{is_unique: false})
       false ->
         json(conn, %{is_unique: true})
@@ -22,18 +22,85 @@ defmodule MilkWeb.UserController do
   Creates a user.
   """
   def create(conn, %{"user" => user_params}) do
-    case Accounts.create_user(user_params) do
-      {:ok, %User{} = user} ->
-        render(conn, "login.json", %{user: user})
+    user_params
+    |> Accounts.create_user()
+    |> case do
+      {:ok, %User{} = user} -> generate_token(user)
+      x -> x
+    end
+    |> case do
+      {:ok, token, %User{} = user} ->
+        render(conn, "login.json", %{user: user, token: token})
       {:error, error} ->
         case error do
-          [email: {"has already been taken", _ }] -> render(conn, "error.json", error_code: 101)
-          [password: {"should be at least %{count} character(s)", _ }] -> render(conn, "error.json", error_code: 102)
-          [password: {"has invalid format", _ }] -> render(conn, "error.json", error_code: 103)
-          _ -> render(conn, "error.json", error: error)
+          [email: {"has already been taken", _ }] ->
+            render(conn, "error.json", error_code: 101)
+          [password: {"should be at least %{count} character(s)", _ }] ->
+            render(conn, "error.json", error_code: 102)
+          [password: {"has invalid format", _ }] ->
+            render(conn, "error.json", error_code: 103)
+          _ ->
+            render(conn, "error.json", error: error)
         end
       _ ->
         render(conn, "show.json", user: nil)
+    end
+  end
+
+  @doc """
+  Login process.
+  """
+  def login(conn, %{"user" => user_params}) do
+    user_params
+    |> Accounts.login()
+    |> case do
+      {:ok, %User{} = user} -> generate_token(user)
+      x -> x
+    end
+    |> case do
+      {:ok, token, %User{} = user} -> render(conn, "login.json", %{user: user, token: token})
+      {:error, nil} -> render(conn, "error.json", error_code: 104)
+      {:error, error} -> render(conn, "error.json", error: error)
+      _ -> render(conn, "error.json", error_code: 104)
+     end
+  end
+
+  @doc """
+  Forced login process.
+  """
+  def login_forced(conn, %{"user" => user_params}) do
+    user = Accounts.login_forced(user_params)
+    render(conn, "login_forced.json", %{user: user})
+  end
+
+  defp generate_token(user) do
+    user
+    |> is_nil()
+    |> unless do
+      user
+      |> Guardian.encode_and_sign()
+      |> case do
+        {:ok, token, _full_claims} -> {:ok, token, user}
+        {:error, error} -> {:error, error}
+        _ -> {:error, nil}
+      end
+    else
+      {:error, "user is nil"}
+    end
+  end
+
+  @doc """
+  Logout process.
+  """
+  def logout(conn, %{"id" => id, "token" => token}) do
+    token
+    |> Guardian.decode_and_verify()
+    |> case do
+      {:ok, _claims} ->
+        result = Accounts.logout(id)
+        json(conn, %{result: result})
+      _ ->
+        json(conn, %{result: false})
     end
   end
 
@@ -81,7 +148,10 @@ defmodule MilkWeb.UserController do
   Deletes a user.
   """
   def delete(conn, %{"id" => id, "password" => password, "email" => email, "token" => token}) do
-    case Accounts.delete_user(id, password, email, token) do
+    id = Tools.to_integer_as_needed(id)
+
+    Accounts.delete_user(id, password, email, token)
+    |> case do
       {:ok, _} ->
         Guardian.revoke(token)
         #send_resp(conn, :no_content, "")
@@ -89,34 +159,6 @@ defmodule MilkWeb.UserController do
       _ ->
         json(conn, %{result: false})
     end
-  end
-
-  @doc """
-  Login process.
-  """
-  def login(conn, %{"user" => user_params}) do
-    user = Accounts.login(user_params)
-    case user do
-      {:ok, user} -> render(conn, "login.json", %{user: user})
-      {:ok, user, _token} -> render(conn, "login.json", %{user: user})
-      {:error, nil, nil} -> render(conn, "error.json", error_code: 104)
-      _ -> render(conn, "error.json", error_code: 104)
-     end
-  end
-
-  def login_forced(conn, %{"user" => user_params}) do
-    user = Accounts.login_forced(user_params)
-    render(conn, "login_forced.json", %{user: user})
-  end
-
-  @doc """
-  Logout process.
-  """
-  def logout(conn, %{"id" => id, "token" => token}) do
-    result = Accounts.logout(id)
-
-    Guardian.revoke(token)
-    json(conn, %{result: result})
   end
 
   @doc """
