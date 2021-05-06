@@ -117,7 +117,7 @@ defmodule Milk.Tournaments do
   end
 
   @doc """
-  Returns tournaments of certain user.
+  Returns tournaments which are filtered by master id.
   """
   def get_tournaments_by_master_id(user_id) do
     Repo.all(from t in Tournament, where: t.master_id == ^user_id)
@@ -138,6 +138,18 @@ defmodule Milk.Tournaments do
         |> Repo.all()
 
       Map.put(tournament_log, :entrants, entrants)
+    end)
+  end
+
+  @doc """
+  Returns tournaments which are filtered by user id of assistant.
+  """
+  def get_tournaments_by_assistant_id(user_id) do
+    Assistant
+    |> where([a], a.user_id == ^user_id)
+    |> Repo.all()
+    |> Enum.map(fn assistant ->
+      get_tournament(assistant.tournament_id)
     end)
   end
 

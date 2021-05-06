@@ -151,13 +151,46 @@ defmodule Milk.TournamentsTest do
 
     test "get_tournaments_by_master_id/1 returns tournaments of a user" do
       tournament = fixture_tournament()
-      refute length(Tournaments.get_tournaments_by_master_id(tournament.master_id)) == 0
+      tournament.master_id
+      |> Tournaments.get_tournaments_by_master_id()
+      |> Enum.map(fn t ->
+        assert t.id == tournament.id
+      end)
+      |> length()
+      |> (fn len ->
+        assert len == 1
+      end).()
     end
 
     test "get_tournaments_by_master_id/1 fails to return tournaments of a user" do
       user = fixture_user()
       _tournament = fixture_tournament()
       assert length(Tournaments.get_tournaments_by_master_id(user.id)) == 0
+    end
+
+    test "get_tournaments_by_assistant_id/1 fails to returns tournaments of a user" do
+      user = fixture_user()
+      tournament = fixture_tournament()
+      Tournaments.create_assistants(%{"tournament_id" => tournament.id, "user_id" => [user.id]})
+
+      user.id
+      |> Tournaments.get_tournaments_by_assistant_id()
+      |> Enum.map(fn t ->
+        IO.inspect(t, label: :ti)
+        assert t.id == tournament.id
+        assert t.game_name == tournament.game_name
+        assert t.is_started == tournament.is_started
+        assert t.master_id == tournament.master_id
+        assert t.name == tournament.name
+        assert t.platform_id == tournament.platform_id
+        assert t.thumbnail_path == tournament.thumbnail_path
+        assert t.url == tournament.url
+        assert t.type == tournament.type
+      end)
+      |> length()
+      |> (fn len ->
+        assert len == 1
+      end).()
     end
 
     test "get_ongoing_tournaments_by_master_id/1 fails to return user's ongoing tournaments" do
