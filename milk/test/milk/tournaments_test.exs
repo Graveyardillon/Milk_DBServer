@@ -176,7 +176,6 @@ defmodule Milk.TournamentsTest do
       user.id
       |> Tournaments.get_tournaments_by_assistant_id()
       |> Enum.map(fn t ->
-        IO.inspect(t, label: :ti)
         assert t.id == tournament.id
         assert t.game_name == tournament.game_name
         assert t.is_started == tournament.is_started
