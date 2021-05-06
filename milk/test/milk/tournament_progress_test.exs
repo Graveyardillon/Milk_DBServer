@@ -256,57 +256,57 @@ defmodule Milk.TournamentProgressTest do
     end
   end
 
-  describe "absence" do
-    test "set_timelimit_on_all_entrants/1 works fine" do
-      tournament = fixture_tournament(is_started: false)
-      entrants = create_entrants(7, tournament.id)
-      {:ok, entrant} = Tournaments.create_entrant(%{"user_id" => tournament.master_id, "tournament_id" => tournament.id})
-      entrants = entrants ++ [entrant]
-      start(tournament.master_id, tournament.id)
+  # describe "absence" do
+  #   test "set_timelimit_on_all_entrants/1 works fine" do
+  #     tournament = fixture_tournament(is_started: false)
+  #     entrants = create_entrants(7, tournament.id)
+  #     {:ok, entrant} = Tournaments.create_entrant(%{"user_id" => tournament.master_id, "tournament_id" => tournament.id})
+  #     entrants = entrants ++ [entrant]
+  #     start(tournament.master_id, tournament.id)
 
-      [{_, match_list}] = TournamentProgress.get_match_list(tournament.id)
-      TournamentProgress.set_time_limit_on_all_entrants(match_list, tournament.id)
-      [{_, match_list}] = TournamentProgress.get_match_list(tournament.id)
-      refute Tournaments.has_lost?(match_list, tournament.master_id)
+  #     [{_, match_list}] = TournamentProgress.get_match_list(tournament.id)
+  #     TournamentProgress.set_time_limit_on_all_entrants(match_list, tournament.id)
+  #     [{_, match_list}] = TournamentProgress.get_match_list(tournament.id)
+  #     refute Tournaments.has_lost?(match_list, tournament.master_id)
 
-      5
-      |> Kernel.*(61)
-      |> Kernel.*(1000)
-      |> Process.sleep()
+  #     5
+  #     |> Kernel.*(61)
+  #     |> Kernel.*(1000)
+  #     |> Process.sleep()
 
-      [{_, match_list}] = TournamentProgress.get_match_list(tournament.id)
-      assert Tournaments.has_lost?(match_list, tournament.master_id)
+  #     [{_, match_list}] = TournamentProgress.get_match_list(tournament.id)
+  #     assert Tournaments.has_lost?(match_list, tournament.master_id)
 
-      Enum.each(entrants, fn entrant ->
-        entrant
-        |> Map.get(:user_id)
-        |> TournamentProgress.get_lost_pid(tournament.id)
-        |> (fn bool ->
-          assert bool
-        end).()
-      end)
-    end
+  #     Enum.each(entrants, fn entrant ->
+  #       entrant
+  #       |> Map.get(:user_id)
+  #       |> TournamentProgress.get_lost_pid(tournament.id)
+  #       |> (fn bool ->
+  #         assert bool
+  #       end).()
+  #     end)
+  #   end
 
-    test "cancel_lose/2 works fine" do
-      tournament = fixture_tournament(is_started: false)
-      entrants = create_entrants(7, tournament.id)
-      {:ok, entrant} = Tournaments.create_entrant(%{"user_id" => tournament.master_id, "tournament_id" => tournament.id})
-      entrants = entrants ++ [entrant]
-      start(tournament.master_id, tournament.id)
+  #   test "cancel_lose/2 works fine" do
+  #     tournament = fixture_tournament(is_started: false)
+  #     entrants = create_entrants(7, tournament.id)
+  #     {:ok, entrant} = Tournaments.create_entrant(%{"user_id" => tournament.master_id, "tournament_id" => tournament.id})
+  #     entrants = entrants ++ [entrant]
+  #     start(tournament.master_id, tournament.id)
 
-      [{_, match_list}] = TournamentProgress.get_match_list(tournament.id)
-      TournamentProgress.set_time_limit_on_all_entrants(match_list, tournament.id)
-      TournamentProgress.cancel_lose(tournament.id, tournament.master_id)
+  #     [{_, match_list}] = TournamentProgress.get_match_list(tournament.id)
+  #     TournamentProgress.set_time_limit_on_all_entrants(match_list, tournament.id)
+  #     TournamentProgress.cancel_lose(tournament.id, tournament.master_id)
 
-      5
-      |> Kernel.*(61)
-      |> Kernel.*(1000)
-      |> Process.sleep()
+  #     5
+  #     |> Kernel.*(61)
+  #     |> Kernel.*(1000)
+  #     |> Process.sleep()
 
-      [{_, match_list}] = TournamentProgress.get_match_list(tournament.id)
-      refute Tournaments.has_lost?(match_list, tournament.master_id)
-    end
-  end
+  #     [{_, match_list}] = TournamentProgress.get_match_list(tournament.id)
+  #     refute Tournaments.has_lost?(match_list, tournament.master_id)
+  #   end
+  # end
 
   describe "get single tournament match logs" do
     test "works" do

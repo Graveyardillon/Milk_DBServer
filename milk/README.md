@@ -41,5 +41,7 @@ mix run ./priv/repo/seeds/tournament/tournament_seeds.exs && \
 mix run ./priv/repo/seeds/tournament/fill_size_4_tournament.exs && \
 mix run ./priv/repo/seeds/tournament/fill_size_32_tournament.exs && \
 mix run ./priv/repo/seeds/notification/add_all_notification_on_user_1.exs && \
-mix run ./priv/repo/seeds/relation/block_some_users.exs
+mix run ./priv/repo/seeds/relation/block_some_users.exs && \
+mix run ./priv/repo/seeds/tournament/assistant_check.exs && \
+mix phx.server
 ```
