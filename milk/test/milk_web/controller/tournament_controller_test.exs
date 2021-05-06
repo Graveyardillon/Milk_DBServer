@@ -64,10 +64,10 @@ defmodule MilkWeb.TournamentControllerTest do
     end)
   end
 
-  def fixture(:tournament) do
+  def fixture_tournament(n \\ 0) do
     Platforms.create_basic_platforms()
     {:ok, user} =
-      %{"name" => "name", "email" => "e@mail.com", "password" => "Password123"}
+      %{"name" => to_string(n) <> "name", "email" => to_string(n) <> "e@mail.com", "password" => "Password123"}
       |> Accounts.create_user()
     {:ok, tournament} = Tournaments.create_tournament(%{@create_attrs|"master_id" => user.id})
     tournament
@@ -140,6 +140,36 @@ defmodule MilkWeb.TournamentControllerTest do
       |> length()
       |> (fn len ->
         assert len  == 1
+      end).()
+    end
+
+    test "including assistant", %{conn: conn, tournament: tournament} do
+      {:ok, user} = fixture(:user)
+      conn = post(conn, Routes.assistant_path(conn, :create), assistant: %{tournament_id: tournament.id, user_id: [user.id]})
+      conn = get(conn, Routes.tournament_path(conn, :get_tournaments_by_master_id), %{user_id: user.id})
+      json_response(conn, 200)
+      |> Map.get("data")
+      |> Enum.map(fn t ->
+        assert t["id"] == tournament.id
+      end)
+      |> length()
+      |> (fn len ->
+        assert len  == 1
+      end).()
+    end
+
+    test "including both", %{conn: conn, tournament: tournament} do
+      tournament2 = fixture_tournament(1)
+      conn = post(conn, Routes.assistant_path(conn, :create), assistant: %{tournament_id: tournament2.id, user_id: [tournament.master_id]})
+      conn = get(conn, Routes.tournament_path(conn, :get_tournaments_by_master_id), %{user_id: tournament.master_id})
+      json_response(conn, 200)
+      |> Map.get("data")
+      |> Enum.map(fn t ->
+        assert t["id"] == tournament.id || t["id"] == tournament2.id
+      end)
+      |> length()
+      |> (fn len ->
+        assert len  == 2
       end).()
     end
   end
@@ -1361,7 +1391,7 @@ defmodule MilkWeb.TournamentControllerTest do
   end
 
   defp create_tournament(_) do
-    tournament = fixture(:tournament)
+    tournament = fixture_tournament()
     %{tournament: tournament}
   end
 

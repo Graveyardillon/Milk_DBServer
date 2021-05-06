@@ -117,7 +117,7 @@ defmodule Milk.Tournaments do
   end
 
   @doc """
-  Returns tournaments of certain user.
+  Returns tournaments which are filtered by master id.
   """
   def get_tournaments_by_master_id(user_id) do
     Repo.all(from t in Tournament, where: t.master_id == ^user_id)
@@ -138,6 +138,18 @@ defmodule Milk.Tournaments do
         |> Repo.all()
 
       Map.put(tournament_log, :entrants, entrants)
+    end)
+  end
+
+  @doc """
+  Returns tournaments which are filtered by user id of assistant.
+  """
+  def get_tournaments_by_assistant_id(user_id) do
+    Assistant
+    |> where([a], a.user_id == ^user_id)
+    |> Repo.all()
+    |> Enum.map(fn assistant ->
+      get_tournament(assistant.tournament_id)
     end)
   end
 
@@ -1078,9 +1090,9 @@ defmodule Milk.Tournaments do
 
   def get_assistant(id), do: Repo.get(Assistant, id)
 
-  def get_assistants(id) do
+  def get_assistants(tournament_id) do
     Assistant
-    |> where([a], a.tournament_id == ^id)
+    |> where([a], a.tournament_id == ^tournament_id)
     |> Repo.all()
   end
 
@@ -1140,7 +1152,7 @@ defmodule Milk.Tournaments do
 
       FIXME: 戻り値とか
   """
-  def create_assistant(attrs \\ %{}) do
+  def create_assistants(attrs \\ %{}) do
     tournament_id = Tools.to_integer_as_needed(attrs["tournament_id"])
 
     Assistant
@@ -1451,16 +1463,22 @@ defmodule Milk.Tournaments do
 
   defp check_is_manager?(tournament, user_id) do
     is_manager = tournament.master_id == user_id
-    is_not_entrant =
-      tournament.id
+    is_assistant = tournament.id
+      |> get_assistants()
+      |> Enum.filter(fn assistant -> assistant.user_id == user_id end)
+      |> (fn list -> list == [] end).()
+    is_not_entrant = tournament.id
       |> get_entrants()
       |> Enum.filter(fn entrant -> entrant.user_id == user_id end)
       |> (fn list -> list == [] end).()
 
-    if is_manager && is_not_entrant do
-      "IsManager"
-    else
-      check_has_lost?(tournament.id, user_id)
+    cond do
+      is_manager && is_not_entrant ->
+        "IsManager"
+      (!is_manager || is_assistant) && is_not_entrant ->
+        "IsAssistant"
+      true ->
+        check_has_lost?(tournament.id, user_id)
     end
   end
 

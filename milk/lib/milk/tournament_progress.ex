@@ -413,32 +413,33 @@ defmodule Milk.TournamentProgress do
     end)
   end
 
+  # TODO: 検証が不十分なためコメントアウトしておいた
   defp get_lost(user_id, tournament_id) do
     # Generate a process which makes a user lost
-    pid_str =
-      Task.start(fn ->
-        5
-        |> Kernel.*(60)
-        |> Kernel.*(1000)
-        |> Process.sleep()
+    # pid_str =
+    #   Task.start(fn ->
+    #     5
+    #     |> Kernel.*(60)
+    #     |> Kernel.*(1000)
+    #     |> Process.sleep()
 
-        Tournaments.delete_loser_process(tournament_id, [user_id])
-      end)
-      |> case do
-        {:ok, pid} ->
-          pid
-          |> :erlang.pid_to_list()
-          |> inspect()
-      end
+    #     Tournaments.delete_loser_process(tournament_id, [user_id])
+    #   end)
+    #   |> case do
+    #     {:ok, pid} ->
+    #       pid
+    #       |> :erlang.pid_to_list()
+    #       |> inspect()
+    #   end
 
-    conn = conn()
+    # conn = conn()
 
-    with {:ok, _} <- Redix.command(conn, ["SELECT", 6]),
-    {:ok, _} <- Redix.command(conn, ["HSET", tournament_id, user_id, pid_str]) do
-      true
-    else
-      _ -> false
-    end
+    # with {:ok, _} <- Redix.command(conn, ["SELECT", 6]),
+    # {:ok, _} <- Redix.command(conn, ["HSET", tournament_id, user_id, pid_str]) do
+    #   true
+    # else
+    #   _ -> false
+    # end
   end
 
   @doc """
