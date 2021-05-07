@@ -478,7 +478,6 @@ defmodule MilkWeb.TournamentController do
 
   @doc """
   Delete losers of a loser list.
-  FIXME: loserをリストじゃなくて整数で入力できるようにしたほうが良さそう
   """
   def delete_loser(conn, %{"tournament" => %{"tournament_id" => tournament_id, "loser_list" => loser}})
   when is_binary(loser) or is_integer(loser) do
