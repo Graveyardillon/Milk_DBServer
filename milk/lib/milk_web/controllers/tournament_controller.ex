@@ -414,7 +414,6 @@ defmodule MilkWeb.TournamentController do
 
   @doc """
   Start a tournament.
-  FIXME: 可読性の向上
   """
   def start(conn, %{"tournament" => %{"master_id" => master_id, "tournament_id" => tournament_id}}) do
     master_id = Tools.to_integer_as_needed(master_id)
@@ -481,6 +480,11 @@ defmodule MilkWeb.TournamentController do
   Delete losers of a loser list.
   FIXME: loserをリストじゃなくて整数で入力できるようにしたほうが良さそう
   """
+  def delete_loser(conn, %{"tournament" => %{"tournament_id" => tournament_id, "loser_list" => loser}})
+  when is_binary(loser) or is_integer(loser) do
+    delete_loser(conn, %{"tournament" => %{"tournament_id" => tournament_id, "loser_list" => [loser]}})
+  end
+
   def delete_loser(conn, %{"tournament" => %{"tournament_id" => tournament_id, "loser_list" => loser_list}}) do
     tournament_id = Tools.to_integer_as_needed(tournament_id)
     loser_list = Enum.map(loser_list, fn loser ->
