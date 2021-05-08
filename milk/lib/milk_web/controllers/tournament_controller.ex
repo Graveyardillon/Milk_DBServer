@@ -414,15 +414,19 @@ defmodule MilkWeb.TournamentController do
 
   @doc """
   Start a tournament.
+  # FIXME: type増加に伴う可読性向上
   """
   def start(conn, %{"tournament" => %{"master_id" => master_id, "tournament_id" => tournament_id}}) do
     master_id = Tools.to_integer_as_needed(master_id)
-    tournament_id = Tools.to_integer_as_needed(tournament_id)
+    tournament =
+      tournament_id
+      |> Tools.to_integer_as_needed()
+      |> Tournaments.get_tournament()
 
-    with {:ok, _} <- Tournaments.start(master_id, tournament_id),
-    {:ok, match_list, match_list_with_fight_result} <- make_matches(conn, tournament_id) do
-      with [{_, match_list}] <- TournamentProgress.get_match_list(tournament_id) do
-        TournamentProgress.set_time_limit_on_all_entrants(match_list, tournament_id)
+    with {:ok, _} <- Tournaments.start(master_id, tournament.id),
+    {:ok, match_list, match_list_with_fight_result} <- make_matches(conn, tournament.id) do
+      with [{_, match_list}] <- TournamentProgress.get_match_list(tournament.id) do
+        TournamentProgress.set_time_limit_on_all_entrants(match_list, tournament.id)
       end
       render(conn, "match.json", %{match_list: match_list, match_list_with_fight_result: match_list_with_fight_result})
     else
@@ -934,4 +938,10 @@ defmodule MilkWeb.TournamentController do
 
     json(conn, %{result: result})
   end
+
+  @doc """
+  ## Process for best-of-format
+  Different from single elimination, best-of-format needs more information
+  for managing a tournament.
+  """
 end
