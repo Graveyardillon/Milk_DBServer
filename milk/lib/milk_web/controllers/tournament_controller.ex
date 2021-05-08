@@ -424,14 +424,15 @@ defmodule MilkWeb.TournamentController do
       |> Tournaments.get_tournament()
 
     case tournament.type do
-      1 ->  start_single_elimination(conn, master_id, tournament)
+      1 -> start_single_elimination(conn, master_id, tournament)
+      2 -> start_best_of_format(conn, master_id, tournament)
       _ -> json(conn, %{error: "error"})
     end
   end
 
   defp start_single_elimination(conn, master_id, tournament) do
     with {:ok, _} <- Tournaments.start(master_id, tournament.id),
-    {:ok, match_list, match_list_with_fight_result} <- make_matches(conn, tournament.id) do
+    {:ok, match_list, match_list_with_fight_result} <- make_single_elimination_matches(conn, tournament.id) do
       with [{_, match_list}] <- TournamentProgress.get_match_list(tournament.id) do
         TournamentProgress.set_time_limit_on_all_entrants(match_list, tournament.id)
       end
@@ -444,7 +445,12 @@ defmodule MilkWeb.TournamentController do
     end
   end
 
-  defp make_matches(conn, tournament_id) do
+  defp start_best_of_format(conn, master_id, tournament) do
+    Tournaments.start(master_id, tournament.id)
+
+  end
+
+  defp make_single_elimination_matches(conn, tournament_id) do
     with {:ok, match_list} <-
       Tournaments.get_entrants(tournament_id)
       |> Enum.map(fn x -> x.user_id end)

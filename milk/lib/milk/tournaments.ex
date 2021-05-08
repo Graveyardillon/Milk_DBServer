@@ -910,13 +910,14 @@ defmodule Milk.Tournaments do
   FIXME: リファクタリング
   """
   def start(master_id, tournament_id) do
-    nil_check_on_start?(master_id, tournament_id)
+    master_id
+    |> nil_check?(tournament_id)
     |> check_entrant_number(tournament_id)
-    |> fetch_tournament(master_id, tournament_id)
+    |> fetch_tournament_as_needed(master_id, tournament_id)
     |> start()
   end
 
-  defp nil_check_on_start?(master_id, tournament_id) do
+  defp nil_check?(master_id, tournament_id) do
     if !is_nil(master_id) and !is_nil(tournament_id) do
       {:ok, nil}
     else
@@ -945,7 +946,7 @@ defmodule Milk.Tournaments do
     |> length()
   end
 
-  defp fetch_tournament(check, master_id, tournament_id) do
+  defp fetch_tournament_as_needed(check, master_id, tournament_id) do
     case check do
       {:ok, nil} ->
         tournament =
