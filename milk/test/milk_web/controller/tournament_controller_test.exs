@@ -762,6 +762,30 @@ defmodule MilkWeb.TournamentControllerTest do
         assert len == length(entrants)
       end).()
     end
+
+    test "does not work (type: -1)", %{conn: conn, tournament: _tournament} do
+      create_attrs2 = %{
+        "capacity" => 42,
+        "deadline" => "2010-04-17T14:00:00Z",
+        "description" => "some description",
+        "event_date" => "2010-04-17T14:00:00Z",
+        "master_id" => 42,
+        "name" => "some name",
+        "type" => -1,
+        "join" => "true",
+        "url" => "some url",
+        "password" => "Password123",
+        "platform" => 1
+      }
+      Platforms.create_basic_platforms()
+      {:ok, user} =
+        %{"name" => "type2name", "email" => "type2e@mail.com", "password" => "Password123"}
+        |> Accounts.create_user()
+      {:ok, tournament} = Tournaments.create_tournament(%{create_attrs2 | "master_id" => user.id})
+      create_entrants(8, tournament.id)
+      conn = post(conn, Routes.tournament_path(conn, :start), tournament: %{"master_id" => tournament.master_id, "tournament_id" => tournament.id})
+      refute json_response(conn, 200)["result"]
+    end
   end
 
   describe "delete loser" do

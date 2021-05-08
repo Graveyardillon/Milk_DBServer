@@ -426,7 +426,7 @@ defmodule MilkWeb.TournamentController do
     case tournament.type do
       1 -> start_single_elimination(conn, master_id, tournament)
       2 -> start_best_of_format(conn, master_id, tournament)
-      _ -> json(conn, %{error: "error"})
+      _ -> json(conn, %{error: "error", result: false})
     end
   end
 
