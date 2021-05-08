@@ -508,6 +508,21 @@ defmodule MilkWeb.TournamentController do
     Tournaments.initialize_rank(match_list, count, tournament.id)
     TournamentProgress.insert_match_list(match_list, tournament.id)
 
+    match_list_with_fight_result = match_list_with_fight_result(match_list)
+
+    match_list_with_fight_result
+    |> List.flatten()
+    |> Enum.reduce(match_list_with_fight_result, fn x, acc ->
+      user = Accounts.get_user(x["user_id"])
+
+      acc
+      |> Tournaments.put_value_on_brackets(user.id, %{"name" => user.name})
+      |> Tournaments.put_value_on_brackets(user.id, %{"win_count" => 0})
+      |> Tournaments.put_value_on_brackets(user.id, %{"icon_path" => user.icon_path})
+      |> Tournaments.put_value_on_brackets(user.id, %{"round" => 0})
+    end)
+    |> TournamentProgress.insert_match_list_with_fight_result(tournament.id)
+
     {:ok, match_list}
   end
 
@@ -941,6 +956,15 @@ defmodule MilkWeb.TournamentController do
       _ ->
         json(conn, %{data: nil, result: false, count: nil})
     end
+  end
+
+  @doc """
+  Bracket data for best of format.
+  """
+  def bracket_data_for_best_of_format(conn, %{"tournament_id" => tournament_id}) do
+    tournament_id = Tools.to_integer_as_needed(tournament_id)
+
+
   end
 
   @doc """

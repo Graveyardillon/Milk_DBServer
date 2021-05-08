@@ -761,6 +761,35 @@ defmodule MilkWeb.TournamentControllerTest do
       |> (fn len ->
         assert len == length(entrants)
       end).()
+
+      tournament.id
+      |> TournamentProgress.get_match_list()
+      |> (fn data ->
+        assert [{tid, match_list}] = data
+        assert tid == tournament.id
+        match_list
+      end).()
+      |> List.flatten()
+      |> Enum.map(fn user_id ->
+        assert user_id in entrant_id_list
+      end)
+      |> length()
+      |> (fn len ->
+        assert len == length(entrants)
+      end).()
+
+      tournament.id
+      |> TournamentProgress.get_match_list_with_fight_result()
+      |> (fn data ->
+        assert [{tid, match_list}] = data
+        assert tid == tournament.id
+        match_list
+      end).()
+      |> List.flatten()
+      |> length()
+      |> (fn len ->
+        assert len == length(entrants)
+      end).()
     end
 
     test "does not work (type: -1)", %{conn: conn, tournament: _tournament} do
