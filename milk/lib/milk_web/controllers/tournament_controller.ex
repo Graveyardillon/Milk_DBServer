@@ -423,6 +423,13 @@ defmodule MilkWeb.TournamentController do
       |> Tools.to_integer_as_needed()
       |> Tournaments.get_tournament()
 
+    case tournament.type do
+      1 ->  start_single_elimination(conn, master_id, tournament)
+      _ -> json(conn, %{error: "error"})
+    end
+  end
+
+  defp start_single_elimination(conn, master_id, tournament) do
     with {:ok, _} <- Tournaments.start(master_id, tournament.id),
     {:ok, match_list, match_list_with_fight_result} <- make_matches(conn, tournament.id) do
       with [{_, match_list}] <- TournamentProgress.get_match_list(tournament.id) do
