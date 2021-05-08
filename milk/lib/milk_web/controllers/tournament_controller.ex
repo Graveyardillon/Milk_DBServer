@@ -426,6 +426,7 @@ defmodule MilkWeb.TournamentController do
     case tournament.type do
       1 -> start_single_elimination(conn, master_id, tournament)
       2 -> start_best_of_format(conn, master_id, tournament)
+      3 -> start_best_of_format(conn, master_id, tournament)
       _ -> json(conn, %{error: "error", result: false})
     end
   end
@@ -822,6 +823,13 @@ defmodule MilkWeb.TournamentController do
           json(conn, %{validated: true, completed: true})
         end
     end
+  end
+
+  @doc """
+  Claims score
+  """
+  def claim_score(conn, %{"user_id" => user_id, "tournament_id" => tournament_id}) do
+
   end
 
   @doc """

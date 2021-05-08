@@ -271,6 +271,7 @@ defmodule Milk.TournamentProgress do
   """
   4. match_pending_list
   Manages fight result.
+  FIXME: 引数のタプルをやめたい
   """
   def insert_fight_result_table({user_id, tournament_id}, is_win) do
     conn = conn()
@@ -402,7 +403,7 @@ defmodule Milk.TournamentProgress do
   end
 
   @doc """
-
+  Set a time limit on entrants of a tournament.
   """
   def set_time_limit_on_all_entrants(match_list, tournament_id) do
     Logger.info("Set time limit on all entrants")
@@ -511,6 +512,26 @@ defmodule Milk.TournamentProgress do
     else
       _ -> false
     end
+  end
+
+  """
+  7. scores
+  """
+  def insert_score(tournament_id, user_id, score) do
+    conn = conn()
+
+    with {:ok, _} <- Redix.command(conn, ["MULTI"]),
+    {:ok, _} <- Redix.command(conn, ["SELECT", 4]),
+    {:ok, _} <- Redix.command(conn, ["HSET", tournament_id, user_id, score]),
+    {:ok, _} <- Redix.command(conn, ["EXEC"]) do
+      true
+    else
+      _ -> false
+    end
+  end
+
+  def get_score(tournament_id, user_id) do
+
   end
 
   """
