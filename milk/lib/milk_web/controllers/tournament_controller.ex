@@ -448,6 +448,11 @@ defmodule MilkWeb.TournamentController do
   defp start_best_of_format(conn, master_id, tournament) do
     Tournaments.start(master_id, tournament.id)
 
+    with {:ok, match_list} <- make_best_of_format_matches(conn, tournament) do
+      render(conn, "match.json", %{match_list: match_list, match_list_with_fight_result: nil})
+    else
+      _ -> json(conn, %{result: false})
+    end
   end
 
   defp make_single_elimination_matches(conn, tournament_id) do
@@ -491,6 +496,19 @@ defmodule MilkWeb.TournamentController do
 
   defp match_list_with_fight_result(match_list) do
     Tournaments.initialize_match_list_with_fight_result(match_list)
+  end
+
+  defp make_best_of_format_matches(conn, tournament) do
+    {:ok, match_list} = tournament.id
+      |> Tournaments.get_entrants()
+      |> Enum.map(fn x -> x.user_id end)
+      |> Tournaments.generate_matchlist()
+
+    count = tournament.count
+    Tournaments.initialize_rank(match_list, count, tournament.id)
+    TournamentProgress.insert_match_list(match_list, tournament.id)
+
+    {:ok, match_list}
   end
 
   @doc """
