@@ -13,7 +13,10 @@ defmodule Milk.TournamentProgress do
     Repo,
     Tournaments
   }
-  alias Milk.TournamentProgress.SingleTournamentMatchLog
+  alias Milk.TournamentProgress.{
+    BestOfXTournamentMatchLog,
+    SingleTournamentMatchLog
+  }
 
   require Logger
 
@@ -563,6 +566,32 @@ defmodule Milk.TournamentProgress do
   def create_single_tournament_match_log(attrs \\ %{}) do
     %SingleTournamentMatchLog{}
     |> SingleTournamentMatchLog.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  """
+  Best of x tournament match log.
+  """
+
+  @doc """
+  Get best of x tournament match log.
+  """
+  def get_best_of_x_tournament_match_logs(tournament_id) do
+    BestOfXTournamentMatchLog
+    |> where([b], b.tournament_id == ^tournament_id)
+    |> Repo.all()
+  end
+
+  def get_best_of_x_tournament_match_logs(tournament_id, user_id) do
+    BestOfXTournamentMatchLog
+    |> where([b], b.tournament_id == ^tournament_id)
+    |> where([b], b.winner_id == ^user_id)
+    |> Repo.all()
+  end
+
+  def create_best_of_x_tournament_match_log(attrs \\ %{}) do
+    %BestOfXTournamentMatchLog{}
+    |> BestOfXTournamentMatchLog.changeset(attrs)
     |> Repo.insert()
   end
 end

@@ -1440,4 +1440,54 @@ defmodule Milk.TournamentsTest do
       assert length(users) == length(entrants)
     end
   end
+
+  describe "data_with_scores_for_brackets" do
+    test "just works with predefined data (size 4 tournament)" do
+      tournament = fixture_tournament(is_started: false)
+      create_entrants(4, tournament.id)
+      Tournaments.start(tournament.master_id, tournament.id)
+
+      {:ok, match_list} = tournament.id
+        |> Tournaments.get_entrants()
+        |> Enum.map(fn x -> x.user_id end)
+        |> Tournaments.generate_matchlist()
+
+      count = tournament.count
+      Tournaments.initialize_rank(match_list, count, tournament.id)
+      TournamentProgress.insert_match_list(match_list, tournament.id)
+
+      match_list_with_fight_result = match_list_with_fight_result(match_list)
+      match_list_with_fight_result
+      |> List.flatten()
+      |> Enum.reduce(match_list_with_fight_result, fn x, acc ->
+        user = Accounts.get_user(x["user_id"])
+
+        acc
+        |> Tournaments.put_value_on_brackets(user.id, %{"name" => user.name})
+        |> Tournaments.put_value_on_brackets(user.id, %{"win_count" => 0})
+        |> Tournaments.put_value_on_brackets(user.id, %{"icon_path" => user.icon_path})
+        |> Tournaments.put_value_on_brackets(user.id, %{"round" => 0})
+      end)
+      |> TournamentProgress.insert_match_list_with_fight_result(tournament.id)
+
+      # %{tournament_id: tournament.id, winner_id: }
+      [user1_id, user2_id, user3_id, user4_id] = List.flatten(match_list)
+      %{tournament_id: tournament.id, winner_id: user1_id, loser_id: user2_id, winner_score: 13, loser_score: 2, match_index: 1}
+      |> TournamentProgress.create_best_of_x_tournament_match_log()
+      %{tournament_id: tournament.id, winner_id: user3_id, loser_id: user4_id, winner_score: 13, loser_score: 3, match_index: 1}
+      |> TournamentProgress.create_best_of_x_tournament_match_log()
+
+      TournamentProgress.get_best_of_x_tournament_match_logs(tournament.id)
+
+      Tournaments.data_with_scores_for_brackets(tournament.id)
+      # |> Enum.map(fn data ->
+
+      # end)
+
+      %{tournament_id: tournament.id, winner_id: user3_id, loser_id: user1_id, winner_score: 13, loser_score: 4, match_index: 1}
+      |> TournamentProgress.create_best_of_x_tournament_match_log()
+
+      Tournaments.data_with_scores_for_brackets(tournament.id)
+    end
+  end
 end

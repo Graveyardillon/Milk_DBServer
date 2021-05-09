@@ -19,6 +19,9 @@ defmodule Milk.Tournaments do
     User,
     Relation
   }
+  alias Milk.TournamentProgress.{
+    BestOfXTournamentMatchLog
+  }
   alias Milk.Tournaments.{
     Tournament,
     Entrant,
@@ -1545,8 +1548,28 @@ defmodule Milk.Tournaments do
     brackets
   end
 
+  @doc """
+  Construct data with game scores for brackets.
+  """
+  def data_with_scores_for_brackets(tournament_id) do
+    [{_, match_list}] = TournamentProgress.get_match_list_with_fight_result(tournament_id)
 
+    # add game_scores
+    match_list
+    |> List.flatten()
+    |> Enum.map(fn bracket ->
+      user_id = bracket["user_id"]
 
+      game_scores = tournament_id
+        |> TournamentProgress.get_best_of_x_tournament_match_logs(user_id)
+        |> Enum.map(fn log ->
+          log.winner_score
+        end)
+        |> IO.inspect(label: :gscores, char_lists: false)
+
+      Map.put(bracket, "game_scores", game_scores)
+    end)
+  end
 
   @doc """
   Returns tournament records.
