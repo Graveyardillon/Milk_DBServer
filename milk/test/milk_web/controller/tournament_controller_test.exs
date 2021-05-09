@@ -1549,9 +1549,21 @@ defmodule MilkWeb.TournamentControllerTest do
       conn = post(conn, Routes.tournament_path(conn, :start), tournament: %{"master_id" => tournament.master_id, "tournament_id" => tournament.id})
       conn = get(conn, Routes.tournament_path(conn, :get_opponent), %{"tournament_id" => tournament.id, "user_id" => entrant1.user_id})
 
+      {entrant1.user_id, tournament.id}
+      |> TournamentProgress.get_match_pending_list()
+      |> (fn list ->
+        assert list == []
+      end).()
+
       opponent = json_response(conn, 200)["opponent"]
       conn = post(conn, Routes.tournament_path(conn, :start_match), user_id: entrant1.user_id, tournament_id: tournament.id)
       conn = post(conn, Routes.tournament_path(conn, :start_match), user_id: opponent["id"], tournament_id: tournament.id)
+
+      {entrant1.user_id, tournament.id}
+      |> TournamentProgress.get_match_pending_list()
+      |> (fn list ->
+        assert list == [{{entrant1.user_id, tournament.id}}]
+      end).()
 
       my_score = 13
       opponent_score = 4
@@ -1595,6 +1607,85 @@ defmodule MilkWeb.TournamentControllerTest do
       |> length()
       |> (fn len ->
         assert len == 4
+      end).()
+    end
+
+    test "claim_score/2 and finish", %{conn: conn} do
+      create_attrs2 = %{
+        "capacity" => 42,
+        "deadline" => "2010-04-17T14:00:00Z",
+        "description" => "some description",
+        "event_date" => "2010-04-17T14:00:00Z",
+        "master_id" => 42,
+        "name" => "some name",
+        "type" => 2,
+        "join" => "true",
+        "url" => "some url",
+        "password" => "Password123",
+        "platform" => 1
+      }
+      Platforms.create_basic_platforms()
+      {:ok, user} =
+        %{"name" => "type2name", "email" => "type2e@mail.com", "password" => "Password123"}
+        |> Accounts.create_user()
+      {:ok, tournament} = Tournaments.create_tournament(%{create_attrs2 | "master_id" => user.id})
+
+      [entrant1, entrant2] = create_entrants(2, tournament.id)
+
+      conn = post(conn, Routes.tournament_path(conn, :start), tournament: %{"master_id" => tournament.master_id, "tournament_id" => tournament.id})
+
+      {entrant1.user_id, tournament.id}
+      |> TournamentProgress.get_match_pending_list()
+      |> (fn list ->
+        assert list == []
+      end).()
+
+      conn = post(conn, Routes.tournament_path(conn, :start_match), user_id: entrant1.user_id, tournament_id: tournament.id)
+      conn = post(conn, Routes.tournament_path(conn, :start_match), user_id: entrant2.user_id, tournament_id: tournament.id)
+
+      {entrant1.user_id, tournament.id}
+      |> TournamentProgress.get_match_pending_list()
+      |> (fn list ->
+        assert list == [{{entrant1.user_id, tournament.id}}]
+      end).()
+
+      my_score = 13
+      opponent_score = 4
+      match_index = 1
+
+      conn = post(conn, Routes.tournament_path(conn, :claim_score), tournament_id: tournament.id, user_id: entrant1.user_id, opponent_id: entrant2.user_id, score: my_score, match_index: match_index)
+      json_response(conn, 200)
+      |> (fn data ->
+        assert data["validated"]
+        refute data["completed"]
+      end).()
+
+      conn = post(conn, Routes.tournament_path(conn, :claim_score), tournament_id: tournament.id, user_id: entrant2.user_id, opponent_id: entrant1.user_id, score: opponent_score, match_index: match_index)
+      json_response(conn, 200)
+      |> (fn data ->
+        assert data["validated"]
+        assert data["completed"]
+      end).()
+
+      conn = get(conn, Routes.tournament_path(conn, :show), tournament_id: tournament.id)
+      json_response(conn, 200)
+      |> (fn t ->
+        assert t["is_log"]
+        assert t["result"]
+        t
+      end).()
+      |> Map.get("data")
+      |> (fn t ->
+        assert t["tournament_id"] == tournament.id
+        assert t["capacity"] == tournament.capacity
+        assert t["description"] == tournament.description
+        assert t["game_id"] == tournament.game_id
+        assert t["game_name"] == tournament.game_name
+        assert t["winner_id"] == entrant1.user_id
+        assert t["master_id"] == tournament.master_id
+        assert t["name"] == tournament.name
+        assert t["url"] == tournament.url
+        assert t["type"] == tournament.type
       end).()
     end
   end
