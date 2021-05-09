@@ -541,7 +541,14 @@ defmodule MilkWeb.TournamentController do
       Tools.to_integer_as_needed(loser)
     end)
 
-    store_single_tournament_match_log(tournament_id, hd(loser_list))
+    tournament_id
+    |> Tournaments.get_tournament()
+    |> (fn tournament ->
+      if tournament.type == 1 do
+        store_single_tournament_match_log(tournament_id, hd(loser_list))
+      end
+    end).()
+
     updated_match_list = Tournaments.delete_loser_process(tournament_id, loser_list)
     render(conn, "loser.json", list: updated_match_list)
   end
@@ -827,9 +834,42 @@ defmodule MilkWeb.TournamentController do
 
   @doc """
   Claims score
-  """
-  def claim_score(conn, %{"user_id" => user_id, "tournament_id" => tournament_id}) do
 
+  1. スコアをredisに登録する
+  2. 相手もスコアを登録していたらマッチが進む
+  """
+  def claim_score(conn, %{"tournament_id" => tournament_id, "user_id" => user_id, "opponent_id" => opponent_id, "score" => score, "match_index" => match_index}) do
+    user_id = Tools.to_integer_as_needed(user_id)
+    opponent_id = Tools.to_integer_as_needed(opponent_id)
+    tournament_id = Tools.to_integer_as_needed(tournament_id)
+    score = Tools.to_integer_as_needed(score)
+    match_index = Tools.to_integer_as_needed(match_index)
+
+    TournamentProgress.insert_score(tournament_id, user_id, score)
+
+    tournament_id
+    |> TournamentProgress.get_score(opponent_id)
+    |> case do
+      n when is_integer(n) ->
+        cond do
+          n > score ->
+            delete_loser(conn, %{"tournament" => %{"tournament_id" => tournament_id, "loser_list" => user_id}})
+            Tournaments.score(tournament_id, opponent_id, user_id, n, score, match_index)
+            TournamentProgress.delete_match_pending_list({user_id, tournament_id})
+            TournamentProgress.delete_match_pending_list({opponent_id, tournament_id})
+            json(conn, %{validated: true, completed: true})
+          n < score ->
+            delete_loser(conn, %{"tournament" => %{"tournament_id" => tournament_id, "loser_list" => opponent_id}})
+            Tournaments.score(tournament_id, user_id, opponent_id, score, n, match_index)
+            TournamentProgress.delete_match_pending_list({user_id, tournament_id})
+            TournamentProgress.delete_match_pending_list({opponent_id, tournament_id})
+            json(conn, %{validated: true, completed: true})
+          true ->
+            json(conn, %{validated: false, completed: false})
+        end
+      [] ->
+        json(conn, %{validated: true, completed: false})
+    end
   end
 
   @doc """

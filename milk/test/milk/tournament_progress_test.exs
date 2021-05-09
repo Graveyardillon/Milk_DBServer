@@ -309,6 +309,17 @@ defmodule Milk.TournamentProgressTest do
   #   end
   # end
 
+  describe "score table" do
+    test "insert_score/3 and get_score/2" do
+      tid = 1
+      uid = 1
+      score = 13
+      TournamentProgress.insert_score(tid, uid, score)
+
+      assert TournamentProgress.get_score(tid, uid) == score
+    end
+  end
+
   describe "get single tournament match logs" do
     test "works" do
       user1 = fixture_user(1)

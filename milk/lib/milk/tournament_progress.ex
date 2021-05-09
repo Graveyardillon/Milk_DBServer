@@ -519,12 +519,13 @@ defmodule Milk.TournamentProgress do
 
   """
   7. scores
+  Instead of fight result, we use scores for players fight result management.
   """
   def insert_score(tournament_id, user_id, score) do
     conn = conn()
 
     with {:ok, _} <- Redix.command(conn, ["MULTI"]),
-    {:ok, _} <- Redix.command(conn, ["SELECT", 4]),
+    {:ok, _} <- Redix.command(conn, ["SELECT", 7]),
     {:ok, _} <- Redix.command(conn, ["HSET", tournament_id, user_id, score]),
     {:ok, _} <- Redix.command(conn, ["EXEC"]) do
       true
@@ -534,7 +535,19 @@ defmodule Milk.TournamentProgress do
   end
 
   def get_score(tournament_id, user_id) do
+    conn = conn()
 
+    with {:ok, _} <- Redix.command(conn, ["SELECT", 7]),
+    {:ok, value} <- Redix.command(conn, ["HGET", tournament_id, user_id]) do
+      if value do
+        {score, _} = Code.eval_string(value)
+        score
+      else
+        []
+      end
+    else
+      _ -> []
+    end
   end
 
   """
