@@ -1023,6 +1023,7 @@ defmodule MilkWeb.TournamentController do
   """
   def bracket_data_for_best_of_format(conn, %{"tournament_id" => tournament_id}) do
     tournament_id = Tools.to_integer_as_needed(tournament_id)
+    # TODO: data_with_scores_for_bracketsを使う
   end
 
   @doc """
