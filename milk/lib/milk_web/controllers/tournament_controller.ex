@@ -909,6 +909,20 @@ defmodule MilkWeb.TournamentController do
   end
 
   @doc """
+  Get score of a user.
+  """
+  def score(conn, %{"tournament_id" => tournament_id, "user_id" => user_id}) do
+    user_id = Tools.to_integer_as_needed(user_id)
+    tournament_id = Tools.to_integer_as_needed(tournament_id)
+
+    TournamentProgress.get_score(tournament_id, user_id)
+    |> case do
+      [] -> json(conn, %{score: nil, result: false})
+      score -> json(conn, %{score: score, result: true})
+    end
+  end
+
+  @doc """
   Publish a url of a tournament.
   """
   def publish_url(conn, _params) do
