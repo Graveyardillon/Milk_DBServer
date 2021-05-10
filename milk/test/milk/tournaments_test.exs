@@ -1440,4 +1440,91 @@ defmodule Milk.TournamentsTest do
       assert length(users) == length(entrants)
     end
   end
+
+  describe "data_with_scores_for_brackets" do
+    test "just works with predefined data (size 4 tournament)" do
+      tournament = fixture_tournament(is_started: false)
+      create_entrants(4, tournament.id)
+      Tournaments.start(tournament.master_id, tournament.id)
+
+      {:ok, match_list} = tournament.id
+        |> Tournaments.get_entrants()
+        |> Enum.map(fn x -> x.user_id end)
+        |> Tournaments.generate_matchlist()
+
+      count = tournament.count
+      Tournaments.initialize_rank(match_list, count, tournament.id)
+      TournamentProgress.insert_match_list(match_list, tournament.id)
+
+      match_list_with_fight_result = match_list_with_fight_result(match_list)
+      match_list_with_fight_result
+      |> List.flatten()
+      |> Enum.reduce(match_list_with_fight_result, fn x, acc ->
+        user = Accounts.get_user(x["user_id"])
+
+        acc
+        |> Tournaments.put_value_on_brackets(user.id, %{"name" => user.name})
+        |> Tournaments.put_value_on_brackets(user.id, %{"win_count" => 0})
+        |> Tournaments.put_value_on_brackets(user.id, %{"icon_path" => user.icon_path})
+        |> Tournaments.put_value_on_brackets(user.id, %{"round" => 0})
+      end)
+      |> TournamentProgress.insert_match_list_with_fight_result(tournament.id)
+
+      [user1_id, user2_id, user3_id, user4_id] = List.flatten(match_list)
+      Tournaments.score(tournament.id, user1_id, user2_id, 13, 2, 1)
+      Tournaments.score(tournament.id, user3_id, user4_id, 13, 3, 1)
+
+      TournamentProgress.get_best_of_x_tournament_match_logs(tournament.id)
+
+      # TODO: 敗北者のスコアを入れたい
+      Tournaments.data_with_scores_for_brackets(tournament.id)
+      |> Enum.map(fn data ->
+        refute data["is_loser"]
+        assert data["round"] == 0
+        cond do
+          data["user_id"] == user1_id ->
+            assert data["win_count"] == 1
+            assert data["game_scores"] == [13]
+          data["user_id"] == user2_id ->
+            assert data["win_count"] == 0
+            assert data["game_scores"] == [2]
+          data["user_id"] == user3_id ->
+            assert data["win_count"] == 1
+            assert data["game_scores"] == [13]
+          data["user_id"] == user4_id ->
+            assert data["win_count"] == 0
+            assert data["game_scores"] == [3]
+        end
+      end)
+      |> length()
+      |> (fn len ->
+        assert len == 4
+      end).()
+
+      Tournaments.score(tournament.id, user3_id, user1_id, 13, 4, 1)
+      Tournaments.data_with_scores_for_brackets(tournament.id)
+      |> Enum.map(fn data ->
+        refute data["is_loser"]
+        assert data["round"] == 0
+        cond do
+          data["user_id"] == user1_id ->
+            assert data["win_count"] == 1
+            assert data["game_scores"] == [13, 4]
+          data["user_id"] == user2_id ->
+            assert data["win_count"] == 0
+            assert data["game_scores"] == [2]
+          data["user_id"] == user3_id ->
+            assert data["win_count"] == 2
+            assert data["game_scores"] == [13, 13]
+          data["user_id"] == user4_id ->
+            assert data["win_count"] == 0
+            assert data["game_scores"] == [3]
+        end
+      end)
+      |> length()
+      |> (fn len ->
+        assert len == 4
+      end).()
+    end
+  end
 end

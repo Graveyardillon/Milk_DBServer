@@ -414,16 +414,28 @@ defmodule MilkWeb.TournamentController do
 
   @doc """
   Start a tournament.
-  FIXME: 可読性の向上
+  # FIXME: type増加に伴う可読性向上
   """
   def start(conn, %{"tournament" => %{"master_id" => master_id, "tournament_id" => tournament_id}}) do
     master_id = Tools.to_integer_as_needed(master_id)
-    tournament_id = Tools.to_integer_as_needed(tournament_id)
+    tournament =
+      tournament_id
+      |> Tools.to_integer_as_needed()
+      |> Tournaments.get_tournament()
 
-    with {:ok, _} <- Tournaments.start(master_id, tournament_id),
-    {:ok, match_list, match_list_with_fight_result} <- make_matches(conn, tournament_id) do
-      with [{_, match_list}] <- TournamentProgress.get_match_list(tournament_id) do
-        TournamentProgress.set_time_limit_on_all_entrants(match_list, tournament_id)
+    case tournament.type do
+      1 -> start_single_elimination(conn, master_id, tournament)
+      2 -> start_best_of_format(conn, master_id, tournament)
+      3 -> start_best_of_format(conn, master_id, tournament)
+      _ -> json(conn, %{error: "error", result: false})
+    end
+  end
+
+  defp start_single_elimination(conn, master_id, tournament) do
+    with {:ok, _} <- Tournaments.start(master_id, tournament.id),
+    {:ok, match_list, match_list_with_fight_result} <- make_single_elimination_matches(conn, tournament.id) do
+      with [{_, match_list}] <- TournamentProgress.get_match_list(tournament.id) do
+        TournamentProgress.set_time_limit_on_all_entrants(match_list, tournament.id)
       end
       render(conn, "match.json", %{match_list: match_list, match_list_with_fight_result: match_list_with_fight_result})
     else
@@ -434,7 +446,17 @@ defmodule MilkWeb.TournamentController do
     end
   end
 
-  defp make_matches(conn, tournament_id) do
+  defp start_best_of_format(conn, master_id, tournament) do
+    Tournaments.start(master_id, tournament.id)
+
+    with {:ok, match_list} <- make_best_of_format_matches(conn, tournament) do
+      render(conn, "match.json", %{match_list: match_list, match_list_with_fight_result: nil})
+    else
+      _ -> json(conn, %{result: false})
+    end
+  end
+
+  defp make_single_elimination_matches(conn, tournament_id) do
     with {:ok, match_list} <-
       Tournaments.get_entrants(tournament_id)
       |> Enum.map(fn x -> x.user_id end)
@@ -477,17 +499,56 @@ defmodule MilkWeb.TournamentController do
     Tournaments.initialize_match_list_with_fight_result(match_list)
   end
 
+  defp make_best_of_format_matches(conn, tournament) do
+    {:ok, match_list} = tournament.id
+      |> Tournaments.get_entrants()
+      |> Enum.map(fn x -> x.user_id end)
+      |> Tournaments.generate_matchlist()
+
+    count = tournament.count
+    Tournaments.initialize_rank(match_list, count, tournament.id)
+    TournamentProgress.insert_match_list(match_list, tournament.id)
+
+    match_list_with_fight_result = match_list_with_fight_result(match_list)
+
+    match_list_with_fight_result
+    |> List.flatten()
+    |> Enum.reduce(match_list_with_fight_result, fn x, acc ->
+      user = Accounts.get_user(x["user_id"])
+
+      acc
+      |> Tournaments.put_value_on_brackets(user.id, %{"name" => user.name})
+      |> Tournaments.put_value_on_brackets(user.id, %{"win_count" => 0})
+      |> Tournaments.put_value_on_brackets(user.id, %{"icon_path" => user.icon_path})
+      |> Tournaments.put_value_on_brackets(user.id, %{"round" => 0})
+    end)
+    |> TournamentProgress.insert_match_list_with_fight_result(tournament.id)
+
+    {:ok, match_list}
+  end
+
   @doc """
   Delete losers of a loser list.
-  FIXME: loserをリストじゃなくて整数で入力できるようにしたほうが良さそう
   """
+  def delete_loser(conn, %{"tournament" => %{"tournament_id" => tournament_id, "loser_list" => loser}})
+  when is_binary(loser) or is_integer(loser) do
+    delete_loser(conn, %{"tournament" => %{"tournament_id" => tournament_id, "loser_list" => [loser]}})
+  end
+
   def delete_loser(conn, %{"tournament" => %{"tournament_id" => tournament_id, "loser_list" => loser_list}}) do
     tournament_id = Tools.to_integer_as_needed(tournament_id)
     loser_list = Enum.map(loser_list, fn loser ->
       Tools.to_integer_as_needed(loser)
     end)
 
-    store_single_tournament_match_log(tournament_id, hd(loser_list))
+    tournament_id
+    |> Tournaments.get_tournament()
+    |> (fn tournament ->
+      if tournament.type == 1 do
+        store_single_tournament_match_log(tournament_id, hd(loser_list))
+      end
+    end).()
+
     updated_match_list = Tournaments.delete_loser_process(tournament_id, loser_list)
     render(conn, "loser.json", list: updated_match_list)
   end
@@ -772,6 +833,57 @@ defmodule MilkWeb.TournamentController do
   end
 
   @doc """
+  Claims score
+
+  1. スコアをredisに登録する
+  2. 相手もスコアを登録していたらマッチが進む
+  """
+  def claim_score(conn, %{"tournament_id" => tournament_id, "user_id" => user_id, "opponent_id" => opponent_id, "score" => score, "match_index" => match_index}) do
+    user_id = Tools.to_integer_as_needed(user_id)
+    opponent_id = Tools.to_integer_as_needed(opponent_id)
+    tournament_id = Tools.to_integer_as_needed(tournament_id)
+    score = Tools.to_integer_as_needed(score)
+    match_index = Tools.to_integer_as_needed(match_index)
+
+    TournamentProgress.insert_score(tournament_id, user_id, score)
+
+    tournament_id
+    |> TournamentProgress.get_score(opponent_id)
+    |> case do
+      n when is_integer(n) ->
+        cond do
+          n > score ->
+            delete_loser(conn, %{"tournament" => %{"tournament_id" => tournament_id, "loser_list" => user_id}})
+            Tournaments.score(tournament_id, opponent_id, user_id, n, score, match_index)
+            TournamentProgress.delete_match_pending_list({user_id, tournament_id})
+            TournamentProgress.delete_match_pending_list({opponent_id, tournament_id})
+            finish_as_needed(conn, tournament_id, opponent_id)
+            json(conn, %{validated: true, completed: true})
+          n < score ->
+            delete_loser(conn, %{"tournament" => %{"tournament_id" => tournament_id, "loser_list" => opponent_id}})
+            Tournaments.score(tournament_id, user_id, opponent_id, score, n, match_index)
+            TournamentProgress.delete_match_pending_list({user_id, tournament_id})
+            TournamentProgress.delete_match_pending_list({opponent_id, tournament_id})
+            finish_as_needed(conn, tournament_id, user_id)
+            json(conn, %{validated: true, completed: true})
+          true ->
+            json(conn, %{validated: false, completed: false})
+        end
+      [] ->
+        json(conn, %{validated: true, completed: false})
+    end
+  end
+
+  defp finish_as_needed(conn, tournament_id, winner_id) do
+    [{_, match_list}] = TournamentProgress.get_match_list(tournament_id)
+    tournament = Tournaments.get_tournament(tournament_id)
+
+    if is_integer(match_list) do
+      finish(conn, %{"tournament_id" => tournament.id, "user_id" => winner_id})
+    end
+  end
+
+  @doc """
   Get a tournament by url.
   """
   def get_tournament_by_url(conn, %{"url" => url}) do
@@ -875,6 +987,7 @@ defmodule MilkWeb.TournamentController do
   """
   def finish(conn, %{"tournament_id" => tournament_id, "user_id" => user_id}) do
     result = Tournaments.finish(tournament_id, user_id)
+      |> IO.inspect()
     TournamentProgress.delete_match_list(tournament_id)
     TournamentProgress.delete_match_list_with_fight_result(tournament_id)
     TournamentProgress.delete_match_pending_list_of_tournament(tournament_id)
@@ -906,6 +1019,21 @@ defmodule MilkWeb.TournamentController do
   end
 
   @doc """
+  Bracket data for best of format.
+  """
+  def bracket_data_for_best_of_format(conn, %{"tournament_id" => tournament_id}) do
+    tournament_id = Tools.to_integer_as_needed(tournament_id)
+    # TODO: data_with_scores_for_bracketsを使う
+    brackets = Tournaments.data_with_scores_for_brackets(tournament_id)
+    count = brackets
+      |> Enum.count()
+      |> Kernel.*(2)
+      |> Tournamex.Number.closest_number_to_power_of_two()
+
+    json(conn, %{result: true, data: brackets, count: count})
+  end
+
+  @doc """
   Registers PID of start notification.
   The notification is handled in Web Server, so the pid does not belong to this server.
   """
@@ -931,4 +1059,10 @@ defmodule MilkWeb.TournamentController do
 
     json(conn, %{result: result})
   end
+
+  @doc """
+  ## Process for best-of-format
+  Different from single elimination, best-of-format needs more information
+  for managing a tournament.
+  """
 end

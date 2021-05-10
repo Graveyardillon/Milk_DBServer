@@ -23,7 +23,7 @@ defmodule MilkWeb.TournamentControllerTest do
     "event_date" => "2010-04-17T14:00:00Z",
     "master_id" => 42,
     "name" => "some name",
-    "type" => 42,
+    "type" => 1,
     "join" => "true",
     "url" => "some url",
     "password" => "Password123",
@@ -36,7 +36,7 @@ defmodule MilkWeb.TournamentControllerTest do
     "event_date" => "2100-04-17T14:00:00Z",
     "master_id" => 42,
     "name" => "some name",
-    "type" => 42,
+    "type" => 1,
     "join" => "true",
     "url" => "some url",
     "platform" => 1
@@ -59,7 +59,7 @@ defmodule MilkWeb.TournamentControllerTest do
         |> Map.put("email", to_string(n) <> "@email.com")
         |> Map.put("password", "Password123")
         |> Accounts.create_user()
-      {:ok, tournament} = Tournaments.create_tournament(%{@create_attrs|"master_id" => user.id})
+      {:ok, tournament} = Tournaments.create_tournament(%{@create_attrs | "master_id" => user.id})
       tournament
     end)
   end
@@ -69,7 +69,7 @@ defmodule MilkWeb.TournamentControllerTest do
     {:ok, user} =
       %{"name" => to_string(n) <> "name", "email" => to_string(n) <> "e@mail.com", "password" => "Password123"}
       |> Accounts.create_user()
-    {:ok, tournament} = Tournaments.create_tournament(%{@create_attrs|"master_id" => user.id})
+    {:ok, tournament} = Tournaments.create_tournament(%{@create_attrs | "master_id" => user.id})
     tournament
   end
 
@@ -288,7 +288,7 @@ defmodule MilkWeb.TournamentControllerTest do
         "event_date" => "2010-04-17T14:00:00Z",
         "master_id" => -1,
         "name" => "some name",
-        "type" => 42,
+        "type" => 1,
         "join" => "true",
         "url" => "some url",
         "platform" => 1
@@ -355,7 +355,7 @@ defmodule MilkWeb.TournamentControllerTest do
         "event_date" => "2040-04-17T14:00:00Z",
         "master_id" => user.id,
         "name" => "some name",
-        "type" => 42,
+        "type" => 1,
         "join" => "true",
         "url" => "some url",
         "platform" => 1
@@ -388,7 +388,7 @@ defmodule MilkWeb.TournamentControllerTest do
         "event_date" => "2040-04-17T14:00:00Z",
         "master_id" => user1.id,
         "name" => "some name",
-        "type" => 42,
+        "type" => 1,
         "join" => "true",
         "url" => "some url",
         "platform" => 1
@@ -418,7 +418,7 @@ defmodule MilkWeb.TournamentControllerTest do
         "event_date" => "2040-04-17T14:00:00Z",
         "master_id" => user.id,
         "name" => "some name",
-        "type" => 42,
+        "type" => 1,
         "join" => "true",
         "url" => "some url",
         "platform" => 1
@@ -447,7 +447,7 @@ defmodule MilkWeb.TournamentControllerTest do
         "event_date" => "2040-04-17T14:00:00Z",
         "master_id" => user.id,
         "name" => "some name",
-        "type" => 42,
+        "type" => 1,
         "join" => "true",
         "url" => "some url",
         "platform" => 1
@@ -603,7 +603,7 @@ defmodule MilkWeb.TournamentControllerTest do
         "event_date" => "2100-04-17T14:00:00Z",
         "master_id" => 42,
         "name" => "some name",
-        "type" => 42,
+        "type" => 1,
         "join" => "false",
         "url" => "some url",
         "platform" => 1,
@@ -616,7 +616,7 @@ defmodule MilkWeb.TournamentControllerTest do
         "event_date" => "2100-04-17T14:00:00Z",
         "master_id" => 42,
         "name" => "some name",
-        "type" => 42,
+        "type" => 1,
         "join" => "false",
         "url" => "some url",
         "platform" => 1,
@@ -629,7 +629,7 @@ defmodule MilkWeb.TournamentControllerTest do
         "event_date" => "2200-04-17T14:00:00Z",
         "master_id" => 42,
         "name" => "some name",
-        "type" => 42,
+        "type" => 1,
         "join" => "false",
         "url" => "some url",
         "platform" => 1,
@@ -714,16 +714,171 @@ defmodule MilkWeb.TournamentControllerTest do
   describe "start tournament" do
     setup [:create_tournament]
 
-    test "start a tournament with valid data", %{conn: conn, tournament: tournament} do
+    test "start a tournament with valid data (type: 1)", %{conn: conn, tournament: tournament} do
       _entrants = create_entrants(12, tournament.id)
       conn = post(conn, Routes.tournament_path(conn, :start), tournament: %{"master_id" => tournament.master_id, "tournament_id" => tournament.id})
 
+      assert json_response(conn, 200)["result"]
       assert json_response(conn, 200)["data"]["match_list"] |> is_list()
       assert Tournaments.get_entrants(tournament.id)
         |> Enum.map(fn x -> x.rank end)
         |> Enum.filter(fn x -> x == 8 end)
         |> length()
         |> Kernel.==(4)
+    end
+
+    test "start a tournament with valid data (type: 2)", %{conn: conn, tournament: _tournament} do
+      create_attrs2 = %{
+        "capacity" => 42,
+        "deadline" => "2010-04-17T14:00:00Z",
+        "description" => "some description",
+        "event_date" => "2010-04-17T14:00:00Z",
+        "master_id" => 42,
+        "name" => "some name",
+        "type" => 2,
+        "join" => "true",
+        "url" => "some url",
+        "password" => "Password123",
+        "platform" => 1
+      }
+      Platforms.create_basic_platforms()
+      {:ok, user} =
+        %{"name" => "type2name", "email" => "type2e@mail.com", "password" => "Password123"}
+        |> Accounts.create_user()
+      {:ok, tournament} = Tournaments.create_tournament(%{create_attrs2 | "master_id" => user.id})
+
+      entrants = create_entrants(8, tournament.id)
+      entrant_id_list = Enum.map(entrants, fn entrant -> entrant.user_id end)
+      conn = post(conn, Routes.tournament_path(conn, :start), tournament: %{"master_id" => tournament.master_id, "tournament_id" => tournament.id})
+      json_response(conn, 200)
+      |> Map.get("data")
+      |> Map.get("match_list")
+      |> List.flatten()
+      |> Enum.map(fn user_id ->
+        assert user_id in entrant_id_list
+      end)
+      |> length()
+      |> (fn len ->
+        assert len == length(entrants)
+      end).()
+
+      tournament.id
+      |> TournamentProgress.get_match_list()
+      |> (fn data ->
+        assert [{tid, match_list}] = data
+        assert tid == tournament.id
+        match_list
+      end).()
+      |> List.flatten()
+      |> Enum.map(fn user_id ->
+        assert user_id in entrant_id_list
+      end)
+      |> length()
+      |> (fn len ->
+        assert len == length(entrants)
+      end).()
+
+      tournament.id
+      |> TournamentProgress.get_match_list_with_fight_result()
+      |> (fn data ->
+        assert [{tid, match_list}] = data
+        assert tid == tournament.id
+        match_list
+      end).()
+      |> List.flatten()
+      |> length()
+      |> (fn len ->
+        assert len == length(entrants)
+      end).()
+    end
+
+    test "start a tournament with valid data (type: 3)", %{conn: conn, tournament: _tournament} do
+      create_attrs2 = %{
+        "capacity" => 42,
+        "deadline" => "2010-04-17T14:00:00Z",
+        "description" => "some description",
+        "event_date" => "2010-04-17T14:00:00Z",
+        "master_id" => 42,
+        "name" => "some name",
+        "type" => 3,
+        "join" => "true",
+        "url" => "some url",
+        "password" => "Password123",
+        "platform" => 1
+      }
+      Platforms.create_basic_platforms()
+      {:ok, user} =
+        %{"name" => "type2name", "email" => "type2e@mail.com", "password" => "Password123"}
+        |> Accounts.create_user()
+      {:ok, tournament} = Tournaments.create_tournament(%{create_attrs2 | "master_id" => user.id})
+
+      entrants = create_entrants(8, tournament.id)
+      entrant_id_list = Enum.map(entrants, fn entrant -> entrant.user_id end)
+      conn = post(conn, Routes.tournament_path(conn, :start), tournament: %{"master_id" => tournament.master_id, "tournament_id" => tournament.id})
+      json_response(conn, 200)
+      |> Map.get("data")
+      |> Map.get("match_list")
+      |> List.flatten()
+      |> Enum.map(fn user_id ->
+        assert user_id in entrant_id_list
+      end)
+      |> length()
+      |> (fn len ->
+        assert len == length(entrants)
+      end).()
+
+      tournament.id
+      |> TournamentProgress.get_match_list()
+      |> (fn data ->
+        assert [{tid, match_list}] = data
+        assert tid == tournament.id
+        match_list
+      end).()
+      |> List.flatten()
+      |> Enum.map(fn user_id ->
+        assert user_id in entrant_id_list
+      end)
+      |> length()
+      |> (fn len ->
+        assert len == length(entrants)
+      end).()
+
+      tournament.id
+      |> TournamentProgress.get_match_list_with_fight_result()
+      |> (fn data ->
+        assert [{tid, match_list}] = data
+        assert tid == tournament.id
+        match_list
+      end).()
+      |> List.flatten()
+      |> length()
+      |> (fn len ->
+        assert len == length(entrants)
+      end).()
+    end
+
+    test "does not work (type: -1)", %{conn: conn, tournament: _tournament} do
+      create_attrs2 = %{
+        "capacity" => 42,
+        "deadline" => "2010-04-17T14:00:00Z",
+        "description" => "some description",
+        "event_date" => "2010-04-17T14:00:00Z",
+        "master_id" => 42,
+        "name" => "some name",
+        "type" => -1,
+        "join" => "true",
+        "url" => "some url",
+        "password" => "Password123",
+        "platform" => 1
+      }
+      Platforms.create_basic_platforms()
+      {:ok, user} =
+        %{"name" => "type2name", "email" => "type2e@mail.com", "password" => "Password123"}
+        |> Accounts.create_user()
+      {:ok, tournament} = Tournaments.create_tournament(%{create_attrs2 | "master_id" => user.id})
+      create_entrants(8, tournament.id)
+      conn = post(conn, Routes.tournament_path(conn, :start), tournament: %{"master_id" => tournament.master_id, "tournament_id" => tournament.id})
+      refute json_response(conn, 200)["result"]
     end
   end
 
@@ -792,6 +947,58 @@ defmodule MilkWeb.TournamentControllerTest do
       end)
       |> (fn bool ->
         assert bool
+      end).()
+    end
+
+    test "works with integer data", %{conn: conn, tournament: tournament} do
+      entrants = create_entrants(8, tournament.id)
+      conn = post(conn, Routes.tournament_path(conn, :start), tournament: %{"master_id" => tournament.master_id, "tournament_id" => tournament.id})
+      match_list = json_response(conn, 200)["data"]["match_list"]
+
+      # TODO: redisの確認もしておきたい
+      losers = hd(entrants).user_id
+      conn = post(conn, Routes.tournament_path(conn, :delete_loser), tournament: %{tournament_id: tournament.id, loser_list: losers})
+      json_response(conn, 200)
+      |> Map.get("updated_match_list")
+      |> (fn list ->
+        old_len =
+          match_list
+          |> List.flatten()
+          |> length()
+        new_len =
+          list
+          |> List.flatten()
+          |> length()
+
+        assert new_len == old_len-1
+      end).()
+    end
+
+    test "works with binary data", %{conn: conn, tournament: tournament} do
+      entrants = create_entrants(8, tournament.id)
+      conn = post(conn, Routes.tournament_path(conn, :start), tournament: %{"master_id" => tournament.master_id, "tournament_id" => tournament.id})
+      match_list = json_response(conn, 200)["data"]["match_list"]
+
+      # TODO: redisの確認もしておきたい
+      losers =
+        entrants
+        |> hd()
+        |> Map.get(:user_id)
+        |> to_string()
+      conn = post(conn, Routes.tournament_path(conn, :delete_loser), tournament: %{tournament_id: tournament.id, loser_list: losers})
+      json_response(conn, 200)
+      |> Map.get("updated_match_list")
+      |> (fn list ->
+        old_len =
+          match_list
+          |> List.flatten()
+          |> length()
+        new_len =
+          list
+          |> List.flatten()
+          |> length()
+
+        assert new_len == old_len-1
       end).()
     end
   end
@@ -1311,7 +1518,254 @@ defmodule MilkWeb.TournamentControllerTest do
       end)
       |> length()
       |> (fn len ->
-        assert len  == 8
+        assert len == 8
+      end).()
+    end
+  end
+
+  describe "bracket data for best format" do
+    test "works", %{conn: conn} do
+      create_attrs2 = %{
+        "capacity" => 42,
+        "deadline" => "2010-04-17T14:00:00Z",
+        "description" => "some description",
+        "event_date" => "2010-04-17T14:00:00Z",
+        "master_id" => 42,
+        "name" => "some name",
+        "type" => 2,
+        "join" => "true",
+        "url" => "some url",
+        "password" => "Password123",
+        "platform" => 1
+      }
+      Platforms.create_basic_platforms()
+      {:ok, user} =
+        %{"name" => "type2name", "email" => "type2e@mail.com", "password" => "Password123"}
+        |> Accounts.create_user()
+      {:ok, tournament} = Tournaments.create_tournament(%{create_attrs2 | "master_id" => user.id})
+
+      [entrant1, _, _, _] = create_entrants(4, tournament.id)
+
+      conn = post(conn, Routes.tournament_path(conn, :start), tournament: %{"master_id" => tournament.master_id, "tournament_id" => tournament.id})
+      conn = get(conn, Routes.tournament_path(conn, :bracket_data_for_best_of_format), %{"tournament_id" => tournament.id})
+
+      assert json_response(conn, 200)["result"]
+      json_response(conn, 200)
+      |> Map.get("data")
+      |> Enum.map(fn bracket ->
+        refute bracket["is_loser"]
+        assert bracket["game_scores"] == []
+        assert bracket["win_count"] == 0
+      end)
+      |> length()
+      |> (fn len ->
+        assert len == 4
+      end).()
+
+      conn = get(conn, Routes.tournament_path(conn, :get_opponent), %{"tournament_id" => tournament.id, "user_id" => entrant1.user_id})
+      opponent = json_response(conn, 200)["opponent"]
+
+      conn = post(conn, Routes.tournament_path(conn, :start_match), user_id: entrant1.user_id, tournament_id: tournament.id)
+      conn = post(conn, Routes.tournament_path(conn, :start_match), user_id: opponent["id"], tournament_id: tournament.id)
+
+      my_score = 13
+      opponent_score = 4
+      match_index = 1
+
+      conn = post(conn, Routes.tournament_path(conn, :claim_score), tournament_id: tournament.id, user_id: entrant1.user_id, opponent_id: opponent["id"], score: my_score, match_index: match_index)
+      conn = post(conn, Routes.tournament_path(conn, :claim_score), tournament_id: tournament.id, user_id: opponent["id"], opponent_id: entrant1.user_id, score: opponent_score, match_index: match_index)
+
+      conn = get(conn, Routes.tournament_path(conn, :bracket_data_for_best_of_format), %{"tournament_id" => tournament.id})
+      assert json_response(conn, 200)["result"]
+
+      json_response(conn, 200)
+      |> Map.get("data")
+      |> Enum.map(fn bracket ->
+        cond do
+          bracket["user_id"] == entrant1.user_id ->
+            assert bracket["game_scores"] == [my_score]
+            refute bracket["is_loser"]
+            assert bracket["win_count"] == 1
+          bracket["user_id"] == opponent["id"] ->
+            assert bracket["game_scores"] == [opponent_score]
+            assert bracket["is_loser"]
+            assert bracket["win_count"] == 0
+          true ->
+            assert bracket["game_scores"] == []
+            refute bracket["is_loser"]
+            assert bracket["win_count"] == 0
+        end
+      end)
+      |> length()
+      |> (fn len ->
+        assert len == 4
+      end).()
+    end
+  end
+
+  describe "claim score" do
+    test "claim_score/2 works", %{conn: conn} do
+      create_attrs2 = %{
+        "capacity" => 42,
+        "deadline" => "2010-04-17T14:00:00Z",
+        "description" => "some description",
+        "event_date" => "2010-04-17T14:00:00Z",
+        "master_id" => 42,
+        "name" => "some name",
+        "type" => 2,
+        "join" => "true",
+        "url" => "some url",
+        "password" => "Password123",
+        "platform" => 1
+      }
+      Platforms.create_basic_platforms()
+      {:ok, user} =
+        %{"name" => "type2name", "email" => "type2e@mail.com", "password" => "Password123"}
+        |> Accounts.create_user()
+      {:ok, tournament} = Tournaments.create_tournament(%{create_attrs2 | "master_id" => user.id})
+
+      [entrant1, entrant2, entrant3, entrant4] = create_entrants(4, tournament.id)
+
+      conn = post(conn, Routes.tournament_path(conn, :start), tournament: %{"master_id" => tournament.master_id, "tournament_id" => tournament.id})
+      conn = get(conn, Routes.tournament_path(conn, :get_opponent), %{"tournament_id" => tournament.id, "user_id" => entrant1.user_id})
+
+      {entrant1.user_id, tournament.id}
+      |> TournamentProgress.get_match_pending_list()
+      |> (fn list ->
+        assert list == []
+      end).()
+
+      opponent = json_response(conn, 200)["opponent"]
+      conn = post(conn, Routes.tournament_path(conn, :start_match), user_id: entrant1.user_id, tournament_id: tournament.id)
+      conn = post(conn, Routes.tournament_path(conn, :start_match), user_id: opponent["id"], tournament_id: tournament.id)
+
+      {entrant1.user_id, tournament.id}
+      |> TournamentProgress.get_match_pending_list()
+      |> (fn list ->
+        assert list == [{{entrant1.user_id, tournament.id}}]
+      end).()
+
+      my_score = 13
+      opponent_score = 4
+      match_index = 1
+
+      conn = post(conn, Routes.tournament_path(conn, :claim_score), tournament_id: tournament.id, user_id: entrant1.user_id, opponent_id: opponent["id"], score: my_score, match_index: match_index)
+      json_response(conn, 200)
+      |> (fn data ->
+        assert data["validated"]
+        refute data["completed"]
+      end).()
+
+      conn = post(conn, Routes.tournament_path(conn, :claim_score), tournament_id: tournament.id, user_id: opponent["id"], opponent_id: entrant1.user_id, score: opponent_score, match_index: match_index)
+      json_response(conn, 200)
+      |> (fn data ->
+        assert data["validated"]
+        assert data["completed"]
+      end).()
+
+      [{_, match_list}] = tournament.id
+        |> TournamentProgress.get_match_list()
+      [{_, match_list_with_fight_result}] = tournament.id
+        |> TournamentProgress.get_match_list_with_fight_result()
+
+      match_list
+      |> List.flatten()
+      |> length()
+      |> (fn len ->
+        assert len == 3
+      end).()
+
+      match_list_with_fight_result
+      |> List.flatten()
+      |> Enum.map(fn bracket ->
+        if bracket["user_id"] == opponent["id"] do
+          assert bracket["is_loser"]
+        else
+          refute bracket["is_loser"]
+        end
+      end)
+      |> length()
+      |> (fn len ->
+        assert len == 4
+      end).()
+    end
+
+    test "claim_score/2 and finish", %{conn: conn} do
+      create_attrs2 = %{
+        "capacity" => 42,
+        "deadline" => "2010-04-17T14:00:00Z",
+        "description" => "some description",
+        "event_date" => "2010-04-17T14:00:00Z",
+        "master_id" => 42,
+        "name" => "some name",
+        "type" => 2,
+        "join" => "true",
+        "url" => "some url",
+        "password" => "Password123",
+        "platform" => 1
+      }
+      Platforms.create_basic_platforms()
+      {:ok, user} =
+        %{"name" => "type2name", "email" => "type2e@mail.com", "password" => "Password123"}
+        |> Accounts.create_user()
+      {:ok, tournament} = Tournaments.create_tournament(%{create_attrs2 | "master_id" => user.id})
+
+      [entrant1, entrant2] = create_entrants(2, tournament.id)
+
+      conn = post(conn, Routes.tournament_path(conn, :start), tournament: %{"master_id" => tournament.master_id, "tournament_id" => tournament.id})
+
+      {entrant1.user_id, tournament.id}
+      |> TournamentProgress.get_match_pending_list()
+      |> (fn list ->
+        assert list == []
+      end).()
+
+      conn = post(conn, Routes.tournament_path(conn, :start_match), user_id: entrant1.user_id, tournament_id: tournament.id)
+      conn = post(conn, Routes.tournament_path(conn, :start_match), user_id: entrant2.user_id, tournament_id: tournament.id)
+
+      {entrant1.user_id, tournament.id}
+      |> TournamentProgress.get_match_pending_list()
+      |> (fn list ->
+        assert list == [{{entrant1.user_id, tournament.id}}]
+      end).()
+
+      my_score = 13
+      opponent_score = 4
+      match_index = 1
+
+      conn = post(conn, Routes.tournament_path(conn, :claim_score), tournament_id: tournament.id, user_id: entrant1.user_id, opponent_id: entrant2.user_id, score: my_score, match_index: match_index)
+      json_response(conn, 200)
+      |> (fn data ->
+        assert data["validated"]
+        refute data["completed"]
+      end).()
+
+      conn = post(conn, Routes.tournament_path(conn, :claim_score), tournament_id: tournament.id, user_id: entrant2.user_id, opponent_id: entrant1.user_id, score: opponent_score, match_index: match_index)
+      json_response(conn, 200)
+      |> (fn data ->
+        assert data["validated"]
+        assert data["completed"]
+      end).()
+
+      conn = get(conn, Routes.tournament_path(conn, :show), tournament_id: tournament.id)
+      json_response(conn, 200)
+      |> (fn t ->
+        assert t["is_log"]
+        assert t["result"]
+        t
+      end).()
+      |> Map.get("data")
+      |> (fn t ->
+        assert t["tournament_id"] == tournament.id
+        assert t["capacity"] == tournament.capacity
+        assert t["description"] == tournament.description
+        assert t["game_id"] == tournament.game_id
+        assert t["game_name"] == tournament.game_name
+        assert t["winner_id"] == entrant1.user_id
+        assert t["master_id"] == tournament.master_id
+        assert t["name"] == tournament.name
+        assert t["url"] == tournament.url
+        assert t["type"] == tournament.type
       end).()
     end
   end

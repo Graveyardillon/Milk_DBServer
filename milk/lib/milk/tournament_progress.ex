@@ -13,7 +13,10 @@ defmodule Milk.TournamentProgress do
     Repo,
     Tournaments
   }
-  alias Milk.TournamentProgress.SingleTournamentMatchLog
+  alias Milk.TournamentProgress.{
+    BestOfXTournamentMatchLog,
+    SingleTournamentMatchLog
+  }
 
   require Logger
 
@@ -271,6 +274,7 @@ defmodule Milk.TournamentProgress do
   """
   4. match_pending_list
   Manages fight result.
+  FIXME: 引数のタプルをやめたい
   """
   def insert_fight_result_table({user_id, tournament_id}, is_win) do
     conn = conn()
@@ -402,7 +406,7 @@ defmodule Milk.TournamentProgress do
   end
 
   @doc """
-
+  Set a time limit on entrants of a tournament.
   """
   def set_time_limit_on_all_entrants(match_list, tournament_id) do
     Logger.info("Set time limit on all entrants")
@@ -514,6 +518,39 @@ defmodule Milk.TournamentProgress do
   end
 
   """
+  7. scores
+  Instead of fight result, we use scores for players fight result management.
+  """
+  def insert_score(tournament_id, user_id, score) do
+    conn = conn()
+
+    with {:ok, _} <- Redix.command(conn, ["MULTI"]),
+    {:ok, _} <- Redix.command(conn, ["SELECT", 7]),
+    {:ok, _} <- Redix.command(conn, ["HSET", tournament_id, user_id, score]),
+    {:ok, _} <- Redix.command(conn, ["EXEC"]) do
+      true
+    else
+      _ -> false
+    end
+  end
+
+  def get_score(tournament_id, user_id) do
+    conn = conn()
+
+    with {:ok, _} <- Redix.command(conn, ["SELECT", 7]),
+    {:ok, value} <- Redix.command(conn, ["HGET", tournament_id, user_id]) do
+      if value do
+        {score, _} = Code.eval_string(value)
+        score
+      else
+        []
+      end
+    else
+      _ -> []
+    end
+  end
+
+  """
   # Single tournament match log.
   Single tournament match log stores a progress information.
 
@@ -542,6 +579,39 @@ defmodule Milk.TournamentProgress do
   def create_single_tournament_match_log(attrs \\ %{}) do
     %SingleTournamentMatchLog{}
     |> SingleTournamentMatchLog.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  """
+  Best of x tournament match log.
+  """
+
+  @doc """
+  Get best of x tournament match log.
+  """
+  def get_best_of_x_tournament_match_logs(tournament_id) do
+    BestOfXTournamentMatchLog
+    |> where([b], b.tournament_id == ^tournament_id)
+    |> Repo.all()
+  end
+
+  def get_best_of_x_tournament_match_logs_by_winner(tournament_id, user_id) do
+    BestOfXTournamentMatchLog
+    |> where([b], b.tournament_id == ^tournament_id)
+    |> where([b], b.winner_id == ^user_id)
+    |> Repo.all()
+  end
+
+  def get_best_of_x_tournament_match_logs_by_loser(tournament_id, user_id) do
+    BestOfXTournamentMatchLog
+    |> where([b], b.tournament_id == ^tournament_id)
+    |> where([b], b.loser_id == ^user_id)
+    |> Repo.all()
+  end
+
+  def create_best_of_x_tournament_match_log(attrs \\ %{}) do
+    %BestOfXTournamentMatchLog{}
+    |> BestOfXTournamentMatchLog.changeset(attrs)
     |> Repo.insert()
   end
 end

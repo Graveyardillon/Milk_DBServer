@@ -19,6 +19,9 @@ defmodule Milk.Tournaments do
     User,
     Relation
   }
+  alias Milk.TournamentProgress.{
+    BestOfXTournamentMatchLog
+  }
   alias Milk.Tournaments.{
     Tournament,
     Entrant,
@@ -910,13 +913,14 @@ defmodule Milk.Tournaments do
   FIXME: リファクタリング
   """
   def start(master_id, tournament_id) do
-    nil_check_on_start?(master_id, tournament_id)
+    master_id
+    |> nil_check?(tournament_id)
     |> check_entrant_number(tournament_id)
-    |> fetch_tournament(master_id, tournament_id)
+    |> fetch_tournament_as_needed(master_id, tournament_id)
     |> start()
   end
 
-  defp nil_check_on_start?(master_id, tournament_id) do
+  defp nil_check?(master_id, tournament_id) do
     if !is_nil(master_id) and !is_nil(tournament_id) do
       {:ok, nil}
     else
@@ -945,7 +949,7 @@ defmodule Milk.Tournaments do
     |> length()
   end
 
-  defp fetch_tournament(check, master_id, tournament_id) do
+  defp fetch_tournament_as_needed(check, master_id, tournament_id) do
     case check do
       {:ok, nil} ->
         tournament =
@@ -1544,6 +1548,34 @@ defmodule Milk.Tournaments do
     brackets
   end
 
+  @doc """
+  Construct data with game scores for brackets.
+  """
+  def data_with_scores_for_brackets(tournament_id) do
+    [{_, match_list}] = TournamentProgress.get_match_list_with_fight_result(tournament_id)
+
+    # add game_scores
+    match_list
+    |> List.flatten()
+    |> Enum.map(fn bracket ->
+      user_id = bracket["user_id"]
+
+      win_game_scores = tournament_id
+        |> TournamentProgress.get_best_of_x_tournament_match_logs_by_winner(user_id)
+        |> Enum.map(fn log ->
+          log.winner_score
+        end)
+      lose_game_scores = tournament_id
+        |> TournamentProgress.get_best_of_x_tournament_match_logs_by_loser(user_id)
+        |> Enum.map(fn log ->
+          log.loser_score
+        end)
+
+      game_scores = win_game_scores ++ lose_game_scores
+
+      Map.put(bracket, "game_scores", game_scores)
+    end)
+  end
 
   @doc """
   Returns tournament records.
@@ -1563,5 +1595,25 @@ defmodule Milk.Tournaments do
       Map.put(entrant_log, :tournament_log, tlog)
     end)
     |> Enum.filter(fn entrant_log -> entrant_log.tournament_log != nil end)
+  end
+
+  @doc """
+  Scores data.
+  """
+  def score(tournament_id, winner_id, loser_id, winner_score, loser_score, match_index) do
+    %{
+      tournament_id: tournament_id,
+      winner_id: winner_id,
+      loser_id: loser_id,
+      winner_score: winner_score,
+      loser_score: loser_score,
+      match_index: match_index
+    }
+    |> TournamentProgress.create_best_of_x_tournament_match_log()
+
+    [{_, match_list}] = TournamentProgress.get_match_list_with_fight_result(tournament_id)
+    match_list = Tournamex.win_count_increment(match_list, winner_id)
+    TournamentProgress.delete_match_list_with_fight_result(tournament_id)
+    TournamentProgress.insert_match_list_with_fight_result(match_list, tournament_id)
   end
 end
