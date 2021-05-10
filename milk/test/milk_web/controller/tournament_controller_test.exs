@@ -1523,6 +1523,86 @@ defmodule MilkWeb.TournamentControllerTest do
     end
   end
 
+  describe "bracket data for best format" do
+    test "works", %{conn: conn} do
+      create_attrs2 = %{
+        "capacity" => 42,
+        "deadline" => "2010-04-17T14:00:00Z",
+        "description" => "some description",
+        "event_date" => "2010-04-17T14:00:00Z",
+        "master_id" => 42,
+        "name" => "some name",
+        "type" => 2,
+        "join" => "true",
+        "url" => "some url",
+        "password" => "Password123",
+        "platform" => 1
+      }
+      Platforms.create_basic_platforms()
+      {:ok, user} =
+        %{"name" => "type2name", "email" => "type2e@mail.com", "password" => "Password123"}
+        |> Accounts.create_user()
+      {:ok, tournament} = Tournaments.create_tournament(%{create_attrs2 | "master_id" => user.id})
+
+      [entrant1, _, _, _] = create_entrants(4, tournament.id)
+
+      conn = post(conn, Routes.tournament_path(conn, :start), tournament: %{"master_id" => tournament.master_id, "tournament_id" => tournament.id})
+      conn = get(conn, Routes.tournament_path(conn, :bracket_data_for_best_of_format), %{"tournament_id" => tournament.id})
+
+      assert json_response(conn, 200)["result"]
+      json_response(conn, 200)
+      |> Map.get("data")
+      |> Enum.map(fn bracket ->
+        refute bracket["is_loser"]
+        assert bracket["game_scores"] == []
+        assert bracket["win_count"] == 0
+      end)
+      |> length()
+      |> (fn len ->
+        assert len == 4
+      end).()
+
+      conn = get(conn, Routes.tournament_path(conn, :get_opponent), %{"tournament_id" => tournament.id, "user_id" => entrant1.user_id})
+      opponent = json_response(conn, 200)["opponent"]
+
+      conn = post(conn, Routes.tournament_path(conn, :start_match), user_id: entrant1.user_id, tournament_id: tournament.id)
+      conn = post(conn, Routes.tournament_path(conn, :start_match), user_id: opponent["id"], tournament_id: tournament.id)
+
+      my_score = 13
+      opponent_score = 4
+      match_index = 1
+
+      conn = post(conn, Routes.tournament_path(conn, :claim_score), tournament_id: tournament.id, user_id: entrant1.user_id, opponent_id: opponent["id"], score: my_score, match_index: match_index)
+      conn = post(conn, Routes.tournament_path(conn, :claim_score), tournament_id: tournament.id, user_id: opponent["id"], opponent_id: entrant1.user_id, score: opponent_score, match_index: match_index)
+
+      conn = get(conn, Routes.tournament_path(conn, :bracket_data_for_best_of_format), %{"tournament_id" => tournament.id})
+      assert json_response(conn, 200)["result"]
+
+      json_response(conn, 200)
+      |> Map.get("data")
+      |> Enum.map(fn bracket ->
+        cond do
+          bracket["user_id"] == entrant1.user_id ->
+            assert bracket["game_scores"] == [my_score]
+            refute bracket["is_loser"]
+            assert bracket["win_count"] == 1
+          bracket["user_id"] == opponent["id"] ->
+            assert bracket["game_scores"] == [opponent_score]
+            assert bracket["is_loser"]
+            assert bracket["win_count"] == 0
+          true ->
+            assert bracket["game_scores"] == []
+            refute bracket["is_loser"]
+            assert bracket["win_count"] == 0
+        end
+      end)
+      |> length()
+      |> (fn len ->
+        assert len == 4
+      end).()
+    end
+  end
+
   describe "claim score" do
     test "claim_score/2 works", %{conn: conn} do
       create_attrs2 = %{

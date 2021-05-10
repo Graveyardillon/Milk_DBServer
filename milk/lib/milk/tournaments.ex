@@ -1560,11 +1560,18 @@ defmodule Milk.Tournaments do
     |> Enum.map(fn bracket ->
       user_id = bracket["user_id"]
 
-      game_scores = tournament_id
-        |> TournamentProgress.get_best_of_x_tournament_match_logs(user_id)
+      win_game_scores = tournament_id
+        |> TournamentProgress.get_best_of_x_tournament_match_logs_by_winner(user_id)
         |> Enum.map(fn log ->
           log.winner_score
         end)
+      lose_game_scores = tournament_id
+        |> TournamentProgress.get_best_of_x_tournament_match_logs_by_loser(user_id)
+        |> Enum.map(fn log ->
+          log.loser_score
+        end)
+
+      game_scores = win_game_scores ++ lose_game_scores
 
       Map.put(bracket, "game_scores", game_scores)
     end)

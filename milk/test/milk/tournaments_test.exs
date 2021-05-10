@@ -1476,6 +1476,7 @@ defmodule Milk.TournamentsTest do
 
       TournamentProgress.get_best_of_x_tournament_match_logs(tournament.id)
 
+      # TODO: 敗北者のスコアを入れたい
       Tournaments.data_with_scores_for_brackets(tournament.id)
       |> Enum.map(fn data ->
         refute data["is_loser"]
@@ -1486,13 +1487,13 @@ defmodule Milk.TournamentsTest do
             assert data["game_scores"] == [13]
           data["user_id"] == user2_id ->
             assert data["win_count"] == 0
-            assert data["game_scores"] == []
+            assert data["game_scores"] == [2]
           data["user_id"] == user3_id ->
             assert data["win_count"] == 1
             assert data["game_scores"] == [13]
           data["user_id"] == user4_id ->
             assert data["win_count"] == 0
-            assert data["game_scores"] == []
+            assert data["game_scores"] == [3]
         end
       end)
       |> length()
@@ -1508,16 +1509,16 @@ defmodule Milk.TournamentsTest do
         cond do
           data["user_id"] == user1_id ->
             assert data["win_count"] == 1
-            assert data["game_scores"] == [13]
+            assert data["game_scores"] == [13, 4]
           data["user_id"] == user2_id ->
             assert data["win_count"] == 0
-            assert data["game_scores"] == []
+            assert data["game_scores"] == [2]
           data["user_id"] == user3_id ->
             assert data["win_count"] == 2
             assert data["game_scores"] == [13, 13]
           data["user_id"] == user4_id ->
             assert data["win_count"] == 0
-            assert data["game_scores"] == []
+            assert data["game_scores"] == [3]
         end
       end)
       |> length()

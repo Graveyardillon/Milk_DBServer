@@ -595,10 +595,17 @@ defmodule Milk.TournamentProgress do
     |> Repo.all()
   end
 
-  def get_best_of_x_tournament_match_logs(tournament_id, user_id) do
+  def get_best_of_x_tournament_match_logs_by_winner(tournament_id, user_id) do
     BestOfXTournamentMatchLog
     |> where([b], b.tournament_id == ^tournament_id)
     |> where([b], b.winner_id == ^user_id)
+    |> Repo.all()
+  end
+
+  def get_best_of_x_tournament_match_logs_by_loser(tournament_id, user_id) do
+    BestOfXTournamentMatchLog
+    |> where([b], b.tournament_id == ^tournament_id)
+    |> where([b], b.loser_id == ^user_id)
     |> Repo.all()
   end
 
