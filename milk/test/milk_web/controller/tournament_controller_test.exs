@@ -1705,6 +1705,19 @@ defmodule MilkWeb.TournamentControllerTest do
         refute data["completed"]
       end).()
 
+      conn = get(conn, Routes.tournament_path(conn, :score), tournament_id: tournament.id, user_id: entrant1.user_id)
+      assert json_response(conn, 200)["score"] == my_score
+
+      my_new_score = 7
+      conn = post(conn, Routes.tournament_path(conn, :claim_score), tournament_id: tournament.id, user_id: entrant1.user_id, opponent_id: opponent["id"], score: my_new_score, match_index: match_index)
+      json_response(conn, 200)
+      |> (fn data ->
+        assert data["validated"]
+        refute data["completed"]
+      end).()
+      conn = get(conn, Routes.tournament_path(conn, :score), tournament_id: tournament.id, user_id: entrant1.user_id)
+      assert json_response(conn, 200)["score"] == my_new_score
+
       conn = post(conn, Routes.tournament_path(conn, :claim_score), tournament_id: tournament.id, user_id: opponent["id"], opponent_id: entrant1.user_id, score: opponent_score, match_index: match_index)
       json_response(conn, 200)
       |> (fn data ->
