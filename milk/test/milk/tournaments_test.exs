@@ -1476,7 +1476,6 @@ defmodule Milk.TournamentsTest do
 
       TournamentProgress.get_best_of_x_tournament_match_logs(tournament.id)
 
-      # TODO: 敗北者のスコアを入れたい
       Tournaments.data_with_scores_for_brackets(tournament.id)
       |> Enum.map(fn data ->
         refute data["is_loser"]
@@ -1525,6 +1524,42 @@ defmodule Milk.TournamentsTest do
       |> (fn len ->
         assert len == 4
       end).()
+    end
+  end
+
+  describe "data_with_scores_for_flexible_brackets" do
+    test "works" do
+      tournament = fixture_tournament(is_started: false)
+      create_entrants(9, tournament.id)
+      Tournaments.start(tournament.master_id, tournament.id)
+
+      {:ok, match_list} = tournament.id
+        |> Tournaments.get_entrants()
+        |> Enum.map(fn x -> x.user_id end)
+        |> Tournaments.generate_matchlist()
+
+        count = tournament.count
+        Tournaments.initialize_rank(match_list, count, tournament.id)
+        TournamentProgress.insert_match_list(match_list, tournament.id)
+
+        match_list_with_fight_result = match_list_with_fight_result(match_list)
+        match_list_with_fight_result
+        |> List.flatten()
+        |> Enum.reduce(match_list_with_fight_result, fn x, acc ->
+          user = Accounts.get_user(x["user_id"])
+
+          acc
+          |> Tournaments.put_value_on_brackets(user.id, %{"name" => user.name})
+          |> Tournaments.put_value_on_brackets(user.id, %{"win_count" => 0})
+          |> Tournaments.put_value_on_brackets(user.id, %{"icon_path" => user.icon_path})
+          |> Tournaments.put_value_on_brackets(user.id, %{"round" => 0})
+        end)
+        |> TournamentProgress.insert_match_list_with_fight_result(tournament.id)
+
+        Tournaments.data_with_scores_for_flexible_brackets(tournament.id)
+        |> (fn list ->
+          assert is_list(list)
+        end).()
     end
   end
 end

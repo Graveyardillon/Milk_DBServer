@@ -1578,6 +1578,40 @@ defmodule Milk.Tournaments do
   end
 
   @doc """
+  new one.
+  """
+  def data_with_scores_for_flexible_brackets(tournament_id) do
+    [{_, match_list}] = TournamentProgress.get_match_list_with_fight_result(tournament_id)
+    {:ok, brackets} = Tournamex.brackets_with_fight_result(match_list)
+
+    # add game_scores
+    brackets
+    |> Enum.map(fn list ->
+      inspect(list)
+      Enum.map(list, fn bracket ->
+        unless is_nil(bracket) do
+          user_id = bracket["user_id"]
+
+          win_game_scores = tournament_id
+            |> TournamentProgress.get_best_of_x_tournament_match_logs_by_winner(user_id)
+            |> Enum.map(fn log ->
+              log.winner_score
+            end)
+          lose_game_scores = tournament_id
+            |> TournamentProgress.get_best_of_x_tournament_match_logs_by_loser(user_id)
+            |> Enum.map(fn log ->
+              log.loser_score
+            end)
+
+          game_scores = win_game_scores ++ lose_game_scores
+
+          Map.put(bracket, "game_scores", game_scores)
+        end
+      end)
+    end)
+  end
+
+  @doc """
   Returns tournament records.
   """
   def get_all_tournament_records(user_id) do

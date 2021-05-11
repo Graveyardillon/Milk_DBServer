@@ -1052,6 +1052,18 @@ defmodule MilkWeb.TournamentController do
     json(conn, %{result: true, data: brackets, count: count})
   end
 
+  def chunk_bracket_data_for_best_of_format(conn, %{"tournament_id" => tournament_id}) do
+    tournament_id = Tools.to_integer_as_needed(tournament_id)
+    # TODO: data_with_scores_for_bracketsを使う
+    brackets = Tournaments.data_with_scores_for_flexible_brackets(tournament_id)
+    count = brackets
+      |> Enum.count()
+      |> Kernel.*(2)
+      |> Tournamex.Number.closest_number_to_power_of_two()
+
+    json(conn, %{result: true, data: brackets, count: count})
+  end
+
   @doc """
   Registers PID of start notification.
   The notification is handled in Web Server, so the pid does not belong to this server.
