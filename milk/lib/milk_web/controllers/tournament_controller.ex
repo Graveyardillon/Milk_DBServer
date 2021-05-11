@@ -854,7 +854,6 @@ defmodule MilkWeb.TournamentController do
         cond do
           n > score ->
             Tournaments.delete_loser_process(tournament_id, [user_id])
-            #delete_loser(conn, %{"tournament" => %{"tournament_id" => tournament_id, "loser_list" => user_id}})
             Tournaments.score(tournament_id, opponent_id, user_id, n, score, match_index)
             TournamentProgress.delete_match_pending_list({user_id, tournament_id})
             TournamentProgress.delete_match_pending_list({opponent_id, tournament_id})
@@ -862,7 +861,6 @@ defmodule MilkWeb.TournamentController do
             json(conn, %{validated: true, completed: true})
           n < score ->
             Tournaments.delete_loser_process(tournament_id, [opponent_id])
-            #delete_loser(conn, %{"tournament" => %{"tournament_id" => tournament_id, "loser_list" => opponent_id}})
             Tournaments.score(tournament_id, user_id, opponent_id, score, n, match_index)
             TournamentProgress.delete_match_pending_list({user_id, tournament_id})
             TournamentProgress.delete_match_pending_list({opponent_id, tournament_id})
