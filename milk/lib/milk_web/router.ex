@@ -109,6 +109,7 @@ defmodule MilkWeb.Router do
     get  "/tournament/brackets_with_score", TournamentController, :bracket_data_for_best_of_format
     get  "/tournament/duplicate_claims", TournamentController, :get_duplicate_claim_members
     get  "/tournament/is_user_win", TournamentController, :is_user_win
+    get  "/tournament/score", TournamentController, :score
     get  "/tournament/relevant", TournamentController, :relevant
     get  "/tournament/is_able_to_join", TournamentController, :is_able_to_join
     get  "/tournament/has_lost", TournamentController, :has_lost?
