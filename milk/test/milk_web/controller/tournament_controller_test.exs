@@ -485,8 +485,42 @@ defmodule MilkWeb.TournamentControllerTest do
       end)
       |> length()
       |> (fn len ->
-            assert len == 1
-          end).()
+        assert len == 1
+      end).()
+    end
+
+    test "blocked user", %{conn: conn} do
+      {:ok, user} = fixture(:user)
+
+      attrs = %{
+        "capacity" => 42,
+        "deadline" => "2040-04-17T14:00:00Z",
+        "description" => "some description",
+        "event_date" => "2040-04-17T14:00:00Z",
+        "master_id" => user.id,
+        "name" => "some name",
+        "type" => 1,
+        "join" => "true",
+        "url" => "some url",
+        "platform" => 1
+      }
+
+      conn = post(conn, Routes.tournament_path(conn, :create), tournament: attrs, file: "")
+      tournament = json_response(conn, 200)["data"]
+
+      Relations.block(user.id, tournament["master_id"])
+
+      date_offset =
+        Timex.now()
+        |> Timex.add(Timex.Duration.from_days(1))
+
+      get(conn, Routes.tournament_path(conn, :home), user_id: user.id, date_offset: date_offset, offset: 0)
+      |> json_response(200)
+      |> Map.get("data")
+      |> length()
+      |> (fn len ->
+        assert len == 0
+      end).()
     end
 
     test "fav filtered", %{conn: conn} do

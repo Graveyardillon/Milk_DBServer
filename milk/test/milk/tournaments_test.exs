@@ -352,6 +352,21 @@ defmodule Milk.TournamentsTest do
       event_date: "2031-05-18T15:01:01Z"
     }
 
+    test "home_tournament/3" do
+      user1 = fixture_user()
+      tournament = fixture_tournament()
+      {:ok, _} = Tournaments.update_tournament(tournament, @home_attrs)
+
+      Relations.block(user1.id, tournament.master_id)
+
+      user1.id
+      |> Tournaments.home_tournament("2020-05-12 16:55:53 +0000", 0)
+      |> length()
+      |> (fn len ->
+        assert len == 0
+      end).()
+    end
+
     test "home_tournament_fav/1 returns tournaments which is filtered by favorite users for home screen" do
       user1 = fixture_user()
       tournament = fixture_tournament()

@@ -14,6 +14,7 @@ defmodule Milk.Tournaments do
     Chat,
     Log,
     TournamentProgress,
+    Relations,
     Repo
   }
 
@@ -69,12 +70,33 @@ defmodule Milk.Tournaments do
   @doc """
   Returns the list of tournament for home screen.
   """
+  def home_tournament(user_id, date_offset, offset) do
+    offset = Tools.to_integer_as_needed(offset)
+    blocked_user_id_list =
+      user_id
+      |> Relations.blocked_users()
+      |> Enum.map(fn relation -> relation.blocked_user_id end)
+
+    Tournament
+    |> where([t], t.deadline > ^Timex.now() and t.create_time < ^date_offset)
+    |> where([t], not (t.master_id in ^blocked_user_id_list))
+    |> order_by([t], asc: :event_date)
+    |> offset(^offset)
+    |> limit(5)
+    |> Repo.all()
+    |> Repo.preload(:entrant)
+  end
+
+  @doc """
+  Returns the list of tournament which is not optimized for user.
+  """
   def home_tournament(date_offset, offset) do
+    IO.inspect(date_offset, label: :date_offset)
     offset = Tools.to_integer_as_needed(offset)
 
     Tournament
-    |> where([e], e.deadline > ^Timex.now() and e.create_time < ^date_offset)
-    |> order_by([e], asc: :event_date)
+    |> where([t], t.deadline > ^Timex.now() and t.create_time < ^date_offset)
+    |> order_by([t], asc: :event_date)
     |> offset(^offset)
     |> limit(5)
     |> Repo.all()

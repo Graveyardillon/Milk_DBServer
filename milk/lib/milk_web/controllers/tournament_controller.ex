@@ -205,6 +205,25 @@ defmodule MilkWeb.TournamentController do
   @doc """
   Gets tournament info list for home screen.
   """
+  def home(conn, %{"user_id" => user_id, "date_offset" => date_offset, "offset" => offset}) do
+    user_id = Tools.to_integer_as_needed(user_id)
+    offset = Tools.to_integer_as_needed(offset)
+
+    tournaments =
+      Tournaments.home_tournament(user_id, date_offset, offset)
+      |> Enum.map(fn tournament ->
+        entrants =
+          Tournaments.get_entrants(tournament.id)
+          |> Enum.map(fn entrant ->
+            Accounts.get_user(entrant.user_id)
+          end)
+
+        Map.put(tournament, :entrants, entrants)
+      end)
+
+    render(conn, "home.json", tournaments_info: tournaments)
+  end
+
   def home(conn, %{"date_offset" => date_offset, "offset" => offset}) do
     tournaments =
       Tournaments.home_tournament(date_offset, offset)
