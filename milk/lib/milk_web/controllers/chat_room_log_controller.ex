@@ -27,7 +27,8 @@ defmodule MilkWeb.ChatRoomLogController do
   def update(conn, %{"id" => id, "chat_room_log" => chat_room_log_params}) do
     chat_room_log = Log.get_chat_room_log!(id)
 
-    with {:ok, %ChatRoomLog{} = chat_room_log} <- Log.update_chat_room_log(chat_room_log, chat_room_log_params) do
+    with {:ok, %ChatRoomLog{} = chat_room_log} <-
+           Log.update_chat_room_log(chat_room_log, chat_room_log_params) do
       render(conn, "show.json", chat_room_log: chat_room_log)
     end
   end

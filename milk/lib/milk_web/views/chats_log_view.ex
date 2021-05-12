@@ -11,10 +11,12 @@ defmodule MilkWeb.ChatsLogView do
   end
 
   def render("chats_log.json", %{chats_log: chats_log}) do
-    %{id: chats_log.id,
+    %{
+      id: chats_log.id,
       chat_room_id: chats_log.chat_room_id,
       word: chats_log.word,
       user_id: chats_log.user_id,
-      index: chats_log.index}
+      index: chats_log.index
+    }
   end
 end

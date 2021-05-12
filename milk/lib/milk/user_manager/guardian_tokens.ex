@@ -12,7 +12,6 @@ defmodule Milk.UserManager.GuardianTokens do
     field(:exp, :integer)
     field(:jwt, :string)
     field(:claims, :map)
-
   end
 
   @doc false

@@ -2,11 +2,13 @@ defmodule MilkWeb.ProfileController do
   use MilkWeb, :controller
 
   alias Common.FileUtils
+
   alias Milk.{
     Accounts,
     Profiles,
     Tournaments
   }
+
   alias Milk.Media.Image
   alias Milk.CloudStorage.Objects
 
@@ -45,15 +47,19 @@ defmodule MilkWeb.ProfileController do
 
   def update_icon(conn, %{"user_id" => user_id, "image" => image}) do
     user = Accounts.get_user(user_id)
+
     if user do
       uuid = SecureRandom.uuid()
 
       FileUtils.copy(image.path, "./static/image/profile_icon/#{uuid}.png")
-      local_path = case Application.get_env(:milk, :environment) do
-        :dev -> update_account(user, uuid)
-        :test -> update_account(user, uuid)
-        _ -> update_account_prod(user, uuid)
-      end
+
+      local_path =
+        case Application.get_env(:milk, :environment) do
+          :dev -> update_account(user, uuid)
+          :test -> update_account(user, uuid)
+          _ -> update_account_prod(user, uuid)
+        end
+
       json(conn, %{local_path: local_path})
     else
       json(conn, %{error: "user not found"})
@@ -83,6 +89,7 @@ defmodule MilkWeb.ProfileController do
         {:ok, file} ->
           b64 = Base.encode64(file)
           json(conn, %{b64: b64})
+
         {:error, _} ->
           json(conn, %{error: "image not found"})
       end

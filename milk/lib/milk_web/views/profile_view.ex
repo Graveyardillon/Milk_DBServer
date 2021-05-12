@@ -13,10 +13,12 @@ defmodule MilkWeb.ProfileView do
   end
 
   def render("profile.json", %{profile: profile}) do
-    %{id: profile.id,
+    %{
+      id: profile.id,
       user_id: profile.user_id,
       content_id: profile.content_id,
-      content_type: profile.content_type}
+      content_type: profile.content_type
+    }
   end
 
   def render("profile.json", %{user: user, games: games, records: records}) do

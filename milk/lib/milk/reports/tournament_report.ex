@@ -30,7 +30,20 @@ defmodule Milk.Reports.TournamentReport do
   @doc false
   def changeset(tournament_report, attrs) do
     tournament_report
-    |> cast(attrs, [:report_type, :capacity, :deadline, :description, :event_date, :name, :type, :url, :thumbnail_path, :count, :game_name, :start_recruiting])
+    |> cast(attrs, [
+      :report_type,
+      :capacity,
+      :deadline,
+      :description,
+      :event_date,
+      :name,
+      :type,
+      :url,
+      :thumbnail_path,
+      :count,
+      :game_name,
+      :start_recruiting
+    ])
     |> validate_required([:report_type, :name, :game_name])
     |> foreign_key_constraint(:reporter_id)
     |> foreign_key_constraint(:master_id)

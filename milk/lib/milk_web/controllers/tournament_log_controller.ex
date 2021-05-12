@@ -12,7 +12,8 @@ defmodule MilkWeb.TournamentLogController do
   end
 
   def create(conn, %{"data" => tournament_log_params}) do
-    with {:ok, %TournamentLog{} = tournament_log} <- Log.create_tournament_log(tournament_log_params) do
+    with {:ok, %TournamentLog{} = tournament_log} <-
+           Log.create_tournament_log(tournament_log_params) do
       conn
       |> render("show.json", tournament_log: tournament_log)
     end
@@ -26,7 +27,8 @@ defmodule MilkWeb.TournamentLogController do
   def update(conn, %{"id" => id, "tournament_log" => tournament_log_params}) do
     tournament_log = Log.get_tournament_log!(id)
 
-    with {:ok, %TournamentLog{} = tournament_log} <- Log.update_tournament_log(tournament_log, tournament_log_params) do
+    with {:ok, %TournamentLog{} = tournament_log} <-
+           Log.update_tournament_log(tournament_log, tournament_log_params) do
       render(conn, "show.json", tournament_log: [tournament_log])
     end
   end

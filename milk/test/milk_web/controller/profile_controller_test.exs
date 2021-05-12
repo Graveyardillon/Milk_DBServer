@@ -6,6 +6,7 @@ defmodule MilkWeb.ProfileControllerTest do
     Profiles,
     Tournaments
   }
+
   alias Milk.Accounts.Profile
 
   @create_attrs %{
@@ -40,10 +41,12 @@ defmodule MilkWeb.ProfileControllerTest do
 
   def fixture(:profile) do
     user = fixture_user()
+
     {:ok, profile} =
       @create_attrs
       |> Map.put("user_id", user.id)
       |> Profiles.create_profile()
+
     profile
   end
 
@@ -58,7 +61,7 @@ defmodule MilkWeb.ProfileControllerTest do
       end
 
     attrs = %{
-      "icon_path"  => "some icon_path",
+      "icon_path" => "some icon_path",
       "language" => "some language",
       "name" => "some name" <> num_str,
       "notification_number" => 42,
@@ -66,6 +69,7 @@ defmodule MilkWeb.ProfileControllerTest do
       "password" => "Password123",
       "email" => "e@mail.com" <> num_str
     }
+
     {:ok, user} = Accounts.create_user(attrs)
     user
   end
@@ -77,7 +81,13 @@ defmodule MilkWeb.ProfileControllerTest do
       |> unless do
         opts[:master_id]
       else
-        {:ok, user} = Accounts.create_user(%{"name" => "name", "email" => "e@mail.com", "password" => "Password123"})
+        {:ok, user} =
+          Accounts.create_user(%{
+            "name" => "name",
+            "email" => "e@mail.com",
+            "password" => "Password123"
+          })
+
         user.id
       end
 
@@ -86,6 +96,7 @@ defmodule MilkWeb.ProfileControllerTest do
       |> Map.put("is_started", false)
       |> Map.put("master_id", master_id)
       |> Tournaments.create_tournament()
+
     tournament
   end
 
@@ -114,8 +125,10 @@ defmodule MilkWeb.ProfileControllerTest do
       user_id = profile.user_id
 
       tournament = fixture_tournament(master_id: user_id)
+
       %{"tournament_id" => tournament.id, "user_id" => user_id, "rank" => 5}
       |> Tournaments.create_entrant()
+
       setup_tournament_having_participants(tournament.id)
       Tournaments.start(user_id, tournament.id)
       Tournaments.finish(tournament.id, user_id)
@@ -125,8 +138,8 @@ defmodule MilkWeb.ProfileControllerTest do
       |> Map.get("data")
       |> length()
       |> (fn records_length ->
-        assert records_length == 1
-      end).()
+            assert records_length == 1
+          end).()
     end
 
     defp setup_tournament_having_participants(tournament_id) do

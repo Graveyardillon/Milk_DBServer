@@ -10,6 +10,5 @@ defmodule Milk.Repo.Migrations.CreateProfiles do
       add :create_time, :timestamptz
       add :update_time, :timestamptz
     end
-
   end
 end

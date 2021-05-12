@@ -7,7 +7,6 @@ defmodule Milk.ProfilesTest do
 
   describe "profiles get" do
     test "a" do
-
     end
   end
 end

@@ -7,6 +7,7 @@ defmodule Milk.UserManager.Guardian do
     Accounts,
     Repo
   }
+
   alias Milk.UserManager.{
     Guardian,
     GuardianTokens
@@ -17,10 +18,12 @@ defmodule Milk.UserManager.Guardian do
       case Map.get(user, :user) do
         nil ->
           user.id
+
         userinfo ->
           user.user.id
       end
       |> to_string()
+
     {:ok, id}
   end
 
@@ -37,13 +40,13 @@ defmodule Milk.UserManager.Guardian do
     # |> token_check(token)
 
     case Repo.transaction(fn ->
-      %GuardianTokens{jwt: token, claims: claims}
-      |> GuardianTokens.changeset(claims)
-      |> Repo.insert
-    end) do
-    {:ok, {:ok, _}} -> {:ok, token}
-    {:ok,{:error, error}} -> {:error, error.errors}
-    _ -> {:error, %{errors: [token: "db error"]}}
+           %GuardianTokens{jwt: token, claims: claims}
+           |> GuardianTokens.changeset(claims)
+           |> Repo.insert()
+         end) do
+      {:ok, {:ok, _}} -> {:ok, token}
+      {:ok, {:error, error}} -> {:error, error.errors}
+      _ -> {:error, %{errors: [token: "db error"]}}
     end
   end
 
@@ -62,7 +65,9 @@ defmodule Milk.UserManager.Guardian do
   # end
 
   def on_verify(claims, _token, _options) do
-    Repo.exists?(from g in GuardianTokens, where: g.jti == ^claims["jti"] and g.aud == ^claims["aud"])
+    Repo.exists?(
+      from g in GuardianTokens, where: g.jti == ^claims["jti"] and g.aud == ^claims["aud"]
+    )
     |> if do
       {:ok, claims}
     else
@@ -75,7 +80,13 @@ defmodule Milk.UserManager.Guardian do
   end
 
   def on_revoke(claims, _token, _options) do
-    Repo.delete_all(from g in GuardianTokens, where: (g.jti == ^claims["jti"] and g.aud == ^claims["aud"]) or g.exp <= ^DateTime.to_unix(DateTime.utc_now))
+    Repo.delete_all(
+      from g in GuardianTokens,
+        where:
+          (g.jti == ^claims["jti"] and g.aud == ^claims["aud"]) or
+            g.exp <= ^DateTime.to_unix(DateTime.utc_now())
+    )
+
     {:ok, claims}
   end
 

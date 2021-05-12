@@ -18,13 +18,15 @@ config :milk, MilkWeb.Endpoint,
   http: [port: 4002],
   server: false
 
-config :milk, Milk.Mailer,
-  adapter: Bamboo.TestAdapter
+config :milk, Milk.Mailer, adapter: Bamboo.TestAdapter
 
 # Print only warnings and errors during test
 config :logger, level: :warn
 
 config :milk, :redix_host, System.get_env("MILK_TEST_REDISHOST") || "localhost"
 config :milk, :redix_port, System.get_env("MILK_TEST_REDISPORT") || 6379
-config :milk, Milk.Repo, migration_timestamps: [type: :timestamptz, inserted_at: :create_time, updated_at: :update_time]
+
+config :milk, Milk.Repo,
+  migration_timestamps: [type: :timestamptz, inserted_at: :create_time, updated_at: :update_time]
+
 config :milk, :environment, :test

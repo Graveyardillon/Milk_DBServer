@@ -7,13 +7,14 @@ defmodule Milk.CloudStorage.Objects do
     {:ok, token} = Goth.fetch(Milk.Goth)
     conn = GoogleApi.Storage.V1.Connection.new(token.token)
 
-    {:ok, object} = GoogleApi.Storage.V1.Api.Objects.storage_objects_insert_simple(
-      conn,
-      @bucket_id,
-      "multipart",
-      %{name: Path.basename(file_path)},
-      file_path
-    )
+    {:ok, object} =
+      GoogleApi.Storage.V1.Api.Objects.storage_objects_insert_simple(
+        conn,
+        @bucket_id,
+        "multipart",
+        %{name: Path.basename(file_path)},
+        file_path
+      )
 
     object
   end
@@ -22,11 +23,12 @@ defmodule Milk.CloudStorage.Objects do
     {:ok, token} = Goth.fetch(Milk.Goth)
     conn = GoogleApi.Storage.V1.Connection.new(token.token)
 
-    {:ok, object} = GoogleApi.Storage.V1.Api.Objects.storage_objects_get(
-      conn,
-      @bucket_id,
-      obj_name
-    )
+    {:ok, object} =
+      GoogleApi.Storage.V1.Api.Objects.storage_objects_get(
+        conn,
+        @bucket_id,
+        obj_name
+      )
 
     object
   end
@@ -35,11 +37,12 @@ defmodule Milk.CloudStorage.Objects do
     {:ok, token} = Goth.fetch(Milk.Goth)
     conn = GoogleApi.Storage.V1.Connection.new(token.token)
 
-    {:ok, object} = GoogleApi.Storage.V1.Api.Objects.storage_objects_delete(
-      conn,
-      @bucket_id,
-      obj_name
-    )
+    {:ok, object} =
+      GoogleApi.Storage.V1.Api.Objects.storage_objects_delete(
+        conn,
+        @bucket_id,
+        obj_name
+      )
 
     object
   end

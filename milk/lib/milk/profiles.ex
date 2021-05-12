@@ -5,11 +5,14 @@ defmodule Milk.Profiles do
     Profile,
     User
   }
+
   alias Milk.Games.Game
+
   alias Milk.Log.{
     EntrantLog,
     TournamentLog
   }
+
   alias Milk.Repo
   alias Milk.Tournaments.Entrant
 
@@ -108,24 +111,26 @@ defmodule Milk.Profiles do
   end
 
   def get_game_list(user) do
-    ids = Profile
-    |> where([p], p.user_id == ^user.id and p.content_type == "game")
-    |> Repo.all()
-    |> Enum.map(& &1.content_id)
+    ids =
+      Profile
+      |> where([p], p.user_id == ^user.id and p.content_type == "game")
+      |> Repo.all()
+      |> Enum.map(& &1.content_id)
 
     Game
     |> where([g], g.id in ^ids)
-    |> Repo.all
+    |> Repo.all()
   end
 
   @doc """
   Get added records of the user.
   """
   def get_records(user) do
-    ids = Profile
-    |> where([p], p.user_id == ^user.id and p.content_type == "record")
-    |> Repo.all()
-    |> Enum.map(& &1.content_id)
+    ids =
+      Profile
+      |> where([p], p.user_id == ^user.id and p.content_type == "record")
+      |> Repo.all()
+      |> Enum.map(& &1.content_id)
 
     EntrantLog
     |> where([el], el.tournament_id in ^ids and el.user_id == ^user.id)
@@ -139,11 +144,11 @@ defmodule Milk.Profiles do
       Map.put(entrant_log, :tournament_log, tlog)
     end)
     |> Enum.filter(fn entrant_log -> entrant_log.tournament_log != nil end)
-
   end
 
   def update_profile(%User{} = user, name, bio, gameList, records) do
-    Repo.update(Ecto.Changeset.change user, name: name, bio: bio)
+    Repo.update(Ecto.Changeset.change(user, name: name, bio: bio))
+
     Profile
     |> where([p], p.user_id == ^user.id)
     |> Repo.delete_all()
@@ -153,6 +158,7 @@ defmodule Milk.Profiles do
       |> Profile.changeset(%{user_id: user.id, content_id: game, content_type: "game"})
       |> Repo.insert()
     end)
+
     Enum.each(records, fn record ->
       %Profile{}
       |> Profile.changeset(%{user_id: user.id, content_id: record, content_type: "record"})

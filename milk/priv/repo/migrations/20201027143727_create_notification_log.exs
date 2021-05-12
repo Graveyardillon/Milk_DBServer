@@ -10,6 +10,5 @@ defmodule Milk.Repo.Migrations.CreateNotificationLog do
 
       timestamps()
     end
-
   end
 end

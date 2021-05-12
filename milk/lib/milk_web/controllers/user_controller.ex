@@ -13,6 +13,7 @@ defmodule MilkWeb.UserController do
     case Accounts.check_duplication?(name) do
       true ->
         json(conn, %{is_unique: false})
+
       false ->
         json(conn, %{is_unique: true})
     end
@@ -31,17 +32,22 @@ defmodule MilkWeb.UserController do
     |> case do
       {:ok, token, %User{} = user} ->
         render(conn, "login.json", %{user: user, token: token})
+
       {:error, error} ->
         case error do
-          [email: {"has already been taken", _ }] ->
+          [email: {"has already been taken", _}] ->
             render(conn, "error.json", error_code: 101)
-          [password: {"should be at least %{count} character(s)", _ }] ->
+
+          [password: {"should be at least %{count} character(s)", _}] ->
             render(conn, "error.json", error_code: 102)
-          [password: {"has invalid format", _ }] ->
+
+          [password: {"has invalid format", _}] ->
             render(conn, "error.json", error_code: 103)
+
           _ ->
             render(conn, "error.json", error: error)
         end
+
       _ ->
         render(conn, "show.json", user: nil)
     end
@@ -62,7 +68,7 @@ defmodule MilkWeb.UserController do
       {:error, nil} -> render(conn, "error.json", error_code: 104)
       {:error, error} -> render(conn, "error.json", error: error)
       _ -> render(conn, "error.json", error_code: 104)
-     end
+    end
   end
 
   @doc """
@@ -99,6 +105,7 @@ defmodule MilkWeb.UserController do
       {:ok, _claims} ->
         result = Accounts.logout(id)
         json(conn, %{result: result})
+
       _ ->
         json(conn, %{result: false})
     end
@@ -130,11 +137,14 @@ defmodule MilkWeb.UserController do
         case Accounts.get_user(id) |> Accounts.update_user(user_params) do
           {:ok, %User{} = user} ->
             render(conn, "show.json", user: user)
+
           {:error, error} ->
             render(conn, "error.json", error: error)
 
-          _ -> render(conn, "show.json", user: nil)
+          _ ->
+            render(conn, "show.json", user: nil)
         end
+
       _ ->
         json(conn, %{msg: "Invalid token"})
     end
@@ -154,8 +164,9 @@ defmodule MilkWeb.UserController do
     |> case do
       {:ok, _} ->
         Guardian.revoke(token)
-        #send_resp(conn, :no_content, "")
+        # send_resp(conn, :no_content, "")
         json(conn, %{result: true})
+
       _ ->
         json(conn, %{result: false})
     end

@@ -16,5 +16,6 @@ defmodule Milk.Release do
     Application.load(@app)
     Application.fetch_env!(@app, :ecto_repos)
   end
+
   # coveralls-ignore-stop
 end

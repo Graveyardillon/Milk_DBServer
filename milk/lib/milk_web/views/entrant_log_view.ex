@@ -11,9 +11,11 @@ defmodule MilkWeb.EntrantLogView do
   end
 
   def render("entrant_log.json", %{entrant_log: entrant_log}) do
-    %{id: entrant_log.id,
-    tournament_id: entrant_log.tournament_id,
-    user_id: entrant_log.user_id,
-    rank: entrant_log.rank}
+    %{
+      id: entrant_log.id,
+      tournament_id: entrant_log.tournament_id,
+      user_id: entrant_log.user_id,
+      rank: entrant_log.rank
+    }
   end
 end

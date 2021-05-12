@@ -20,17 +20,29 @@ defmodule MilkWeb.AssistantControllerTest do
   }
 
   defp fixture(:user) do
-    {:ok, user} = Accounts.create_user(%{"name" => "name", "email" => "e@mail.com", "password" => "Password123"})
+    {:ok, user} =
+      Accounts.create_user(%{
+        "name" => "name",
+        "email" => "e@mail.com",
+        "password" => "Password123"
+      })
+
     user
   end
 
   defp fixture(:tournament) do
-    {:ok, user} = Accounts.create_user(%{"name" => "myname", "email" => "mye@mail.com", "password" => "Password123"})
+    {:ok, user} =
+      Accounts.create_user(%{
+        "name" => "myname",
+        "email" => "mye@mail.com",
+        "password" => "Password123"
+      })
 
     {:ok, tournament} =
       @tournament_create_attrs
       |> Map.put("master_id", user.id)
       |> Tournaments.create_tournament()
+
     tournament
   end
 
@@ -50,8 +62,18 @@ defmodule MilkWeb.AssistantControllerTest do
       tournament = fixture(:tournament)
       user = fixture(:user)
 
-      conn = post(conn, Routes.assistant_path(conn, :create), %{"assistant" => %{"tournament_id" => tournament.id, "user_id" => [user.id]}})
-      assert %{"id" => id, "create_time" => _, "tournament_id" => _, "update_time" => _, "user_id" => _} = json_response(conn, 200)["data"] |> hd()
+      conn =
+        post(conn, Routes.assistant_path(conn, :create), %{
+          "assistant" => %{"tournament_id" => tournament.id, "user_id" => [user.id]}
+        })
+
+      assert %{
+               "id" => id,
+               "create_time" => _,
+               "tournament_id" => _,
+               "update_time" => _,
+               "user_id" => _
+             } = json_response(conn, 200)["data"] |> hd()
 
       conn = post(conn, Routes.assistant_path(conn, :show, %{"id" => id}))
 
@@ -62,19 +84,27 @@ defmodule MilkWeb.AssistantControllerTest do
       tournament = fixture(:tournament)
       user = fixture(:user)
 
-      conn = post(conn, Routes.assistant_path(conn, :create), %{"assistant" => %{"tournament_id" => tournament.id, "user_id" => [-1]}})
+      conn =
+        post(conn, Routes.assistant_path(conn, :create), %{
+          "assistant" => %{"tournament_id" => tournament.id, "user_id" => [-1]}
+        })
+
       assert "[-1] not found" == json_response(conn, 200)["error"]
 
       conn = post(conn, Routes.assistant_path(conn, :show, %{"id" => -1}))
 
-      assert json_response(conn, 200)["error"]|> is_nil()
+      assert json_response(conn, 200)["error"] |> is_nil()
     end
 
     test "renders not_found_tournament", %{conn: conn} do
       tournament = fixture(:tournament)
       user = fixture(:user)
 
-      conn = post(conn, Routes.assistant_path(conn, :create), %{"assistant" => %{"tournament_id" => -1, "user_id" => [user.id]}})
+      conn =
+        post(conn, Routes.assistant_path(conn, :create), %{
+          "assistant" => %{"tournament_id" => -1, "user_id" => [user.id]}
+        })
+
       assert "tournament not found" == json_response(conn, 200)["error"]
     end
 

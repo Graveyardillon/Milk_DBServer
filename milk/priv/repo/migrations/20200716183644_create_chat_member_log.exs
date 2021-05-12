@@ -10,6 +10,5 @@ defmodule Milk.Repo.Migrations.CreateChatMemberLog do
       add :update_time, :timestamptz
       add :is_deleted, :boolean, default: false
     end
-
   end
 end

@@ -19,7 +19,8 @@ defmodule Milk.Accounts.Auth do
     |> cast(attrs, [:email, :password])
     |> validate_required([:email, :password])
     |> validate_length(:password, min: 8)
-    |> validate_format(:password, ~r/\A(?=.*?[a-z])(?=.*?[A-Z])(?=.*?\d)[a-zA-Z\d]/) #パスワードは半角英数大文字小文字をそれぞれ一文字以上含む
+    # パスワードは半角英数大文字小文字をそれぞれ一文字以上含む
+    |> validate_format(:password, ~r/\A(?=.*?[a-z])(?=.*?[A-Z])(?=.*?\d)[a-zA-Z\d]/)
     |> unique_constraint(:email)
     |> put_password_hash()
   end
@@ -30,11 +31,14 @@ defmodule Milk.Accounts.Auth do
     |> cast(attrs, [:email, :password])
     |> unique_constraint(:email)
     |> validate_length(:password, min: 8)
-    |> validate_format(:password, ~r/\A(?=.*?[a-z])(?=.*?[A-Z])(?=.*?\d)[a-zA-Z\d]/) #パスワードは半角英数大文字小文字をそれぞれ一文字以上含む
+    # パスワードは半角英数大文字小文字をそれぞれ一文字以上含む
+    |> validate_format(:password, ~r/\A(?=.*?[a-z])(?=.*?[A-Z])(?=.*?\d)[a-zA-Z\d]/)
     |> put_password_hash()
   end
 
-  defp put_password_hash(%Ecto.Changeset{valid?: true, changes: %{password: password}} = changeset) do
+  defp put_password_hash(
+         %Ecto.Changeset{valid?: true, changes: %{password: password}} = changeset
+       ) do
     change(changeset, password: create_pass(password))
   end
 

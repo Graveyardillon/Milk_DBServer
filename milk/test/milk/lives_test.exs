@@ -33,7 +33,8 @@ defmodule Milk.LivesTest do
       assert {:ok, %Live{} = live} = Lives.update_live(live, @update_attrs)
       assert live.name == "some updated name"
     end
-    #fix me
+
+    # fix me
     # test "update_live/2 with invalid data returns error changeset" do
     #   live = live_fixture()
     #   assert {:error, %Ecto.Changeset{}} = Lives.update_live(live, @invalid_attrs)

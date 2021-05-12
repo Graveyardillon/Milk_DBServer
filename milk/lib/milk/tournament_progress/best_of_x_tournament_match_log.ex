@@ -17,7 +17,21 @@ defmodule Milk.TournamentProgress.BestOfXTournamentMatchLog do
   @doc false
   def changeset(best_of_x_tournament_match_log, attrs) do
     best_of_x_tournament_match_log
-    |> cast(attrs, [:tournament_id, :winner_id, :loser_id, :winner_score, :loser_score, :match_index])
-    |> validate_required([:tournament_id, :winner_id, :loser_id, :winner_score, :loser_score, :match_index])
+    |> cast(attrs, [
+      :tournament_id,
+      :winner_id,
+      :loser_id,
+      :winner_score,
+      :loser_score,
+      :match_index
+    ])
+    |> validate_required([
+      :tournament_id,
+      :winner_id,
+      :loser_id,
+      :winner_score,
+      :loser_score,
+      :match_index
+    ])
   end
 end

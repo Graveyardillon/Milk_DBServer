@@ -10,6 +10,5 @@ defmodule Milk.Repo.Migrations.CreateTournamentChatTopicLog do
 
       timestamps()
     end
-
   end
 end

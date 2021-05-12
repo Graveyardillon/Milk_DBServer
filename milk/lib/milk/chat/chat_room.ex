@@ -4,10 +4,12 @@ defmodule Milk.Chat.ChatRoom do
   import Ecto.Changeset
 
   alias Milk.Accounts.User
+
   alias Milk.Chat.{
     ChatMember,
     Chats
   }
+
   alias Milk.Tournaments.TournamentChatTopic
 
   schema "chat_rooms" do
@@ -29,7 +31,7 @@ defmodule Milk.Chat.ChatRoom do
   def changeset(chat_room, attrs) do
     chat_room
     |> cast(attrs, [:name, :last_chat, :count, :member_count])
-    #|> validate_required([:name, :last_chat, :count, :member_count])
+    # |> validate_required([:name, :last_chat, :count, :member_count])
     |> validate_required([:name, :count])
   end
 

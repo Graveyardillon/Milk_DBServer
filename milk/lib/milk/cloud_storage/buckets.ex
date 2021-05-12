@@ -1,5 +1,4 @@
 defmodule Milk.CloudStorage.Buckets do
-
   def list(project_id) do
     {:ok, token} = Goth.fetch(Milk.Goth)
     conn = GoogleApi.Storage.V1.Connection.new(token.token)

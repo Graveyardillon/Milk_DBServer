@@ -11,8 +11,10 @@ defmodule MilkWeb.AssistantLogView do
   end
 
   def render("assistant_log.json", %{assistant_log: assistant_log}) do
-    %{id: assistant_log.id,
+    %{
+      id: assistant_log.id,
       tournament_id: assistant_log.tournament_id,
-      user_id: assistant_log.user_id}
+      user_id: assistant_log.user_id
+    }
   end
 end

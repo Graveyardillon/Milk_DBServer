@@ -4,7 +4,7 @@
 # remember to add this file to your .gitignore.
 import Config
 
-#database_url =
+# database_url =
 #  System.get_env("DATABASE_URL") ||
 #    raise """
 #    environment variable DATABASE_URL is missing.
@@ -18,7 +18,7 @@ config :milk, Milk.Repo,
   socket_dir: "/tmp/cloudsql/e-players6814:asia-northeast1:milkdb",
   pool_size: 10
 
-#secret_key_base =
+# secret_key_base =
 #  System.get_env("SECRET_KEY_BASE") ||
 #    raise """
 #    environment variable SECRET_KEY_BASE is missing.

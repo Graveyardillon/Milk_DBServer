@@ -6,6 +6,7 @@ defmodule Milk.Log do
   import Ecto.Query, warn: false
 
   alias Milk.Repo
+
   alias Milk.Log.{
     ChatRoomLog,
     TournamentChatTopicLog,
@@ -583,7 +584,10 @@ defmodule Milk.Log do
     end)
     |> if do
       Enum.filter(attrs, fn x ->
-        !Repo.exists?(from al in AssistantLog, where: al.tournament_id == ^x["tournament_id"] and al.user_id == ^x["user_id"])
+        !Repo.exists?(
+          from al in AssistantLog,
+            where: al.tournament_id == ^x["tournament_id"] and al.user_id == ^x["user_id"]
+        )
       end)
       |> Enum.map(fn x ->
         %AssistantLog{}
@@ -641,7 +645,6 @@ defmodule Milk.Log do
   def change_assistant_log(%AssistantLog{} = assistant_log, attrs \\ %{}) do
     AssistantLog.changeset(assistant_log, attrs)
   end
-
 
   alias Milk.Log.NotificationLog
 
@@ -798,7 +801,10 @@ defmodule Milk.Log do
       {:error, %Ecto.Changeset{}}
 
   """
-  def update_tournament_chat_topic_log(%TournamentChatTopicLog{} = tournament_chat_topic_log, attrs) do
+  def update_tournament_chat_topic_log(
+        %TournamentChatTopicLog{} = tournament_chat_topic_log,
+        attrs
+      ) do
     tournament_chat_topic_log
     |> TournamentChatTopicLog.changeset(attrs)
     |> Repo.update()
@@ -829,7 +835,10 @@ defmodule Milk.Log do
       %Ecto.Changeset{data: %TournamentChatTopicLog{}}
 
   """
-  def change_tournament_chat_topic_log(%TournamentChatTopicLog{} = tournament_chat_topic_log, attrs \\ %{}) do
+  def change_tournament_chat_topic_log(
+        %TournamentChatTopicLog{} = tournament_chat_topic_log,
+        attrs \\ %{}
+      ) do
     TournamentChatTopicLog.changeset(tournament_chat_topic_log, attrs)
   end
 end

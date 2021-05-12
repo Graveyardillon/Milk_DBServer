@@ -7,7 +7,17 @@ defmodule Milk.RelationsTest do
   }
 
   defp fixture_user(n \\ 0) do
-    attrs = %{"icon_path" => "some icon_path", "language" => "some language", "name" => to_string(n)<>"some name", "notification_number" => 42, "point" => 42, "email" => to_string(n)<>"some@email.com", "logout_fl" => true, "password" => "S1ome password"}
+    attrs = %{
+      "icon_path" => "some icon_path",
+      "language" => "some language",
+      "name" => to_string(n) <> "some name",
+      "notification_number" => 42,
+      "point" => 42,
+      "email" => to_string(n) <> "some@email.com",
+      "logout_fl" => true,
+      "password" => "S1ome password"
+    }
+
     {:ok, user} = Accounts.create_user(attrs)
     user
   end
@@ -26,8 +36,8 @@ defmodule Milk.RelationsTest do
       end)
       |> length()
       |> (fn len ->
-        assert len == 1
-      end).()
+            assert len == 1
+          end).()
     end
   end
 

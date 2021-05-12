@@ -47,12 +47,12 @@ defmodule MilkWeb.ChatsLogControllerTest do
       conn = get(conn, Routes.chats_log_path(conn, :show, id))
 
       assert %{
-        "id" => id,
-        "chat_room_id" => 42,
-        "index" => 42,
-        "user_id" => 42,
-        "word" => "some word"
-      } = json_response(conn, 200)["data"]
+               "id" => id,
+               "chat_room_id" => 42,
+               "index" => 42,
+               "user_id" => 42,
+               "word" => "some word"
+             } = json_response(conn, 200)["data"]
     end
 
     test "renders errors when data is invalid", %{conn: conn} do
@@ -64,7 +64,10 @@ defmodule MilkWeb.ChatsLogControllerTest do
   describe "update chats_log" do
     setup [:create_chats_log]
 
-    test "renders chats_log when data is valid", %{conn: conn, chats_log: %ChatsLog{id: id} = chats_log} do
+    test "renders chats_log when data is valid", %{
+      conn: conn,
+      chats_log: %ChatsLog{id: id} = chats_log
+    } do
       conn = put(conn, Routes.chats_log_path(conn, :update, chats_log), chats_log: @update_attrs)
       assert %{"id" => ^id} = json_response(conn, 200)["data"]
 

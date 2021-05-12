@@ -2,15 +2,18 @@ defmodule MilkWeb.GameController do
   use MilkWeb, :controller
 
   alias Ecto.Multi
+
   alias Milk.{
     Games,
     Repo
   }
+
   alias Milk.Games.Game
 
   action_fallback MilkWeb.FallbackController
 
-  def list(conn, _params) do #TODO: リストに何もなかった場合の返答
+  # TODO: リストに何もなかった場合の返答
+  def list(conn, _params) do
     games = Games.list_games()
     render(conn, "list.json", games: games)
   end
@@ -25,9 +28,9 @@ defmodule MilkWeb.GameController do
   # TODO: multiにしたけどいい実装方法なのか微妙だからまた見てもらう
   # てかControllerでRepo操作するのだめやん
   def create(attrs \\ %{}) do
-    case Multi.new
-    |> Multi.insert(:game, Game.changeset(%Game{}, attrs))
-    |> Repo.transaction() do
+    case Multi.new()
+         |> Multi.insert(:game, Game.changeset(%Game{}, attrs))
+         |> Repo.transaction() do
       {:ok, game} -> {:ok, game.game}
       {:error, _, error, _data} -> {:error, error.errors}
       _ -> {:ok, nil}

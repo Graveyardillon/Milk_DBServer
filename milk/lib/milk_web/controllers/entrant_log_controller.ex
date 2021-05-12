@@ -28,7 +28,8 @@ defmodule MilkWeb.EntrantLogController do
   def update(conn, %{"id" => id, "entrant_log" => entrant_log_params}) do
     entrant_log = Log.get_entrant_log!(id)
 
-    with {:ok, %EntrantLog{} = entrant_log} <- Log.update_entrant_log(entrant_log, entrant_log_params) do
+    with {:ok, %EntrantLog{} = entrant_log} <-
+           Log.update_entrant_log(entrant_log, entrant_log_params) do
       render(conn, "show.json", entrant_log: entrant_log)
     end
   end

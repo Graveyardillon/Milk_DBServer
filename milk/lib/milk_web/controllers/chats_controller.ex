@@ -13,8 +13,10 @@ defmodule MilkWeb.ChatsController do
     case Chat.create_chats(chats_params) do
       {:ok, %Chats{} = chats} ->
         render(conn, "show.json", chats: chats)
+
       {:error, error} ->
         render(conn, "error.json", error: error)
+
       _ ->
         render(conn, "error.json", error: nil)
     end
@@ -25,7 +27,8 @@ defmodule MilkWeb.ChatsController do
   """
   def show(conn, %{"id" => id}) do
     chats = Chat.get_chats!(id)
-    if (chats) do
+
+    if chats do
       render(conn, "show.json", chats: chats)
     else
       render(conn, "error.json", error: nil)
@@ -37,7 +40,8 @@ defmodule MilkWeb.ChatsController do
   """
   def update(conn, %{"id" => id, "chat" => chats_params}) do
     chats = Chat.get_chats!(id)
-    if (chats) do
+
+    if chats do
       with {:ok, %Chats{} = chats} <- Chat.update_chats(chats, chats_params) do
         render(conn, "show.json", chats: chats)
       else
@@ -53,6 +57,7 @@ defmodule MilkWeb.ChatsController do
   """
   def delete(conn, %{"chat_room_id" => chat_room_id, "index" => index}) do
     chats = Chat.get_chat(chat_room_id, index)
+
     if chats do
       with {:ok, %Chats{}} <- Chat.delete_chats(chats) do
         send_resp(conn, :no_content, "")
@@ -65,20 +70,27 @@ defmodule MilkWeb.ChatsController do
   FIXME: chatディレクトリがない場合は作成の処理入れたいな
   """
   def upload_image(conn, %{"image" => image}) do
-    image_path = if image != "" do
-      uuid = SecureRandom.uuid()
-      File.cp(image.path, "./static/image/chat/#{uuid}.jpg")
-      case Application.get_env(:milk, :environment) do
-        :dev -> uuid
-        :test -> uuid
-        _ ->
-          object = Milk.CloudStorage.Objects.upload("./static/image/chat/#{uuid}.jpg")
-          File.rm("./static/image/chat/#{uuid}.jpg")
-          object.name
+    image_path =
+      if image != "" do
+        uuid = SecureRandom.uuid()
+        File.cp(image.path, "./static/image/chat/#{uuid}.jpg")
+
+        case Application.get_env(:milk, :environment) do
+          :dev ->
+            uuid
+
+          :test ->
+            uuid
+
+          _ ->
+            object = Milk.CloudStorage.Objects.upload("./static/image/chat/#{uuid}.jpg")
+            File.rm("./static/image/chat/#{uuid}.jpg")
+            object.name
+        end
+      else
+        nil
       end
-    else
-      nil
-    end
+
     json(conn, %{local_path: image_path})
   end
 
@@ -86,11 +98,12 @@ defmodule MilkWeb.ChatsController do
   Load image.
   """
   def load_image(conn, %{"id" => id, "path" => name}) do
-    map = case Application.get_env(:milk, :environment) do
-      :dev -> loadimg(name)
-      :test -> loadimg(name)
-      _ -> loadimg_prod(name)
-    end
+    map =
+      case Application.get_env(:milk, :environment) do
+        :dev -> loadimg(name)
+        :test -> loadimg(name)
+        _ -> loadimg_prod(name)
+      end
 
     json(conn, map)
   end
@@ -100,6 +113,7 @@ defmodule MilkWeb.ChatsController do
       {:ok, file} ->
         b64 = Base.encode64(file)
         %{b64: b64}
+
       {:error, _} ->
         %{error: "image not found"}
     end
@@ -107,10 +121,12 @@ defmodule MilkWeb.ChatsController do
 
   defp loadimg_prod(name) do
     object = Objects.get(name)
+
     case Image.get(object.mediaLink) do
       {:ok, file} ->
         b64 = Base.encode64(file)
         %{b64: b64}
+
       _ ->
         %{error: "image not found"}
     end
@@ -128,8 +144,10 @@ defmodule MilkWeb.ChatsController do
       {:ok, %Chats{} = chats} ->
         conn
         |> render("show.json", chats: chats)
+
       {:error, error} ->
         render(conn, "error.json", error: error)
+
       _ ->
         render(conn, "error.json", error: nil)
     end
@@ -138,15 +156,18 @@ defmodule MilkWeb.ChatsController do
   def create_dialogue(conn, %{"chat_group" => chats_params}) do
     case Chat.dialogue(chats_params) do
       {:ok, %Chats{} = chats} ->
-        members = Chat.get_chat_members_of_room(chats.chat_room_id)
-                  |> Enum.map(fn member ->
-                    member.id
-                  end)
+        members =
+          Chat.get_chat_members_of_room(chats.chat_room_id)
+          |> Enum.map(fn member ->
+            member.id
+          end)
 
         conn
         |> render("show.json", chats: chats, members: members)
+
       {:error, error} ->
         render(conn, "error.json", error: error)
+
       _ ->
         render(conn, "error.json", error: nil)
     end

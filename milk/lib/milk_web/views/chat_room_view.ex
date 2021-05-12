@@ -24,18 +24,19 @@ defmodule MilkWeb.ChatRoomView do
 
   def render("chat_rooms_with_user.json", %{info: info}) do
     %{
-      data: Enum.map(info, fn i ->
-        %{
-          id: i.id,
-          room_id: i.room_id,
-          name: i.name,
-          email: i.email,
-          last_chat: i.last_chat,
-          count: i.count,
-          is_private: i.is_private,
-          icon_path: i.icon_path
-        }
-      end)
+      data:
+        Enum.map(info, fn i ->
+          %{
+            id: i.id,
+            room_id: i.room_id,
+            name: i.name,
+            email: i.email,
+            last_chat: i.last_chat,
+            count: i.count,
+            is_private: i.is_private,
+            icon_path: i.icon_path
+          }
+        end)
     }
   end
 

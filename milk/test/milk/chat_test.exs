@@ -13,7 +13,7 @@ defmodule Milk.ChatTest do
     "language" => "some language",
     "name" => "some name",
     "notification_number" => 42,
-    "point"  =>  42,
+    "point" => 42,
     "email" => "some email",
     "logout_fl" => true,
     "password" => "S1ome password"
@@ -23,6 +23,7 @@ defmodule Milk.ChatTest do
   def create_chat_member(_) do
     {:ok, user} = Accounts.create_user(@user_attrs)
     {:ok, chat_room} = Chat.create_chat_room(@room_attrs)
+
     {:ok, chat_member} =
       %{
         "authority" => 42,
@@ -45,10 +46,13 @@ defmodule Milk.ChatTest do
   end
 
   def create_private_chat_room(_) do
-    {:ok, user1} = Accounts.create_user(%{@user_attrs | "name" => "mgrke","email" => "mgrke@mfedsawif.com"})
-    {:ok, user2} = Accounts.create_user(%{@user_attrs | "name" => "mgrfewke", "email" => "mgrke@mfewif.com"})
+    {:ok, user1} =
+      Accounts.create_user(%{@user_attrs | "name" => "mgrke", "email" => "mgrke@mfedsawif.com"})
 
-    Chat.dialogue(%{"user_id" => user1.id,"partner_id" => user2.id, "word" => "fneijk"})
+    {:ok, user2} =
+      Accounts.create_user(%{@user_attrs | "name" => "mgrfewke", "email" => "mgrke@mfewif.com"})
+
+    Chat.dialogue(%{"user_id" => user1.id, "partner_id" => user2.id, "word" => "fneijk"})
     {:ok, priv_chat_room} = Chat.get_private_chat_room(user1.id, user2.id)
     %{private_chat_room: priv_chat_room, user_id: user1.id, partner_id: user2.id}
   end
@@ -56,11 +60,13 @@ defmodule Milk.ChatTest do
   def create_chat(_) do
     {:ok, user} = Accounts.create_user(@user_attrs)
     {:ok, chat_room} = Chat.create_chat_room(@room_attrs)
+
     {:ok, _chat_member} =
       @member_attrs
       |> Map.put("chat_room_id", chat_room.id)
       |> Map.put("user_id", user.id)
       |> Chat.create_chat_member()
+
     {:ok, chats} =
       %{}
       |> Enum.into(%{"word" => "some word"})
@@ -68,13 +74,26 @@ defmodule Milk.ChatTest do
       |> Map.put("chat_room_id", chat_room.id)
       |> Chat.create_chats()
 
-    %{chat: Chat.get_chat(chat_room.id, chats.index), user_id: user.id, chat_room_id: chat_room.id}
+    %{
+      chat: Chat.get_chat(chat_room.id, chats.index),
+      user_id: user.id,
+      chat_room_id: chat_room.id
+    }
   end
 
   describe "chat_room" do
     @update_attrs %{count: 43, last_chat: "some updated last_chat", name: "some updated name"}
     @invalid_attrs %{count: nil, last_chat: nil, name: "aa"}
-    @user_valid_attrs %{"icon_path" => "some icon_path", "language" => "some language", "name" => "some name", "notification_number" => 42, "point" => 42, "email" => "some@email.com", "logout_fl" => true, "password" => "S1ome password"}
+    @user_valid_attrs %{
+      "icon_path" => "some icon_path",
+      "language" => "some language",
+      "name" => "some name",
+      "notification_number" => 42,
+      "point" => 42,
+      "email" => "some@email.com",
+      "logout_fl" => true,
+      "password" => "S1ome password"
+    }
 
     setup [:create_chat_room]
     setup [:create_chat_member]
@@ -84,15 +103,22 @@ defmodule Milk.ChatTest do
       assert Chat.get_chat_room(chat_room.id) == chat_room
     end
 
-    test "get_chat_room_by_chat_member/1 returns the chat_room with given id", %{chat_member: chat_member} do
+    test "get_chat_room_by_chat_member/1 returns the chat_room with given id", %{
+      chat_member: chat_member
+    } do
       assert Chat.get_chat_room_by_chat_member(chat_member)
     end
 
-    test "get_chat_rooms_by_user_id/1 returns the chat_room with given id", %{chat_member: chat_member} do
+    test "get_chat_rooms_by_user_id/1 returns the chat_room with given id", %{
+      chat_member: chat_member
+    } do
       assert Chat.get_chat_rooms_by_user_id(chat_member.user_id)
     end
 
-    test "get_private_chat_room/2 returns the private chat room", %{user_id: user_id, partner_id: partner_id} do
+    test "get_private_chat_room/2 returns the private chat room", %{
+      user_id: user_id,
+      partner_id: partner_id
+    } do
       assert Chat.get_private_chat_room(user_id, partner_id)
     end
 
@@ -100,9 +126,13 @@ defmodule Milk.ChatTest do
       assert Chat.get_private_chat_rooms(user_id)
     end
 
-    test "get_user_in_private_room/1 returns the private chat room", %{private_chat_room: private_chat_room, user_id: user_id} do
+    test "get_user_in_private_room/1 returns the private chat room", %{
+      private_chat_room: private_chat_room,
+      user_id: user_id
+    } do
       assert %User{auth: %Auth{}} = Chat.get_user_in_private_room(private_chat_room.id, user_id)
     end
+
     test "create_chat_room/1 with valid data creates a chat_room" do
       assert {:ok, %ChatRoom{} = chat_room} = Chat.create_chat_room(@valid_attrs)
       assert chat_room.count == 42
@@ -133,11 +163,21 @@ defmodule Milk.ChatTest do
     end
 
     test "dialogue/1 returns chat", %{user_id: user_id, partner_id: partner_id} do
-      assert {:ok, %Chats{}} = Chat.dialogue(%{"user_id" => user_id, "partner_id" => partner_id, "word" => "fneiw"})
+      assert {:ok, %Chats{}} =
+               Chat.dialogue(%{
+                 "user_id" => user_id,
+                 "partner_id" => partner_id,
+                 "word" => "fneiw"
+               })
     end
 
     test "dialogue/1 returns chat(group chat)", %{chat_member: chat_member} do
-      assert {:ok, %Chats{}} = Chat.dialogue(%{"user_id" => chat_member.user_id, "chat_room_id" => chat_member.chat_room_id, "word" => "dmsk"})
+      assert {:ok, %Chats{}} =
+               Chat.dialogue(%{
+                 "user_id" => chat_member.user_id,
+                 "chat_room_id" => chat_member.chat_room_id,
+                 "word" => "dmsk"
+               })
     end
   end
 
@@ -148,6 +188,7 @@ defmodule Milk.ChatTest do
     @invalid_attrs %{"authority" => nil}
 
     setup [:create_chat_member]
+
     test "create_chat_member/1 with valid data creates a chat_member", %{chat_member: chat_member} do
       # assert {:ok, %ChatMember{} = chat_member} = Chat.create_chat_member(@valid_attrs)
       assert chat_member.authority == 42
@@ -157,13 +198,19 @@ defmodule Milk.ChatTest do
       assert {:error, _} = Chat.create_chat_member(%{"user_id" => -1, "chat_room_id" => 111})
     end
 
-    test "update_chat_member/2 with valid data updates the chat_member", %{chat_member: chat_member} do
-      assert {:ok, %ChatMember{} = chat_member} = Chat.update_chat_member(chat_member, @update_attrs)
+    test "update_chat_member/2 with valid data updates the chat_member", %{
+      chat_member: chat_member
+    } do
+      assert {:ok, %ChatMember{} = chat_member} =
+               Chat.update_chat_member(chat_member, @update_attrs)
+
       assert chat_member.authority == 43
     end
 
     test "delete_chat_member/1 deletes the chat_member", %{chat_member: chat_member} do
-      assert {:ok, %ChatMember{}} = Chat.delete_chat_member(chat_member.chat_room_id,chat_member.user_id)
+      assert {:ok, %ChatMember{}} =
+               Chat.delete_chat_member(chat_member.chat_room_id, chat_member.user_id)
+
       # assert_raise Ecto.NoResultsError, fn -> Chat.get_chat_member!(chat_member.id) end
     end
 
@@ -179,9 +226,17 @@ defmodule Milk.ChatTest do
 
     @update_attrs %{word: "some updated word"}
     @invalid_attrs %{"word" => nil}
-    @user_attrs %{"icon_path" => "some icon_path", "language" => "some language", "name" => "some name", "notification_number" => 42, "point"  =>  42, "email" => "some email", "logout_fl" => true, "password" => "S1ome password"}
+    @user_attrs %{
+      "icon_path" => "some icon_path",
+      "language" => "some language",
+      "name" => "some name",
+      "notification_number" => 42,
+      "point" => 42,
+      "email" => "some email",
+      "logout_fl" => true,
+      "password" => "S1ome password"
+    }
     setup [:create_chat]
-
 
     test "list_chat/1 returns all chat", %{chat: chats} do
       assert Chat.list_chat(%{chat_room_id: chats.chat_room_id, max: 999, min: 0}) == [chats]
@@ -206,13 +261,19 @@ defmodule Milk.ChatTest do
       assert {:ok, %Chats{}} = Chat.delete_chats(chats)
       assert nil == Chat.get_chat(chats.chat_room_id, chats.index)
     end
+
     test "sync/1 gets all chats from user_id", %{chat: chats, user_id: user_id} do
       assert [%{"data" => chat_list, "room_id" => room_id}] = Chat.sync(user_id)
     end
 
-    test "get_latest_chat gets a latest chat", %{chat: chats, user_id: user_id, chat_room_id: chat_room_id} do
+    test "get_latest_chat gets a latest chat", %{
+      chat: chats,
+      user_id: user_id,
+      chat_room_id: chat_room_id
+    } do
       assert Chat.get_latest_chat(chat_room_id) == [chats]
     end
+
     # test "change_chats/1 returns a chats changeset" do
     #   chats = chats_fixture()
     #   assert %Ecto.Changeset{} = Chat.change_chats(chats)

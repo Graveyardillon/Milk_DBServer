@@ -8,23 +8,28 @@ defmodule Milk.Accounts do
   require Logger
 
   alias Ecto.Multi
+
   alias Milk.{
     Repo,
     Accounts
   }
+
   alias Milk.Accounts.{
     User,
     Auth
   }
+
   alias Milk.Chat.{
     ChatRoom,
     ChatMember
   }
+
   alias Milk.Log.{
     ChatMemberLog,
     AssistantLog,
     EntrantLog
   }
+
   alias Milk.UserManager.Guardian
   alias Milk.CloudStorage.Objects
 
@@ -57,8 +62,10 @@ defmodule Milk.Accounts do
       ** (Ecto.NoResultsError)
 
   """
-  @spec get_user(integer) :: Accounts.t
-  def get_user(id), do: Repo.one(from u in User, join: a in assoc(u, :auth), where: u.id == ^id, preload: [auth: a])
+  @spec get_user(integer) :: Accounts.t()
+  def get_user(id),
+    do:
+      Repo.one(from u in User, join: a in assoc(u, :auth), where: u.id == ^id, preload: [auth: a])
 
   @doc """
   Checks name duplication.
@@ -71,7 +78,7 @@ defmodule Milk.Accounts do
   @doc """
   Get all users in touch.
   """
-  @spec get_users_in_touch(integer) :: list(Accounts.t)
+  @spec get_users_in_touch(integer) :: list(Accounts.t())
   def get_users_in_touch(id) do
     ChatMember
     |> where([cm], cm.user_id == ^id)
@@ -105,9 +112,9 @@ defmodule Milk.Accounts do
     Enum.map(members, fn member ->
       Repo.one(
         from u in User,
-        join: a in assoc(u, :auth),
-        where: u.id == ^member.user_id,
-        preload: [auth: a]
+          join: a in assoc(u, :auth),
+          where: u.id == ^member.user_id,
+          preload: [auth: a]
       )
     end)
   end
@@ -124,10 +131,12 @@ defmodule Milk.Accounts do
   """
   @spec create_user(map) :: tuple()
   def create_user(attrs_without_id_for_show) do
-    attrs = attrs_without_id_for_show
+    attrs =
+      attrs_without_id_for_show
       |> case do
         %{"id_for_show" => id} ->
           %{attrs_without_id_for_show | "id_for_show" => generate_id_for_show(id)}
+
         _ ->
           attrs_without_id_for_show
           |> Map.put("id_for_show", generate_id_for_show())
@@ -135,7 +144,7 @@ defmodule Milk.Accounts do
 
     Multi.new()
     |> Multi.insert(:user, User.changeset(%User{}, attrs))
-    |> Multi.insert(:auth, fn(%{user: user}) ->
+    |> Multi.insert(:auth, fn %{user: user} ->
       Ecto.build_assoc(user, :auth)
       |> Auth.changeset(attrs)
     end)
@@ -148,12 +157,14 @@ defmodule Milk.Accounts do
   end
 
   defp generate_id_for_show() do
-    Enum.random(0..999999)
+    Enum.random(0..999_999)
     |> generate_id_for_show()
   end
-  defp generate_id_for_show(1000000) do
+
+  defp generate_id_for_show(1_000_000) do
     generate_id_for_show(0)
   end
+
   defp generate_id_for_show(tmp_id) do
     unless Repo.exists?(from u in User, where: u.id_for_show == ^tmp_id) do
       tmp_id
@@ -173,7 +184,7 @@ defmodule Milk.Accounts do
       iex> update_user(user, %{field: bad_value})
       {:error, error}
   """
-  @spec update_user(Accounts.t, map) :: tuple()
+  @spec update_user(Accounts.t(), map) :: tuple()
   def update_user(%User{} = user, attrs) do
     Multi.new()
     |> Multi.update(:user, fn _ ->
@@ -205,23 +216,29 @@ defmodule Milk.Accounts do
     User
     |> join(:inner, [u], a in assoc(u, :auth))
     |> where([u, a], a.email == ^email)
-    |> preload([u, a], [auth: a])
+    |> preload([u, a], auth: a)
     |> Repo.one()
   end
 
   @doc """
   Updates an icon.
   """
-  @spec update_icon_path(Accounts.t, binary) :: tuple()
+  @spec update_icon_path(Accounts.t(), binary) :: tuple()
   def update_icon_path(user, icon_path) do
     old_icon_path = Repo.one(from u in User, where: u.id == ^user.id, select: u.icon_path)
+
     unless is_nil(old_icon_path) do
       case Application.get_env(:milk, :environment) do
         # coveralls-ignore-start
-        :dev -> rm(old_icon_path)
-        :test -> rm(old_icon_path)
-        _ -> rm_prod(old_icon_path)
-        # coveralls-ignore-stop
+        :dev ->
+          rm(old_icon_path)
+
+        :test ->
+          rm(old_icon_path)
+
+        _ ->
+          rm_prod(old_icon_path)
+          # coveralls-ignore-stop
       end
     end
 
@@ -258,19 +275,64 @@ defmodule Milk.Accounts do
 
     if user && !is_binary(user) do
       if is_list(user.chat_member) do
-        member = Enum.map(user.chat_member, fn x -> %{chat_room_id: x.chat_room_id, user_id: x.user_id, authority: x.authority, create_time: x.create_time, update_time: x.update_time} end)
+        member =
+          Enum.map(user.chat_member, fn x ->
+            %{
+              chat_room_id: x.chat_room_id,
+              user_id: x.user_id,
+              authority: x.authority,
+              create_time: x.create_time,
+              update_time: x.update_time
+            }
+          end)
+
         Repo.insert_all(ChatMemberLog, member)
-        Repo.update_all(from(cr in Milk.Chat.ChatRoom, join: cm in assoc(cr, :chat_member), where: cm.user_id == ^user.id, update: [set: [member_count: cr.member_count - 1]]),[])
+
+        Repo.update_all(
+          from(cr in Milk.Chat.ChatRoom,
+            join: cm in assoc(cr, :chat_member),
+            where: cm.user_id == ^user.id,
+            update: [set: [member_count: cr.member_count - 1]]
+          ),
+          []
+        )
       end
 
       if is_list(user.entrant) do
-        entrant = Enum.map(user.entrant, fn x -> %{user_id: x.user_id, tournament_id: x.tournament_id, rank: x.rank, create_time: x.create_time, update_time: x.update_time} end)
+        entrant =
+          Enum.map(user.entrant, fn x ->
+            %{
+              user_id: x.user_id,
+              tournament_id: x.tournament_id,
+              rank: x.rank,
+              create_time: x.create_time,
+              update_time: x.update_time
+            }
+          end)
+
         Repo.insert_all(EntrantLog, entrant)
-        Repo.update_all(from(t in Milk.Tournaments.Tournament, join: e in assoc(t, :entrant), where: e.user_id == ^user.id, update: [set: [count: t.count - 1]]), [])
+
+        Repo.update_all(
+          from(t in Milk.Tournaments.Tournament,
+            join: e in assoc(t, :entrant),
+            where: e.user_id == ^user.id,
+            update: [set: [count: t.count - 1]]
+          ),
+          []
+        )
       end
 
       if is_list(user.chat_member) do
-        assistant = Enum.map(user.assistant, fn x -> %{user_id: x.user_id, tournament_id: x.tournament_id, create_time: x.create_time, update_time: x.update_time} end)
+        assistant =
+          Enum.map(user.assistant, fn x ->
+            %{
+              user_id: x.user_id,
+              tournament_id: x.tournament_id,
+              create_time: x.create_time,
+              update_time: x.update_time
+            }
+          end)
+
         Repo.insert_all(AssistantLog, assistant)
       end
 
@@ -287,15 +349,16 @@ defmodule Milk.Accounts do
       {:ok, _claims} ->
         Repo.one(
           from u in User,
-          join: a in assoc(u, :auth),
-          left_join: cm in assoc(u, :chat_member),
-          left_join: as in assoc(u, :assistant),
-          left_join: e in assoc(u, :entrant),
-          where:
-            u.id == ^id
-            and a.email == ^email,
-          preload: [auth: a, chat_member: cm, entrant: e, assistant: as]
+            join: a in assoc(u, :auth),
+            left_join: cm in assoc(u, :chat_member),
+            left_join: as in assoc(u, :assistant),
+            left_join: e in assoc(u, :entrant),
+            where:
+              u.id == ^id and
+                a.email == ^email,
+            preload: [auth: a, chat_member: cm, entrant: e, assistant: as]
         )
+
       {:error, :token_expired} ->
         Guardian.signout(token)
         |> if do
@@ -303,8 +366,10 @@ defmodule Milk.Accounts do
         else
           "That token does not exist"
         end
+
       {:error, :not_exist} ->
         "That token can't use"
+
       _ ->
         "That token does not exist"
     end
@@ -317,7 +382,9 @@ defmodule Milk.Accounts do
         else
           nil
         end
-      x -> x
+
+      x ->
+        x
     end
   end
 
@@ -326,12 +393,15 @@ defmodule Milk.Accounts do
   Login function.
   """
   # FIXME: specの型を細かく指定したい
-  #@spec login(map | nil) :: {:ok, _, binary} | {:error, nil, nil}
+  # @spec login(map | nil) :: {:ok, _, binary} | {:error, nil, nil}
   @spec login(map) :: tuple()
   def login(user) do
     password = user["password"]
     # usernameかemailか
-    if String.match?(user["email_or_username"], ~r/^[[:word:]\-._]+@[[:word:]\-_.]+\.[[:alpha:]]+$/) do
+    if String.match?(
+         user["email_or_username"],
+         ~r/^[[:word:]\-._]+@[[:word:]\-_.]+\.[[:alpha:]]+$/
+       ) do
       get_valid_user(user, password, :email)
     else
       get_valid_user(user, password, :username)
@@ -341,7 +411,9 @@ defmodule Milk.Accounts do
         user
         |> User.changeset(%{logout_fl: false})
         |> Repo.update()
-      _ -> {:error, nil}
+
+      _ ->
+        {:error, nil}
     end
   end
 
@@ -357,11 +429,12 @@ defmodule Milk.Accounts do
     User
     |> join(:inner, [u], a in assoc(u, :auth))
     |> where_mode(mode, user)
-    |> preload([u, a], [auth: a])
+    |> preload([u, a], auth: a)
     |> Repo.one()
     |> case do
       %User{} = userinfo ->
         if Argon2.verify_pass(password, userinfo.auth.password), do: userinfo
+
       nil ->
         case mode do
           :email -> get_valid_user(user, password, :username)
@@ -369,6 +442,7 @@ defmodule Milk.Accounts do
         end
     end
   end
+
   # def login(user) do
   #   password = Auth.create_pass(user["password"])
   #   #usernameかemailか
@@ -392,11 +466,13 @@ defmodule Milk.Accounts do
 
   def login_forced(user) do
     user = get_valid_user(%{"email_or_username" => user["email"]}, user["password"], :email)
+
     if user do
       user
       |> User.changeset(%{logout_fl: false})
-      |> Repo.update
+      |> Repo.update()
     end
+
     user
   end
 
@@ -404,11 +480,13 @@ defmodule Milk.Accounts do
   Logout function
   """
   def logout(id) do
-    user = Repo.one(from u in User,where: u.id ==  ^id and not u.logout_fl)
+    user = Repo.one(from u in User, where: u.id == ^id and not u.logout_fl)
+
     if user do
       user
       |> User.changeset(%{logout_fl: true})
       |> Repo.update()
+
       true
     else
       false

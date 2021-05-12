@@ -5,7 +5,7 @@ defmodule MilkWeb.AssistantLogController do
   alias Milk.Log.AssistantLog
   alias Common.Tools
 
-  #action_fallback MilkWeb.FallbackController
+  # action_fallback MilkWeb.FallbackController
 
   def index(conn, _params) do
     assistant_log = Log.list_assistant_log()
@@ -44,7 +44,8 @@ defmodule MilkWeb.AssistantLogController do
   def update(conn, %{"id" => id, "assistant_log" => assistant_log_params}) do
     assistant_log = Log.get_assistant_log!(id)
 
-    with {:ok, %AssistantLog{} = assistant_log} <- Log.update_assistant_log(assistant_log, assistant_log_params) do
+    with {:ok, %AssistantLog{} = assistant_log} <-
+           Log.update_assistant_log(assistant_log, assistant_log_params) do
       render(conn, "show.json", assistant_log: assistant_log)
     else
       _ -> json(conn, %{result: false})

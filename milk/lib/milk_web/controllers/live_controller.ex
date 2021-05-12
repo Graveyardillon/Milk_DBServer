@@ -8,6 +8,7 @@ defmodule MilkWeb.LiveController do
   # coveralls-ignore-start
   def home(conn, %{"id" => _id}) do
     lives = Lives.list_lives()
+
     if lives do
       render(conn, "index.json", lives: lives)
     else
@@ -23,9 +24,11 @@ defmodule MilkWeb.LiveController do
 
       {:error, error} ->
         render(conn, "error.json", error: error)
+
       _ ->
         render(conn, "error.json", error: nil)
     end
   end
+
   # coveralls-ignore-stop
 end

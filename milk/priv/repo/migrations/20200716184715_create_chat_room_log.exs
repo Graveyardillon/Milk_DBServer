@@ -13,6 +13,5 @@ defmodule Milk.Repo.Migrations.CreateChatRoomLog do
       add :is_private, :boolean
       add :is_deleted, :boolean, default: false
     end
-
   end
 end

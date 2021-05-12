@@ -44,17 +44,21 @@ config :milk, Milk.Mailer,
   port: 587,
   username: "kunosoichiro@gmail.com",
   password: "zdmxmmkhbdvxrsgb",
-  tls: :if_available, # can be `:always` or `:never`
-  allowed_tls_versions: [:"tlsv1.1", :"tlsv1.2"], # or {:system, "ALLOWED_TLS_VERSIONS"} w/ comma seprated values (e.g. "tlsv1.1,tlsv1.2")
-  ssl: false, # can be `true`
+  # can be `:always` or `:never`
+  tls: :if_available,
+  # or {:system, "ALLOWED_TLS_VERSIONS"} w/ comma seprated values (e.g. "tlsv1.1,tlsv1.2")
+  allowed_tls_versions: [:"tlsv1.1", :"tlsv1.2"],
+  # can be `true`
+  ssl: false,
   retries: 1,
-  no_mx_lookups: false, # can be `true`
+  # can be `true`
+  no_mx_lookups: false,
   auth: :if_available
 
 # config :goth,
 #   json: "e-players6814-8e8eac82841c.json"
 #     |> File.read!
 
-config :milk, :json_file,  "e-players6814-8e8eac82841c.json" |> File.read!
+config :milk, :json_file, "e-players6814-8e8eac82841c.json" |> File.read!()
 
 config :milk, :storage_bucket_id, "milk-image"

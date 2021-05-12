@@ -35,5 +35,6 @@ defmodule MilkWeb.ChannelCase do
 
     :ok
   end
+
   # coveralls-ignore-stop
 end

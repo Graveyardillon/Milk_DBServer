@@ -13,6 +13,7 @@ defmodule Milk.UserManager.GuardianPipeline do
     |> case do
       {:ok, _} ->
         conn
+
       {:error, :token_expired} ->
         Guardian.signout(token)
         |> if do
@@ -22,9 +23,11 @@ defmodule Milk.UserManager.GuardianPipeline do
           json(conn, %{result: false, error: "That token does not exist"})
           halt(conn)
         end
+
       {:error, :not_exist} ->
         json(conn, %{resutl: false, error: "That token can't use"})
         halt(conn)
+
       _ ->
         json(conn, %{result: false, error: "That token does not exist"})
         halt(conn)
@@ -32,7 +35,10 @@ defmodule Milk.UserManager.GuardianPipeline do
   end
 
   def call(conn, _default) do
-    if(String.contains?(conn.request_path, "api/user/login") or String.contains?(conn.request_path, "api/user/signup")) do
+    if(
+      String.contains?(conn.request_path, "api/user/login") or
+        String.contains?(conn.request_path, "api/user/signup")
+    ) do
       conn
     else
       json(conn, %{result: false, error: "There's not a token"})
