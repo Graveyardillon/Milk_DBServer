@@ -69,13 +69,6 @@ defmodule Milk.Tournaments do
   @doc """
   Returns the list of tournament for home screen.
   """
-  def home_tournament() do
-    Tournament
-    |> where([e], e.deadline > ^Timex.now())
-    |> order_by([e], asc: :event_date)
-    |> Repo.all()
-  end
-
   def home_tournament(date_offset, offset) do
     offset = Tools.to_integer_as_needed(offset)
 

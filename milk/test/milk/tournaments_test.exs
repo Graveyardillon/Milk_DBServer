@@ -352,12 +352,6 @@ defmodule Milk.TournamentsTest do
       event_date: "2031-05-18T15:01:01Z"
     }
 
-    test "home_tournament()/0 returns tournaments for home screen" do
-      tournament = fixture_tournament()
-      {:ok, _} = Tournaments.update_tournament(tournament, @home_attrs)
-      refute length(Tournaments.home_tournament()) == 0
-    end
-
     test "home_tournament_fav/1 returns tournaments which is filtered by favorite users for home screen" do
       user1 = fixture_user()
       tournament = fixture_tournament()
@@ -368,19 +362,35 @@ defmodule Milk.TournamentsTest do
         "followee_id" => tournament.master_id
       })
 
-      refute length(Tournaments.home_tournament_fav(user1.id)) == 0
+      user1.id
+      |> Tournaments.home_tournament_fav()
+      |> length()
+      |> (fn len ->
+        assert len == 1
+      end).()
     end
 
     test "home_tournament_fav/1 fails to return tournaments which is filtered by favorite users for home screen" do
       tournament = fixture_tournament()
       {:ok, _} = Tournaments.update_tournament(tournament, @home_attrs)
-      assert length(Tournaments.home_tournament_fav(tournament.master_id)) == 0
+
+      tournament.master_id
+      |> Tournaments.home_tournament_fav()
+      |> length()
+      |> (fn len ->
+        assert len == 0
+      end).()
     end
 
     test "home_tournament_plan/1 returns user's tournaments" do
       tournament = fixture_tournament()
       {:ok, _} = Tournaments.update_tournament(tournament, @home_attrs)
-      refute length(Tournaments.home_tournament_plan(tournament.master_id)) == 0
+
+      tournament.master_id
+      |> Tournaments.home_tournament_plan()
+      |> (fn len ->
+        refute len == 0
+      end).()
     end
 
     test "home_tournament_plan/1 fails to return user's tournaments" do
