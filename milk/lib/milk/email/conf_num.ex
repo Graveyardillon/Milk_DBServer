@@ -1,12 +1,12 @@
 defmodule Milk.ConfNum do
   use GenServer
 
-  def init(_state) do 
+  def init(_state) do
     {:ok, %{}}
   end
 
   def start_link(state \\ %{}) do
-    GenServer.start_link(__MODULE__ ,state, name: ConfNum)
+    GenServer.start_link(__MODULE__, state, name: ConfNum)
   end
 
   def handle_call(:get, _from, state), do: {:reply, state, state}

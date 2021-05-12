@@ -23,9 +23,9 @@ defmodule Milk.Notif do
   def list_notification(user_id) do
     Repo.all(
       from n in Notification,
-      join: u in assoc(n, :user),
-      where: u.id == ^user_id,
-      preload: [user: u]
+        join: u in assoc(n, :user),
+        where: u.id == ^user_id,
+        preload: [user: u]
     )
   end
 
@@ -67,7 +67,9 @@ defmodule Milk.Notif do
           {:ok, notif} -> {:ok, Map.put(notif, :user, Accounts.get_user(attrs["user_id"]))}
           {:error, error} -> {:error, error}
         end
-      _ -> {:error, %Ecto.Changeset{}}
+
+      _ ->
+        {:error, %Ecto.Changeset{}}
     end
   end
 
@@ -105,6 +107,7 @@ defmodule Milk.Notif do
     %NotificationLog{}
     |> NotificationLog.changeset(Map.from_struct(notification))
     |> Repo.insert()
+
     Repo.delete(notification)
   end
 
@@ -121,7 +124,7 @@ defmodule Milk.Notif do
     Notification.changeset(notification, attrs)
   end
 
-   @doc """
+  @doc """
   Creates a notification log.
   """
   def create_notification_log(attrs \\ %{}) do

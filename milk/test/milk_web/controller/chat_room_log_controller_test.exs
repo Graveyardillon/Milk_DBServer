@@ -23,10 +23,12 @@ defmodule MilkWeb.ChatRoomLogControllerTest do
 
   def fixture(:chat_room_log) do
     chat_room = fixture(:chat_room)
+
     {:ok, chat_room_log} =
       @create_attrs
       |> Map.put("id", chat_room.id)
       |> Log.create_chat_room_log()
+
     chat_room_log
   end
 
@@ -56,11 +58,11 @@ defmodule MilkWeb.ChatRoomLogControllerTest do
       conn = get(conn, Routes.chat_room_log_path(conn, :show, id))
 
       assert %{
-        "id" => id,
-        "count" => 42,
-        "last_chat" => "some last_chat",
-        "name" => "some name"
-      } = json_response(conn, 200)["data"]
+               "id" => id,
+               "count" => 42,
+               "last_chat" => "some last_chat",
+               "name" => "some name"
+             } = json_response(conn, 200)["data"]
     end
 
     test "renders errors when data is invalid", %{conn: conn} do
@@ -72,8 +74,15 @@ defmodule MilkWeb.ChatRoomLogControllerTest do
   describe "update chat_room_log" do
     setup [:create_chat_room_log]
 
-    test "renders chat_room_log when data is valid", %{conn: conn, chat_room_log: %ChatRoomLog{id: id} = chat_room_log} do
-      conn = put(conn, Routes.chat_room_log_path(conn, :update, chat_room_log), chat_room_log: @update_attrs)
+    test "renders chat_room_log when data is valid", %{
+      conn: conn,
+      chat_room_log: %ChatRoomLog{id: id} = chat_room_log
+    } do
+      conn =
+        put(conn, Routes.chat_room_log_path(conn, :update, chat_room_log),
+          chat_room_log: @update_attrs
+        )
+
       assert %{"id" => ^id} = json_response(conn, 200)["data"]
 
       conn = get(conn, Routes.chat_room_log_path(conn, :show, id))
@@ -87,7 +96,11 @@ defmodule MilkWeb.ChatRoomLogControllerTest do
     end
 
     test "renders errors when data is invalid", %{conn: conn, chat_room_log: chat_room_log} do
-      conn = put(conn, Routes.chat_room_log_path(conn, :update, chat_room_log), chat_room_log: @invalid_attrs)
+      conn =
+        put(conn, Routes.chat_room_log_path(conn, :update, chat_room_log),
+          chat_room_log: @invalid_attrs
+        )
+
       assert json_response(conn, 422)["errors"] != %{}
     end
   end

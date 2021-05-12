@@ -25,11 +25,22 @@ defmodule MilkWeb.ChatsControllerTest do
       |> Map.put("user_id", user.id)
       |> Map.put("chat_room_id", chat_room.id)
       |> Chat.create_chats()
+
     chats
   end
 
   defp fixture(:user, name) do
-    user_valid_attrs = %{"icon_path" => "some icon_path", "language" => "some language", "name" => "some name"<>name, "notification_number" => 42, "point" => 42, "email" => "some#{name}@email.com", "logout_fl" => true, "password" => "S1ome password"}
+    user_valid_attrs = %{
+      "icon_path" => "some icon_path",
+      "language" => "some language",
+      "name" => "some name" <> name,
+      "notification_number" => 42,
+      "point" => 42,
+      "email" => "some#{name}@email.com",
+      "logout_fl" => true,
+      "password" => "S1ome password"
+    }
+
     {:ok, user} =
       user_valid_attrs
       |> Accounts.create_user()
@@ -52,6 +63,7 @@ defmodule MilkWeb.ChatsControllerTest do
       user = fixture(:user, "createchat")
       chat_room = fixture(:chat_room)
       Chat.create_chat_member(%{"user_id" => user.id, "chat_room_id" => chat_room.id})
+
       attrs =
         @create_attrs
         |> Map.put("user_id", user.id)
@@ -63,10 +75,10 @@ defmodule MilkWeb.ChatsControllerTest do
       conn = get(conn, Routes.chats_path(conn, :show, id))
 
       assert %{
-        "id" => id,
-        "index" => 43,
-        "word" => "some word"
-      } = json_response(conn, 200)["data"]
+               "id" => id,
+               "index" => 43,
+               "word" => "some word"
+             } = json_response(conn, 200)["data"]
     end
 
     test "renders errors when data is invalid", %{conn: conn} do
@@ -85,10 +97,10 @@ defmodule MilkWeb.ChatsControllerTest do
       conn = get(conn, Routes.chats_path(conn, :show, id))
 
       assert %{
-        "id" => id,
-        "index" => 43,
-        "word" => "some updated word"
-      } = json_response(conn, 200)["data"]
+               "id" => id,
+               "index" => 43,
+               "word" => "some updated word"
+             } = json_response(conn, 200)["data"]
     end
 
     test "renders errors when data is invalid", %{conn: conn, chats: chats} do
@@ -101,7 +113,12 @@ defmodule MilkWeb.ChatsControllerTest do
     setup [:create_chats]
 
     test "deletes chosen chats", %{conn: conn, chats: chats} do
-      conn = delete(conn, Routes.chats_path(conn, :delete, %{chat_room_id: chats.chat_room_id, index: chats.index}))
+      conn =
+        delete(
+          conn,
+          Routes.chats_path(conn, :delete, %{chat_room_id: chats.chat_room_id, index: chats.index})
+        )
+
       assert response(conn, 204)
     end
   end

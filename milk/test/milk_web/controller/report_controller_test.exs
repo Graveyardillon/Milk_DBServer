@@ -25,7 +25,17 @@ defmodule MilkWeb.ReportControllerTest do
   }
 
   defp fixture_user(n \\ 0) do
-    attrs = %{"icon_path" => "some icon_path", "language" => "some language", "name" => to_string(n)<>"some name", "notification_number" => 42, "point" => 42, "email" => to_string(n)<>"some@email.com", "logout_fl" => true, "password" => "S1ome password"}
+    attrs = %{
+      "icon_path" => "some icon_path",
+      "language" => "some language",
+      "name" => to_string(n) <> "some name",
+      "notification_number" => 42,
+      "point" => 42,
+      "email" => to_string(n) <> "some@email.com",
+      "logout_fl" => true,
+      "password" => "S1ome password"
+    }
+
     {:ok, user} = Accounts.create_user(attrs)
     user
   end
@@ -47,7 +57,13 @@ defmodule MilkWeb.ReportControllerTest do
       |> unless do
         opts[:master_id]
       else
-        {:ok, user} = Accounts.create_user(%{"name" => "name", "email" => "e@mail.com", "password" => "Password123"})
+        {:ok, user} =
+          Accounts.create_user(%{
+            "name" => "name",
+            "email" => "e@mail.com",
+            "password" => "Password123"
+          })
+
         user.id
       end
 
@@ -56,6 +72,7 @@ defmodule MilkWeb.ReportControllerTest do
       |> Map.put("is_started", is_started)
       |> Map.put("master_id", master_id)
       |> Tournaments.create_tournament()
+
     tournament
   end
 
@@ -68,7 +85,11 @@ defmodule MilkWeb.ReportControllerTest do
       reporter = fixture_user(1)
       reportee = fixture_user(2)
 
-      conn = post(conn, Routes.report_path(conn, :create_user_report), report: %{reporter: reporter.id, reportee: reportee.id, report_types: [0]})
+      conn =
+        post(conn, Routes.report_path(conn, :create_user_report),
+          report: %{reporter: reporter.id, reportee: reportee.id, report_types: [0]}
+        )
+
       assert json_response(conn, 200)["result"]
     end
   end
@@ -78,7 +99,11 @@ defmodule MilkWeb.ReportControllerTest do
       user = fixture_user()
       tournament = fixture_tournament()
 
-      conn = post(conn, Routes.report_path(conn, :create_tournament_report), report: %{reporter_id: user.id, tournament_id: tournament.id, report_type: 0})
+      conn =
+        post(conn, Routes.report_path(conn, :create_tournament_report),
+          report: %{reporter_id: user.id, tournament_id: tournament.id, report_type: 0}
+        )
+
       assert json_response(conn, 200)["result"]
     end
 
@@ -86,7 +111,11 @@ defmodule MilkWeb.ReportControllerTest do
       user = fixture_user()
       tournament = fixture_tournament()
 
-      conn = post(conn, Routes.report_path(conn, :create_tournament_report), report: %{reporter_id: user.id, tournament_id: tournament.id, report_type: [0]})
+      conn =
+        post(conn, Routes.report_path(conn, :create_tournament_report),
+          report: %{reporter_id: user.id, tournament_id: tournament.id, report_type: [0]}
+        )
+
       assert json_response(conn, 200)["result"]
     end
 
@@ -94,7 +123,11 @@ defmodule MilkWeb.ReportControllerTest do
       user = fixture_user()
       tournament = fixture_tournament()
 
-      conn = post(conn, Routes.report_path(conn, :create_tournament_report), report: %{reporter_id: user.id, tournament_id: tournament.id, report_type: [6]})
+      conn =
+        post(conn, Routes.report_path(conn, :create_tournament_report),
+          report: %{reporter_id: user.id, tournament_id: tournament.id, report_type: [6]}
+        )
+
       assert json_response(conn, 200)["result"]
 
       Relations.blocked_users(user.id)
@@ -104,8 +137,8 @@ defmodule MilkWeb.ReportControllerTest do
       end)
       |> length()
       |> (fn len ->
-        assert len == 1
-      end).()
+            assert len == 1
+          end).()
     end
   end
 end

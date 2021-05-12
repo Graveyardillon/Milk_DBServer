@@ -13,6 +13,7 @@ defmodule Milk.LogTest do
 
     def chat_room_log_fixture(attrs \\ %{}) do
       {:ok, chat_room} = Chat.create_chat_room(%{"name" => "some name"})
+
       {:ok, chat_room_log} =
         attrs
         |> Enum.into(@valid_attrs)
@@ -45,7 +46,10 @@ defmodule Milk.LogTest do
 
     test "update_chat_room_log/2 with valid data updates the chat_room_log" do
       chat_room_log = chat_room_log_fixture()
-      assert {:ok, %ChatRoomLog{} = chat_room_log} = Log.update_chat_room_log(chat_room_log, @update_attrs)
+
+      assert {:ok, %ChatRoomLog{} = chat_room_log} =
+               Log.update_chat_room_log(chat_room_log, @update_attrs)
+
       assert chat_room_log.count == 43
       assert chat_room_log.last_chat == "some updated last_chat"
       assert chat_room_log.name == "some updated name"
@@ -108,7 +112,10 @@ defmodule Milk.LogTest do
 
     test "update_chat_member_log/2 with valid data updates the chat_member_log" do
       chat_member_log = chat_member_log_fixture()
-      assert {:ok, %ChatMemberLog{} = chat_member_log} = Log.update_chat_member_log(chat_member_log, @update_attrs)
+
+      assert {:ok, %ChatMemberLog{} = chat_member_log} =
+               Log.update_chat_member_log(chat_member_log, @update_attrs)
+
       assert chat_member_log.authority == 43
       assert chat_member_log.chat_room_id == 43
       assert chat_member_log.user_id == 43
@@ -116,7 +123,10 @@ defmodule Milk.LogTest do
 
     test "update_chat_member_log/2 with invalid data returns error changeset" do
       chat_member_log = chat_member_log_fixture()
-      assert {:error, %Ecto.Changeset{}} = Log.update_chat_member_log(chat_member_log, @invalid_attrs)
+
+      assert {:error, %Ecto.Changeset{}} =
+               Log.update_chat_member_log(chat_member_log, @invalid_attrs)
+
       assert chat_member_log == Log.get_chat_member_log!(chat_member_log.id)
     end
 
@@ -200,7 +210,14 @@ defmodule Milk.LogTest do
   describe "entrant_log" do
     alias Milk.Log.EntrantLog
 
-    @valid_attrs %{entrant_id: 42, rank: 42, tournament_id: 42, user_id: 42, create_time: ~U[2020-12-20 16:29:01.100311Z], update_time: ~U[2020-12-20 16:29:01.100311Z]}
+    @valid_attrs %{
+      entrant_id: 42,
+      rank: 42,
+      tournament_id: 42,
+      user_id: 42,
+      create_time: ~U[2020-12-20 16:29:01.100311Z],
+      update_time: ~U[2020-12-20 16:29:01.100311Z]
+    }
     @update_attrs %{entrant_id: 42, rank: 43, tournament_id: 43, user_id: 43}
     @invalid_attrs %{entrant_id: 42, rank: nil, tournament_id: nil, user_id: nil}
 
@@ -218,6 +235,7 @@ defmodule Milk.LogTest do
       entrant_logs = Log.list_entrant_log()
       assert is_list(entrant_logs)
       refute length(entrant_logs) == 0
+
       Enum.each(entrant_logs, fn log ->
         assert %EntrantLog{} = log
       end)
@@ -241,7 +259,10 @@ defmodule Milk.LogTest do
 
     test "update_entrant_log/2 with valid data updates the entrant_log" do
       entrant_log = entrant_log_fixture()
-      assert {:ok, %EntrantLog{} = entrant_log} = Log.update_entrant_log(entrant_log, @update_attrs)
+
+      assert {:ok, %EntrantLog{} = entrant_log} =
+               Log.update_entrant_log(entrant_log, @update_attrs)
+
       assert entrant_log.rank == 43
       assert entrant_log.tournament_id == 43
       assert entrant_log.user_id == 43
@@ -268,7 +289,7 @@ defmodule Milk.LogTest do
   describe "tournament_log" do
     alias Milk.Log.TournamentLog
 
-    @valid_attrs %{name: "some name",create_time: "time"}
+    @valid_attrs %{name: "some name", create_time: "time"}
     @update_attrs %{name: "some updated name"}
     @invalid_attrs %{name: nil}
 
@@ -286,6 +307,7 @@ defmodule Milk.LogTest do
       tournament_logs = Log.list_tournament_log()
       assert is_list(tournament_logs)
       refute length(tournament_logs) == 0
+
       Enum.each(tournament_logs, fn log ->
         assert %TournamentLog{} = log
       end)
@@ -307,13 +329,19 @@ defmodule Milk.LogTest do
 
     test "update_tournament_log/2 with valid data updates the tournament_log" do
       tournament_log = tournament_log_fixture()
-      assert {:ok, %TournamentLog{} = tournament_log} = Log.update_tournament_log(tournament_log, @update_attrs)
+
+      assert {:ok, %TournamentLog{} = tournament_log} =
+               Log.update_tournament_log(tournament_log, @update_attrs)
+
       assert tournament_log.name == "some updated name"
     end
 
     test "update_tournament_log/2 with invalid data returns error changeset" do
       tournament_log = tournament_log_fixture()
-      assert {:error, %Ecto.Changeset{}} = Log.update_tournament_log(tournament_log, @invalid_attrs)
+
+      assert {:error, %Ecto.Changeset{}} =
+               Log.update_tournament_log(tournament_log, @invalid_attrs)
+
       assert tournament_log.id == Log.get_tournament_log!(tournament_log.id).id
     end
 

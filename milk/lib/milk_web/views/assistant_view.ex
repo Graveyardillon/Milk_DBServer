@@ -32,7 +32,11 @@ defmodule MilkWeb.AssistantView do
 
   def render("error_string.json", %{data: data}) do
     if data.data do
-      %{result: true, error: data.error, data: render_many(data.data, AssistantView, "assistant.json")}
+      %{
+        result: true,
+        error: data.error,
+        data: render_many(data.data, AssistantView, "assistant.json")
+      }
     else
       %{result: false, error: data.error, data: nil}
     end

@@ -7,6 +7,7 @@ defmodule MilkWeb.ConfNumController do
     Accounts,
     ConfNum
   }
+
   alias Milk.Email.Auth
 
   @doc """
@@ -29,7 +30,7 @@ defmodule MilkWeb.ConfNumController do
           subject: "confirmation number",
           text_body: number
         )
-        |> Milk.Mailer.deliver_now
+        |> Milk.Mailer.deliver_now()
 
         ConfNum.delete_conf_num(email)
         ConfNum.set_conf_num(%{email => number})
@@ -41,7 +42,7 @@ defmodule MilkWeb.ConfNumController do
   end
 
   defp expire_conf_num(email) do
-    :timer.sleep(1000*60*10)
+    :timer.sleep(1000 * 60 * 10)
     ConfNum.delete_conf_num(email)
   end
 

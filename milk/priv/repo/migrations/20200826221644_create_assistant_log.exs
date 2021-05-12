@@ -9,6 +9,5 @@ defmodule Milk.Repo.Migrations.CreateAssistantLog do
 
       timestamps()
     end
-
   end
 end

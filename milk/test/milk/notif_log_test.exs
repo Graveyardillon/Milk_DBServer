@@ -19,7 +19,7 @@ defmodule Milk.NotifLogTest do
       notification_log
     end
 
-# FIXME
+    # FIXME
     # test "list_notification_log/0 returns all notification_log" do
     #   notification_log = notification_log_fixture()
     #   assert Log.list_notification_log() == [notification_log]
@@ -32,7 +32,9 @@ defmodule Milk.NotifLogTest do
     # end
 
     test "create_notification_log/1 with valid data creates a notification_log" do
-      assert {:ok, %NotificationLog{} = notification_log} = Log.create_notification_log(@valid_attrs)
+      assert {:ok, %NotificationLog{} = notification_log} =
+               Log.create_notification_log(@valid_attrs)
+
       assert notification_log.content == "some content"
       assert notification_log.user_id == 42
     end
@@ -43,11 +45,15 @@ defmodule Milk.NotifLogTest do
 
     test "update_notification_log/2 with valid data updates the notification_log" do
       notification_log = notification_log_fixture()
-      assert {:ok, %NotificationLog{} = notification_log} = Log.update_notification_log(notification_log, @update_attrs)
+
+      assert {:ok, %NotificationLog{} = notification_log} =
+               Log.update_notification_log(notification_log, @update_attrs)
+
       assert notification_log.content == "some updated content"
       assert notification_log.user_id == 43
     end
-    #FIXME: 時間の型
+
+    # FIXME: 時間の型
     # test "update_notification_log/2 with invalid data returns error changeset" do
     #   notification_log = notification_log_fixture()
     #   assert {:error, %Ecto.Changeset{}} = Log.update_notification_log(notification_log, @invalid_attrs)

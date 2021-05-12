@@ -4,17 +4,21 @@ defmodule Milk.Accounts.User do
   import Ecto.Changeset
 
   alias Milk.Accounts.Auth
+
   alias Milk.Chat.{
     Chats,
     ChatMember,
     ChatRoom
   }
+
   alias Milk.Lives.Live
+
   alias Milk.Tournaments.{
     Assistant,
     Entrant,
-    Tournament,
+    Tournament
   }
+
   alias Milk.Notif.Notification
 
   schema "users" do
@@ -44,7 +48,15 @@ defmodule Milk.Accounts.User do
   @doc false
   def changeset(user, attrs) do
     user
-    |> cast(attrs, [:name, :icon_path, :point, :id_for_show, :notification_number, :language, :logout_fl])
+    |> cast(attrs, [
+      :name,
+      :icon_path,
+      :point,
+      :id_for_show,
+      :notification_number,
+      :language,
+      :logout_fl
+    ])
     |> validate_required([:name])
     |> unique_constraint([:id_for_show, :name])
   end

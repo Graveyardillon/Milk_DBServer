@@ -67,7 +67,9 @@ config :phoenix, :stacktrace_depth, 20
 # Initialize plugs at runtime for faster development compilation
 config :phoenix, :plug_init_mode, :runtime
 
-config :milk, Milk.Repo, migration_timestamps: [type: :timestamptz, inserted_at: :create_time, updated_at: :update_time]
+config :milk, Milk.Repo,
+  migration_timestamps: [type: :timestamptz, inserted_at: :create_time, updated_at: :update_time]
+
 config :milk, :redix_host, "localhost"
 config :milk, :redix_port, 6379
 config :milk, :environment, :dev

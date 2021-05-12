@@ -9,11 +9,12 @@ defmodule MilkWeb.EntrantView do
   end
 
   def render("show.json", %{entrant: entrant}) do
-    %{result: true,data: render_one(entrant, EntrantView, "entrant.json")}
+    %{result: true, data: render_one(entrant, EntrantView, "entrant.json")}
   end
 
   def render("entrant.json", %{entrant: entrant}) do
-    %{id: entrant.id,
+    %{
+      id: entrant.id,
       rank: entrant.rank,
       create_time: entrant.create_time,
       tournament_id: entrant.tournament_id,

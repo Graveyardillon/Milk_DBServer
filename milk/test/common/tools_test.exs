@@ -28,8 +28,13 @@ defmodule Common.ToolsTest do
     end
 
     test "is_map_element_nil?/1 does not work with invalid data" do
-      assert catch_error(Tools.is_all_map_elements_nil?(@invalid_data_1)) == %RuntimeError{message: "Argument is not map"}
-      assert catch_error(Tools.is_all_map_elements_nil?(@invalid_data_2)) == %RuntimeError{message: "Argument is not map"}
+      assert catch_error(Tools.is_all_map_elements_nil?(@invalid_data_1)) == %RuntimeError{
+               message: "Argument is not map"
+             }
+
+      assert catch_error(Tools.is_all_map_elements_nil?(@invalid_data_2)) == %RuntimeError{
+               message: "Argument is not map"
+             }
     end
   end
 end

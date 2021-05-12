@@ -1,9 +1,9 @@
 defmodule Milk.UserManager.Pipeline do
   use Guardian.Plug.Pipeline,
-    otp_app: :milk, 
+    otp_app: :milk,
     error_handler: Milk.UserManager.ErrorHandler,
     module: Milk.UserManager.Guardian
-  
+
   # If there is a session token, restrict it to an access token and validate it
   plug Guardian.Plug.VerifySession, claims: %{"typ" => "access"}
   # If there is an authorization header, restrict it to an access token and validate it

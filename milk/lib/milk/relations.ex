@@ -7,10 +7,12 @@ defmodule Milk.Relations do
   require Logger
 
   alias Common.Tools
+
   alias Milk.{
     Repo,
     Accounts
   }
+
   alias Milk.Accounts.{
     BlockRelation,
     Relation,
@@ -27,7 +29,7 @@ defmodule Milk.Relations do
 
   """
   def list_relations do
-      Repo.all(Relation)
+    Repo.all(Relation)
   end
 
   @doc """
@@ -72,15 +74,14 @@ defmodule Milk.Relations do
     |> Enum.map(fn relation ->
       Repo.one(
         from u in User,
-        join: a in assoc(u, :auth),
-        where: u.id == ^relation.followee_id,
-        preload: [auth: a]
+          join: a in assoc(u, :auth),
+          where: u.id == ^relation.followee_id,
+          preload: [auth: a]
       )
     end)
   end
 
-
- # NOTE: ユーザーの詳細な情報は必要ないのでフォローしているIDリストを返す
+  # NOTE: ユーザーの詳細な情報は必要ないのでフォローしているIDリストを返す
   def get_following_id_list(user_id) do
     user_id = Tools.to_integer_as_needed(user_id)
 
@@ -114,9 +115,9 @@ defmodule Milk.Relations do
     |> Enum.map(fn relation ->
       Repo.one(
         from u in User,
-        join: a in assoc(u, :auth),
-        where: u.id == ^relation.follower_id,
-        preload: [auth: a]
+          join: a in assoc(u, :auth),
+          where: u.id == ^relation.follower_id,
+          preload: [auth: a]
       )
     end)
   end
@@ -197,19 +198,22 @@ defmodule Milk.Relations do
   Deletes a relation by follower id and followee id.
   """
   def delete_relation_by_ids(attrs) do
-    follower_id = if is_binary(attrs["follower_id"]) do
-      String.to_integer(attrs["follower_id"])
-    else
-      attrs["follower_id"]
-    end
+    follower_id =
+      if is_binary(attrs["follower_id"]) do
+        String.to_integer(attrs["follower_id"])
+      else
+        attrs["follower_id"]
+      end
 
-    followee_id = if is_binary(attrs["followee_id"]) do
-      String.to_integer(attrs["followee_id"])
-    else
-      attrs["followee_id"]
-    end
+    followee_id =
+      if is_binary(attrs["followee_id"]) do
+        String.to_integer(attrs["followee_id"])
+      else
+        attrs["followee_id"]
+      end
 
     relation = get_relation_by_ids(follower_id, followee_id)
+
     if relation != nil do
       delete_relation(relation)
     else

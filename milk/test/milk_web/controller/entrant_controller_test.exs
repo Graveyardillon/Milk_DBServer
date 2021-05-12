@@ -38,11 +38,18 @@ defmodule MilkWeb.EntrantControllerTest do
     {:ok, entrant} =
       %{@create_attrs | "tournament_id" => tournament.id, "user_id" => tournament.master_id}
       |> Tournaments.create_entrant()
+
     entrant
   end
 
   def fixture(:tournament) do
-    {:ok, user} = Accounts.create_user(%{"name" => "name", "email" => "e@mail.com", "password" => "Password123"})
+    {:ok, user} =
+      Accounts.create_user(%{
+        "name" => "name",
+        "email" => "e@mail.com",
+        "password" => "Password123"
+      })
+
     %{}
     |> Enum.into(@tournament_valid_attrs)
     |> Map.put("master_id", user.id)
@@ -63,7 +70,16 @@ defmodule MilkWeb.EntrantControllerTest do
   describe "create entrant" do
     test "renders entrant when data is valid", %{conn: conn} do
       {:ok, tournament} = fixture(:tournament)
-      conn = post(conn, Routes.entrant_path(conn, :create), entrant: %{@create_attrs | "tournament_id" => tournament.id, "user_id" => tournament.master_id})
+
+      conn =
+        post(conn, Routes.entrant_path(conn, :create),
+          entrant: %{
+            @create_attrs
+            | "tournament_id" => tournament.id,
+              "user_id" => tournament.master_id
+          }
+        )
+
       assert %{"id" => id} = json_response(conn, 200)["data"]
 
       conn = get(conn, Routes.entrant_path(conn, :show, id))
@@ -105,7 +121,12 @@ defmodule MilkWeb.EntrantControllerTest do
     setup [:create_entrant]
 
     test "deletes chosen entrant", %{conn: conn, entrant: entrant} do
-      conn = delete(conn, Routes.entrant_path(conn, :delete), tournament_id: entrant.tournament_id,user_id: entrant.user_id)
+      conn =
+        delete(conn, Routes.entrant_path(conn, :delete),
+          tournament_id: entrant.tournament_id,
+          user_id: entrant.user_id
+        )
+
       assert response(conn, 200)
 
       assert_error_sent 404, fn ->
@@ -117,17 +138,19 @@ defmodule MilkWeb.EntrantControllerTest do
   describe "show entrant's rank" do
     setup [:create_entrant]
 
-    test "renders entrant's rank when data is valid", %{conn: conn,entrant: entrant} do
-      conn = get(conn, Routes.entrant_path(conn, :show_rank, entrant.tournament_id, entrant.user_id))
+    test "renders entrant's rank when data is valid", %{conn: conn, entrant: entrant} do
+      conn =
+        get(conn, Routes.entrant_path(conn, :show_rank, entrant.tournament_id, entrant.user_id))
+
       assert is_integer(json_response(conn, 200)["data"]["rank"])
     end
 
-    test "renders error with invalid tournament_id", %{conn: conn,entrant: entrant} do
+    test "renders error with invalid tournament_id", %{conn: conn, entrant: entrant} do
       conn = get(conn, Routes.entrant_path(conn, :show_rank, -1, entrant.user_id))
       assert json_response(conn, 200)["error"] == "entrant is not found"
     end
 
-    test "renders error with invalid user_id", %{conn: conn,entrant: entrant} do
+    test "renders error with invalid user_id", %{conn: conn, entrant: entrant} do
       conn = get(conn, Routes.entrant_path(conn, :show_rank, entrant.tournament_id, -1))
       assert json_response(conn, 200)["error"] == "entrant is not found"
     end
@@ -155,7 +178,12 @@ defmodule MilkWeb.EntrantControllerTest do
 
       TournamentProgress.insert_match_list(matchlist, entrant.tournament_id)
 
-      conn = post(conn, Routes.entrant_path(conn, :promote), tournament_id: entrant.tournament_id, user_id: entrant.user_id)
+      conn =
+        post(conn, Routes.entrant_path(conn, :promote),
+          tournament_id: entrant.tournament_id,
+          user_id: entrant.user_id
+        )
+
       assert json_response(conn, 200)["data"]["rank"] == 4
     end
 
@@ -168,7 +196,13 @@ defmodule MilkWeb.EntrantControllerTest do
       |> Kernel.++([%{entrant | rank: num + 1}])
       |> Tournaments.generate_matchlist()
       |> TournamentProgress.insert_match_list(entrant.tournament_id)
-      conn = post(conn, Routes.entrant_path(conn, :promote), tournament_id: -1, user_id: entrant.user_id)
+
+      conn =
+        post(conn, Routes.entrant_path(conn, :promote),
+          tournament_id: -1,
+          user_id: entrant.user_id
+        )
+
       assert json_response(conn, 200)["error"] == "undefined tournament"
     end
 
@@ -181,7 +215,13 @@ defmodule MilkWeb.EntrantControllerTest do
       |> Kernel.++([%{entrant | rank: num + 1}])
       |> Tournaments.generate_matchlist()
       |> TournamentProgress.insert_match_list(entrant.tournament_id)
-      conn = post(conn, Routes.entrant_path(conn, :promote), tournament_id: entrant.tournament_id, user_id: -1)
+
+      conn =
+        post(conn, Routes.entrant_path(conn, :promote),
+          tournament_id: entrant.tournament_id,
+          user_id: -1
+        )
+
       assert json_response(conn, 200)["error"] == "undefined user"
     end
 
@@ -194,25 +234,41 @@ defmodule MilkWeb.EntrantControllerTest do
       |> Kernel.++([%{entrant | rank: num + 1}])
       |> Tournaments.generate_matchlist()
       |> TournamentProgress.insert_match_list(entrant.tournament_id)
-      assert conn = post(conn, Routes.entrant_path(conn, :promote), tournament_id: -1, user_id: -1)
+
+      assert conn =
+               post(conn, Routes.entrant_path(conn, :promote), tournament_id: -1, user_id: -1)
+
       assert json_response(conn, 200)["error"] == "undefined user"
     end
   end
 
   # 複数の参加者作成用関数
-  defp create_entrants(num, tournament_id, result \\ []), do: create_entrants(num, tournament_id, result, num)
+  defp create_entrants(num, tournament_id, result \\ []),
+    do: create_entrants(num, tournament_id, result, num)
+
   defp create_entrants(_num, _tournament_id, result, 0) do
     result
   end
+
   defp create_entrants(num, tournament_id, result, current) do
     {:ok, user} =
-      %{"name" => "name" <> to_string(current), "email" => "e" <> to_string(current) <> "@mail.com", "password" => "Password123"}
-
+      %{
+        "name" => "name" <> to_string(current),
+        "email" => "e" <> to_string(current) <> "@mail.com",
+        "password" => "Password123"
+      }
       |> Accounts.create_user()
+
     {:ok, entrant} =
-      %{@entrant_create_attrs | "tournament_id" => tournament_id, "user_id" => user.id, "rank" => num}
+      %{
+        @entrant_create_attrs
+        | "tournament_id" => tournament_id,
+          "user_id" => user.id,
+          "rank" => num
+      }
       |> Tournaments.create_entrant()
-    create_entrants(num, tournament_id, (result ++ [entrant]), current - 1)
+
+    create_entrants(num, tournament_id, result ++ [entrant], current - 1)
   end
 
   defp create_entrant(_) do

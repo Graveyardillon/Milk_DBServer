@@ -26,7 +26,7 @@ defmodule Milk.MixProject do
             runtime_tools: :permanent
           ]
         ]
-      ],
+      ]
     ]
   end
 

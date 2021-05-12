@@ -13,10 +13,12 @@ defmodule MilkWeb.ChatMemberView do
   end
 
   def render("chat_member.json", %{chat_member: chat_member}) do
-    %{id: chat_member.id,
+    %{
+      id: chat_member.id,
       authority: chat_member.authority,
       user_id: chat_member.user_id,
-      chat_room_id: chat_member.chat_room_id,}
+      chat_room_id: chat_member.chat_room_id
+    }
   end
 
   def render("error.json", %{error: error}) do

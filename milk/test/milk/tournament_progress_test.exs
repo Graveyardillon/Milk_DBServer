@@ -32,7 +32,17 @@ defmodule Milk.TournamentProgressTest do
   @moduletag timeout: :infinity
 
   defp fixture_user(n \\ 0) do
-    attrs = %{"icon_path" => "some icon_path", "language" => "some language", "name" => to_string(n)<>"some name", "notification_number" => 42, "point" => 42, "email" => to_string(n)<>"some@email.com", "logout_fl" => true, "password" => "S1ome password"}
+    attrs = %{
+      "icon_path" => "some icon_path",
+      "language" => "some language",
+      "name" => to_string(n) <> "some name",
+      "notification_number" => 42,
+      "point" => 42,
+      "email" => to_string(n) <> "some@email.com",
+      "logout_fl" => true,
+      "password" => "S1ome password"
+    }
+
     {:ok, user} = Accounts.create_user(attrs)
     user
   end
@@ -54,7 +64,13 @@ defmodule Milk.TournamentProgressTest do
       |> unless do
         opts[:master_id]
       else
-        {:ok, user} = Accounts.create_user(%{"name" => "name", "email" => "e@mail.com", "password" => "Password123"})
+        {:ok, user} =
+          Accounts.create_user(%{
+            "name" => "name",
+            "email" => "e@mail.com",
+            "password" => "Password123"
+          })
+
         user.id
       end
 
@@ -63,6 +79,7 @@ defmodule Milk.TournamentProgressTest do
       |> Map.put("is_started", is_started)
       |> Map.put("master_id", master_id)
       |> Tournaments.create_tournament()
+
     tournament
   end
 
@@ -88,22 +105,36 @@ defmodule Milk.TournamentProgressTest do
     {:ok, entrant} =
       %{@entrant_create_attrs | "tournament_id" => tournament.id, "user_id" => user_id}
       |> Tournaments.create_entrant()
+
     entrant
   end
 
-  defp create_entrants(num, tournament_id, result \\ []), do: create_entrants(num, tournament_id, result, num)
+  defp create_entrants(num, tournament_id, result \\ []),
+    do: create_entrants(num, tournament_id, result, num)
+
   defp create_entrants(_num, _tournament_id, result, 0) do
     result
   end
 
   defp create_entrants(num, tournament_id, result, current) do
     {:ok, user} =
-      %{"name" => "name" <> to_string(current), "email" => "e" <> to_string(current) <> "@mail.com", "password" => "Password123"}
+      %{
+        "name" => "name" <> to_string(current),
+        "email" => "e" <> to_string(current) <> "@mail.com",
+        "password" => "Password123"
+      }
       |> Accounts.create_user()
+
     {:ok, entrant} =
-      %{@entrant_create_attrs | "tournament_id" => tournament_id, "user_id" => user.id, "rank" => num}
+      %{
+        @entrant_create_attrs
+        | "tournament_id" => tournament_id,
+          "user_id" => user.id,
+          "rank" => num
+      }
       |> Tournaments.create_entrant()
-    create_entrants(num, tournament_id, (result ++ [entrant]), current - 1)
+
+    create_entrants(num, tournament_id, result ++ [entrant], current - 1)
   end
 
   defp create_entrant(_) do
@@ -122,8 +153,10 @@ defmodule Milk.TournamentProgressTest do
     count =
       Tournaments.get_tournament(tournament_id)
       |> Map.get(:count)
+
     match_list
     |> Tournaments.initialize_rank(count, tournament_id)
+
     match_list
     |> TournamentProgress.insert_match_list(tournament_id)
 
@@ -184,7 +217,7 @@ defmodule Milk.TournamentProgressTest do
 
     test "get_match_pending_list/2" do
       TournamentProgress.insert_match_pending_list_table({1, 2})
-      assert {r} = TournamentProgress.get_match_pending_list({1, 2})|>hd()
+      assert {r} = TournamentProgress.get_match_pending_list({1, 2}) |> hd()
       assert r == {1, 2}
     end
 
@@ -203,13 +236,13 @@ defmodule Milk.TournamentProgressTest do
 
     test "get_fight_result/1 works fine true" do
       TournamentProgress.insert_fight_result_table({1, 2}, true)
-      assert {_, r} = TournamentProgress.get_fight_result({1, 2})|>hd()
+      assert {_, r} = TournamentProgress.get_fight_result({1, 2}) |> hd()
       assert is_boolean(r)
     end
 
     test "get_fight_result/1 works fine false" do
       TournamentProgress.insert_fight_result_table({2, 2}, false)
-      assert {_, r} = TournamentProgress.get_fight_result({2, 2})|>hd()
+      assert {_, r} = TournamentProgress.get_fight_result({2, 2}) |> hd()
       refute r
     end
 
@@ -231,7 +264,7 @@ defmodule Milk.TournamentProgressTest do
     test "get_match_list_with_fight_result/1" do
       match_list = [[1, 2], 3]
       TournamentProgress.insert_match_list_with_fight_result(match_list, 2)
-      assert {_, r} = TournamentProgress.get_match_list_with_fight_result(2)|>hd()
+      assert {_, r} = TournamentProgress.get_match_list_with_fight_result(2) |> hd()
       assert r == match_list
     end
 
@@ -343,8 +376,8 @@ defmodule Milk.TournamentProgressTest do
       end)
       |> length()
       |> (fn len ->
-        assert len == 1
-      end).()
+            assert len == 1
+          end).()
 
       TournamentProgress.get_single_tournament_match_logs(tournament.id, user2.id)
       |> Enum.map(fn log ->
@@ -355,8 +388,8 @@ defmodule Milk.TournamentProgressTest do
       end)
       |> length()
       |> (fn len ->
-        assert len == 1
-      end).()
+            assert len == 1
+          end).()
     end
   end
 
@@ -367,29 +400,30 @@ defmodule Milk.TournamentProgressTest do
       tournament = fixture_tournament()
       str = "just str"
 
-      id = %{}
+      id =
+        %{}
         |> Map.put("tournament_id", tournament.id)
         |> Map.put("winner_id", user1.id)
         |> Map.put("loser_id", user2.id)
         |> Map.put("match_list_str", str)
         |> TournamentProgress.create_single_tournament_match_log()
         |> (fn result ->
-          assert {:ok, log} = result
-          assert log.tournament_id == tournament.id
-          assert log.winner_id == user1.id
-          assert log.loser_id == user2.id
-          assert log.match_list_str == str
-          log.id
-        end).()
+              assert {:ok, log} = result
+              assert log.tournament_id == tournament.id
+              assert log.winner_id == user1.id
+              assert log.loser_id == user2.id
+              assert log.match_list_str == str
+              log.id
+            end).()
 
       TournamentProgress.get_single_tournament_match_log(id)
       |> (fn log ->
-        assert log.tournament_id == tournament.id
-        assert log.winner_id == user1.id
-        assert log.loser_id == user2.id
-        assert log.match_list_str == str
-        log.id
-      end).()
+            assert log.tournament_id == tournament.id
+            assert log.winner_id == user1.id
+            assert log.loser_id == user2.id
+            assert log.match_list_str == str
+            log.id
+          end).()
     end
   end
 end

@@ -2,10 +2,12 @@ defmodule MilkWeb.NotifController do
   use MilkWeb, :controller
 
   alias Common.Tools
+
   alias Milk.{
     Accounts,
     Notif
   }
+
   alias Milk.Notif.Notification
 
   def get_list(conn, %{"user_id" => user_id}) do
@@ -25,6 +27,7 @@ defmodule MilkWeb.NotifController do
     id = Tools.to_integer_as_needed(id)
 
     notif = Notif.get_notification!(id)
+
     with {:ok, %Notification{}} <- Notif.delete_notification(notif) do
       json(conn, %{result: true})
     else

@@ -44,9 +44,9 @@ defmodule MilkWeb.EntrantLogControllerTest do
       conn = get(conn, Routes.entrant_log_path(conn, :show, id))
 
       assert %{
-        "id" => id,
-        "user_id" => 42
-      } = json_response(conn, 200)["data"]
+               "id" => id,
+               "user_id" => 42
+             } = json_response(conn, 200)["data"]
     end
 
     test "renders errors when data is invalid", %{conn: conn} do
@@ -58,8 +58,13 @@ defmodule MilkWeb.EntrantLogControllerTest do
   describe "update entrant_log" do
     setup [:create_entrant_log]
 
-    test "renders entrant_log when data is valid", %{conn: conn, entrant_log: %EntrantLog{id: id} = entrant_log} do
-      conn = put(conn, Routes.entrant_log_path(conn, :update, entrant_log), entrant_log: @update_attrs)
+    test "renders entrant_log when data is valid", %{
+      conn: conn,
+      entrant_log: %EntrantLog{id: id} = entrant_log
+    } do
+      conn =
+        put(conn, Routes.entrant_log_path(conn, :update, entrant_log), entrant_log: @update_attrs)
+
       assert %{"id" => ^id} = json_response(conn, 200)["data"]
 
       conn = get(conn, Routes.entrant_log_path(conn, :show, id))
@@ -71,7 +76,9 @@ defmodule MilkWeb.EntrantLogControllerTest do
     end
 
     test "renders errors when data is invalid", %{conn: conn, entrant_log: entrant_log} do
-      conn = put(conn, Routes.entrant_log_path(conn, :update, entrant_log), entrant_log: @invalid_attrs)
+      conn =
+        put(conn, Routes.entrant_log_path(conn, :update, entrant_log), entrant_log: @invalid_attrs)
+
       assert json_response(conn, 422)["errors"] != %{}
     end
   end

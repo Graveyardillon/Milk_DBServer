@@ -2,6 +2,7 @@ defmodule MilkWeb.RelationController do
   use MilkWeb, :controller
 
   alias Common.Tools
+
   alias Milk.{
     Accounts,
     Relations
@@ -14,6 +15,7 @@ defmodule MilkWeb.RelationController do
     case Relations.create_relation(params) do
       {:ok, _relation} ->
         json(conn, %{result: true})
+
       {:error, error} ->
         json(conn, %{result: false, error: error})
     end
@@ -26,6 +28,7 @@ defmodule MilkWeb.RelationController do
     case Relations.delete_relation_by_ids(params) do
       {:ok, _relation} ->
         json(conn, %{result: true})
+
       {:error, error} ->
         json(conn, %{result: false, error: error})
     end
@@ -76,6 +79,7 @@ defmodule MilkWeb.RelationController do
       |> Enum.map(fn relation ->
         Accounts.get_user(relation.blocked_user_id)
       end)
+
     render(conn, "user.json", users: users)
   end
 

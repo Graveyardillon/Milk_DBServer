@@ -27,7 +27,21 @@ defmodule Milk.Log.TournamentLog do
   @doc false
   def changeset(tournament, attrs) do
     tournament
-    |> cast(attrs, [:tournament_id, :name, :game_id, :game_name, :event_date, :capacity, :description, :master_id, :winner_id, :deadline, :type, :url, :thumbnail_path])
+    |> cast(attrs, [
+      :tournament_id,
+      :name,
+      :game_id,
+      :game_name,
+      :event_date,
+      :capacity,
+      :description,
+      :master_id,
+      :winner_id,
+      :deadline,
+      :type,
+      :url,
+      :thumbnail_path
+    ])
     |> validate_required([:name])
   end
 end

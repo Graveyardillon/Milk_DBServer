@@ -11,6 +11,5 @@ defmodule Milk.Repo.Migrations.CreateEntrantLog do
 
       timestamps()
     end
-
   end
 end

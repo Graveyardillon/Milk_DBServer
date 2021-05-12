@@ -3,17 +3,23 @@ defmodule Milk.Reports do
 
   alias Common.Tools
   alias Ecto.Multi
+
   alias Milk.{
     Accounts,
     Repo,
     Tournaments
   }
+
   alias Milk.Reports.{
     TournamentReport,
     UserReport
   }
 
-  def create_user_report(%{"reporter" => reporter, "reportee" => reportee, "report_types" => report_types}) do
+  def create_user_report(%{
+        "reporter" => reporter,
+        "reportee" => reportee,
+        "report_types" => report_types
+      }) do
     reporter = Tools.to_integer_as_needed(reporter)
     reportee = Tools.to_integer_as_needed(reportee)
 
@@ -21,14 +27,15 @@ defmodule Milk.Reports do
       user_reports =
         Enum.map(report_types, fn type ->
           with {:ok, report} <-
-            %UserReport{reporter_id: reporter, reportee_id: reportee}
-            |> UserReport.changeset(%{report_type: type})
-            |> Repo.insert() do
+                 %UserReport{reporter_id: reporter, reportee_id: reportee}
+                 |> UserReport.changeset(%{report_type: type})
+                 |> Repo.insert() do
             report
           else
             _ -> nil
           end
         end)
+
       {:ok, user_reports}
     else
       {:error, "user error"}
@@ -39,11 +46,21 @@ defmodule Milk.Reports do
   Create tournament report
   FIXME: report_type -> report_types
   """
-  def create_tournament_report(%{"reporter_id" => reporter_id, "report_type" => report_type, "tournament_id" => tournament_id}) when is_list(report_type) do
+  def create_tournament_report(%{
+        "reporter_id" => reporter_id,
+        "report_type" => report_type,
+        "tournament_id" => tournament_id
+      })
+      when is_list(report_type) do
     report_type
     |> Enum.map(fn type ->
       type = Tools.to_integer_as_needed(type)
-      create_tournament_report(%{"reporter_id" => reporter_id, "report_type" => type, "tournament_id" => tournament_id})
+
+      create_tournament_report(%{
+        "reporter_id" => reporter_id,
+        "report_type" => type,
+        "tournament_id" => tournament_id
+      })
     end)
     |> Enum.all?(fn tuple ->
       case tuple do
@@ -58,7 +75,11 @@ defmodule Milk.Reports do
     end
   end
 
-  def create_tournament_report(%{"reporter_id" => reporter_id, "report_type" => report_type, "tournament_id" => tournament_id}) do
+  def create_tournament_report(%{
+        "reporter_id" => reporter_id,
+        "report_type" => report_type,
+        "tournament_id" => tournament_id
+      }) do
     reporter_id = Tools.to_integer_as_needed(reporter_id)
     tournament_id = Tools.to_integer_as_needed(tournament_id)
 
@@ -67,13 +88,15 @@ defmodule Milk.Reports do
     |> case do
       nil ->
         {:error, nil}
+
       tournament ->
         insert_report_data(reporter_id, report_type, tournament)
     end
   end
 
   defp insert_report_data(reporter_id, report_type, tournament) do
-    attrs = %{}
+    attrs =
+      %{}
       |> Map.put("report_type", report_type)
       |> Map.put("capacity", tournament.capacity)
       |> Map.put("deadline", tournament.deadline)

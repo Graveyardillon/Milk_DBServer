@@ -10,6 +10,5 @@ defmodule Milk.Repo.Migrations.CreateChatRoom do
       add :is_private, :boolean, default: false
       timestamps()
     end
-
   end
 end

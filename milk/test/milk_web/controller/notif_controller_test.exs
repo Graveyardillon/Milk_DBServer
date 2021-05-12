@@ -7,7 +7,17 @@ defmodule MilkWeb.NotifControllerTest do
   }
 
   defp fixture_user(n \\ 0) do
-    attrs = %{"icon_path" => "some icon_path", "language" => "some language", "name" => to_string(n)<>"some name", "notification_number" => 42, "point" => 42, "email" => to_string(n)<>"some@email.com", "logout_fl" => true, "password" => "S1ome password"}
+    attrs = %{
+      "icon_path" => "some icon_path",
+      "language" => "some language",
+      "name" => to_string(n) <> "some name",
+      "notification_number" => 42,
+      "point" => 42,
+      "email" => to_string(n) <> "some@email.com",
+      "logout_fl" => true,
+      "password" => "S1ome password"
+    }
+
     {:ok, user} = Accounts.create_user(attrs)
     user
   end
@@ -19,6 +29,7 @@ defmodule MilkWeb.NotifControllerTest do
   describe "get list" do
     test "works", %{conn: conn} do
       user = fixture_user()
+
       Enum.each(1..4, fn _n ->
         %{
           "content" => "chore",
@@ -33,6 +44,7 @@ defmodule MilkWeb.NotifControllerTest do
       response = json_response(conn, 200)
 
       assert response["result"]
+
       response
       |> Map.get("data")
       |> Enum.map(fn notification ->
@@ -43,14 +55,15 @@ defmodule MilkWeb.NotifControllerTest do
       end)
       |> length()
       |> (fn len ->
-        assert len == 4
-      end).()
+            assert len == 4
+          end).()
     end
   end
 
   describe "create" do
     test "works", %{conn: conn} do
       user = fixture_user()
+
       attrs = %{
         "content" => "chore",
         "process_code" => 0,
@@ -62,14 +75,15 @@ defmodule MilkWeb.NotifControllerTest do
       response = json_response(conn, 200)
 
       assert response["result"]
+
       response
       |> Map.get("data")
       |> (fn notification ->
-        assert notification["content"] == attrs["content"]
-        assert notification["process_code"] == attrs["process_code"]
-        assert notification["data"] == attrs["data"]
-        assert notification["user_id"] == attrs["user_id"]
-      end).()
+            assert notification["content"] == attrs["content"]
+            assert notification["process_code"] == attrs["process_code"]
+            assert notification["data"] == attrs["data"]
+            assert notification["user_id"] == attrs["user_id"]
+          end).()
     end
   end
 
@@ -77,6 +91,7 @@ defmodule MilkWeb.NotifControllerTest do
     # FIXME: assertを追加したい
     test "works", %{conn: conn} do
       user = fixture_user()
+
       attrs = %{
         "content" => "chore",
         "process_code" => 0,
@@ -102,6 +117,7 @@ defmodule MilkWeb.NotifControllerTest do
       assert json_response(conn, 200)["result"]
 
       conn = get(conn, Routes.notif_path(conn, :get_list), user_id: user1.id)
+
       json_response(conn, 200)
       |> Map.get("data")
       |> Enum.map(fn notification ->
@@ -111,10 +127,11 @@ defmodule MilkWeb.NotifControllerTest do
       end)
       |> length()
       |> (fn len ->
-        assert len == 1
-      end).()
+            assert len == 1
+          end).()
 
       conn = get(conn, Routes.notif_path(conn, :get_list), user_id: user2.id)
+
       json_response(conn, 200)
       |> Map.get("data")
       |> Enum.map(fn notification ->
@@ -124,8 +141,8 @@ defmodule MilkWeb.NotifControllerTest do
       end)
       |> length()
       |> (fn len ->
-        assert len == 1
-      end).()
+            assert len == 1
+          end).()
     end
   end
 end

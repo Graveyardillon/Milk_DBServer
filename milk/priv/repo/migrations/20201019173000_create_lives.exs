@@ -12,6 +12,5 @@ defmodule Milk.Repo.Migrations.CreateLives do
 
       timestamps()
     end
-
   end
 end

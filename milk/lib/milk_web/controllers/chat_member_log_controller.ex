@@ -12,7 +12,8 @@ defmodule MilkWeb.ChatMemberLogController do
   end
 
   def create(conn, %{"data" => chat_member_log_params}) do
-    with {:ok, %ChatMemberLog{} = chat_member_log} <- Log.create_chat_member_log(chat_member_log_params) do
+    with {:ok, %ChatMemberLog{} = chat_member_log} <-
+           Log.create_chat_member_log(chat_member_log_params) do
       conn
       |> render("show.json", chat_member_log: chat_member_log)
     end
@@ -26,7 +27,8 @@ defmodule MilkWeb.ChatMemberLogController do
   def update(conn, %{"id" => id, "chat_member_log" => chat_member_log_params}) do
     chat_member_log = Log.get_chat_member_log!(id)
 
-    with {:ok, %ChatMemberLog{} = chat_member_log} <- Log.update_chat_member_log(chat_member_log, chat_member_log_params) do
+    with {:ok, %ChatMemberLog{} = chat_member_log} <-
+           Log.update_chat_member_log(chat_member_log, chat_member_log_params) do
       render(conn, "show.json", chat_member_log: chat_member_log)
     end
   end
