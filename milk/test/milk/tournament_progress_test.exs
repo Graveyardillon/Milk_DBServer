@@ -200,6 +200,49 @@ defmodule Milk.TournamentProgressTest do
       assert match_list == [[1, 2], 3]
     end
 
+    test "get_match_list/1 returns data 1 size smaller than past one after deleting a user" do
+      tournament = fixture_tournament()
+      entrants = create_entrants(8, tournament.id)
+      entrant_id_list = Enum.map(entrants, fn entrant -> entrant.user_id end)
+      start(tournament.master_id, tournament.id)
+
+      tournament.id
+      |> TournamentProgress.get_match_list()
+      |> hd()
+      |> elem(1)
+      |> List.flatten()
+      |> Enum.map(fn user_id ->
+        assert user_id in entrant_id_list
+      end)
+      |> length()
+      |> (fn len ->
+        assert len == length(entrants)
+      end).()
+
+      entrants
+      |> hd()
+      |> Map.get(:user_id)
+      |> Accounts.get_user()
+      |> Accounts.delete()
+
+      tournament.id
+      |> TournamentProgress.get_match_list()
+      |> hd()
+      |> elem(1)
+      |> List.flatten()
+      |> Enum.map(fn user_id ->
+        if user_id == hd(entrants).user_id do
+          refute user_id in entrant_id_list
+        else
+          assert user_id in entrant_id_list
+        end
+      end)
+      |> length()
+      |> (fn len ->
+        assert len == length(entrants) - 1
+      end).()
+    end
+
     test "delete_match_list/1 works fine" do
       match_list = [[1, 2], 3]
       TournamentProgress.insert_match_list(match_list, 3)
@@ -255,17 +298,78 @@ defmodule Milk.TournamentProgressTest do
 
   describe "match list with fight result" do
     test "insert_match_list_with_fight_result/2" do
-      match_list = [[1, 2], 3]
+      match_list = [
+        [
+          %{"user_id" => 1},
+          %{"user_id" => 2}
+        ],
+        %{"user_id" => 3}
+      ]
       r = TournamentProgress.insert_match_list_with_fight_result(match_list, 1)
       assert r
       assert is_boolean(r)
     end
 
     test "get_match_list_with_fight_result/1" do
-      match_list = [[1, 2], 3]
+      match_list = [
+        [
+          %{"user_id" => 1},
+          %{"user_id" => 2}
+        ],
+        %{"user_id" => 3}
+      ]
       TournamentProgress.insert_match_list_with_fight_result(match_list, 2)
-      assert {_, r} = TournamentProgress.get_match_list_with_fight_result(2) |> hd()
-      assert r == match_list
+
+      2
+      |> TournamentProgress.get_match_list_with_fight_result()
+      |> hd()
+      |> elem(1)
+      |> (fn result ->
+        result == match_list
+      end).()
+    end
+
+    test "get_match_list/1 returns data which is renewed after deleting a user" do
+      tournament = fixture_tournament()
+      entrants = create_entrants(8, tournament.id)
+      entrant_id_list = Enum.map(entrants, fn entrant -> entrant.user_id end)
+      start(tournament.master_id, tournament.id)
+
+      tournament.id
+      |> TournamentProgress.get_match_list_with_fight_result()
+      |> hd()
+      |> elem(1)
+      |> List.flatten()
+      |> Enum.map(fn bracket ->
+        assert is_map(bracket)
+        if is_map(bracket) do
+          assert bracket["user_id"] in entrant_id_list
+          assert bracket["is_loser"] == false
+        end
+      end)
+
+      entrants
+      |> hd()
+      |> Map.get(:user_id)
+      |> Accounts.get_user()
+      |> Accounts.delete()
+
+      tournament.id
+      |> TournamentProgress.get_match_list_with_fight_result()
+      |> hd()
+      |> elem(1)
+      |> List.flatten()
+      |> Enum.map(fn bracket ->
+        if is_map(bracket) do
+          if bracket["user_id"] == hd(entrants).user_id do
+            assert bracket["user_id"] in entrant_id_list
+            assert bracket["is_loser"]
+          else
+            assert bracket["user_id"] in entrant_id_list
+            assert bracket["is_loser"] == false
+          end
+        end
+      end)
     end
 
     test "delete_match_list_with_fight_result/1" do

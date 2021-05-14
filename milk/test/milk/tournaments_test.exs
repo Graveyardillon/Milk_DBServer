@@ -1617,6 +1617,7 @@ defmodule Milk.TournamentsTest do
     end
   end
 
+  # FIXME: 不要
   describe "match list length" do
     test "match_list_length/1 returns number of players : 3" do
       match_list = [3, [1, 2]]

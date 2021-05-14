@@ -10,8 +10,9 @@ defmodule Milk.Accounts do
   alias Ecto.Multi
 
   alias Milk.{
+    Accounts,
     Repo,
-    Accounts
+    Tournaments
   }
 
   alias Milk.Accounts.{
@@ -336,10 +337,19 @@ defmodule Milk.Accounts do
         Repo.insert_all(AssistantLog, assistant)
       end
 
-      Repo.delete(user)
+      delete(user)
     else
       {:error, user}
     end
+  end
+
+  def delete(user) do
+    user.id
+    |> Tournaments.get_participating_tournaments()
+    |> Enum.each(fn tournament ->
+      Tournaments.delete_loser_process(tournament.id, [user.id])
+    end)
+    Repo.delete(user)
   end
 
   defp get_authorized_user(id, password, email, token) do
