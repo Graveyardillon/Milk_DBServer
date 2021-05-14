@@ -2,12 +2,13 @@ defmodule Milk.TournamentsTest do
   use Milk.DataCase
 
   alias Milk.{
-    Tournaments,
     Accounts,
-    TournamentProgress,
-    Relations,
+    Chat,
     Games,
-    Chat
+    Relations,
+    Repo,
+    TournamentProgress,
+    Tournaments
   }
 
   alias Milk.Tournaments.{
@@ -453,20 +454,50 @@ defmodule Milk.TournamentsTest do
       end)
     end
 
-    test "get_entrant!/1 works fine with a valid data", %{entrant: entrant} do
+    test "get_entrant!/1 work with valid data", %{entrant: entrant} do
       assert %Entrant{} = obtained_entrant = Tournaments.get_entrant!(entrant.id)
       assert obtained_entrant.id == entrant.id
     end
 
-    test "get_entrants/1 works fine with a valid data", %{entrant: entrant} do
+    test "get_entrants/1 works with valid data", %{entrant: entrant} do
       num = 7
-      create_entrants(num, entrant.tournament_id)
-      assert entrants = Tournaments.get_entrants(entrant.tournament_id)
-      assert is_list(entrants)
+      entrants =
+        num
+        |> create_entrants(entrant.tournament_id)
+        |> Enum.concat([entrant])
 
-      Enum.each(entrants, fn entrant ->
+      entrant.tournament_id
+      |> Tournaments.get_entrants()
+      |> Enum.map(fn entrant ->
         assert %Entrant{} = entrant
       end)
+      |> length()
+      |> (fn len ->
+        assert len == length(entrants)
+      end).()
+    end
+
+    test "get_entrants/1 returns data 1 size smaller than past one after deleting an entrant", %{entrant: entrant} do
+      num = 7
+      entrants = num
+        |> create_entrants(entrant.tournament_id)
+        |> Enum.concat([entrant])
+
+      user = entrants
+        |> hd()
+        |> Map.get(:user_id)
+        |> Accounts.get_user()
+        |> Repo.delete()
+
+      entrant.tournament_id
+      |> Tournaments.get_entrants()
+      |> Enum.map(fn entrant ->
+        assert %Entrant{} = entrant
+      end)
+      |> length()
+      |> (fn len ->
+        assert len == length(entrants) - 1
+      end).()
     end
 
     test "get_entrant_including_logs/1 gets tournament log with a valid data", %{entrant: entrant} do
