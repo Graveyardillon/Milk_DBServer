@@ -193,10 +193,8 @@ defmodule Milk.TournamentProgressTest do
     test "get_match_list/1 works fine" do
       match_list = [[1, 2], 3]
       TournamentProgress.insert_match_list(match_list, 2)
-      {tid, match_list} = TournamentProgress.get_match_list(2) |> hd()
-      assert tid
+      match_list = TournamentProgress.get_match_list(2)
       assert match_list
-      assert tid == 2
       assert match_list == [[1, 2], 3]
     end
 
@@ -208,8 +206,6 @@ defmodule Milk.TournamentProgressTest do
 
       tournament.id
       |> TournamentProgress.get_match_list()
-      |> hd()
-      |> elem(1)
       |> List.flatten()
       |> Enum.map(fn user_id ->
         assert user_id in entrant_id_list
@@ -227,8 +223,6 @@ defmodule Milk.TournamentProgressTest do
 
       tournament.id
       |> TournamentProgress.get_match_list()
-      |> hd()
-      |> elem(1)
       |> List.flatten()
       |> Enum.map(fn user_id ->
         if user_id == hd(entrants).user_id do
@@ -322,8 +316,6 @@ defmodule Milk.TournamentProgressTest do
 
       2
       |> TournamentProgress.get_match_list_with_fight_result()
-      |> hd()
-      |> elem(1)
       |> (fn result ->
         result == match_list
       end).()
@@ -337,8 +329,6 @@ defmodule Milk.TournamentProgressTest do
 
       tournament.id
       |> TournamentProgress.get_match_list_with_fight_result()
-      |> hd()
-      |> elem(1)
       |> List.flatten()
       |> Enum.map(fn bracket ->
         assert is_map(bracket)
@@ -356,8 +346,6 @@ defmodule Milk.TournamentProgressTest do
 
       tournament.id
       |> TournamentProgress.get_match_list_with_fight_result()
-      |> hd()
-      |> elem(1)
       |> List.flatten()
       |> Enum.map(fn bracket ->
         if is_map(bracket) do

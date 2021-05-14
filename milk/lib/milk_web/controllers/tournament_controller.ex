@@ -489,7 +489,7 @@ defmodule MilkWeb.TournamentController do
     with {:ok, _} <- Tournaments.start(master_id, tournament.id),
          {:ok, match_list, match_list_with_fight_result} <-
            make_single_elimination_matches(conn, tournament.id) do
-      with [{_, match_list}] <- TournamentProgress.get_match_list(tournament.id) do
+      with match_list <- TournamentProgress.get_match_list(tournament.id) do
         TournamentProgress.set_time_limit_on_all_entrants(match_list, tournament.id)
       end
 
@@ -629,7 +629,7 @@ defmodule MilkWeb.TournamentController do
   end
 
   defp store_single_tournament_match_log(tournament_id, loser_id) when is_integer(loser_id) do
-    [{_, match_list}] = TournamentProgress.get_match_list(tournament_id)
+    match_list = TournamentProgress.get_match_list(tournament_id)
 
     {:ok, winner} =
       match_list
@@ -657,8 +657,7 @@ defmodule MilkWeb.TournamentController do
       [] ->
         json(conn, %{result: false, match: nil})
 
-      list when is_list(list) ->
-        {_, match_list} = hd(list)
+      match_list when is_list(match_list) ->
         match = Tournaments.find_match(match_list, user_id)
         result = Tournaments.is_alone?(match)
 
@@ -725,16 +724,12 @@ defmodule MilkWeb.TournamentController do
   def get_match_list(conn, %{"tournament_id" => tournament_id}) do
     tournament_id = Tools.to_integer_as_needed(tournament_id)
 
-    list = TournamentProgress.get_match_list(tournament_id)
+    match_list = TournamentProgress.get_match_list(tournament_id)
 
-    list =
-      unless list == [] do
-        hd(list)
-      end
-
-    case list do
-      {_, match_list} -> json(conn, %{match_list: match_list, result: true})
-      _ -> json(conn, %{match_list: nil, result: false})
+    if match_list == [] do
+      json(conn, %{match_list: nil, result: false})
+    else
+      json(conn, %{match_list: match_list, result: true})
     end
   end
 
@@ -762,10 +757,7 @@ defmodule MilkWeb.TournamentController do
     tournament_id = Tools.to_integer_as_needed(tournament_id)
     user_id = Tools.to_integer_as_needed(user_id)
 
-    {_, match_list} =
-      tournament_id
-      |> TournamentProgress.get_match_list()
-      |> hd()
+    match_list = TournamentProgress.get_match_list(tournament_id)
 
     unless is_integer(match_list) do
       match = Tournaments.find_match(match_list, user_id)
@@ -832,7 +824,7 @@ defmodule MilkWeb.TournamentController do
     user_id = Tools.to_integer_as_needed(user_id)
     tournament_id = Tools.to_integer_as_needed(tournament_id)
 
-    {_, match_list} = hd(TournamentProgress.get_match_list(tournament_id))
+    match_list = TournamentProgress.get_match_list(tournament_id)
 
     has_lost = Tournaments.has_lost?(match_list, user_id)
 
@@ -982,7 +974,7 @@ defmodule MilkWeb.TournamentController do
   end
 
   defp finish_as_needed(tournament_id, winner_id) do
-    [{_, match_list}] = TournamentProgress.get_match_list(tournament_id)
+    match_list = TournamentProgress.get_match_list(tournament_id)
     tournament = Tournaments.get_tournament(tournament_id)
 
     if is_integer(match_list) do
@@ -1139,19 +1131,16 @@ defmodule MilkWeb.TournamentController do
   """
   def brackets_with_fight_result(conn, %{"tournament_id" => tournament_id}) do
     tournament_id = Tools.to_integer_as_needed(tournament_id)
-    list = TournamentProgress.get_match_list_with_fight_result(tournament_id)
-    list = unless list == [], do: hd(list)
+    match_list = TournamentProgress.get_match_list_with_fight_result(tournament_id)
 
-    case list do
-      {_, match_list} ->
-        brackets = Tournaments.data_with_fight_result_for_brackets(match_list)
+    if match_list == [] do
+      json(conn, %{data: nil, result: false, count: nil})
+    else
+      brackets = Tournaments.data_with_fight_result_for_brackets(match_list)
         count = Enum.count(brackets) * 2
         num_for_brackets = Tournamex.Number.closest_number_to_power_of_two(count)
 
         json(conn, %{data: brackets, result: true, count: num_for_brackets})
-
-      _ ->
-        json(conn, %{data: nil, result: false, count: nil})
     end
   end
 
