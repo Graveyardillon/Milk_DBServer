@@ -91,7 +91,6 @@ defmodule Milk.Tournaments do
   Returns the list of tournament which is not optimized for user.
   """
   def home_tournament(date_offset, offset) do
-    IO.inspect(date_offset, label: :date_offset)
     offset = Tools.to_integer_as_needed(offset)
 
     Tournament
