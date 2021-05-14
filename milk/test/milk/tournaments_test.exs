@@ -801,10 +801,7 @@ defmodule Milk.TournamentsTest do
 
       start(tournament.master_id, tournament.id)
 
-      {_, match_list} =
-        tournament.id
-        |> TournamentProgress.get_match_list()
-        |> hd()
+      match_list = TournamentProgress.get_match_list(tournament.id)
 
       match = Tournaments.find_match(match_list, tournament.master_id)
       {:ok, opponent} = Tournaments.get_opponent(match, tournament.master_id)
@@ -824,10 +821,7 @@ defmodule Milk.TournamentsTest do
 
       start(tournament.master_id, tournament.id)
 
-      {_, match_list} =
-        tournament.id
-        |> TournamentProgress.get_match_list()
-        |> hd()
+      match_list = TournamentProgress.get_match_list(tournament.id)
 
       match = Tournaments.find_match(match_list, tournament.master_id)
       {:ok, opponent} = Tournaments.get_opponent(match, tournament.master_id)
@@ -924,7 +918,7 @@ defmodule Milk.TournamentsTest do
   end
 
   defp delete_loser(tournament_id, loser_list) do
-    {_, match_list} = hd(TournamentProgress.get_match_list(tournament_id))
+    match_list = TournamentProgress.get_match_list(tournament_id)
 
     match_list
     |> Tournaments.find_match(hd(loser_list))
@@ -945,10 +939,9 @@ defmodule Milk.TournamentsTest do
   end
 
   defp get_lost(tournament_id, _match_list, [loser]) do
-    {_, match_list} =
+    match_list =
       tournament_id
       |> TournamentProgress.get_match_list_with_fight_result()
-      |> hd()
 
     updated_match_list = Tournaments.get_lost(match_list, loser)
     TournamentProgress.delete_match_list_with_fight_result(tournament_id)
@@ -1719,10 +1712,9 @@ defmodule Milk.TournamentsTest do
         user.id == tournament.master_id
       end)
 
-      {_, match_list} =
+      match_list =
         tournament.id
         |> TournamentProgress.get_match_list()
-        |> hd()
 
       match = Tournaments.find_match(match_list, tournament.master_id)
       {:ok, opponent} = Tournaments.get_opponent(match, tournament.master_id)
@@ -1768,10 +1760,9 @@ defmodule Milk.TournamentsTest do
       users = Tournaments.get_waiting_users(tournament.id)
       assert length(users) == length(entrants) - 1
 
-      {_, match_list} =
+      match_list =
         tournament.id
         |> TournamentProgress.get_match_list()
-        |> hd()
 
       match = Tournaments.find_match(match_list, tournament.master_id)
       {:ok, opponent} = Tournaments.get_opponent(match, tournament.master_id)

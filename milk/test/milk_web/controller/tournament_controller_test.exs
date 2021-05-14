@@ -1009,11 +1009,6 @@ defmodule MilkWeb.TournamentControllerTest do
 
       tournament.id
       |> TournamentProgress.get_match_list()
-      |> (fn data ->
-            assert [{tid, match_list}] = data
-            assert tid == tournament.id
-            match_list
-          end).()
       |> List.flatten()
       |> Enum.map(fn user_id ->
         assert user_id in entrant_id_list
@@ -1025,11 +1020,6 @@ defmodule MilkWeb.TournamentControllerTest do
 
       tournament.id
       |> TournamentProgress.get_match_list_with_fight_result()
-      |> (fn data ->
-            assert [{tid, match_list}] = data
-            assert tid == tournament.id
-            match_list
-          end).()
       |> List.flatten()
       |> length()
       |> (fn len ->
@@ -1082,11 +1072,6 @@ defmodule MilkWeb.TournamentControllerTest do
 
       tournament.id
       |> TournamentProgress.get_match_list()
-      |> (fn data ->
-            assert [{tid, match_list}] = data
-            assert tid == tournament.id
-            match_list
-          end).()
       |> List.flatten()
       |> Enum.map(fn user_id ->
         assert user_id in entrant_id_list
@@ -1098,11 +1083,6 @@ defmodule MilkWeb.TournamentControllerTest do
 
       tournament.id
       |> TournamentProgress.get_match_list_with_fight_result()
-      |> (fn data ->
-            assert [{tid, match_list}] = data
-            assert tid == tournament.id
-            match_list
-          end).()
       |> List.flatten()
       |> length()
       |> (fn len ->
@@ -1195,8 +1175,6 @@ defmodule MilkWeb.TournamentControllerTest do
 
       tournament.id
       |> TournamentProgress.get_match_list()
-      |> hd()
-      |> elem(1)
       |> List.flatten()
       |> Enum.any?(fn user_id ->
         user_id == hd(losers)
@@ -1207,8 +1185,6 @@ defmodule MilkWeb.TournamentControllerTest do
 
       tournament.id
       |> TournamentProgress.get_match_list_with_fight_result()
-      |> hd()
-      |> elem(1)
       |> List.flatten()
       |> Enum.any?(fn map ->
         if map["is_loser"] do
@@ -2613,11 +2589,11 @@ defmodule MilkWeb.TournamentControllerTest do
             assert data["completed"]
           end).()
 
-      [{_, match_list}] =
+      match_list =
         tournament.id
         |> TournamentProgress.get_match_list()
 
-      [{_, match_list_with_fight_result}] =
+      match_list_with_fight_result =
         tournament.id
         |> TournamentProgress.get_match_list_with_fight_result()
 
@@ -2817,8 +2793,6 @@ defmodule MilkWeb.TournamentControllerTest do
 
       tournament.id
       |> TournamentProgress.get_match_list_with_fight_result()
-      |> hd()
-      |> elem(1)
       |> Tournaments.match_list_length()
       |> (fn len ->
             assert len == 17
@@ -2873,8 +2847,6 @@ defmodule MilkWeb.TournamentControllerTest do
 
         tournament.id
         |> TournamentProgress.get_match_list_with_fight_result()
-        |> hd()
-        |> elem(1)
         |> Tournaments.match_list_length()
         |> (fn len ->
               assert len == 16

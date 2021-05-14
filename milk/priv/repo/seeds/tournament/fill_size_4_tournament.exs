@@ -73,7 +73,7 @@ Enum.reduce(lis, list_with_fight_result, fn x, acc ->
 end)
 |> TournamentProgress.insert_match_list_with_fight_result(tournament.id)
 
-with [{_, match_list}] <- TournamentProgress.get_match_list(tournament.id) do
+with match_list <- TournamentProgress.get_match_list(tournament.id) do
   Logger.info("Set time limit on all entrants")
   TournamentProgress.set_time_limit_on_all_entrants(match_list, tournament.id)
 end

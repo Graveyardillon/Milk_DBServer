@@ -433,7 +433,7 @@ defmodule Milk.Tournaments do
       tournament_id
       |> TournamentProgress.get_match_list()
       |> case do
-        [{_, match_list}] when is_list(match_list) -> match_list_length(match_list)
+        match_list when is_list(match_list) -> match_list_length(match_list)
         _ -> 0
       end
 
@@ -441,12 +441,12 @@ defmodule Milk.Tournaments do
       tournament_id
       |> TournamentProgress.get_match_list_with_fight_result()
       |> case do
-        [{_, match_list}] when is_list(match_list) -> match_list_length(match_list)
+        match_list when is_list(match_list) -> match_list_length(match_list)
         _ -> 0
       end
 
     if match_list_with_fight_result_len > 16 and match_list_len <= 16 do
-      [{_, new_list}] = TournamentProgress.get_match_list(tournament_id)
+      new_list = TournamentProgress.get_match_list(tournament_id)
       TournamentProgress.delete_match_list_with_fight_result(tournament_id)
       TournamentProgress.insert_match_list_with_fight_result(new_list, tournament_id)
     end
@@ -834,7 +834,7 @@ defmodule Milk.Tournaments do
   loser_listは一人用になっている
   """
   def delete_loser_process(tournament_id, loser_list) do
-    [{_, match_list}] = TournamentProgress.get_match_list(tournament_id)
+    match_list = TournamentProgress.get_match_list(tournament_id)
 
     match_list
     |> find_match(hd(loser_list))
@@ -844,7 +844,7 @@ defmodule Milk.Tournaments do
     end)
 
     renew_match_list(tournament_id, match_list, loser_list)
-    [{_, updated_match_list}] = TournamentProgress.get_match_list(tournament_id)
+    updated_match_list = TournamentProgress.get_match_list(tournament_id)
     renew_match_list_with_fight_result(tournament_id, loser_list)
     unless is_integer(updated_match_list), do: trim_match_list_as_needed(tournament_id)
 
@@ -1224,7 +1224,7 @@ defmodule Milk.Tournaments do
     tournament_id
     |> get_entrants()
     |> Enum.filter(fn entrant ->
-      [{_, match_list}] = TournamentProgress.get_match_list(tournament_id)
+      match_list = TournamentProgress.get_match_list(tournament_id)
       !has_lost?(match_list, entrant.user_id)
     end)
     |> Enum.map(fn entrant ->
@@ -1416,8 +1416,7 @@ defmodule Milk.Tournaments do
       [] ->
         {:error, nil}
 
-      list ->
-        [{_, match_list}] = list
+      match_list ->
         {:ok, match_list}
     end
   end
@@ -1613,7 +1612,7 @@ defmodule Milk.Tournaments do
       [] ->
         "IsFinished"
 
-      [{_, match_list}] ->
+      match_list ->
         if has_lost?(match_list, user_id) do
           "IsLoser"
         else
@@ -1623,10 +1622,7 @@ defmodule Milk.Tournaments do
   end
 
   defp check_is_alone?(tournament_id, user_id) do
-    {_, match_list} =
-      TournamentProgress.get_match_list(tournament_id)
-      |> hd()
-
+    match_list = TournamentProgress.get_match_list(tournament_id)
     match = find_match(match_list, user_id)
 
     if is_alone?(match) do
@@ -1637,11 +1633,9 @@ defmodule Milk.Tournaments do
   end
 
   defp check_wait_state?(tournament_id, user_id) do
-    {_, match_list} =
-      TournamentProgress.get_match_list(tournament_id)
-      |> hd()
-
+    match_list = TournamentProgress.get_match_list(tournament_id)
     match = find_match(match_list, user_id)
+
     # FIXME: エラーハンドリング
     {:ok, opponent} = get_opponent(match, user_id)
     pending_list = TournamentProgress.get_match_pending_list({user_id, tournament_id})
@@ -1681,7 +1675,7 @@ defmodule Milk.Tournaments do
   Construct data with game scores for brackets.
   """
   def data_with_scores_for_brackets(tournament_id) do
-    [{_, match_list}] = TournamentProgress.get_match_list_with_fight_result(tournament_id)
+    match_list = TournamentProgress.get_match_list_with_fight_result(tournament_id)
 
     # add game_scores
     match_list
@@ -1713,7 +1707,7 @@ defmodule Milk.Tournaments do
   new one.
   """
   def data_with_scores_for_flexible_brackets(tournament_id) do
-    [{_, match_list}] = TournamentProgress.get_match_list_with_fight_result(tournament_id)
+    match_list = TournamentProgress.get_match_list_with_fight_result(tournament_id)
     {:ok, brackets} = Tournamex.brackets_with_fight_result(match_list)
 
     # add game_scores
@@ -1781,7 +1775,7 @@ defmodule Milk.Tournaments do
     }
     |> TournamentProgress.create_best_of_x_tournament_match_log()
 
-    [{_, match_list}] = TournamentProgress.get_match_list_with_fight_result(tournament_id)
+    match_list = TournamentProgress.get_match_list_with_fight_result(tournament_id)
     match_list = Tournamex.win_count_increment(match_list, winner_id)
     TournamentProgress.delete_match_list_with_fight_result(tournament_id)
     TournamentProgress.insert_match_list_with_fight_result(match_list, tournament_id)
