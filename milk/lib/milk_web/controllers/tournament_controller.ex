@@ -162,6 +162,8 @@ defmodule MilkWeb.TournamentController do
             tournament
             |> Map.put(:followers, Relations.get_followers(tournament.master_id))
 
+          %{"user_id" => tournament.master_id, "game_name" => tournament.game_name, "score" => 7}
+          |> Accounts.gain_score()
           render(conn, "create.json", tournament: tournament)
 
         {:error, error} ->
@@ -190,7 +192,7 @@ defmodule MilkWeb.TournamentController do
         end)
 
       %{"user_id" => user_id, "game_name" => tournament.game_name, "score" => 1}
-      |> Accounts.gain_score5()
+      |> Accounts.gain_score()
       |> IO.inspect()
       render(conn, "tournament_info.json", tournament: tournament, entrants: entrants)
     else
@@ -199,7 +201,7 @@ defmodule MilkWeb.TournamentController do
         tournament_log = Map.put(tournament_log, :entrants, entrants)
 
         %{"user_id" => user_id, "game_name" => tournament_log.game_name, "score" => 1}
-        |> Accounts.gain_score5()
+        |> Accounts.gain_score()
         render(conn, "tournament_log.json", tournament_log: tournament_log)
       else
         render(conn, "error.json", error: nil)

@@ -449,6 +449,25 @@ defmodule MilkWeb.TournamentControllerTest do
       conn = get(conn, Routes.tournament_path(conn, :show), %{"tournament_id" => tournament.id})
 
       assert json_response(conn, 200)["result"]
+      json_response(conn, 200)
+      |> Map.get("data")
+      |> (fn data ->
+            assert data["tournament_id"] == tournament.id
+            assert data["name"] == tournament.name
+            #assert data["thumbnail_path"] == tournament.thumbnail_path
+            assert data["game_id"] == tournament.game_id
+            assert data["game_name"] == tournament.game_name
+            # assert data["event_date"] == tournament.event_date
+            # assert data["start_recruiting"] == tournament.start_recruiting
+            # assert data["deadline"] == tournament.deadline
+            assert data["type"] == tournament.type
+            # assert data["platform"] == tournament.platform
+            assert is_nil(data["password"])
+            assert data["capacity"] == tournament.capacity
+            assert data["master_id"] == tournament.master_id
+            assert data["url"] == tournament.url
+          end).()
+
       assert TournamentProgress.get_duplicate_users(tournament.id) == []
     end
 
@@ -492,6 +511,74 @@ defmodule MilkWeb.TournamentControllerTest do
       |> length()
       |> (fn len ->
         assert len == 1
+      end).()
+    end
+
+    test "get tournament log with user_id", %{conn: conn, tournament: tournament} do
+      entrants = create_entrants(2, tournament.id)
+      entrant = hd(entrants)
+
+      conn =
+        post(conn, Routes.tournament_path(conn, :start),
+          tournament: %{"master_id" => tournament.master_id, "tournament_id" => tournament.id}
+        )
+
+      conn =
+        post(conn, Routes.tournament_path(conn, :delete_loser),
+          tournament: %{"tournament_id" => tournament.id, "loser_list" => [entrant.user_id]}
+        )
+
+      conn =
+        post(conn, Routes.tournament_path(conn, :finish), %{
+          "tournament_id" => tournament.id,
+          "user_id" => tournament.master_id
+        })
+
+      conn = get(conn, Routes.tournament_path(conn, :show), %{"user_id" => tournament.master_id, "tournament_id" => tournament.id})
+
+      assert json_response(conn, 200)["result"]
+      json_response(conn, 200)
+      |> Map.get("data")
+      |> (fn data ->
+            assert data["tournament_id"] == tournament.id
+            assert data["name"] == tournament.name
+            #assert data["thumbnail_path"] == tournament.thumbnail_path
+            assert data["game_id"] == tournament.game_id
+            assert data["game_name"] == tournament.game_name
+            # assert data["event_date"] == tournament.event_date
+            # assert data["start_recruiting"] == tournament.start_recruiting
+            # assert data["deadline"] == tournament.deadline
+            assert data["type"] == tournament.type
+            # assert data["platform"] == tournament.platform
+            assert is_nil(data["password"])
+            assert data["capacity"] == tournament.capacity
+            assert data["master_id"] == tournament.master_id
+            assert data["url"] == tournament.url
+          end).()
+
+      ActionHistory
+      |> where([ah], ah.user_id == ^tournament.master_id)
+      |> Repo.all()
+      |> Enum.map(fn action_history ->
+        assert action_history.game_name == tournament.game_name
+        assert action_history.user_id == tournament.master_id
+        assert action_history.gain == 1
+      end)
+      |> length()
+      |> (fn len ->
+        assert len == 1
+      end).()
+    end
+
+    test "cannot get action history", %{conn: conn, tournament: tournament} do
+      conn = get(conn, Routes.tournament_path(conn, :show), %{"tournament_id" => tournament.id})
+
+      ActionHistory
+      |> where([ah], ah.user_id == ^tournament.master_id)
+      |> Repo.all()
+      |> length()
+      |> (fn len ->
+        assert len == 0
       end).()
     end
   end
