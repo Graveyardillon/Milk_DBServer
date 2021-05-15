@@ -20,7 +20,7 @@ defmodule MilkWeb.EntrantController do
     case Tournaments.create_entrant(entrant_params) do
       {:ok, %Entrant{} = entrant} ->
         conn
-        # |> put_status(:created)
+        #|> put_status(:created)
         # |> put_resp_header("location", Routes.entrant_path(conn, :show, entrant))
         |> render("show.json", entrant: entrant)
 
