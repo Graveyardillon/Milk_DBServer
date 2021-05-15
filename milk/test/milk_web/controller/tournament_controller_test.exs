@@ -1,13 +1,17 @@
 defmodule MilkWeb.TournamentControllerTest do
   use MilkWeb.ConnCase
 
+  import Ecto.Query, warn: false
+
   alias Milk.{
     Accounts,
     Platforms,
     Relations,
+    Repo,
     TournamentProgress,
     Tournaments
   }
+  alias Milk.Accounts.ActionHistory
 
   require Logger
 
@@ -23,6 +27,7 @@ defmodule MilkWeb.TournamentControllerTest do
     "event_date" => "2010-04-17T14:00:00Z",
     "master_id" => 42,
     "name" => "some name",
+    "game_name" => "gm nm",
     "type" => 1,
     "join" => "true",
     "url" => "some url",
@@ -450,6 +455,44 @@ defmodule MilkWeb.TournamentControllerTest do
     test "cannot get a tournament which does not exist", %{conn: conn, tournament: _tournament} do
       conn = get(conn, Routes.tournament_path(conn, :show), %{"tournament_id" => -1})
       refute json_response(conn, 200)["result"]
+    end
+
+    test "get tournament with user_id", %{conn: conn, tournament: tournament} do
+      conn = get(conn, Routes.tournament_path(conn, :show), %{"user_id" => tournament.master_id, "tournament_id" => tournament.id})
+      assert json_response(conn, 200)["result"]
+
+      json_response(conn, 200)
+      |> Map.get("data")
+      |> (fn data ->
+            assert data["id"] == tournament.id
+            assert data["name"] == tournament.name
+            assert data["thumbnail_path"] == tournament.thumbnail_path
+            assert data["game_id"] == tournament.game_id
+            assert data["game_name"] == tournament.game_name
+            # assert data["event_date"] == tournament.event_date
+            # assert data["start_recruiting"] == tournament.start_recruiting
+            # assert data["deadline"] == tournament.deadline
+            assert data["type"] == tournament.type
+            # assert data["platform"] == tournament.platform
+            assert is_nil(data["password"])
+            assert data["capacity"] == tournament.capacity
+            assert data["master_id"] == tournament.master_id
+            assert data["url"] == tournament.url
+            assert data["is_started"] == tournament.is_started
+          end).()
+
+      ActionHistory
+      |> where([ah], ah.user_id == ^tournament.master_id)
+      |> Repo.all()
+      |> Enum.map(fn action_history ->
+        assert action_history.game_name == tournament.game_name
+        assert action_history.user_id == tournament.master_id
+        assert action_history.gain == 1
+      end)
+      |> length()
+      |> (fn len ->
+        assert len == 1
+      end).()
     end
   end
 

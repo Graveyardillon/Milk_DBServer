@@ -513,4 +513,12 @@ defmodule Milk.Accounts do
     |> ActionHistory.changeset(attrs)
     |> Repo.insert()
   end
+
+  @doc """
+  Gain 5 score.
+  """
+  def gain_score(%{"user_id" => user_id, "game_name" => game_name, "score" => gain}) do
+    %{"user_id" => user_id, "game_name" => game_name, "gain" => gain}
+    |> create_action_history()
+  end
 end

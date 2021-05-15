@@ -176,6 +176,37 @@ defmodule MilkWeb.TournamentController do
   @doc """
   Show tournament information.
   """
+  def show(conn, %{"user_id" => user_id, "tournament_id" => id}) do
+    id = Tools.to_integer_as_needed(id)
+
+    tournament = Tournaments.get_tournament(id)
+    tournament_log = Log.get_tournament_log_by_tournament_id(id)
+
+    if tournament do
+      entrants =
+        Tournaments.get_entrants(tournament.id)
+        |> Enum.map(fn entrant ->
+          Accounts.get_user(entrant.user_id)
+        end)
+
+      %{"user_id" => user_id, "game_name" => tournament.game_name, "score" => 1}
+      |> Accounts.gain_score5()
+      |> IO.inspect()
+      render(conn, "tournament_info.json", tournament: tournament, entrants: entrants)
+    else
+      if tournament_log do
+        entrants = Log.get_entrant_logs_by_tournament_id(tournament_log.tournament_id)
+        tournament_log = Map.put(tournament_log, :entrants, entrants)
+
+        %{"user_id" => user_id, "game_name" => tournament_log.game_name, "score" => 1}
+        |> Accounts.gain_score5()
+        render(conn, "tournament_log.json", tournament_log: tournament_log)
+      else
+        render(conn, "error.json", error: nil)
+      end
+    end
+  end
+
   def show(conn, %{"tournament_id" => id}) do
     id = Tools.to_integer_as_needed(id)
 
