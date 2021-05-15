@@ -464,7 +464,19 @@ defmodule Milk.AccountsTest do
 
   describe "create action history" do
     test "works" do
+      games = ["Fortnite", "Apex Legends"]
+      gains = [1, 5, 7]
 
+      1..10
+      |> Enum.to_list()
+      |> Enum.map(fn n ->
+        fixture_user(n)
+      end)
+      |> Enum.map(fn user ->
+        assert {:ok, _action_history} =
+          %{"user_id" => user.id, "game_name" => Enum.random(games), "gain" => Enum.random(gains)}
+          |> Accounts.create_action_history()
+      end)
     end
   end
 
