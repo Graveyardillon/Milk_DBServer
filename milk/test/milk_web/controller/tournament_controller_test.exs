@@ -359,7 +359,7 @@ defmodule MilkWeb.TournamentControllerTest do
   end
 
   describe "create tournament" do
-    test "renders tournament when data is valid", %{conn: conn} do
+    test "renders tournament when data is valid (and scores gain in action history)", %{conn: conn} do
       {:ok, user} = fixture(:user)
       attrs = Map.put(@create_attrs, "master_id", user.id)
       conn = post(conn, Routes.tournament_path(conn, :create), %{tournament: attrs, file: ""})
@@ -367,7 +367,33 @@ defmodule MilkWeb.TournamentControllerTest do
 
       conn = post(conn, Routes.tournament_path(conn, :show, %{"tournament_id" => id}))
 
-      assert _tournament = json_response(conn, 200)["data"]
+      assert tournament = json_response(conn, 200)["data"]
+      json_response(conn, 200)
+      |> Map.get("data")
+      |> (fn tournament ->
+        assert tournament["capacity"] == @create_attrs["capacity"]
+        assert tournament["description"] == @create_attrs["description"]
+        assert tournament["game_name"] == @create_attrs["game_name"]
+        assert tournament["has_password"]
+        assert tournament["master_id"] == user.id
+        assert tournament["name"] == @create_attrs["name"]
+        assert tournament["platform"] == @create_attrs["platform"]
+        assert tournament["type"] == @create_attrs["type"]
+        assert tournament["url"] == @create_attrs["url"]
+      end).()
+
+      ActionHistory
+      |> where([ah], ah.user_id == ^tournament["master_id"])
+      |> Repo.all()
+      |> Enum.map(fn action_history ->
+        assert action_history.game_name == tournament["game_name"]
+        assert action_history.user_id == tournament["master_id"]
+        assert action_history.gain == 7
+      end)
+      |> length()
+      |> (fn len ->
+        assert len == 1
+      end).()
     end
 
     test "renders errors when data is mostly nil", %{conn: conn} do
