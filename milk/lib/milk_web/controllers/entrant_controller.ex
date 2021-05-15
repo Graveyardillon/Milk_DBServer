@@ -1,7 +1,10 @@
 defmodule MilkWeb.EntrantController do
   use MilkWeb, :controller
 
-  alias Milk.Tournaments
+  alias Milk.{
+    Accounts,
+    Tournaments
+  }
   alias Milk.Tournaments.Entrant
 
   # action_fallback MilkWeb.FallbackController
@@ -16,11 +19,15 @@ defmodule MilkWeb.EntrantController do
     end
   end
 
+  @doc """
+  Create an entrant.
+  """
   def create(conn, %{"entrant" => entrant_params}) do
     case Tournaments.create_entrant(entrant_params) do
       {:ok, %Entrant{} = entrant} ->
+        action_history(entrant)
         conn
-        # |> put_status(:created)
+        #|> put_status(:created)
         # |> put_resp_header("location", Routes.entrant_path(conn, :show, entrant))
         |> render("show.json", entrant: entrant)
 
@@ -35,6 +42,18 @@ defmodule MilkWeb.EntrantController do
     end
   end
 
+  defp action_history(entrant) do
+    {:ok, tournament} = Tournaments.get_tournament_including_logs(entrant.tournament_id)
+      |> IO.inspect()
+    IO.inspect(entrant)
+    %{"user_id" => entrant.user_id, "game_name" => tournament.game_name, "score" => 5}
+    |> Accounts.gain_score()
+    |> IO.inspect()
+  end
+
+  @doc """
+  Shows an entrant.
+  """
   def show(conn, %{"id" => id}) do
     entrant = Tournaments.get_entrant!(id)
 

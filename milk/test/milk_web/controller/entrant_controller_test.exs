@@ -1,7 +1,15 @@
 defmodule MilkWeb.EntrantControllerTest do
   use MilkWeb.ConnCase
 
-  alias Milk.{Tournaments, Accounts, TournamentProgress}
+  import Ecto.Query, warn: false
+
+  alias Milk.{
+    Accounts,
+    Repo,
+    TournamentProgress,
+    Tournaments
+  }
+  alias Milk.Accounts.ActionHistory
   alias Milk.Tournaments.Entrant
 
   @entrant_create_attrs %{
@@ -29,7 +37,8 @@ defmodule MilkWeb.EntrantControllerTest do
     "url" => "some url",
     "master_id" => 1,
     "platform_id" => 1,
-    "is_started" => true
+    "is_started" => true,
+    "game_name" => "fortnite"
   }
 
   def fixture(:entrant) do
@@ -86,8 +95,24 @@ defmodule MilkWeb.EntrantControllerTest do
 
       assert %{
                "id" => id,
-               "rank" => 42
+               "rank" => rank,
+               "tournament_id" => tournament_id,
+               "user_id" => user_id
              } = json_response(conn, 200)["data"]
+
+      ActionHistory
+      |> where([ah], ah.user_id == ^user_id)
+      |> Repo.all()
+      |> Enum.map(fn action_history ->
+        # TODO: 記述
+        #assert action_history.game_name == tournament["game_name"]
+        assert action_history.user_id == user_id
+        assert action_history.gain == 5
+      end)
+      |> length()
+      |> (fn len ->
+        assert len == 1
+      end).()
     end
 
     test "renders errors when data is invalid", %{conn: conn} do
