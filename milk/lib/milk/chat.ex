@@ -440,21 +440,24 @@ defmodule Milk.Chat do
             where: cm.user_id == ^attrs["user_id"] and cm.chat_room_id == ^attrs["chat_room_id"]
         )
       )
+      |> IO.inspect(label: :can_create)
 
     if can_create? do
-      case Multi.new()
-           |> Multi.run(:chat_room, fn repo, _ ->
-             {:ok, repo.get(ChatRoom, attrs["chat_room_id"])}
-           end)
-           |> Multi.insert(:chat, fn %{chat_room: chat_room} ->
-             %Chats{
-               user_id: attrs["user_id"],
-               chat_room_id: attrs["chat_room_id"],
-               index: chat_room.count + 1
-             }
-             |> Chats.changeset(attrs)
-           end)
-           |> Repo.transaction() do
+      Multi.new()
+      |> Multi.run(:chat_room, fn repo, _ ->
+        {:ok, repo.get(ChatRoom, attrs["chat_room_id"])}
+      end)
+      |> Multi.insert(:chat, fn %{chat_room: chat_room} ->
+        %Chats{
+          user_id: attrs["user_id"],
+          chat_room_id: attrs["chat_room_id"],
+          index: chat_room.count + 1
+        }
+        |> Chats.changeset(attrs)
+      end)
+      |> Repo.transaction()
+      |> IO.inspect()
+      |> case do
         {:ok, chat} ->
           chat.chat_room
           |> ChatRoom.changeset_update(%{last_chat: chat.chat.word, count: chat.chat.index})
@@ -565,6 +568,7 @@ defmodule Milk.Chat do
       _ = Repo.one(from cr in ChatRoom, where: cr.id == ^chat_room_id)
 
       attrs
+      |> IO.inspect(label: :attrs)
       |> create_chats()
     end
   end

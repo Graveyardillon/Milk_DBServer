@@ -58,10 +58,30 @@ defmodule Milk.Notif do
 
   """
   def create_notification(attrs \\ %{}) do
-    case Accounts.get_user(attrs["user_id"]) do
+    IO.inspect(attrs, label: :create_notification)
+    data =
+      attrs["data"]
+      |> is_nil()
+      |> unless do
+        if is_integer(attrs["data"]) do
+          to_string(attrs["data"])
+        else
+          attrs["data"]
+        end
+      end
+
+    attrs =
+      Map.put(attrs, "data", data)
+      |> IO.inspect(label: :after)
+
+    Accounts.get_user(attrs["user_id"])
+    |> IO.inspect()
+    |> case do
       %User{} = user ->
         Ecto.build_assoc(user, :notif)
+        |> IO.inspect(label: :assco)
         |> Notification.changeset(attrs)
+        |> IO.inspect(label: :changeset)
         |> Repo.insert()
         |> case do
           {:ok, notif} -> {:ok, Map.put(notif, :user, Accounts.get_user(attrs["user_id"]))}

@@ -154,12 +154,15 @@ defmodule MilkWeb.ChatsController do
   end
 
   def create_dialogue(conn, %{"chat_group" => chats_params}) do
-    case Chat.dialogue(chats_params) do
+    chats_params
+    |> Chat.dialogue()
+    |> IO.inspect(label: :createdialogue)
+    |> case do
       {:ok, %Chats{} = chats} ->
         members =
           Chat.get_chat_members_of_room(chats.chat_room_id)
           |> Enum.map(fn member ->
-            member.id
+            member.user_id
           end)
 
         conn
@@ -167,7 +170,6 @@ defmodule MilkWeb.ChatsController do
 
       {:error, error} ->
         render(conn, "error.json", error: error)
-
       _ ->
         render(conn, "error.json", error: nil)
     end

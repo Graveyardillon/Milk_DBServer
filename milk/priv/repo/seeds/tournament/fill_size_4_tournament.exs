@@ -36,10 +36,11 @@ end)
   }
 end)
 |> Enum.each(fn user ->
-  Repo.insert! %Entrant{
-    tournament_id: tournament.id,
-    user_id: user.id
+  %{
+    "tournament_id" => tournament.id,
+    "user_id" => user.id
   }
+  |> Tournaments.create_entrant()
 end)
 
 Tournaments.start(tournament.master_id, tournament.id)
