@@ -699,9 +699,7 @@ defmodule Milk.Tournaments do
 
   defp join_tournament_chat_room_as_needed(entrant, attrs) do
     tournament = get_tournament(attrs["tournament_id"])
-    IO.inspect(tournament.master_id == entrant.entrant.user_id, label: :entrant)
     if tournament.master_id == entrant.entrant.user_id do
-      IO.inspect(entrant, label: :entrant)
       {:ok, entrant.entrant}
     else
       join_tournament_chat_room(entrant, attrs)

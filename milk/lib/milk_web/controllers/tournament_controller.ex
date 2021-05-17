@@ -193,7 +193,6 @@ defmodule MilkWeb.TournamentController do
 
       %{"user_id" => user_id, "game_name" => tournament.game_name, "score" => 1}
       |> Accounts.gain_score()
-      |> IO.inspect()
       render(conn, "tournament_info.json", tournament: tournament, entrants: entrants)
     else
       if tournament_log do

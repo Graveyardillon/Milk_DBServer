@@ -157,7 +157,6 @@ defmodule MilkWeb.ChatsController do
   def create_dialogue(conn, %{"chat_group" => chats_params}) do
     chats_params
     |> Chat.dialogue()
-    |> IO.inspect(label: :createdialogue)
     |> case do
       {:ok, %Chats{} = chats} ->
         members =
