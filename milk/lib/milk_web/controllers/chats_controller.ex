@@ -1,6 +1,7 @@
 defmodule MilkWeb.ChatsController do
   use MilkWeb, :controller
 
+  alias Common.FileUtils
   alias Milk.Chat
   alias Milk.Chat.Chats
   alias Milk.Media.Image
@@ -73,7 +74,7 @@ defmodule MilkWeb.ChatsController do
     image_path =
       if image != "" do
         uuid = SecureRandom.uuid()
-        File.cp(image.path, "./static/image/chat/#{uuid}.jpg")
+        FileUtils.copy(image.path, "./static/image/chat/#{uuid}.jpg")
 
         case Application.get_env(:milk, :environment) do
           :dev ->
