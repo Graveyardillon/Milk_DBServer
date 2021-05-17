@@ -23,7 +23,9 @@ defmodule MilkWeb.EntrantController do
   Create an entrant.
   """
   def create(conn, %{"entrant" => entrant_params}) do
-    case Tournaments.create_entrant(entrant_params) do
+    entrant_params
+    |> Tournaments.create_entrant()
+    |> case do
       {:ok, %Entrant{} = entrant} ->
         action_history(entrant)
         conn

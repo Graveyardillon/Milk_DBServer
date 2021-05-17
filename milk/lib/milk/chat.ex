@@ -432,12 +432,14 @@ defmodule Milk.Chat do
 
   """
   def create_chats(attrs \\ %{}) do
+    IO.inspect(attrs, label: :chat_attrs)
     can_create? =
       !Tools.is_all_map_elements_nil?(attrs)
       |> Kernel.and(
         Repo.exists?(
           from cm in ChatMember,
-            where: cm.user_id == ^attrs["user_id"] and cm.chat_room_id == ^attrs["chat_room_id"]
+            where: cm.user_id == ^attrs["user_id"]
+            and cm.chat_room_id == ^attrs["chat_room_id"]
         )
       )
       |> IO.inspect(label: :can_create)
