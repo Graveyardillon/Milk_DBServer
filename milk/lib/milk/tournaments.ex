@@ -341,6 +341,19 @@ defmodule Milk.Tournaments do
     end)
   end
 
+  defp join_topics(tournament_id, master_id) do
+    tournament_id
+    |> Chat.get_chat_rooms_by_tournament_id()
+    |> Enum.each(fn chat_room ->
+      %{
+        "user_id" => master_id,
+        "authority" => 1,
+        "chat_room_id" => chat_room.id
+      }
+      |> Chat.create_chat_member()
+    end)
+  end
+
   defp create(attrs, thumbnail_path) do
     master_id = Tools.to_integer_as_needed(attrs["master_id"])
     platform_id = Tools.to_integer_as_needed(attrs["platform"])
@@ -368,11 +381,10 @@ defmodule Milk.Tournaments do
     |> Repo.transaction()
     |> case do
       {:ok, tournament} ->
+        join_topics(tournament.tournament.id, master_id)
         {:ok, tournament.tournament}
-
       {:error, error} ->
         {:error, error.errors}
-
       _ ->
         {:error, nil}
     end
@@ -603,7 +615,7 @@ defmodule Milk.Tournaments do
     |> not_entrant_check()
     |> insert()
     |> case do
-      {:ok, entrant} -> join_tournament_chat_room(entrant, attrs)
+      {:ok, entrant} -> join_tournament_chat_room_as_needed(entrant, attrs)
       {:error, _, error, _data} when is_bitstring(error) -> {:error, error}
       {:error, _, error, _data} -> {:multierror, error.errors}
       {:error, error} -> {:error, error}
@@ -685,6 +697,15 @@ defmodule Milk.Tournaments do
     {:error, error}
   end
 
+  defp join_tournament_chat_room_as_needed(entrant, attrs) do
+    tournament = get_tournament(attrs["tournament_id"])
+    if tournament.master_id == entrant.entrant.user_id do
+      {:ok, entrant.entrant}
+    else
+      join_tournament_chat_room(entrant, attrs)
+    end
+  end
+
   # TODO: リファクタリングできそう
   defp join_tournament_chat_room(entrant, attrs) do
     user_id =
@@ -708,7 +729,6 @@ defmodule Milk.Tournaments do
         else
           {:error, reason} ->
             {:error, reason}
-
           _ ->
             {:error, nil}
         end
