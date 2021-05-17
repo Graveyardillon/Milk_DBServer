@@ -6,7 +6,7 @@ defmodule MilkWeb.RelationControllerTest do
     Relations
   }
 
-  defp fixture_user(num \\ 0) do
+  defp fixture_user(num) do
     {:ok, user} =
       Map.new()
       |> Map.put("icon_path", "my_icon_path")

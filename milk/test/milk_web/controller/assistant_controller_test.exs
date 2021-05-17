@@ -82,7 +82,7 @@ defmodule MilkWeb.AssistantControllerTest do
 
     test "renders not_found_user", %{conn: conn} do
       tournament = fixture(:tournament)
-      user = fixture(:user)
+      fixture(:user)
 
       conn =
         post(conn, Routes.assistant_path(conn, :create), %{
@@ -97,7 +97,7 @@ defmodule MilkWeb.AssistantControllerTest do
     end
 
     test "renders not_found_tournament", %{conn: conn} do
-      tournament = fixture(:tournament)
+      fixture(:tournament)
       user = fixture(:user)
 
       conn =

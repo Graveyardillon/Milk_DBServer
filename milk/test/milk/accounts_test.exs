@@ -5,8 +5,8 @@ defmodule Milk.AccountsTest do
     Accounts,
     Profiles,
     Relations,
-    Chat,
-    Repo
+    Chat
+    # Repo
   }
 
   alias Milk.Accounts.{
@@ -34,25 +34,14 @@ defmodule Milk.AccountsTest do
     Accounts.get_user(user.id)
   end
 
-  defp fixture(:chat_member) do
-    %{"id" => user_id} = fixture_user()
-    attrs = %{"user_id" => user_id}
-    {:ok, chat_member} = Chat.create_chat_member(attrs)
-  end
+  # defp fixture(:chat_member) do
+  #   %{"id" => user_id} = fixture_user()
+  #   attrs = %{"user_id" => user_id}
+  #   {:ok, _chat_member} = Chat.create_chat_member(attrs)
+  # end
 
   describe "users get" do
     setup [:create_user]
-
-    @user2_valid_attrs %{
-      "icon_path" => "some icon_path",
-      "language" => "some language",
-      "name" => "some name2",
-      "notification_number" => 42,
-      "point" => 42,
-      "email" => "some2@email.com",
-      "logout_fl" => true,
-      "password" => "S1ome password"
-    }
     @invalid_attrs %{
       "icon_path" => nil,
       "language" => nil,
@@ -245,7 +234,7 @@ defmodule Milk.AccountsTest do
       assert {:ok, %User{}} = Accounts.login(login_params)
     end
 
-    test "login/1 can't login user by invalid username", %{user: user} do
+    test "login/1 can't login user by invalid username" do
       login_params = %{
         "password" => @user_valid_attrs["password"],
         "email_or_username" => "invalid"
@@ -254,7 +243,7 @@ defmodule Milk.AccountsTest do
       assert {:error, nil} == Accounts.login(login_params)
     end
 
-    test "login/1 can't login user by invalid email", %{user: user} do
+    test "login/1 can't login user by invalid email" do
       login_params = %{
         "password" => @user_valid_attrs["password"],
         "email_or_username" => "invalid@a.com"
@@ -480,7 +469,7 @@ defmodule Milk.AccountsTest do
     end
   end
 
-  defp create_chat_member(_) do
-    %{chat_member: fixture(:chat_member)}
-  end
+  # defp create_chat_member(_) do
+  #   %{chat_member: fixture(:chat_member)}
+  # end
 end

@@ -84,16 +84,6 @@ defmodule Milk.ChatTest do
   describe "chat_room" do
     @update_attrs %{count: 43, last_chat: "some updated last_chat", name: "some updated name"}
     @invalid_attrs %{count: nil, last_chat: nil, name: "aa"}
-    @user_valid_attrs %{
-      "icon_path" => "some icon_path",
-      "language" => "some language",
-      "name" => "some name",
-      "notification_number" => 42,
-      "point" => 42,
-      "email" => "some@email.com",
-      "logout_fl" => true,
-      "password" => "S1ome password"
-    }
 
     setup [:create_chat_room]
     setup [:create_chat_member]
@@ -194,7 +184,7 @@ defmodule Milk.ChatTest do
       assert chat_member.authority == 42
     end
 
-    test "create_chat_member/1 with invalid data returns an error", %{chat_member: chat_member} do
+    test "create_chat_member/1 with invalid data returns an error" do
       assert {:error, _} = Chat.create_chat_member(%{"user_id" => -1, "chat_room_id" => 111})
     end
 
@@ -222,20 +212,8 @@ defmodule Milk.ChatTest do
 
   describe "chat" do
     alias Milk.Chat.Chats
-    @room_attrs %{count: 42, last_chat: "some last_chat", name: "some name"}
-
     @update_attrs %{word: "some updated word"}
     @invalid_attrs %{"word" => nil}
-    @user_attrs %{
-      "icon_path" => "some icon_path",
-      "language" => "some language",
-      "name" => "some name",
-      "notification_number" => 42,
-      "point" => 42,
-      "email" => "some email",
-      "logout_fl" => true,
-      "password" => "S1ome password"
-    }
     setup [:create_chat]
 
     test "list_chat/1 returns all chat", %{chat: chats} do
@@ -262,13 +240,12 @@ defmodule Milk.ChatTest do
       assert nil == Chat.get_chat(chats.chat_room_id, chats.index)
     end
 
-    test "sync/1 gets all chats from user_id", %{chat: chats, user_id: user_id} do
+    test "sync/1 gets all chats from user_id", %{user_id: user_id} do
       assert [%{"data" => chat_list, "room_id" => room_id}] = Chat.sync(user_id)
     end
 
     test "get_latest_chat gets a latest chat", %{
       chat: chats,
-      user_id: user_id,
       chat_room_id: chat_room_id
     } do
       assert Chat.get_latest_chat(chat_room_id) == [chats]

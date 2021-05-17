@@ -2,7 +2,6 @@ defmodule MilkWeb.UserControllerTest do
   use MilkWeb.ConnCase
 
   alias Milk.Accounts
-  alias Milk.Accounts.User
 
   @create_attrs %{
     "icon_path" => "some icon_path",
@@ -12,13 +11,6 @@ defmodule MilkWeb.UserControllerTest do
     "point" => 42,
     "password" => "Password123",
     "email" => "e@mail.com"
-  }
-  @update_attrs %{
-    icon_path: "some updated icon_path",
-    language: "some updated language",
-    name: "some updated name",
-    notification_number: 43,
-    point: 43
   }
   @invalid_attrs %{icon_path: nil, language: nil, name: nil, notification_number: nil, point: nil}
 
@@ -173,7 +165,7 @@ defmodule MilkWeb.UserControllerTest do
     end
 
     test "renders error when invalid email", %{conn: conn} do
-      {:ok, user} =
+      {:ok, _user} =
         Accounts.create_user(%{
           "name" => "name",
           "email" => "e@mail.com",
@@ -190,7 +182,7 @@ defmodule MilkWeb.UserControllerTest do
     end
 
     test "renders error when invalid password", %{conn: conn} do
-      {:ok, user} =
+      {:ok, _user} =
         Accounts.create_user(%{
           "name" => "name",
           "email" => "e@mail.com",
@@ -351,7 +343,7 @@ defmodule MilkWeb.UserControllerTest do
       password = "Password123"
       new_password = "321passworD"
 
-      {:ok, user} =
+      {:ok, _user} =
         Accounts.create_user(%{
           "name" => "name",
           "email" => email,
@@ -380,8 +372,8 @@ defmodule MilkWeb.UserControllerTest do
     end
   end
 
-  defp create_user(_) do
-    user = fixture(:user)
-    {:ok, user: user}
-  end
+  # defp create_user(_) do
+  #   user = fixture(:user)
+  #   {:ok, user: user}
+  # end
 end

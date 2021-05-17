@@ -2,7 +2,7 @@ defmodule Milk.ProfilesTest do
   use Milk.DataCase
 
   alias Milk.{
-    Profiles
+    # Profiles
   }
 
   describe "profiles get" do
