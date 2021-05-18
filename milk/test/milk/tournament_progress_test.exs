@@ -31,7 +31,7 @@ defmodule Milk.TournamentProgressTest do
 
   @moduletag timeout: :infinity
 
-  defp fixture_user(n \\ 0) do
+  defp fixture_user(n) do
     attrs = %{
       "icon_path" => "some icon_path",
       "language" => "some language",
@@ -83,31 +83,31 @@ defmodule Milk.TournamentProgressTest do
     tournament
   end
 
-  defp fixture_entrant(opts \\ %{}) do
-    tournament =
-      opts["tournament_id"]
-      |> is_nil()
-      |> unless do
-        Tournaments.get_tournament!(opts["tournament_id"])
-      else
-        fixture_tournament()
-      end
+  # defp fixture_entrant(opts \\ %{}) do
+  #   tournament =
+  #     opts["tournament_id"]
+  #     |> is_nil()
+  #     |> unless do
+  #       Tournaments.get_tournament!(opts["tournament_id"])
+  #     else
+  #       fixture_tournament()
+  #     end
 
-    user_id =
-      opts["user_id"]
-      |> is_nil()
-      |> unless do
-        opts["user_id"]
-      else
-        tournament.master_id
-      end
+  #   user_id =
+  #     opts["user_id"]
+  #     |> is_nil()
+  #     |> unless do
+  #       opts["user_id"]
+  #     else
+  #       tournament.master_id
+  #     end
 
-    {:ok, entrant} =
-      %{@entrant_create_attrs | "tournament_id" => tournament.id, "user_id" => user_id}
-      |> Tournaments.create_entrant()
+  #   {:ok, entrant} =
+  #     %{@entrant_create_attrs | "tournament_id" => tournament.id, "user_id" => user_id}
+  #     |> Tournaments.create_entrant()
 
-    entrant
-  end
+  #   entrant
+  # end
 
   defp create_entrants(num, tournament_id, result \\ []),
     do: create_entrants(num, tournament_id, result, num)
@@ -137,10 +137,10 @@ defmodule Milk.TournamentProgressTest do
     create_entrants(num, tournament_id, result ++ [entrant], current - 1)
   end
 
-  defp create_entrant(_) do
-    entrant = fixture_entrant()
-    %{entrant: entrant}
-  end
+  # defp create_entrant(_) do
+  #   entrant = fixture_entrant()
+  #   %{entrant: entrant}
+  # end
 
   defp start(master_id, tournament_id) do
     Tournaments.start(master_id, tournament_id)
