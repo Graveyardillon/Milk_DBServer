@@ -28,7 +28,6 @@ defmodule Milk.Tournaments.Tournament do
     field :game_name, :string
     field :is_started, :boolean, default: false
     field :start_recruiting, EctoDate
-    field :start_notification_pid, :string
 
     belongs_to :platform, Platform
     belongs_to :game, Game
@@ -59,8 +58,7 @@ defmodule Milk.Tournaments.Tournament do
       :master_id,
       :count,
       :is_started,
-      :start_recruiting,
-      :start_notification_pid
+      :start_recruiting
     ])
     |> validate_required([:name, :event_date, :capacity, :deadline, :type])
     |> foreign_key_constraint(:platform_id)
@@ -99,8 +97,7 @@ defmodule Milk.Tournaments.Tournament do
       :master_id,
       :count,
       :is_started,
-      :start_recruiting,
-      :start_notification_pid
+      :start_recruiting
     ])
     |> validate_required([:name, :event_date, :capacity, :deadline])
     |> foreign_key_constraint(:platform_id)

@@ -75,7 +75,7 @@ defmodule Milk.TournamentProgress do
          {:ok, value} <- Redix.command(conn, ["GET", tournament_id]) do
       if value do
         {match_list, _} = Code.eval_string(value)
-        [{tournament_id, match_list}]
+        match_list
       else
         []
       end
@@ -160,7 +160,7 @@ defmodule Milk.TournamentProgress do
          {:ok, value} <- Redix.command(conn, ["GET", tournament_id]) do
       if value do
         {match_list, _} = Code.eval_string(value)
-        [{tournament_id, match_list}]
+        match_list
       else
         []
       end

@@ -97,18 +97,6 @@ defmodule MilkWeb.TournamentController do
   end
 
   @doc """
-  Get a pid of a spacific tournament.
-  """
-  def get_pid(conn, %{"tournament_id" => tournament_id}) do
-    pid =
-      tournament_id
-      |> Tournaments.get_tournament!()
-      |> Map.get(:start_notification_pid)
-
-    json(conn, %{pid: pid})
-  end
-
-  @doc """
   Create a tournament.
   """
   def create(conn, %{"tournament" => tournament_params, "file" => file}) do
@@ -162,6 +150,8 @@ defmodule MilkWeb.TournamentController do
             tournament
             |> Map.put(:followers, Relations.get_followers(tournament.master_id))
 
+          %{"user_id" => tournament.master_id, "game_name" => tournament.game_name, "score" => 7}
+          |> Accounts.gain_score()
           render(conn, "create.json", tournament: tournament)
 
         {:error, error} ->
@@ -176,6 +166,36 @@ defmodule MilkWeb.TournamentController do
   @doc """
   Show tournament information.
   """
+  def show(conn, %{"user_id" => user_id, "tournament_id" => id}) do
+    id = Tools.to_integer_as_needed(id)
+
+    tournament = Tournaments.get_tournament(id)
+    tournament_log = Log.get_tournament_log_by_tournament_id(id)
+
+    if tournament do
+      entrants =
+        Tournaments.get_entrants(tournament.id)
+        |> Enum.map(fn entrant ->
+          Accounts.get_user(entrant.user_id)
+        end)
+
+      %{"user_id" => user_id, "game_name" => tournament.game_name, "score" => 1}
+      |> Accounts.gain_score()
+      render(conn, "tournament_info.json", tournament: tournament, entrants: entrants)
+    else
+      if tournament_log do
+        entrants = Log.get_entrant_logs_by_tournament_id(tournament_log.tournament_id)
+        tournament_log = Map.put(tournament_log, :entrants, entrants)
+
+        %{"user_id" => user_id, "game_name" => tournament_log.game_name, "score" => 1}
+        |> Accounts.gain_score()
+        render(conn, "tournament_log.json", tournament_log: tournament_log)
+      else
+        render(conn, "error.json", error: nil)
+      end
+    end
+  end
+
   def show(conn, %{"tournament_id" => id}) do
     id = Tools.to_integer_as_needed(id)
 
@@ -489,7 +509,7 @@ defmodule MilkWeb.TournamentController do
     with {:ok, _} <- Tournaments.start(master_id, tournament.id),
          {:ok, match_list, match_list_with_fight_result} <-
            make_single_elimination_matches(conn, tournament.id) do
-      with [{_, match_list}] <- TournamentProgress.get_match_list(tournament.id) do
+      with match_list <- TournamentProgress.get_match_list(tournament.id) do
         TournamentProgress.set_time_limit_on_all_entrants(match_list, tournament.id)
       end
 
@@ -629,7 +649,7 @@ defmodule MilkWeb.TournamentController do
   end
 
   defp store_single_tournament_match_log(tournament_id, loser_id) when is_integer(loser_id) do
-    [{_, match_list}] = TournamentProgress.get_match_list(tournament_id)
+    match_list = TournamentProgress.get_match_list(tournament_id)
 
     {:ok, winner} =
       match_list
@@ -657,8 +677,7 @@ defmodule MilkWeb.TournamentController do
       [] ->
         json(conn, %{result: false, match: nil})
 
-      list when is_list(list) ->
-        {_, match_list} = hd(list)
+      match_list when is_list(match_list) ->
         match = Tournaments.find_match(match_list, user_id)
         result = Tournaments.is_alone?(match)
 
@@ -725,16 +744,12 @@ defmodule MilkWeb.TournamentController do
   def get_match_list(conn, %{"tournament_id" => tournament_id}) do
     tournament_id = Tools.to_integer_as_needed(tournament_id)
 
-    list = TournamentProgress.get_match_list(tournament_id)
+    match_list = TournamentProgress.get_match_list(tournament_id)
 
-    list =
-      unless list == [] do
-        hd(list)
-      end
-
-    case list do
-      {_, match_list} -> json(conn, %{match_list: match_list, result: true})
-      _ -> json(conn, %{match_list: nil, result: false})
+    if match_list == [] do
+      json(conn, %{match_list: nil, result: false})
+    else
+      json(conn, %{match_list: match_list, result: true})
     end
   end
 
@@ -762,10 +777,7 @@ defmodule MilkWeb.TournamentController do
     tournament_id = Tools.to_integer_as_needed(tournament_id)
     user_id = Tools.to_integer_as_needed(user_id)
 
-    {_, match_list} =
-      tournament_id
-      |> TournamentProgress.get_match_list()
-      |> hd()
+    match_list = TournamentProgress.get_match_list(tournament_id)
 
     unless is_integer(match_list) do
       match = Tournaments.find_match(match_list, user_id)
@@ -832,7 +844,7 @@ defmodule MilkWeb.TournamentController do
     user_id = Tools.to_integer_as_needed(user_id)
     tournament_id = Tools.to_integer_as_needed(tournament_id)
 
-    {_, match_list} = hd(TournamentProgress.get_match_list(tournament_id))
+    match_list = TournamentProgress.get_match_list(tournament_id)
 
     has_lost = Tournaments.has_lost?(match_list, user_id)
 
@@ -982,7 +994,7 @@ defmodule MilkWeb.TournamentController do
   end
 
   defp finish_as_needed(tournament_id, winner_id) do
-    [{_, match_list}] = TournamentProgress.get_match_list(tournament_id)
+    match_list = TournamentProgress.get_match_list(tournament_id)
     tournament = Tournaments.get_tournament(tournament_id)
 
     if is_integer(match_list) do
@@ -1139,19 +1151,16 @@ defmodule MilkWeb.TournamentController do
   """
   def brackets_with_fight_result(conn, %{"tournament_id" => tournament_id}) do
     tournament_id = Tools.to_integer_as_needed(tournament_id)
-    list = TournamentProgress.get_match_list_with_fight_result(tournament_id)
-    list = unless list == [], do: hd(list)
+    match_list = TournamentProgress.get_match_list_with_fight_result(tournament_id)
 
-    case list do
-      {_, match_list} ->
-        brackets = Tournaments.data_with_fight_result_for_brackets(match_list)
+    if match_list == [] do
+      json(conn, %{data: nil, result: false, count: nil})
+    else
+      brackets = Tournaments.data_with_fight_result_for_brackets(match_list)
         count = Enum.count(brackets) * 2
         num_for_brackets = Tournamex.Number.closest_number_to_power_of_two(count)
 
         json(conn, %{data: brackets, result: true, count: num_for_brackets})
-
-      _ ->
-        json(conn, %{data: nil, result: false, count: nil})
     end
   end
 
@@ -1184,24 +1193,6 @@ defmodule MilkWeb.TournamentController do
       |> Tournamex.Number.closest_number_to_power_of_two()
 
     json(conn, %{result: true, data: brackets, count: count})
-  end
-
-  @doc """
-  Registers PID of start notification.
-  The notification is handled in Web Server, so the pid does not belong to this server.
-  """
-  def register_pid_of_start_notification(conn, %{"tournament_id" => tournament_id, "pid" => pid}) do
-    tournament_id = Tools.to_integer_as_needed(tournament_id)
-
-    # FIXME: エラーハンドリング
-    tournament_id
-    |> Tournaments.get_tournament!()
-    |> Tournaments.update_tournament(%{"start_notification_pid" => pid})
-    |> case do
-      {:ok, _tournament} -> json(conn, %{result: true})
-      {:error, nil} -> json(conn, %{result: false})
-      {:error, _error} -> json(conn, %{result: false})
-    end
   end
 
   def verify_password(conn, %{"tournament_id" => tournament_id, "password" => password}) do

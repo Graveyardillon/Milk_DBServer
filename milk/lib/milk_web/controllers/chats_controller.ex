@@ -1,6 +1,7 @@
 defmodule MilkWeb.ChatsController do
   use MilkWeb, :controller
 
+  alias Common.FileUtils
   alias Milk.Chat
   alias Milk.Chat.Chats
   alias Milk.Media.Image
@@ -73,7 +74,7 @@ defmodule MilkWeb.ChatsController do
     image_path =
       if image != "" do
         uuid = SecureRandom.uuid()
-        File.cp(image.path, "./static/image/chat/#{uuid}.jpg")
+        FileUtils.copy(image.path, "./static/image/chat/#{uuid}.jpg")
 
         case Application.get_env(:milk, :environment) do
           :dev ->
@@ -154,12 +155,14 @@ defmodule MilkWeb.ChatsController do
   end
 
   def create_dialogue(conn, %{"chat_group" => chats_params}) do
-    case Chat.dialogue(chats_params) do
+    chats_params
+    |> Chat.dialogue()
+    |> case do
       {:ok, %Chats{} = chats} ->
         members =
           Chat.get_chat_members_of_room(chats.chat_room_id)
           |> Enum.map(fn member ->
-            member.id
+            member.user_id
           end)
 
         conn
@@ -167,7 +170,6 @@ defmodule MilkWeb.ChatsController do
 
       {:error, error} ->
         render(conn, "error.json", error: error)
-
       _ ->
         render(conn, "error.json", error: nil)
     end

@@ -20,11 +20,17 @@ defmodule MilkWeb.EntrantController do
     end
   end
 
+  @doc """
+  Create an entrant.
+  """
   def create(conn, %{"entrant" => entrant_params}) do
-    case Tournaments.create_entrant(entrant_params) do
+    entrant_params
+    |> Tournaments.create_entrant()
+    |> case do
       {:ok, %Entrant{} = entrant} ->
+        action_history(entrant)
         conn
-        # |> put_status(:created)
+        #|> put_status(:created)
         # |> put_resp_header("location", Routes.entrant_path(conn, :show, entrant))
         |> render("show.json", entrant: entrant)
 
@@ -39,6 +45,15 @@ defmodule MilkWeb.EntrantController do
     end
   end
 
+  defp action_history(entrant) do
+    {:ok, tournament} = Tournaments.get_tournament_including_logs(entrant.tournament_id)
+    %{"user_id" => entrant.user_id, "game_name" => tournament.game_name, "score" => 5}
+    |> Accounts.gain_score()
+  end
+
+  @doc """
+  Shows an entrant.
+  """
   def show(conn, %{"id" => id}) do
     entrant = Tournaments.get_entrant!(id)
 

@@ -31,7 +31,7 @@ defmodule Milk.TournamentProgressTest do
 
   @moduletag timeout: :infinity
 
-  defp fixture_user(n \\ 0) do
+  defp fixture_user(n) do
     attrs = %{
       "icon_path" => "some icon_path",
       "language" => "some language",
@@ -83,31 +83,31 @@ defmodule Milk.TournamentProgressTest do
     tournament
   end
 
-  defp fixture_entrant(opts \\ %{}) do
-    tournament =
-      opts["tournament_id"]
-      |> is_nil()
-      |> unless do
-        Tournaments.get_tournament!(opts["tournament_id"])
-      else
-        fixture_tournament()
-      end
+  # defp fixture_entrant(opts \\ %{}) do
+  #   tournament =
+  #     opts["tournament_id"]
+  #     |> is_nil()
+  #     |> unless do
+  #       Tournaments.get_tournament!(opts["tournament_id"])
+  #     else
+  #       fixture_tournament()
+  #     end
 
-    user_id =
-      opts["user_id"]
-      |> is_nil()
-      |> unless do
-        opts["user_id"]
-      else
-        tournament.master_id
-      end
+  #   user_id =
+  #     opts["user_id"]
+  #     |> is_nil()
+  #     |> unless do
+  #       opts["user_id"]
+  #     else
+  #       tournament.master_id
+  #     end
 
-    {:ok, entrant} =
-      %{@entrant_create_attrs | "tournament_id" => tournament.id, "user_id" => user_id}
-      |> Tournaments.create_entrant()
+  #   {:ok, entrant} =
+  #     %{@entrant_create_attrs | "tournament_id" => tournament.id, "user_id" => user_id}
+  #     |> Tournaments.create_entrant()
 
-    entrant
-  end
+  #   entrant
+  # end
 
   defp create_entrants(num, tournament_id, result \\ []),
     do: create_entrants(num, tournament_id, result, num)
@@ -137,10 +137,10 @@ defmodule Milk.TournamentProgressTest do
     create_entrants(num, tournament_id, result ++ [entrant], current - 1)
   end
 
-  defp create_entrant(_) do
-    entrant = fixture_entrant()
-    %{entrant: entrant}
-  end
+  # defp create_entrant(_) do
+  #   entrant = fixture_entrant()
+  #   %{entrant: entrant}
+  # end
 
   defp start(master_id, tournament_id) do
     Tournaments.start(master_id, tournament_id)
@@ -193,11 +193,48 @@ defmodule Milk.TournamentProgressTest do
     test "get_match_list/1 works fine" do
       match_list = [[1, 2], 3]
       TournamentProgress.insert_match_list(match_list, 2)
-      {tid, match_list} = TournamentProgress.get_match_list(2) |> hd()
-      assert tid
+      match_list = TournamentProgress.get_match_list(2)
       assert match_list
-      assert tid == 2
       assert match_list == [[1, 2], 3]
+    end
+
+    test "get_match_list/1 returns data 1 size smaller than past one after deleting a user" do
+      tournament = fixture_tournament()
+      entrants = create_entrants(8, tournament.id)
+      entrant_id_list = Enum.map(entrants, fn entrant -> entrant.user_id end)
+      start(tournament.master_id, tournament.id)
+
+      tournament.id
+      |> TournamentProgress.get_match_list()
+      |> List.flatten()
+      |> Enum.map(fn user_id ->
+        assert user_id in entrant_id_list
+      end)
+      |> length()
+      |> (fn len ->
+        assert len == length(entrants)
+      end).()
+
+      entrants
+      |> hd()
+      |> Map.get(:user_id)
+      |> Accounts.get_user()
+      |> Accounts.delete()
+
+      tournament.id
+      |> TournamentProgress.get_match_list()
+      |> List.flatten()
+      |> Enum.map(fn user_id ->
+        if user_id == hd(entrants).user_id do
+          refute user_id in entrant_id_list
+        else
+          assert user_id in entrant_id_list
+        end
+      end)
+      |> length()
+      |> (fn len ->
+        assert len == length(entrants) - 1
+      end).()
     end
 
     test "delete_match_list/1 works fine" do
@@ -255,17 +292,72 @@ defmodule Milk.TournamentProgressTest do
 
   describe "match list with fight result" do
     test "insert_match_list_with_fight_result/2" do
-      match_list = [[1, 2], 3]
+      match_list = [
+        [
+          %{"user_id" => 1},
+          %{"user_id" => 2}
+        ],
+        %{"user_id" => 3}
+      ]
       r = TournamentProgress.insert_match_list_with_fight_result(match_list, 1)
       assert r
       assert is_boolean(r)
     end
 
     test "get_match_list_with_fight_result/1" do
-      match_list = [[1, 2], 3]
+      match_list = [
+        [
+          %{"user_id" => 1},
+          %{"user_id" => 2}
+        ],
+        %{"user_id" => 3}
+      ]
       TournamentProgress.insert_match_list_with_fight_result(match_list, 2)
-      assert {_, r} = TournamentProgress.get_match_list_with_fight_result(2) |> hd()
-      assert r == match_list
+
+      2
+      |> TournamentProgress.get_match_list_with_fight_result()
+      |> (fn result ->
+        result == match_list
+      end).()
+    end
+
+    test "get_match_list/1 returns data which is renewed after deleting a user" do
+      tournament = fixture_tournament()
+      entrants = create_entrants(8, tournament.id)
+      entrant_id_list = Enum.map(entrants, fn entrant -> entrant.user_id end)
+      start(tournament.master_id, tournament.id)
+
+      tournament.id
+      |> TournamentProgress.get_match_list_with_fight_result()
+      |> List.flatten()
+      |> Enum.map(fn bracket ->
+        assert is_map(bracket)
+        if is_map(bracket) do
+          assert bracket["user_id"] in entrant_id_list
+          assert bracket["is_loser"] == false
+        end
+      end)
+
+      entrants
+      |> hd()
+      |> Map.get(:user_id)
+      |> Accounts.get_user()
+      |> Accounts.delete()
+
+      tournament.id
+      |> TournamentProgress.get_match_list_with_fight_result()
+      |> List.flatten()
+      |> Enum.map(fn bracket ->
+        if is_map(bracket) do
+          if bracket["user_id"] == hd(entrants).user_id do
+            assert bracket["user_id"] in entrant_id_list
+            assert bracket["is_loser"]
+          else
+            assert bracket["user_id"] in entrant_id_list
+            assert bracket["is_loser"] == false
+          end
+        end
+      end)
     end
 
     test "delete_match_list_with_fight_result/1" do
