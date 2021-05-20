@@ -2708,6 +2708,24 @@ defmodule MilkWeb.TournamentControllerTest do
         tournament.id
         |> TournamentProgress.get_match_list_with_fight_result()
 
+      conn =
+        get(conn, Routes.tournament_path(conn, :score),
+          tournament_id: tournament.id,
+          user_id: entrant1.user_id
+        )
+
+      refute json_response(conn, 200)["result"]
+      assert is_nil(json_response(conn, 200)["score"])
+
+      conn =
+        get(conn, Routes.tournament_path(conn, :score),
+          tournament_id: tournament.id,
+          user_id: opponent["id"]
+        )
+
+      refute json_response(conn, 200)["result"]
+      assert is_nil(json_response(conn, 200)["score"])
+
       match_list
       |> List.flatten()
       |> length()
