@@ -177,6 +177,10 @@ defmodule Milk.TournamentProgress do
       [] ->
         tournament_id
         |> get_match_list_with_fight_result_log()
+        |> hd()
+        |> Map.get(:match_list_with_fight_result_str)
+        |> Code.eval_string()
+        |> elem(0)
       match_list ->
         match_list
     end

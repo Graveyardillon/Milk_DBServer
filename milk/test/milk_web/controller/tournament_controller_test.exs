@@ -2304,13 +2304,9 @@ defmodule MilkWeb.TournamentControllerTest do
 
       TournamentProgress.get_match_list_with_fight_result_including_log(tournament.id)
       |> (fn list ->
-            assert hd(list).tournament_id == tournament.id
             list
-            |> hd()
-            |> Map.get(:match_list_with_fight_result_str)
-            |> Code.eval_string()
-            |> elem(0)
-            |> is_list()
+            |> length()
+            |> Kernel.==(2)
             |> assert()
           end).()
 

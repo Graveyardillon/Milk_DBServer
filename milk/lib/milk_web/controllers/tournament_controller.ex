@@ -1002,6 +1002,14 @@ defmodule MilkWeb.TournamentController do
     tournament = Tournaments.get_tournament(tournament_id)
 
     if is_integer(match_list) do
+      tournament_id
+      |> TournamentProgress.get_match_list_with_fight_result()
+      |> inspect()
+      |> (fn str ->
+        %{"tournament_id" => tournament_id, "match_list_with_fight_result_str" => str}
+      end).()
+      |> TournamentProgress.create_match_list_with_fight_result_log()
+
       result = Tournaments.finish(tournament_id, winner_id)
       TournamentProgress.delete_match_list(tournament_id)
       TournamentProgress.delete_match_list_with_fight_result(tournament_id)
