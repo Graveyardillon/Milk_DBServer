@@ -12,5 +12,7 @@ defmodule Milk.Repo.Migrations.CreateEntrant do
 
     create index(:entrants, [:tournament_id])
     create index(:entrants, [:user_id])
+    
+    create unique_index(:entrants, [:user_id, :tournament_id])
   end
 end
