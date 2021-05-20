@@ -1,6 +1,7 @@
 defmodule MilkWeb.EntrantController do
   use MilkWeb, :controller
 
+  alias Common.Tools
   alias Milk.{
     Accounts,
     Tournaments
@@ -93,6 +94,9 @@ defmodule MilkWeb.EntrantController do
   end
 
   def show_rank(conn, %{"tournament_id" => tournament_id, "user_id" => user_id}) do
+    tournament_id = Tools.to_integer_as_needed(tournament_id)
+    user_id = Tools.to_integer_as_needed(user_id)
+
     case Tournaments.get_rank(tournament_id, user_id) do
       {:error, msg} -> render(conn, "error.json", error: msg)
       rank -> render(conn, "rank.json", rank: rank)
