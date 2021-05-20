@@ -16,6 +16,7 @@ defmodule Milk.TournamentProgress do
 
   alias Milk.TournamentProgress.{
     BestOfXTournamentMatchLog,
+    MatchListWithFightResultLog,
     SingleTournamentMatchLog
   }
 
@@ -643,6 +644,22 @@ defmodule Milk.TournamentProgress do
   def create_best_of_x_tournament_match_log(attrs \\ %{}) do
     %BestOfXTournamentMatchLog{}
     |> BestOfXTournamentMatchLog.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  """
+  match list with fight result log.
+  """
+
+  def get_match_list_with_fight_result_log(tournament_id) do
+    MatchListWithFightResultLog
+    |> where([l], l.tournament_id == ^tournament_id)
+    |> Repo.one()
+  end
+
+  def create_match_list_with_fight_result_log(attrs \\ %{}) do
+    %MatchListWithFightResultLog{}
+    |> MatchListWithFightResultLog.changeset(attrs)
     |> Repo.insert()
   end
 end
