@@ -1695,11 +1695,12 @@ defmodule Milk.Tournaments do
   Construct data with game scores for brackets.
   """
   def data_with_scores_for_brackets(tournament_id) do
-    match_list = TournamentProgress.get_match_list_with_fight_result(tournament_id)
+    match_list = TournamentProgress.get_match_list_with_fight_result_including_log(tournament_id)
 
     # add game_scores
     match_list
     |> List.flatten()
+    |> IO.inspect()
     |> Enum.map(fn bracket ->
       user_id = bracket["user_id"]
 
