@@ -463,6 +463,7 @@ defmodule MilkWeb.TournamentController do
   Get tournament topics.
   """
   def tournament_topics(conn, %{"tournament_id" => tournament_id}) do
+    tournament_id = Tools.to_integer_as_needed(tournament_id)
     tabs = Tournaments.get_tabs_by_tournament_id(tournament_id)
 
     render(conn, "tournament_topics.json", topics: tabs)
