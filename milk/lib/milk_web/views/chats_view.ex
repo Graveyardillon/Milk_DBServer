@@ -23,6 +23,7 @@ defmodule MilkWeb.ChatsView do
   def render("chats.json", %{chats: chats}) do
     %{
       id: chats.id,
+      user_id: chats.user_id,
       word: chats.word,
       index: chats.index
     }
