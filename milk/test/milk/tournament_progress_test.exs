@@ -533,12 +533,6 @@ defmodule Milk.TournamentProgressTest do
         assert log.tournament_id == tournament_id
         assert log.match_list_with_fight_result_str == str
       end).()
-
-      TournamentProgress.get_match_list_with_fight_result_log(tournament_id)
-      |> (fn log ->
-        assert log.match_list_with_fight_result_str == str
-        assert log.tournament_id == tournament_id
-      end).()
     end
   end
 end
