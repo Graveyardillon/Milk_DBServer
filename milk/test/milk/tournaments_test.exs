@@ -570,6 +570,35 @@ defmodule Milk.TournamentsTest do
     test "create_entrant/1 with an invalid data does not work" do
       assert {:error, _} = Tournaments.create_entrant(@invalid_entrant_create_attrs)
     end
+
+    test "create_entrant/1 returns an error when entrant already exists" do
+      user = fixture_user()
+      tournament = fixture_tournament()
+
+      entrant_param = @entrant_create_attrs
+      |> Map.put("tournament_id", tournament.id)
+      |> Map.put("user_id", user.id)
+      Tournaments.create_entrant(entrant_param)
+
+      Tournaments.create_entrant(entrant_param)
+      |> Kernel.==({:error, "Already joined"})
+      |> assert()
+    end
+
+    test "create_entrant/1 returns a multi error when it runs with same parameter at one time." do
+      user = fixture_user()
+      tournament = fixture_tournament()
+
+      entrant_param = @entrant_create_attrs
+        |> Map.put("tournament_id", tournament.id)
+        |> Map.put("user_id", user.id)
+
+      create_entrant_task = Task.async(fn -> Tournaments.create_entrant(entrant_param) end)
+
+      Tournaments.create_entrant(entrant_param)|>IO.inspect()|>assert
+      Task.await(create_entrant_task)|> IO.inspect(label: :diw)
+      Repo.all(Entrant)|> IO.inspect(label: :fwnwew)
+    end
   end
 
   describe "update entrant" do

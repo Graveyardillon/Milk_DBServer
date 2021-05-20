@@ -615,10 +615,10 @@ defmodule Milk.Tournaments do
     |> not_entrant_check()
     |> insert()
     |> case do
-      {:ok, entrant} -> join_tournament_chat_room_as_needed(entrant, attrs)
-      {:error, _, error, _data} when is_bitstring(error) -> {:error, error}
+      {:ok, entrant} -> join_tournament_chat_room_as_needed(entrant|> IO.inspect(label: :fhnudis), attrs)
+      {:error, _, error, _data} when is_bitstring(error) -> {:error, error}|> IO.inspect(label: :fhnudis)
       {:error, _, error, _data} -> {:multierror, error.errors}
-      {:error, error} -> {:error, error}
+      {:error, error} -> {:error, error}|> IO.inspect(label: :fwnfiew)
       _ -> {:error, nil}
     end
   end
