@@ -1140,6 +1140,15 @@ defmodule MilkWeb.TournamentController do
   """
   def finish(conn, %{"tournament_id" => tournament_id, "user_id" => user_id}) do
     result = Tournaments.finish(tournament_id, user_id)
+
+    tournament_id
+    |> TournamentProgress.get_match_list_with_fight_result()
+    |> inspect()
+    |> (fn str ->
+      %{"tournament_id" => tournament_id, "match_list_with_fight_result_str" => str}
+    end).()
+    |> TournamentProgress.create_match_list_with_fight_result_log()
+
     TournamentProgress.delete_match_list(tournament_id)
     TournamentProgress.delete_match_list_with_fight_result(tournament_id)
     TournamentProgress.delete_match_pending_list_of_tournament(tournament_id)

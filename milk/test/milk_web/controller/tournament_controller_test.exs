@@ -2204,7 +2204,6 @@ defmodule MilkWeb.TournamentControllerTest do
     end
   end
 
-  # TODO: redisの確認とログの確認を入れたい
   describe "finish" do
     setup [:create_tournament]
 
@@ -2301,6 +2300,18 @@ defmodule MilkWeb.TournamentControllerTest do
       TournamentProgress.get_match_list_with_fight_result(tournament.id)
       |> (fn list ->
             assert list == []
+          end).()
+
+      TournamentProgress.get_match_list_with_fight_result_including_log(tournament.id)
+      |> (fn list ->
+            assert hd(list).tournament_id == tournament.id
+            list
+            |> hd()
+            |> Map.get(:match_list_with_fight_result_str)
+            |> Code.eval_string()
+            |> elem(0)
+            |> is_list()
+            |> assert()
           end).()
 
       TournamentProgress.get_match_pending_list_of_tournament(tournament.id)

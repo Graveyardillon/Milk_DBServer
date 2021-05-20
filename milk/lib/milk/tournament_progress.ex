@@ -170,6 +170,18 @@ defmodule Milk.TournamentProgress do
     end
   end
 
+  def get_match_list_with_fight_result_including_log(tournament_id) do
+    tournament_id
+    |> get_match_list_with_fight_result()
+    |> case do
+      [] ->
+        tournament_id
+        |> get_match_list_with_fight_result_log()
+      match_list ->
+        match_list
+    end
+  end
+
   def delete_match_list_with_fight_result(tournament_id) do
     conn = conn()
 
@@ -654,7 +666,7 @@ defmodule Milk.TournamentProgress do
   def get_match_list_with_fight_result_log(tournament_id) do
     MatchListWithFightResultLog
     |> where([l], l.tournament_id == ^tournament_id)
-    |> Repo.one()
+    |> Repo.all()
   end
 
   def create_match_list_with_fight_result_log(attrs \\ %{}) do
