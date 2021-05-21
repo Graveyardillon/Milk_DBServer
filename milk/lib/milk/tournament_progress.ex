@@ -181,6 +181,7 @@ defmodule Milk.TournamentProgress do
         |> Map.get(:match_list_with_fight_result_str)
         |> Code.eval_string()
         |> elem(0)
+
       match_list ->
         match_list
     end
@@ -588,9 +589,9 @@ defmodule Milk.TournamentProgress do
     conn = conn()
 
     with {:ok, _} <- Redix.command(conn, ["MULTI"]),
-      {:ok, _} <- Redix.command(conn, ["SELECT", 7]),
-      {:ok, _} <- Redix.command(conn, ["HDEL", tournament_id, user_id]),
-      {:ok, _} <- Redix.command(conn, ["EXEC"]) do
+         {:ok, _} <- Redix.command(conn, ["SELECT", 7]),
+         {:ok, _} <- Redix.command(conn, ["HDEL", tournament_id, user_id]),
+         {:ok, _} <- Redix.command(conn, ["EXEC"]) do
       true
     else
       _error ->

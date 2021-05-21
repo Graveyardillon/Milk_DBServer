@@ -69,8 +69,7 @@ defmodule Milk.Notif do
         end
       end
 
-    attrs =
-      Map.put(attrs, "data", data)
+    attrs = Map.put(attrs, "data", data)
 
     Accounts.get_user(attrs["user_id"])
     |> case do

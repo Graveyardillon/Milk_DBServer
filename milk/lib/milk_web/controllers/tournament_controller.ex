@@ -152,6 +152,7 @@ defmodule MilkWeb.TournamentController do
 
           %{"user_id" => tournament.master_id, "game_name" => tournament.game_name, "score" => 7}
           |> Accounts.gain_score()
+
           render(conn, "create.json", tournament: tournament)
 
         {:error, error} ->
@@ -181,6 +182,7 @@ defmodule MilkWeb.TournamentController do
 
       %{"user_id" => user_id, "game_name" => tournament.game_name, "score" => 1}
       |> Accounts.gain_score()
+
       render(conn, "tournament_info.json", tournament: tournament, entrants: entrants)
     else
       if tournament_log do
@@ -189,6 +191,7 @@ defmodule MilkWeb.TournamentController do
 
         %{"user_id" => user_id, "game_name" => tournament_log.game_name, "score" => 1}
         |> Accounts.gain_score()
+
         render(conn, "tournament_log.json", tournament_log: tournament_log)
       else
         render(conn, "error.json", error: nil)
@@ -1006,8 +1009,8 @@ defmodule MilkWeb.TournamentController do
       |> TournamentProgress.get_match_list_with_fight_result()
       |> inspect()
       |> (fn str ->
-        %{"tournament_id" => tournament_id, "match_list_with_fight_result_str" => str}
-      end).()
+            %{"tournament_id" => tournament_id, "match_list_with_fight_result_str" => str}
+          end).()
       |> TournamentProgress.create_match_list_with_fight_result_log()
 
       result = Tournaments.finish(tournament_id, winner_id)
@@ -1153,8 +1156,8 @@ defmodule MilkWeb.TournamentController do
     |> TournamentProgress.get_match_list_with_fight_result()
     |> inspect()
     |> (fn str ->
-      %{"tournament_id" => tournament_id, "match_list_with_fight_result_str" => str}
-    end).()
+          %{"tournament_id" => tournament_id, "match_list_with_fight_result_str" => str}
+        end).()
     |> TournamentProgress.create_match_list_with_fight_result_log()
 
     TournamentProgress.delete_match_list(tournament_id)
@@ -1178,10 +1181,10 @@ defmodule MilkWeb.TournamentController do
       json(conn, %{data: nil, result: false, count: nil})
     else
       brackets = Tournaments.data_with_fight_result_for_brackets(match_list)
-        count = Enum.count(brackets) * 2
-        num_for_brackets = Tournamex.Number.closest_number_to_power_of_two(count)
+      count = Enum.count(brackets) * 2
+      num_for_brackets = Tournamex.Number.closest_number_to_power_of_two(count)
 
-        json(conn, %{data: brackets, result: true, count: num_for_brackets})
+      json(conn, %{data: brackets, result: true, count: num_for_brackets})
     end
   end
 
