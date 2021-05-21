@@ -72,6 +72,7 @@ defmodule Milk.Tournaments do
   """
   def home_tournament(user_id, date_offset, offset) do
     offset = Tools.to_integer_as_needed(offset)
+
     blocked_user_id_list =
       user_id
       |> Relations.blocked_users()
@@ -383,8 +384,10 @@ defmodule Milk.Tournaments do
       {:ok, tournament} ->
         join_topics(tournament.tournament.id, master_id)
         {:ok, tournament.tournament}
+
       {:error, error} ->
         {:error, error.errors}
+
       _ ->
         {:error, nil}
     end
@@ -699,6 +702,7 @@ defmodule Milk.Tournaments do
 
   defp join_tournament_chat_room_as_needed(entrant, attrs) do
     tournament = get_tournament(attrs["tournament_id"])
+
     if tournament.master_id == entrant.entrant.user_id do
       {:ok, entrant.entrant}
     else
@@ -729,6 +733,7 @@ defmodule Milk.Tournaments do
         else
           {:error, reason} ->
             {:error, reason}
+
           _ ->
             {:error, nil}
         end

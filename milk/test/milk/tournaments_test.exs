@@ -397,8 +397,8 @@ defmodule Milk.TournamentsTest do
       |> Tournaments.home_tournament("2020-05-12 16:55:53 +0000", 0)
       |> length()
       |> (fn len ->
-        assert len == 0
-      end).()
+            assert len == 0
+          end).()
     end
 
     test "home_tournament_fav/1 returns tournaments which is filtered by favorite users for home screen" do
@@ -415,8 +415,8 @@ defmodule Milk.TournamentsTest do
       |> Tournaments.home_tournament_fav()
       |> length()
       |> (fn len ->
-        assert len == 1
-      end).()
+            assert len == 1
+          end).()
     end
 
     test "home_tournament_fav/1 fails to return tournaments which is filtered by favorite users for home screen" do
@@ -427,8 +427,8 @@ defmodule Milk.TournamentsTest do
       |> Tournaments.home_tournament_fav()
       |> length()
       |> (fn len ->
-        assert len == 0
-      end).()
+            assert len == 0
+          end).()
     end
 
     test "home_tournament_plan/1 returns user's tournaments" do
@@ -438,8 +438,8 @@ defmodule Milk.TournamentsTest do
       tournament.master_id
       |> Tournaments.home_tournament_plan()
       |> (fn len ->
-        refute len == 0
-      end).()
+            refute len == 0
+          end).()
     end
 
     test "home_tournament_plan/1 fails to return user's tournaments" do
@@ -494,6 +494,7 @@ defmodule Milk.TournamentsTest do
 
     test "get_entrants/1 works with valid data", %{entrant: entrant} do
       num = 7
+
       entrants =
         num
         |> create_entrants(entrant.tournament_id)
@@ -506,13 +507,17 @@ defmodule Milk.TournamentsTest do
       end)
       |> length()
       |> (fn len ->
-        assert len == length(entrants)
-      end).()
+            assert len == length(entrants)
+          end).()
     end
 
-    test "get_entrants/1 returns data 1 size smaller than past one after deleting an entrant", %{entrant: entrant} do
+    test "get_entrants/1 returns data 1 size smaller than past one after deleting an entrant", %{
+      entrant: entrant
+    } do
       num = 7
-      entrants = num
+
+      entrants =
+        num
         |> create_entrants(entrant.tournament_id)
         |> Enum.concat([entrant])
 
@@ -529,8 +534,8 @@ defmodule Milk.TournamentsTest do
       end)
       |> length()
       |> (fn len ->
-        assert len == length(entrants) - 1
-      end).()
+            assert len == length(entrants) - 1
+          end).()
     end
 
     test "get_entrant_including_logs/1 gets tournament log with a valid data", %{entrant: entrant} do

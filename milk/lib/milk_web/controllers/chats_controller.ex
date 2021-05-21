@@ -170,6 +170,7 @@ defmodule MilkWeb.ChatsController do
 
       {:error, error} ->
         render(conn, "error.json", error: error)
+
       _ ->
         render(conn, "error.json", error: nil)
     end

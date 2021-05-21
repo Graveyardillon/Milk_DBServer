@@ -9,6 +9,7 @@ defmodule MilkWeb.EntrantControllerTest do
     TournamentProgress,
     Tournaments
   }
+
   alias Milk.Accounts.ActionHistory
   alias Milk.Tournaments.Entrant
 
@@ -105,14 +106,14 @@ defmodule MilkWeb.EntrantControllerTest do
       |> Repo.all()
       |> Enum.map(fn action_history ->
         # TODO: 記述
-        #assert action_history.game_name == tournament["game_name"]
+        # assert action_history.game_name == tournament["game_name"]
         assert action_history.user_id == user_id
         assert action_history.gain == 5
       end)
       |> length()
       |> (fn len ->
-        assert len == 1
-      end).()
+            assert len == 1
+          end).()
     end
 
     test "renders errors when data is invalid", %{conn: conn} do

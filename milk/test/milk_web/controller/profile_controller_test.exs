@@ -72,6 +72,7 @@ defmodule MilkWeb.ProfileControllerTest do
     {:ok, user} = Accounts.create_user(attrs)
     user
   end
+
   # defp fixture_tournament(opts \\ []) do
   defp fixture_tournament(opts) do
     master_id =

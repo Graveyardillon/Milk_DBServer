@@ -42,6 +42,7 @@ defmodule Milk.AccountsTest do
 
   describe "users get" do
     setup [:create_user]
+
     @invalid_attrs %{
       "icon_path" => nil,
       "language" => nil,
@@ -265,8 +266,8 @@ defmodule Milk.AccountsTest do
       %{"email" => user.auth.email, "password" => "S1ome password"}
       |> Accounts.login_forced()
       |> (fn login_user ->
-        assert login_user.id == user.id
-      end).()
+            assert login_user.id == user.id
+          end).()
     end
   end
 
@@ -463,8 +464,12 @@ defmodule Milk.AccountsTest do
       end)
       |> Enum.map(fn user ->
         assert {:ok, _action_history} =
-          %{"user_id" => user.id, "game_name" => Enum.random(games), "gain" => Enum.random(gains)}
-          |> Accounts.create_action_history()
+                 %{
+                   "user_id" => user.id,
+                   "game_name" => Enum.random(games),
+                   "gain" => Enum.random(gains)
+                 }
+                 |> Accounts.create_action_history()
       end)
     end
   end
