@@ -286,8 +286,7 @@ defmodule Milk.Chat do
           {:error, nil}
       end
     else
-      Logger.error("User does not exist")
-      {:error, nil}
+      {:error, "User does not exist"}
     end
   end
 

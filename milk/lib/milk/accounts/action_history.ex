@@ -3,8 +3,6 @@ defmodule Milk.Accounts.ActionHistory do
 
   import Ecto.Changeset
 
-  alias Milk.Accounts.User
-
   schema "action_histories" do
     field :user_id, :integer
     field :game_name, :string

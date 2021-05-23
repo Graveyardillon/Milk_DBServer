@@ -14,7 +14,6 @@ defmodule Milk.Profiles do
   }
 
   alias Milk.Repo
-  alias Milk.Tournaments.Entrant
 
   @doc """
   Returns the list of profiles.

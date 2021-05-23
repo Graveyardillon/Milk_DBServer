@@ -23,10 +23,6 @@ defmodule Milk.Tournaments do
     Relation
   }
 
-  alias Milk.TournamentProgress.{
-    BestOfXTournamentMatchLog
-  }
-
   alias Milk.Tournaments.{
     Tournament,
     Entrant,
@@ -37,8 +33,7 @@ defmodule Milk.Tournaments do
   alias Milk.Log.{
     TournamentLog,
     EntrantLog,
-    AssistantLog,
-    TournamentChatTopicLog
+    AssistantLog
   }
 
   alias Milk.Games.Game
@@ -1417,7 +1412,7 @@ defmodule Milk.Tournaments do
     |> tournament_exist_check()
     |> tournament_start_check()
     |> case do
-      {:ok, attrs} ->
+      {:ok, _} ->
         get_match_list_if_possible(tournament_id)
 
       {:error, error} ->

@@ -5,7 +5,6 @@ defmodule MilkWeb.TournamentController do
 
   alias Milk.{
     Accounts,
-    Chat,
     Log,
     Relations,
     TournamentProgress,
@@ -508,7 +507,7 @@ defmodule MilkWeb.TournamentController do
   defp start_single_elimination(conn, master_id, tournament) do
     with {:ok, _} <- Tournaments.start(master_id, tournament.id),
          {:ok, match_list, match_list_with_fight_result} <-
-           make_single_elimination_matches(conn, tournament.id) do
+           make_single_elimination_matches(tournament.id) do
       with match_list <- TournamentProgress.get_match_list(tournament.id) do
         TournamentProgress.set_time_limit_on_all_entrants(match_list, tournament.id)
       end
@@ -529,14 +528,14 @@ defmodule MilkWeb.TournamentController do
   defp start_best_of_format(conn, master_id, tournament) do
     Tournaments.start(master_id, tournament.id)
 
-    with {:ok, match_list} <- make_best_of_format_matches(conn, tournament) do
+    with {:ok, match_list} <- make_best_of_format_matches(tournament) do
       render(conn, "match.json", %{match_list: match_list, match_list_with_fight_result: nil})
     else
       _ -> json(conn, %{result: false})
     end
   end
 
-  defp make_single_elimination_matches(conn, tournament_id) do
+  defp make_single_elimination_matches(tournament_id) do
     with {:ok, match_list} <-
            Tournaments.get_entrants(tournament_id)
            |> Enum.map(fn x -> x.user_id end)
@@ -581,7 +580,7 @@ defmodule MilkWeb.TournamentController do
     Tournaments.initialize_match_list_with_fight_result(match_list)
   end
 
-  defp make_best_of_format_matches(conn, tournament) do
+  defp make_best_of_format_matches(tournament) do
     {:ok, match_list} =
       tournament.id
       |> Tournaments.get_entrants()
@@ -999,10 +998,9 @@ defmodule MilkWeb.TournamentController do
 
   defp finish_as_needed(tournament_id, winner_id) do
     match_list = TournamentProgress.get_match_list(tournament_id)
-    tournament = Tournaments.get_tournament(tournament_id)
 
     if is_integer(match_list) do
-      result = Tournaments.finish(tournament_id, winner_id)
+      Tournaments.finish(tournament_id, winner_id)
       TournamentProgress.delete_match_list(tournament_id)
       TournamentProgress.delete_match_list_with_fight_result(tournament_id)
       TournamentProgress.delete_match_pending_list_of_tournament(tournament_id)
