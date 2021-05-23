@@ -2,7 +2,8 @@ defmodule Milk.Tournaments.Entrant do
   use Milk.Schema
 
   import Ecto.Changeset
-
+  alias Milk.Repo
+  alias Milk.Tournaments.Entrant
   alias Milk.Tournaments.Tournament
   alias Milk.Accounts.User
 
@@ -18,5 +19,6 @@ defmodule Milk.Tournaments.Entrant do
   def changeset(entrant, attrs) do
     entrant
     |> cast(attrs, [:rank])
+    |> unique_constraint([:user_id,:tournament_id], name: :entrants_user_id_tournament_id_index)
   end
 end
