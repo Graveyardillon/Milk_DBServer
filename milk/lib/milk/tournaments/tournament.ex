@@ -76,8 +76,7 @@ defmodule Milk.Tournaments.Tournament do
   defp put_password_hash(changeset), do: changeset
 
   defp create_pass(password) do
-    # Argon2.hash_pwd_salt(password)
-    password
+    Argon2.hash_pwd_salt(password)
   end
 
   @doc false
