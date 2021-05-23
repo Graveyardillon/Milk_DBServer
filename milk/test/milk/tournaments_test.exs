@@ -608,9 +608,9 @@ defmodule Milk.TournamentsTest do
       # user_idのみ書き換えたパラメータ
       assert {:ok, _} = Tournaments.create_entrant(%{entrant_param|"user_id" => user1.id})
       # tournament_idのみ書き換えたパラメータ
-      assert {:ok, _} =　Task.await(create_entrant_task1)
+      assert {:ok, _} = Task.await(create_entrant_task1)
       # どちらも書き換えていないパラメータ
-      assert {:multierror, _} =　Task.await(create_entrant_task2)
+      assert {:multierror, _} = Task.await(create_entrant_task2)
     end
   end
 
