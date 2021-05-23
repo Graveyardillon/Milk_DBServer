@@ -420,12 +420,18 @@ defmodule MilkWeb.TournamentController do
   Get relevant tournaments.
   """
   def relevant(conn, %{"user_id" => user_id}) do
+    user_id = Tools.to_integer_as_needed(user_id)
+
+    tournaments = relevant(user_id)
+
+    render(conn, "index.json", tournament: tournaments)
+  end
+
+  defp relevant(user_id) do
     participatings = Tournaments.get_participating_tournaments(user_id)
     hostings = Tournaments.get_tournaments_by_master_id(user_id)
 
-    tournaments = Enum.uniq(participatings ++ hostings)
-
-    render(conn, "index.json", tournament: tournaments)
+    Enum.uniq(participatings ++ hostings)
   end
 
   @doc """
@@ -447,19 +453,35 @@ defmodule MilkWeb.TournamentController do
 
     result = tournament.capacity > entrants_len
 
-    participatings = Tournaments.get_participating_tournaments(user_id)
-    hostings = Tournaments.get_tournaments_by_master_id(user_id)
-
-    result =
-      participatings
-      |> Kernel.++(hostings)
-      |> Enum.uniq()
+    result = user_id
+      |> relevant()
       |> Enum.all?(fn t ->
         tournament.master_id == user_id || t.event_date != tournament.event_date
       end)
       |> Kernel.and(result)
 
     json(conn, %{result: result})
+  end
+
+  @doc """
+  Checks if the user is related to a started tournament.
+  """
+  def is_started_at_least_one(conn, %{"user_id" => user_id}) do
+    user_id = Tools.to_integer_as_needed(user_id)
+
+    tournaments = user_id
+      |> relevant()
+      |> Enum.filter(fn tournament ->
+        tournament.is_started
+      end)
+      |> Enum.map(fn tournament ->
+        tournament.id
+      end)
+
+    result = tournaments != []
+    tournament_id = if result, do: hd(tournaments)
+
+    json(conn, %{result: result, tournament_id: tournament_id})
   end
 
   @doc """

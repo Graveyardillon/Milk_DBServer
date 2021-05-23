@@ -1705,7 +1705,6 @@ defmodule Milk.Tournaments do
     # add game_scores
     match_list
     |> List.flatten()
-    |> IO.inspect()
     |> Enum.map(fn bracket ->
       user_id = bracket["user_id"]
 

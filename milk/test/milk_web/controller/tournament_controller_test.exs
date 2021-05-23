@@ -1013,6 +1013,48 @@ defmodule MilkWeb.TournamentControllerTest do
     end
   end
 
+  describe "is started?" do
+    test "works", %{conn: conn} do
+      {:ok, user1} = fixture(:user)
+      {:ok, user2} = fixture(:user2)
+
+      attrs1 = %{
+        "capacity" => 42,
+        "deadline" => "2100-04-17T14:00:00Z",
+        "description" => "some description",
+        "event_date" => "2100-04-17T14:00:00Z",
+        "name" => "some name",
+        "type" => 1,
+        "join" => "false",
+        "url" => "some url",
+        "platform" => 1,
+        "master_id" => user1.id,
+        "is_started" => true
+      }
+
+      conn = post(conn, Routes.tournament_path(conn, :create), %{tournament: attrs1, file: ""})
+      tournament = json_response(conn, 200)["data"]
+      conn = get(conn, Routes.tournament_path(conn, :is_started_at_least_one), user_id: user1.id)
+      assert json_response(conn, 200)["result"]
+      assert json_response(conn, 200)["tournament_id"] == tournament["id"]
+
+      conn = get(conn, Routes.tournament_path(conn, :is_started_at_least_one), user_id: user2.id)
+      refute json_response(conn, 200)["result"]
+      assert is_nil(json_response(conn, 200)["tournament_id"])
+
+      %{
+        "rank" => 0,
+        "tournament_id" => tournament["id"],
+        "user_id" => user2.id
+      }
+      |> Tournaments.create_entrant()
+
+      conn = get(conn, Routes.tournament_path(conn, :is_started_at_least_one), user_id: user2.id)
+      assert json_response(conn, 200)["result"]
+      assert json_response(conn, 200)["tournament_id"] == tournament["id"]
+    end
+  end
+
   describe "tournament topics" do
     setup [:create_tournament]
 
