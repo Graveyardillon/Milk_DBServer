@@ -453,13 +453,8 @@ defmodule MilkWeb.TournamentController do
 
     result = tournament.capacity > entrants_len
 
-    participatings = Tournaments.get_participating_tournaments(user_id)
-    hostings = Tournaments.get_tournaments_by_master_id(user_id)
-
-    result =
-      participatings
-      |> Kernel.++(hostings)
-      |> Enum.uniq()
+    result = user_id
+      |> relevant()
       |> Enum.all?(fn t ->
         tournament.master_id == user_id || t.event_date != tournament.event_date
       end)
@@ -471,10 +466,16 @@ defmodule MilkWeb.TournamentController do
   @doc """
 
   """
-  def is_able_to_join(conn, %{"user_id" => user_id}) do
+  def is_started_at_least_one(conn, %{"user_id" => user_id}) do
     user_id = Tools.to_integer_as_needed(user_id)
 
+    result = user_id
+      |> relevant()
+      |> Enum.any?(fn tournament ->
+        tournament.is_started
+      end)
 
+    json(conn, %{result: result})
   end
 
   @doc """
