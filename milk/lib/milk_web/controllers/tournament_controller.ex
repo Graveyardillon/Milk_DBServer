@@ -420,12 +420,18 @@ defmodule MilkWeb.TournamentController do
   Get relevant tournaments.
   """
   def relevant(conn, %{"user_id" => user_id}) do
+    user_id = Tools.to_integer_as_needed(user_id)
+
+    tournaments = relevant(user_id)
+
+    render(conn, "index.json", tournament: tournaments)
+  end
+
+  defp relevant(user_id) do
     participatings = Tournaments.get_participating_tournaments(user_id)
     hostings = Tournaments.get_tournaments_by_master_id(user_id)
 
-    tournaments = Enum.uniq(participatings ++ hostings)
-
-    render(conn, "index.json", tournament: tournaments)
+    Enum.uniq(participatings ++ hostings)
   end
 
   @doc """
@@ -460,6 +466,15 @@ defmodule MilkWeb.TournamentController do
       |> Kernel.and(result)
 
     json(conn, %{result: result})
+  end
+
+  @doc """
+
+  """
+  def is_able_to_join(conn, %{"user_id" => user_id}) do
+    user_id = Tools.to_integer_as_needed(user_id)
+
+
   end
 
   @doc """
