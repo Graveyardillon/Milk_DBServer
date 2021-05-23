@@ -464,18 +464,24 @@ defmodule MilkWeb.TournamentController do
   end
 
   @doc """
-
+  Checks if the user is related to a started tournament.
   """
   def is_started_at_least_one(conn, %{"user_id" => user_id}) do
     user_id = Tools.to_integer_as_needed(user_id)
 
-    result = user_id
+    tournaments = user_id
       |> relevant()
-      |> Enum.any?(fn tournament ->
+      |> Enum.filter(fn tournament ->
         tournament.is_started
       end)
+      |> Enum.map(fn tournament ->
+        tournament.id
+      end)
 
-    json(conn, %{result: result})
+    result = tournaments != []
+    tournament_id = if result, do: hd(tournaments)
+
+    json(conn, %{result: result, tournament_id: tournament_id})
   end
 
   @doc """

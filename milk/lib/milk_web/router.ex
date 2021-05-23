@@ -102,7 +102,7 @@ defmodule MilkWeb.Router do
         TournamentController,
         :participating_tournaments
 
-    get "/tournament/is_user_started", TournamentController, :is_started_at_least_one
+    get "/tournament/is_started_at_least_one", TournamentController, :is_started_at_least_one
     get "/tournament/participating", TournamentController, :participating_tournaments
     get "/tournament/get_tabs", TournamentController, :tournament_topics
     get "/tournament/get_thumbnail", TournamentController, :get_thumbnail_image

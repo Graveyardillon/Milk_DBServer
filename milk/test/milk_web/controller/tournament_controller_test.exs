@@ -1035,14 +1035,12 @@ defmodule MilkWeb.TournamentControllerTest do
       conn = post(conn, Routes.tournament_path(conn, :create), %{tournament: attrs1, file: ""})
       tournament = json_response(conn, 200)["data"]
       conn = get(conn, Routes.tournament_path(conn, :is_started_at_least_one), user_id: user1.id)
-      json_response(conn, 200)
-      |> Map.get("result")
-      |> assert()
+      assert json_response(conn, 200)["result"]
+      assert json_response(conn, 200)["tournament_id"] == tournament["id"]
 
       conn = get(conn, Routes.tournament_path(conn, :is_started_at_least_one), user_id: user2.id)
-      json_response(conn, 200)
-      |> Map.get("result")
-      |> refute()
+      refute json_response(conn, 200)["result"]
+      assert is_nil(json_response(conn, 200)["tournament_id"])
 
       %{
         "rank" => 0,
@@ -1052,9 +1050,8 @@ defmodule MilkWeb.TournamentControllerTest do
       |> Tournaments.create_entrant()
 
       conn = get(conn, Routes.tournament_path(conn, :is_started_at_least_one), user_id: user2.id)
-      json_response(conn, 200)
-      |> Map.get("result")
-      |> assert()
+      assert json_response(conn, 200)["result"]
+      assert json_response(conn, 200)["tournament_id"] == tournament["id"]
     end
   end
 
