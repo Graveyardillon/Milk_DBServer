@@ -212,8 +212,8 @@ defmodule Milk.TournamentProgressTest do
       end)
       |> length()
       |> (fn len ->
-        assert len == length(entrants)
-      end).()
+            assert len == length(entrants)
+          end).()
 
       entrants
       |> hd()
@@ -233,8 +233,8 @@ defmodule Milk.TournamentProgressTest do
       end)
       |> length()
       |> (fn len ->
-        assert len == length(entrants) - 1
-      end).()
+            assert len == length(entrants) - 1
+          end).()
     end
 
     test "delete_match_list/1 works fine" do
@@ -299,6 +299,7 @@ defmodule Milk.TournamentProgressTest do
         ],
         %{"user_id" => 3}
       ]
+
       r = TournamentProgress.insert_match_list_with_fight_result(match_list, 1)
       assert r
       assert is_boolean(r)
@@ -312,13 +313,14 @@ defmodule Milk.TournamentProgressTest do
         ],
         %{"user_id" => 3}
       ]
+
       TournamentProgress.insert_match_list_with_fight_result(match_list, 2)
 
       2
       |> TournamentProgress.get_match_list_with_fight_result()
       |> (fn result ->
-        result == match_list
-      end).()
+            result == match_list
+          end).()
     end
 
     test "get_match_list/1 returns data which is renewed after deleting a user" do
@@ -332,6 +334,7 @@ defmodule Milk.TournamentProgressTest do
       |> List.flatten()
       |> Enum.map(fn bracket ->
         assert is_map(bracket)
+
         if is_map(bracket) do
           assert bracket["user_id"] in entrant_id_list
           assert bracket["is_loser"] == false
@@ -515,6 +518,23 @@ defmodule Milk.TournamentProgressTest do
             assert log.loser_id == user2.id
             assert log.match_list_str == str
             log.id
+          end).()
+    end
+  end
+
+  describe "create and get match list with fight result log" do
+    test "just works" do
+      match_list = [[1, 2], [3, 4]]
+      tournament_id = 1
+
+      str = inspect(match_list)
+
+      %{"tournament_id" => tournament_id, "match_list_with_fight_result_str" => str}
+      |> TournamentProgress.create_match_list_with_fight_result_log()
+      |> (fn log ->
+            assert {:ok, log} = log
+            assert log.tournament_id == tournament_id
+            assert log.match_list_with_fight_result_str == str
           end).()
     end
   end

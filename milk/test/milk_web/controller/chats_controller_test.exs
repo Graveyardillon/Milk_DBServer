@@ -54,8 +54,6 @@ defmodule MilkWeb.ChatsControllerTest do
     Accounts.get_user(user.id)
   end
 
-
-
   setup %{conn: conn} do
     {:ok, conn: put_req_header(conn, "accept", "application/json")}
   end

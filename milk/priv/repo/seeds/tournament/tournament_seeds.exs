@@ -5,7 +5,6 @@ alias Milk.{
   Repo,
   Tournaments
 }
-alias Milk.Tournaments.Tournament
 alias Milk.Accounts.{
   Auth,
   User

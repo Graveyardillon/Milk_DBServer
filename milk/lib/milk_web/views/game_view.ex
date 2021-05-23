@@ -11,6 +11,10 @@ defmodule MilkWeb.GameView do
   end
 
   def render("game.json", %{game: game}) do
-    %{id: game.id, title: game.title, icon_path: game.icon_path}
+    %{
+      id: game.id,
+      title: game.title,
+      icon_path: game.icon_path
+    }
   end
 end
