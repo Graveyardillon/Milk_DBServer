@@ -586,18 +586,31 @@ defmodule Milk.TournamentsTest do
     end
 
     test "create_entrant/1 returns a multi error when it runs with same parameter at one time." do
-      user = fixture_user()
-      tournament = fixture_tournament()
+      # tournament and user for entrant_param
+      user0 = fixture_user()
+      user1 = fixture_user([num: 0])
+      tournament0 = fixture_tournament()
+      tournament1 = fixture_tournament([master_id: user1.id])
 
-      entrant_param = @entrant_create_attrs
-        |> Map.put("tournament_id", tournament.id)
-        |> Map.put("user_id", user.id)
+      entrant_param =
+        @entrant_create_attrs
+        |> Map.put("tournament_id", tournament0.id)
+        |> Map.put("user_id", user0.id)
 
-      create_entrant_task = Task.async(fn -> Tournaments.create_entrant(entrant_param) end)
+      # entrant作成の並行タスク生成
+      create_entrant_task0 = Task.async(fn -> Tournaments.create_entrant(entrant_param) end)
+      create_entrant_task1 = Task.async(fn -> Tournaments.create_entrant(%{entrant_param|"tournament_id" => tournament1.id}) end)
+      create_entrant_task2 = Task.async(fn -> Tournaments.create_entrant(entrant_param) end)
 
-      Tournaments.create_entrant(entrant_param)|>IO.inspect()|>assert
-      Task.await(create_entrant_task)|> IO.inspect(label: :diw)
-      Repo.all(Entrant)|> IO.inspect(label: :fwnwew)
+      # 元のパラメータとそれぞれtournament_id, user_idのどちらかの重複，どちらも同じの合計4パターンのentrant作成結果の出力
+      # 元のentrant_param
+      assert {:ok, _} = Task.await(create_entrant_task0)
+      # user_idのみ書き換えたパラメータ
+      assert {:ok, _} = Tournaments.create_entrant(%{entrant_param|"user_id" => user1.id})
+      # tournament_idのみ書き換えたパラメータ
+      assert {:ok, _} =　Task.await(create_entrant_task1)
+      # どちらも書き換えていないパラメータ
+      assert {:multierror, _} =　Task.await(create_entrant_task2)
     end
   end
 
