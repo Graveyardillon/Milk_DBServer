@@ -858,7 +858,7 @@ defmodule Milk.Tournaments do
   TODO: エラーハンドリング
   loser_listは一人用になっている
   """
-  def delete_loser_process(tournament_id, loser_list) do
+  def delete_loser_process(tournament_id, loser_list) when is_list(loser_list) do
     match_list = TournamentProgress.get_match_list(tournament_id)
 
     match_list
@@ -908,12 +908,15 @@ defmodule Milk.Tournaments do
 
   def promote_winners_by_loser(tournament_id, match_list, losers) when is_list(losers) do
     Enum.each(losers, fn loser ->
-      {:ok, opponent} =
-        match_list
-        |> find_match(loser)
-        |> get_opponent(loser)
-
-      promote_rank(%{"tournament_id" => tournament_id, "user_id" => opponent["id"]})
+      match_list
+      |> find_match(loser)
+      |> get_opponent(loser)
+      |> case do
+        {:ok, opponent} ->
+          promote_rank(%{"tournament_id" => tournament_id, "user_id" => opponent["id"]})
+        {:wait, nil} ->
+          IO.inspect("wait nil")
+      end
     end)
   end
 
