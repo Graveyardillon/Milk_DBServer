@@ -1187,6 +1187,41 @@ defmodule MilkWeb.TournamentController do
   end
 
   @doc """
+  テスト用 Idの数だけのブラケットを返す
+  """
+  def chunk_bracket_data_for_best_of_format_test(conn, %{"tournament_id" => number}) do 
+    num = Tools.to_integer_as_needed(number)
+    Enum.to_list(1..num) |> Tournamex.generate_matchlist() |> elem(1) |> IO.inspect(charlists: false) |> Tournamex.brackets() |> elem(1) |> IO.inspect(charlists: false) 
+
+    match_list =
+      1..num
+      |> Enum.to_list()
+      |> Tournamex.generate_matchlist()
+      |> elem(1)
+      |> Tournamex.initialize_match_list_with_fight_result()
+
+    match_list = match_list
+    |> List.flatten()
+    |> Enum.reduce(match_list, fn x, acc ->
+      user_id = x["user_id"]
+
+      acc
+      |> Milk.Tournaments.put_value_on_brackets(user_id, %{"name" => "name" <> to_string(user_id)})
+      |> Milk.Tournaments.put_value_on_brackets(user_id, %{"win_count" => 0})
+      |> Milk.Tournaments.put_value_on_brackets(user_id, %{"icon_path" => nil})
+      |> Milk.Tournaments.put_value_on_brackets(user_id, %{"round" => 0})
+      |> Milk.Tournaments.put_value_on_brackets(user_id, %{"game_scores" => [0]})
+    end)
+    |> Tournamex.brackets_with_fight_result()
+    |> elem(1)
+    |> List.flatten()
+    # |> IO.inspect(charlists: false)
+
+    json(conn, %{result: true, data: match_list, count: 0})
+  end
+
+
+  @doc """
   Registers PID of start notification.
   The notification is handled in Web Server, so the pid does not belong to this server.
   """
