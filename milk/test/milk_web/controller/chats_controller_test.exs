@@ -29,6 +29,12 @@ defmodule MilkWeb.ChatsControllerTest do
     chats
   end
 
+  defp fixture(:chat_room) do
+    attrs = %{"count" => 42, "last_chat" => "some last_chat", "name" => "some name"}
+    {:ok, chat_room} = Chat.create_chat_room(attrs)
+    chat_room
+  end
+
   defp fixture(:user, name) do
     user_valid_attrs = %{
       "icon_path" => "some icon_path",
@@ -46,12 +52,6 @@ defmodule MilkWeb.ChatsControllerTest do
       |> Accounts.create_user()
 
     Accounts.get_user(user.id)
-  end
-
-  defp fixture(:chat_room) do
-    attrs = %{"count" => 42, "last_chat" => "some last_chat", "name" => "some name"}
-    {:ok, chat_room} = Chat.create_chat_room(attrs)
-    chat_room
   end
 
   setup %{conn: conn} do

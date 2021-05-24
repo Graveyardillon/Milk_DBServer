@@ -16,6 +16,7 @@ defmodule Milk.TournamentProgress do
 
   alias Milk.TournamentProgress.{
     BestOfXTournamentMatchLog,
+    MatchListWithFightResultLog,
     SingleTournamentMatchLog
   }
 
@@ -75,7 +76,7 @@ defmodule Milk.TournamentProgress do
          {:ok, value} <- Redix.command(conn, ["GET", tournament_id]) do
       if value do
         {match_list, _} = Code.eval_string(value)
-        [{tournament_id, match_list}]
+        match_list
       else
         []
       end
@@ -160,12 +161,29 @@ defmodule Milk.TournamentProgress do
          {:ok, value} <- Redix.command(conn, ["GET", tournament_id]) do
       if value do
         {match_list, _} = Code.eval_string(value)
-        [{tournament_id, match_list}]
+        match_list
       else
         []
       end
     else
       e -> []
+    end
+  end
+
+  def get_match_list_with_fight_result_including_log(tournament_id) do
+    tournament_id
+    |> get_match_list_with_fight_result()
+    |> case do
+      [] ->
+        tournament_id
+        |> get_match_list_with_fight_result_log()
+        |> hd()
+        |> Map.get(:match_list_with_fight_result_str)
+        |> Code.eval_string()
+        |> elem(0)
+
+      match_list ->
+        match_list
     end
   end
 
@@ -567,6 +585,20 @@ defmodule Milk.TournamentProgress do
     end
   end
 
+  def delete_score(tournament_id, user_id) do
+    conn = conn()
+
+    with {:ok, _} <- Redix.command(conn, ["MULTI"]),
+         {:ok, _} <- Redix.command(conn, ["SELECT", 7]),
+         {:ok, _} <- Redix.command(conn, ["HDEL", tournament_id, user_id]),
+         {:ok, _} <- Redix.command(conn, ["EXEC"]) do
+      true
+    else
+      _error ->
+        false
+    end
+  end
+
   """
   # Single tournament match log.
   Single tournament match log stores a progress information.
@@ -629,6 +661,22 @@ defmodule Milk.TournamentProgress do
   def create_best_of_x_tournament_match_log(attrs \\ %{}) do
     %BestOfXTournamentMatchLog{}
     |> BestOfXTournamentMatchLog.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  """
+  match list with fight result log.
+  """
+
+  def get_match_list_with_fight_result_log(tournament_id) do
+    MatchListWithFightResultLog
+    |> where([l], l.tournament_id == ^tournament_id)
+    |> Repo.all()
+  end
+
+  def create_match_list_with_fight_result_log(attrs \\ %{}) do
+    %MatchListWithFightResultLog{}
+    |> MatchListWithFightResultLog.changeset(attrs)
     |> Repo.insert()
   end
 end

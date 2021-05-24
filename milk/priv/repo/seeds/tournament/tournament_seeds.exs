@@ -5,7 +5,6 @@ alias Milk.{
   Repo,
   Tournaments
 }
-alias Milk.Tournaments.Tournament
 alias Milk.Accounts.{
   Auth,
   User
@@ -48,7 +47,6 @@ attrs = %{
   "password" => nil,
   "game_name" => "my awesome name",
   "start_recruiting" => now,
-  "start_notification_pid" => nil,
   "master_id" => user.id,
   "platform" => 1,
   "game_id" => nil
@@ -68,7 +66,6 @@ attrs = %{
   "password" => nil,
   "game_name" => "my awesome name",
   "start_recruiting" => now,
-  "start_notification_pid" => nil,
   "master_id" => user.id,
   "platform" => 1,
   "game_id" => nil
@@ -88,7 +85,6 @@ attrs = %{
   "password" => nil,
   "game_name" => "my awesome name",
   "start_recruiting" => now,
-  "start_notification_pid" => nil,
   "master_id" => user.id,
   "platform" => 1,
   "game_id" => nil
@@ -108,7 +104,6 @@ attrs = %{
   "password" => "8880",
   "game_name" => "my awesome name",
   "start_recruiting" => now,
-  "start_notification_pid" => nil,
   "master_id" => user.id,
   "platform" => 1,
   "game_id" => nil
@@ -128,7 +123,6 @@ attrs = %{
   "password" => nil,
   "game_name" => "my awesome name",
   "start_recruiting" => now,
-  "start_notification_pid" => nil,
   "master_id" => user.id,
   "platform" => 1,
   "game_id" => nil
@@ -148,7 +142,6 @@ attrs = %{
   "password" => nil,
   "game_name" => "my awesome name",
   "start_recruiting" => now,
-  "start_notification_pid" => nil,
   "master_id" => user.id,
   "platform" => 1,
   "game_id" => nil

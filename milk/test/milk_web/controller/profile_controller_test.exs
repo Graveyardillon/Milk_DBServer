@@ -25,7 +25,6 @@ defmodule MilkWeb.ProfileControllerTest do
     "gameList" => [],
     "records" => []
   }
-  @invalid_attrs %{content_id: nil, content_type: nil, user_id: nil}
   @tournament_attrs %{
     "capacity" => 42,
     "deadline" => "2010-04-17T14:00:00Z",
@@ -74,7 +73,8 @@ defmodule MilkWeb.ProfileControllerTest do
     user
   end
 
-  defp fixture_tournament(opts \\ []) do
+  # defp fixture_tournament(opts \\ []) do
+  defp fixture_tournament(opts) do
     master_id =
       opts[:master_id]
       |> is_nil()
@@ -107,7 +107,7 @@ defmodule MilkWeb.ProfileControllerTest do
   describe "update profile" do
     setup [:create_profile]
 
-    test "renders profile when data is valid", %{conn: conn, profile: %Profile{id: id} = profile} do
+    test "renders profile when data is valid", %{conn: conn, profile: %Profile{id: _id} = profile} do
       attrs = Map.put(@update_attrs, "user_id", profile.user_id)
       conn = post(conn, Routes.profile_path(conn, :update), profile: attrs)
       assert json_response(conn, 200)["result"]

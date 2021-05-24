@@ -1,7 +1,13 @@
 defmodule MilkWeb.EntrantController do
   use MilkWeb, :controller
 
-  alias Milk.Tournaments
+  alias Common.Tools
+
+  alias Milk.{
+    Accounts,
+    Tournaments
+  }
+
   alias Milk.Tournaments.Entrant
 
   # action_fallback MilkWeb.FallbackController
@@ -16,9 +22,16 @@ defmodule MilkWeb.EntrantController do
     end
   end
 
+  @doc """
+  Create an entrant.
+  """
   def create(conn, %{"entrant" => entrant_params}) do
-    case Tournaments.create_entrant(entrant_params) do
+    entrant_params
+    |> Tournaments.create_entrant()
+    |> case do
       {:ok, %Entrant{} = entrant} ->
+        action_history(entrant)
+
         conn
         # |> put_status(:created)
         # |> put_resp_header("location", Routes.entrant_path(conn, :show, entrant))
@@ -35,6 +48,16 @@ defmodule MilkWeb.EntrantController do
     end
   end
 
+  defp action_history(entrant) do
+    {:ok, tournament} = Tournaments.get_tournament_including_logs(entrant.tournament_id)
+
+    %{"user_id" => entrant.user_id, "game_name" => tournament.game_name, "score" => 5}
+    |> Accounts.gain_score()
+  end
+
+  @doc """
+  Shows an entrant.
+  """
   def show(conn, %{"id" => id}) do
     entrant = Tournaments.get_entrant!(id)
 
@@ -75,6 +98,9 @@ defmodule MilkWeb.EntrantController do
   end
 
   def show_rank(conn, %{"tournament_id" => tournament_id, "user_id" => user_id}) do
+    tournament_id = Tools.to_integer_as_needed(tournament_id)
+    user_id = Tools.to_integer_as_needed(user_id)
+
     case Tournaments.get_rank(tournament_id, user_id) do
       {:error, msg} -> render(conn, "error.json", error: msg)
       rank -> render(conn, "rank.json", rank: rank)

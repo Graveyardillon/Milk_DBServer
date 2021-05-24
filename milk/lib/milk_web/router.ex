@@ -45,6 +45,8 @@ defmodule MilkWeb.Router do
     post "/user_report", ReportController, :create_user_report
     post "/tournament_report", ReportController, :create_tournament_report
 
+    get "/profile/get", ProfileController, :get_profile
+    post "/profile/get", ProfileController, :get_profile
     post "/profile", ProfileController, :get_profile
     post "/profile/update", ProfileController, :update
     post "/profile/update_icon", ProfileController, :update_icon
@@ -100,6 +102,7 @@ defmodule MilkWeb.Router do
         TournamentController,
         :participating_tournaments
 
+    get "/tournament/is_started_at_least_one", TournamentController, :is_started_at_least_one
     get "/tournament/participating", TournamentController, :participating_tournaments
     get "/tournament/get_tabs", TournamentController, :tournament_topics
     get "/tournament/get_thumbnail", TournamentController, :get_thumbnail_image
@@ -147,6 +150,7 @@ defmodule MilkWeb.Router do
     get "/tournament_log/index", TournamentLogController, :index
     post "/tournament_log/add", TournamentLogController, :create
 
+    get "/entrant/rank", EntrantController, :show_rank
     resources "/entrant", EntrantController, except: [:new, :edit, :delete]
     # FIXME: GETのパラメータの渡し方を統一したい
     get "/entrant/rank/:tournament_id/:user_id", EntrantController, :show_rank

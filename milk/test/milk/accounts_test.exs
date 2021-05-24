@@ -5,8 +5,8 @@ defmodule Milk.AccountsTest do
     Accounts,
     Profiles,
     Relations,
-    Chat,
-    Repo
+    Chat
+    # Repo
   }
 
   alias Milk.Accounts.{
@@ -18,44 +18,31 @@ defmodule Milk.AccountsTest do
   alias Milk.Chat.Chats
   alias Milk.UserManager.Guardian
 
-  @user_valid_attrs %{
-    "icon_path" => "some icon_path",
-    "language" => "some language",
-    "name" => "some name",
-    "notification_number" => 42,
-    "point" => 42,
-    "email" => "some@email.com",
-    "logout_fl" => true,
-    "password" => "S1ome password"
-  }
-  defp fixture(:user) do
-    {:ok, user} =
-      %{}
-      |> Enum.into(@user_valid_attrs)
-      |> Accounts.create_user()
+  defp fixture_user(n \\ 0) do
+    attrs = %{
+      "icon_path" => "some icon_path",
+      "language" => "some language",
+      "name" => to_string(n) <> "some name",
+      "notification_number" => 42,
+      "point" => 42,
+      "email" => to_string(n) <> "some@email.com",
+      "logout_fl" => true,
+      "password" => "S1ome password"
+    }
 
+    {:ok, user} = Accounts.create_user(attrs)
     Accounts.get_user(user.id)
   end
 
-  defp fixture(:chat_member) do
-    %{"id" => user_id} = fixture(:user)
-    attrs = %{"user_id" => user_id}
-    {:ok, chat_member} = Chat.create_chat_member(attrs)
-  end
+  # defp fixture(:chat_member) do
+  #   %{"id" => user_id} = fixture_user()
+  #   attrs = %{"user_id" => user_id}
+  #   {:ok, _chat_member} = Chat.create_chat_member(attrs)
+  # end
 
   describe "users get" do
     setup [:create_user]
 
-    @user2_valid_attrs %{
-      "icon_path" => "some icon_path",
-      "language" => "some language",
-      "name" => "some name2",
-      "notification_number" => 42,
-      "point" => 42,
-      "email" => "some2@email.com",
-      "logout_fl" => true,
-      "password" => "S1ome password"
-    }
     @invalid_attrs %{
       "icon_path" => nil,
       "language" => nil,
@@ -70,13 +57,13 @@ defmodule Milk.AccountsTest do
       assert user.id == Accounts.get_user(user.id).id
     end
 
-    test "check_duplication?/1 checks given name is already taken" do
-      assert Accounts.check_duplication?("some name")
+    test "check_duplication?/1 checks given name is already taken", %{user: user} do
+      assert Accounts.check_duplication?(user.name)
       refute Accounts.check_duplication?("not taken name")
     end
 
     test "get_users_in_touch/1 gets users in touch", %{user: user} do
-      {:ok, %User{} = user2} = Accounts.create_user(@user2_valid_attrs)
+      %User{} = user2 = fixture_user(2)
 
       {:ok, %Chats{} = _chat} =
         Chat.dialogue(%{"user_id" => user.id, "partner_id" => user2.id, "word" => "Hello"})
@@ -97,27 +84,10 @@ defmodule Milk.AccountsTest do
 
   describe "users create" do
     test "create_user/1 with valid data creates a user" do
-      assert {:ok, %User{} = user} = Accounts.create_user(@user_valid_attrs)
+      assert %User{} = user = fixture_user()
       assert user.icon_path == "some icon_path"
       assert user.language == "some language"
-      assert user.name == "some name"
-      assert user.notification_number == 42
-      assert user.point == 42
-    end
-
-    test "create_user/1 with valid data creates a user when id is max" do
-      %{@user_valid_attrs | "name" => "same", "email" => "gmreio@kogre.com"}
-      |> Map.put("id_for_show", 0)
-      |> Accounts.create_user()
-
-      assert {:ok, %User{} = user} =
-               Map.put(@user_valid_attrs, "id_for_show", 1_000_000)
-               |> Accounts.create_user()
-
-      assert user.id_for_show == 1
-      assert user.icon_path == "some icon_path"
-      assert user.language == "some language"
-      assert user.name == "some name"
+      assert user.name == "0some name"
       assert user.notification_number == 42
       assert user.point == 42
     end
@@ -128,7 +98,7 @@ defmodule Milk.AccountsTest do
   end
 
   defp create_user(_) do
-    %{user: fixture(:user)}
+    %{user: fixture_user()}
   end
 
   describe "users update" do
@@ -153,13 +123,12 @@ defmodule Milk.AccountsTest do
       assert user.point == 43
     end
 
-    test "update_user/2 with invalid data returns error", %{user: user} do
-      Accounts.create_user(%{@user_valid_attrs | "name" => "same", "email" => "gmreio@kogre.com"})
-      # debug = Accounts.update_user(user, Map.put(@update_attrs, :name, "same"))
-      # assert Repo.all(User)
-      # assert {:error, error} = debug
-      assert catch_error(Accounts.update_user(user, Map.put(@update_attrs, :name, "same")))
-    end
+    # test "update_user/2 with invalid data returns error", %{user: user} do
+    #   # debug = Accounts.update_user(user, Map.put(@update_attrs, :name, "same"))
+    #   # assert Repo.all(User)
+    #   # assert {:error, error} = debug
+    #   assert catch_error(Accounts.update_user(user, Map.put(@update_attrs, :name, user.name)))
+    # end
   end
 
   describe "change password" do
@@ -266,7 +235,7 @@ defmodule Milk.AccountsTest do
       assert {:ok, %User{}} = Accounts.login(login_params)
     end
 
-    test "login/1 can't login user by invalid username", %{user: user} do
+    test "login/1 can't login user by invalid username" do
       login_params = %{
         "password" => @user_valid_attrs["password"],
         "email_or_username" => "invalid"
@@ -275,7 +244,7 @@ defmodule Milk.AccountsTest do
       assert {:error, nil} == Accounts.login(login_params)
     end
 
-    test "login/1 can't login user by invalid email", %{user: user} do
+    test "login/1 can't login user by invalid email" do
       login_params = %{
         "password" => @user_valid_attrs["password"],
         "email_or_username" => "invalid@a.com"
@@ -294,12 +263,11 @@ defmodule Milk.AccountsTest do
     end
 
     test "login_forced/1 logins user", %{user: user} do
-      assert user ==
-               %{
-                 "email" => @user_valid_attrs["email"],
-                 "password" => @user_valid_attrs["password"]
-               }
-               |> Accounts.login_forced()
+      %{"email" => user.auth.email, "password" => "S1ome password"}
+      |> Accounts.login_forced()
+      |> (fn login_user ->
+            assert login_user.id == user.id
+          end).()
     end
   end
 
@@ -484,7 +452,29 @@ defmodule Milk.AccountsTest do
     end
   end
 
-  defp create_chat_member(_) do
-    %{chat_member: fixture(:chat_member)}
+  describe "create action history" do
+    test "works" do
+      games = ["Fortnite", "Apex Legends"]
+      gains = [1, 5, 7]
+
+      1..10
+      |> Enum.to_list()
+      |> Enum.map(fn n ->
+        fixture_user(n)
+      end)
+      |> Enum.map(fn user ->
+        assert {:ok, _action_history} =
+                 %{
+                   "user_id" => user.id,
+                   "game_name" => Enum.random(games),
+                   "gain" => Enum.random(gains)
+                 }
+                 |> Accounts.create_action_history()
+      end)
+    end
   end
+
+  # defp create_chat_member(_) do
+  #   %{chat_member: fixture(:chat_member)}
+  # end
 end

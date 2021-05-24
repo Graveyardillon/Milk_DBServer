@@ -10,6 +10,7 @@ WORKDIR /opt/app
 RUN apk update \
   && apk --no-cache --update add nodejs nodejs-npm \
   && apk add alpine-sdk \
+  && apk add libc6-compat libstdc++ \
   && mix local.rebar --force \
   && mix local.hex --force
 
@@ -28,6 +29,7 @@ RUN ls /opt/release
 FROM alpine:latest
 ARG project_id
 RUN apk update \
+  && apk add libc6-compat libstdc++ \
   && apk --no-cache --update add bash ca-certificates openssl-dev \
   && mkdir -p /usr/local/bin \
   && wget https://dl.google.com/cloudsql/cloud_sql_proxy.linux.amd64 \

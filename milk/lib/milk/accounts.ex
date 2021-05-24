@@ -10,13 +10,15 @@ defmodule Milk.Accounts do
   alias Ecto.Multi
 
   alias Milk.{
+    Accounts,
     Repo,
-    Accounts
+    Tournaments
   }
 
   alias Milk.Accounts.{
-    User,
-    Auth
+    ActionHistory,
+    Auth,
+    User
   }
 
   alias Milk.Chat.{
@@ -336,10 +338,21 @@ defmodule Milk.Accounts do
         Repo.insert_all(AssistantLog, assistant)
       end
 
-      Repo.delete(user)
+      delete(user)
     else
       {:error, user}
     end
+  end
+
+  # テスト用に分離しただけなので、基本的にはdelete_userから呼び出すべき関数
+  def delete(user) do
+    user.id
+    |> Tournaments.get_participating_tournaments()
+    |> Enum.each(fn tournament ->
+      Tournaments.delete_loser_process(tournament.id, [user.id])
+    end)
+
+    Repo.delete(user)
   end
 
   defp get_authorized_user(id, password, email, token) do
@@ -491,5 +504,22 @@ defmodule Milk.Accounts do
     else
       false
     end
+  end
+
+  @doc """
+  Create an action history.
+  """
+  def create_action_history(attrs) do
+    %ActionHistory{}
+    |> ActionHistory.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  @doc """
+  Gain 5 score.
+  """
+  def gain_score(%{"user_id" => user_id, "game_name" => game_name, "score" => gain}) do
+    %{"user_id" => user_id, "game_name" => game_name, "gain" => gain}
+    |> create_action_history()
   end
 end
