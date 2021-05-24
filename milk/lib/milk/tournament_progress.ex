@@ -433,7 +433,7 @@ defmodule Milk.TournamentProgress do
   end
 
   # TODO: 検証が不十分なためコメントアウトしておいた
-  defp get_lost(_user_id, _tournament_id) do
+  defp get_lost(user_id, tournament_id) do
     # Generate a process which makes a user lost
     # pid_str =
     #   Task.start(fn ->
