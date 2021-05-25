@@ -910,7 +910,7 @@ defmodule Milk.Tournaments do
         {:ok, opponent} ->
           promote_rank(%{"tournament_id" => tournament_id, "user_id" => opponent["id"]})
         {:wait, nil} ->
-          IO.inspect("wait nil")
+          {:wait, nil}
       end
     end)
   end
