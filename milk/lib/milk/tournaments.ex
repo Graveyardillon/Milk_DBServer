@@ -1411,7 +1411,39 @@ defmodule Milk.Tournaments do
   Promotes rank of a entrant.
   勝った人のランクが上がるやつ
   FIXME: 引数をmapからかえたい
+  FIXME: 色々リファクタリング
   """
+  def promote_rank(attrs, :force) do
+    user_id = attrs["user_id"]
+    tournament_id = attrs["tournament_id"]
+
+    attrs
+    |> user_exist_check()
+    |> tournament_exist_check()
+    |> tournament_start_check()
+    |> case do
+      {:ok, _} ->
+        user_id
+        |> get_entrant_by_user_id_and_tournament_id(tournament_id)
+        |> Map.get(:rank)
+        |> check_exponentiation_of_two()
+        |> (fn {bool, rank} ->
+          updated = if bool do
+            div(rank, 2)
+          else
+            find_num_closest_exponentiation_of_two(rank)
+          end
+
+          user_id
+          |> get_entrant_by_user_id_and_tournament_id(tournament_id)
+          |> update_entrant(%{rank: updated})
+        end).()
+
+      {:error, error} ->
+        {:error, error}
+    end
+  end
+
   def promote_rank(attrs \\ %{}) do
     user_id = attrs["user_id"]
     tournament_id = attrs["tournament_id"]
