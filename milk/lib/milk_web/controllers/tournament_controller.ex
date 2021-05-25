@@ -1044,6 +1044,39 @@ defmodule MilkWeb.TournamentController do
   end
 
   @doc """
+  Force to defeat a user.
+  """
+  def force_to_defeat(conn, %{"tournament_id" => tournament_id, "target_user_id" => target_user_id}) do
+    tournament_id = Tools.to_integer_as_needed(tournament_id)
+    target_user_id = Tools.to_integer_as_needed(target_user_id)
+
+    tournament_id
+    |> TournamentProgress.get_match_list()
+    |> Tournaments.find_match(target_user_id)
+    |> Tournaments.get_opponent(target_user_id)
+    |> case do
+      {:ok, winner} ->
+        Tournaments.promote_rank(%{"tournament_id" => tournament_id, "user_id" => winner["id"]})
+        Tournaments.score(tournament_id, winner["id"], target_user_id, 0, -1, 0)
+        Tournaments.delete_loser_process(tournament_id, [target_user_id])
+        finish_as_needed(tournament_id, winner["id"])
+      {:wait, nil} ->
+        match = tournament_id
+          |> TournamentProgress.get_match_list()
+          |> Tournaments.find_match(target_user_id)
+          |> Kernel.--([target_user_id])
+          |> hd()
+          |> Enum.each(fn user_id ->
+            Tournaments.promote_rank(%{"tournament_id" => tournament_id, "user_id" => user_id}, :force)
+            #Tournaments.score(tournament_id, user_id, target_user_id, 0, -1, 0)
+          end)
+        Tournaments.delete_loser_process(tournament_id, [target_user_id])
+    end
+
+    json(conn, %{result: true})
+  end
+
+  @doc """
   Get a tournament by url.
   """
   def get_tournament_by_url(conn, %{"url" => url}) do
