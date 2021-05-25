@@ -1415,6 +1415,7 @@ defmodule Milk.Tournaments do
   @doc """
   Promotes rank of a entrant.
   勝った人のランクが上がるやつ
+  FIXME: 引数をmapからかえたい
   """
   def promote_rank(attrs \\ %{}) do
     user_id = attrs["user_id"]

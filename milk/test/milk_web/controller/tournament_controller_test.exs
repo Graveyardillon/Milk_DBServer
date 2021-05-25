@@ -2162,6 +2162,13 @@ defmodule MilkWeb.TournamentControllerTest do
       conn = get(conn, Routes.tournament_path(conn, :get_entrants), tournament_id: tournament.id)
       json_response(conn, 200)
       |> IO.inspect()
+      # |> Map.get("data")
+      # |> Enum.each(fn entrant ->
+      #   cond do
+      #     entrant["user_id"] == opponent["id"] ->
+
+      #   end
+      # end)
     end
   end
 

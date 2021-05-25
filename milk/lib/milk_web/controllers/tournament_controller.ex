@@ -1058,9 +1058,20 @@ defmodule MilkWeb.TournamentController do
     |> Tournaments.get_opponent(target_user_id)
     |> case do
       {:ok, winner} ->
+        Tournaments.promote_rank(%{"tournament_id" => tournament_id, "user_id" => winner["id"]})
         Tournaments.score(tournament_id, winner["id"], target_user_id, 0, -1, 0)
         Tournaments.delete_loser_process(tournament_id, [target_user_id])
       {:wait, nil} ->
+        match = tournament_id
+          |> TournamentProgress.get_match_list()
+          |> Tournaments.find_match(target_user_id)
+          |> Kernel.--([target_user_id])
+          |> hd()
+          |> IO.inspect(label: :hd)
+          |> Enum.each(fn user_id ->
+            Tournaments.promote_rank(%{"tournament_id" => tournament_id, "user_id" => user_id})
+            |> IO.inspect
+          end)
         Tournaments.delete_loser_process(tournament_id, [target_user_id])
     end
     |> IO.inspect()
