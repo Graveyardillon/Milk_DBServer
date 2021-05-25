@@ -2,7 +2,6 @@ defmodule Milk.Reports do
   import Ecto.Query, warn: false
 
   alias Common.Tools
-  alias Ecto.Multi
 
   alias Milk.{
     Accounts,

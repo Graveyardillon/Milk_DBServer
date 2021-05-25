@@ -10,8 +10,7 @@ defmodule Milk.TournamentProgress do
   import Ecto.Query, warn: false
 
   alias Milk.{
-    Repo,
-    Tournaments
+    Repo
   }
 
   alias Milk.TournamentProgress.{
@@ -43,11 +42,9 @@ defmodule Milk.TournamentProgress do
     Logger.info("Redis has been flushed all")
   end
 
-  """
-  1. match_list
-  Manages match list which is used in tournament.
-  The data form is like `[[2, 1], 3]`.
-  """
+  # 1. match_list
+  # Manages match list which is used in tournament.
+  # The data form is like `[[2, 1], 3]`.
 
   def insert_match_list(match_list, tournament_id) do
     conn = conn()
@@ -123,19 +120,17 @@ defmodule Milk.TournamentProgress do
     end
   end
 
-  """
-  2. match_list_with_fight_result
-  Manages match list with fight result.
-  The purpose of this list is drawing brackets.
-  Data form is like
-  [
-    %{"user_id" => 3, "is_loser" => false, "name" => "testname", "win_count" => 0},
-    [
-      %{"user_id" => 1, "is_loser" => false, "name" => "testname", "win_count" => 0},
-      %{"user_id" => 2, "is_loser" => false, "name" => "testname", "win_count" => 0}
-    ]
-  ]
-  """
+  # 2. match_list_with_fight_result
+  # Manages match list with fight result.
+  # The purpose of this list is drawing brackets.
+  # Data form is like
+  # [
+  #   %{"user_id" => 3, "is_loser" => false, "name" => "testname", "win_count" => 0},
+  #   [
+  #     %{"user_id" => 1, "is_loser" => false, "name" => "testname", "win_count" => 0},
+  #     %{"user_id" => 2, "is_loser" => false, "name" => "testname", "win_count" => 0}
+  #   ]
+  # ]
 
   @doc """
   insert match list with fight result.
@@ -165,8 +160,6 @@ defmodule Milk.TournamentProgress do
       else
         []
       end
-    else
-      e -> []
     end
   end
 
@@ -223,12 +216,10 @@ defmodule Milk.TournamentProgress do
     end
   end
 
-  """
-  3. match_pending_list
-  Manages match pending list.
-  The list contains user_id of a user who pressed start_match and
-  the fight is not finished.
-  """
+  # 3. match_pending_list
+  # Manages match pending list.
+  # The list contains user_id of a user who pressed start_match and
+  # the fight is not finished.
 
   def insert_match_pending_list_table({user_id, tournament_id}) do
     conn = conn()
@@ -296,11 +287,9 @@ defmodule Milk.TournamentProgress do
     end
   end
 
-  """
-  4. match_pending_list
-  Manages fight result.
-  FIXME: 引数のタプルをやめたい
-  """
+  # 4. match_pending_list
+  # Manages fight result.
+  # FIXME: 引数のタプルをやめたい
 
   def insert_fight_result_table({user_id, tournament_id}, is_win) do
     conn = conn()
@@ -360,10 +349,8 @@ defmodule Milk.TournamentProgress do
     end
   end
 
-  """
-  5. duplicate_users
-  Manages duplicate users whose claims are same as their opponent.
-  """
+  # 5. duplicate_users
+  # Manages duplicate users whose claims are same as their opponent.
 
   def add_duplicate_user_id(tournament_id, user_id) do
     conn = conn()
@@ -421,10 +408,8 @@ defmodule Milk.TournamentProgress do
     end
   end
 
-  """
-  6. absence_process
-  The process manages users who did not press 'start' button for 5 mins.
-  """
+  # 6. absence_process
+  # The process manages users who did not press 'start' button for 5 mins.
 
   @doc """
   Set a time limit on entrant.
@@ -522,9 +507,9 @@ defmodule Milk.TournamentProgress do
       error -> {:error, error}
     end
     |> case do
-      {:ok, pid} ->
+      {:ok, _} ->
         with {:ok, _} <- Redix.command(conn, ["SELECT", 6]),
-             {:ok, value} <- Redix.command(conn, ["HDEL", tournament_id, user_id]) do
+             {:ok, _value} <- Redix.command(conn, ["HDEL", tournament_id, user_id]) do
           true
         else
           _ -> false
@@ -551,10 +536,8 @@ defmodule Milk.TournamentProgress do
     end
   end
 
-  """
-  7. scores
-  Instead of fight result, we use scores for players fight result management.
-  """
+  # 7. scores
+  # Instead of fight result, we use scores for players fight result management.
 
   def insert_score(tournament_id, user_id, score) do
     conn = conn()
@@ -599,13 +582,11 @@ defmodule Milk.TournamentProgress do
     end
   end
 
-  """
   # Single tournament match log.
-  Single tournament match log stores a progress information.
+  # Single tournament match log stores a progress information.
 
-  We have no idea of presenting this information in iOS,
-  but just storing them in a database.
-  """
+  # We have no idea of presenting this information in iOS,
+  # but just storing them in a database.
 
   @doc """
   Get single tournament match log.
@@ -631,9 +612,7 @@ defmodule Milk.TournamentProgress do
     |> Repo.insert()
   end
 
-  """
-  Best of x tournament match log.
-  """
+  # Best of x tournament match log.
 
   @doc """
   Get best of x tournament match log.
