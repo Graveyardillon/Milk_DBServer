@@ -1068,7 +1068,6 @@ defmodule MilkWeb.TournamentController do
           |> hd()
           |> Enum.each(fn user_id ->
             Tournaments.promote_rank(%{"tournament_id" => tournament_id, "user_id" => user_id}, :force)
-            #Tournaments.score(tournament_id, user_id, target_user_id, 0, -1, 0)
           end)
         Tournaments.delete_loser_process(tournament_id, [target_user_id])
     end
