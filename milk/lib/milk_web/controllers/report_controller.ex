@@ -20,7 +20,7 @@ defmodule MilkWeb.ReportController do
     case Reports.create_user_report(report_params) do
       {:ok, reports} ->
         Enum.all?(reports, fn report ->
-          !is_nil(reports)
+          !is_nil(report)
         end)
         |> if do
           Application.get_env(:milk, :environment)
@@ -61,7 +61,7 @@ defmodule MilkWeb.ReportController do
     report_params
     |> Reports.create_tournament_report()
     |> case do
-      {:ok, report} ->
+      {:ok, _} ->
         Application.get_env(:milk, :environment)
         |> Kernel.==(:test)
         |> unless do
