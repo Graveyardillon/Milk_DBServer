@@ -2748,11 +2748,10 @@ defmodule MilkWeb.TournamentControllerTest do
       assert json_response(conn, 200)["result"]
 
       json_response(conn, 200)
-      |> IO.inspect()
       |> Map.get("data")
       |> (fn list ->
             assert is_list(list)
-            assert length(list) == 2
+            assert length(list) == 4
           end).()
     end
   end
