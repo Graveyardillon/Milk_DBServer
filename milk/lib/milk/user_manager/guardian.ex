@@ -19,7 +19,7 @@ defmodule Milk.UserManager.Guardian do
         nil ->
           user.id
 
-        userinfo ->
+        _ ->
           user.user.id
       end
       |> to_string()

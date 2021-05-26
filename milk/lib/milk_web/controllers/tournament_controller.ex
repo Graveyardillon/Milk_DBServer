@@ -5,7 +5,6 @@ defmodule MilkWeb.TournamentController do
 
   alias Milk.{
     Accounts,
-    Chat,
     Log,
     Relations,
     TournamentProgress,
@@ -533,7 +532,7 @@ defmodule MilkWeb.TournamentController do
   defp start_single_elimination(conn, master_id, tournament) do
     with {:ok, _} <- Tournaments.start(master_id, tournament.id),
          {:ok, match_list, match_list_with_fight_result} <-
-           make_single_elimination_matches(conn, tournament.id) do
+           make_single_elimination_matches(tournament.id) do
       with match_list <- TournamentProgress.get_match_list(tournament.id) do
         TournamentProgress.set_time_limit_on_all_entrants(match_list, tournament.id)
       end
@@ -554,14 +553,14 @@ defmodule MilkWeb.TournamentController do
   defp start_best_of_format(conn, master_id, tournament) do
     Tournaments.start(master_id, tournament.id)
 
-    with {:ok, match_list} <- make_best_of_format_matches(conn, tournament) do
+    with {:ok, match_list} <- make_best_of_format_matches(tournament) do
       render(conn, "match.json", %{match_list: match_list, match_list_with_fight_result: nil})
     else
       _ -> json(conn, %{result: false})
     end
   end
 
-  defp make_single_elimination_matches(conn, tournament_id) do
+  defp make_single_elimination_matches(tournament_id) do
     with {:ok, match_list} <-
            Tournaments.get_entrants(tournament_id)
            |> Enum.map(fn x -> x.user_id end)
@@ -606,7 +605,7 @@ defmodule MilkWeb.TournamentController do
     Tournaments.initialize_match_list_with_fight_result(match_list)
   end
 
-  defp make_best_of_format_matches(conn, tournament) do
+  defp make_best_of_format_matches(tournament) do
     {:ok, match_list} =
       tournament.id
       |> Tournaments.get_entrants()
@@ -1024,9 +1023,10 @@ defmodule MilkWeb.TournamentController do
 
   defp finish_as_needed(tournament_id, winner_id) do
     match_list = TournamentProgress.get_match_list(tournament_id)
-    tournament = Tournaments.get_tournament(tournament_id)
 
     if is_integer(match_list) do
+      Tournaments.finish(tournament_id, winner_id)
+
       tournament_id
       |> TournamentProgress.get_match_list_with_fight_result()
       |> inspect()
@@ -1034,8 +1034,6 @@ defmodule MilkWeb.TournamentController do
             %{"tournament_id" => tournament_id, "match_list_with_fight_result_str" => str}
           end).()
       |> TournamentProgress.create_match_list_with_fight_result_log()
-
-      result = Tournaments.finish(tournament_id, winner_id)
       TournamentProgress.delete_match_list(tournament_id)
       TournamentProgress.delete_match_list_with_fight_result(tournament_id)
       TournamentProgress.delete_match_pending_list_of_tournament(tournament_id)
@@ -1043,6 +1041,38 @@ defmodule MilkWeb.TournamentController do
       TournamentProgress.delete_duplicate_users_all(tournament_id)
       TournamentProgress.delete_lose_processes(tournament_id)
     end
+  end
+
+  @doc """
+  Force to defeat a user.
+  """
+  def force_to_defeat(conn, %{"tournament_id" => tournament_id, "target_user_id" => target_user_id}) do
+    tournament_id = Tools.to_integer_as_needed(tournament_id)
+    target_user_id = Tools.to_integer_as_needed(target_user_id)
+
+    tournament_id
+    |> TournamentProgress.get_match_list()
+    |> Tournaments.find_match(target_user_id)
+    |> Tournaments.get_opponent(target_user_id)
+    |> case do
+      {:ok, winner} ->
+        Tournaments.promote_rank(%{"tournament_id" => tournament_id, "user_id" => winner["id"]})
+        Tournaments.score(tournament_id, winner["id"], target_user_id, 0, -1, 0)
+        Tournaments.delete_loser_process(tournament_id, [target_user_id])
+        finish_as_needed(tournament_id, winner["id"])
+      {:wait, nil} ->
+        match = tournament_id
+          |> TournamentProgress.get_match_list()
+          |> Tournaments.find_match(target_user_id)
+          |> Kernel.--([target_user_id])
+          |> hd()
+          |> Enum.each(fn user_id ->
+            Tournaments.promote_rank(%{"tournament_id" => tournament_id, "user_id" => user_id}, :force)
+          end)
+        Tournaments.delete_loser_process(tournament_id, [target_user_id])
+    end
+
+    json(conn, %{result: true})
   end
 
   @doc """

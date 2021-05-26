@@ -2,8 +2,6 @@ defmodule MilkWeb.AssistantController do
   use MilkWeb, :controller
 
   alias Milk.Tournaments
-  alias Milk.Tournaments.Assistant
-
   # action_fallback MilkWeb.FallbackController
 
   @doc """
