@@ -81,7 +81,8 @@ defmodule Milk.MixProject do
       {:google_api_storage, "~> 0.29"},
       # {:goth, "~> 1.2.0"}
       {:goth, "~> 1.3-rc"},
-      {:hackney, "~> 1.17"}
+      {:hackney, "~> 1.17"},
+      {:credo, "~> 1.5", only: [:dev, :test], runtime: false}
     ]
   end
 
