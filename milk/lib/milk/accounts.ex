@@ -351,6 +351,7 @@ defmodule Milk.Accounts do
     |> Enum.each(fn tournament ->
       Tournaments.delete_loser_process(tournament.id, [user.id])
     end)
+
     Repo.delete(user)
   end
 

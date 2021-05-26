@@ -81,7 +81,8 @@ defmodule Milk.MixProject do
       {:google_api_storage, "~> 0.29"},
       # {:goth, "~> 1.2.0"}
       {:goth, "~> 1.3-rc"},
-      {:hackney, "~> 1.17"}
+      {:hackney, "~> 1.17"},
+      {:credo, "~> 1.5", only: [:dev, :test], runtime: false}
     ]
   end
 
@@ -95,7 +96,14 @@ defmodule Milk.MixProject do
     [
       "ecto.setup": ["ecto.create", "ecto.migrate"],
       "ecto.reset": ["ecto.drop", "ecto.setup", "run -e Milk.TournamentProgress.flushall"],
-      test: ["ecto.create --quiet", "ecto.migrate", "test"]
+      test: ["ecto.create --quiet", "ecto.migrate", "test"],
+      check: [
+        "compile --warnings-as-errors",
+        "format --check-formatted",
+        "credo --strict",
+        "coveralls.html",
+        "dialyzer --format short"
+      ]
     ]
   end
 end

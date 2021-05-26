@@ -5,7 +5,6 @@ defmodule MilkWeb.TournamentController do
 
   alias Milk.{
     Accounts,
-    Chat,
     Log,
     Relations,
     TournamentProgress,
@@ -152,6 +151,7 @@ defmodule MilkWeb.TournamentController do
 
           %{"user_id" => tournament.master_id, "game_name" => tournament.game_name, "score" => 7}
           |> Accounts.gain_score()
+
           render(conn, "create.json", tournament: tournament)
 
         {:error, error} ->
@@ -181,6 +181,7 @@ defmodule MilkWeb.TournamentController do
 
       %{"user_id" => user_id, "game_name" => tournament.game_name, "score" => 1}
       |> Accounts.gain_score()
+
       render(conn, "tournament_info.json", tournament: tournament, entrants: entrants)
     else
       if tournament_log do
@@ -189,6 +190,7 @@ defmodule MilkWeb.TournamentController do
 
         %{"user_id" => user_id, "game_name" => tournament_log.game_name, "score" => 1}
         |> Accounts.gain_score()
+
         render(conn, "tournament_log.json", tournament_log: tournament_log)
       else
         render(conn, "error.json", error: nil)
@@ -417,12 +419,19 @@ defmodule MilkWeb.TournamentController do
   Get relevant tournaments.
   """
   def relevant(conn, %{"user_id" => user_id}) do
+    user_id = Tools.to_integer_as_needed(user_id)
+
+    tournaments = relevant(user_id)
+
+    render(conn, "index.json", tournament: tournaments)
+  end
+
+  # TODO: assistantを追加
+  defp relevant(user_id) do
     participatings = Tournaments.get_participating_tournaments(user_id)
     hostings = Tournaments.get_tournaments_by_master_id(user_id)
 
-    tournaments = Enum.uniq(participatings ++ hostings)
-
-    render(conn, "index.json", tournament: tournaments)
+    Enum.uniq(participatings ++ hostings)
   end
 
   @doc """
@@ -444,19 +453,35 @@ defmodule MilkWeb.TournamentController do
 
     result = tournament.capacity > entrants_len
 
-    participatings = Tournaments.get_participating_tournaments(user_id)
-    hostings = Tournaments.get_tournaments_by_master_id(user_id)
-
-    result =
-      participatings
-      |> Kernel.++(hostings)
-      |> Enum.uniq()
+    result = user_id
+      |> relevant()
       |> Enum.all?(fn t ->
         tournament.master_id == user_id || t.event_date != tournament.event_date
       end)
       |> Kernel.and(result)
 
     json(conn, %{result: result})
+  end
+
+  @doc """
+  Checks if the user is related to a started tournament.
+  """
+  def is_started_at_least_one(conn, %{"user_id" => user_id}) do
+    user_id = Tools.to_integer_as_needed(user_id)
+
+    tournaments = user_id
+      |> relevant()
+      |> Enum.filter(fn tournament ->
+        tournament.is_started
+      end)
+      |> Enum.map(fn tournament ->
+        tournament.id
+      end)
+
+    result = tournaments != []
+    tournament_id = if result, do: hd(tournaments)
+
+    json(conn, %{result: result, tournament_id: tournament_id})
   end
 
   @doc """
@@ -509,7 +534,7 @@ defmodule MilkWeb.TournamentController do
   defp start_single_elimination(conn, master_id, tournament) do
     with {:ok, _} <- Tournaments.start(master_id, tournament.id),
          {:ok, match_list, match_list_with_fight_result} <-
-           make_single_elimination_matches(conn, tournament.id) do
+           make_single_elimination_matches(tournament.id) do
       with match_list <- TournamentProgress.get_match_list(tournament.id) do
         TournamentProgress.set_time_limit_on_all_entrants(match_list, tournament.id)
       end
@@ -530,14 +555,14 @@ defmodule MilkWeb.TournamentController do
   defp start_best_of_format(conn, master_id, tournament) do
     Tournaments.start(master_id, tournament.id)
 
-    with {:ok, match_list} <- make_best_of_format_matches(conn, tournament) do
+    with {:ok, match_list} <- make_best_of_format_matches(tournament) do
       render(conn, "match.json", %{match_list: match_list, match_list_with_fight_result: nil})
     else
       _ -> json(conn, %{result: false})
     end
   end
 
-  defp make_single_elimination_matches(conn, tournament_id) do
+  defp make_single_elimination_matches(tournament_id) do
     with {:ok, match_list} <-
            Tournaments.get_entrants(tournament_id)
            |> Enum.map(fn x -> x.user_id end)
@@ -582,7 +607,7 @@ defmodule MilkWeb.TournamentController do
     Tournaments.initialize_match_list_with_fight_result(match_list)
   end
 
-  defp make_best_of_format_matches(conn, tournament) do
+  defp make_best_of_format_matches(tournament) do
     {:ok, match_list} =
       tournament.id
       |> Tournaments.get_entrants()
@@ -1000,17 +1025,56 @@ defmodule MilkWeb.TournamentController do
 
   defp finish_as_needed(tournament_id, winner_id) do
     match_list = TournamentProgress.get_match_list(tournament_id)
-    tournament = Tournaments.get_tournament(tournament_id)
 
     if is_integer(match_list) do
-      result = Tournaments.finish(tournament_id, winner_id)
-      TournamentProgress.delete_match_list(tournament_id)
-      TournamentProgress.delete_match_list_with_fight_result(tournament_id)
+      Tournaments.finish(tournament_id, winner_id)
+
+      tournament_id
+      |> TournamentProgress.get_match_list_with_fight_result()
+      |> inspect()
+      |> (fn str ->
+            %{"tournament_id" => tournament_id, "match_list_with_fight_result_str" => str}
+          end).()
+      |> TournamentProgress.create_match_list_with_fight_result_log()
+      # TournamentProgress.delete_match_list(tournament_id)
+      # TournamentProgress.delete_match_list_with_fight_result(tournament_id)
       TournamentProgress.delete_match_pending_list_of_tournament(tournament_id)
       TournamentProgress.delete_fight_result_of_tournament(tournament_id)
       TournamentProgress.delete_duplicate_users_all(tournament_id)
       TournamentProgress.delete_lose_processes(tournament_id)
     end
+  end
+
+  @doc """
+  Force to defeat a user.
+  """
+  def force_to_defeat(conn, %{"tournament_id" => tournament_id, "target_user_id" => target_user_id}) do
+    tournament_id = Tools.to_integer_as_needed(tournament_id)
+    target_user_id = Tools.to_integer_as_needed(target_user_id)
+
+    tournament_id
+    |> TournamentProgress.get_match_list()
+    |> Tournaments.find_match(target_user_id)
+    |> Tournaments.get_opponent(target_user_id)
+    |> case do
+      {:ok, winner} ->
+        Tournaments.promote_rank(%{"tournament_id" => tournament_id, "user_id" => winner["id"]})
+        Tournaments.score(tournament_id, winner["id"], target_user_id, 0, -1, 0)
+        Tournaments.delete_loser_process(tournament_id, [target_user_id])
+        finish_as_needed(tournament_id, winner["id"])
+      {:wait, nil} ->
+        match = tournament_id
+          |> TournamentProgress.get_match_list()
+          |> Tournaments.find_match(target_user_id)
+          |> Kernel.--([target_user_id])
+          |> hd()
+          |> Enum.each(fn user_id ->
+            Tournaments.promote_rank(%{"tournament_id" => tournament_id, "user_id" => user_id}, :force)
+          end)
+        Tournaments.delete_loser_process(tournament_id, [target_user_id])
+    end
+
+    json(conn, %{result: true})
   end
 
   @doc """
@@ -1141,6 +1205,15 @@ defmodule MilkWeb.TournamentController do
   """
   def finish(conn, %{"tournament_id" => tournament_id, "user_id" => user_id}) do
     result = Tournaments.finish(tournament_id, user_id)
+
+    tournament_id
+    |> TournamentProgress.get_match_list_with_fight_result()
+    |> inspect()
+    |> (fn str ->
+          %{"tournament_id" => tournament_id, "match_list_with_fight_result_str" => str}
+        end).()
+    |> TournamentProgress.create_match_list_with_fight_result_log()
+
     TournamentProgress.delete_match_list(tournament_id)
     TournamentProgress.delete_match_list_with_fight_result(tournament_id)
     TournamentProgress.delete_match_pending_list_of_tournament(tournament_id)
@@ -1162,10 +1235,10 @@ defmodule MilkWeb.TournamentController do
       json(conn, %{data: nil, result: false, count: nil})
     else
       brackets = Tournaments.data_with_fight_result_for_brackets(match_list)
-        count = Enum.count(brackets) * 2
-        num_for_brackets = Tournamex.Number.closest_number_to_power_of_two(count)
+      count = Enum.count(brackets) * 2
+      num_for_brackets = Tournamex.Number.closest_number_to_power_of_two(count)
 
-        json(conn, %{data: brackets, result: true, count: num_for_brackets})
+      json(conn, %{data: brackets, result: true, count: num_for_brackets})
     end
   end
 

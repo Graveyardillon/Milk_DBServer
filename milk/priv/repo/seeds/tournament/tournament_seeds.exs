@@ -5,7 +5,6 @@ alias Milk.{
   Repo,
   Tournaments
 }
-alias Milk.Tournaments.Tournament
 alias Milk.Accounts.{
   Auth,
   User
@@ -80,7 +79,7 @@ attrs = %{
   "description" => "test tournament of size 6.",
   "event_date" => tomorrow,
   "name" => "test tournament size 6",
-  "type" => 1,
+  "type" => 2,
   "url" => nil,
   "thumbnail_path" => "darksideofthemoon",
   "password" => nil,

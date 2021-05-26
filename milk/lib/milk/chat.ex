@@ -286,8 +286,7 @@ defmodule Milk.Chat do
           {:error, nil}
       end
     else
-      Logger.error("User does not exist")
-      {:error, nil}
+      {:error, "User does not exist"}
     end
   end
 
@@ -437,8 +436,9 @@ defmodule Milk.Chat do
       |> Kernel.and(
         Repo.exists?(
           from cm in ChatMember,
-            where: cm.user_id == ^attrs["user_id"]
-            and cm.chat_room_id == ^attrs["chat_room_id"]
+            where:
+              cm.user_id == ^attrs["user_id"] and
+                cm.chat_room_id == ^attrs["chat_room_id"]
         )
       )
 

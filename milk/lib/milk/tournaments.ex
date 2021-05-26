@@ -23,10 +23,6 @@ defmodule Milk.Tournaments do
     Relation
   }
 
-  alias Milk.TournamentProgress.{
-    BestOfXTournamentMatchLog
-  }
-
   alias Milk.Tournaments.{
     Tournament,
     Entrant,
@@ -37,8 +33,7 @@ defmodule Milk.Tournaments do
   alias Milk.Log.{
     TournamentLog,
     EntrantLog,
-    AssistantLog,
-    TournamentChatTopicLog
+    AssistantLog
   }
 
   alias Milk.Games.Game
@@ -72,6 +67,7 @@ defmodule Milk.Tournaments do
   """
   def home_tournament(user_id, date_offset, offset) do
     offset = Tools.to_integer_as_needed(offset)
+
     blocked_user_id_list =
       user_id
       |> Relations.blocked_users()
@@ -383,8 +379,10 @@ defmodule Milk.Tournaments do
       {:ok, tournament} ->
         join_topics(tournament.tournament.id, master_id)
         {:ok, tournament.tournament}
+
       {:error, error} ->
         {:error, error.errors}
+
       _ ->
         {:error, nil}
     end
@@ -699,6 +697,7 @@ defmodule Milk.Tournaments do
 
   defp join_tournament_chat_room_as_needed(entrant, attrs) do
     tournament = get_tournament(attrs["tournament_id"])
+
     if tournament.master_id == entrant.entrant.user_id do
       {:ok, entrant.entrant}
     else
@@ -729,6 +728,7 @@ defmodule Milk.Tournaments do
         else
           {:error, reason} ->
             {:error, reason}
+
           _ ->
             {:error, nil}
         end
@@ -853,7 +853,7 @@ defmodule Milk.Tournaments do
   TODO: エラーハンドリング
   loser_listは一人用になっている
   """
-  def delete_loser_process(tournament_id, loser_list) do
+  def delete_loser_process(tournament_id, loser_list) when is_list(loser_list) do
     match_list = TournamentProgress.get_match_list(tournament_id)
 
     match_list
@@ -903,12 +903,15 @@ defmodule Milk.Tournaments do
 
   def promote_winners_by_loser(tournament_id, match_list, losers) when is_list(losers) do
     Enum.each(losers, fn loser ->
-      {:ok, opponent} =
-        match_list
-        |> find_match(loser)
-        |> get_opponent(loser)
-
-      promote_rank(%{"tournament_id" => tournament_id, "user_id" => opponent["id"]})
+      match_list
+      |> find_match(loser)
+      |> get_opponent(loser)
+      |> case do
+        {:ok, opponent} ->
+          promote_rank(%{"tournament_id" => tournament_id, "user_id" => opponent["id"]})
+        {:wait, nil} ->
+          {:wait, nil}
+      end
     end)
   end
 
@@ -1407,7 +1410,40 @@ defmodule Milk.Tournaments do
   @doc """
   Promotes rank of a entrant.
   勝った人のランクが上がるやつ
+  FIXME: 引数をmapからかえたい
+  FIXME: 色々リファクタリング
   """
+  def promote_rank(attrs, :force) do
+    user_id = attrs["user_id"]
+    tournament_id = attrs["tournament_id"]
+
+    attrs
+    |> user_exist_check()
+    |> tournament_exist_check()
+    |> tournament_start_check()
+    |> case do
+      {:ok, _} ->
+        user_id
+        |> get_entrant_by_user_id_and_tournament_id(tournament_id)
+        |> Map.get(:rank)
+        |> check_exponentiation_of_two()
+        |> (fn {bool, rank} ->
+          updated = if bool do
+            div(rank, 2)
+          else
+            find_num_closest_exponentiation_of_two(rank)
+          end
+
+          user_id
+          |> get_entrant_by_user_id_and_tournament_id(tournament_id)
+          |> update_entrant(%{rank: updated})
+        end).()
+
+      {:error, error} ->
+        {:error, error}
+    end
+  end
+
   def promote_rank(attrs \\ %{}) do
     user_id = attrs["user_id"]
     tournament_id = attrs["tournament_id"]
@@ -1417,7 +1453,7 @@ defmodule Milk.Tournaments do
     |> tournament_exist_check()
     |> tournament_start_check()
     |> case do
-      {:ok, attrs} ->
+      {:ok, _} ->
         get_match_list_if_possible(tournament_id)
 
       {:error, error} ->
@@ -1695,7 +1731,7 @@ defmodule Milk.Tournaments do
   Construct data with game scores for brackets.
   """
   def data_with_scores_for_brackets(tournament_id) do
-    match_list = TournamentProgress.get_match_list_with_fight_result(tournament_id)
+    match_list = TournamentProgress.get_match_list_with_fight_result_including_log(tournament_id)
 
     # add game_scores
     match_list
@@ -1759,6 +1795,7 @@ defmodule Milk.Tournaments do
         end
       end)
     end)
+    |> List.flatten()
   end
 
   @doc """

@@ -111,7 +111,7 @@ defmodule MilkWeb.ChatsController do
   @doc """
   Load image.
   """
-  def load_image(conn, %{"id" => id, "path" => name}) do
+  def load_image(conn, %{"path" => name}) do
     map =
       case Application.get_env(:milk, :environment) do
         :dev -> loadimg(name)
@@ -183,6 +183,7 @@ defmodule MilkWeb.ChatsController do
 
       {:error, error} ->
         render(conn, "error.json", error: error)
+
       _ ->
         render(conn, "error.json", error: nil)
     end

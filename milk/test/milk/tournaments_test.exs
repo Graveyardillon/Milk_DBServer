@@ -397,8 +397,8 @@ defmodule Milk.TournamentsTest do
       |> Tournaments.home_tournament("2020-05-12 16:55:53 +0000", 0)
       |> length()
       |> (fn len ->
-        assert len == 0
-      end).()
+            assert len == 0
+          end).()
     end
 
     test "home_tournament_fav/1 returns tournaments which is filtered by favorite users for home screen" do
@@ -415,8 +415,8 @@ defmodule Milk.TournamentsTest do
       |> Tournaments.home_tournament_fav()
       |> length()
       |> (fn len ->
-        assert len == 1
-      end).()
+            assert len == 1
+          end).()
     end
 
     test "home_tournament_fav/1 fails to return tournaments which is filtered by favorite users for home screen" do
@@ -427,8 +427,8 @@ defmodule Milk.TournamentsTest do
       |> Tournaments.home_tournament_fav()
       |> length()
       |> (fn len ->
-        assert len == 0
-      end).()
+            assert len == 0
+          end).()
     end
 
     test "home_tournament_plan/1 returns user's tournaments" do
@@ -438,8 +438,8 @@ defmodule Milk.TournamentsTest do
       tournament.master_id
       |> Tournaments.home_tournament_plan()
       |> (fn len ->
-        refute len == 0
-      end).()
+            refute len == 0
+          end).()
     end
 
     test "home_tournament_plan/1 fails to return user's tournaments" do
@@ -494,6 +494,7 @@ defmodule Milk.TournamentsTest do
 
     test "get_entrants/1 works with valid data", %{entrant: entrant} do
       num = 7
+
       entrants =
         num
         |> create_entrants(entrant.tournament_id)
@@ -506,13 +507,17 @@ defmodule Milk.TournamentsTest do
       end)
       |> length()
       |> (fn len ->
-        assert len == length(entrants)
-      end).()
+            assert len == length(entrants)
+          end).()
     end
 
-    test "get_entrants/1 returns data 1 size smaller than past one after deleting an entrant", %{entrant: entrant} do
+    test "get_entrants/1 returns data 1 size smaller than past one after deleting an entrant", %{
+      entrant: entrant
+    } do
       num = 7
-      entrants = num
+
+      entrants =
+        num
         |> create_entrants(entrant.tournament_id)
         |> Enum.concat([entrant])
 
@@ -529,8 +534,8 @@ defmodule Milk.TournamentsTest do
       end)
       |> length()
       |> (fn len ->
-        assert len == length(entrants) - 1
-      end).()
+            assert len == length(entrants) - 1
+          end).()
     end
 
     test "get_entrant_including_logs/1 gets tournament log with a valid data", %{entrant: entrant} do
@@ -569,6 +574,48 @@ defmodule Milk.TournamentsTest do
 
     test "create_entrant/1 with an invalid data does not work" do
       assert {:error, _} = Tournaments.create_entrant(@invalid_entrant_create_attrs)
+    end
+
+    test "create_entrant/1 returns an error when entrant already exists" do
+      user = fixture_user()
+      tournament = fixture_tournament()
+
+      entrant_param = @entrant_create_attrs
+      |> Map.put("tournament_id", tournament.id)
+      |> Map.put("user_id", user.id)
+      Tournaments.create_entrant(entrant_param)
+
+      Tournaments.create_entrant(entrant_param)
+      |> Kernel.==({:error, "Already joined"})
+      |> assert()
+    end
+
+    test "create_entrant/1 returns a multi error when it runs with same parameter at one time." do
+      # tournament and user for entrant_param
+      user0 = fixture_user()
+      user1 = fixture_user([num: 0])
+      tournament0 = fixture_tournament()
+      tournament1 = fixture_tournament([master_id: user1.id])
+
+      entrant_param =
+        @entrant_create_attrs
+        |> Map.put("tournament_id", tournament0.id)
+        |> Map.put("user_id", user0.id)
+
+      # entrant作成の並行タスク生成
+      create_entrant_task0 = Task.async(fn -> Tournaments.create_entrant(entrant_param) end)
+      create_entrant_task1 = Task.async(fn -> Tournaments.create_entrant(%{entrant_param|"tournament_id" => tournament1.id}) end)
+      create_entrant_task2 = Task.async(fn -> Tournaments.create_entrant(entrant_param) end)
+
+      # 元のパラメータとそれぞれtournament_id, user_idのどちらかの重複，どちらも同じの合計4パターンのentrant作成結果の出力
+      # 元のentrant_param
+      assert {:ok, _} = Task.await(create_entrant_task0)
+      # user_idのみ書き換えたパラメータ
+      assert {:ok, _} = Tournaments.create_entrant(%{entrant_param|"user_id" => user1.id})
+      # tournament_idのみ書き換えたパラメータ
+      assert {:ok, _} = Task.await(create_entrant_task1)
+      # どちらも書き換えていないパラメータ
+      assert {:multierror, _} = Task.await(create_entrant_task2)
     end
   end
 
