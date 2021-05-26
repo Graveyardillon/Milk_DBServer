@@ -1035,8 +1035,8 @@ defmodule MilkWeb.TournamentController do
             %{"tournament_id" => tournament_id, "match_list_with_fight_result_str" => str}
           end).()
       |> TournamentProgress.create_match_list_with_fight_result_log()
-      TournamentProgress.delete_match_list(tournament_id)
-      TournamentProgress.delete_match_list_with_fight_result(tournament_id)
+      # TournamentProgress.delete_match_list(tournament_id)
+      # TournamentProgress.delete_match_list_with_fight_result(tournament_id)
       TournamentProgress.delete_match_pending_list_of_tournament(tournament_id)
       TournamentProgress.delete_fight_result_of_tournament(tournament_id)
       TournamentProgress.delete_duplicate_users_all(tournament_id)

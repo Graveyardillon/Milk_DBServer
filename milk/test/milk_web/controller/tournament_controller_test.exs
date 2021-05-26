@@ -2751,7 +2751,7 @@ defmodule MilkWeb.TournamentControllerTest do
       |> Map.get("data")
       |> (fn list ->
             assert is_list(list)
-            assert length(list) == 2
+            assert length(list) == 4
           end).()
     end
   end

@@ -1795,6 +1795,7 @@ defmodule Milk.Tournaments do
         end
       end)
     end)
+    |> List.flatten()
   end
 
   @doc """
