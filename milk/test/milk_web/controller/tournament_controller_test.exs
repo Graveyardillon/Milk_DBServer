@@ -3033,8 +3033,16 @@ defmodule MilkWeb.TournamentControllerTest do
           "tournament_id" => tournament.id
         })
 
+      assert json_response(conn, 200)["result"]
       json_response(conn, 200)
-      |> IO.inspect()
+      |> Map.get("data")
+      |> Enum.map(fn bracket ->
+        if bracket["user_id"] == entrant1.user_id do
+          refute bracket["is_loser"]
+        else
+          assert bracket["is_loser"]
+        end
+      end)
 
       conn = get(conn, Routes.tournament_path(conn, :show), tournament_id: tournament.id)
 
