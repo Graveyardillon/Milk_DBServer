@@ -329,6 +329,7 @@ defmodule MilkWeb.TournamentControllerTest do
       conn = post(conn, Routes.tournament_path(conn, :show, %{"tournament_id" => id}))
 
       assert tournament = json_response(conn, 200)["data"]
+      refute json_response(conn, 200)["is_log"]
 
       json_response(conn, 200)
       |> Map.get("data")
@@ -2097,7 +2098,7 @@ defmodule MilkWeb.TournamentControllerTest do
         )
 
       conn =
-        get(conn, Routes.tournament_path(conn, :bracket_data_for_best_of_format), %{
+        get(conn, Routes.tournament_path(conn, :chunk_bracket_data_for_best_of_format), %{
           "tournament_id" => tournament.id
         })
 
@@ -2115,7 +2116,7 @@ defmodule MilkWeb.TournamentControllerTest do
         )
 
       conn =
-        get(conn, Routes.tournament_path(conn, :bracket_data_for_best_of_format), %{
+        get(conn, Routes.tournament_path(conn, :chunk_bracket_data_for_best_of_format), %{
           "tournament_id" => tournament.id
         })
 
@@ -2199,6 +2200,11 @@ defmodule MilkWeb.TournamentControllerTest do
       |> (fn len ->
         assert len == length(entrants)
       end).()
+
+      conn = get(conn, Routes.tournament_path(conn, :show), tournament_id: tournament.id)
+      assert json_response(conn, 200)["is_log"]
+
+      assert TournamentProgress.get_match_list_with_fight_result(tournament.id) == []
     end
   end
 
@@ -3021,6 +3027,22 @@ defmodule MilkWeb.TournamentControllerTest do
             assert data["validated"]
             assert data["completed"]
           end).()
+
+      conn =
+        get(conn, Routes.tournament_path(conn, :chunk_bracket_data_for_best_of_format), %{
+          "tournament_id" => tournament.id
+        })
+
+      assert json_response(conn, 200)["result"]
+      json_response(conn, 200)
+      |> Map.get("data")
+      |> Enum.map(fn bracket ->
+        if bracket["user_id"] == entrant1.user_id do
+          refute bracket["is_loser"]
+        else
+          assert bracket["is_loser"]
+        end
+      end)
 
       conn = get(conn, Routes.tournament_path(conn, :show), tournament_id: tournament.id)
 

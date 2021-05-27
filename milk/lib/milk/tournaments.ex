@@ -1760,10 +1760,11 @@ defmodule Milk.Tournaments do
   end
 
   @doc """
-  new one.
+  Construct data with game scores for brackets.
   """
   def data_with_scores_for_flexible_brackets(tournament_id) do
-    match_list = TournamentProgress.get_match_list_with_fight_result(tournament_id)
+    # TODO: fix
+    match_list = TournamentProgress.get_match_list_with_fight_result_including_log(tournament_id)
     {:ok, brackets} = Tournamex.brackets_with_fight_result(match_list)
 
     # add game_scores
