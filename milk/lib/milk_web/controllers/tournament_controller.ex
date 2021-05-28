@@ -1036,8 +1036,8 @@ defmodule MilkWeb.TournamentController do
             %{"tournament_id" => tournament_id, "match_list_with_fight_result_str" => str}
           end).()
       |> TournamentProgress.create_match_list_with_fight_result_log()
-      # TournamentProgress.delete_match_list(tournament_id)
-      # TournamentProgress.delete_match_list_with_fight_result(tournament_id)
+      TournamentProgress.delete_match_list(tournament_id)
+      TournamentProgress.delete_match_list_with_fight_result(tournament_id)
       TournamentProgress.delete_match_pending_list_of_tournament(tournament_id)
       TournamentProgress.delete_fight_result_of_tournament(tournament_id)
       TournamentProgress.delete_duplicate_users_all(tournament_id)
@@ -1245,23 +1245,8 @@ defmodule MilkWeb.TournamentController do
   @doc """
   Bracket data for best of format.
   """
-  def bracket_data_for_best_of_format(conn, %{"tournament_id" => tournament_id}) do
-    tournament_id = Tools.to_integer_as_needed(tournament_id)
-    # TODO: data_with_scores_for_bracketsを使う
-    brackets = Tournaments.data_with_scores_for_brackets(tournament_id)
-
-    count =
-      brackets
-      |> Enum.count()
-      |> Kernel.*(2)
-      |> Tournamex.Number.closest_number_to_power_of_two()
-
-    json(conn, %{result: true, data: brackets, count: count})
-  end
-
   def chunk_bracket_data_for_best_of_format(conn, %{"tournament_id" => tournament_id}) do
     tournament_id = Tools.to_integer_as_needed(tournament_id)
-    # TODO: data_with_scores_for_bracketsを使う
     brackets = Tournaments.data_with_scores_for_flexible_brackets(tournament_id)
 
     count =
