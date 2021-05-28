@@ -851,7 +851,7 @@ defmodule Milk.Tournaments do
   @doc """
   Delete loser.
   TODO: エラーハンドリング
-  loser_listは一人用になっている
+  loser_listは一人用
   """
   def delete_loser_process(tournament_id, loser_list) when is_list(loser_list) do
     match_list = TournamentProgress.get_match_list(tournament_id)
@@ -859,14 +859,16 @@ defmodule Milk.Tournaments do
     match_list
     |> find_match(hd(loser_list))
     |> Enum.each(fn user_id ->
-      TournamentProgress.delete_match_pending_list({user_id, tournament_id})
-      TournamentProgress.delete_fight_result({user_id, tournament_id})
+      if is_integer(user_id) do
+        TournamentProgress.delete_match_pending_list({user_id, tournament_id})
+        TournamentProgress.delete_fight_result({user_id, tournament_id})
+      end
     end)
 
     renew_match_list(tournament_id, match_list, loser_list)
     updated_match_list = TournamentProgress.get_match_list(tournament_id)
     renew_match_list_with_fight_result(tournament_id, loser_list)
-    unless is_integer(updated_match_list), do: trim_match_list_as_needed(tournament_id)
+    #unless is_integer(updated_match_list), do: trim_match_list_as_needed(tournament_id)
 
     updated_match_list
   end

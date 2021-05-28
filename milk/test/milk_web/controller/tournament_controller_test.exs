@@ -2142,7 +2142,7 @@ defmodule MilkWeb.TournamentControllerTest do
         )
 
       conn =
-        get(conn, Routes.tournament_path(conn, :bracket_data_for_best_of_format), %{
+        get(conn, Routes.tournament_path(conn, :chunk_bracket_data_for_best_of_format), %{
           "tournament_id" => tournament.id
         })
 
@@ -2183,7 +2183,7 @@ defmodule MilkWeb.TournamentControllerTest do
         )
 
       conn =
-        get(conn, Routes.tournament_path(conn, :bracket_data_for_best_of_format), %{
+        get(conn, Routes.tournament_path(conn, :chunk_bracket_data_for_best_of_format), %{
           "tournament_id" => tournament.id
         })
 
@@ -2621,7 +2621,7 @@ defmodule MilkWeb.TournamentControllerTest do
         )
 
       conn =
-        get(conn, Routes.tournament_path(conn, :bracket_data_for_best_of_format), %{
+        get(conn, Routes.tournament_path(conn, :chunk_bracket_data_for_best_of_format), %{
           "tournament_id" => tournament.id
         })
 
@@ -2682,7 +2682,7 @@ defmodule MilkWeb.TournamentControllerTest do
         )
 
       conn =
-        get(conn, Routes.tournament_path(conn, :bracket_data_for_best_of_format), %{
+        get(conn, Routes.tournament_path(conn, :chunk_bracket_data_for_best_of_format), %{
           "tournament_id" => tournament.id
         })
 
@@ -3090,84 +3090,84 @@ defmodule MilkWeb.TournamentControllerTest do
     end
   end
 
-  describe "test trim of players" do
-    setup [:create_tournament]
+  # describe "test trim of players" do
+  #   setup [:create_tournament]
 
-    test "trim of players", %{conn: conn, tournament: tournament} do
-      entrants = create_entrants(17, tournament.id)
-      player = hd(entrants)
+  #   test "trim of players", %{conn: conn, tournament: tournament} do
+  #     entrants = create_entrants(17, tournament.id)
+  #     player = hd(entrants)
 
-      conn =
-        post(conn, Routes.tournament_path(conn, :start),
-          tournament: %{"master_id" => tournament.master_id, "tournament_id" => tournament.id}
-        )
+  #     conn =
+  #       post(conn, Routes.tournament_path(conn, :start),
+  #         tournament: %{"master_id" => tournament.master_id, "tournament_id" => tournament.id}
+  #       )
 
-      # match_list = json_response(conn, 200)["data"]["match_list"]
+  #     # match_list = json_response(conn, 200)["data"]["match_list"]
 
-      tournament.id
-      |> TournamentProgress.get_match_list_with_fight_result()
-      |> Tournaments.match_list_length()
-      |> (fn len ->
-            assert len == 17
-          end).()
+  #     tournament.id
+  #     |> TournamentProgress.get_match_list_with_fight_result()
+  #     |> Tournaments.match_list_length()
+  #     |> (fn len ->
+  #           assert len == 17
+  #         end).()
 
-      conn =
-        get(conn, Routes.tournament_path(conn, :get_opponent), %{
-          "tournament_id" => tournament.id,
-          "user_id" => player.user_id
-        })
+  #     conn =
+  #       get(conn, Routes.tournament_path(conn, :get_opponent), %{
+  #         "tournament_id" => tournament.id,
+  #         "user_id" => player.user_id
+  #       })
 
-      response = json_response(conn, 200)
+  #     response = json_response(conn, 200)
 
-      cond do
-        !is_nil(response["opponent"]) -> true
-        is_nil(response["opponent"]) and !is_nil(response["wait"]) -> false
-        true -> assert false, "it must not be true"
-      end
-      |> if do
-        opponent = response["opponent"]
+  #     cond do
+  #       !is_nil(response["opponent"]) -> true
+  #       is_nil(response["opponent"]) and !is_nil(response["wait"]) -> false
+  #       true -> assert false, "it must not be true"
+  #     end
+  #     |> if do
+  #       opponent = response["opponent"]
 
-        conn =
-          post(conn, Routes.tournament_path(conn, :start_match),
-            user_id: player.user_id,
-            tournament_id: tournament.id
-          )
+  #       conn =
+  #         post(conn, Routes.tournament_path(conn, :start_match),
+  #           user_id: player.user_id,
+  #           tournament_id: tournament.id
+  #         )
 
-        conn =
-          post(conn, Routes.tournament_path(conn, :start_match),
-            user_id: opponent["id"],
-            tournament_id: tournament.id
-          )
+  #       conn =
+  #         post(conn, Routes.tournament_path(conn, :start_match),
+  #           user_id: opponent["id"],
+  #           tournament_id: tournament.id
+  #         )
 
-        conn =
-          post(conn, Routes.tournament_path(conn, :claim_win),
-            opponent_id: opponent["id"],
-            user_id: player.user_id,
-            tournament_id: tournament.id
-          )
+  #       conn =
+  #         post(conn, Routes.tournament_path(conn, :claim_win),
+  #           opponent_id: opponent["id"],
+  #           user_id: player.user_id,
+  #           tournament_id: tournament.id
+  #         )
 
-        conn =
-          post(conn, Routes.tournament_path(conn, :claim_lose),
-            opponent_id: player.user_id,
-            user_id: opponent["id"],
-            tournament_id: tournament.id
-          )
+  #       conn =
+  #         post(conn, Routes.tournament_path(conn, :claim_lose),
+  #           opponent_id: player.user_id,
+  #           user_id: opponent["id"],
+  #           tournament_id: tournament.id
+  #         )
 
-        post(conn, Routes.tournament_path(conn, :delete_loser),
-          tournament: %{"tournament_id" => tournament.id, "loser_list" => [opponent["id"]]}
-        )
+  #       post(conn, Routes.tournament_path(conn, :delete_loser),
+  #         tournament: %{"tournament_id" => tournament.id, "loser_list" => [opponent["id"]]}
+  #       )
 
-        tournament.id
-        |> TournamentProgress.get_match_list_with_fight_result()
-        |> Tournaments.match_list_length()
-        |> (fn len ->
-              assert len == 16
-            end).()
-      else
-        Logger.warn("opponent is nil in 'test trim of players'")
-      end
-    end
-  end
+  #       tournament.id
+  #       |> TournamentProgress.get_match_list_with_fight_result()
+  #       |> Tournaments.match_list_length()
+  #       |> (fn len ->
+  #             assert len == 16
+  #           end).()
+  #     else
+  #       Logger.warn("opponent is nil in 'test trim of players'")
+  #     end
+  #   end
+  # end
 
   defp create_tournament(_) do
     tournament = fixture_tournament()
