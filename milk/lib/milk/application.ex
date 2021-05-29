@@ -20,6 +20,7 @@ defmodule Milk.Application do
       {Task, fn -> Milk.setup_platform() end},
       Milk.ConfNum,
       Milk.Email.Auth,
+      #Common.KeyValueStore,
       {Goth, name: Milk.Goth, source: source}
     ]
 

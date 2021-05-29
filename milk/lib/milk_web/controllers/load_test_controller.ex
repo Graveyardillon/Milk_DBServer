@@ -2,10 +2,14 @@ defmodule MilkWeb.LoadTestController do
   use MilkWeb, :controller
   use Timex
 
+  alias Common.KeyValueStore
+
   @log_file_path "load_test_log.txt"
 
   # TODO: 認証処理
   def start(conn, _) do
+    KeyValueStore.start()
+
     pid_str =
       Task.async(fn ->
         start_count = 0
@@ -30,11 +34,16 @@ defmodule MilkWeb.LoadTestController do
           :timer.sleep(sleep_msec)
         end)
       end)
+      |> Map.get(:pid)
+      |> KeyValueStore.set(:load_test)
 
     json(conn, %{result: true})
   end
 
   def crash(conn, _) do
-    exit(:boom)
+    KeyValueStore.get(:load_test)
+    |> Process.exit(:boom)
+
+    json(conn, %{result: true})
   end
 end
