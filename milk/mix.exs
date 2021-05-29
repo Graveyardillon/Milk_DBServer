@@ -36,7 +36,14 @@ defmodule Milk.MixProject do
   def application do
     [
       mod: {Milk.Application, []},
-      extra_applications: [:logger, :runtime_tools, :guardian, :bamboo, :bamboo_smtp]
+      extra_applications: [
+        :logger,
+        :runtime_tools,
+        :guardian,
+        :bamboo,
+        :bamboo_smtp,
+        :os_mon
+      ]
     ]
   end
 
