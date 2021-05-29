@@ -20,11 +20,13 @@ config :milk, MilkWeb.Endpoint,
 # Do not print debug messages in production
 config :logger, level: :info
 
+IO.inspect(System.get_env("CLOUD_SQL_HOST"), label: :host)
+
 config :milk, Milk.Repo,
   username: "postgres",
   password: "postgres",
   database: "milkdb",
-  socket_dir: "/tmp/cloudsql/e-players6814:asia-northeast1:milkdb",
+  socket_dir: "/tmp/cloudsql/" <> System.get_env("CLOUD_SQL_HOST"),
   show_sensitive_data_on_connection_error: true,
   pool_size: 10
 

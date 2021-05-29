@@ -1,0 +1,9 @@
+{
+    "name": "Google Cloud SDK Remote-Container",
+    "build" : {
+        "dockerfile": "Dockerfile"
+    },
+    "settings": {
+        "terminal.integrated.shell.linux": "/usr/bin/fish",
+    }
+}
