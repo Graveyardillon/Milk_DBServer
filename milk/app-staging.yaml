@@ -11,6 +11,8 @@ resources:
 instance_class: b1
 manual_scaling:
   instances: 1
+beta_settings:
+  cloud_sql_instances: e-players6814:asia-northeast1:milkdb-test
 env_variables:
   REDISHOST: '10.231.150.131'
   REDISPORT: '6379'
