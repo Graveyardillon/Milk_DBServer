@@ -67,6 +67,7 @@ defmodule MilkWeb.Router do
     post "/relation/block_user", RelationController, :block_user
     post "/relation/unblock_user", RelationController, :unblock_user
 
+    get "/chat/all_chats", ChatsController, :get_all_chats
     resources "/chat", ChatsController, except: [:new, :edit, :index, :delete]
     delete "/chat", ChatsController, :delete
     post "/chat/create_dialogue", ChatsController, :create_dialogue

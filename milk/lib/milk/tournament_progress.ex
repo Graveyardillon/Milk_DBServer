@@ -170,7 +170,6 @@ defmodule Milk.TournamentProgress do
       [] ->
         tournament_id
         |> get_match_list_with_fight_result_log()
-        |> hd()
         |> Map.get(:match_list_with_fight_result_str)
         |> Code.eval_string()
         |> elem(0)
@@ -650,7 +649,7 @@ defmodule Milk.TournamentProgress do
   def get_match_list_with_fight_result_log(tournament_id) do
     MatchListWithFightResultLog
     |> where([l], l.tournament_id == ^tournament_id)
-    |> Repo.all()
+    |> Repo.one()
   end
 
   def create_match_list_with_fight_result_log(attrs \\ %{}) do

@@ -54,8 +54,44 @@ defmodule MilkWeb.ChatsControllerTest do
     Accounts.get_user(user.id)
   end
 
+  defp create_chat_list(user_id, room_id, n) do
+    1..n
+    |> Enum.to_list()
+    |> Enum.map(fn n ->
+      %{
+        "user_id" => user_id,
+        "chat_room_id" => room_id,
+        "word" => to_string(n) <> "hello"
+      }
+      |> Chat.create_chats()
+      |> elem(1)
+    end)
+  end
+
   setup %{conn: conn} do
     {:ok, conn: put_req_header(conn, "accept", "application/json")}
+  end
+
+  describe "get all chats" do
+    test "works", %{conn: conn} do
+      user = fixture(:user, "createchat")
+      chat_room = fixture(:chat_room)
+      Chat.create_chat_member(%{"user_id" => user.id, "chat_room_id" => chat_room.id})
+
+      create_chat_list(user.id, chat_room.id, 100)
+
+      conn = get(conn, Routes.chats_path(conn, :get_all_chats), room_id: chat_room.id)
+      assert json_response(conn, 200)["result"]
+      json_response(conn, 200)
+      |> Map.get("data")
+      |> Enum.map(fn chat ->
+        assert is_map(chat)
+      end)
+      |> length()
+      |> (fn len ->
+        assert len == 100
+      end).()
+    end
   end
 
   describe "create chats" do

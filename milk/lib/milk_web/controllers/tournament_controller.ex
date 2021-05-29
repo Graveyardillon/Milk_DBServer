@@ -426,6 +426,7 @@ defmodule MilkWeb.TournamentController do
     render(conn, "index.json", tournament: tournaments)
   end
 
+  # TODO: assistantを追加
   defp relevant(user_id) do
     participatings = Tournaments.get_participating_tournaments(user_id)
     hostings = Tournaments.get_tournaments_by_master_id(user_id)
@@ -487,6 +488,7 @@ defmodule MilkWeb.TournamentController do
   Get tournament topics.
   """
   def tournament_topics(conn, %{"tournament_id" => tournament_id}) do
+    tournament_id = Tools.to_integer_as_needed(tournament_id)
     tabs = Tournaments.get_tabs_by_tournament_id(tournament_id)
 
     render(conn, "tournament_topics.json", topics: tabs)
@@ -1243,23 +1245,8 @@ defmodule MilkWeb.TournamentController do
   @doc """
   Bracket data for best of format.
   """
-  def bracket_data_for_best_of_format(conn, %{"tournament_id" => tournament_id}) do
-    tournament_id = Tools.to_integer_as_needed(tournament_id)
-    # TODO: data_with_scores_for_bracketsを使う
-    brackets = Tournaments.data_with_scores_for_brackets(tournament_id)
-
-    count =
-      brackets
-      |> Enum.count()
-      |> Kernel.*(2)
-      |> Tournamex.Number.closest_number_to_power_of_two()
-
-    json(conn, %{result: true, data: brackets, count: count})
-  end
-
   def chunk_bracket_data_for_best_of_format(conn, %{"tournament_id" => tournament_id}) do
     tournament_id = Tools.to_integer_as_needed(tournament_id)
-    # TODO: data_with_scores_for_bracketsを使う
     brackets = Tournaments.data_with_scores_for_flexible_brackets(tournament_id)
 
     count =
