@@ -1,6 +1,17 @@
 use Timex
 
 defmodule Spare do
+  def get(url, attr) do
+    {:ok, %HTTPoison.Response{body: body}} =
+      HTTPoison.get(
+        url,
+        [{"Content-Type", "application/json"}],
+        params: attr
+      )
+    {:ok, map} = Poison.decode(body)
+    map
+  end
+
   def send_post(url, attr) do
     {:ok, %HTTPoison.Response{body: body}} =
       HTTPoison.post(
@@ -105,7 +116,17 @@ end)
 |> Enum.map(fn n ->
   Task.async(fn ->
     tournament_id = n
+    url = "http://localhost:4000/api/tournament/get_entrants"
+    Spare.get(url, %{"tournament_id" => tournament_id})
+    |> IO.inspect()
 
+    # url = "http://localhost:4000/api/tournament/state"
+
+    # Stream.info("IsInitialState", fn
+    #   "IsFinished" -> nil
+    #   state ->
+
+    # end)
   end)
 end)
 |> Task.yield_many()
