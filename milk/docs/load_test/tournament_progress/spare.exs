@@ -109,24 +109,41 @@ users
     end
   end)
 end)
-|> IO.inspect(limit: :infinity)
 
 1..25
 |> Enum.to_list()
 |> Enum.map(fn n ->
   Task.async(fn ->
     tournament_id = n
-    url = "http://localhost:4000/api/tournament/get_entrants"
-    Spare.get(url, %{"tournament_id" => tournament_id})
+    master_id = "http://localhost:4000/api/tournament/get"
+      |> Spare.get(%{"tournament_id" => tournament_id})
+      |> Map.get("data")
+      |> Map.get("master_id")
+
+    "http://localhost:4000/api/tournament/start"
+    |> Spare.send_post(
+      %{"tournament" =>
+        %{"tournament_id" => tournament_id, "master_id" => master_id}
+      }
+    )
+
+    "http://localhost:4000/api/tournament/get_entrants"
+    |> Spare.get(%{"tournament_id" => tournament_id})
+    |> Map.get("data")
+    |> Enum.map(fn %{"user_id" => user_id} ->
+      "http://localhost:4000/api/tournament/state"
+      |> Spare.get(%{"tournament_id" => tournament_id, "user_id" => user_id})
+      |> Map.get("state")
+    end)
     |> IO.inspect()
-
-    # url = "http://localhost:4000/api/tournament/state"
-
-    # Stream.info("IsInitialState", fn
-    #   "IsFinished" -> nil
-    #   state ->
-
-    # end)
+    |> Enum.each(fn state ->
+      Stream.unfold(state, fn
+        "IsFinished" ->
+          nil
+        state ->
+          nil
+      end)
+    end)
   end)
 end)
 |> Task.yield_many()
