@@ -22,6 +22,32 @@ defmodule Spare do
     {:ok, map} = Poison.decode(body)
     map
   end
+
+  def state_process(state, user_id, tournament_id) when state != "IsFinished" do
+    cond do
+      state == "IsInMatch" ->
+        "http://localhost:4000/api/tournament/start_match"
+        |> send_post(%{"tournament_id" => tournament_id, "user_id" => user_id})
+      state == "IsManager" ->
+        nil
+      state == "IsAssistant" ->
+        nil
+      state == "IsLoser" ->
+        nil
+      state == "IsAlone" ->
+        nil
+      state == "IsWaitingForStart" ->
+        nil
+      state == "IsPending" ->
+        nil
+    end
+
+    "http://localhost:4000/api/tournament/state"
+    |> Spare.get(%{"tournament_id" => tournament_id, "user_id" => user_id})
+    |> IO.inspect()
+  end
+
+  def state_process(state, user_id, tournament_id), do: "IsFinished"
 end
 
 url = "http://localhost:4000/api/load_test/start"
@@ -40,7 +66,6 @@ Process.sleep(1000)
   }
   Spare.send_post(url, %{"user" => attr})
 end)
-|> IO.inspect()
 |> Enum.map(fn response ->
   now = Timex.now()
   tomorrow = Timex.now()
@@ -134,15 +159,7 @@ end)
       "http://localhost:4000/api/tournament/state"
       |> Spare.get(%{"tournament_id" => tournament_id, "user_id" => user_id})
       |> Map.get("state")
-    end)
-    |> IO.inspect()
-    |> Enum.each(fn state ->
-      Stream.unfold(state, fn
-        "IsFinished" ->
-          nil
-        state ->
-          nil
-      end)
+      |> Spare.state_process(user_id, tournament_id)
     end)
   end)
 end)
