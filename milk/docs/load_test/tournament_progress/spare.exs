@@ -37,14 +37,17 @@ defmodule Spare do
       state == "IsAlone" ->
         nil
       state == "IsWaitingForStart" ->
-        nil
+        Process.sleep(1500)
       state == "IsPending" ->
         nil
     end
 
-    "http://localhost:4000/api/tournament/state"
-    |> Spare.get(%{"tournament_id" => tournament_id, "user_id" => user_id})
-    |> IO.inspect()
+    Process.sleep(1000)
+
+    # "http://localhost:4000/api/tournament/state"
+    # |> Spare.get(%{"tournament_id" => tournament_id, "user_id" => user_id})
+    # |> IO.inspect()
+    # |> state_process(state, user_id, tournament_id)
   end
 
   def state_process(state, user_id, tournament_id), do: "IsFinished"
@@ -155,6 +158,7 @@ end)
     "http://localhost:4000/api/tournament/get_entrants"
     |> Spare.get(%{"tournament_id" => tournament_id})
     |> Map.get("data")
+    |> IO.inspect(label: :data)
     |> Enum.map(fn %{"user_id" => user_id} ->
       "http://localhost:4000/api/tournament/state"
       |> Spare.get(%{"tournament_id" => tournament_id, "user_id" => user_id})
