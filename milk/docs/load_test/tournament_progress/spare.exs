@@ -9,8 +9,11 @@ defmodule Spare do
         params: attr
       )
     inspect(body, label: :body, charlists: false)
-    {:ok, map} = Poison.decode(body)
-    map
+    with {:ok, map} <- Poison.decode(body) do
+      map
+    else
+      e -> IO.inspect(e)
+    end
   end
 
   def send_post(url, attr) do
@@ -165,7 +168,7 @@ users
   end)
 end)
 
-1..25
+1..1
 |> Enum.to_list()
 |> Enum.map(fn n ->
   Process.sleep(500)
