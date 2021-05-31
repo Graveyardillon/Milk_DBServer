@@ -12,7 +12,9 @@ defmodule Spare do
     with {:ok, map} <- Poison.decode(body) do
       map
     else
-      e -> IO.inspect(e)
+      e ->
+        IO.inspect(body, label: :ebody)
+        IO.inspect(e)
     end
   end
 
@@ -23,8 +25,13 @@ defmodule Spare do
         Jason.encode!(attr),
         "Content-Type": "application/json"
       )
-    {:ok, map} = Poison.decode(body)
-    map
+    with {:ok, map} <- Poison.decode(body) do
+      map
+    else
+      e ->
+        IO.inspect(body, label: :ebody)
+        IO.inspect(e)
+    end
   end
 
   def state_process(state, user_id, tournament_id)
@@ -168,7 +175,7 @@ users
   end)
 end)
 
-1..1
+1..20
 |> Enum.to_list()
 |> Enum.map(fn n ->
   Process.sleep(500)

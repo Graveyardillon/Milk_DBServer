@@ -78,7 +78,12 @@ defmodule Milk.TournamentProgress do
         []
       end
     else
-      _ -> []
+      {:error, %Redix.Error{message: message}} ->
+        Logger.error(message)
+        []
+
+      _ ->
+        []
     end
   end
 
@@ -91,7 +96,12 @@ defmodule Milk.TournamentProgress do
          {:ok, _} <- Redix.command(conn, ["EXEC"]) do
       true
     else
-      _ -> false
+      {:error, %Redix.Error{message: message}} ->
+        Logger.error(message)
+        []
+
+      _ ->
+        false
     end
   end
 
@@ -145,6 +155,10 @@ defmodule Milk.TournamentProgress do
          {:ok, _} <- Redix.command(conn, ["EXEC"]) do
       true
     else
+      {:error, %Redix.Error{message: message}} ->
+        Logger.error(message)
+        []
+
       _ -> false
     end
   end
@@ -160,6 +174,12 @@ defmodule Milk.TournamentProgress do
       else
         []
       end
+    else
+      {:error, %Redix.Error{message: message}} ->
+        Logger.error(message)
+        []
+
+      _ -> []
     end
   end
 
@@ -188,7 +208,10 @@ defmodule Milk.TournamentProgress do
          {:ok, _} <- Redix.command(conn, ["EXEC"]) do
       true
     else
-      _error ->
+      {:error, %Redix.Error{message: message}} ->
+        Logger.error(message)
+        false
+      _ ->
         false
     end
   end
@@ -229,6 +252,10 @@ defmodule Milk.TournamentProgress do
          {:ok, _} <- Redix.command(conn, ["EXEC"]) do
       true
     else
+      {:error, %Redix.Error{message: message}} ->
+        Logger.error(message)
+        false
+
       _ -> false
     end
   end
@@ -241,6 +268,10 @@ defmodule Milk.TournamentProgress do
       {b, _} = Code.eval_string(value)
       if b, do: [{{user_id, tournament_id}}], else: []
     else
+      {:error, %Redix.Error{message: message}} ->
+        Logger.error(message)
+        []
+
       _ -> []
     end
   end
@@ -252,6 +283,10 @@ defmodule Milk.TournamentProgress do
          {:ok, value} <- Redix.command(conn, ["HKEYS", tournament_id]) do
       value
     else
+      {:error, %Redix.Error{message: message}} ->
+        Logger.error(message)
+        []
+
       _ -> []
     end
   end
@@ -265,7 +300,11 @@ defmodule Milk.TournamentProgress do
          {:ok, _} <- Redix.command(conn, ["EXEC"]) do
       true
     else
-      _error ->
+      {:error, %Redix.Error{message: message}} ->
+        Logger.error(message)
+        false
+
+      _ ->
         false
     end
   end
@@ -282,6 +321,10 @@ defmodule Milk.TournamentProgress do
 
       true
     else
+      {:error, %Redix.Error{message: message}} ->
+        Logger.error(message)
+        false
+
       _ -> false
     end
   end
@@ -299,6 +342,10 @@ defmodule Milk.TournamentProgress do
          {:ok, _} <- Redix.command(conn, ["EXEC"]) do
       true
     else
+      {:error, %Redix.Error{message: message}} ->
+        Logger.error(message)
+        false
+
       _ -> false
     end
   end
@@ -315,6 +362,10 @@ defmodule Milk.TournamentProgress do
         []
       end
     else
+      {:error, %Redix.Error{message: message}} ->
+        Logger.error(message)
+        []
+
       _ -> []
     end
   end
@@ -328,6 +379,10 @@ defmodule Milk.TournamentProgress do
          {:ok, _} <- Redix.command(conn, ["EXEC"]) do
       true
     else
+      {:error, %Redix.Error{message: message}} ->
+        Logger.error(message)
+        false
+
       _ -> false
     end
   end
@@ -344,6 +399,10 @@ defmodule Milk.TournamentProgress do
 
       true
     else
+      {:error, %Redix.Error{message: message}} ->
+        Logger.error(message)
+        false
+
       _ -> false
     end
   end
@@ -360,6 +419,10 @@ defmodule Milk.TournamentProgress do
          {:ok, _} <- Redix.command(conn, ["EXEC"]) do
       true
     else
+      {:error, %Redix.Error{message: message}} ->
+        Logger.error(message)
+        false
+
       _ -> false
     end
   end
@@ -373,7 +436,11 @@ defmodule Milk.TournamentProgress do
         String.to_integer(v)
       end)
     else
-      _v -> []
+      {:error, %Redix.Error{message: message}} ->
+        Logger.error(message)
+        []
+
+      _ -> []
     end
   end
 
@@ -391,6 +458,10 @@ defmodule Milk.TournamentProgress do
 
       true
     else
+      {:error, %Redix.Error{message: message}} ->
+        Logger.error(message)
+        false
+
       _ -> false
     end
   end
@@ -403,6 +474,10 @@ defmodule Milk.TournamentProgress do
          {:ok, _} <- Redix.command(conn, ["SPOP", tournament_id, n]) do
       true
     else
+      {:error, %Redix.Error{message: message}} ->
+        Logger.error(message)
+        false
+
       _ -> false
     end
   end
@@ -531,6 +606,10 @@ defmodule Milk.TournamentProgress do
 
       true
     else
+      {:error, %Redix.Error{message: message}} ->
+        Logger.error(message)
+        false
+
       _ -> false
     end
   end
@@ -547,6 +626,10 @@ defmodule Milk.TournamentProgress do
          {:ok, _} <- Redix.command(conn, ["EXEC"]) do
       true
     else
+      {:error, %Redix.Error{message: message}} ->
+        Logger.error(message)
+        false
+
       _ -> false
     end
   end
@@ -563,6 +646,10 @@ defmodule Milk.TournamentProgress do
         []
       end
     else
+      {:error, %Redix.Error{message: message}} ->
+        Logger.error(message)
+        []
+
       _ -> []
     end
   end
@@ -576,7 +663,11 @@ defmodule Milk.TournamentProgress do
          {:ok, _} <- Redix.command(conn, ["EXEC"]) do
       true
     else
-      _error ->
+      {:error, %Redix.Error{message: message}} ->
+        Logger.error(message)
+        false
+
+      _ ->
         false
     end
   end

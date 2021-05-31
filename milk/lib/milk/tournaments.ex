@@ -1683,10 +1683,10 @@ defmodule Milk.Tournaments do
     match_list = TournamentProgress.get_match_list(tournament_id)
     match = find_match(match_list, user_id)
 
-    if is_alone?(match) do
-      "IsAlone"
-    else
-      check_wait_state?(tournament_id, user_id)
+    cond do
+      is_alone?(match) -> "IsAlone"
+      match == [] -> "IsLoser"
+      true -> check_wait_state?(tournament_id, user_id)
     end
   end
 
