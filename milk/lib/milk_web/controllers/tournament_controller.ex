@@ -1043,6 +1043,10 @@ defmodule MilkWeb.TournamentController do
       TournamentProgress.delete_duplicate_users_all(tournament_id)
       TournamentProgress.delete_lose_processes(tournament_id)
     end
+
+    if match_list == [] do
+      Logger.error("Match list error on finish as needed")
+    end
   end
 
   @doc """

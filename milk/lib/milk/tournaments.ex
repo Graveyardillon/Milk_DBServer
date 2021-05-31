@@ -907,23 +907,31 @@ defmodule Milk.Tournaments do
     Enum.each(losers, fn loser ->
       match_list
       |> find_match(loser)
-      |> get_opponent(loser)
       |> case do
-        {:ok, opponent} ->
-          promote_rank(%{"tournament_id" => tournament_id, "user_id" => opponent["id"]})
-        {:wait, nil} ->
-          {:wait, nil}
+        [] ->
+          {:error, nil}
+        match ->
+          match
+          |> get_opponent(loser)
+          |> case do
+            {:ok, opponent} ->
+              promote_rank(%{"tournament_id" => tournament_id, "user_id" => opponent["id"]})
+            {:wait, nil} ->
+              {:wait, nil}
+          end
       end
+
     end)
   end
 
   def promote_winners_by_loser(tournament_id, match_list, loser) do
-    {:ok, opponent} =
-      match_list
-      |> find_match(loser)
-      |> get_opponent(loser)
+    match = find_match(match_list, loser)
 
-    promote_rank(%{"tournament_id" => tournament_id, "user_id" => opponent["id"]})
+    unless match == [] do
+      {:ok, opponent} = get_opponent(match, loser)
+
+      promote_rank(%{"tournament_id" => tournament_id, "user_id" => opponent["id"]})
+    end
   end
 
   @doc """
@@ -1694,7 +1702,6 @@ defmodule Milk.Tournaments do
     match_list = TournamentProgress.get_match_list(tournament_id)
     match = find_match(match_list, user_id)
 
-    # FIXME: エラーハンドリング
     {:ok, opponent} = get_opponent(match, user_id)
     pending_list = TournamentProgress.get_match_pending_list({user_id, tournament_id})
 

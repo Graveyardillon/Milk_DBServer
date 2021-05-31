@@ -42,39 +42,42 @@ defmodule Spare do
         |> send_post(%{"tournament_id" => tournament_id, "user_id" => user_id})
         |> IO.inspect(label: :start_match, charlists: false)
 
-        Process.sleep(500)
+        Process.sleep(10000)
       state == "IsAlone" ->
-        Process.sleep(3000)
+        Process.sleep(10000)
         state
       state == "IsWaitingForStart" ->
-        Process.sleep(3000)
+        Process.sleep(10000)
         IO.inspect("waiting...", charlists: false)
         state
       state == "IsPending" ->
-        opponent_id = "http://localhost:4000/api/tournament/get_opponent"
+        opponent = "http://localhost:4000/api/tournament/get_opponent"
           |> get(%{"tournament_id" => tournament_id, "user_id" => user_id})
           |> Map.get("opponent")
-          |> Map.get("id")
 
-        score = :rand.uniform(100000)
+        unless is_nil(opponent) do
+          opponent_id = opponent["id"]
+          score = :rand.uniform(100000)
 
-        "http://localhost:4000/api/tournament/claim_score"
-        |> send_post(
-          %{
-            "tournament_id" => tournament_id,
-            "user_id" => user_id,
-            "opponent_id" => opponent_id,
-            "score" => score,
-            "match_index" => 0
-          }
-        )
-        Process.sleep(500)
+          "http://localhost:4000/api/tournament/claim_score"
+          |> send_post(
+            %{
+              "tournament_id" => tournament_id,
+              "user_id" => user_id,
+              "opponent_id" => opponent_id,
+              "score" => score,
+              "match_index" => 0
+            }
+          )
+        end
+
+        Process.sleep(10000)
       true ->
         IO.inspect(state, charlists: false)
         state
     end
 
-    Process.sleep(500)
+    Process.sleep(10000)
 
     "http://localhost:4000/api/tournament/state"
     |> Spare.get(%{"tournament_id" => tournament_id, "user_id" => user_id})
@@ -175,7 +178,7 @@ users
   end)
 end)
 
-1..20
+1..25
 |> Enum.to_list()
 |> Enum.map(fn n ->
   Process.sleep(500)
