@@ -527,7 +527,7 @@ defmodule Milk.TournamentProgressTest do
       match_list = [[1, 2], [3, 4]]
       tournament_id = 1
 
-      str = inspect(match_list)
+      str = inspect(match_list, charlists: false)
 
       %{"tournament_id" => tournament_id, "match_list_with_fight_result_str" => str}
       |> TournamentProgress.create_match_list_with_fight_result_log()

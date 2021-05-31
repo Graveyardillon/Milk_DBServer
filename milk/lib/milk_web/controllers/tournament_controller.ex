@@ -682,7 +682,7 @@ defmodule MilkWeb.TournamentController do
       |> Tournaments.find_match(loser_id)
       |> Tournaments.get_opponent(loser_id)
 
-    match_list_str = inspect(match_list)
+    match_list_str = inspect(match_list, charlists: false)
 
     Map.new()
     |> Map.put("tournament_id", tournament_id)
@@ -1031,7 +1031,7 @@ defmodule MilkWeb.TournamentController do
 
       tournament_id
       |> TournamentProgress.get_match_list_with_fight_result()
-      |> inspect()
+      |> inspect(charlists: false)
       |> (fn str ->
             %{"tournament_id" => tournament_id, "match_list_with_fight_result_str" => str}
           end).()
@@ -1208,7 +1208,7 @@ defmodule MilkWeb.TournamentController do
 
     tournament_id
     |> TournamentProgress.get_match_list_with_fight_result()
-    |> inspect()
+    |> inspect(charlists: false)
     |> (fn str ->
           %{"tournament_id" => tournament_id, "match_list_with_fight_result_str" => str}
         end).()

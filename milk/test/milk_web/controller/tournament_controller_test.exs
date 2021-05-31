@@ -152,8 +152,8 @@ defmodule MilkWeb.TournamentControllerTest do
     test "get_users_for_add_assistant/2 with valid data", %{conn: conn, tournament: tournament} do
       {:ok, user2} = fixture(:user)
       {:ok, user3} = fixture(:user2)
-      inspect(user2)
-      inspect(user3)
+      inspect(user2, charlists: false)
+      inspect(user3, charlists: false)
       user2_id = user2.id
       user3_id = user3.id
 

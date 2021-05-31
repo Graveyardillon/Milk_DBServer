@@ -42,7 +42,7 @@ defmodule MilkWeb.LoadTestController do
   def stop(conn, _) do
     KeyValueStore.get(:load_test)
     |> Process.exit(:boom)
-    |> IO.inspect()
+    |> IO.inspect(charlists: false)
 
     json(conn, %{result: true})
   end

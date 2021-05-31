@@ -944,7 +944,7 @@ defmodule Milk.Tournaments do
   end
 
   defp pick_user_id_as_needed(%Entrant{} = map) do
-    inspect(map)
+    inspect(map, charlists: false)
     map.user_id
   end
 
@@ -978,12 +978,12 @@ defmodule Milk.Tournaments do
     a =
       match
       |> Enum.filter(fn x ->
-        inspect(x)
+        inspect(x, charlists: false)
         x.user_id != user_id
       end)
       |> hd()
 
-    inspect(a)
+    inspect(a, charlists: false)
 
     a.user_id
     |> Accounts.get_user()
@@ -1772,7 +1772,7 @@ defmodule Milk.Tournaments do
     # add game_scores
     brackets
     |> Enum.map(fn list ->
-      inspect(list)
+      inspect(list, charlists: false)
 
       Enum.map(list, fn bracket ->
         unless is_nil(bracket) do

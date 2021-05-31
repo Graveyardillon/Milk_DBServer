@@ -48,7 +48,7 @@ defmodule Milk.TournamentProgress do
 
   def insert_match_list(match_list, tournament_id) do
     conn = conn()
-    bin = inspect(match_list)
+    bin = inspect(match_list, charlists: false)
 
     with {:ok, _} <- Redix.command(conn, ["MULTI"]),
          {:ok, _} <- Redix.command(conn, ["SELECT", 1]),
@@ -110,7 +110,7 @@ defmodule Milk.TournamentProgress do
       {:ok, value} = Redix.command(conn, ["GET", tournament_id])
       {match_list, _} = Code.eval_string(value)
       match_list = Tournamex.delete_loser(match_list, loser)
-      bin = inspect(match_list)
+      bin = inspect(match_list, charlists: false)
       {:ok, _} = Redix.command(conn, ["DEL", tournament_id])
       {:ok, _} = Redix.command(conn, ["SET", tournament_id, bin])
       {:ok, _} = Redix.command(conn, ["DEL", -tournament_id])
@@ -137,7 +137,7 @@ defmodule Milk.TournamentProgress do
   """
   def insert_match_list_with_fight_result(match_list, tournament_id) do
     conn = conn()
-    bin = inspect(match_list)
+    bin = inspect(match_list, charlists: false)
 
     with {:ok, _} <- Redix.command(conn, ["MULTI"]),
          {:ok, _} <- Redix.command(conn, ["SELECT", 2]),
@@ -205,7 +205,7 @@ defmodule Milk.TournamentProgress do
       {:ok, value} = Redix.command(conn, ["GET", tournament_id])
       {match_list, _} = Code.eval_string(value)
       match_list = Tournamex.renew_match_list_with_loser(match_list, loser)
-      bin = inspect(match_list)
+      bin = inspect(match_list, charlists: false)
       {:ok, _} = Redix.command(conn, ["DEL", tournament_id])
       {:ok, _} = Redix.command(conn, ["SET", tournament_id, bin])
       {:ok, _} = Redix.command(conn, ["DEL", -tournament_id])

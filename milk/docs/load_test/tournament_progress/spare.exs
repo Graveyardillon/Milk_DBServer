@@ -8,7 +8,7 @@ defmodule Spare do
         [{"Content-Type", "application/json"}],
         params: attr
       )
-    inspect(body, label: :body)
+    inspect(body, label: :body, charlists: false)
     {:ok, map} = Poison.decode(body)
     map
   end
@@ -30,7 +30,7 @@ defmodule Spare do
       state == "IsInMatch" ->
         "http://localhost:4000/api/tournament/start_match"
         |> send_post(%{"tournament_id" => tournament_id, "user_id" => user_id})
-        |> IO.inspect(label: :start_match)
+        |> IO.inspect(label: :start_match, charlists: false)
 
         Process.sleep(500)
       state == "IsAlone" ->
@@ -38,7 +38,7 @@ defmodule Spare do
         state
       state == "IsWaitingForStart" ->
         Process.sleep(3000)
-        IO.inspect("waiting...")
+        IO.inspect("waiting...", charlists: false)
         state
       state == "IsPending" ->
         opponent_id = "http://localhost:4000/api/tournament/get_opponent"
@@ -60,7 +60,7 @@ defmodule Spare do
         )
         Process.sleep(500)
       true ->
-        IO.inspect(state)
+        IO.inspect(state, charlists: false)
         state
     end
 
@@ -68,8 +68,10 @@ defmodule Spare do
 
     "http://localhost:4000/api/tournament/state"
     |> Spare.get(%{"tournament_id" => tournament_id, "user_id" => user_id})
+    |> Map.put("user_id", user_id)
+    |> Map.put("tournament_id", tournament_id)
+    |> IO.inspect(label: :state, charlists: false)
     |> Map.get("state")
-    |> IO.inspect(label: :state)
     |> state_process(user_id, tournament_id)
   end
 
@@ -184,26 +186,24 @@ end)
     "http://localhost:4000/api/tournament/get_entrants"
     |> Spare.get(%{"tournament_id" => tournament_id})
     |> Map.get("data")
-    |> IO.inspect(label: :data)
+    |> IO.inspect(label: :data, charlists: false)
     |> Enum.map(fn %{"user_id" => user_id} ->
-      IO.inspect(user_id, label: :user_id)
+      IO.inspect(user_id, label: :user_id, charlists: false)
       Process.sleep(500)
       Task.async(fn ->
         "http://localhost:4000/api/tournament/state"
         |> Spare.get(%{"tournament_id" => tournament_id, "user_id" => user_id})
         |> Map.get("state")
         |> Spare.state_process(user_id, tournament_id)
-        |> IO.inspect(label: :end)
+        |> IO.inspect(label: :end, charlists: false)
       end)
     end)
   end)
 end)
-|> Task.yield_many(:infinity)
-|> Enum.map(fn {task, res} ->
-  IO.inspect(task, label: :task)
-  IO.inspect(res, label: :res)
-  #res || Task.shutdown(task, :brutal_kill)
-end)
+# |> Task.yield_many(:infinity)
+# |> Enum.map(fn {task, res} ->
+#   #res || Task.shutdown(task, :brutal_kill)
+# end)
 
 Process.sleep(3600000)
 

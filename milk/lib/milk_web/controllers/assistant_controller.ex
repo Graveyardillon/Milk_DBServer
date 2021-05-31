@@ -32,7 +32,7 @@ defmodule MilkWeb.AssistantController do
           assistant = Tournaments.get_assistants(assistant_params["tournament_id"])
 
           render(conn, "error_string.json",
-            data: %{data: assistant, error: "#{inspect(not_found_users)}" <> " not found"}
+            data: %{data: assistant, error: "#{inspect(not_found_users, charlists: false)}" <> " not found"}
           )
 
         {:error, :tournament_not_found} ->
