@@ -25,12 +25,10 @@ Repo.insert! %Auth{
 Platforms.create_basic_platforms()
 
 now = Timex.now()
-tomorrow =
-  Timex.now()
+tomorrow = Timex.now()
   |> Timex.add(Timex.Duration.from_days(1))
   |> Timex.to_datetime()
-day_after_tomorrow =
-  Timex.now()
+day_after_tomorrow = Timex.now()
   |> Timex.add(Timex.Duration.from_days(2))
   |> Timex.to_datetime()
 

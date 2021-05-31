@@ -682,7 +682,7 @@ defmodule MilkWeb.TournamentController do
       |> Tournaments.find_match(loser_id)
       |> Tournaments.get_opponent(loser_id)
 
-    match_list_str = inspect(match_list)
+    match_list_str = inspect(match_list, charlists: false)
 
     Map.new()
     |> Map.put("tournament_id", tournament_id)
@@ -1031,7 +1031,7 @@ defmodule MilkWeb.TournamentController do
 
       tournament_id
       |> TournamentProgress.get_match_list_with_fight_result()
-      |> inspect()
+      |> inspect(charlists: false)
       |> (fn str ->
             %{"tournament_id" => tournament_id, "match_list_with_fight_result_str" => str}
           end).()
@@ -1042,6 +1042,10 @@ defmodule MilkWeb.TournamentController do
       TournamentProgress.delete_fight_result_of_tournament(tournament_id)
       TournamentProgress.delete_duplicate_users_all(tournament_id)
       TournamentProgress.delete_lose_processes(tournament_id)
+    end
+
+    if match_list == [] do
+      Logger.error("Match list error on finish as needed")
     end
   end
 
@@ -1208,7 +1212,7 @@ defmodule MilkWeb.TournamentController do
 
     tournament_id
     |> TournamentProgress.get_match_list_with_fight_result()
-    |> inspect()
+    |> inspect(charlists: false)
     |> (fn str ->
           %{"tournament_id" => tournament_id, "match_list_with_fight_result_str" => str}
         end).()

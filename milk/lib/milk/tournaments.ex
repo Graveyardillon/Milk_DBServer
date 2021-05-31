@@ -907,23 +907,31 @@ defmodule Milk.Tournaments do
     Enum.each(losers, fn loser ->
       match_list
       |> find_match(loser)
-      |> get_opponent(loser)
       |> case do
-        {:ok, opponent} ->
-          promote_rank(%{"tournament_id" => tournament_id, "user_id" => opponent["id"]})
-        {:wait, nil} ->
-          {:wait, nil}
+        [] ->
+          {:error, nil}
+        match ->
+          match
+          |> get_opponent(loser)
+          |> case do
+            {:ok, opponent} ->
+              promote_rank(%{"tournament_id" => tournament_id, "user_id" => opponent["id"]})
+            {:wait, nil} ->
+              {:wait, nil}
+          end
       end
+
     end)
   end
 
   def promote_winners_by_loser(tournament_id, match_list, loser) do
-    {:ok, opponent} =
-      match_list
-      |> find_match(loser)
-      |> get_opponent(loser)
+    match = find_match(match_list, loser)
 
-    promote_rank(%{"tournament_id" => tournament_id, "user_id" => opponent["id"]})
+    unless match == [] do
+      {:ok, opponent} = get_opponent(match, loser)
+
+      promote_rank(%{"tournament_id" => tournament_id, "user_id" => opponent["id"]})
+    end
   end
 
   @doc """
@@ -944,7 +952,7 @@ defmodule Milk.Tournaments do
   end
 
   defp pick_user_id_as_needed(%Entrant{} = map) do
-    inspect(map)
+    inspect(map, charlists: false)
     map.user_id
   end
 
@@ -978,12 +986,12 @@ defmodule Milk.Tournaments do
     a =
       match
       |> Enum.filter(fn x ->
-        inspect(x)
+        inspect(x, charlists: false)
         x.user_id != user_id
       end)
       |> hd()
 
-    inspect(a)
+    inspect(a, charlists: false)
 
     a.user_id
     |> Accounts.get_user()
@@ -1683,10 +1691,10 @@ defmodule Milk.Tournaments do
     match_list = TournamentProgress.get_match_list(tournament_id)
     match = find_match(match_list, user_id)
 
-    if is_alone?(match) do
-      "IsAlone"
-    else
-      check_wait_state?(tournament_id, user_id)
+    cond do
+      is_alone?(match) -> "IsAlone"
+      match == [] -> "IsLoser"
+      true -> check_wait_state?(tournament_id, user_id)
     end
   end
 
@@ -1694,7 +1702,6 @@ defmodule Milk.Tournaments do
     match_list = TournamentProgress.get_match_list(tournament_id)
     match = find_match(match_list, user_id)
 
-    # FIXME: エラーハンドリング
     {:ok, opponent} = get_opponent(match, user_id)
     pending_list = TournamentProgress.get_match_pending_list({user_id, tournament_id})
 
@@ -1772,7 +1779,7 @@ defmodule Milk.Tournaments do
     # add game_scores
     brackets
     |> Enum.map(fn list ->
-      inspect(list)
+      inspect(list, charlists: false)
 
       Enum.map(list, fn bracket ->
         unless is_nil(bracket) do
