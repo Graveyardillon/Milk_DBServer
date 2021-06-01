@@ -1072,6 +1072,24 @@ defmodule Milk.TournamentsTest do
       assert is_list(Tournaments.list_assistant())
       assert length(Tournaments.list_assistant())
     end
+
+    test "get_assistants/1 works" do
+      assistant_attr = fixture(:assistant)
+
+      assistant_attr["tournament_id"]
+      |> Tournaments.get_assistants()
+      |> Enum.map(fn assistant ->
+        assert assistant.user_id == hd(assistant_attr["user_id"])
+        assistant = Tournaments.get_assistant(assistant.id)
+        assert assistant.user_id == hd(assistant_attr["user_id"])
+        assistant = Tournaments.get_assistant!(assistant.id)
+        assert assistant.user_id == hd(assistant_attr["user_id"])
+      end)
+      |> length()
+      |> (fn len ->
+        assert len == 1
+      end).()
+    end
   end
 
   describe "create assistants" do
