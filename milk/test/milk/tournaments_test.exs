@@ -1072,11 +1072,6 @@ defmodule Milk.TournamentsTest do
       assert is_list(Tournaments.list_assistant())
       assert length(Tournaments.list_assistant())
     end
-
-    test "get_assistant/1 works" do
-      assistant = fixture(:assistant)
-        |> IO.inspect()
-    end
   end
 
   describe "create assistants" do

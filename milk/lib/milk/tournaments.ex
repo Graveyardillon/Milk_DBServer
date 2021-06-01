@@ -1294,11 +1294,7 @@ defmodule Milk.Tournaments do
       not_found_users =
         attrs["user_id"]
         |> Enum.map(fn id ->
-          if is_binary(id) do
-            String.to_integer(id)
-          else
-            id
-          end
+          Tools.to_integer_as_needed(id)
         end)
         |> Enum.uniq()
         |> Enum.filter(fn id ->

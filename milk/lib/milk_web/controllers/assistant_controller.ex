@@ -24,7 +24,7 @@ defmodule MilkWeb.AssistantController do
   def create(conn, %{"assistant" => assistant_params}) do
     unless is_nil(assistant_params["tournament_id"]) do
       case Tournaments.create_assistants(assistant_params) do
-        :ok ->
+        {:ok, []} ->
           assistant = Tournaments.get_assistants(assistant_params["tournament_id"])
           render(conn, "index.json", assistant: assistant)
 
