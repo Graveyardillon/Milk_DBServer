@@ -36,9 +36,10 @@ defmodule Spare do
 
   def state_process(state, user_id, tournament_id)
   when state != "IsLoser" and state != "IsFinished" do
+    dom_url = "https://dbserver-load-test-dot-e-players6814.an.r.appspot.com"
     cond do
       state == "IsInMatch" ->
-        "http://localhost:4000/api/tournament/start_match"
+        dom_url <> "/api/tournament/start_match"
         |> send_post(%{"tournament_id" => tournament_id, "user_id" => user_id})
         |> IO.inspect(label: :start_match, charlists: false)
 
@@ -51,7 +52,7 @@ defmodule Spare do
         IO.inspect("waiting...", charlists: false)
         state
       state == "IsPending" ->
-        opponent = "http://localhost:4000/api/tournament/get_opponent"
+        opponent = dom_url <> "/api/tournament/get_opponent"
           |> get(%{"tournament_id" => tournament_id, "user_id" => user_id})
           |> Map.get("opponent")
 
@@ -59,7 +60,7 @@ defmodule Spare do
           opponent_id = opponent["id"]
           score = :rand.uniform(100000)
 
-          "http://localhost:4000/api/tournament/claim_score"
+          dom_url <> "/api/tournament/claim_score"
           |> send_post(
             %{
               "tournament_id" => tournament_id,
@@ -79,7 +80,7 @@ defmodule Spare do
 
     Process.sleep(10000)
 
-    "http://localhost:4000/api/tournament/state"
+    dom_url <> "/api/tournament/state"
     |> Spare.get(%{"tournament_id" => tournament_id, "user_id" => user_id})
     |> Map.put("user_id", user_id)
     |> Map.put("tournament_id", tournament_id)
@@ -93,7 +94,9 @@ defmodule Spare do
   end
 end
 
-url = "http://localhost:4000/api/load_test/start"
+dom_url = "https://dbserver-load-test-dot-e-players6814.an.r.appspot.com"
+
+url = dom_url <> "/api/load_test/start"
 HTTPoison.post(url, Jason.encode!(%{}), "Content-Type": "application/json")
 
 Process.sleep(1000)
@@ -101,7 +104,7 @@ Process.sleep(1000)
 1..25
 |> Enum.to_list()
 |> Enum.map(fn n ->
-  url = "http://localhost:4000/api/user/signup"
+  url = dom_url <> "/api/user/signup"
   attr = %{
     "email" => to_string(n)<>"organizer@mail.co.m",
     "password" => "Password123",
@@ -137,7 +140,7 @@ end)
   form = [{"file", ""}, {"tournament", attrs}]
   {:ok, %HTTPoison.Response{body: body}} =
     HTTPoison.post(
-      "http://localhost:4000/api/tournament",
+      dom_url <> "/api/tournament",
       {:multipart, form},
       [{"Content-Type", "multipart/form-data"}],
       ssl: [{:versions, [:'tlsv1.2']}]
@@ -149,7 +152,7 @@ users =
   1..100
   |> Enum.to_list()
   |> Enum.map(fn n ->
-    url = "http://localhost:4000/api/user/signup"
+    url = dom_url <> "/api/user/signup"
     attr = %{
       "email" => to_string(n)<>"entrant@mail.co.m",
       "password" => "Password123",
@@ -165,7 +168,7 @@ users
   |> Enum.to_list()
   |> Enum.reduce([], fn m, acc ->
     if rem(n, 25) == m do
-      url = "http://localhost:4000/api/entrant"
+      url = dom_url <> "/api/entrant"
       attr = %{
         "tournament_id" => m+1,
         "user_id" => response["data"]["id"],
@@ -184,19 +187,19 @@ end)
   Process.sleep(500)
   Task.async(fn ->
     tournament_id = n
-    master_id = "http://localhost:4000/api/tournament/get"
+    master_id = dom_url <> "/api/tournament/get"
       |> Spare.get(%{"tournament_id" => tournament_id})
       |> Map.get("data")
       |> Map.get("master_id")
 
-    "http://localhost:4000/api/tournament/start"
+    dom_url <> "/api/tournament/start"
     |> Spare.send_post(
       %{"tournament" =>
         %{"tournament_id" => tournament_id, "master_id" => master_id}
       }
     )
 
-    "http://localhost:4000/api/tournament/get_entrants"
+    dom_url <> "/api/tournament/get_entrants"
     |> Spare.get(%{"tournament_id" => tournament_id})
     |> Map.get("data")
     |> IO.inspect(label: :data, charlists: false)
@@ -204,7 +207,7 @@ end)
       IO.inspect(user_id, label: :user_id, charlists: false)
       Process.sleep(500)
       Task.async(fn ->
-        "http://localhost:4000/api/tournament/state"
+        dom_url <> "/api/tournament/state"
         |> Spare.get(%{"tournament_id" => tournament_id, "user_id" => user_id})
         |> Map.get("state")
         |> Spare.state_process(user_id, tournament_id)
@@ -218,7 +221,7 @@ end)
 #   #res || Task.shutdown(task, :brutal_kill)
 # end)
 
-Process.sleep(3600000)
+Process.sleep(1800000)
 
-url = "http://localhost:4000/api/load_test/stop"
+url = dom_url <> "/api/load_test/stop"
 HTTPoison.post(url, Jason.encode!(%{}), "Content-Type": "application/json")
