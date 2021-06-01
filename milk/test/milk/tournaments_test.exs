@@ -122,7 +122,7 @@ defmodule Milk.TournamentsTest do
       "user_id" => [user.id]
     }
 
-    :ok = Tournaments.create_assistants(assistant_attrs)
+    {:ok, _users} = Tournaments.create_assistants(assistant_attrs)
     assistant_attrs
   end
 
@@ -1071,6 +1071,11 @@ defmodule Milk.TournamentsTest do
       fixture(:assistant)
       assert is_list(Tournaments.list_assistant())
       assert length(Tournaments.list_assistant())
+    end
+
+    test "get_assistant/1 works" do
+      assistant = fixture(:assistant)
+        |> IO.inspect()
     end
   end
 

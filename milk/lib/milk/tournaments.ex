@@ -19,25 +19,25 @@ defmodule Milk.Tournaments do
   }
 
   alias Milk.Accounts.{
-    User,
-    Relation
+    Relation,
+    User
+  }
+
+  alias Milk.Chat.ChatRoom
+  alias Milk.Games.Game
+
+  alias Milk.Log.{
+    AssistantLog,
+    EntrantLog,
+    TournamentLog
   }
 
   alias Milk.Tournaments.{
-    Tournament,
-    Entrant,
     Assistant,
+    Entrant,
+    Tournament,
     TournamentChatTopic
   }
-
-  alias Milk.Log.{
-    TournamentLog,
-    EntrantLog,
-    AssistantLog
-  }
-
-  alias Milk.Games.Game
-  alias Milk.Chat.ChatRoom
 
   require Integer
   require Logger
@@ -1312,11 +1312,7 @@ defmodule Milk.Tournaments do
           end
         end)
 
-      if Enum.empty?(not_found_users) do
-        :ok
-      else
-        {:ok, not_found_users}
-      end
+      {:ok, not_found_users}
     else
       {:error, :tournament_not_found}
     end
