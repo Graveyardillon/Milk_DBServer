@@ -886,6 +886,8 @@ defmodule MilkWeb.TournamentControllerTest do
 
     test "works", %{conn: conn, tournament: tournament} do
       tournaments = fixture_tournaments(3)
+      assistant_tournament = fixture_tournament(999)
+      conn = post(conn, Routes.assistant_path(conn, :create), assistant: %{tournament_id: assistant_tournament.id, user_id: [tournament.master_id]})
 
       Enum.each(tournaments, fn t ->
         Map.new()
@@ -901,6 +903,7 @@ defmodule MilkWeb.TournamentControllerTest do
           tournament.id
         end)
         |> Enum.concat([tournament.id])
+        |> Enum.concat([assistant_tournament.id])
 
       conn =
         get(conn, Routes.tournament_path(conn, :relevant, %{"user_id" => tournament.master_id}))
@@ -912,7 +915,7 @@ defmodule MilkWeb.TournamentControllerTest do
       end)
       |> length()
       |> (fn len ->
-            assert len == 4
+            assert len == length(tournament_id_list)
           end).()
     end
   end

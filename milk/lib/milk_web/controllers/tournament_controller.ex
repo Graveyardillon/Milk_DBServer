@@ -430,8 +430,13 @@ defmodule MilkWeb.TournamentController do
   defp relevant(user_id) do
     participatings = Tournaments.get_participating_tournaments(user_id)
     hostings = Tournaments.get_tournaments_by_master_id(user_id)
+    assistants = user_id
+      |> Tournaments.get_assistants_by_user_id()
+      |> Enum.map(fn assistant ->
+        Tournaments.get_tournament(assistant.tournament_id)
+      end)
 
-    Enum.uniq(participatings ++ hostings)
+    Enum.uniq(participatings ++ hostings ++ assistants)
   end
 
   @doc """
