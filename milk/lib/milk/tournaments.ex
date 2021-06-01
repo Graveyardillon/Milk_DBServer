@@ -1226,6 +1226,12 @@ defmodule Milk.Tournaments do
     |> Repo.all()
   end
 
+  def get_assistants_by_user_id(user_id) do
+    Assistant
+    |> where([a], a.user_id == ^user_id)
+    |> Repo.all()
+  end
+
   @doc """
   Get user information of an assistant.
   """
