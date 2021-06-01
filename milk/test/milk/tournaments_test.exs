@@ -122,7 +122,7 @@ defmodule Milk.TournamentsTest do
       "user_id" => [user.id]
     }
 
-    :ok = Tournaments.create_assistants(assistant_attrs)
+    {:ok, _users} = Tournaments.create_assistants(assistant_attrs)
     assistant_attrs
   end
 
@@ -1071,6 +1071,43 @@ defmodule Milk.TournamentsTest do
       fixture(:assistant)
       assert is_list(Tournaments.list_assistant())
       assert length(Tournaments.list_assistant())
+    end
+
+    test "get_assistants/1 works" do
+      assistant_attr = fixture(:assistant)
+
+      assistant_attr["tournament_id"]
+      |> Tournaments.get_assistants()
+      |> Enum.map(fn assistant ->
+        assert assistant.user_id == hd(assistant_attr["user_id"])
+        assert assistant.tournament_id == assistant_attr["tournament_id"]
+        assistant = Tournaments.get_assistant(assistant.id)
+        assert assistant.user_id == hd(assistant_attr["user_id"])
+        assert assistant.tournament_id == assistant_attr["tournament_id"]
+        assistant = Tournaments.get_assistant!(assistant.id)
+        assert assistant.user_id == hd(assistant_attr["user_id"])
+        assert assistant.tournament_id == assistant_attr["tournament_id"]
+      end)
+      |> length()
+      |> (fn len ->
+        assert len == 1
+      end).()
+    end
+
+    test "get_assistants_by_user_id/1" do
+      assistant_attr = fixture(:assistant)
+
+      assistant_attr["user_id"]
+      |> hd()
+      |> Tournaments.get_assistants_by_user_id()
+      |> Enum.map(fn assistant ->
+        assert assistant.user_id == hd(assistant_attr["user_id"])
+        assert assistant.tournament_id == assistant_attr["tournament_id"]
+      end)
+      |> length()
+      |> (fn len ->
+        assert len == 1
+      end).()
     end
   end
 

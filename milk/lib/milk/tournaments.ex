@@ -19,25 +19,25 @@ defmodule Milk.Tournaments do
   }
 
   alias Milk.Accounts.{
-    User,
-    Relation
+    Relation,
+    User
+  }
+
+  alias Milk.Chat.ChatRoom
+  alias Milk.Games.Game
+
+  alias Milk.Log.{
+    AssistantLog,
+    EntrantLog,
+    TournamentLog
   }
 
   alias Milk.Tournaments.{
-    Tournament,
-    Entrant,
     Assistant,
+    Entrant,
+    Tournament,
     TournamentChatTopic
   }
-
-  alias Milk.Log.{
-    TournamentLog,
-    EntrantLog,
-    AssistantLog
-  }
-
-  alias Milk.Games.Game
-  alias Milk.Chat.ChatRoom
 
   require Integer
   require Logger
@@ -1226,6 +1226,12 @@ defmodule Milk.Tournaments do
     |> Repo.all()
   end
 
+  def get_assistants_by_user_id(user_id) do
+    Assistant
+    |> where([a], a.user_id == ^user_id)
+    |> Repo.all()
+  end
+
   @doc """
   Get user information of an assistant.
   """
@@ -1294,11 +1300,7 @@ defmodule Milk.Tournaments do
       not_found_users =
         attrs["user_id"]
         |> Enum.map(fn id ->
-          if is_binary(id) do
-            String.to_integer(id)
-          else
-            id
-          end
+          Tools.to_integer_as_needed(id)
         end)
         |> Enum.uniq()
         |> Enum.filter(fn id ->
@@ -1312,11 +1314,7 @@ defmodule Milk.Tournaments do
           end
         end)
 
-      if Enum.empty?(not_found_users) do
-        :ok
-      else
-        {:ok, not_found_users}
-      end
+      {:ok, not_found_users}
     else
       {:error, :tournament_not_found}
     end

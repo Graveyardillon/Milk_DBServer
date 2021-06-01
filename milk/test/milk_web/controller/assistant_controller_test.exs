@@ -19,11 +19,20 @@ defmodule MilkWeb.AssistantControllerTest do
     "url" => "some url"
   }
 
-  defp fixture(:user) do
+  defp fixture_user(opts \\ []) do
+    num_str =
+      opts[:num]
+      |> is_nil()
+      |> unless do
+        to_string(opts[:num])
+      else
+        "1"
+      end
+
     {:ok, user} =
       Accounts.create_user(%{
-        "name" => "name",
-        "email" => "e@mail.com",
+        "name" => "name" <> num_str,
+        "email" => "e1" <> num_str <> "mail.com",
         "password" => "Password123"
       })
 
@@ -57,10 +66,10 @@ defmodule MilkWeb.AssistantControllerTest do
     end
   end
 
-  describe "create assistant" do
+  describe "create assistants" do
     test "renders assistant when data is valid", %{conn: conn} do
       tournament = fixture(:tournament)
-      user = fixture(:user)
+      user = fixture_user()
 
       conn =
         post(conn, Routes.assistant_path(conn, :create), %{
@@ -82,7 +91,7 @@ defmodule MilkWeb.AssistantControllerTest do
 
     test "renders not_found_user", %{conn: conn} do
       tournament = fixture(:tournament)
-      fixture(:user)
+      fixture_user()
 
       conn =
         post(conn, Routes.assistant_path(conn, :create), %{
@@ -90,15 +99,18 @@ defmodule MilkWeb.AssistantControllerTest do
         })
 
       assert "[-1] not found" == json_response(conn, 200)["error"]
+      assert json_response(conn, 200)["result"]
 
       conn = post(conn, Routes.assistant_path(conn, :show, %{"id" => -1}))
 
-      assert json_response(conn, 200)["error"] |> is_nil()
+      json_response(conn, 200)["error"]
+      |> is_nil()
+      |> assert()
     end
 
     test "renders not_found_tournament", %{conn: conn} do
       fixture(:tournament)
-      user = fixture(:user)
+      user = fixture_user()
 
       conn =
         post(conn, Routes.assistant_path(conn, :create), %{
@@ -107,14 +119,6 @@ defmodule MilkWeb.AssistantControllerTest do
 
       assert "tournament not found" == json_response(conn, 200)["error"]
     end
-
-    # test "renders error when data is invalid", %{conn: conn} do
-    #   tournament = fixture(:tournament)
-    #   user = fixture(:user)
-
-    #   conn = post(conn, Routes.assistant_path(conn, :create), %{"assistant" => %{"tournament_id" => tournament.id, "usner_id" => [user.id]}})
-    #   assert json_response(conn, 200)["error"] == "invalid request parameters"
-    # end
 
     test "renders errors when data is invalid", %{conn: conn} do
       conn = post(conn, Routes.assistant_path(conn, :create), %{"assistant" => @invalid_attrs})
