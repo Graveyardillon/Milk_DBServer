@@ -296,7 +296,7 @@ defmodule MilkWeb.TournamentView do
         }
       end)
 
-    %{data: map}
+    %{result: true, data: map}
   end
 
   # FIXME: Authは読み込んでないのでemailを返すようにしていない

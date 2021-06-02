@@ -29,6 +29,7 @@ defmodule Milk.Tournaments do
   alias Milk.Log.{
     AssistantLog,
     EntrantLog,
+    TournamentChatTopicLog,
     TournamentLog
   }
 
@@ -1113,15 +1114,16 @@ defmodule Milk.Tournaments do
   """
   def finish(tournament_id, winner_user_id) do
     case finish_entrants(tournament_id) do
-      :ok -> finish_tournament(tournament_id, winner_user_id)
+      :ok ->
+        finish_topics(tournament_id)
+        finish_tournament(tournament_id, winner_user_id)
       :error -> false
       _ -> false
     end
   end
 
   defp finish_tournament(tournament_id, winner_user_id) do
-    {:ok, tournament} =
-      tournament_id
+    {:ok, tournament} = tournament_id
       |> get_tournament!()
       |> delete_tournament()
 
@@ -1142,6 +1144,17 @@ defmodule Milk.Tournaments do
     end)
   end
 
+  defp finish_topics(tournament_id) do
+    TournamentChatTopic
+    |> where([t], t.tournament_id == ^tournament_id)
+    |> Repo.all()
+    |> Enum.map(fn topic ->
+      topic
+      |> atom_topic_map_to_string_map()
+      |> Log.create_tournament_chat_topic_log()
+    end)
+  end
+
   defp atom_tournament_map_to_string_map(%Tournament{} = tournament, winner_id) do
     %{
       "master_id" => tournament.master_id,
@@ -1158,6 +1171,15 @@ defmodule Milk.Tournaments do
       "capacity" => tournament.capacity,
       "thumbnail_path" => tournament.thumbnail_path,
       "entrant" => tournament.entrant
+    }
+  end
+
+  defp atom_topic_map_to_string_map(%TournamentChatTopic{} = topic) do
+    %{
+      "tournament_id" => topic.tournament_id,
+      "topic_name" => topic.topic_name,
+      "chat_room_id" => topic.chat_room_id,
+      "tab_index" => topic.tab_index
     }
   end
 
@@ -1350,12 +1372,18 @@ defmodule Milk.Tournaments do
   def get_tournament_chat_topic!(id), do: Repo.get!(TournamentChatTopic, id)
 
   @doc """
-  Get group chat tabs in a tournament.
+  Get group chat tabs in a tournament including log.
   """
   def get_tabs_by_tournament_id(tournament_id) do
-    TournamentChatTopic
-    |> where([t], t.tournament_id == ^tournament_id)
-    |> Repo.all()
+    topics = TournamentChatTopic
+      |> where([t], t.tournament_id == ^tournament_id)
+      |> Repo.all()
+
+    logs = TournamentChatTopicLog
+      |> where([tl], tl.tournament_id == ^tournament_id)
+      |> Repo.all()
+
+    topics ++ logs
   end
 
   @doc """

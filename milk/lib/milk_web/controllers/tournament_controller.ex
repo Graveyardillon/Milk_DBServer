@@ -426,7 +426,6 @@ defmodule MilkWeb.TournamentController do
     render(conn, "index.json", tournament: tournaments)
   end
 
-  # TODO: assistantを追加
   defp relevant(user_id) do
     participatings = Tournaments.get_participating_tournaments(user_id)
     hostings = Tournaments.get_tournaments_by_master_id(user_id)
@@ -493,8 +492,9 @@ defmodule MilkWeb.TournamentController do
   Get tournament topics.
   """
   def tournament_topics(conn, %{"tournament_id" => tournament_id}) do
-    tournament_id = Tools.to_integer_as_needed(tournament_id)
-    tabs = Tournaments.get_tabs_by_tournament_id(tournament_id)
+    tabs = tournament_id
+      |> Tools.to_integer_as_needed()
+      |> Tournaments.get_tabs_by_tournament_id()
 
     render(conn, "tournament_topics.json", topics: tabs)
   end
