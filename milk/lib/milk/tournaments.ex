@@ -29,6 +29,7 @@ defmodule Milk.Tournaments do
   alias Milk.Log.{
     AssistantLog,
     EntrantLog,
+    TournamentChatTopicLog,
     TournamentLog
   }
 
@@ -1122,8 +1123,7 @@ defmodule Milk.Tournaments do
   end
 
   defp finish_tournament(tournament_id, winner_user_id) do
-    {:ok, tournament} =
-      tournament_id
+    {:ok, tournament} = tournament_id
       |> get_tournament!()
       |> delete_tournament()
 
@@ -1372,12 +1372,18 @@ defmodule Milk.Tournaments do
   def get_tournament_chat_topic!(id), do: Repo.get!(TournamentChatTopic, id)
 
   @doc """
-  Get group chat tabs in a tournament.
+  Get group chat tabs in a tournament including log.
   """
   def get_tabs_by_tournament_id(tournament_id) do
-    TournamentChatTopic
-    |> where([t], t.tournament_id == ^tournament_id)
-    |> Repo.all()
+    topics = TournamentChatTopic
+      |> where([t], t.tournament_id == ^tournament_id)
+      |> Repo.all()
+
+    logs = TournamentChatTopicLog
+      |> where([tl], tl.tournament_id == ^tournament_id)
+      |> Repo.all()
+
+    topics ++ logs
   end
 
   @doc """

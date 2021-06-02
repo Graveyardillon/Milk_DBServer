@@ -3,8 +3,8 @@ defmodule Milk.Repo.Migrations.AlterTournamentChatTopicsLog do
 
   def change do
     alter table(:tournament_chat_topics_log) do
-      modify :tournament_id, :integer
-      modify :chat_room_id, :integer
+      remove :tournament_id
+      remove :chat_room_id
       add :tab_index, :integer
     end
   end
