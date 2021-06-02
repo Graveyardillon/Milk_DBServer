@@ -1113,7 +1113,9 @@ defmodule Milk.Tournaments do
   """
   def finish(tournament_id, winner_user_id) do
     case finish_entrants(tournament_id) do
-      :ok -> finish_tournament(tournament_id, winner_user_id)
+      :ok ->
+        finish_topics(tournament_id)
+        finish_tournament(tournament_id, winner_user_id)
       :error -> false
       _ -> false
     end
@@ -1142,6 +1144,17 @@ defmodule Milk.Tournaments do
     end)
   end
 
+  defp finish_topics(tournament_id) do
+    TournamentChatTopic
+    |> where([t], t.tournament_id == ^tournament_id)
+    |> Repo.all()
+    |> Enum.map(fn topic ->
+      topic
+      |> atom_topic_map_to_string_map()
+      |> Log.create_tournament_chat_topic_log()
+    end)
+  end
+
   defp atom_tournament_map_to_string_map(%Tournament{} = tournament, winner_id) do
     %{
       "master_id" => tournament.master_id,
@@ -1158,6 +1171,15 @@ defmodule Milk.Tournaments do
       "capacity" => tournament.capacity,
       "thumbnail_path" => tournament.thumbnail_path,
       "entrant" => tournament.entrant
+    }
+  end
+
+  defp atom_topic_map_to_string_map(%TournamentChatTopic{} = topic) do
+    %{
+      "tournament_id" => topic.tournament_id,
+      "topic_name" => topic.topic_name,
+      "chat_room_id" => topic.chat_room_id,
+      "tab_index" => topic.tab_index
     }
   end
 
