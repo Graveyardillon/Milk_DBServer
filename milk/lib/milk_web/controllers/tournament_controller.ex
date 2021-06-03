@@ -791,7 +791,7 @@ defmodule MilkWeb.TournamentController do
     user_id = Tools.to_integer_as_needed(user_id)
     tournament_id = Tools.to_integer_as_needed(tournament_id)
 
-    pending_list = TournamentProgress.get_match_pending_list({user_id, tournament_id})
+    pending_list = TournamentProgress.get_match_pending_list(user_id, tournament_id)
 
     if pending_list == [] do
       TournamentProgress.insert_match_pending_list_table(user_id, tournament_id)
@@ -858,7 +858,7 @@ defmodule MilkWeb.TournamentController do
     user_id = Tools.to_integer_as_needed(user_id)
     tournament_id = Tools.to_integer_as_needed(tournament_id)
 
-    pending_list = TournamentProgress.get_match_pending_list({user_id, tournament_id})
+    pending_list = TournamentProgress.get_match_pending_list(user_id, tournament_id)
 
     unless pending_list == [] do
       {{_, id}} = hd(pending_list)

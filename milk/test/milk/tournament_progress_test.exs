@@ -254,7 +254,7 @@ defmodule Milk.TournamentProgressTest do
 
     test "get_match_pending_list/2" do
       TournamentProgress.insert_match_pending_list_table(1, 2)
-      assert {r} = TournamentProgress.get_match_pending_list({1, 2}) |> hd()
+      assert {r} = TournamentProgress.get_match_pending_list(1, 2) |> hd()
       assert r == {1, 2}
     end
 

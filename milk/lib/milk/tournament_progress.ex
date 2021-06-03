@@ -260,7 +260,7 @@ defmodule Milk.TournamentProgress do
     end
   end
 
-  def get_match_pending_list({user_id, tournament_id}) do
+  def get_match_pending_list(user_id, tournament_id) do
     conn = conn()
 
     with {:ok, _} <- Redix.command(conn, ["SELECT", 3]),

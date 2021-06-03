@@ -907,12 +907,12 @@ defmodule Milk.TournamentsTest do
       {:ok, opponent} = Tournaments.get_opponent(match, tournament.master_id)
 
       pending_list =
-        TournamentProgress.get_match_pending_list({tournament.master_id, tournament.id})
+        TournamentProgress.get_match_pending_list(tournament.master_id, tournament.id)
 
       assert pending_list == []
 
       opponent_pending_list =
-        TournamentProgress.get_match_pending_list({opponent["id"], tournament.id})
+        TournamentProgress.get_match_pending_list(opponent["id"], tournament.id)
 
       assert opponent_pending_list == []
 
@@ -934,7 +934,7 @@ defmodule Milk.TournamentsTest do
       start(tournament.master_id, tournament.id)
 
       pending_list =
-        TournamentProgress.get_match_pending_list({tournament.master_id, tournament.id})
+        TournamentProgress.get_match_pending_list(tournament.master_id, tournament.id)
 
       assert pending_list == []
       TournamentProgress.insert_match_pending_list_table(tournament.master_id, tournament.id)

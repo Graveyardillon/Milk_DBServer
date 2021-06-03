@@ -1275,7 +1275,7 @@ defmodule Milk.Tournaments do
   def get_fighting_users(tournament_id) do
     get_entrants(tournament_id)
     |> Enum.filter(fn entrant ->
-      TournamentProgress.get_match_pending_list({entrant.user_id, tournament_id}) != []
+      TournamentProgress.get_match_pending_list(entrant.user_id, tournament_id) != []
     end)
     |> Enum.map(fn entrant ->
       Accounts.get_user(entrant.user_id)
@@ -1734,10 +1734,10 @@ defmodule Milk.Tournaments do
     match = find_match(match_list, user_id)
 
     {:ok, opponent} = get_opponent(match, user_id)
-    pending_list = TournamentProgress.get_match_pending_list({user_id, tournament_id})
+    pending_list = TournamentProgress.get_match_pending_list(user_id, tournament_id)
 
     opponent_pending_list =
-      TournamentProgress.get_match_pending_list({opponent["id"], tournament_id})
+      TournamentProgress.get_match_pending_list(opponent["id"], tournament_id)
 
     cond do
       pending_list == [] ->
