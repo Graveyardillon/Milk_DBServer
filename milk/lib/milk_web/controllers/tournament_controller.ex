@@ -912,7 +912,7 @@ defmodule MilkWeb.TournamentController do
           TournamentProgress.delete_fight_result({user_id, tournament_id})
         end
 
-        TournamentProgress.insert_fight_result_table({user_id, tournament_id}, true)
+        TournamentProgress.insert_fight_result_table(user_id, tournament_id, true)
         json(conn, %{validated: true, completed: false})
 
       result_list ->
@@ -953,7 +953,7 @@ defmodule MilkWeb.TournamentController do
           TournamentProgress.delete_fight_result({user_id, tournament_id})
         end
 
-        TournamentProgress.insert_fight_result_table({user_id, tournament_id}, false)
+        TournamentProgress.insert_fight_result_table(user_id, tournament_id, false)
         json(conn, %{validated: true, completed: false})
 
       result_list ->
