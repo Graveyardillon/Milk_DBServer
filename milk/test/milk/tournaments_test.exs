@@ -1004,7 +1004,7 @@ defmodule Milk.TournamentsTest do
     |> Tournaments.find_match(hd(loser_list))
     |> Enum.each(fn user_id ->
       TournamentProgress.delete_match_pending_list({user_id, tournament_id})
-      TournamentProgress.delete_fight_result({user_id, tournament_id})
+      TournamentProgress.delete_fight_result(user_id, tournament_id)
     end)
 
     renew_match_list(tournament_id, match_list, loser_list)

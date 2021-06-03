@@ -285,7 +285,7 @@ defmodule Milk.TournamentProgressTest do
 
     test "delete_fight_result/1 works fine" do
       TournamentProgress.insert_fight_result_table(1, 3, true)
-      assert r = TournamentProgress.delete_fight_result({1, 3})
+      assert r = TournamentProgress.delete_fight_result(1, 3)
       assert is_boolean(r)
     end
   end

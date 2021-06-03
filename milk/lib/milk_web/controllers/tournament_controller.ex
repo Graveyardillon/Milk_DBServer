@@ -909,7 +909,7 @@ defmodule MilkWeb.TournamentController do
     case TournamentProgress.get_fight_result(opponent_id, tournament_id) do
       [] ->
         if TournamentProgress.get_fight_result(user_id, tournament_id) != [] do
-          TournamentProgress.delete_fight_result({user_id, tournament_id})
+          TournamentProgress.delete_fight_result(user_id, tournament_id)
         end
 
         TournamentProgress.insert_fight_result_table(user_id, tournament_id, true)
@@ -917,8 +917,8 @@ defmodule MilkWeb.TournamentController do
 
       result_list ->
         {{_, _tournament_id}, is_win} = hd(result_list)
-        TournamentProgress.delete_fight_result({user_id, tournament_id})
-        TournamentProgress.delete_fight_result({opponent_id, tournament_id})
+        TournamentProgress.delete_fight_result(user_id, tournament_id)
+        TournamentProgress.delete_fight_result(opponent_id, tournament_id)
 
         if is_win do
           TournamentProgress.add_duplicate_user_id(tournament_id, user_id)
@@ -950,7 +950,7 @@ defmodule MilkWeb.TournamentController do
     case TournamentProgress.get_fight_result(opponent_id, tournament_id) do
       [] ->
         if TournamentProgress.get_fight_result(user_id, tournament_id) != [] do
-          TournamentProgress.delete_fight_result({user_id, tournament_id})
+          TournamentProgress.delete_fight_result(user_id, tournament_id)
         end
 
         TournamentProgress.insert_fight_result_table(user_id, tournament_id, false)
@@ -966,8 +966,8 @@ defmodule MilkWeb.TournamentController do
         else
           TournamentProgress.delete_match_pending_list({user_id, tournament_id})
           TournamentProgress.delete_match_pending_list({opponent_id, tournament_id})
-          TournamentProgress.delete_fight_result({user_id, tournament_id})
-          TournamentProgress.delete_fight_result({opponent_id, tournament_id})
+          TournamentProgress.delete_fight_result(user_id, tournament_id)
+          TournamentProgress.delete_fight_result(opponent_id, tournament_id)
           json(conn, %{validated: true, completed: true})
         end
     end
