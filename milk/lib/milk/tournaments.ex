@@ -444,7 +444,10 @@ defmodule Milk.Tournaments do
       tournament_id
       |> TournamentProgress.get_match_list()
       |> case do
-        match_list when is_list(match_list) -> match_list_length(match_list)
+        match_list when is_list(match_list) ->
+          match_list
+          |> List.flatten()
+          |> length()
         _ -> 0
       end
 
@@ -452,7 +455,10 @@ defmodule Milk.Tournaments do
       tournament_id
       |> TournamentProgress.get_match_list_with_fight_result()
       |> case do
-        match_list when is_list(match_list) -> match_list_length(match_list)
+        match_list when is_list(match_list) ->
+          match_list
+          |> List.flatten()
+          |> length()
         _ -> 0
       end
 
@@ -861,8 +867,8 @@ defmodule Milk.Tournaments do
     |> find_match(hd(loser_list))
     |> Enum.each(fn user_id ->
       if is_integer(user_id) do
-        TournamentProgress.delete_match_pending_list({user_id, tournament_id})
-        TournamentProgress.delete_fight_result({user_id, tournament_id})
+        TournamentProgress.delete_match_pending_list(user_id, tournament_id)
+        TournamentProgress.delete_fight_result(user_id, tournament_id)
       end
     end)
 
@@ -1269,7 +1275,7 @@ defmodule Milk.Tournaments do
   def get_fighting_users(tournament_id) do
     get_entrants(tournament_id)
     |> Enum.filter(fn entrant ->
-      TournamentProgress.get_match_pending_list({entrant.user_id, tournament_id}) != []
+      TournamentProgress.get_match_pending_list(entrant.user_id, tournament_id) != []
     end)
     |> Enum.map(fn entrant ->
       Accounts.get_user(entrant.user_id)
@@ -1656,7 +1662,6 @@ defmodule Milk.Tournaments do
 
   @doc """
   Checks tournament state.
-  # FIXME: 大会には参加していない主催者のstateを追加する
   """
   def state!(tournament_id, user_id) do
     tournament = get_tournament(tournament_id)
@@ -1729,10 +1734,10 @@ defmodule Milk.Tournaments do
     match = find_match(match_list, user_id)
 
     {:ok, opponent} = get_opponent(match, user_id)
-    pending_list = TournamentProgress.get_match_pending_list({user_id, tournament_id})
+    pending_list = TournamentProgress.get_match_pending_list(user_id, tournament_id)
 
     opponent_pending_list =
-      TournamentProgress.get_match_pending_list({opponent["id"], tournament_id})
+      TournamentProgress.get_match_pending_list(opponent["id"], tournament_id)
 
     cond do
       pending_list == [] ->

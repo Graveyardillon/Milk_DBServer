@@ -1351,8 +1351,8 @@ defmodule MilkWeb.TournamentControllerTest do
             assert len == 1
           end).()
 
-      assert TournamentProgress.get_fight_result({hd(losers), tournament.id}) == []
-      assert TournamentProgress.get_match_pending_list({hd(losers), tournament.id}) == []
+      assert TournamentProgress.get_fight_result(hd(losers), tournament.id) == []
+      assert TournamentProgress.get_match_pending_list(hd(losers), tournament.id) == []
 
       tournament.id
       |> TournamentProgress.get_match_list()
@@ -2836,8 +2836,8 @@ defmodule MilkWeb.TournamentControllerTest do
           "user_id" => entrant1.user_id
         })
 
-      {entrant1.user_id, tournament.id}
-      |> TournamentProgress.get_match_pending_list()
+      entrant1.user_id
+      |> TournamentProgress.get_match_pending_list(tournament.id)
       |> (fn list ->
             assert list == []
           end).()
@@ -2856,8 +2856,8 @@ defmodule MilkWeb.TournamentControllerTest do
           tournament_id: tournament.id
         )
 
-      {entrant1.user_id, tournament.id}
-      |> TournamentProgress.get_match_pending_list()
+      entrant1.user_id
+      |> TournamentProgress.get_match_pending_list(tournament.id)
       |> (fn list ->
             assert list == [{{entrant1.user_id, tournament.id}}]
           end).()
@@ -3007,8 +3007,8 @@ defmodule MilkWeb.TournamentControllerTest do
           tournament: %{"master_id" => tournament.master_id, "tournament_id" => tournament.id}
         )
 
-      {entrant1.user_id, tournament.id}
-      |> TournamentProgress.get_match_pending_list()
+      entrant1.user_id
+      |> TournamentProgress.get_match_pending_list(tournament.id)
       |> (fn list ->
             assert list == []
           end).()
@@ -3025,8 +3025,8 @@ defmodule MilkWeb.TournamentControllerTest do
           tournament_id: tournament.id
         )
 
-      {entrant1.user_id, tournament.id}
-      |> TournamentProgress.get_match_pending_list()
+      entrant1.user_id
+      |> TournamentProgress.get_match_pending_list( tournament.id)
       |> (fn list ->
             assert list == [{{entrant1.user_id, tournament.id}}]
           end).()

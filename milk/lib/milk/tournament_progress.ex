@@ -243,7 +243,7 @@ defmodule Milk.TournamentProgress do
   # The list contains user_id of a user who pressed start_match and
   # the fight is not finished.
 
-  def insert_match_pending_list_table({user_id, tournament_id}) do
+  def insert_match_pending_list_table(user_id, tournament_id) do
     conn = conn()
 
     with {:ok, _} <- Redix.command(conn, ["MULTI"]),
@@ -260,7 +260,7 @@ defmodule Milk.TournamentProgress do
     end
   end
 
-  def get_match_pending_list({user_id, tournament_id}) do
+  def get_match_pending_list(user_id, tournament_id) do
     conn = conn()
 
     with {:ok, _} <- Redix.command(conn, ["SELECT", 3]),
@@ -291,7 +291,7 @@ defmodule Milk.TournamentProgress do
     end
   end
 
-  def delete_match_pending_list({user_id, tournament_id}) do
+  def delete_match_pending_list(user_id, tournament_id) do
     conn = conn()
 
     with {:ok, _} <- Redix.command(conn, ["MULTI"]),
@@ -333,7 +333,7 @@ defmodule Milk.TournamentProgress do
   # Manages fight result.
   # FIXME: 引数のタプルをやめたい
 
-  def insert_fight_result_table({user_id, tournament_id}, is_win) do
+  def insert_fight_result_table(user_id, tournament_id, is_win) do
     conn = conn()
 
     with {:ok, _} <- Redix.command(conn, ["MULTI"]),
@@ -350,7 +350,7 @@ defmodule Milk.TournamentProgress do
     end
   end
 
-  def get_fight_result({user_id, tournament_id}) do
+  def get_fight_result(user_id, tournament_id) do
     conn = conn()
 
     with {:ok, _} <- Redix.command(conn, ["SELECT", 4]),
@@ -370,7 +370,7 @@ defmodule Milk.TournamentProgress do
     end
   end
 
-  def delete_fight_result({user_id, tournament_id}) do
+  def delete_fight_result(user_id, tournament_id) do
     conn = conn()
 
     with {:ok, _} <- Redix.command(conn, ["MULTI"]),
