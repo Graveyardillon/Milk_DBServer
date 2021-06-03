@@ -1003,7 +1003,7 @@ defmodule Milk.TournamentsTest do
     match_list
     |> Tournaments.find_match(hd(loser_list))
     |> Enum.each(fn user_id ->
-      TournamentProgress.delete_match_pending_list({user_id, tournament_id})
+      TournamentProgress.delete_match_pending_list(user_id, tournament_id)
       TournamentProgress.delete_fight_result(user_id, tournament_id)
     end)
 
@@ -1768,11 +1768,11 @@ defmodule Milk.TournamentsTest do
       users = Tournaments.get_fighting_users(tournament.id)
       assert length(users) == 2
 
-      TournamentProgress.delete_match_pending_list({tournament.master_id, tournament.id})
+      TournamentProgress.delete_match_pending_list(tournament.master_id, tournament.id)
       users = Tournaments.get_fighting_users(tournament.id)
       assert length(users) == 1
 
-      TournamentProgress.delete_match_pending_list({opponent["id"], tournament.id})
+      TournamentProgress.delete_match_pending_list(opponent["id"], tournament.id)
       users = Tournaments.get_fighting_users(tournament.id)
       assert length(users) == 0
     end
@@ -1816,11 +1816,11 @@ defmodule Milk.TournamentsTest do
       users = Tournaments.get_waiting_users(tournament.id)
       assert length(users) == length(entrants) - 2
 
-      TournamentProgress.delete_match_pending_list({tournament.master_id, tournament.id})
+      TournamentProgress.delete_match_pending_list(tournament.master_id, tournament.id)
       users = Tournaments.get_waiting_users(tournament.id)
       assert length(users) == length(entrants) - 1
 
-      TournamentProgress.delete_match_pending_list({opponent["id"], tournament.id})
+      TournamentProgress.delete_match_pending_list(opponent["id"], tournament.id)
       users = Tournaments.get_waiting_users(tournament.id)
       assert length(users) == length(entrants)
     end

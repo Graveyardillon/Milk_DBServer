@@ -260,7 +260,7 @@ defmodule Milk.TournamentProgressTest do
 
     test "delete_match_pending_list" do
       TournamentProgress.insert_match_pending_list_table(1, 3)
-      assert r = TournamentProgress.delete_match_pending_list({1, 3})
+      assert r = TournamentProgress.delete_match_pending_list(1, 3)
       assert is_boolean(r)
     end
   end

@@ -291,7 +291,7 @@ defmodule Milk.TournamentProgress do
     end
   end
 
-  def delete_match_pending_list({user_id, tournament_id}) do
+  def delete_match_pending_list(user_id, tournament_id) do
     conn = conn()
 
     with {:ok, _} <- Redix.command(conn, ["MULTI"]),
