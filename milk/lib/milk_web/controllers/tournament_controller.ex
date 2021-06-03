@@ -794,7 +794,7 @@ defmodule MilkWeb.TournamentController do
     pending_list = TournamentProgress.get_match_pending_list({user_id, tournament_id})
 
     if pending_list == [] do
-      TournamentProgress.insert_match_pending_list_table({user_id, tournament_id})
+      TournamentProgress.insert_match_pending_list_table(user_id, tournament_id)
       json(conn, %{result: true})
     else
       json(conn, %{result: false})

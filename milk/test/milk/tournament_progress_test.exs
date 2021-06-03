@@ -247,19 +247,19 @@ defmodule Milk.TournamentProgressTest do
 
   describe "match pending list" do
     test "insert_match_pending_list_table/1 works fine" do
-      r = TournamentProgress.insert_match_pending_list_table({1, 1})
+      r = TournamentProgress.insert_match_pending_list_table(1, 1)
       assert r
       assert is_boolean(r)
     end
 
     test "get_match_pending_list/2" do
-      TournamentProgress.insert_match_pending_list_table({1, 2})
+      TournamentProgress.insert_match_pending_list_table(1, 2)
       assert {r} = TournamentProgress.get_match_pending_list({1, 2}) |> hd()
       assert r == {1, 2}
     end
 
     test "delete_match_pending_list" do
-      TournamentProgress.insert_match_pending_list_table({1, 3})
+      TournamentProgress.insert_match_pending_list_table(1, 3)
       assert r = TournamentProgress.delete_match_pending_list({1, 3})
       assert is_boolean(r)
     end

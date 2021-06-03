@@ -243,7 +243,7 @@ defmodule Milk.TournamentProgress do
   # The list contains user_id of a user who pressed start_match and
   # the fight is not finished.
 
-  def insert_match_pending_list_table({user_id, tournament_id}) do
+  def insert_match_pending_list_table(user_id, tournament_id) do
     conn = conn()
 
     with {:ok, _} <- Redix.command(conn, ["MULTI"]),
