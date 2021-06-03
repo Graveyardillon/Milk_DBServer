@@ -19,18 +19,6 @@ defmodule Milk.NotifLogTest do
       notification_log
     end
 
-    # FIXME
-    # test "list_notification_log/0 returns all notification_log" do
-    #   notification_log = notification_log_fixture()
-    #   assert Log.list_notification_log() == [notification_log]
-    # end
-
-    # FIXME
-    # test "get_notification_log!/1 returns the notification_log with given id" do
-    #   notification_log = notification_log_fixture()
-    #   assert Log.get_notification_log!(notification_log.id) == notification_log
-    # end
-
     test "create_notification_log/1 with valid data creates a notification_log" do
       assert {:ok, %NotificationLog{} = notification_log} =
                Log.create_notification_log(@valid_attrs)

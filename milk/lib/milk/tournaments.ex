@@ -444,7 +444,10 @@ defmodule Milk.Tournaments do
       tournament_id
       |> TournamentProgress.get_match_list()
       |> case do
-        match_list when is_list(match_list) -> match_list_length(match_list)
+        match_list when is_list(match_list) ->
+          match_list
+          |> List.flatten()
+          |> length()
         _ -> 0
       end
 
@@ -452,7 +455,10 @@ defmodule Milk.Tournaments do
       tournament_id
       |> TournamentProgress.get_match_list_with_fight_result()
       |> case do
-        match_list when is_list(match_list) -> match_list_length(match_list)
+        match_list when is_list(match_list) ->
+          match_list
+          |> List.flatten()
+          |> length()
         _ -> 0
       end
 
