@@ -1351,7 +1351,7 @@ defmodule MilkWeb.TournamentControllerTest do
             assert len == 1
           end).()
 
-      assert TournamentProgress.get_fight_result({hd(losers), tournament.id}) == []
+      assert TournamentProgress.get_fight_result(hd(losers), tournament.id) == []
       assert TournamentProgress.get_match_pending_list({hd(losers), tournament.id}) == []
 
       tournament.id

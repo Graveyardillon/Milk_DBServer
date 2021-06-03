@@ -906,9 +906,9 @@ defmodule MilkWeb.TournamentController do
     user_id = Tools.to_integer_as_needed(user_id)
     tournament_id = Tools.to_integer_as_needed(tournament_id)
 
-    case TournamentProgress.get_fight_result({opponent_id, tournament_id}) do
+    case TournamentProgress.get_fight_result(opponent_id, tournament_id) do
       [] ->
-        if TournamentProgress.get_fight_result({user_id, tournament_id}) != [] do
+        if TournamentProgress.get_fight_result(user_id, tournament_id) != [] do
           TournamentProgress.delete_fight_result({user_id, tournament_id})
         end
 
@@ -947,9 +947,9 @@ defmodule MilkWeb.TournamentController do
     user_id = Tools.to_integer_as_needed(user_id)
     tournament_id = Tools.to_integer_as_needed(tournament_id)
 
-    case TournamentProgress.get_fight_result({opponent_id, tournament_id}) do
+    case TournamentProgress.get_fight_result(opponent_id, tournament_id) do
       [] ->
-        if TournamentProgress.get_fight_result({user_id, tournament_id}) != [] do
+        if TournamentProgress.get_fight_result(user_id, tournament_id) != [] do
           TournamentProgress.delete_fight_result({user_id, tournament_id})
         end
 
@@ -1101,7 +1101,7 @@ defmodule MilkWeb.TournamentController do
     user_id = Tools.to_integer_as_needed(user_id)
     tournament_id = Tools.to_integer_as_needed(tournament_id)
 
-    case TournamentProgress.get_fight_result({user_id, tournament_id}) do
+    case TournamentProgress.get_fight_result(user_id, tournament_id) do
       [] ->
         json(conn, %{is_win: nil, is_claimed: false})
 

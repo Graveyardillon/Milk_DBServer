@@ -273,13 +273,13 @@ defmodule Milk.TournamentProgressTest do
 
     test "get_fight_result/1 works fine true" do
       TournamentProgress.insert_fight_result_table(1, 2, true)
-      assert {_, r} = TournamentProgress.get_fight_result({1, 2}) |> hd()
+      assert {_, r} = TournamentProgress.get_fight_result(1, 2) |> hd()
       assert is_boolean(r)
     end
 
     test "get_fight_result/1 works fine false" do
       TournamentProgress.insert_fight_result_table(2, 2, false)
-      assert {_, r} = TournamentProgress.get_fight_result({2, 2}) |> hd()
+      assert {_, r} = TournamentProgress.get_fight_result(2, 2) |> hd()
       refute r
     end
 
