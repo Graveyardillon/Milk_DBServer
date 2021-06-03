@@ -12,9 +12,10 @@ instance_class: b1
 manual_scaling:
   instances: 1
 beta_settings:
-  cloud_sql_instances: e-players6814:asia-northeast1:milkdb-test
+  cloud_sql_instances: e-players6814:asia-northeast1:milkdb
 env_variables:
   REDISHOST: '10.231.150.131'
   REDISPORT: '6379'
+  CLOUD_SQL_HOST: "e-players6814:asia-northeast1:milkdb"
 network:
   name: default
