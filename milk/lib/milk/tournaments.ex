@@ -1662,7 +1662,6 @@ defmodule Milk.Tournaments do
 
   @doc """
   Checks tournament state.
-  # FIXME: 大会には参加していない主催者のstateを追加する
   """
   def state!(tournament_id, user_id) do
     tournament = get_tournament(tournament_id)
