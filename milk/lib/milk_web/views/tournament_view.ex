@@ -293,7 +293,8 @@ defmodule MilkWeb.TournamentView do
           chat_room_id: topic.chat_room_id,
           topic_name: topic.topic_name,
           tournament_id: topic.tournament_id,
-          authority: topic.authority
+          authority: topic.authority,
+          can_speak: topic.can_speak
         }
       end)
 
