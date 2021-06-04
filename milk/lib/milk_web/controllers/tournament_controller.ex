@@ -497,11 +497,12 @@ defmodule MilkWeb.TournamentController do
       |> Tools.to_integer_as_needed()
       |> Tournaments.get_tabs_by_tournament_id()
       |> Enum.map(fn tab ->
-        authority = tab.chat_room_id
-          |> Chat.get_chat_room()
-          |> Map.get(:authority)
+        chat_room = Chat.get_chat_room(tab.chat_room_id)
+        member = Chat.get_member(chat_room.id, user_id)
 
-        Map.put(tab, :authority, authority)
+        tab
+        |> Map.put(:authority, chat_room.authority)
+        |> Map.put(:can_speak, chat_room.authority <= member.authority)
       end)
 
     render(conn, "tournament_topics.json", topics: tabs)
@@ -520,11 +521,12 @@ defmodule MilkWeb.TournamentController do
       tabs = tournament_id
         |> Tournaments.get_tabs_by_tournament_id()
         |> Enum.map(fn tab ->
-          authority = tab.chat_room_id
-            |> Chat.get_chat_room()
-            |> Map.get(:authority)
+          chat_room = Chat.get_chat_room(tab.chat_room_id)
 
-          Map.put(tab, :authority, authority)
+          tab
+          |> Map.put(:authority, chat_room.authority)
+          # 自分より権限が大きいルームは作成しないのでtrueを入れておく
+          |> Map.put(:can_speak, true)
         end)
 
       render(conn, "tournament_topics.json", topics: tabs)
