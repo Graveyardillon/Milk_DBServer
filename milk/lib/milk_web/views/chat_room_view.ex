@@ -35,7 +35,7 @@ defmodule MilkWeb.ChatRoomView do
             last_chat: i.last_chat,
             count: i.count,
             is_private: i.is_private,
-            authority: i.autority,
+            authority: i.authority,
             icon_path: i.icon_path
           }
         end)
