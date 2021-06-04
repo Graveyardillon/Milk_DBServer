@@ -90,6 +90,7 @@ defmodule MilkWeb.ChatRoomController do
           last_chat: room.last_chat,
           count: room.count,
           is_private: room.is_private,
+          authority: room.authority,
           icon_path: user.icon_path
         }
       end)

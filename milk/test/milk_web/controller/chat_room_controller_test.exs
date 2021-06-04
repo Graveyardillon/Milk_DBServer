@@ -17,21 +17,20 @@ defmodule MilkWeb.ChatRoomControllerTest do
     chat_room
   end
 
-  defp fixture(:user, name) do
-    {:ok, user} =
-      %{
-        "icon_path" => "iconpath",
-        "language" => "somelang",
-        "name" => name,
-        "notification_number" => 42,
-        "point" => 42,
-        "email" => name <> "@email.com",
-        "logout_fl" => true,
-        "password" => "S1ome password"
-      }
-      |> Accounts.create_user()
+  defp fixture_user(n \\ 0) do
+    attrs = %{
+      "icon_path" => "some icon_path",
+      "language" => "some language",
+      "name" => to_string(n) <> "some name",
+      "notification_number" => 42,
+      "point" => 42,
+      "email" => to_string(n) <> "some@email.com",
+      "logout_fl" => true,
+      "password" => "S1ome password"
+    }
 
-    Accounts.get_user(user.id)
+    {:ok, user} = Accounts.create_user(attrs)
+    user
   end
 
   setup %{conn: conn} do
@@ -101,8 +100,8 @@ defmodule MilkWeb.ChatRoomControllerTest do
     setup [:create_chat_room]
 
     test "private_room works fine with valid data", %{conn: conn, chat_room: _chat_room} do
-      user1 = fixture(:user, "user1")
-      user2 = fixture(:user, "user2")
+      user1 = fixture_user(1)
+      user2 = fixture_user(2)
 
       conn =
         get(
@@ -120,5 +119,9 @@ defmodule MilkWeb.ChatRoomControllerTest do
   defp create_chat_room(_) do
     chat_room = fixture(:chat_room)
     %{chat_room: chat_room}
+  end
+
+  defp create_chat_rooms(_) do
+
   end
 end
