@@ -1069,7 +1069,7 @@ defmodule MilkWeb.TournamentControllerTest do
 
     test "works", %{conn: conn, tournament: tournament} do
       conn =
-        get(conn, Routes.tournament_path(conn, :tournament_topics), tournament_id: tournament.id)
+        get(conn, Routes.tournament_path(conn, :tournament_topics), tournament_id: tournament.id, user_id: tournament.master_id)
 
       json_response(conn, 200)
       |> Map.get("data")
@@ -1079,6 +1079,13 @@ defmodule MilkWeb.TournamentControllerTest do
         |> (fn mem ->
               assert mem
             end).()
+
+        assert topic["tournament_id"] == tournament.id
+        if topic["topic_name"] == "Notification" do
+          assert topic["authority"] == 1
+        else
+          assert topic["authority"] == 0
+        end
       end)
       |> length()
       |> (fn len ->
@@ -2460,7 +2467,7 @@ defmodule MilkWeb.TournamentControllerTest do
           tournament: %{tournament_id: tournament["id"], loser_list: [user1_id]}
         )
 
-      conn = get(conn, Routes.tournament_path(conn, :tournament_topics), tournament_id: tournament["id"])
+      conn = get(conn, Routes.tournament_path(conn, :tournament_topics), tournament_id: tournament["id"], user_id: tournament["master_id"])
       assert json_response(conn, 200)["result"]
       json_response(conn, 200)
       |> Map.get("data")
@@ -2502,7 +2509,7 @@ defmodule MilkWeb.TournamentControllerTest do
             assert t["type"] == tournament["type"]
           end).()
 
-      conn = get(conn, Routes.tournament_path(conn, :tournament_topics), tournament_id: tournament["id"])
+      conn = get(conn, Routes.tournament_path(conn, :tournament_topics), tournament_id: tournament["id"], user_id: tournament["master_id"])
       assert json_response(conn, 200)["result"]
       json_response(conn, 200)
       |> Map.get("data")

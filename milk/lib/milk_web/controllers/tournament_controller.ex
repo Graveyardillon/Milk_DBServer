@@ -5,6 +5,7 @@ defmodule MilkWeb.TournamentController do
 
   alias Milk.{
     Accounts,
+    Chat,
     Log,
     Relations,
     TournamentProgress,
@@ -491,10 +492,17 @@ defmodule MilkWeb.TournamentController do
   @doc """
   Get tournament topics.
   """
-  def tournament_topics(conn, %{"tournament_id" => tournament_id}) do
+  def tournament_topics(conn, %{"tournament_id" => tournament_id, "user_id" => user_id}) do
     tabs = tournament_id
       |> Tools.to_integer_as_needed()
       |> Tournaments.get_tabs_by_tournament_id()
+      |> Enum.map(fn tab ->
+        authority = tab.chat_room_id
+          |> Chat.get_chat_room()
+          |> Map.get(:authority)
+
+        Map.put(tab, :authority, authority)
+      end)
 
     render(conn, "tournament_topics.json", topics: tabs)
   end
@@ -509,7 +517,16 @@ defmodule MilkWeb.TournamentController do
       current_tabs = Tournaments.get_tabs_by_tournament_id(tournament_id)
       Tournaments.update_topic(tournament, current_tabs, tabs)
 
-      tabs = Tournaments.get_tabs_by_tournament_id(tournament_id)
+      tabs = tournament_id
+        |> Tournaments.get_tabs_by_tournament_id()
+        |> Enum.map(fn tab ->
+          authority = tab.chat_room_id
+            |> Chat.get_chat_room()
+            |> Map.get(:authority)
+
+          Map.put(tab, :authority, authority)
+        end)
+
       render(conn, "tournament_topics.json", topics: tabs)
     else
       render(conn, "error.json", error: "tournament not found")
