@@ -291,11 +291,12 @@ defmodule Milk.Tournaments do
     end
   end
 
-  defp create_topic(tournament, topic, tab_index) do
+  defp create_topic(tournament, topic, tab_index, authority \\ 0) do
     {:ok, chat_room} =
       %{
         name: tournament.name <> "-" <> topic,
-        member_count: tournament.count
+        member_count: tournament.count,
+        authority: authority
       }
       |> Chat.create_chat_room()
 
@@ -370,7 +371,7 @@ defmodule Milk.Tournaments do
       create_topic(tournament, "Group", 0)
     end)
     |> Multi.insert(:notification_topic, fn %{tournament: tournament} ->
-      create_topic(tournament, "Notification", 1)
+      create_topic(tournament, "Notification", 1, 1)
     end)
     |> Multi.insert(:q_and_a_topic, fn %{tournament: tournament} ->
       create_topic(tournament, "Q&A", 2)
