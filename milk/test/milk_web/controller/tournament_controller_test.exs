@@ -980,6 +980,7 @@ defmodule MilkWeb.TournamentControllerTest do
 
       assert json_response(conn, 200)["result"]
 
+      # same time as attrs1
       conn = post(conn, Routes.tournament_path(conn, :create), %{tournament: attrs2, file: ""})
       tournament2 = json_response(conn, 200)["data"]
 

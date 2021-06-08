@@ -451,8 +451,7 @@ defmodule MilkWeb.TournamentController do
 
     tournament = Tournaments.get_tournament(tournament_id)
 
-    entrants_len =
-      tournament.id
+    entrants_len = tournament.id
       |> Tournaments.get_entrants()
       |> length()
 
