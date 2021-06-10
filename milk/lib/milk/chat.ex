@@ -66,9 +66,10 @@ defmodule Milk.Chat do
 
   """
   def create_chat_room(attrs \\ %{}) do
-    case %ChatRoom{}
-         |> ChatRoom.changeset(attrs)
-         |> Repo.insert() do
+    %ChatRoom{}
+    |> ChatRoom.changeset(attrs)
+    |> Repo.insert()
+    |> case do
       {:ok, chat} ->
         {:ok, chat}
 
@@ -404,12 +405,33 @@ defmodule Milk.Chat do
         from c in Chats, where: c.chat_room_id == ^id, order_by: [desc: c.index], limit: 20
       )
 
+  @doc """
+  Get all chat by room id.
+  """
   def get_all_chat_by_room_id(room_id) do
     Chats
     |> where([c], c.chat_room_id == ^room_id)
     |> Repo.all()
   end
 
+  @doc """
+  Get all chat including logs by room id.
+  """
+  def get_all_chat_by_room_id_including_log(room_id) do
+    chats = Chats
+      |> where([c], c.chat_room_id == ^room_id)
+      |> Repo.all()
+
+    chat_logs = ChatsLog
+      |> where([c], c.chat_room_id == ^room_id)
+      |> Repo.all()
+
+    chats ++ chat_logs
+  end
+
+  @doc """
+  Synchronize chat.
+  """
   def sync(date, id) do
     Repo.all(
       from cr in ChatRoom,

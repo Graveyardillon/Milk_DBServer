@@ -178,6 +178,10 @@ defmodule MilkWeb.Router do
     post "/notification/all", NotifController, :notify_all
     post "/notification_log/create", NotifLogController, :create
     delete "/notification/delete", NotifController, :delete
+
+    post "/load_test/start", LoadTestController, :start
+    post "/load_test/stop", LoadTestController, :stop
+    get "/load_test/download", LoadTestController,  :download
   end
 
   scope "/debug", MilkWeb do

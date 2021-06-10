@@ -38,3 +38,5 @@ data/
 .DS_Store
 
 volumes/
+
+load_test_log.txt

@@ -292,11 +292,13 @@ defmodule MilkWeb.TournamentView do
           id: topic.id,
           chat_room_id: topic.chat_room_id,
           topic_name: topic.topic_name,
-          tournament_id: topic.tournament_id
+          tournament_id: topic.tournament_id,
+          authority: topic.authority,
+          can_speak: topic.can_speak
         }
       end)
 
-    %{data: map}
+    %{result: true, data: map}
   end
 
   # FIXME: Authは読み込んでないのでemailを返すようにしていない

@@ -21,6 +21,7 @@ defmodule MilkWeb.TournamentControllerTest do
     "user_id" => -1,
     "tournament_id" => -1
   }
+
   @create_attrs %{
     "capacity" => 42,
     "deadline" => "2010-04-17T14:00:00Z",
@@ -35,6 +36,7 @@ defmodule MilkWeb.TournamentControllerTest do
     "password" => "Password123",
     "platform" => 1
   }
+
   @create_incoming_attrs %{
     "capacity" => 42,
     "deadline" => "2100-04-17T14:00:00Z",
@@ -47,10 +49,12 @@ defmodule MilkWeb.TournamentControllerTest do
     "url" => "some url",
     "platform" => 1
   }
+
   @update_attrs %{
     "capacity" => 4200,
     "url" => "updated url"
   }
+
   @invalid_attrs %{
     "capacity" => nil,
     "deadline" => nil,
@@ -73,6 +77,7 @@ defmodule MilkWeb.TournamentControllerTest do
     "logout_fl" => true,
     "password" => "S1ome password"
   }
+
   @create_user_attrs2 %{
     "icon_path" => "some icon_path",
     "language" => "some language",
@@ -152,8 +157,8 @@ defmodule MilkWeb.TournamentControllerTest do
     test "get_users_for_add_assistant/2 with valid data", %{conn: conn, tournament: tournament} do
       {:ok, user2} = fixture(:user)
       {:ok, user3} = fixture(:user2)
-      inspect(user2)
-      inspect(user3)
+      inspect(user2, charlists: false)
+      inspect(user3, charlists: false)
       user2_id = user2.id
       user3_id = user3.id
 
@@ -886,6 +891,8 @@ defmodule MilkWeb.TournamentControllerTest do
 
     test "works", %{conn: conn, tournament: tournament} do
       tournaments = fixture_tournaments(3)
+      assistant_tournament = fixture_tournament(999)
+      conn = post(conn, Routes.assistant_path(conn, :create), assistant: %{tournament_id: assistant_tournament.id, user_id: [tournament.master_id]})
 
       Enum.each(tournaments, fn t ->
         Map.new()
@@ -901,6 +908,7 @@ defmodule MilkWeb.TournamentControllerTest do
           tournament.id
         end)
         |> Enum.concat([tournament.id])
+        |> Enum.concat([assistant_tournament.id])
 
       conn =
         get(conn, Routes.tournament_path(conn, :relevant, %{"user_id" => tournament.master_id}))
@@ -912,7 +920,7 @@ defmodule MilkWeb.TournamentControllerTest do
       end)
       |> length()
       |> (fn len ->
-            assert len == 4
+            assert len == length(tournament_id_list)
           end).()
     end
   end
@@ -972,6 +980,7 @@ defmodule MilkWeb.TournamentControllerTest do
 
       assert json_response(conn, 200)["result"]
 
+      # same time as attrs1
       conn = post(conn, Routes.tournament_path(conn, :create), %{tournament: attrs2, file: ""})
       tournament2 = json_response(conn, 200)["data"]
 
@@ -1061,7 +1070,7 @@ defmodule MilkWeb.TournamentControllerTest do
 
     test "works", %{conn: conn, tournament: tournament} do
       conn =
-        get(conn, Routes.tournament_path(conn, :tournament_topics), tournament_id: tournament.id)
+        get(conn, Routes.tournament_path(conn, :tournament_topics), tournament_id: tournament.id, user_id: tournament.master_id)
 
       json_response(conn, 200)
       |> Map.get("data")
@@ -1071,6 +1080,13 @@ defmodule MilkWeb.TournamentControllerTest do
         |> (fn mem ->
               assert mem
             end).()
+
+        assert topic["tournament_id"] == tournament.id
+        if topic["topic_name"] == "Notification" do
+          assert topic["authority"] == 1
+        else
+          assert topic["authority"] == 0
+        end
       end)
       |> length()
       |> (fn len ->
@@ -1343,8 +1359,8 @@ defmodule MilkWeb.TournamentControllerTest do
             assert len == 1
           end).()
 
-      assert TournamentProgress.get_fight_result({hd(losers), tournament.id}) == []
-      assert TournamentProgress.get_match_pending_list({hd(losers), tournament.id}) == []
+      assert TournamentProgress.get_fight_result(hd(losers), tournament.id) == []
+      assert TournamentProgress.get_match_pending_list(hd(losers), tournament.id) == []
 
       tournament.id
       |> TournamentProgress.get_match_list()
@@ -2392,25 +2408,30 @@ defmodule MilkWeb.TournamentControllerTest do
   describe "finish" do
     setup [:create_tournament]
 
-    test "check status of redis and logs", %{conn: conn, tournament: tournament} do
-      create_entrants(1, tournament.id)
+    test "check status of redis and logs", %{conn: conn} do
+      {:ok, user} = fixture(:user)
+      attrs = Map.put(@create_attrs, "master_id", user.id)
+      conn = post(conn, Routes.tournament_path(conn, :create), %{tournament: attrs, file: ""})
+      tournament = json_response(conn, 200)["data"]
+
+      create_entrants(1, tournament["id"])
 
       Map.new()
       |> Map.put("rank", 0)
-      |> Map.put("tournament_id", tournament.id)
-      |> Map.put("user_id", tournament.master_id)
+      |> Map.put("tournament_id", tournament["id"])
+      |> Map.put("user_id", tournament["master_id"])
       |> Tournaments.create_entrant()
 
-      user1_id = tournament.master_id
+      user1_id = tournament["master_id"]
 
       conn =
         post(conn, Routes.tournament_path(conn, :start),
-          tournament: %{"master_id" => tournament.master_id, "tournament_id" => tournament.id}
+          tournament: %{"master_id" => tournament["master_id"], "tournament_id" => tournament["id"]}
         )
 
       conn =
         get(conn, Routes.tournament_path(conn, :get_opponent),
-          tournament_id: tournament.id,
+          tournament_id: tournament["id"],
           user_id: user1_id
         )
 
@@ -2419,43 +2440,55 @@ defmodule MilkWeb.TournamentControllerTest do
       conn =
         post(conn, Routes.tournament_path(conn, :start_match),
           user_id: user1_id,
-          tournament_id: tournament.id
+          tournament_id: tournament["id"]
         )
 
       conn =
         post(conn, Routes.tournament_path(conn, :start_match),
           user_id: opponent1_id,
-          tournament_id: tournament.id
+          tournament_id: tournament["id"]
         )
 
       conn =
         post(conn, Routes.tournament_path(conn, :claim_lose),
           user_id: user1_id,
           opponent_id: opponent1_id,
-          tournament_id: tournament.id
+          tournament_id: tournament["id"]
         )
 
       conn =
         post(conn, Routes.tournament_path(conn, :claim_win),
           user_id: opponent1_id,
           opponent_id: user1_id,
-          tournament_id: tournament.id
+          tournament_id: tournament["id"]
         )
 
       conn =
         post(conn, Routes.tournament_path(conn, :delete_loser),
-          tournament: %{tournament_id: tournament.id, loser_list: [user1_id]}
+          tournament: %{tournament_id: tournament["id"], loser_list: [user1_id]}
         )
+
+      conn = get(conn, Routes.tournament_path(conn, :tournament_topics), tournament_id: tournament["id"], user_id: tournament["master_id"])
+      assert json_response(conn, 200)["result"]
+      json_response(conn, 200)
+      |> Map.get("data")
+      |> Enum.map(fn topic_log ->
+        assert topic_log["tournament_id"] == tournament["id"]
+      end)
+      |> length()
+      |> (fn len ->
+        assert len == 3
+      end).()
 
       conn =
         post(conn, Routes.tournament_path(conn, :finish),
-          tournament_id: tournament.id,
+          tournament_id: tournament["id"],
           user_id: opponent1_id
         )
 
       assert json_response(conn, 200)["result"]
 
-      conn = get(conn, Routes.tournament_path(conn, :show), tournament_id: tournament.id)
+      conn = get(conn, Routes.tournament_path(conn, :show), tournament_id: tournament["id"])
 
       json_response(conn, 200)
       |> (fn t ->
@@ -2465,29 +2498,41 @@ defmodule MilkWeb.TournamentControllerTest do
           end).()
       |> Map.get("data")
       |> (fn t ->
-            assert t["tournament_id"] == tournament.id
-            assert t["capacity"] == tournament.capacity
-            assert t["description"] == tournament.description
-            assert t["game_id"] == tournament.game_id
-            assert t["game_name"] == tournament.game_name
+            assert t["tournament_id"] == tournament["id"]
+            assert t["capacity"] == tournament["capacity"]
+            assert t["description"] == tournament["description"]
+            assert t["game_id"] == tournament["game_id"]
+            assert t["game_name"] == tournament["game_name"]
             assert t["winner_id"] == opponent1_id
-            assert t["master_id"] == tournament.master_id
-            assert t["name"] == tournament.name
-            assert t["url"] == tournament.url
-            assert t["type"] == tournament.type
+            assert t["master_id"] == tournament["master_id"]
+            assert t["name"] == tournament["name"]
+            assert t["url"] == tournament["url"]
+            assert t["type"] == tournament["type"]
           end).()
 
-      TournamentProgress.get_match_list(tournament.id)
+      conn = get(conn, Routes.tournament_path(conn, :tournament_topics), tournament_id: tournament["id"], user_id: tournament["master_id"])
+      assert json_response(conn, 200)["result"]
+      json_response(conn, 200)
+      |> Map.get("data")
+      |> Enum.map(fn topic_log ->
+        assert topic_log["tournament_id"] == tournament["id"]
+      end)
+      |> length()
+      |> (fn len ->
+        assert len == 3
+      end).()
+
+      TournamentProgress.get_match_list(tournament["id"])
       |> (fn list ->
             assert list == []
           end).()
 
-      TournamentProgress.get_match_list_with_fight_result(tournament.id)
+      TournamentProgress.get_match_list_with_fight_result(tournament["id"])
       |> (fn list ->
             assert list == []
           end).()
 
-      TournamentProgress.get_match_list_with_fight_result_including_log(tournament.id)
+      TournamentProgress.get_match_list_with_fight_result_including_log(tournament["id"])
       |> (fn list ->
             list
             |> length()
@@ -2495,7 +2540,7 @@ defmodule MilkWeb.TournamentControllerTest do
             |> assert()
           end).()
 
-      TournamentProgress.get_match_pending_list_of_tournament(tournament.id)
+      TournamentProgress.get_match_pending_list_of_tournament(tournament["id"])
       |> (fn list ->
             assert list == []
           end).()
@@ -2799,8 +2844,8 @@ defmodule MilkWeb.TournamentControllerTest do
           "user_id" => entrant1.user_id
         })
 
-      {entrant1.user_id, tournament.id}
-      |> TournamentProgress.get_match_pending_list()
+      entrant1.user_id
+      |> TournamentProgress.get_match_pending_list(tournament.id)
       |> (fn list ->
             assert list == []
           end).()
@@ -2819,8 +2864,8 @@ defmodule MilkWeb.TournamentControllerTest do
           tournament_id: tournament.id
         )
 
-      {entrant1.user_id, tournament.id}
-      |> TournamentProgress.get_match_pending_list()
+      entrant1.user_id
+      |> TournamentProgress.get_match_pending_list(tournament.id)
       |> (fn list ->
             assert list == [{{entrant1.user_id, tournament.id}}]
           end).()
@@ -2970,8 +3015,8 @@ defmodule MilkWeb.TournamentControllerTest do
           tournament: %{"master_id" => tournament.master_id, "tournament_id" => tournament.id}
         )
 
-      {entrant1.user_id, tournament.id}
-      |> TournamentProgress.get_match_pending_list()
+      entrant1.user_id
+      |> TournamentProgress.get_match_pending_list(tournament.id)
       |> (fn list ->
             assert list == []
           end).()
@@ -2988,8 +3033,8 @@ defmodule MilkWeb.TournamentControllerTest do
           tournament_id: tournament.id
         )
 
-      {entrant1.user_id, tournament.id}
-      |> TournamentProgress.get_match_pending_list()
+      entrant1.user_id
+      |> TournamentProgress.get_match_pending_list( tournament.id)
       |> (fn list ->
             assert list == [{{entrant1.user_id, tournament.id}}]
           end).()

@@ -19,25 +19,26 @@ defmodule Milk.Tournaments do
   }
 
   alias Milk.Accounts.{
-    User,
-    Relation
+    Relation,
+    User
+  }
+
+  alias Milk.Chat.ChatRoom
+  alias Milk.Games.Game
+
+  alias Milk.Log.{
+    AssistantLog,
+    EntrantLog,
+    TournamentChatTopicLog,
+    TournamentLog
   }
 
   alias Milk.Tournaments.{
-    Tournament,
-    Entrant,
     Assistant,
+    Entrant,
+    Tournament,
     TournamentChatTopic
   }
-
-  alias Milk.Log.{
-    TournamentLog,
-    EntrantLog,
-    AssistantLog
-  }
-
-  alias Milk.Games.Game
-  alias Milk.Chat.ChatRoom
 
   require Integer
   require Logger
@@ -290,11 +291,12 @@ defmodule Milk.Tournaments do
     end
   end
 
-  defp create_topic(tournament, topic, tab_index) do
+  defp create_topic(tournament, topic, tab_index, authority \\ 0) do
     {:ok, chat_room} =
       %{
         name: tournament.name <> "-" <> topic,
-        member_count: tournament.count
+        member_count: tournament.count,
+        authority: authority
       }
       |> Chat.create_chat_room()
 
@@ -369,7 +371,7 @@ defmodule Milk.Tournaments do
       create_topic(tournament, "Group", 0)
     end)
     |> Multi.insert(:notification_topic, fn %{tournament: tournament} ->
-      create_topic(tournament, "Notification", 1)
+      create_topic(tournament, "Notification", 1, 1)
     end)
     |> Multi.insert(:q_and_a_topic, fn %{tournament: tournament} ->
       create_topic(tournament, "Q&A", 2)
@@ -443,7 +445,10 @@ defmodule Milk.Tournaments do
       tournament_id
       |> TournamentProgress.get_match_list()
       |> case do
-        match_list when is_list(match_list) -> match_list_length(match_list)
+        match_list when is_list(match_list) ->
+          match_list
+          |> List.flatten()
+          |> length()
         _ -> 0
       end
 
@@ -451,7 +456,10 @@ defmodule Milk.Tournaments do
       tournament_id
       |> TournamentProgress.get_match_list_with_fight_result()
       |> case do
-        match_list when is_list(match_list) -> match_list_length(match_list)
+        match_list when is_list(match_list) ->
+          match_list
+          |> List.flatten()
+          |> length()
         _ -> 0
       end
 
@@ -860,8 +868,8 @@ defmodule Milk.Tournaments do
     |> find_match(hd(loser_list))
     |> Enum.each(fn user_id ->
       if is_integer(user_id) do
-        TournamentProgress.delete_match_pending_list({user_id, tournament_id})
-        TournamentProgress.delete_fight_result({user_id, tournament_id})
+        TournamentProgress.delete_match_pending_list(user_id, tournament_id)
+        TournamentProgress.delete_fight_result(user_id, tournament_id)
       end
     end)
 
@@ -907,23 +915,31 @@ defmodule Milk.Tournaments do
     Enum.each(losers, fn loser ->
       match_list
       |> find_match(loser)
-      |> get_opponent(loser)
       |> case do
-        {:ok, opponent} ->
-          promote_rank(%{"tournament_id" => tournament_id, "user_id" => opponent["id"]})
-        {:wait, nil} ->
-          {:wait, nil}
+        [] ->
+          {:error, nil}
+        match ->
+          match
+          |> get_opponent(loser)
+          |> case do
+            {:ok, opponent} ->
+              promote_rank(%{"tournament_id" => tournament_id, "user_id" => opponent["id"]})
+            {:wait, nil} ->
+              {:wait, nil}
+          end
       end
+
     end)
   end
 
   def promote_winners_by_loser(tournament_id, match_list, loser) do
-    {:ok, opponent} =
-      match_list
-      |> find_match(loser)
-      |> get_opponent(loser)
+    match = find_match(match_list, loser)
 
-    promote_rank(%{"tournament_id" => tournament_id, "user_id" => opponent["id"]})
+    unless match == [] do
+      {:ok, opponent} = get_opponent(match, loser)
+
+      promote_rank(%{"tournament_id" => tournament_id, "user_id" => opponent["id"]})
+    end
   end
 
   @doc """
@@ -944,7 +960,7 @@ defmodule Milk.Tournaments do
   end
 
   defp pick_user_id_as_needed(%Entrant{} = map) do
-    inspect(map)
+    inspect(map, charlists: false)
     map.user_id
   end
 
@@ -978,12 +994,12 @@ defmodule Milk.Tournaments do
     a =
       match
       |> Enum.filter(fn x ->
-        inspect(x)
+        inspect(x, charlists: false)
         x.user_id != user_id
       end)
       |> hd()
 
-    inspect(a)
+    inspect(a, charlists: false)
 
     a.user_id
     |> Accounts.get_user()
@@ -1105,15 +1121,16 @@ defmodule Milk.Tournaments do
   """
   def finish(tournament_id, winner_user_id) do
     case finish_entrants(tournament_id) do
-      :ok -> finish_tournament(tournament_id, winner_user_id)
+      :ok ->
+        finish_topics(tournament_id)
+        finish_tournament(tournament_id, winner_user_id)
       :error -> false
       _ -> false
     end
   end
 
   defp finish_tournament(tournament_id, winner_user_id) do
-    {:ok, tournament} =
-      tournament_id
+    {:ok, tournament} = tournament_id
       |> get_tournament!()
       |> delete_tournament()
 
@@ -1134,6 +1151,17 @@ defmodule Milk.Tournaments do
     end)
   end
 
+  defp finish_topics(tournament_id) do
+    TournamentChatTopic
+    |> where([t], t.tournament_id == ^tournament_id)
+    |> Repo.all()
+    |> Enum.map(fn topic ->
+      topic
+      |> atom_topic_map_to_string_map()
+      |> Log.create_tournament_chat_topic_log()
+    end)
+  end
+
   defp atom_tournament_map_to_string_map(%Tournament{} = tournament, winner_id) do
     %{
       "master_id" => tournament.master_id,
@@ -1150,6 +1178,15 @@ defmodule Milk.Tournaments do
       "capacity" => tournament.capacity,
       "thumbnail_path" => tournament.thumbnail_path,
       "entrant" => tournament.entrant
+    }
+  end
+
+  defp atom_topic_map_to_string_map(%TournamentChatTopic{} = topic) do
+    %{
+      "tournament_id" => topic.tournament_id,
+      "topic_name" => topic.topic_name,
+      "chat_room_id" => topic.chat_room_id,
+      "tab_index" => topic.tab_index
     }
   end
 
@@ -1218,6 +1255,12 @@ defmodule Milk.Tournaments do
     |> Repo.all()
   end
 
+  def get_assistants_by_user_id(user_id) do
+    Assistant
+    |> where([a], a.user_id == ^user_id)
+    |> Repo.all()
+  end
+
   @doc """
   Get user information of an assistant.
   """
@@ -1233,7 +1276,7 @@ defmodule Milk.Tournaments do
   def get_fighting_users(tournament_id) do
     get_entrants(tournament_id)
     |> Enum.filter(fn entrant ->
-      TournamentProgress.get_match_pending_list({entrant.user_id, tournament_id}) != []
+      TournamentProgress.get_match_pending_list(entrant.user_id, tournament_id) != []
     end)
     |> Enum.map(fn entrant ->
       Accounts.get_user(entrant.user_id)
@@ -1286,11 +1329,7 @@ defmodule Milk.Tournaments do
       not_found_users =
         attrs["user_id"]
         |> Enum.map(fn id ->
-          if is_binary(id) do
-            String.to_integer(id)
-          else
-            id
-          end
+          Tools.to_integer_as_needed(id)
         end)
         |> Enum.uniq()
         |> Enum.filter(fn id ->
@@ -1304,11 +1343,7 @@ defmodule Milk.Tournaments do
           end
         end)
 
-      if Enum.empty?(not_found_users) do
-        :ok
-      else
-        {:ok, not_found_users}
-      end
+      {:ok, not_found_users}
     else
       {:error, :tournament_not_found}
     end
@@ -1344,12 +1379,18 @@ defmodule Milk.Tournaments do
   def get_tournament_chat_topic!(id), do: Repo.get!(TournamentChatTopic, id)
 
   @doc """
-  Get group chat tabs in a tournament.
+  Get group chat tabs in a tournament including log.
   """
   def get_tabs_by_tournament_id(tournament_id) do
-    TournamentChatTopic
-    |> where([t], t.tournament_id == ^tournament_id)
-    |> Repo.all()
+    topics = TournamentChatTopic
+      |> where([t], t.tournament_id == ^tournament_id)
+      |> Repo.all()
+
+    logs = TournamentChatTopicLog
+      |> where([tl], tl.tournament_id == ^tournament_id)
+      |> Repo.all()
+
+    topics ++ logs
   end
 
   @doc """
@@ -1622,7 +1663,6 @@ defmodule Milk.Tournaments do
 
   @doc """
   Checks tournament state.
-  # FIXME: 大会には参加していない主催者のstateを追加する
   """
   def state!(tournament_id, user_id) do
     tournament = get_tournament(tournament_id)
@@ -1683,10 +1723,10 @@ defmodule Milk.Tournaments do
     match_list = TournamentProgress.get_match_list(tournament_id)
     match = find_match(match_list, user_id)
 
-    if is_alone?(match) do
-      "IsAlone"
-    else
-      check_wait_state?(tournament_id, user_id)
+    cond do
+      is_alone?(match) -> "IsAlone"
+      match == [] -> "IsLoser"
+      true -> check_wait_state?(tournament_id, user_id)
     end
   end
 
@@ -1694,12 +1734,11 @@ defmodule Milk.Tournaments do
     match_list = TournamentProgress.get_match_list(tournament_id)
     match = find_match(match_list, user_id)
 
-    # FIXME: エラーハンドリング
     {:ok, opponent} = get_opponent(match, user_id)
-    pending_list = TournamentProgress.get_match_pending_list({user_id, tournament_id})
+    pending_list = TournamentProgress.get_match_pending_list(user_id, tournament_id)
 
     opponent_pending_list =
-      TournamentProgress.get_match_pending_list({opponent["id"], tournament_id})
+      TournamentProgress.get_match_pending_list(opponent["id"], tournament_id)
 
     cond do
       pending_list == [] ->
@@ -1772,7 +1811,7 @@ defmodule Milk.Tournaments do
     # add game_scores
     brackets
     |> Enum.map(fn list ->
-      inspect(list)
+      inspect(list, charlists: false)
 
       Enum.map(list, fn bracket ->
         unless is_nil(bracket) do

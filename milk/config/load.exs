@@ -17,20 +17,15 @@ config :milk, MilkWeb.Endpoint,
   root: ".",
   version: Application.spec(:milk, :vsn)
 
-# Do not print debug messages in production
-config :logger, level: :info
-
-IO.inspect(System.get_env("CLOUD_SQL_HOST"), label: :host)
-
 config :milk, Milk.Repo,
   username: "postgres",
   password: "postgres",
-  database: "milkdb",
-  socket_dir: "/tmp/cloudsql/e-players6814:asia-northeast1:milkdb",
+  database: "milkdb-load-test",
+  socket_dir: "/tmp/cloudsql/e-players6814:asia-northeast1:milkdb-load-test",
   show_sensitive_data_on_connection_error: true,
   pool_size: 10
 
-config :milk, Milk.Repo,
+  config :milk, Milk.Repo,
   migration_timestamps: [type: :timestamptz, inserted_at: :create_time, updated_at: :update_time]
 
 # ## SSL Support
@@ -71,6 +66,6 @@ config :milk, Milk.Repo,
 # and configuration from environment variables.
 # import_config "prod.secret.exs"
 
-config :milk, :redix_host, "10.231.150.131"
+config :milk, :redix_host, "10.77.33.219"
 config :milk, :redix_port, 6379
 config :milk, :environment, :prod

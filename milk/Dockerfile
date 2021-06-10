@@ -1,10 +1,13 @@
 FROM elixir:alpine
+LABEL description="Milk Database Server"
 ARG app_name=milk
 ARG phoenix_subdir=.
-ARG build_env=prod
+ARG build_env=load
 ENV MIX_ENV=${build_env} TERM=xterm
 ENV GOOGLE_APPLICATION_CREDENTIALS=e-players6814-8e8eac82841c.json
 ENV GOOGLE_PROJECT_ID=e-players6814
+ENV DBNAME=milkdb
+ENV CLOUD_SQL_HOST=e-players6814:asia-northeast1:milkdb
 
 WORKDIR /opt/app
 RUN apk update \

@@ -14,8 +14,9 @@ defmodule MilkWeb.ChatsController do
   TODO: 認証
   """
   def get_all_chats(conn, %{"room_id" => room_id}) do
-    room_id = Tools.to_integer_as_needed(room_id)
-    chat_list = Chat.get_all_chat_by_room_id(room_id)
+    chat_list = room_id
+      |> Tools.to_integer_as_needed()
+      |> Chat.get_all_chat_by_room_id_including_log()
 
     render(conn, "index.json", chat: chat_list)
   end

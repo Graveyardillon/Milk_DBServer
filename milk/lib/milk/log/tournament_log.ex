@@ -3,23 +3,22 @@ defmodule Milk.Log.TournamentLog do
 
   import Ecto.Changeset
 
-  # FIXME: master_idとかは外部キーにしないほうがいいかしっかり検証する
   schema "tournaments_log" do
-    field :name, :string
-    field :event_date, EctoDate
     field :capacity, :integer
-    field :description, :string
     field :deadline, EctoDate
-    field :type, :integer
-    field :url, :string
-    field :tournament_id, :integer
+    field :description, :string
+    field :event_date, EctoDate
     field :game_id, :integer
     field :game_name, :string
-    field :master_id, :integer
-    field :winner_id, :integer
-    field :thumbnail_path, :string
     field :is_deleted, :boolean
     field :is_started, :boolean
+    field :master_id, :integer
+    field :name, :string
+    field :thumbnail_path, :string
+    field :tournament_id, :integer
+    field :type, :integer
+    field :url, :string
+    field :winner_id, :integer
 
     timestamps()
   end

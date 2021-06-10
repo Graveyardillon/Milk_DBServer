@@ -1,5 +1,5 @@
 env: flex
-service: dbserver-staging
+service: dbserver-load-test
 runtime: custom
 runtime_config:
   release_app: milk
@@ -12,10 +12,10 @@ instance_class: b1
 manual_scaling:
   instances: 1
 beta_settings:
-  cloud_sql_instances: e-players6814:asia-northeast1:milkdb
+  cloud_sql_instances: e-players6814:asia-northeast1:milkdb-load-test
 env_variables:
-  REDISHOST: '10.231.150.131'
+  REDISHOST: '10.77.33.219'
   REDISPORT: '6379'
-  CLOUD_SQL_HOST: "e-players6814:asia-northeast1:milkdb"
+  CLOUD_SQL_HOST: "e-players6814:asia-northeast1:milkdb-load-test"
 network:
   name: default

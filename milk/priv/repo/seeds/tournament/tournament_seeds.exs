@@ -25,12 +25,10 @@ Repo.insert! %Auth{
 Platforms.create_basic_platforms()
 
 now = Timex.now()
-tomorrow =
-  Timex.now()
+tomorrow = Timex.now()
   |> Timex.add(Timex.Duration.from_days(1))
   |> Timex.to_datetime()
-day_after_tomorrow =
-  Timex.now()
+day_after_tomorrow = Timex.now()
   |> Timex.add(Timex.Duration.from_days(2))
   |> Timex.to_datetime()
 
@@ -61,7 +59,7 @@ attrs = %{
   "event_date" => tomorrow,
   "name" => "test tournament size 5",
   "type" => 1,
-  "url" => nil,
+  "url" => "test url",
   "thumbnail_path" => "damn",
   "password" => nil,
   "game_name" => "my awesome name",

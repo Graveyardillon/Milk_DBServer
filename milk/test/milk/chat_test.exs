@@ -214,6 +214,7 @@ defmodule Milk.ChatTest do
     alias Milk.Chat.Chats
     @update_attrs %{word: "some updated word"}
     @invalid_attrs %{"word" => nil}
+
     setup [:create_chat]
 
     test "list_chat/1 returns all chat", %{chat: chats} do
@@ -250,10 +251,5 @@ defmodule Milk.ChatTest do
     } do
       assert Chat.get_latest_chat(chat_room_id) == [chats]
     end
-
-    # test "change_chats/1 returns a chats changeset" do
-    #   chats = chats_fixture()
-    #   assert %Ecto.Changeset{} = Chat.change_chats(chats)
-    # end
   end
 end

@@ -90,6 +90,7 @@ defmodule MilkWeb.ChatRoomController do
           last_chat: room.last_chat,
           count: room.count,
           is_private: room.is_private,
+          authority: room.authority,
           icon_path: user.icon_path
         }
       end)
@@ -121,7 +122,7 @@ defmodule MilkWeb.ChatRoomController do
           }
 
         {:error, _} ->
-          {:ok, room} = Chat.create_chat_room(%{name: "%user%", member_count: 2, is_private: 2})
+          {:ok, room} = Chat.create_chat_room(%{name: "%user%", member_count: 2, is_private: true})
           Chat.create_chat_member(%{"user_id" => my_id, "chat_room_id" => room.id})
           Chat.create_chat_member(%{"user_id" => partner_id, "chat_room_id" => room.id})
 
