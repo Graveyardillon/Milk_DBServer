@@ -152,16 +152,19 @@ defmodule Milk.Profiles do
     |> where([p], p.user_id == ^user.id)
     |> Repo.delete_all()
 
-    Enum.each(gameList, fn game ->
-      %Profile{}
-      |> Profile.changeset(%{user_id: user.id, content_id: game, content_type: "game"})
-      |> Repo.insert()
-    end)
-
-    Enum.each(records, fn record ->
-      %Profile{}
-      |> Profile.changeset(%{user_id: user.id, content_id: record, content_type: "record"})
-      |> Repo.insert()
-    end)
+    if gameList != nil do 
+      Enum.each(gameList, fn game ->
+        %Profile{}
+        |> Profile.changeset(%{user_id: user.id, content_id: game, content_type: "game"})
+        |> Repo.insert()
+      end)
+    end
+    if records != nil do
+      Enum.each(records, fn record ->
+        %Profile{}
+        |> Profile.changeset(%{user_id: user.id, content_id: record, content_type: "record"})
+        |> Repo.insert()
+      end)
+    end
   end
 end
