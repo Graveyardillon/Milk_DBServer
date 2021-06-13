@@ -6,7 +6,6 @@ defmodule Milk.AccountsTest do
     Profiles,
     Relations,
     Chat
-    # Repo
   }
 
   alias Milk.Accounts.{
@@ -477,4 +476,26 @@ defmodule Milk.AccountsTest do
   # defp create_chat_member(_) do
   #   %{chat_member: fixture(:chat_member)}
   # end
+
+  describe "register revice" do
+    test "works" do
+      token = "tesToken0101"
+      user = fixture_user()
+
+      %{"user_id" => user.id, "device_id" => token}
+      |> Accounts.register_device()
+      |> elem(1)
+      |> (fn device ->
+        assert device.token == token
+        assert device.user_id == user.id
+      end).()
+
+      token
+      |> Accounts.get_device()
+      |> (fn device ->
+        assert device.token == token
+        assert device.user_id == user.id
+      end).()
+    end
+  end
 end

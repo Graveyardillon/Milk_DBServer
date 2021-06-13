@@ -5,7 +5,7 @@ defmodule Milk.Accounts.Device do
 
   alias Milk.Accounts.User
 
-  schema "device" do
+  schema "devices" do
     field :token, :string
     belongs_to :user, User
 
@@ -14,7 +14,7 @@ defmodule Milk.Accounts.Device do
 
   def changeset(device, attrs) do
     device
-    |> cast(attrs, [:token])
+    |> cast(attrs, [:token, :user_id])
     |> validate_required([:token])
   end
 end
