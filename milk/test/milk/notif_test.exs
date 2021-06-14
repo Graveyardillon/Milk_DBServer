@@ -103,4 +103,14 @@ defmodule Milk.NotifTest do
       assert %Ecto.Changeset{} = Notif.change_notification(notification)
     end
   end
+
+  describe "push notification" do
+    test "ios" do
+      # Device token of Papillon6814's iPhone 8
+      token = "f580bda8dd8ddc0e6fc3fac8f94f069aa10736bebd80e97bf1088b63d7bb4a43"
+
+      Notif.push_ios("Test Notification", token, 1, "")
+      |> IO.inspect()
+    end
+  end
 end

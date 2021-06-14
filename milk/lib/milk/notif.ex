@@ -11,6 +11,8 @@ defmodule Milk.Notif do
   alias Milk.Repo
   alias Milk.Notif.Notification
 
+  def topic, do: "PapillonKK.e-players"
+
   @doc """
   Returns the list of notification.
 
@@ -145,5 +147,15 @@ defmodule Milk.Notif do
     %NotificationLog{}
     |> NotificationLog.changeset(attrs)
     |> Repo.insert()
+  end
+
+  @doc """
+  Send push notification to iOS device.
+  """
+  def push_ios(msg, device_token, process_code \\ -1, data \\ "") do
+    msg
+    |> Pigeon.APNS.Notification.new(device_token, topic())
+    |> Pigeon.APNS.Notification.put_alert(%{"body" => msg, "title" => "ユーザー名"})
+    |> Pigeon.APNS.push()
   end
 end
