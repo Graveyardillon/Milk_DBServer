@@ -603,6 +603,8 @@ defmodule Milk.Chat do
       |> List.flatten()
       |> Enum.each(fn device ->
         unless device.user_id == user_id do
+          tournament = Tournaments.get_tournament_by_room_id(chat_room_id)
+          title = "#{user.name} (in #{tournament.name})"
           Notif.push_ios(attrs["word"], user.name, device.token, 4, "")
         end
       end)
