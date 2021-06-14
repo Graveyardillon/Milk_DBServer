@@ -9,7 +9,8 @@ defmodule Milk.Chat do
   alias Ecto.Multi
   alias Milk.{
     Accounts,
-    Notif
+    Notif,
+    Tournaments
   }
   alias Milk.Accounts.User
 
@@ -605,7 +606,7 @@ defmodule Milk.Chat do
         unless device.user_id == user_id do
           tournament = Tournaments.get_tournament_by_room_id(chat_room_id)
           title = "#{user.name} (in #{tournament.name})"
-          Notif.push_ios(attrs["word"], user.name, device.token, 4, "")
+          Notif.push_ios(attrs["word"], title, device.token, 4, "")
         end
       end)
 
