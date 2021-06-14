@@ -16,5 +16,6 @@ defmodule Milk.Accounts.Device do
     device
     |> cast(attrs, [:token, :user_id])
     |> validate_required([:token])
+    |> foreign_key_constraint(:user_id)
   end
 end

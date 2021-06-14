@@ -36,5 +36,13 @@ defmodule MilkWeb.DeviceControllerTest do
         assert device["user_id"] == user.id
       end).()
     end
+
+    test "invalid user id", %{conn: conn} do
+      token = "invaliduserid"
+
+      conn = post(conn, Routes.device_path(conn, :register_token), %{user_id: 0, device_id: token})
+      json_response(conn, 200)
+      |> IO.inspect()
+    end
   end
 end
