@@ -536,7 +536,17 @@ defmodule Milk.Accounts do
   end
 
   @doc """
+  Get devices by user id.
+  """
+  def get_devices_by_user_id(user_id) do
+    Device
+    |> where([d], d.user_id == ^user_id)
+    |> Repo.all()
+  end
+
+  @doc """
   Register a device token.
+  TODO: update処理
   """
   def register_device(%{"user_id" => user_id, "device_id" => device_id}) do
     attrs = %{"user_id" => user_id, "token" => device_id}

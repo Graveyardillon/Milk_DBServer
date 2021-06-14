@@ -155,7 +155,14 @@ defmodule Milk.Notif do
   def push_ios(msg, device_token, process_code \\ -1, data \\ "") do
     msg
     |> Pigeon.APNS.Notification.new(device_token, topic())
-    |> Pigeon.APNS.Notification.put_alert(%{"body" => msg, "title" => "ユーザー名"})
+    |> Pigeon.APNS.Notification.put_alert(%{"body" => msg, "title" => "e-players"})
+    |> Pigeon.APNS.push()
+  end
+
+  def push_ios(msg, title, device_token, process_code, data) do
+    msg
+    |> Pigeon.APNS.Notification.new(device_token, topic())
+    |> Pigeon.APNS.Notification.put_alert(%{"body" => msg, "title" => title})
     |> Pigeon.APNS.push()
   end
 end

@@ -477,7 +477,33 @@ defmodule Milk.AccountsTest do
   #   %{chat_member: fixture(:chat_member)}
   # end
 
-  describe "register revice" do
+  describe "get devices by user id" do
+    test "works" do
+      token = "tesToken0101"
+      user = fixture_user()
+
+      %{"user_id" => user.id, "device_id" => token}
+      |> Accounts.register_device()
+      |> elem(1)
+      |> (fn device ->
+        assert device.token == token
+        assert device.user_id == user.id
+      end).()
+
+      user.id
+      |> Accounts.get_devices_by_user_id()
+      |> Enum.map(fn device ->
+        assert device.user_id == user.id
+        assert device.token == token
+      end)
+      |> length()
+      |> (fn len ->
+        assert len == 1
+      end).()
+    end
+  end
+
+  describe "register device" do
     test "works" do
       token = "tesToken0101"
       user = fixture_user()

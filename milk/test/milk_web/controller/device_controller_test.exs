@@ -42,7 +42,6 @@ defmodule MilkWeb.DeviceControllerTest do
 
       conn = post(conn, Routes.device_path(conn, :register_token), %{user_id: 0, device_id: token})
       json_response(conn, 200)
-      |> IO.inspect()
     end
   end
 end
