@@ -194,6 +194,20 @@ defmodule Milk.TournamentsTest do
       refute length(Tournaments.list_tournament()) == 0
     end
 
+    test "get_tournament_by_room_id works" do
+      tournament = fixture_tournament()
+
+      tournament.id
+      |> Chat.get_chat_rooms_by_tournament_id()
+      |> Enum.map(fn room ->
+        room.id
+        |> Tournaments.get_tournament_by_room_id()
+        |> (fn t ->
+          assert t.id == tournament.id
+        end).()
+      end)
+    end
+
     test "get_tournaments_by_master_id/1 returns tournaments of a user" do
       tournament = fixture_tournament()
 

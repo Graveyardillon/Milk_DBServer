@@ -137,6 +137,21 @@ defmodule Milk.Tournaments do
   end
 
   @doc """
+  Get a tournament by room id.
+  """
+  def get_tournament_by_room_id(chat_room_id) do
+    topic = TournamentChatTopic
+      |> where([tct], tct.chat_room_id == ^chat_room_id)
+      |> Repo.one()
+
+    unless nil do
+      Tournament
+      |> where([t], t.id == ^topic.tournament_id)
+      |> Repo.one()
+    end
+  end
+
+  @doc """
   Returns tournaments which are filtered by master id.
   """
   def get_tournaments_by_master_id(user_id) do

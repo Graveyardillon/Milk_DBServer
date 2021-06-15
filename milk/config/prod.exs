@@ -33,6 +33,14 @@ config :milk, Milk.Repo,
 config :milk, Milk.Repo,
   migration_timestamps: [type: :timestamptz, inserted_at: :create_time, updated_at: :update_time]
 
+config :pigeon, :apns,
+  apns_default: %{
+    key: "lib/milk-0.1.2/priv/cert/AuthKey_MHN824H499.p8",
+    key_identifier: "MHN824H499",
+    team_id: "6ZMC8WKZZQ",
+    mode: :prod
+  }
+
 # ## SSL Support
 #
 # To get SSL working, you will need to add the `https` key

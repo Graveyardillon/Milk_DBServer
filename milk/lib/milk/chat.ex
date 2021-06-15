@@ -7,7 +7,11 @@ defmodule Milk.Chat do
 
   alias Common.Tools
   alias Ecto.Multi
-  alias Milk.Accounts
+  alias Milk.{
+    Accounts,
+    Notif,
+    Tournaments
+  }
   alias Milk.Accounts.User
 
   alias Milk.Chat.{
@@ -460,7 +464,7 @@ defmodule Milk.Chat do
           from cm in ChatMember,
             where:
               cm.user_id == ^attrs["user_id"] and
-                cm.chat_room_id == ^attrs["chat_room_id"]
+              cm.chat_room_id == ^attrs["chat_room_id"]
         )
       )
 
@@ -535,6 +539,7 @@ defmodule Milk.Chat do
   end
 
   # 個人チャット用の関数
+  # TODO: 通知処理
   def dialogue(attrs = %{"user_id" => user_id, "partner_id" => partner_id, "word" => word}) do
     user_id = Tools.to_integer_as_needed(user_id)
     partner_id = Tools.to_integer_as_needed(partner_id)
@@ -587,6 +592,23 @@ defmodule Milk.Chat do
     if Repo.exists?(from u in User, where: u.id == ^user_id) and
          Repo.exists?(from cr in ChatRoom, where: cr.id == ^chat_room_id) do
       _ = Repo.one(from cr in ChatRoom, where: cr.id == ^chat_room_id)
+
+      # 通知
+      user = Accounts.get_user(user_id)
+
+      chat_room_id
+      |> get_chat_members_of_room()
+      |> Enum.map(fn member ->
+        Accounts.get_devices_by_user_id(member.user_id)
+      end)
+      |> List.flatten()
+      |> Enum.each(fn device ->
+        unless device.user_id == user_id do
+          tournament = Tournaments.get_tournament_by_room_id(chat_room_id)
+          title = "#{user.name} (in #{tournament.name})"
+          Notif.push_ios(attrs["word"], title, device.token, 4, "")
+        end
+      end)
 
       attrs
       |> create_chats()

@@ -86,10 +86,11 @@ defmodule Milk.MixProject do
       {:excoveralls, "~> 0.10", only: :test},
       {:redix, ">= 0.0.0"},
       {:google_api_storage, "~> 0.29"},
-      # {:goth, "~> 1.2.0"}
       {:goth, "~> 1.3-rc"},
       {:hackney, "~> 1.17"},
-      {:credo, "~> 1.5", only: [:dev, :test], runtime: false}
+      {:credo, "~> 1.5", only: [:dev, :test], runtime: false},
+      {:pigeon, "~> 1.5.1"},
+      {:kadabra, "~> 0.4.4"}
     ]
   end
 
