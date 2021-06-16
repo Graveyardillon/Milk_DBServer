@@ -43,6 +43,15 @@ defmodule Milk.Notif do
   end
 
   @doc """
+  Count unchecked notifications.
+  """
+  def count_unchecked_notifications(user_id) do
+    Notification
+    |> where([n], not n.is_checked)
+    |> Repo.aggregate(:count)
+  end
+
+  @doc """
   Gets a single notification.
 
   Raises `Ecto.NoResultsError` if the Notification does not exist.
