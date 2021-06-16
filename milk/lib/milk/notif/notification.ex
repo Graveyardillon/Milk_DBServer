@@ -22,4 +22,10 @@ defmodule Milk.Notif.Notification do
     |> cast(attrs, [:content, :process_code, :data, :is_checked])
     |> validate_required([:content])
   end
+
+  @doc false
+  def update_changeset(notification, attrs) do
+    notification
+    |> cast(attrs, [:content, :process_code, :data, :is_checked])
+  end
 end

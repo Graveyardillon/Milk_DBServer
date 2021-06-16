@@ -49,4 +49,13 @@ defmodule MilkWeb.NotifController do
 
     json(conn, %{result: true})
   end
+
+  def check_all(conn, %{"user_id" => user_id}) do
+    user_id
+    |> Tools.to_integer_as_needed()
+    |> Notif.list_notification()
+    |> IO.inspect()
+
+    json(conn, "a")
+  end
 end
