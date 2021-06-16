@@ -55,6 +55,100 @@ defmodule Milk.NotifTest do
     end
   end
 
+  describe "unchecked notifications" do
+    test "unchecked_notifications/1 works with 0 unchecked notifications" do
+      {:ok, user} =
+        Accounts.create_user(%{
+          "name" => "name",
+          "email" => "e@mail.com",
+          "password" => "Password123"
+        })
+
+      Enum.each(1..4, fn _n ->
+        %{"content" => "some content", "is_checked" => true}
+        |> Map.put("user_id", user.id)
+        |> Notif.create_notification()
+      end)
+
+      user.id
+      |> Notif.unchecked_notifications()
+      |> Enum.map(fn notif ->
+        assert notif.user_id == user.id
+      end)
+      |> length()
+      |> (fn len ->
+            assert len == 0
+          end).()
+    end
+
+    test "unchecked_notifications/1 works with 4 unchecked notifications" do
+      {:ok, user} =
+        Accounts.create_user(%{
+          "name" => "name",
+          "email" => "e@mail.com",
+          "password" => "Password123"
+        })
+
+      Enum.each(1..4, fn _n ->
+        %{"content" => "some content"}
+        |> Map.put("user_id", user.id)
+        |> Notif.create_notification()
+      end)
+
+      user.id
+      |> Notif.unchecked_notifications()
+      |> Enum.map(fn notif ->
+        assert notif.user_id == user.id
+      end)
+      |> length()
+      |> (fn len ->
+            assert len == 4
+          end).()
+    end
+  end
+
+  describe "count unchecked notifications" do
+    test "works with 0 unchecked notifications" do
+      {:ok, user} =
+        Accounts.create_user(%{
+          "name" => "name",
+          "email" => "e@mail.com",
+          "password" => "Password123"
+        })
+
+      Enum.each(1..4, fn _n ->
+        %{"content" => "some content", "is_checked" => true}
+        |> Map.put("user_id", user.id)
+        |> Notif.create_notification()
+      end)
+
+      user.id
+      |> Notif.count_unchecked_notifications()
+      |> Kernel.==(0)
+      |> assert()
+    end
+
+    test "works with 4 unchecked notifications" do
+      {:ok, user} =
+        Accounts.create_user(%{
+          "name" => "name",
+          "email" => "e@mail.com",
+          "password" => "Password123"
+        })
+
+      Enum.each(1..4, fn _n ->
+        %{"content" => "some content"}
+        |> Map.put("user_id", user.id)
+        |> Notif.create_notification()
+      end)
+
+      user.id
+      |> Notif.count_unchecked_notifications()
+      |> Kernel.==(4)
+      |> assert()
+    end
+  end
+
   describe "notification" do
     test "create_notification/1 with valid data creates a notification" do
       {:ok, user} =

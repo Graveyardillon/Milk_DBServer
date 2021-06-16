@@ -32,6 +32,27 @@ defmodule Milk.Notif do
   end
 
   @doc """
+  Get unchecked notifications.
+  """
+  def unchecked_notifications(user_id) do
+    user_id
+    |> list_notification()
+    |> Enum.filter(fn notification ->
+      !notification.is_checked
+    end)
+  end
+
+  @doc """
+  Count unchecked notifications.
+  """
+  def count_unchecked_notifications(user_id) do
+    Notification
+    |> where([n], not n.is_checked)
+    |> where([n], n.user_id == ^user_id)
+    |> Repo.aggregate(:count)
+  end
+
+  @doc """
   Gets a single notification.
 
   Raises `Ecto.NoResultsError` if the Notification does not exist.
@@ -159,10 +180,20 @@ defmodule Milk.Notif do
     |> Pigeon.APNS.push()
   end
 
-  def push_ios(msg, title, device_token, process_code, data) do
+  def push_ios(msg, title, device_token, _process_code, _data) do
     msg
     |> Pigeon.APNS.Notification.new(device_token, topic())
     |> Pigeon.APNS.Notification.put_alert(%{"body" => msg, "title" => title})
+    |> Pigeon.APNS.push()
+  end
+
+  def push_ios_with_badge(msg, title, user_id, device_token) do
+    badge_num = count_unchecked_notifications(user_id)
+
+    msg
+    |> Pigeon.APNS.Notification.new(device_token, topic())
+    |> Pigeon.APNS.Notification.put_alert(%{"body" => msg, "title" => title})
+    |> Pigeon.APNS.Notification.put_badge(badge_num)
     |> Pigeon.APNS.push()
   end
 end

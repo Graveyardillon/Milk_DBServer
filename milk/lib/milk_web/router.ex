@@ -28,6 +28,7 @@ defmodule MilkWeb.Router do
     resources "/user", UserController,
       except: [:new, :edit, :index, :show, :create, :update, :delete]
 
+    get "/user/check_username_duplication", UserController, :check_username_duplication
     post "/user/check_username_duplication", UserController, :check_username_duplication
     get "/user/get", UserController, :show
     get "/user/in_touch", UserController, :users_in_touch
@@ -177,6 +178,7 @@ defmodule MilkWeb.Router do
     post "/notification/create", NotifController, :create
     post "/notification/all", NotifController, :notify_all
     post "/notification_log/create", NotifLogController, :create
+    post "/notification/check_all", NotifController, :check_all
     delete "/notification/delete", NotifController, :delete
 
     post "/load_test/start", LoadTestController, :start

@@ -22,6 +22,21 @@ defmodule MilkWeb.NotifControllerTest do
     user
   end
 
+  defp set_notifications(user_id, n) do
+    1..n
+    |> Enum.to_list()
+    |> Enum.map(fn n ->
+      %{
+        "content" => "chore: #{n}",
+        "process_code" => 0,
+        "data" => nil,
+        "user_id" => user_id
+      }
+      |> Notif.create_notification()
+      |> elem(1)
+    end)
+  end
+
   setup %{conn: conn} do
     {:ok, conn: put_req_header(conn, "accept", "application/json")}
   end
@@ -143,6 +158,41 @@ defmodule MilkWeb.NotifControllerTest do
       |> (fn len ->
             assert len == 1
           end).()
+    end
+  end
+
+  describe "check all" do
+    test "works", %{conn: conn} do
+      user = fixture_user()
+
+      set_notifications(user.id, 10)
+
+      conn = get(conn, Routes.notif_path(conn, :get_list), user_id: user.id)
+      json_response(conn, 200)
+      |> Map.get("data")
+      |> Enum.map(fn notification ->
+        assert notification["user_id"] == user.id
+        refute notification["is_checked"]
+      end)
+      |> length()
+      |> (fn len ->
+        assert len == 10
+      end).()
+
+      conn = post(conn, Routes.notif_path(conn, :check_all), user_id: user.id)
+      assert json_response(conn, 200)["result"]
+
+      conn = get(conn, Routes.notif_path(conn, :get_list), user_id: user.id)
+      json_response(conn, 200)
+      |> Map.get("data")
+      |> Enum.map(fn notification ->
+        assert notification["user_id"] == user.id
+        assert notification["is_checked"]
+      end)
+      |> length()
+      |> (fn len ->
+        assert len == 10
+      end).()
     end
   end
 end
