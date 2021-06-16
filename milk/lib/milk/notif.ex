@@ -31,6 +31,14 @@ defmodule Milk.Notif do
     )
   end
 
+  def unchecked_notifications(user_id) do
+    user_id
+    |> list_notification()
+    |> Enum.filter(fn notification ->
+      !notification.is_checked
+    end)
+  end
+
   @doc """
   Gets a single notification.
 
