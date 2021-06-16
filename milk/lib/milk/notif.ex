@@ -179,10 +179,20 @@ defmodule Milk.Notif do
     |> Pigeon.APNS.push()
   end
 
-  def push_ios(msg, title, device_token, process_code, data) do
+  def push_ios(msg, title, device_token, _process_code, _data) do
     msg
     |> Pigeon.APNS.Notification.new(device_token, topic())
     |> Pigeon.APNS.Notification.put_alert(%{"body" => msg, "title" => title})
+    |> Pigeon.APNS.push()
+  end
+
+  def push_ios_with_badge(msg, title, user_id, device_token) do
+    badge_num = count_unchecked_notifications(user_id)
+
+    msg
+    |> Pigeon.APNS.Notification.new(device_token, topic())
+    |> Pigeon.APNS.Notification.put_alert(%{"body" => msg, "title" => title})
+    |> Pigeon.APNS.Notification.put_badge(badge_num)
     |> Pigeon.APNS.push()
   end
 end
