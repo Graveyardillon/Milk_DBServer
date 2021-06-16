@@ -48,6 +48,7 @@ defmodule Milk.Notif do
   def count_unchecked_notifications(user_id) do
     Notification
     |> where([n], not n.is_checked)
+    |> where([n], n.user_id == ^user_id)
     |> Repo.aggregate(:count)
   end
 
