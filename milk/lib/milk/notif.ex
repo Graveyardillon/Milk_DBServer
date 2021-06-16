@@ -31,6 +31,9 @@ defmodule Milk.Notif do
     )
   end
 
+  @doc """
+  Get unchecked notifications.
+  """
   def unchecked_notifications(user_id) do
     user_id
     |> list_notification()

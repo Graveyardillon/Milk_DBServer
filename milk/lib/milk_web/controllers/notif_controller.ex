@@ -53,7 +53,7 @@ defmodule MilkWeb.NotifController do
   def check_all(conn, %{"user_id" => user_id}) do
     user_id
     |> Tools.to_integer_as_needed()
-    |> Notif.list_notification()
+    |> Notif.unchecked_notifications()
     |> Enum.each(fn notification ->
       Notif.update_notification(notification, %{is_checked: true})
     end)
