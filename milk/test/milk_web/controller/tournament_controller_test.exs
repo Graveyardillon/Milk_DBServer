@@ -142,15 +142,6 @@ defmodule MilkWeb.TournamentControllerTest do
     {:ok, conn: put_req_header(conn, "accept", "application/json")}
   end
 
-  describe "index" do
-    setup [:create_tournament]
-
-    test "index with valid data", %{conn: conn} do
-      conn = get(conn, Routes.tournament_path(conn, :index))
-      assert length(json_response(conn, 200)["data"]) == 1
-    end
-  end
-
   describe "get users for add assistant" do
     setup [:create_tournament]
 
