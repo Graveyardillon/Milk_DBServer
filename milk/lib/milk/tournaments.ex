@@ -51,19 +51,6 @@ defmodule Milk.Tournaments do
   @type t :: %Tournament{}
 
   @doc """
-  Returns the list of tournament.
-
-  ## Examples
-
-      iex> list_tournament()
-      [%Tournament{}, ...]
-
-  """
-  def list_tournament do
-    Repo.all(Tournament)
-  end
-
-  @doc """
   Returns the list of tournament for home screen.
   """
   def home_tournament(user_id, date_offset, offset) do
@@ -1232,19 +1219,6 @@ defmodule Milk.Tournaments do
   """
   def put_value_on_brackets(match_list, key, value) do
     Tournamex.put_value_on_brackets(match_list, key, value)
-  end
-
-  @doc """
-  Returns the list of assistant.
-
-  ## Examples
-
-      iex> list_assistant()
-      [%Assistant{}, ...]
-
-  """
-  def list_assistant() do
-    Repo.all(Assistant)
   end
 
   @doc """
