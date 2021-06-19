@@ -140,14 +140,15 @@ defmodule Milk.Tournaments do
   Get a tournament by room id.
   """
   def get_tournament_by_room_id(chat_room_id) do
-    topic = TournamentChatTopic
-      |> where([tct], tct.chat_room_id == ^chat_room_id)
-      |> Repo.one()
-
-    unless nil do
-      Tournament
-      |> where([t], t.id == ^topic.tournament_id)
-      |> Repo.one()
+    TournamentChatTopic
+    |> where([tct], tct.chat_room_id == ^chat_room_id)
+    |> Repo.one()
+    |> case do
+      nil -> {:error, "the tournament was not found."}
+      topic ->
+        Tournament
+        |> where([t], t.id == ^topic.tournament_id)
+        |> Repo.one()
     end
   end
 

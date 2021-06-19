@@ -208,6 +208,12 @@ defmodule Milk.TournamentsTest do
       end)
     end
 
+    test "get_tournament_by_room_id returns nil" do
+      Tournaments.get_tournament_by_room_id(-1)
+      |> Kernel.==({:error, "the tournament was not found."})
+      |> assert()
+    end
+
     test "get_tournaments_by_master_id/1 returns tournaments of a user" do
       tournament = fixture_tournament()
 
