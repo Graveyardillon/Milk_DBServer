@@ -18,14 +18,6 @@ defmodule MilkWeb.TournamentController do
   alias Common.Tools
 
   @doc """
-  Get tournament list.
-  """
-  def index(conn, _params) do
-    tournament = Tournaments.list_tournament()
-    render(conn, "index.json", tournament: tournament)
-  end
-
-  @doc """
   Get users for assistant.
   """
   def get_users_for_add_assistant(conn, %{"user_id" => user_id}) do
@@ -1288,9 +1280,9 @@ defmodule MilkWeb.TournamentController do
   @doc """
   テスト用 Idの数だけのブラケットを返す
   """
-  def chunk_bracket_data_for_best_of_format_test(conn, %{"tournament_id" => number}) do 
+  def chunk_bracket_data_for_best_of_format_test(conn, %{"tournament_id" => number}) do
     num = Tools.to_integer_as_needed(number)
-    Enum.to_list(1..num) |> Tournamex.generate_matchlist() |> elem(1) |> IO.inspect(charlists: false) |> Tournamex.brackets() |> elem(1) |> IO.inspect(charlists: false) 
+    Enum.to_list(1..num) |> Tournamex.generate_matchlist() |> elem(1) |> IO.inspect(charlists: false) |> Tournamex.brackets() |> elem(1) |> IO.inspect(charlists: false)
 
     match_list =
       1..num

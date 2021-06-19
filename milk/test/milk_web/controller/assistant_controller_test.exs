@@ -59,13 +59,6 @@ defmodule MilkWeb.AssistantControllerTest do
     {:ok, conn: put_req_header(conn, "accept", "application/json")}
   end
 
-  describe "index" do
-    test "lists all assistant", %{conn: conn} do
-      conn = post(conn, Routes.assistant_path(conn, :index))
-      assert json_response(conn, 200)["data"] == []
-    end
-  end
-
   describe "create assistants" do
     test "renders assistant when data is valid", %{conn: conn} do
       tournament = fixture(:tournament)

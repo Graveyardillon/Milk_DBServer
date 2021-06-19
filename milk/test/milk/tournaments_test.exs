@@ -189,10 +189,6 @@ defmodule Milk.TournamentsTest do
   end
 
   describe "get tournament" do
-    test "list_tournament/0 returns all tournament" do
-      _ = fixture_tournament()
-      refute length(Tournaments.list_tournament()) == 0
-    end
 
     test "get_tournament_by_room_id works" do
       tournament = fixture_tournament()
@@ -206,6 +202,12 @@ defmodule Milk.TournamentsTest do
           assert t.id == tournament.id
         end).()
       end)
+    end
+
+    test "get_tournament_by_room_id returns nil" do
+      Tournaments.get_tournament_by_room_id(-1)
+      |> Kernel.==({:error, "the tournament was not found."})
+      |> assert()
     end
 
     test "get_tournaments_by_master_id/1 returns tournaments of a user" do
@@ -1081,11 +1083,6 @@ defmodule Milk.TournamentsTest do
   end
 
   describe "get assistant" do
-    test "list_assistant/0 works fine" do
-      fixture(:assistant)
-      assert is_list(Tournaments.list_assistant())
-      assert length(Tournaments.list_assistant())
-    end
 
     test "get_assistants/1 works" do
       assistant_attr = fixture(:assistant)
