@@ -402,18 +402,30 @@ defmodule Milk.TournamentsTest do
       event_date: "2031-05-18T15:01:01Z"
     }
 
-    test "home_tournament/3" do
+    test "home_tournament/3 with user_id" do
       user1 = fixture_user()
       tournament = fixture_tournament()
       {:ok, _} = Tournaments.update_tournament(tournament, @home_attrs)
 
       Relations.block(user1.id, tournament.master_id)
 
-      user1.id
-      |> Tournaments.home_tournament("2020-05-12 16:55:53 +0000", 0)
+      "2020-05-12 16:55:53 +0000"
+      |> Tournaments.home_tournament(0, user1.id)
       |> length()
       |> (fn len ->
             assert len == 0
+          end).()
+    end
+
+    test "home_tournament/3 without user_id" do
+      tournament = fixture_tournament()
+      {:ok, _} = Tournaments.update_tournament(tournament, @home_attrs)
+
+      "2020-05-12 16:55:53 +0000"
+      |> Tournaments.home_tournament(0)
+      |> length()
+      |> (fn len ->
+            assert len == 1
           end).()
     end
 

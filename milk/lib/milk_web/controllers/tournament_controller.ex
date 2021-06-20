@@ -225,7 +225,7 @@ defmodule MilkWeb.TournamentController do
     offset = Tools.to_integer_as_needed(offset)
 
     tournaments =
-      Tournaments.home_tournament(user_id, date_offset, offset)
+      Tournaments.home_tournament(date_offset, offset, user_id)
       |> Enum.map(fn tournament ->
         entrants =
           Tournaments.get_entrants(tournament.id)
