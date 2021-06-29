@@ -90,9 +90,7 @@ defmodule Milk.Tournaments do
 
     Tournament
     |> where([t], t.master_id in ^users)
-    |> where([e], e.deadline > ^Timex.now())
-    |> order_by([e], asc: :event_date)
-    |> Repo.all()
+    |> date_filter()
   end
 
   @doc """
@@ -101,6 +99,11 @@ defmodule Milk.Tournaments do
   def home_tournament_plan(user_id) do
     Tournament
     |> where([t], t.master_id == ^user_id)
+    |> date_filter()
+  end
+
+  defp date_filter(query) do
+    query
     |> where([e], e.deadline > ^Timex.now())
     |> order_by([e], asc: :event_date)
     |> Repo.all()
@@ -109,8 +112,8 @@ defmodule Milk.Tournaments do
   @doc """
   Returns the list of tournament specified with a game id.
   """
-  def game_tournament(attrs) do
-    Repo.all(from t in Tournament, where: t.game_id == ^attrs["game_id"])
+  def get_tournament_by_game_id(game_id) do
+    Repo.all(from t in Tournament, where: t.game_id == ^game_id)
   end
 
   @doc """
