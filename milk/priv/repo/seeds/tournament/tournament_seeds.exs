@@ -56,9 +56,9 @@ Tournaments.create_tournament(attrs, attrs["thumbnail_path"])
 File.cp("./priv/repo/seeds/image/damn.jpg", "./static/image/tournament_thumbnail/damn.jpg")
 attrs = %{
   "capacity" => 5,
-  "deadline" => tomorrow,
+  "deadline" => day_after_tomorrow,
   "description" => "test tournament of size 5.",
-  "event_date" => tomorrow,
+  "event_date" => day_after_tomorrow,
   "name" => "test tournament size 5",
   "type" => 1,
   "url" => "test url",
