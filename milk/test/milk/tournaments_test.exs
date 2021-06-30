@@ -29,6 +29,7 @@ defmodule Milk.TournamentsTest do
     "deadline" => "2010-04-17T14:00:00Z",
     "description" => "some description",
     "event_date" => "2010-04-17T14:00:00Z",
+    "game_name" => "some game",
     "name" => "some name",
     "type" => 0,
     "url" => "somesomeurl",
@@ -473,6 +474,56 @@ defmodule Milk.TournamentsTest do
     test "home_tournament_plan/1 fails to return user's tournaments" do
       tournament = fixture_tournament()
       assert length(Tournaments.home_tournament_plan(tournament.master_id)) == 0
+    end
+
+    test "search/2 works" do
+      user = fixture_user()
+
+      fixture_tournament()
+
+      @valid_attrs
+      |> Map.put("name", "favorite")
+      |> Map.put("game_name", "favorite game")
+      |> Map.put("master_id", user.id)
+      |> Map.put("is_started", false)
+      |> Tournaments.create_tournament()
+
+      @valid_attrs
+      |> Map.put("name", "test")
+      |> Map.put("game_name", "test")
+      |> Map.put("master_id", user.id)
+      |> Map.put("is_started", false)
+      |> Tournaments.create_tournament()
+
+      nil
+      |> Tournaments.search("test")
+      |> Enum.map(fn tournament ->
+        assert tournament.name == "test"
+      end)
+      |> length()
+      |> Kernel.==(1)
+      |> assert()
+
+      nil
+      |> Tournaments.search("game")
+      |> Enum.map(fn tournament ->
+        assert tournament.name == "favorite" || tournament.name == "some name"
+      end)
+      |> length()
+      |> Kernel.==(2)
+      |> assert()
+
+      nil
+      |> Tournaments.search("fizz")
+      |> length()
+      |> Kernel.==(0)
+      |> assert()
+
+      nil
+      |> Tournaments.search("name")
+      |> length()
+      |> Kernel.==(1)
+      |> assert()
     end
   end
 

@@ -102,6 +102,19 @@ defmodule Milk.Tournaments do
     |> date_filter()
   end
 
+  @doc """
+  Get searched tournaments as home.
+  """
+  def search(_user_id, text) do
+    like = "%#{text}%"
+
+    from(
+      t in Tournament,
+      where: like(t.name, ^like) or like(t.game_name, ^like)
+    )
+    |> Repo.all()
+  end
+
   defp date_filter(query) do
     query
     |> where([e], e.deadline > ^Timex.now())
