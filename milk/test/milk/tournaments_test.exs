@@ -485,7 +485,7 @@ defmodule Milk.TournamentsTest do
   end
 
   describe "game" do
-    test "game_tournament/1 returns game of the tournament" do
+    test "get_tournament_by_game_id/1 returns game of the tournament" do
       game = fixture(:game)
       user = fixture_user()
 
@@ -494,7 +494,7 @@ defmodule Milk.TournamentsTest do
       |> Map.put("master_id", user.id)
       |> Tournaments.create_tournament()
 
-      assert tournaments = Tournaments.game_tournament(%{"game_id" => game.id})
+      assert tournaments = Tournaments.get_tournament_by_game_id(game.id)
       assert is_list(tournaments)
 
       Enum.each(tournaments, fn tournament ->
