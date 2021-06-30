@@ -189,9 +189,25 @@ defmodule Milk.TournamentsTest do
   end
 
   describe "get tournament" do
-    test "list_tournament/0 returns all tournament" do
-      _ = fixture_tournament()
-      refute length(Tournaments.list_tournament()) == 0
+
+    test "get_tournament_by_room_id works" do
+      tournament = fixture_tournament()
+
+      tournament.id
+      |> Chat.get_chat_rooms_by_tournament_id()
+      |> Enum.map(fn room ->
+        room.id
+        |> Tournaments.get_tournament_by_room_id()
+        |> (fn t ->
+          assert t.id == tournament.id
+        end).()
+      end)
+    end
+
+    test "get_tournament_by_room_id returns nil" do
+      Tournaments.get_tournament_by_room_id(-1)
+      |> Kernel.==({:error, "the tournament was not found."})
+      |> assert()
     end
 
     test "get_tournaments_by_master_id/1 returns tournaments of a user" do
@@ -386,18 +402,30 @@ defmodule Milk.TournamentsTest do
       event_date: "2031-05-18T15:01:01Z"
     }
 
-    test "home_tournament/3" do
+    test "home_tournament/3 with user_id" do
       user1 = fixture_user()
       tournament = fixture_tournament()
       {:ok, _} = Tournaments.update_tournament(tournament, @home_attrs)
 
       Relations.block(user1.id, tournament.master_id)
 
-      user1.id
-      |> Tournaments.home_tournament("2020-05-12 16:55:53 +0000", 0)
+      "2020-05-12 16:55:53 +0000"
+      |> Tournaments.home_tournament(0, user1.id)
       |> length()
       |> (fn len ->
             assert len == 0
+          end).()
+    end
+
+    test "home_tournament/3 without user_id" do
+      tournament = fixture_tournament()
+      {:ok, _} = Tournaments.update_tournament(tournament, @home_attrs)
+
+      "2020-05-12 16:55:53 +0000"
+      |> Tournaments.home_tournament(0)
+      |> length()
+      |> (fn len ->
+            assert len == 1
           end).()
     end
 
@@ -1067,11 +1095,6 @@ defmodule Milk.TournamentsTest do
   end
 
   describe "get assistant" do
-    test "list_assistant/0 works fine" do
-      fixture(:assistant)
-      assert is_list(Tournaments.list_assistant())
-      assert length(Tournaments.list_assistant())
-    end
 
     test "get_assistants/1 works" do
       assistant_attr = fixture(:assistant)

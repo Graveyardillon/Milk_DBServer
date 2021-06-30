@@ -5,6 +5,7 @@ defmodule MilkWeb.TournamentController do
 
   alias Milk.{
     Accounts,
+    Chat,
     Log,
     Relations,
     TournamentProgress,
@@ -18,14 +19,6 @@ defmodule MilkWeb.TournamentController do
     Tools,
     FileUtils
   }
-
-  @doc """
-  Get tournament list.
-  """
-  def index(conn, _params) do
-    tournament = Tournaments.list_tournament()
-    render(conn, "index.json", tournament: tournament)
-  end
 
   @doc """
   Get users for assistant.
@@ -235,7 +228,7 @@ defmodule MilkWeb.TournamentController do
     offset = Tools.to_integer_as_needed(offset)
 
     tournaments =
-      Tournaments.home_tournament(user_id, date_offset, offset)
+      Tournaments.home_tournament(date_offset, offset, user_id)
       |> Enum.map(fn tournament ->
         entrants =
           Tournaments.get_entrants(tournament.id)
@@ -453,8 +446,7 @@ defmodule MilkWeb.TournamentController do
 
     tournament = Tournaments.get_tournament(tournament_id)
 
-    entrants_len =
-      tournament.id
+    entrants_len = tournament.id
       |> Tournaments.get_entrants()
       |> length()
 
@@ -494,10 +486,18 @@ defmodule MilkWeb.TournamentController do
   @doc """
   Get tournament topics.
   """
-  def tournament_topics(conn, %{"tournament_id" => tournament_id}) do
+  def tournament_topics(conn, %{"tournament_id" => tournament_id, "user_id" => user_id}) do
     tabs = tournament_id
       |> Tools.to_integer_as_needed()
       |> Tournaments.get_tabs_by_tournament_id()
+      |> Enum.map(fn tab ->
+        chat_room = Chat.get_chat_room(tab.chat_room_id)
+        member = Chat.get_member(chat_room.id, user_id)
+
+        tab
+        |> Map.put(:authority, chat_room.authority)
+        |> Map.put(:can_speak, chat_room.authority <= member.authority)
+      end)
 
     render(conn, "tournament_topics.json", topics: tabs)
   end
@@ -512,7 +512,17 @@ defmodule MilkWeb.TournamentController do
       current_tabs = Tournaments.get_tabs_by_tournament_id(tournament_id)
       Tournaments.update_topic(tournament, current_tabs, tabs)
 
-      tabs = Tournaments.get_tabs_by_tournament_id(tournament_id)
+      tabs = tournament_id
+        |> Tournaments.get_tabs_by_tournament_id()
+        |> Enum.map(fn tab ->
+          chat_room = Chat.get_chat_room(tab.chat_room_id)
+
+          tab
+          |> Map.put(:authority, chat_room.authority)
+          # 自分より権限が大きいルームは作成しないのでtrueを入れておく
+          |> Map.put(:can_speak, true)
+        end)
+
       render(conn, "tournament_topics.json", topics: tabs)
     else
       render(conn, "error.json", error: "tournament not found")
@@ -1268,6 +1278,59 @@ defmodule MilkWeb.TournamentController do
       |> Tournamex.Number.closest_number_to_power_of_two()
 
     json(conn, %{result: true, data: brackets, count: count})
+  end
+
+  @doc """
+  テスト用 Idの数だけのブラケットを返す
+  """
+  def chunk_bracket_data_for_best_of_format_test(conn, %{"tournament_id" => number}) do
+    num = Tools.to_integer_as_needed(number)
+    Enum.to_list(1..num) |> Tournamex.generate_matchlist() |> elem(1) |> IO.inspect(charlists: false) |> Tournamex.brackets() |> elem(1) |> IO.inspect(charlists: false)
+
+    match_list =
+      1..num
+      |> Enum.to_list()
+      |> Tournamex.generate_matchlist()
+      |> elem(1)
+      |> Tournamex.initialize_match_list_with_fight_result()
+
+    match_list = match_list
+    |> List.flatten()
+    |> Enum.reduce(match_list, fn x, acc ->
+      user_id = x["user_id"]
+
+      acc
+      |> Milk.Tournaments.put_value_on_brackets(user_id, %{"name" => "name" <> to_string(user_id)})
+      |> Milk.Tournaments.put_value_on_brackets(user_id, %{"win_count" => 0})
+      |> Milk.Tournaments.put_value_on_brackets(user_id, %{"icon_path" => nil})
+      |> Milk.Tournaments.put_value_on_brackets(user_id, %{"round" => 0})
+      |> Milk.Tournaments.put_value_on_brackets(user_id, %{"game_scores" => [0]})
+    end)
+    |> Tournamex.brackets_with_fight_result()
+    |> elem(1)
+    |> List.flatten()
+    # |> IO.inspect(charlists: false)
+
+    json(conn, %{result: true, data: match_list, count: 0})
+  end
+
+
+  @doc """
+  Registers PID of start notification.
+  The notification is handled in Web Server, so the pid does not belong to this server.
+  """
+  def register_pid_of_start_notification(conn, %{"tournament_id" => tournament_id, "pid" => pid}) do
+    tournament_id = Tools.to_integer_as_needed(tournament_id)
+
+    # FIXME: エラーハンドリング
+    tournament_id
+    |> Tournaments.get_tournament!()
+    |> Tournaments.update_tournament(%{"start_notification_pid" => pid})
+    |> case do
+      {:ok, _tournament} -> json(conn, %{result: true})
+      {:error, nil} -> json(conn, %{result: false})
+      {:error, _error} -> json(conn, %{result: false})
+    end
   end
 
   def verify_password(conn, %{"tournament_id" => tournament_id, "password" => password}) do

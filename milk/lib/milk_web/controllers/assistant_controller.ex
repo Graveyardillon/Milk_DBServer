@@ -5,20 +5,6 @@ defmodule MilkWeb.AssistantController do
   # action_fallback MilkWeb.FallbackController
 
   @doc """
-  Return list of assistants.
-  """
-  def index(conn, _params) do
-    assistant = Tournaments.list_assistant()
-    render(conn, "index.json", assistant: assistant)
-    # いらない気がしたのでコメントアウトしました
-    # if(assistant) do
-    #   render(conn, "index.json", assistant: assistant)
-    # else
-    #   render(conn, "error.json", error: nil)
-    # end
-  end
-
-  @doc """
   Create an assistant
   """
   def create(conn, %{"assistant" => assistant_params}) do

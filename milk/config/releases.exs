@@ -33,6 +33,14 @@ config :milk, MilkWeb.Endpoint,
   root: ".",
   secret_key_base: "LqoR7+lZoQ0d7SFXzx2GJhzn8QrhoOn2tM43fL6i+2S0d//IjQ4+y+gOcSxsK+2f"
 
+config :pigeon, :apns,
+  apns_default: %{
+    key: "lib/milk-0.1.2/priv/cert/AuthKey_MHN824H499.p8",
+    key_identifier: "MHN824H499",
+    team_id: "6ZMC8WKZZQ",
+    mode: :prod
+  }
+
 # ## Using releases (Elixir v1.9+)
 #
 # If you are doing OTP releases, you need to instruct Phoenix

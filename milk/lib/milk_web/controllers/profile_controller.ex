@@ -51,7 +51,7 @@ defmodule MilkWeb.ProfileController do
     if user do
       uuid = SecureRandom.uuid()
 
-      FileUtils.copy(image.path, "./static/image/profile_icon/#{uuid}.png")
+      FileUtils.copy(image["path"], "./static/image/profile_icon/#{uuid}.png")
 
       local_path =
         case Application.get_env(:milk, :environment) do

@@ -51,28 +51,19 @@ defmodule Milk.Tournaments do
   @type t :: %Tournament{}
 
   @doc """
-  Returns the list of tournament.
-
-  ## Examples
-
-      iex> list_tournament()
-      [%Tournament{}, ...]
-
-  """
-  def list_tournament do
-    Repo.all(Tournament)
-  end
-
-  @doc """
   Returns the list of tournament for home screen.
   """
-  def home_tournament(user_id, date_offset, offset) do
+  def home_tournament(date_offset, offset, user_id \\ nil) do
     offset = Tools.to_integer_as_needed(offset)
 
     blocked_user_id_list =
-      user_id
-      |> Relations.blocked_users()
-      |> Enum.map(fn relation -> relation.blocked_user_id end)
+      if user_id do
+        user_id
+        |> Relations.blocked_users()
+        |> Enum.map(fn relation -> relation.blocked_user_id end)
+      else
+        []
+      end
 
     Tournament
     |> where([t], t.deadline > ^Timex.now() and t.create_time < ^date_offset)
@@ -82,21 +73,7 @@ defmodule Milk.Tournaments do
     |> limit(5)
     |> Repo.all()
     |> Repo.preload(:entrant)
-  end
 
-  @doc """
-  Returns the list of tournament which is not optimized for user.
-  """
-  def home_tournament(date_offset, offset) do
-    offset = Tools.to_integer_as_needed(offset)
-
-    Tournament
-    |> where([t], t.deadline > ^Timex.now() and t.create_time < ^date_offset)
-    |> order_by([t], asc: :event_date)
-    |> offset(^offset)
-    |> limit(5)
-    |> Repo.all()
-    |> Repo.preload(:entrant)
   end
 
   @doc """
@@ -134,6 +111,22 @@ defmodule Milk.Tournaments do
   """
   def game_tournament(attrs) do
     Repo.all(from t in Tournament, where: t.game_id == ^attrs["game_id"])
+  end
+
+  @doc """
+  Get a tournament by room id.
+  """
+  def get_tournament_by_room_id(chat_room_id) do
+    TournamentChatTopic
+    |> where([tct], tct.chat_room_id == ^chat_room_id)
+    |> Repo.one()
+    |> case do
+      nil -> {:error, "the tournament was not found."}
+      topic ->
+        Tournament
+        |> where([t], t.id == ^topic.tournament_id)
+        |> Repo.one()
+    end
   end
 
   @doc """
@@ -291,11 +284,12 @@ defmodule Milk.Tournaments do
     end
   end
 
-  defp create_topic(tournament, topic, tab_index) do
+  defp create_topic(tournament, topic, tab_index, authority \\ 0) do
     {:ok, chat_room} =
       %{
         name: tournament.name <> "-" <> topic,
-        member_count: tournament.count
+        member_count: tournament.count,
+        authority: authority
       }
       |> Chat.create_chat_room()
 
@@ -370,7 +364,7 @@ defmodule Milk.Tournaments do
       create_topic(tournament, "Group", 0)
     end)
     |> Multi.insert(:notification_topic, fn %{tournament: tournament} ->
-      create_topic(tournament, "Notification", 1)
+      create_topic(tournament, "Notification", 1, 1)
     end)
     |> Multi.insert(:q_and_a_topic, fn %{tournament: tournament} ->
       create_topic(tournament, "Q&A", 2)
@@ -1215,19 +1209,6 @@ defmodule Milk.Tournaments do
   """
   def put_value_on_brackets(match_list, key, value) do
     Tournamex.put_value_on_brackets(match_list, key, value)
-  end
-
-  @doc """
-  Returns the list of assistant.
-
-  ## Examples
-
-      iex> list_assistant()
-      [%Assistant{}, ...]
-
-  """
-  def list_assistant() do
-    Repo.all(Assistant)
   end
 
   @doc """

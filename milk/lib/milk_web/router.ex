@@ -28,11 +28,11 @@ defmodule MilkWeb.Router do
     resources "/user", UserController,
       except: [:new, :edit, :index, :show, :create, :update, :delete]
 
+    get "/user/check_username_duplication", UserController, :check_username_duplication
     post "/user/check_username_duplication", UserController, :check_username_duplication
     get "/user/get", UserController, :show
     get "/user/in_touch", UserController, :users_in_touch
     post "/user/update", UserController, :update
-    get "/user/get_all", UserController, :index
     post "/user/get", UserController, :show
     post "/user/in_touch", UserController, :get_users_in_touch
     post "/user/signup", UserController, :create
@@ -112,7 +112,6 @@ defmodule MilkWeb.Router do
     get "/tournament/masters", TournamentController, :get_game_masters
     get "/tournament/members", TournamentController, :get_match_members
     get "/tournament/find_match", TournamentController, :find_match
-    get "/tournament/get_all", TournamentController, :index
     get "/tournament/check_pending", TournamentController, :check_pending
     get "/tournament/brackets", TournamentController, :brackets_with_fight_result
     get "/tournament/brackets_with_score", TournamentController, :bracket_data_for_best_of_format
@@ -177,20 +176,21 @@ defmodule MilkWeb.Router do
     post "/notification/create", NotifController, :create
     post "/notification/all", NotifController, :notify_all
     post "/notification_log/create", NotifLogController, :create
+    post "/notification/check_all", NotifController, :check_all
     delete "/notification/delete", NotifController, :delete
 
     post "/load_test/start", LoadTestController, :start
     post "/load_test/stop", LoadTestController, :stop
     get "/load_test/download", LoadTestController,  :download
+
+    post "/register/device", DeviceController, :register_token
   end
 
   scope "/debug", MilkWeb do
     # FIXME: 見た感じ使われてなさそうだったけど、一応残しておいた
     get "/tournament/image", TournamentController, :image
-    post "/tournament/get_all", TournamentController, :index
     get "/tournament/debug_match_list", TournamentController, :debug_match_list
     post "/assistant/get", AssistantController, :show
-    post "/assistant/get_all", AssistantController, :index
 
     # ETSのデバッグ用
     post "/observe", DebugController, :observe

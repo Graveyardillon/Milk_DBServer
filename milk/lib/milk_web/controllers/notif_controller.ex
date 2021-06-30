@@ -39,12 +39,23 @@ defmodule MilkWeb.NotifController do
   def notify_all(conn, %{"text" => text}) do
     Accounts.list_user()
     |> Enum.each(fn user ->
-      %{}
+      Map.new()
       |> Map.put("user_id", user.id)
       |> Map.put("content", text)
       |> Map.put("process_code", 0)
       |> Map.put("data", "")
       |> Notif.create_notification()
+    end)
+
+    json(conn, %{result: true})
+  end
+
+  def check_all(conn, %{"user_id" => user_id}) do
+    user_id
+    |> Tools.to_integer_as_needed()
+    |> Notif.unchecked_notifications()
+    |> Enum.each(fn notification ->
+      Notif.update_notification(notification, %{is_checked: true})
     end)
 
     json(conn, %{result: true})

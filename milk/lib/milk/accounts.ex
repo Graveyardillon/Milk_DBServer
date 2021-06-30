@@ -7,6 +7,8 @@ defmodule Milk.Accounts do
 
   require Logger
 
+  alias Common.Tools
+
   alias Ecto.Multi
 
   alias Milk.{
@@ -18,6 +20,7 @@ defmodule Milk.Accounts do
   alias Milk.Accounts.{
     ActionHistory,
     Auth,
+    Device,
     User
   }
 
@@ -521,5 +524,39 @@ defmodule Milk.Accounts do
   def gain_score(%{"user_id" => user_id, "game_name" => game_name, "score" => gain}) do
     %{"user_id" => user_id, "game_name" => game_name, "gain" => gain}
     |> create_action_history()
+  end
+
+  @doc """
+  Get a device.
+  """
+  def get_device(device_id) do
+    Device
+    |> where([d], d.token == ^device_id)
+    |> Repo.one()
+  end
+
+  @doc """
+  Get devices by user id.
+  """
+  def get_devices_by_user_id(user_id) do
+    Device
+    |> where([d], d.user_id == ^user_id)
+    |> Repo.all()
+  end
+
+  @doc """
+  Register a device token.
+  TODO: update処理
+  """
+  def register_device(%{"user_id" => user_id, "device_id" => device_id}) do
+    attrs = %{"user_id" => user_id, "token" => device_id}
+
+    with {:ok, device} <- %Device{}
+      |> Device.changeset(attrs)
+      |> Repo.insert() do
+      {:ok, device}
+    else
+      {:error, error} -> {:error, Tools.create_error_message(error.errors)}
+    end
   end
 end
