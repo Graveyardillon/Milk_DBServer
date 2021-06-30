@@ -73,7 +73,6 @@ defmodule Milk.Tournaments do
     |> limit(5)
     |> Repo.all()
     |> Repo.preload(:entrant)
-
   end
 
   @doc """
@@ -91,6 +90,7 @@ defmodule Milk.Tournaments do
     Tournament
     |> where([t], t.master_id in ^users)
     |> date_filter()
+    |> Repo.all()
   end
 
   @doc """
@@ -100,6 +100,7 @@ defmodule Milk.Tournaments do
     Tournament
     |> where([t], t.master_id == ^user_id)
     |> date_filter()
+    |> Repo.all()
   end
 
   @doc """
@@ -112,6 +113,7 @@ defmodule Milk.Tournaments do
       t in Tournament,
       where: like(t.name, ^like) or like(t.game_name, ^like)
     )
+    |> date_filter()
     |> Repo.all()
   end
 
@@ -119,7 +121,6 @@ defmodule Milk.Tournaments do
     query
     |> where([e], e.deadline > ^Timex.now())
     |> order_by([e], asc: :event_date)
-    |> Repo.all()
   end
 
   @doc """

@@ -1,5 +1,6 @@
 defmodule Milk.TournamentsTest do
   use Milk.DataCase
+  use Timex
 
   alias Milk.{
     Accounts,
@@ -478,10 +479,23 @@ defmodule Milk.TournamentsTest do
 
     test "search/2 works" do
       user = fixture_user()
-
-      fixture_tournament()
+      tomorrow = Timex.now()
+        |> Timex.add(Timex.Duration.from_days(1))
+        |> Timex.to_datetime()
+      yesterday = Timex.now()
+        |> Timex.add(Timex.Duration.from_days(-1))
+        |> Timex.to_datetime()
 
       @valid_attrs
+      |> Map.put("deadline", tomorrow)
+      |> Map.put("event_date", tomorrow)
+      |> Map.put("is_started", false)
+      |> Map.put("master_id", user.id)
+      |> Tournaments.create_tournament()
+
+      @valid_attrs
+      |> Map.put("deadline", tomorrow)
+      |> Map.put("event_date", tomorrow)
       |> Map.put("name", "favorite")
       |> Map.put("game_name", "favorite game")
       |> Map.put("master_id", user.id)
@@ -489,8 +503,19 @@ defmodule Milk.TournamentsTest do
       |> Tournaments.create_tournament()
 
       @valid_attrs
+      |> Map.put("deadline", tomorrow)
+      |> Map.put("event_date", tomorrow)
       |> Map.put("name", "test")
       |> Map.put("game_name", "test")
+      |> Map.put("master_id", user.id)
+      |> Map.put("is_started", false)
+      |> Tournaments.create_tournament()
+
+      @valid_attrs
+      |> Map.put("deadline", yesterday)
+      |> Map.put("event_date", yesterday)
+      |> Map.put("name", "dummy test")
+      |> Map.put("game_name", "dummy test")
       |> Map.put("master_id", user.id)
       |> Map.put("is_started", false)
       |> Tournaments.create_tournament()
