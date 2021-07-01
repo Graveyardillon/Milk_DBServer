@@ -15,7 +15,10 @@ defmodule MilkWeb.TournamentController do
   alias Milk.CloudStorage.Objects
   alias Milk.Tournaments.Tournament
   alias Milk.Media.Image
-  alias Common.Tools
+  alias Common.{
+    Tools,
+    FileUtils
+  }
 
   @doc """
   Get users for assistant.
@@ -100,7 +103,7 @@ defmodule MilkWeb.TournamentController do
     thumbnail_path =
       if image != "" do
         uuid = SecureRandom.uuid()
-        File.cp(image.path, "./static/image/tournament_thumbnail/#{uuid}.jpg")
+        FileUtils.copy(image.path, "./static/image/tournament_thumbnail/#{uuid}.jpg")
 
         case Application.get_env(:milk, :environment) do
           :dev ->

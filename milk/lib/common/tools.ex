@@ -34,4 +34,28 @@ defmodule Common.Tools do
       to_string(key) <> " " <> elem(value, 0) <> ", " <> acc
     end)
   end
+
+  @doc """
+  Get ip address
+  """
+  def get_ip() do
+    :inet.getif()
+    |> elem(1)
+    |> hd()
+    |> elem(0)
+    |> Tuple.to_list()
+    |> Enum.reduce("", fn n, acc ->
+      "#{acc}.#{to_string(n)}"
+    end)
+    |> String.slice(1..1500)
+  end
+
+  @doc """
+  Get hostname
+  """
+
+  def get_hostname() do
+    :inet.gethostname()
+    |> elem(1)
+  end
 end
