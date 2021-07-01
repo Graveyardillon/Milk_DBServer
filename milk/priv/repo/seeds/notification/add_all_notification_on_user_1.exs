@@ -35,13 +35,15 @@ alias Milk.Notif
     "user_id" => 1,
     "content" => "ビバンダム君",
     "data" => nil,
-    "process_code" => 5
+    "process_code" => 5,
+    "icon_path" => "./static/image/tournament_thumbnail/2pimp.jpg"
   },
   %{
     "user_id" => 1,
     "content" => "ビバンダム君",
     "data" => nil,
-    "process_code" => 6
+    "process_code" => 6,
+    "icon_path" => "2pimp"
   },
   %{
     "user_id" => 1,
