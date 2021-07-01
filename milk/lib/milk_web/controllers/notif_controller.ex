@@ -48,7 +48,6 @@ defmodule MilkWeb.NotifController do
       {:ok, file} -> Base.encode64(file)
       {:error, _} -> nil
     end
-    |> IO.inspect(label: :icon)
   end
 
   defp read_icon_dev(path) do
