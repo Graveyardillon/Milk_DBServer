@@ -10,7 +10,7 @@ defmodule Milk.Notif.Notification do
     field :process_code, :integer
     field :data, :string
     field :is_checked, :boolean, default: false
-    field :icon_path, :string
+    field :icon_path, :string, default: nil
 
     belongs_to :user, User
 

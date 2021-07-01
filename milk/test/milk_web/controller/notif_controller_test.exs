@@ -35,6 +35,60 @@ defmodule MilkWeb.NotifControllerTest do
       |> Notif.create_notification()
       |> elem(1)
     end)
+
+    [
+      %{
+        "user_id" => user_id,
+        "content" => "chore",
+        "data" => nil,
+        "process_code" => 0
+      },
+      %{
+        "user_id" => user_id,
+        "content" => "ビバンダム君",
+        "data" => nil,
+        "process_code" => 1
+      },
+      %{
+        "user_id" => user_id,
+        "content" => "ライブ",
+        "data" => nil,
+        "process_code" => 2
+      },
+      %{
+        "user_id" => user_id,
+        "content" => "ビバンダム君",
+        "data" => nil,
+        "process_code" => 3
+      },
+      %{
+        "user_id" => user_id,
+        "content" => "ビバンダム君",
+        "data" => nil,
+        "process_code" => 4
+      },
+      %{
+        "user_id" => user_id,
+        "content" => "ビバンダム君",
+        "data" => nil,
+        "process_code" => 5
+      },
+      %{
+        "user_id" => user_id,
+        "content" => "ビバンダム君",
+        "data" => nil,
+        "process_code" => 6
+      },
+      %{
+        "user_id" => user_id,
+        "content" => "",
+        "data" => nil,
+        "process_code" => 7
+      }
+    ]
+    |> Enum.each(fn notification ->
+      Notif.create_notification(notification)
+    end)
   end
 
   setup %{conn: conn} do
@@ -62,6 +116,7 @@ defmodule MilkWeb.NotifControllerTest do
 
       response
       |> Map.get("data")
+      |> IO.inspect()
       |> Enum.map(fn notification ->
         assert notification["content"] == "chore"
         assert notification["process_code"] == 0
@@ -176,7 +231,7 @@ defmodule MilkWeb.NotifControllerTest do
       end)
       |> length()
       |> (fn len ->
-        assert len == 10
+        assert len == 17
       end).()
 
       conn = post(conn, Routes.notif_path(conn, :check_all), user_id: user.id)
@@ -191,7 +246,7 @@ defmodule MilkWeb.NotifControllerTest do
       end)
       |> length()
       |> (fn len ->
-        assert len == 10
+        assert len == 17
       end).()
     end
   end

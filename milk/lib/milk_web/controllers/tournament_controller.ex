@@ -775,7 +775,8 @@ defmodule MilkWeb.TournamentController do
   end
 
   defp read_thumbnail(name) do
-    case File.read("./static/image/tournament_thumbnail/#{name}.jpg") do
+    File.read("./static/image/tournament_thumbnail/#{name}.jpg")
+    |> case do
       {:ok, file} ->
         b64 = Base.encode64(file)
         %{b64: b64}
