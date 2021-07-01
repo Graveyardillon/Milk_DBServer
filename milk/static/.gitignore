@@ -1,1 +1,9 @@
-image
+/image/*
+!/image/tournament_thumbnail
+/image/tournament_thumbnail/*
+!/image/tournament_thumbnail/2pimp.jpg
+!/image/tournament_thumbnail/damn.jpg
+!/image/tournament_thumbnail/darksideofthemoon.jpg
+!/image/tournament_thumbnail/kazemachi.jpg
+!/image/tournament_thumbnail/nevermind.jpg
+!/image/tournament_thumbnail/solid_state_survivor.jpg
