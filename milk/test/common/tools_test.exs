@@ -37,4 +37,17 @@ defmodule Common.ToolsTest do
              }
     end
   end
+
+  describe "get_ip" do
+    test "get_ip works" do
+      ip = Tools.get_ip()
+      assert is_binary(ip)
+    end
+  end
+
+  describe "get_hostname" do
+    test "get_hostname works" do
+      Tools.get_hostname()
+    end
+  end
 end
