@@ -7,18 +7,103 @@ defmodule MilkWeb.NotifController do
     Accounts,
     Notif
   }
-
+  alias Milk.CloudStorage.Objects
+  alias Milk.Media.Image
   alias Milk.Notif.Notification
 
   def get_list(conn, %{"user_id" => user_id}) do
     user_id = Tools.to_integer_as_needed(user_id)
 
-    notifs = Notif.list_notification(user_id)
+    notifs = user_id
+      |> Notif.list_notification()
+      |> Enum.map(fn notification ->
+        if is_nil(notification.icon_path) do
+          Map.put(notification, :icon, nil)
+        else
+          icon = notification.process_code
+          |> case do
+            1 -> read_icon(notification.icon_path)
+            4 -> read_icon(notification.icon_path)
+            5 -> read_icon(notification.icon_path)
+            6 -> read_thumbnail(notification.icon_path)
+            _ -> nil
+          end
+
+          Map.put(notification, :icon, icon)
+        end
+      end)
+
     render(conn, "list.json", notif: notifs)
+  end
+
+  defp read_icon(path) do
+    :milk
+    |> Application.get_env(:environment)
+    |> case do
+      :dev -> read_icon_dev(path)
+      :test -> read_icon_dev(path)
+      _ -> read_icon_prod(path)
+    end
+    |> case do
+      {:ok, file} -> Base.encode64(file)
+      {:error, _} -> nil
+    end
+  end
+
+  defp read_icon_dev(path) do
+    File.read(path)
+  end
+
+  defp read_icon_prod(name) do
+    name
+    |> Objects.get()
+    |> Map.get(:mediaLink)
+    |> Image.get()
+  end
+
+  defp read_thumbnail(name) do
+    :milk
+    |> Application.get_env(:environment)
+    |> case do
+      :dev -> read_thumbnail_dev(name)
+      :test -> read_thumbnail_dev(name)
+      _ -> read_thumbnail_prod(name)
+    end
+    |> case do
+      %{b64: b64} -> b64
+      %{error: _} -> nil
+    end
+  end
+
+  defp read_thumbnail_dev(name) do
+    File.read("./static/image/tournament_thumbnail/#{name}.jpg")
+    |> case do
+      {:ok, file} ->
+        b64 = Base.encode64(file)
+        %{b64: b64}
+
+      {:error, _} ->
+        %{error: "image not found"}
+    end
+  end
+
+  defp read_thumbnail_prod(name) do
+    name
+    |> Objects.get()
+    |> Map.get(:mediaLink)
+    |> Image.get()
+    |> case do
+      {:ok, file} ->
+        b64 = Base.encode64(file)
+        %{b64: b64}
+      _ ->
+        %{error: "image not found"}
+    end
   end
 
   def create(conn, %{"notif" => notif}) do
     {:ok, notif} = Notif.create_notification(notif)
+    notif = Map.put(notif, :icon, nil)
 
     render(conn, "show.json", notif: notif)
   end
