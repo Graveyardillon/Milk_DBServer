@@ -71,13 +71,15 @@ defmodule MilkWeb.NotifControllerTest do
         "user_id" => user_id,
         "content" => "ビバンダム君",
         "data" => nil,
-        "process_code" => 5
+        "process_code" => 5,
+        "icon_path" => "./static/image/tournament_thumbnail/2pimp.jpg"
       },
       %{
         "user_id" => user_id,
         "content" => "ビバンダム君",
         "data" => nil,
-        "process_code" => 6
+        "process_code" => 6,
+        "icon_path" => "2pimp"
       },
       %{
         "user_id" => user_id,
@@ -116,7 +118,6 @@ defmodule MilkWeb.NotifControllerTest do
 
       response
       |> Map.get("data")
-      |> IO.inspect()
       |> Enum.map(fn notification ->
         assert notification["content"] == "chore"
         assert notification["process_code"] == 0

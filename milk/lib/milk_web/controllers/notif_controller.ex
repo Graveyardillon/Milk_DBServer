@@ -32,7 +32,6 @@ defmodule MilkWeb.NotifController do
           Map.put(notification, :icon, icon)
         end
       end)
-      |> IO.inspect(label: :asdf)
 
     render(conn, "list.json", notif: notifs)
   end
@@ -44,6 +43,10 @@ defmodule MilkWeb.NotifController do
       :dev -> read_icon_dev(path)
       :test -> read_icon_dev(path)
       _ -> read_icon_prod(path)
+    end
+    |> case do
+      {:ok, file} -> Base.encode64(file)
+      {:error, _} -> nil
     end
     |> IO.inspect(label: :icon)
   end
