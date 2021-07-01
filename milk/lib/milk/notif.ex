@@ -27,6 +27,7 @@ defmodule Milk.Notif do
       from n in Notification,
         join: u in assoc(n, :user),
         where: u.id == ^user_id,
+        order_by: n.create_time,
         preload: [user: u]
     )
   end
