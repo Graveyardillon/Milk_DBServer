@@ -59,7 +59,8 @@ defmodule MilkWeb.TournamentView do
       url: tournament.url,
       create_time: tournament.create_time,
       update_time: tournament.update_time,
-      is_started: tournament.is_started
+      is_started: tournament.is_started,
+      is_team: tournament.is_team
     }
   end
 
