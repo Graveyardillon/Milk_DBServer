@@ -71,8 +71,7 @@ defmodule Milk.TournamentsTest do
 
   defp fixture_tournament(opts \\ []) do
     # FIXME: ここのデフォルト値は本当はfalseのほうがよさそう
-    is_started =
-      opts[:is_started]
+    is_started = opts[:is_started]
       |> is_nil()
       |> unless do
         opts[:is_started]
@@ -80,8 +79,15 @@ defmodule Milk.TournamentsTest do
         true
       end
 
-    master_id =
-      opts[:master_id]
+    is_team = opts[:is_team]
+      |> is_nil()
+      |> unless do
+        opts[:is_team]
+      else
+        false
+      end
+
+    master_id = opts[:master_id]
       |> is_nil()
       |> unless do
         opts[:master_id]
@@ -100,6 +106,7 @@ defmodule Milk.TournamentsTest do
       @valid_attrs
       |> Map.put("is_started", is_started)
       |> Map.put("master_id", master_id)
+      |> Map.put("is_team", is_team)
       |> Tournaments.create_tournament()
 
     tournament
@@ -2066,6 +2073,30 @@ defmodule Milk.TournamentsTest do
       |> (fn list ->
             assert is_list(list)
           end).()
+    end
+  end
+
+  describe "create_team" do
+    test "works" do
+      tournament = fixture_tournament([is_started: false, is_team: true])
+      users = 1..5
+        |> Enum.to_list()
+        |> Enum.map(fn n ->
+          fixture_user(num: n)
+        end)
+        |> Enum.map(fn user ->
+          user.id
+        end)
+
+      [leader | users] = users
+      size = 5
+
+      tournament.id
+      |> Tournaments.create_team(size, leader, users)
+      |> (fn {:ok, team} ->
+        assert team.tournament_id == tournament.id
+        assert team.size == size
+      end).()
     end
   end
 end

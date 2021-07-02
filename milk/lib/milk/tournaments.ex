@@ -36,6 +36,8 @@ defmodule Milk.Tournaments do
   alias Milk.Tournaments.{
     Assistant,
     Entrant,
+    Team,
+    TeamMember,
     Tournament,
     TournamentChatTopic
   }
@@ -1890,5 +1892,36 @@ defmodule Milk.Tournaments do
     match_list = Tournamex.win_count_increment(match_list, winner_id)
     TournamentProgress.delete_match_list_with_fight_result(tournament_id)
     TournamentProgress.insert_match_list_with_fight_result(match_list, tournament_id)
+  end
+
+  @doc """
+  Create a team.
+  """
+  def create_team(tournament_id, size, leader, user_id_list) when is_list(user_id_list) do
+    %Team{}
+    |> Team.changeset(%{"tournament_id" => tournament_id, "size" => size, "name" => ""})
+    |> Repo.insert()
+    |> case do
+      {:ok, team} ->
+        create_team_leader(team.id, leader)
+        create_team_members(team.id, user_id_list)
+        {:ok, team}
+      {:error, error} ->
+        {:error, error}
+    end
+  end
+
+  defp create_team_leader(team_id, leader_id) do
+    %TeamMember{}
+    |> TeamMember.changeset(%{"team_id" => team_id, "user_id" => leader_id, "is_leader" => true})
+    |> Repo.insert()
+  end
+
+  defp create_team_members(team_id, user_id_list) do
+    Enum.each(user_id_list, fn id ->
+      %TeamMember{}
+      |> TeamMember.changeset(%{"team_id" => team_id, "user_id" => id})
+      |> Repo.insert()
+    end)
   end
 end
