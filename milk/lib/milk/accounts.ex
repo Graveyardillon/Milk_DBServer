@@ -226,6 +226,20 @@ defmodule Milk.Accounts do
   end
 
   @doc """
+  Search users.
+  """
+  def search(text) do
+    like = "%#{text}%"
+
+    from(
+      u in User,
+      where: like(u.name, ^like),
+      preload: [:auth]
+    )
+    |> Repo.all()
+  end
+
+  @doc """
   Updates an icon.
   """
   @spec update_icon_path(Accounts.t(), binary) :: tuple()

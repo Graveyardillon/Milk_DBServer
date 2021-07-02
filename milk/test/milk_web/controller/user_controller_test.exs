@@ -199,6 +199,29 @@ defmodule MilkWeb.UserControllerTest do
     end
   end
 
+  describe "search" do
+    test "works", %{conn: conn} do
+      {:ok, user1} =
+        Accounts.create_user(%{
+          "name" => "name1",
+          "email" => "e1@mail.com",
+          "password" => "Password123",
+          "logout_fl" => true
+        })
+
+      ok_text = "ame"
+      conn = get(conn, Routes.user_path(conn, :search), text: ok_text)
+      json_response(conn, 200)
+      |> Map.get("data")
+      |> Enum.map(fn user ->
+        assert user["id"] == user1.id
+      end)
+      |> length()
+      |> Kernel.==(1)
+      |> assert()
+    end
+  end
+
   describe "logout" do
     test "works", %{conn: conn} do
       conn = post(conn, Routes.user_path(conn, :create), user: @create_attrs)
