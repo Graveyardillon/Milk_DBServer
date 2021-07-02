@@ -86,6 +86,7 @@ defmodule MilkWeb.TournamentView do
         create_time: tournament.create_time,
         update_time: tournament.update_time,
         is_started: tournament.is_started,
+        is_team: tournament.is_team,
         entrants:
           Enum.map(entrants, fn user ->
             %{
@@ -127,6 +128,7 @@ defmodule MilkWeb.TournamentView do
         create_time: tournament.create_time,
         update_time: tournament.update_time,
         is_started: tournament.is_started,
+        is_team: tournament.is_team,
         entrants:
           Enum.map(tournament.entrants, fn user ->
             %{
@@ -225,6 +227,7 @@ defmodule MilkWeb.TournamentView do
       create_time: tournament.create_time,
       update_time: tournament.update_time,
       is_started: tournament.is_started,
+      is_team: tournament.is_team,
       entrants:
         Enum.map(tournament.entrants, fn user ->
           %{
@@ -258,6 +261,7 @@ defmodule MilkWeb.TournamentView do
         password: tournament.password,
         description: tournament.description,
         master_id: tournament.master_id,
+        is_team: tournament.is_team,
         url: tournament.url,
         create_time: tournament.create_time,
         update_time: tournament.update_time,

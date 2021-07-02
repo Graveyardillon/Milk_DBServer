@@ -123,6 +123,7 @@ attrs = %{
   "password" => nil,
   "game_name" => "my awesome name",
   "start_recruiting" => now,
+  "is_team" => true,
   "master_id" => user.id,
   "platform" => 1,
   "game_id" => nil
