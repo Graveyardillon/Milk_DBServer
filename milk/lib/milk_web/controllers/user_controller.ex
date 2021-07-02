@@ -129,6 +129,15 @@ defmodule MilkWeb.UserController do
   end
 
   @doc """
+  Search.
+  """
+  def search(conn, %{"text" => text}) do
+    users = Accounts.search(text)
+
+    render(conn, "index.json", users: users)
+  end
+
+  @doc """
   Updates user.
   """
   def update(conn, %{"id" => id, "user" => user_params, "token" => token}) do

@@ -32,6 +32,7 @@ defmodule MilkWeb.Router do
     post "/user/check_username_duplication", UserController, :check_username_duplication
     get "/user/get", UserController, :show
     get "/user/in_touch", UserController, :users_in_touch
+    get "/user/search", UserController, :search
     post "/user/update", UserController, :update
     post "/user/get", UserController, :show
     post "/user/in_touch", UserController, :get_users_in_touch
