@@ -33,6 +33,10 @@ defmodule Milk.AccountsTest do
     Accounts.get_user(user.id)
   end
 
+  defp create_user(_) do
+    %{user: fixture_user()}
+  end
+
   # defp fixture(:chat_member) do
   #   %{"id" => user_id} = fixture_user()
   #   attrs = %{"user_id" => user_id}
@@ -79,6 +83,23 @@ defmodule Milk.AccountsTest do
       assert u.name == user.name
       assert u.auth.email == user.auth.email
     end
+
+    test "search", %{user: user} do
+      "some"
+      |> Accounts.search()
+      |> Enum.map(fn u ->
+        assert u.id == user.id
+      end)
+      |> length()
+      |> Kernel.==(1)
+      |> assert()
+
+      "dddd"
+      |> Accounts.search()
+      |> length()
+      |> Kernel.==(0)
+      |> assert()
+    end
   end
 
   describe "users create" do
@@ -94,10 +115,6 @@ defmodule Milk.AccountsTest do
     test "create_user/1 with invalid data returns error changeset" do
       assert {:error, error} = Accounts.create_user(@invalid_attrs)
     end
-  end
-
-  defp create_user(_) do
-    %{user: fixture_user()}
   end
 
   describe "users update" do
