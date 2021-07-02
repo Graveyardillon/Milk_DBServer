@@ -172,15 +172,16 @@ defmodule Milk.ChatTest do
 
     test "dialogue/1 notification(group chat)", %{chat_member: chat_member} do
       token = "asdftokentoken"
+
       %{"user_id" => chat_member.user_id, "device_id" => token}
       |> Accounts.register_device()
 
       assert {:ok, %Chats{}} =
-        Chat.dialogue(%{
-          "user_id" => chat_member.user_id,
-          "chat_room_id" => chat_member.chat_room_id,
-          "word" => "dmsk"
-        })
+               Chat.dialogue(%{
+                 "user_id" => chat_member.user_id,
+                 "chat_room_id" => chat_member.chat_room_id,
+                 "word" => "dmsk"
+               })
     end
   end
 

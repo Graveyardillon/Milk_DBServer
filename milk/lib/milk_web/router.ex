@@ -183,7 +183,7 @@ defmodule MilkWeb.Router do
 
     post "/load_test/start", LoadTestController, :start
     post "/load_test/stop", LoadTestController, :stop
-    get "/load_test/download", LoadTestController,  :download
+    get "/load_test/download", LoadTestController, :download
 
     post "/register/device", DeviceController, :register_token
   end

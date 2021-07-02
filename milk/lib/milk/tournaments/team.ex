@@ -4,12 +4,14 @@ defmodule Milk.Tournaments.Team do
   import Ecto.Changeset
 
   alias Milk.Tournaments.Tournament
+  alias Milk.Tournaments.TeamMember
 
   schema "teams" do
     field :name, :string
     field :size, :integer
 
     belongs_to :tournament, Tournament
+    has_many :team_member, TeamMember
 
     timestamps()
   end

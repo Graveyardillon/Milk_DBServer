@@ -207,11 +207,11 @@ defmodule Milk.NotifTest do
       "Test Notification (#{hostname})"
       |> Notif.push_ios(token, 1, "")
       |> (fn notification ->
-        assert notification.device_token == token
-        assert notification.push_type == "alert"
-        assert notification.response == :success
-        assert notification.topic == Notif.topic()
-      end).()
+            assert notification.device_token == token
+            assert notification.push_type == "alert"
+            assert notification.response == :success
+            assert notification.topic == Notif.topic()
+          end).()
     end
   end
 end

@@ -191,7 +191,6 @@ defmodule Milk.TournamentsTest do
   end
 
   describe "get tournament" do
-
     test "get_tournament_by_room_id works" do
       tournament = fixture_tournament()
 
@@ -201,8 +200,8 @@ defmodule Milk.TournamentsTest do
         room.id
         |> Tournaments.get_tournament_by_room_id()
         |> (fn t ->
-          assert t.id == tournament.id
-        end).()
+              assert t.id == tournament.id
+            end).()
       end)
     end
 
@@ -479,10 +478,14 @@ defmodule Milk.TournamentsTest do
 
     test "search/2 works" do
       user = fixture_user()
-      tomorrow = Timex.now()
+
+      tomorrow =
+        Timex.now()
         |> Timex.add(Timex.Duration.from_days(1))
         |> Timex.to_datetime()
-      yesterday = Timex.now()
+
+      yesterday =
+        Timex.now()
         |> Timex.add(Timex.Duration.from_days(-1))
         |> Timex.to_datetime()
 
@@ -684,9 +687,11 @@ defmodule Milk.TournamentsTest do
       user = fixture_user()
       tournament = fixture_tournament()
 
-      entrant_param = @entrant_create_attrs
-      |> Map.put("tournament_id", tournament.id)
-      |> Map.put("user_id", user.id)
+      entrant_param =
+        @entrant_create_attrs
+        |> Map.put("tournament_id", tournament.id)
+        |> Map.put("user_id", user.id)
+
       Tournaments.create_entrant(entrant_param)
 
       Tournaments.create_entrant(entrant_param)
@@ -697,9 +702,9 @@ defmodule Milk.TournamentsTest do
     test "create_entrant/1 returns a multi error when it runs with same parameter at one time." do
       # tournament and user for entrant_param
       user0 = fixture_user()
-      user1 = fixture_user([num: 0])
+      user1 = fixture_user(num: 0)
       tournament0 = fixture_tournament()
-      tournament1 = fixture_tournament([master_id: user1.id])
+      tournament1 = fixture_tournament(master_id: user1.id)
 
       entrant_param =
         @entrant_create_attrs
@@ -708,14 +713,19 @@ defmodule Milk.TournamentsTest do
 
       # entrant作成の並行タスク生成
       create_entrant_task0 = Task.async(fn -> Tournaments.create_entrant(entrant_param) end)
-      create_entrant_task1 = Task.async(fn -> Tournaments.create_entrant(%{entrant_param|"tournament_id" => tournament1.id}) end)
+
+      create_entrant_task1 =
+        Task.async(fn ->
+          Tournaments.create_entrant(%{entrant_param | "tournament_id" => tournament1.id})
+        end)
+
       create_entrant_task2 = Task.async(fn -> Tournaments.create_entrant(entrant_param) end)
 
       # 元のパラメータとそれぞれtournament_id, user_idのどちらかの重複，どちらも同じの合計4パターンのentrant作成結果の出力
       # 元のentrant_param
       assert {:ok, _} = Task.await(create_entrant_task0)
       # user_idのみ書き換えたパラメータ
-      assert {:ok, _} = Tournaments.create_entrant(%{entrant_param|"user_id" => user1.id})
+      assert {:ok, _} = Tournaments.create_entrant(%{entrant_param | "user_id" => user1.id})
       # tournament_idのみ書き換えたパラメータ
       assert {:ok, _} = Task.await(create_entrant_task1)
       # どちらも書き換えていないパラメータ
@@ -1171,7 +1181,6 @@ defmodule Milk.TournamentsTest do
   end
 
   describe "get assistant" do
-
     test "get_assistants/1 works" do
       assistant_attr = fixture(:assistant)
 
@@ -1189,8 +1198,8 @@ defmodule Milk.TournamentsTest do
       end)
       |> length()
       |> (fn len ->
-        assert len == 1
-      end).()
+            assert len == 1
+          end).()
     end
 
     test "get_assistants_by_user_id/1" do
@@ -1205,8 +1214,8 @@ defmodule Milk.TournamentsTest do
       end)
       |> length()
       |> (fn len ->
-        assert len == 1
-      end).()
+            assert len == 1
+          end).()
     end
   end
 

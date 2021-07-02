@@ -7,11 +7,13 @@ defmodule Milk.Chat do
 
   alias Common.Tools
   alias Ecto.Multi
+
   alias Milk.{
     Accounts,
     Notif,
     Tournaments
   }
+
   alias Milk.Accounts.User
 
   alias Milk.Chat.{
@@ -422,11 +424,13 @@ defmodule Milk.Chat do
   Get all chat including logs by room id.
   """
   def get_all_chat_by_room_id_including_log(room_id) do
-    chats = Chats
+    chats =
+      Chats
       |> where([c], c.chat_room_id == ^room_id)
       |> Repo.all()
 
-    chat_logs = ChatsLog
+    chat_logs =
+      ChatsLog
       |> where([c], c.chat_room_id == ^room_id)
       |> Repo.all()
 
@@ -464,7 +468,7 @@ defmodule Milk.Chat do
           from cm in ChatMember,
             where:
               cm.user_id == ^attrs["user_id"] and
-              cm.chat_room_id == ^attrs["chat_room_id"]
+                cm.chat_room_id == ^attrs["chat_room_id"]
         )
       )
 
@@ -605,18 +609,21 @@ defmodule Milk.Chat do
       |> Enum.each(fn device ->
         unless device.user_id == user_id do
           tournament = Tournaments.get_tournament_by_room_id(chat_room_id)
+
           %{
             "content" => attrs["word"],
             "process_code" => 4,
             "user_id" => device.user_id,
             "data" => ""
           }
+
           Map.new()
           |> Map.put("content", attrs["word"])
           |> Map.put("process_code", 4)
           |> Map.put("user_id", device.user_id)
           |> Map.put("data", "")
           |> Notif.create_notification()
+
           title = "#{user.name} (in #{tournament.name})"
           Notif.push_ios_with_badge(attrs["word"], title, device.user_id, device.token)
         end

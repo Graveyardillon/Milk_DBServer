@@ -138,7 +138,9 @@ defmodule Milk.Tournaments do
     |> where([tct], tct.chat_room_id == ^chat_room_id)
     |> Repo.one()
     |> case do
-      nil -> {:error, "the tournament was not found."}
+      nil ->
+        {:error, "the tournament was not found."}
+
       topic ->
         Tournament
         |> where([t], t.id == ^topic.tournament_id)
@@ -459,7 +461,9 @@ defmodule Milk.Tournaments do
           match_list
           |> List.flatten()
           |> length()
-        _ -> 0
+
+        _ ->
+          0
       end
 
     match_list_with_fight_result_len =
@@ -470,7 +474,9 @@ defmodule Milk.Tournaments do
           match_list
           |> List.flatten()
           |> length()
-        _ -> 0
+
+        _ ->
+          0
       end
 
     if match_list_with_fight_result_len > 16 and match_list_len <= 16 do
@@ -886,7 +892,7 @@ defmodule Milk.Tournaments do
     renew_match_list(tournament_id, match_list, loser_list)
     updated_match_list = TournamentProgress.get_match_list(tournament_id)
     renew_match_list_with_fight_result(tournament_id, loser_list)
-    #unless is_integer(updated_match_list), do: trim_match_list_as_needed(tournament_id)
+    # unless is_integer(updated_match_list), do: trim_match_list_as_needed(tournament_id)
 
     updated_match_list
   end
@@ -928,17 +934,18 @@ defmodule Milk.Tournaments do
       |> case do
         [] ->
           {:error, nil}
+
         match ->
           match
           |> get_opponent(loser)
           |> case do
             {:ok, opponent} ->
               promote_rank(%{"tournament_id" => tournament_id, "user_id" => opponent["id"]})
+
             {:wait, nil} ->
               {:wait, nil}
           end
       end
-
     end)
   end
 
@@ -1134,13 +1141,18 @@ defmodule Milk.Tournaments do
       :ok ->
         finish_topics(tournament_id)
         finish_tournament(tournament_id, winner_user_id)
-      :error -> false
-      _ -> false
+
+      :error ->
+        false
+
+      _ ->
+        false
     end
   end
 
   defp finish_tournament(tournament_id, winner_user_id) do
-    {:ok, tournament} = tournament_id
+    {:ok, tournament} =
+      tournament_id
       |> get_tournament!()
       |> delete_tournament()
 
@@ -1379,11 +1391,13 @@ defmodule Milk.Tournaments do
   Get group chat tabs in a tournament including log.
   """
   def get_tabs_by_tournament_id(tournament_id) do
-    topics = TournamentChatTopic
+    topics =
+      TournamentChatTopic
       |> where([t], t.tournament_id == ^tournament_id)
       |> Repo.all()
 
-    logs = TournamentChatTopicLog
+    logs =
+      TournamentChatTopicLog
       |> where([tl], tl.tournament_id == ^tournament_id)
       |> Repo.all()
 
@@ -1468,16 +1482,17 @@ defmodule Milk.Tournaments do
         |> Map.get(:rank)
         |> check_exponentiation_of_two()
         |> (fn {bool, rank} ->
-          updated = if bool do
-            div(rank, 2)
-          else
-            find_num_closest_exponentiation_of_two(rank)
-          end
+              updated =
+                if bool do
+                  div(rank, 2)
+                else
+                  find_num_closest_exponentiation_of_two(rank)
+                end
 
-          user_id
-          |> get_entrant_by_user_id_and_tournament_id(tournament_id)
-          |> update_entrant(%{rank: updated})
-        end).()
+              user_id
+              |> get_entrant_by_user_id_and_tournament_id(tournament_id)
+              |> update_entrant(%{rank: updated})
+            end).()
 
       {:error, error} ->
         {:error, error}

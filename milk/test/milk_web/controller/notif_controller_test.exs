@@ -224,6 +224,7 @@ defmodule MilkWeb.NotifControllerTest do
       set_notifications(user.id, 10)
 
       conn = get(conn, Routes.notif_path(conn, :get_list), user_id: user.id)
+
       json_response(conn, 200)
       |> Map.get("data")
       |> Enum.map(fn notification ->
@@ -232,13 +233,14 @@ defmodule MilkWeb.NotifControllerTest do
       end)
       |> length()
       |> (fn len ->
-        assert len == 17
-      end).()
+            assert len == 17
+          end).()
 
       conn = post(conn, Routes.notif_path(conn, :check_all), user_id: user.id)
       assert json_response(conn, 200)["result"]
 
       conn = get(conn, Routes.notif_path(conn, :get_list), user_id: user.id)
+
       json_response(conn, 200)
       |> Map.get("data")
       |> Enum.map(fn notification ->
@@ -247,8 +249,8 @@ defmodule MilkWeb.NotifControllerTest do
       end)
       |> length()
       |> (fn len ->
-        assert len == 17
-      end).()
+            assert len == 17
+          end).()
     end
   end
 end

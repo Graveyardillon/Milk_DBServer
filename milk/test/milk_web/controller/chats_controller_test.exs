@@ -82,6 +82,7 @@ defmodule MilkWeb.ChatsControllerTest do
 
       conn = get(conn, Routes.chats_path(conn, :get_all_chats), room_id: chat_room.id)
       assert json_response(conn, 200)["result"]
+
       json_response(conn, 200)
       |> Map.get("data")
       |> Enum.map(fn chat ->
@@ -89,14 +90,15 @@ defmodule MilkWeb.ChatsControllerTest do
       end)
       |> length()
       |> (fn len ->
-        assert len == 100
-      end).()
+            assert len == 100
+          end).()
 
       conn = delete(conn, Routes.chat_room_path(conn, :delete, chat_room.id))
       assert response(conn, 204) == ""
 
       conn = get(conn, Routes.chats_path(conn, :get_all_chats), room_id: chat_room.id)
       assert json_response(conn, 200)["result"]
+
       json_response(conn, 200)
       |> Map.get("data")
       |> Enum.map(fn chat ->
@@ -104,8 +106,8 @@ defmodule MilkWeb.ChatsControllerTest do
       end)
       |> length()
       |> (fn len ->
-        assert len == 100
-      end).()
+            assert len == 100
+          end).()
     end
   end
 

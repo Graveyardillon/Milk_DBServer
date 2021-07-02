@@ -121,22 +121,25 @@ defmodule MilkWeb.ChatRoomControllerTest do
       user1 = fixture_user(1)
       user2 = fixture_user(2)
 
-      chat_rooms = 1..5
+      chat_rooms =
+        1..5
         |> Enum.to_list()
         |> Enum.map(fn n ->
           %{"name" => "test room" <> to_string(n), "is_private" => true}
           |> Chat.create_chat_room()
           |> elem(1)
         end)
+
       chat_room_id_list = Enum.map(chat_rooms, fn room -> room.id end)
 
       conn = get(conn, Routes.chat_room_path(conn, :private_rooms), user_id: user1.id)
+
       json_response(conn, 200)
       |> Map.get("data")
       |> length()
       |> (fn len ->
-        assert len == 0
-      end).()
+            assert len == 0
+          end).()
 
       chat_rooms
       |> Enum.each(fn room ->
@@ -148,6 +151,7 @@ defmodule MilkWeb.ChatRoomControllerTest do
       end)
 
       conn = get(conn, Routes.chat_room_path(conn, :private_rooms), user_id: user1.id)
+
       json_response(conn, 200)
       |> Map.get("data")
       |> Enum.map(fn room ->
@@ -157,8 +161,8 @@ defmodule MilkWeb.ChatRoomControllerTest do
       end)
       |> length()
       |> (fn len ->
-        assert len == length(chat_rooms)
-      end).()
+            assert len == length(chat_rooms)
+          end).()
     end
   end
 
