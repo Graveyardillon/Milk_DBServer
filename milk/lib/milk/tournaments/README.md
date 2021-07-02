@@ -34,6 +34,17 @@
 | tournament_id | 大会のid |
 | chat_room_id | 関連付いたチャットルームのid |
 
+## team.ex
+大会に参加するチームについてのスキーマ
+### teams
+
+| フィールド名 | 説明 |
+| --- | --- |
+| name | チーム名 |
+| member_id | user_id |
+| size | チームの最大人数 |
+| tournament_id | 参加する大会のid |
+
 ## tournament.ex
 大会自体のスキーマ
 
