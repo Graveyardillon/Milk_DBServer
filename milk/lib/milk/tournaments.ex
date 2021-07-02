@@ -1924,4 +1924,22 @@ defmodule Milk.Tournaments do
       |> Repo.insert()
     end)
   end
+
+  @doc """
+  Get teams by tournament_id.
+  """
+  def get_teams_by_tournament_id(tournament_id) do
+    Team
+    |> where([t], t.tournament_id == ^tournament_id)
+    |> Repo.all()
+  end
+
+  @doc """
+  Get team members by team id.
+  """
+  def get_team_members_by_team_id(team_id) do
+    TeamMember
+    |> where([tm], tm.team_id == ^team_id)
+    |> Repo.all()
+  end
 end

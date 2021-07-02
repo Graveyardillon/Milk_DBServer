@@ -2076,7 +2076,7 @@ defmodule Milk.TournamentsTest do
     end
   end
 
-  describe "create_team" do
+  describe "create_team and get_teams_by_tournament_id" do
     test "works" do
       tournament = fixture_tournament([is_started: false, is_team: true])
       users = 1..5
@@ -2097,6 +2097,31 @@ defmodule Milk.TournamentsTest do
         assert team.tournament_id == tournament.id
         assert team.size == size
       end).()
+
+      tournament.id
+      |> Tournaments.get_teams_by_tournament_id()
+      |> Enum.map(fn team ->
+        assert team.tournament_id == tournament.id
+      end)
+      |> length()
+      |> Kernel.==(1)
+      |> assert()
+
+      tournament.id
+      |> Tournaments.get_teams_by_tournament_id()
+      |> hd()
+      |> Map.get(:id)
+      |> Tournaments.get_team_members_by_team_id()
+      |> Enum.map(fn member ->
+        if member.is_leader do
+          assert member.user_id == leader
+        else
+          assert member.user_id in users
+        end
+      end)
+      |> length()
+      |> Kernel.==(5)
+      |> assert()
     end
   end
 end
