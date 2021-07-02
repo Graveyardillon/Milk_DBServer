@@ -233,7 +233,8 @@ defmodule Milk.Accounts do
 
     from(
       u in User,
-      where: like(u.name, ^like)
+      where: like(u.name, ^like),
+      preload: [:auth]
     )
     |> Repo.all()
   end
