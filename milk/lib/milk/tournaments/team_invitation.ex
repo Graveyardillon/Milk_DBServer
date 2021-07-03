@@ -19,6 +19,6 @@ defmodule Milk.Tournaments.TeamInvitation do
   @doc false
   def changeset(team_invitation, attrs) do
     team_invitation
-    |> cast(attrs, [:text])
+    |> cast(attrs, [:text, :team_id, :destination_id, :sender_id])
   end
 end

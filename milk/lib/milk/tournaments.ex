@@ -37,6 +37,7 @@ defmodule Milk.Tournaments do
     Assistant,
     Entrant,
     Team,
+    TeamInvitation,
     TeamMember,
     Tournament,
     TournamentChatTopic
@@ -348,7 +349,9 @@ defmodule Milk.Tournaments do
           tab_index: tab["tab_index"]
         })
       else
-        Repo.insert(create_topic(tournament, tab["topic_name"], tab["tab_index"]))
+        tournament
+        |> create_topic(tab["topic_name"], tab["tab_index"])
+        |> Repo.insert()
       end
     end)
   end
@@ -853,7 +856,8 @@ defmodule Milk.Tournaments do
       |> Map.from_struct()
       |> Map.put(:entrant_id, entrant.id)
 
-    EntrantLog.changeset(%EntrantLog{}, map)
+    %EntrantLog{}
+    |> EntrantLog.changeset(map)
     |> Repo.insert()
 
     tournament = Repo.get(Tournament, entrant.tournament_id)
@@ -1956,5 +1960,20 @@ defmodule Milk.Tournaments do
     TeamMember
     |> where([tm], tm.team_id == ^team_id)
     |> Repo.all()
+  end
+
+  @doc """
+  Create team invitation
+  """
+  def create_team_invitation(team_id, destination_id, sender_id, text) do
+    %TeamInvitation{}
+    |> TeamInvitation.changeset(%{"team_id" => team_id, "destination_id" => destination_id, "sender_id" => sender_id, "text" => text})
+    |> Repo.insert()
+    |> case do
+      {:ok, invitation} ->
+        {:ok, invitation}
+      {:error, error} ->
+        {:error, error}
+    end
   end
 end

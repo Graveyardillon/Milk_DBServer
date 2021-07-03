@@ -2138,4 +2138,34 @@ defmodule Milk.TournamentsTest do
       |> assert()
     end
   end
+
+  describe "create_team_invitation" do
+    test "works" do
+      tournament = fixture_tournament([is_started: false, is_team: true])
+      users = 1..5
+        |> Enum.to_list()
+        |> Enum.map(fn n ->
+          fixture_user(num: n)
+        end)
+        |> Enum.map(fn user ->
+          user.id
+        end)
+
+      [leader | users] = users
+      size = 5
+
+      {:ok, team} = Tournaments.create_team(tournament.id, size, leader, users)
+
+      Enum.each(users, fn user ->
+        team.id
+        |> Tournaments.create_team_invitation(user, leader, "test")
+        |> (fn {:ok, invitation} ->
+          assert invitation.team_id == team.id
+          assert invitation.destination_id == user
+          assert invitation.sender_id == leader
+          assert invitation.text == "test"
+        end).()
+      end)
+    end
+  end
 end
