@@ -2102,7 +2102,7 @@ defmodule Milk.TournamentsTest do
       end)
 
     [leader | members] = users
-    size = 5
+    size = n
 
     tournament.id
     |> Tournaments.create_team(size, leader, members)
@@ -2142,6 +2142,45 @@ defmodule Milk.TournamentsTest do
       end)
       |> length()
       |> Kernel.==(5)
+      |> assert()
+    end
+  end
+
+  describe "get_confirmed_teams" do
+    test "works" do
+      {tournament, users} = setup_team(2)
+      [leader | members] = users
+
+      tournament.id
+      |> Tournaments.get_confirmed_teams()
+      |> length()
+      |> Kernel.==(0)
+      |> assert()
+
+      team = tournament.id
+        |> Tournaments.get_teams_by_tournament_id()
+        |> hd()
+
+      team.id
+      |> Tournaments.get_team_members_by_team_id()
+      |> Enum.each(fn member ->
+        Tournaments.create_team_invitation(member.id, leader, "test")
+      end)
+
+      users
+      |> Enum.map(fn user_id ->
+        user_id
+        |> Tournaments.get_team_invitations_by_user_id()
+        |> hd()
+        |> Map.get(:id)
+        |> Tournaments.confirm_team_invitation()
+        |> elem(1)
+      end)
+
+      tournament.id
+      |> Tournaments.get_confirmed_teams()
+      |> length()
+      |> Kernel.==(1)
       |> assert()
     end
   end

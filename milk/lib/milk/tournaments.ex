@@ -1976,6 +1976,26 @@ defmodule Milk.Tournaments do
   end
 
   @doc """
+  Get confirmed teams of a tournament.
+  """
+  def get_confirmed_teams(tournament_id) do
+    Team
+    |> join(:inner, [t], tm in TeamMember, on: t.id == tm.team_id)
+    |> where([t, tm], t.tournament_id == ^tournament_id)
+    |> preload([t, tm], :team_member)
+    |> Repo.all()
+    |> Enum.filter(fn members_in_team ->
+      members_in_team.team_member
+      |> Enum.all?(fn member ->
+        member.is_invitation_confirmed
+      end)
+    end)
+    |> Enum.uniq_by(fn team_with_member_info ->
+      team_with_member_info.id
+    end)
+  end
+
+  @doc """
   Create team invitation
   """
   def create_team_invitation(team_member_id, sender_id, text) do
