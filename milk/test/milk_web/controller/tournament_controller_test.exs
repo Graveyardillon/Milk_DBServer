@@ -104,18 +104,55 @@ defmodule MilkWeb.TournamentControllerTest do
     end)
   end
 
-  def fixture_tournament(n \\ 0) do
+  defp fixture_tournament(opts \\ []) do
     Platforms.create_basic_platforms()
 
-    {:ok, user} =
-      %{
-        "name" => to_string(n) <> "name",
-        "email" => to_string(n) <> "e@mail.com",
-        "password" => "Password123"
-      }
-      |> Accounts.create_user()
+    num = opts[:num]
+      |> is_nil()
+      |> unless do
+        opts[:num]
+      else
+        0
+      end
 
-    {:ok, tournament} = Tournaments.create_tournament(%{@create_attrs | "master_id" => user.id})
+    is_started = opts[:is_started]
+      |> is_nil()
+      |> unless do
+        opts[:is_started]
+      else
+        false
+      end
+
+    is_team = opts[:is_team]
+      |> is_nil()
+      |> unless do
+        opts[:is_team]
+      else
+        false
+      end
+
+    master_id = opts[:master_id]
+      |> is_nil()
+      |> unless do
+        opts[:master_id]
+      else
+        {:ok, user} =
+          Accounts.create_user(%{
+            "name" => "#{num}name",
+            "email" => "e#{num}@mail.com",
+            "password" => "Password123"
+          })
+
+        user.id
+      end
+
+    {:ok, tournament} =
+      @create_attrs
+      |> Map.put("is_started", is_started)
+      |> Map.put("master_id", master_id)
+      |> Map.put("is_team", is_team)
+      |> Tournaments.create_tournament()
+
     tournament
   end
 
@@ -223,8 +260,9 @@ defmodule MilkWeb.TournamentControllerTest do
           end).()
     end
 
-    test "including both", %{conn: conn, tournament: tournament} do
-      tournament2 = fixture_tournament(1)
+    test "including both", %{conn: conn} do
+      tournament = fixture_tournament(num: 2)
+      tournament2 = fixture_tournament(num: 1)
 
       conn =
         post(conn, Routes.assistant_path(conn, :create),
@@ -914,7 +952,7 @@ defmodule MilkWeb.TournamentControllerTest do
 
     test "works", %{conn: conn, tournament: tournament} do
       tournaments = fixture_tournaments(3)
-      assistant_tournament = fixture_tournament(999)
+      assistant_tournament = fixture_tournament(num: 999)
 
       conn =
         post(conn, Routes.assistant_path(conn, :create),
