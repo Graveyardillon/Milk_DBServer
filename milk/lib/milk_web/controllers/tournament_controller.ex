@@ -1392,8 +1392,13 @@ defmodule MilkWeb.TournamentController do
   end
 
   @doc """
-  ## Process for best-of-format
-  Different from single elimination, best-of-format needs more information
-  for managing a tournament.
+  Get confirmed teams of a tournament.
   """
+  def get_confirmed_teams(conn, %{"tournament_id" => tournament_id}) do
+    teams = tournament_id
+      |> Tools.to_integer_as_needed()
+      |> Tournaments.get_confirmed_teams()
+
+    render(conn, "teams.json", teams: teams)
+  end
 end

@@ -3190,6 +3190,15 @@ defmodule MilkWeb.TournamentControllerTest do
     end
   end
 
+  describe "get_confirmed_teams" do
+    test "works", %{conn: conn} do
+      # {:ok, tournament} = @create_attrs
+      #   |> Map.put("master_id", user.id)
+      #   |> Map.put("is_team", true)
+      #   |> Tournaments.create_tournament()
+    end
+  end
+
   # describe "test trim of players" do
   #   setup [:create_tournament]
 

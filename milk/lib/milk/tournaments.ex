@@ -1977,6 +1977,7 @@ defmodule Milk.Tournaments do
 
   @doc """
   Get confirmed teams of a tournament.
+  This is similar to get_entrants.
   """
   def get_confirmed_teams(tournament_id) do
     Team
@@ -2031,7 +2032,6 @@ defmodule Milk.Tournaments do
 
   defp push_invitation_notification(%Notification{} = _notification) do
     # TODO: push通知に関する処理を書く
-
   end
 
   @doc """

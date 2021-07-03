@@ -323,6 +323,27 @@ defmodule MilkWeb.TournamentView do
     }
   end
 
+  def render("teams.json", %{teams: teams}) do
+    %{
+      data:
+        Enum.map(teams, fn team ->
+          %{
+            name: team.name,
+            size: team.size,
+            tournament_id: team.tournament_id,
+            team_member: Enum.map(team.team_member, fn member ->
+              %{
+                user_id: member.user_id,
+                team_id: member.team_id,
+                is_leader: member.is_leader,
+                is_invitation_confirmed: member.is_invitation_confirmed
+              }
+            end)
+          }
+        end)
+    }
+  end
+
   # def render("error.json", %{error: error, msg: "Creating tournament failed"}) do
   def render("error.json", %{error: error}) do
     if error do
