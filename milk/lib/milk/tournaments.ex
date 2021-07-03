@@ -1963,12 +1963,21 @@ defmodule Milk.Tournaments do
   end
 
   @doc """
+  Get invitations for a user.
+  """
+  def get_team_invitations_by_user_id(user_id) do
+    TeamInvitation
+    |> join(:inner, [ti], tm in TeamMember, on: ti.team_member_id == tm.id)
+    |> where([ti, tm], tm.user_id == ^user_id)
+    |> Repo.all()
+  end
+
+  @doc """
   Create team invitation
   """
   def create_team_invitation(team_member_id, sender_id, text) do
     %TeamInvitation{}
     |> TeamInvitation.changeset(%{"team_member_id" => team_member_id, "sender_id" => sender_id, "text" => text})
-    |> IO.inspect(label: :asdf)
     |> Repo.insert()
     |> case do
       {:ok, invitation} ->
@@ -1976,5 +1985,17 @@ defmodule Milk.Tournaments do
       {:error, error} ->
         {:error, error}
     end
+  end
+
+  @doc """
+  Confirm invitation.
+  """
+  def confirm_team_invitation(team_invitation_id) do
+    TeamMember
+    |> join(:inner, [tm], ti in TeamInvitation, on: tm.id == ti.team_member_id)
+    |> where([tm, ti], ti.id == ^team_invitation_id)
+    |> Repo.one()
+    |> TeamMember.changeset(%{"is_invitation_confirmed" => true})
+    |> Repo.update()
   end
 end
