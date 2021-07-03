@@ -1965,9 +1965,10 @@ defmodule Milk.Tournaments do
   @doc """
   Create team invitation
   """
-  def create_team_invitation(team_id, destination_id, sender_id, text) do
+  def create_team_invitation(team_member_id, sender_id, text) do
     %TeamInvitation{}
-    |> TeamInvitation.changeset(%{"team_id" => team_id, "destination_id" => destination_id, "sender_id" => sender_id, "text" => text})
+    |> TeamInvitation.changeset(%{"team_member_id" => team_member_id, "sender_id" => sender_id, "text" => text})
+    |> IO.inspect(label: :asdf)
     |> Repo.insert()
     |> case do
       {:ok, invitation} ->

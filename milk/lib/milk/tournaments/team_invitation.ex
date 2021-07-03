@@ -4,13 +4,14 @@ defmodule Milk.Tournaments.TeamInvitation do
   import Ecto.Changeset
 
   alias Milk.Accounts.User
-  alias Milk.Tournaments.Team
+  alias Milk.Tournaments.TeamMember
 
   schema "team_invitations" do
     field :text, :string
 
-    belongs_to :team, Team
-    belongs_to :destination, User
+    #belongs_to :team, Team
+    belongs_to :team_member, TeamMember
+    #belongs_to :destination, User
     belongs_to :sender, User
 
     timestamps()
@@ -19,6 +20,6 @@ defmodule Milk.Tournaments.TeamInvitation do
   @doc false
   def changeset(team_invitation, attrs) do
     team_invitation
-    |> cast(attrs, [:text, :team_id, :destination_id, :sender_id])
+    |> cast(attrs, [:text, :team_member_id, :sender_id])
   end
 end

@@ -2156,12 +2156,14 @@ defmodule Milk.TournamentsTest do
 
       {:ok, team} = Tournaments.create_team(tournament.id, size, leader, users)
 
-      Enum.each(users, fn user ->
-        team.id
-        |> Tournaments.create_team_invitation(user, leader, "test")
+      team.id
+      |> Tournaments.get_team_members_by_team_id()
+      |> Enum.each(fn member ->
+        IO.inspect(member)
+        member.id
+        |> Tournaments.create_team_invitation(leader, "test")
         |> (fn {:ok, invitation} ->
-          assert invitation.team_id == team.id
-          assert invitation.destination_id == user
+          assert invitation.team_member_id == member.id
           assert invitation.sender_id == leader
           assert invitation.text == "test"
         end).()
