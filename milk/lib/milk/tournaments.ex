@@ -13,6 +13,7 @@ defmodule Milk.Tournaments do
     Accounts,
     Chat,
     Log,
+    Notif,
     TournamentProgress,
     Relations,
     Repo
@@ -32,6 +33,8 @@ defmodule Milk.Tournaments do
     TournamentChatTopicLog,
     TournamentLog
   }
+
+  alias Milk.Notif.Notification
 
   alias Milk.Tournaments.{
     Assistant,
@@ -1981,10 +1984,34 @@ defmodule Milk.Tournaments do
     |> Repo.insert()
     |> case do
       {:ok, invitation} ->
+        invitation
+        |> Repo.preload(:team_member)
+        |> Repo.preload(:sender)
+        |> create_invitation_notification()
         {:ok, invitation}
       {:error, error} ->
         {:error, error}
     end
+  end
+
+  defp create_invitation_notification(invitation) do
+    %{
+      "user_id" => invitation.team_member.user_id,
+      "process_code" => 8,
+      "icon_path" => invitation.sender.icon_path,
+      "content" => to_string(invitation.sender_id),
+      "data" => invitation.team_member_id
+    }
+    |> Notif.create_notification()
+    |> case do
+      {:ok, notification} ->
+        push_invitation_notification(notification)
+    end
+  end
+
+  defp push_invitation_notification(%Notification{} = _notification) do
+    # TODO: push通知に関する処理を書く
+
   end
 
   @doc """

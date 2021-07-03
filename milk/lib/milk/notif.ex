@@ -175,7 +175,7 @@ defmodule Milk.Notif do
   @doc """
   Send push notification to iOS device.
   """
-  def push_ios(msg, device_token, process_code \\ -1, data \\ "") do
+  def push_ios(msg, device_token, _process_code, data \\ "") do
     msg
     |> Pigeon.APNS.Notification.new(device_token, topic())
     |> Pigeon.APNS.Notification.put_alert(%{"body" => msg, "title" => "e-players"})
