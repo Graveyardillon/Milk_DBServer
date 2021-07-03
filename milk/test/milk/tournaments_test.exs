@@ -694,15 +694,29 @@ defmodule Milk.TournamentsTest do
       user = fixture_user()
       tournament = fixture_tournament()
 
-      entrant_param =
+      entrant_params =
         @entrant_create_attrs
         |> Map.put("tournament_id", tournament.id)
         |> Map.put("user_id", user.id)
 
-      Tournaments.create_entrant(entrant_param)
+      Tournaments.create_entrant(entrant_params)
 
-      Tournaments.create_entrant(entrant_param)
-      |> Kernel.==({:error, "Already joined"})
+      Tournaments.create_entrant(entrant_params)
+      |> Kernel.==({:error, "already joined"})
+      |> assert()
+    end
+
+    test "create_entrant/1 returns a team error when the tournament requires team participation" do
+      user = fixture_user()
+      tournament = fixture_tournament(is_team: true)
+
+      entrant_params =
+        @entrant_create_attrs
+        |> Map.put("tournament_id", tournament.id)
+        |> Map.put("user_id", user.id)
+
+      Tournaments.create_entrant(entrant_params)
+      |> Kernel.==({:error, "requires team"})
       |> assert()
     end
 

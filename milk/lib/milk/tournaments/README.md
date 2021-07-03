@@ -36,14 +36,24 @@
 
 ## team.ex
 大会に参加するチームについてのスキーマ
-### teams
+チームで参加するタイプの大会はentrantの代わりにteamを利用すると考えて良い
+### fields
 
 | フィールド名 | 説明 |
 | --- | --- |
 | name | チーム名 |
-| member_id | user_id |
 | size | チームの最大人数 |
 | tournament_id | 参加する大会のid |
+
+## team_member.ex
+大会に参加するチームのメンバーについてのスキーマ
+
+### fields
+ | フィールド名 | 説明 |
+ | --- | --- |
+ | user_id | メンバーのユーザーid |
+ | team_id | 所属しているチームのid |
+ | is_leader | チームのリーダーかどうか |
 
 ## tournament.ex
 大会自体のスキーマ

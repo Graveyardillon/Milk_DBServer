@@ -634,9 +634,10 @@ defmodule Milk.Tournaments do
   """
   def create_entrant(attrs \\ %{}) do
     attrs
-    |> user_exist_check()
-    |> tournament_exist_check()
-    |> not_entrant_check()
+    |> user_exists?()
+    |> tournament_exists?()
+    |> is_not_team?()
+    |> already_participant?()
     |> insert()
     |> case do
       {:ok, entrant} -> join_tournament_chat_room_as_needed(entrant, attrs)
@@ -647,7 +648,7 @@ defmodule Milk.Tournaments do
     end
   end
 
-  defp user_exist_check(attrs) do
+  defp user_exists?(attrs) do
     with false <- is_nil(attrs["user_id"]),
          true <- Repo.exists?(from u in User, where: u.id == ^attrs["user_id"]) do
       {:ok, attrs}
@@ -656,7 +657,33 @@ defmodule Milk.Tournaments do
     end
   end
 
-  defp not_entrant_check({:ok, attrs}) do
+  defp tournament_exists?({:ok, attrs}) do
+    tournament = get_tournament(attrs["tournament_id"])
+    if tournament do
+      attrs = Map.put(attrs, "tournament", tournament)
+      {:ok, attrs}
+    else
+      {:error, "undefined tournament"}
+    end
+  end
+
+  defp tournament_exists?({:error, error}) do
+    {:error, error}
+  end
+
+  defp is_not_team?({:ok, attrs}) do
+    unless attrs["tournament"].is_team do
+      {:ok, attrs}
+    else
+      {:error, "requires team"}
+    end
+  end
+
+  defp is_not_team?({:error, error}) do
+    {:error, error}
+  end
+
+  defp already_participant?({:ok, attrs}) do
     unless Repo.exists?(
              from e in Entrant,
                where:
@@ -664,23 +691,11 @@ defmodule Milk.Tournaments do
            ) do
       {:ok, attrs}
     else
-      {:error, "Already joined"}
+      {:error, "already joined"}
     end
   end
 
-  defp not_entrant_check({:error, error}) do
-    {:error, error}
-  end
-
-  defp tournament_exist_check({:ok, attrs}) do
-    if Repo.exists?(from t in Tournament, where: t.id == ^attrs["tournament_id"]) do
-      {:ok, attrs}
-    else
-      {:error, "undefined tournament"}
-    end
-  end
-
-  defp tournament_exist_check({:error, error}) do
+  defp already_participant?({:error, error}) do
     {:error, error}
   end
 
@@ -1474,8 +1489,8 @@ defmodule Milk.Tournaments do
     tournament_id = attrs["tournament_id"]
 
     attrs
-    |> user_exist_check()
-    |> tournament_exist_check()
+    |> user_exists?()
+    |> tournament_exists?()
     |> tournament_start_check()
     |> case do
       {:ok, _} ->
@@ -1506,8 +1521,8 @@ defmodule Milk.Tournaments do
     tournament_id = attrs["tournament_id"]
 
     attrs
-    |> user_exist_check()
-    |> tournament_exist_check()
+    |> user_exists?()
+    |> tournament_exists?()
     |> tournament_start_check()
     |> case do
       {:ok, _} ->
