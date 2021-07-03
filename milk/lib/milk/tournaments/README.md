@@ -45,6 +45,17 @@
 | size | チームの最大人数 |
 | tournament_id | 参加する大会のid |
 
+## team_invitation.ex
+大会に参加するチームの招待についてのスキーマ
+
+### fields
+| フィールド名 | 説明 |
+| --- | --- |
+| destination_id | 宛先ユーザーのid |
+| sender_id | 差出人ユーザーのid |
+| team_id | 招待しているチームのid |
+| text | 招待の文章 |
+
 ## team_member.ex
 大会に参加するチームのメンバーについてのスキーマ
 

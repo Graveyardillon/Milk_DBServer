@@ -9,7 +9,9 @@ defmodule Milk.Tournaments.TeamMember do
   schema "team_members" do
     belongs_to :user, User
     belongs_to :team, Team
+
     field :is_leader, :boolean, default: false
+    field :is_invitation_confirmed, :boolean, default: false
 
     timestamps()
   end
@@ -17,6 +19,6 @@ defmodule Milk.Tournaments.TeamMember do
   @doc false
   def changeset(team, attrs) do
     team
-    |> cast(attrs, [:is_leader, :user_id, :team_id])
+    |> cast(attrs, [:is_leader, :is_invitation_confirmed, :user_id, :team_id])
   end
 end
