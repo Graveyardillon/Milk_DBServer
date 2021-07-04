@@ -2020,7 +2020,7 @@ defmodule Milk.Tournaments do
       "user_id" => invitation.team_member.user_id,
       "process_code" => 8,
       "icon_path" => invitation.sender.icon_path,
-      "content" => to_string(invitation.sender_id),
+      "content" => invitation.sender.name,
       "data" => invitation.team_member_id
     }
     |> Notif.create_notification()

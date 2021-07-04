@@ -1359,8 +1359,6 @@ defmodule MilkWeb.TournamentController do
       |> elem(1)
       |> List.flatten()
 
-    # |> IO.inspect(charlists: false)
-
     json(conn, %{result: true, data: match_list, count: 0})
   end
 
@@ -1400,5 +1398,20 @@ defmodule MilkWeb.TournamentController do
       |> Tournaments.get_confirmed_teams()
 
     render(conn, "teams.json", teams: teams)
+  end
+
+  @doc """
+  Confirm invitation of team
+  """
+  def confirm_invitation(conn, %{"invitation_id" => invitation_id}) do
+    invitation_id
+    |> Tools.to_integer_as_needed()
+    |> Tournaments.confirm_team_invitation()
+    |> case do
+      {:ok, _invitation} ->
+        json(conn, %{result: true})
+      {:error, error} ->
+        render(conn, "error.json", error: error)
+    end
   end
 end

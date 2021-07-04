@@ -2197,7 +2197,6 @@ defmodule Milk.TournamentsTest do
       team.id
       |> Tournaments.get_team_members_by_team_id()
       |> Enum.each(fn member ->
-        IO.inspect(member)
         member.id
         |> Tournaments.create_team_invitation(leader, "test")
         |> (fn {:ok, invitation} ->
