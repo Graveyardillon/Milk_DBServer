@@ -1997,6 +1997,27 @@ defmodule Milk.Tournaments do
   end
 
   @doc """
+  Check if the user has requested participation as a team.
+  """
+  def has_requested_as_team?(user_id, tournament_id) do
+    Team
+    |> join(:inner, [t], tm in TeamMember, on: t.id == tm.team_id)
+    |> where([t, tm], t.tournament_id == ^tournament_id)
+    |> preload([t, tm], :team_member)
+    |> Repo.all()
+    |> Enum.uniq_by(fn team_with_member_info ->
+      team_with_member_info.id
+    end)
+    |> Enum.any?(fn team ->
+      team
+      |> Map.get(:team_member)
+      |> Enum.any?(fn member ->
+        member.user_id == user_id
+      end)
+    end)
+  end
+
+  @doc """
   Create team invitation
   """
   def create_team_invitation(team_member_id, sender_id, text) do

@@ -2185,6 +2185,22 @@ defmodule Milk.TournamentsTest do
     end
   end
 
+  describe "has_requested_as_team?" do
+    test "works" do
+      {tournament, users} = setup_team(5)
+      [leader | users] = users
+      another_user = fixture_user(num: 666)
+
+      leader
+      |> Tournaments.has_requested_as_team?(tournament.id)
+      |> assert()
+
+      another_user
+      |> Tournaments.has_requested_as_team?(tournament.id)
+      |> refute()
+    end
+  end
+
   describe "create_team_invitation" do
     test "works" do
       {tournament, users} = setup_team(5)
