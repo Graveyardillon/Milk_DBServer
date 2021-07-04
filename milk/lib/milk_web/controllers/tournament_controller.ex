@@ -1389,29 +1389,4 @@ defmodule MilkWeb.TournamentController do
     json(conn, %{result: result})
   end
 
-  @doc """
-  Get confirmed teams of a tournament.
-  """
-  def get_confirmed_teams(conn, %{"tournament_id" => tournament_id}) do
-    teams = tournament_id
-      |> Tools.to_integer_as_needed()
-      |> Tournaments.get_confirmed_teams()
-
-    render(conn, "teams.json", teams: teams)
-  end
-
-  @doc """
-  Confirm invitation of team
-  """
-  def confirm_invitation(conn, %{"invitation_id" => invitation_id}) do
-    invitation_id
-    |> Tools.to_integer_as_needed()
-    |> Tournaments.confirm_team_invitation()
-    |> case do
-      {:ok, _invitation} ->
-        json(conn, %{result: true})
-      {:error, error} ->
-        render(conn, "error.json", error: error)
-    end
-  end
 end
