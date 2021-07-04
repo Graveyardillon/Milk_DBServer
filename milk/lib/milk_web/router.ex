@@ -131,7 +131,6 @@ defmodule MilkWeb.Router do
     get "/tournament/state", TournamentController, :state
     get "/tournament/pid", TournamentController, :get_pid
     get "/tournament/verify_password", TournamentController, :verify_password
-    get "/tournament/confirmed_teams", TournamentController, :get_confirmed_teams
     post "/tournament/start", TournamentController, :start
     post "/tournament/register/pid", TournamentController, :register_pid_of_start_notification
     post "/tournament/deleteloser", TournamentController, :delete_loser
@@ -161,6 +160,8 @@ defmodule MilkWeb.Router do
     delete "/entrant/delete", EntrantController, :delete
     resources "/entrant_log", EntrantLogController
     post "/entrant/rank/promote", EntrantController, :promote
+
+    get "/team/confirmed_teams", TeamController, :get_confirmed_teams
 
     resources "/assistant", AssistantController,
       except: [:new, :edit, :index, :show, :delete, :update]

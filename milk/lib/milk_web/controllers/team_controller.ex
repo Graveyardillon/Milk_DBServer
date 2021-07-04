@@ -26,7 +26,7 @@ defmodule MilkWeb.TeamController do
       |> Tools.to_integer_as_needed()
       |> Tournaments.get_confirmed_teams()
 
-    render(conn, "teams.json", teams: teams)
+    render(conn, "index.json", teams: teams)
   end
 
   @doc """
