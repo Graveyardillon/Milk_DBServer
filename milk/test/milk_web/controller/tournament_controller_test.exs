@@ -68,28 +68,6 @@ defmodule MilkWeb.TournamentControllerTest do
     "url" => nil
   }
 
-  @create_user_attrs %{
-    "icon_path" => "some icon_path",
-    "language" => "some language",
-    "name" => "some name",
-    "notification_number" => 42,
-    "point" => 42,
-    "email" => "some2@email.com",
-    "logout_fl" => true,
-    "password" => "S1ome password"
-  }
-
-  @create_user_attrs2 %{
-    "icon_path" => "some icon_path",
-    "language" => "some language",
-    "name" => "some sname",
-    "notification_number" => 42,
-    "point" => 42,
-    "email" => "somes2@email.com",
-    "logout_fl" => true,
-    "password" => "S1ome password"
-  }
-
   defp fixture_tournaments(num) do
     1..num
     |> Enum.map(fn n ->
@@ -112,26 +90,6 @@ defmodule MilkWeb.TournamentControllerTest do
       Tournaments.create_tournament(%{@create_incoming_attrs | "master_id" => user.id})
 
     tournament
-  end
-
-  defp fixture_user(opts \\ []) do
-    num_str =
-      opts[:num]
-      |> is_nil()
-      |> unless do
-        to_string(opts[:num])
-      else
-        "0"
-      end
-
-    {:ok, user} =
-      Accounts.create_user(%{
-        "name" => "name" <> num_str,
-        "email" => "e1" <> num_str <> "mail.com",
-        "password" => "Password123"
-      })
-
-    user
   end
 
   setup %{conn: conn} do

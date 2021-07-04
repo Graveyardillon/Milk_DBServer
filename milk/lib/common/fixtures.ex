@@ -73,6 +73,26 @@ defmodule Milk.Common.Fixtures do
 
         tournament
       end
+
+      def fixture_user(opts \\ []) do
+        num_str =
+          opts[:num]
+          |> is_nil()
+          |> unless do
+            to_string(opts[:num])
+          else
+            "0"
+          end
+
+        {:ok, user} =
+          Accounts.create_user(%{
+            "name" => "name" <> num_str,
+            "email" => "e1" <> num_str <> "mail.com",
+            "password" => "Password123"
+          })
+
+        user
+      end
     end
   end
 end
