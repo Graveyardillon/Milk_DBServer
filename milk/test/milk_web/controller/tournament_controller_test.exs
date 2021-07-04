@@ -1,5 +1,6 @@
 defmodule MilkWeb.TournamentControllerTest do
   use MilkWeb.ConnCase
+  use Milk.Common.Fixtures
 
   import Ecto.Query, warn: false
 
@@ -102,58 +103,6 @@ defmodule MilkWeb.TournamentControllerTest do
       {:ok, tournament} = Tournaments.create_tournament(%{@create_attrs | "master_id" => user.id})
       tournament
     end)
-  end
-
-  defp fixture_tournament(opts \\ []) do
-    Platforms.create_basic_platforms()
-
-    num = opts[:num]
-      |> is_nil()
-      |> unless do
-        opts[:num]
-      else
-        0
-      end
-
-    is_started = opts[:is_started]
-      |> is_nil()
-      |> unless do
-        opts[:is_started]
-      else
-        false
-      end
-
-    is_team = opts[:is_team]
-      |> is_nil()
-      |> unless do
-        opts[:is_team]
-      else
-        false
-      end
-
-    master_id = opts[:master_id]
-      |> is_nil()
-      |> unless do
-        opts[:master_id]
-      else
-        {:ok, user} =
-          Accounts.create_user(%{
-            "name" => "#{num}nname",
-            "email" => "ee#{num}@mail.com",
-            "password" => "Password123"
-          })
-
-        user.id
-      end
-
-    {:ok, tournament} =
-      @create_attrs
-      |> Map.put("is_started", is_started)
-      |> Map.put("master_id", master_id)
-      |> Map.put("is_team", is_team)
-      |> Tournaments.create_tournament()
-
-    tournament
   end
 
   def fixture_tournament_incoming() do
