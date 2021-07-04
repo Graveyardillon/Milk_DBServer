@@ -32,7 +32,7 @@ defmodule MilkWeb.TeamControllerTest do
     {tournament, users}
   end
 
-  describe "get_confirmed_teams" do
+  describe "get_confirmed_teams & convirm_invitation" do
     test "works", %{conn: conn} do
       {tournament, users} = setup_team(5)
       [leader | members] = users
@@ -55,13 +55,14 @@ defmodule MilkWeb.TeamControllerTest do
       end)
 
       users
-      |> Enum.map(fn user_id ->
-        user_id
-        |> Tournaments.get_team_invitations_by_user_id()
-        |> hd()
-        |> Map.get(:id)
-        |> Tournaments.confirm_team_invitation()
-        |> elem(1)
+      |> Enum.each(fn user_id ->
+        id = user_id
+          |> Tournaments.get_team_invitations_by_user_id()
+          |> hd()
+          |> Map.get(:id)
+
+        conn = post(conn, Routes.team_path(conn, :confirm_invitation), invitation_id: id)
+        assert json_response(conn, 200)["result"]
       end)
 
       conn = get(conn, Routes.team_path(conn, :get_confirmed_teams), tournament_id: tournament.id)

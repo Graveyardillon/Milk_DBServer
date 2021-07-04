@@ -162,6 +162,7 @@ defmodule MilkWeb.Router do
     post "/entrant/rank/promote", EntrantController, :promote
 
     get "/team/confirmed_teams", TeamController, :get_confirmed_teams
+    post "/team/invitation_confirm", TeamController, :confirm_invitation
 
     resources "/assistant", AssistantController,
       except: [:new, :edit, :index, :show, :delete, :update]
