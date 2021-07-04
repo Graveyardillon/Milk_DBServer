@@ -485,9 +485,9 @@ defmodule MilkWeb.TournamentController do
       end)
       |> Kernel.and(result)
 
+    requested? = Tournaments.has_requested_as_team?(user_id, tournament_id)
 
-
-    json(conn, %{result: result})
+    json(conn, %{result: result, has_requested_as_team: requested?})
   end
 
   @doc """
