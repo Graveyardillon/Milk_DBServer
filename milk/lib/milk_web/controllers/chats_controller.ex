@@ -5,6 +5,7 @@ defmodule MilkWeb.ChatsController do
     Tools,
     FileUtils
   }
+
   alias Milk.Chat
   alias Milk.Chat.Chats
   alias Milk.Media.Image
@@ -14,7 +15,8 @@ defmodule MilkWeb.ChatsController do
   TODO: 認証
   """
   def get_all_chats(conn, %{"room_id" => room_id}) do
-    chat_list = room_id
+    chat_list =
+      room_id
       |> Tools.to_integer_as_needed()
       |> Chat.get_all_chat_by_room_id_including_log()
 

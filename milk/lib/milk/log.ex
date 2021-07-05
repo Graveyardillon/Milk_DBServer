@@ -318,15 +318,6 @@ defmodule Milk.Log do
   Gets a single tournament.
 
   Raises `Ecto.NoResultsError` if the Tournament does not exist.
-
-  ## Examples
-
-      iex> get_tournament!(123)
-      %Tournament{}
-
-      iex> get_tournament!(456)
-      ** (Ecto.NoResultsError)
-
   """
   def get_tournament_log!(id), do: Repo.get(TournamentLog, id)
 

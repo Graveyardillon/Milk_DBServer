@@ -211,6 +211,7 @@ defmodule MilkWeb.UserControllerTest do
 
       ok_text = "ame"
       conn = get(conn, Routes.user_path(conn, :search), text: ok_text)
+
       json_response(conn, 200)
       |> Map.get("data")
       |> Enum.map(fn user ->

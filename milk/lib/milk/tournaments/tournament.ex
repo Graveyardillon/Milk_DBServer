@@ -11,6 +11,7 @@ defmodule Milk.Tournaments.Tournament do
   alias Milk.Tournaments.{
     Entrant,
     Assistant,
+    Team,
     TournamentChatTopic
   }
 
@@ -27,6 +28,7 @@ defmodule Milk.Tournaments.Tournament do
     field :count, :integer, default: 0
     field :game_name, :string
     field :is_started, :boolean, default: false
+    field :is_team, :boolean, default: false
     field :start_recruiting, EctoDate
 
     belongs_to :platform, Platform
@@ -36,6 +38,7 @@ defmodule Milk.Tournaments.Tournament do
     has_many :entrant, Entrant
     has_many :assistant, Assistant
     has_many :tournament_chat_topics, TournamentChatTopic
+    has_many :team, Team
 
     timestamps()
   end
@@ -58,6 +61,7 @@ defmodule Milk.Tournaments.Tournament do
       :master_id,
       :count,
       :is_started,
+      :is_team,
       :start_recruiting
     ])
     |> validate_required([:name, :event_date, :capacity, :deadline, :type])
@@ -97,6 +101,7 @@ defmodule Milk.Tournaments.Tournament do
       :master_id,
       :count,
       :is_started,
+      :is_team,
       :start_recruiting
     ])
     |> validate_required([:name, :event_date, :capacity, :deadline])

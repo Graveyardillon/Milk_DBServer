@@ -7,6 +7,7 @@ defmodule MilkWeb.NotifController do
     Accounts,
     Notif
   }
+
   alias Milk.CloudStorage.Objects
   alias Milk.Media.Image
   alias Milk.Notif.Notification
@@ -14,20 +15,22 @@ defmodule MilkWeb.NotifController do
   def get_list(conn, %{"user_id" => user_id}) do
     user_id = Tools.to_integer_as_needed(user_id)
 
-    notifs = user_id
+    notifs =
+      user_id
       |> Notif.list_notification()
       |> Enum.map(fn notification ->
         if is_nil(notification.icon_path) do
           Map.put(notification, :icon, nil)
         else
-          icon = notification.process_code
-          |> case do
-            1 -> read_icon(notification.icon_path)
-            4 -> read_icon(notification.icon_path)
-            5 -> read_icon(notification.icon_path)
-            6 -> read_thumbnail(notification.icon_path)
-            _ -> nil
-          end
+          icon =
+            notification.process_code
+            |> case do
+              1 -> read_icon(notification.icon_path)
+              4 -> read_icon(notification.icon_path)
+              5 -> read_icon(notification.icon_path)
+              6 -> read_thumbnail(notification.icon_path)
+              _ -> nil
+            end
 
           Map.put(notification, :icon, icon)
         end
@@ -96,6 +99,7 @@ defmodule MilkWeb.NotifController do
       {:ok, file} ->
         b64 = Base.encode64(file)
         %{b64: b64}
+
       _ ->
         %{error: "image not found"}
     end

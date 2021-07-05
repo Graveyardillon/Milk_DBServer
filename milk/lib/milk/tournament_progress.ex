@@ -159,7 +159,8 @@ defmodule Milk.TournamentProgress do
         Logger.error(message)
         []
 
-      _ -> false
+      _ ->
+        false
     end
   end
 
@@ -179,7 +180,8 @@ defmodule Milk.TournamentProgress do
         Logger.error(message)
         []
 
-      _ -> []
+      _ ->
+        []
     end
   end
 
@@ -211,6 +213,7 @@ defmodule Milk.TournamentProgress do
       {:error, %Redix.Error{message: message}} ->
         Logger.error(message)
         false
+
       _ ->
         false
     end
@@ -256,7 +259,8 @@ defmodule Milk.TournamentProgress do
         Logger.error(message)
         false
 
-      _ -> false
+      _ ->
+        false
     end
   end
 
@@ -272,7 +276,8 @@ defmodule Milk.TournamentProgress do
         Logger.error(message)
         []
 
-      _ -> []
+      _ ->
+        []
     end
   end
 
@@ -287,7 +292,8 @@ defmodule Milk.TournamentProgress do
         Logger.error(message)
         []
 
-      _ -> []
+      _ ->
+        []
     end
   end
 
@@ -325,7 +331,8 @@ defmodule Milk.TournamentProgress do
         Logger.error(message)
         false
 
-      _ -> false
+      _ ->
+        false
     end
   end
 
@@ -346,7 +353,8 @@ defmodule Milk.TournamentProgress do
         Logger.error(message)
         false
 
-      _ -> false
+      _ ->
+        false
     end
   end
 
@@ -366,7 +374,8 @@ defmodule Milk.TournamentProgress do
         Logger.error(message)
         []
 
-      _ -> []
+      _ ->
+        []
     end
   end
 
@@ -383,7 +392,8 @@ defmodule Milk.TournamentProgress do
         Logger.error(message)
         false
 
-      _ -> false
+      _ ->
+        false
     end
   end
 
@@ -403,7 +413,8 @@ defmodule Milk.TournamentProgress do
         Logger.error(message)
         false
 
-      _ -> false
+      _ ->
+        false
     end
   end
 
@@ -423,7 +434,8 @@ defmodule Milk.TournamentProgress do
         Logger.error(message)
         false
 
-      _ -> false
+      _ ->
+        false
     end
   end
 
@@ -440,7 +452,8 @@ defmodule Milk.TournamentProgress do
         Logger.error(message)
         []
 
-      _ -> []
+      _ ->
+        []
     end
   end
 
@@ -462,7 +475,8 @@ defmodule Milk.TournamentProgress do
         Logger.error(message)
         false
 
-      _ -> false
+      _ ->
+        false
     end
   end
 
@@ -478,7 +492,8 @@ defmodule Milk.TournamentProgress do
         Logger.error(message)
         false
 
-      _ -> false
+      _ ->
+        false
     end
   end
 
@@ -610,7 +625,8 @@ defmodule Milk.TournamentProgress do
         Logger.error(message)
         false
 
-      _ -> false
+      _ ->
+        false
     end
   end
 
@@ -630,7 +646,8 @@ defmodule Milk.TournamentProgress do
         Logger.error(message)
         false
 
-      _ -> false
+      _ ->
+        false
     end
   end
 
@@ -650,7 +667,8 @@ defmodule Milk.TournamentProgress do
         Logger.error(message)
         []
 
-      _ -> []
+      _ ->
+        []
     end
   end
 

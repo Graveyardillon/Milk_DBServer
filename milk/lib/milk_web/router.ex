@@ -161,6 +161,11 @@ defmodule MilkWeb.Router do
     resources "/entrant_log", EntrantLogController
     post "/entrant/rank/promote", EntrantController, :promote
 
+    get "/team/mates", TeamController, :get_teammates
+    get "/team/confirmed_teams", TeamController, :get_confirmed_teams
+    post "/team", TeamController, :create
+    post "/team/invitation_confirm", TeamController, :confirm_invitation
+
     resources "/assistant", AssistantController,
       except: [:new, :edit, :index, :show, :delete, :update]
 
@@ -183,7 +188,7 @@ defmodule MilkWeb.Router do
 
     post "/load_test/start", LoadTestController, :start
     post "/load_test/stop", LoadTestController, :stop
-    get "/load_test/download", LoadTestController,  :download
+    get "/load_test/download", LoadTestController, :download
 
     post "/register/device", DeviceController, :register_token
   end

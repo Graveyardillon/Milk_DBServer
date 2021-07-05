@@ -71,8 +71,7 @@ defmodule Milk.TournamentsTest do
 
   defp fixture_tournament(opts \\ []) do
     # FIXME: ここのデフォルト値は本当はfalseのほうがよさそう
-    is_started =
-      opts[:is_started]
+    is_started = opts[:is_started]
       |> is_nil()
       |> unless do
         opts[:is_started]
@@ -80,8 +79,15 @@ defmodule Milk.TournamentsTest do
         true
       end
 
-    master_id =
-      opts[:master_id]
+    is_team = opts[:is_team]
+      |> is_nil()
+      |> unless do
+        opts[:is_team]
+      else
+        false
+      end
+
+    master_id = opts[:master_id]
       |> is_nil()
       |> unless do
         opts[:master_id]
@@ -100,6 +106,7 @@ defmodule Milk.TournamentsTest do
       @valid_attrs
       |> Map.put("is_started", is_started)
       |> Map.put("master_id", master_id)
+      |> Map.put("is_team", is_team)
       |> Tournaments.create_tournament()
 
     tournament
@@ -169,7 +176,7 @@ defmodule Milk.TournamentsTest do
       opts["tournament_id"]
       |> is_nil()
       |> unless do
-        Tournaments.get_tournament!(opts["tournament_id"])
+        Tournaments.get_tournament(opts["tournament_id"])
       else
         fixture_tournament()
       end
@@ -191,6 +198,27 @@ defmodule Milk.TournamentsTest do
   end
 
   describe "get tournament" do
+    test "get_tournament/1" do
+      tournament = fixture_tournament()
+
+      t = Tournaments.get_tournament(tournament.id)
+      assert t.capacity == tournament.capacity
+      assert t.description == tournament.description
+      assert t.name == tournament.name
+      assert t.type == tournament.type
+      assert t.url == tournament.url
+      assert t.count == 0
+      assert t.entrant == []
+      refute t.is_team
+      assert t.game_name == tournament.game_name
+    end
+
+    test "get_tournament/1 fails" do
+      1
+      |> Tournaments.get_tournament()
+      |> is_nil()
+      |> assert()
+    end
 
     test "get_tournament_by_room_id works" do
       tournament = fixture_tournament()
@@ -201,8 +229,8 @@ defmodule Milk.TournamentsTest do
         room.id
         |> Tournaments.get_tournament_by_room_id()
         |> (fn t ->
-          assert t.id == tournament.id
-        end).()
+              assert t.id == tournament.id
+            end).()
       end)
     end
 
@@ -264,12 +292,6 @@ defmodule Milk.TournamentsTest do
     test "get_tournament/1 with valid data works fine" do
       tournament = fixture_tournament()
       assert %Tournament{} = obtained_tournament = Tournaments.get_tournament(tournament.id)
-      assert obtained_tournament.id == tournament.id
-    end
-
-    test "get_tournament!/1 with valid data works fine" do
-      tournament = fixture_tournament()
-      assert %Tournament{} = obtained_tournament = Tournaments.get_tournament!(tournament.id)
       assert obtained_tournament.id == tournament.id
     end
 
@@ -479,10 +501,14 @@ defmodule Milk.TournamentsTest do
 
     test "search/2 works" do
       user = fixture_user()
-      tomorrow = Timex.now()
+
+      tomorrow =
+        Timex.now()
         |> Timex.add(Timex.Duration.from_days(1))
         |> Timex.to_datetime()
-      yesterday = Timex.now()
+
+      yesterday =
+        Timex.now()
         |> Timex.add(Timex.Duration.from_days(-1))
         |> Timex.to_datetime()
 
@@ -684,22 +710,38 @@ defmodule Milk.TournamentsTest do
       user = fixture_user()
       tournament = fixture_tournament()
 
-      entrant_param = @entrant_create_attrs
-      |> Map.put("tournament_id", tournament.id)
-      |> Map.put("user_id", user.id)
-      Tournaments.create_entrant(entrant_param)
+      entrant_params =
+        @entrant_create_attrs
+        |> Map.put("tournament_id", tournament.id)
+        |> Map.put("user_id", user.id)
 
-      Tournaments.create_entrant(entrant_param)
-      |> Kernel.==({:error, "Already joined"})
+      Tournaments.create_entrant(entrant_params)
+
+      Tournaments.create_entrant(entrant_params)
+      |> Kernel.==({:error, "already joined"})
+      |> assert()
+    end
+
+    test "create_entrant/1 returns a team error when the tournament requires team participation" do
+      user = fixture_user()
+      tournament = fixture_tournament(is_team: true)
+
+      entrant_params =
+        @entrant_create_attrs
+        |> Map.put("tournament_id", tournament.id)
+        |> Map.put("user_id", user.id)
+
+      Tournaments.create_entrant(entrant_params)
+      |> Kernel.==({:error, "requires team"})
       |> assert()
     end
 
     test "create_entrant/1 returns a multi error when it runs with same parameter at one time." do
       # tournament and user for entrant_param
       user0 = fixture_user()
-      user1 = fixture_user([num: 0])
+      user1 = fixture_user(num: 0)
       tournament0 = fixture_tournament()
-      tournament1 = fixture_tournament([master_id: user1.id])
+      tournament1 = fixture_tournament(master_id: user1.id)
 
       entrant_param =
         @entrant_create_attrs
@@ -708,14 +750,19 @@ defmodule Milk.TournamentsTest do
 
       # entrant作成の並行タスク生成
       create_entrant_task0 = Task.async(fn -> Tournaments.create_entrant(entrant_param) end)
-      create_entrant_task1 = Task.async(fn -> Tournaments.create_entrant(%{entrant_param|"tournament_id" => tournament1.id}) end)
+
+      create_entrant_task1 =
+        Task.async(fn ->
+          Tournaments.create_entrant(%{entrant_param | "tournament_id" => tournament1.id})
+        end)
+
       create_entrant_task2 = Task.async(fn -> Tournaments.create_entrant(entrant_param) end)
 
       # 元のパラメータとそれぞれtournament_id, user_idのどちらかの重複，どちらも同じの合計4パターンのentrant作成結果の出力
       # 元のentrant_param
       assert {:ok, _} = Task.await(create_entrant_task0)
       # user_idのみ書き換えたパラメータ
-      assert {:ok, _} = Tournaments.create_entrant(%{entrant_param|"user_id" => user1.id})
+      assert {:ok, _} = Tournaments.create_entrant(%{entrant_param | "user_id" => user1.id})
       # tournament_idのみ書き換えたパラメータ
       assert {:ok, _} = Task.await(create_entrant_task1)
       # どちらも書き換えていないパラメータ
@@ -1171,7 +1218,6 @@ defmodule Milk.TournamentsTest do
   end
 
   describe "get assistant" do
-
     test "get_assistants/1 works" do
       assistant_attr = fixture(:assistant)
 
@@ -1189,8 +1235,8 @@ defmodule Milk.TournamentsTest do
       end)
       |> length()
       |> (fn len ->
-        assert len == 1
-      end).()
+            assert len == 1
+          end).()
     end
 
     test "get_assistants_by_user_id/1" do
@@ -1205,8 +1251,8 @@ defmodule Milk.TournamentsTest do
       end)
       |> length()
       |> (fn len ->
-        assert len == 1
-      end).()
+            assert len == 1
+          end).()
     end
   end
 
@@ -2057,6 +2103,201 @@ defmodule Milk.TournamentsTest do
       |> (fn list ->
             assert is_list(list)
           end).()
+    end
+  end
+
+  defp setup_team(n) do
+    tournament = fixture_tournament([is_started: false, is_team: true])
+    users = 1..n
+      |> Enum.to_list()
+      |> Enum.map(fn n ->
+        fixture_user(num: n)
+      end)
+      |> Enum.map(fn user ->
+        user.id
+      end)
+
+    [leader | members] = users
+    size = n
+
+    tournament.id
+    |> Tournaments.create_team(size, leader, members)
+    |> (fn {:ok, team} ->
+      assert team.tournament_id == tournament.id
+      assert team.size == size
+    end).()
+
+    {tournament, users}
+  end
+
+  describe "create_team and get_teams_by_tournament_id" do
+    test "works" do
+      {tournament, users} = setup_team(5)
+      [leader | users] = users
+
+      tournament.id
+      |> Tournaments.get_teams_by_tournament_id()
+      |> Enum.map(fn team ->
+        assert team.tournament_id == tournament.id
+      end)
+      |> length()
+      |> Kernel.==(1)
+      |> assert()
+
+      tournament.id
+      |> Tournaments.get_teams_by_tournament_id()
+      |> hd()
+      |> Map.get(:id)
+      |> Tournaments.get_team_members_by_team_id()
+      |> Enum.map(fn member ->
+        if member.is_leader do
+          assert member.user_id == leader
+        else
+          assert member.user_id in users
+        end
+      end)
+      |> length()
+      |> Kernel.==(5)
+      |> assert()
+    end
+  end
+
+  describe "get_teammates" do
+    test "works" do
+      {tournament, users} = setup_team(5)
+      [leader | users] = users
+
+      another_users = 6..10
+      |> Enum.to_list()
+      |> Enum.map(fn n ->
+        fixture_user(num: n)
+      end)
+      |> Enum.map(fn user ->
+        user.id
+      end)
+
+      [another_leader | another_members] = another_users
+      Tournaments.create_team(tournament.id, 5, another_leader, another_members)
+
+      tournament.id
+      |> Tournaments.get_teammates(leader)
+      |> Enum.map(fn member ->
+        assert member.user_id in users || member.user_id == leader
+      end)
+      |> length()
+      |> Kernel.==(5)
+      |> assert()
+    end
+  end
+
+  describe "get_confirmed_teams" do
+    test "works" do
+      {tournament, users} = setup_team(2)
+      [leader | members] = users
+
+      tournament.id
+      |> Tournaments.get_confirmed_teams()
+      |> length()
+      |> Kernel.==(0)
+      |> assert()
+
+      team = tournament.id
+        |> Tournaments.get_teams_by_tournament_id()
+        |> hd()
+
+      team.id
+      |> Tournaments.get_team_members_by_team_id()
+      |> Enum.each(fn member ->
+        Tournaments.create_team_invitation(member.id, leader, "test")
+      end)
+
+      users
+      |> Enum.map(fn user_id ->
+        user_id
+        |> Tournaments.get_team_invitations_by_user_id()
+        |> hd()
+        |> Map.get(:id)
+        |> Tournaments.confirm_team_invitation()
+        |> elem(1)
+      end)
+
+      tournament.id
+      |> Tournaments.get_confirmed_teams()
+      |> length()
+      |> Kernel.==(1)
+      |> assert()
+    end
+  end
+
+  describe "has_requested_as_team?" do
+    test "works" do
+      {tournament, users} = setup_team(5)
+      [leader | users] = users
+      another_user = fixture_user(num: 666)
+
+      leader
+      |> Tournaments.has_requested_as_team?(tournament.id)
+      |> assert()
+
+      another_user
+      |> Tournaments.has_requested_as_team?(tournament.id)
+      |> refute()
+    end
+  end
+
+  describe "create_team_invitation" do
+    test "works" do
+      {tournament, users} = setup_team(5)
+      [leader | users] = users
+
+      team = tournament.id
+        |> Tournaments.get_teams_by_tournament_id()
+        |> hd()
+
+      team.id
+      |> Tournaments.get_team_members_by_team_id()
+      |> Enum.each(fn member ->
+        member.id
+        |> Tournaments.create_team_invitation(leader, "test")
+        |> (fn {:ok, invitation} ->
+          assert invitation.team_member_id == member.id
+          assert invitation.sender_id == leader
+          assert invitation.text == "test"
+        end).()
+      end)
+    end
+  end
+
+  describe "confirm_team_invitation" do
+    test "works" do
+      {tournament, users} = setup_team(5)
+      [leader | users] = users
+
+      team = tournament.id
+        |> Tournaments.get_teams_by_tournament_id()
+        |> hd()
+
+      team.id
+      |> Tournaments.get_team_members_by_team_id()
+      |> Enum.each(fn member ->
+        Tournaments.create_team_invitation(member.id, leader, "test")
+      end)
+
+      users
+      |> Enum.map(fn user_id ->
+        user_id
+        |> Tournaments.get_team_invitations_by_user_id()
+        |> hd()
+        |> Map.get(:id)
+        |> Tournaments.confirm_team_invitation()
+        |> elem(1)
+      end)
+      |> Enum.map(fn invitation ->
+        assert invitation.is_invitation_confirmed
+      end)
+      |> length()
+      |> Kernel.==(4)
+      |> assert()
     end
   end
 end

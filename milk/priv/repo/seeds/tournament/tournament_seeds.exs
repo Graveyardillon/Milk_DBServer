@@ -65,6 +65,7 @@ attrs = %{
   "thumbnail_path" => "damn",
   "password" => nil,
   "game_name" => "my awesome name",
+  "is_team" => true,
   "start_recruiting" => now,
   "master_id" => user.id,
   "platform" => 1,

@@ -13,6 +13,7 @@ defmodule Milk.Tournaments do
     Accounts,
     Chat,
     Log,
+    Notif,
     TournamentProgress,
     Relations,
     Repo
@@ -33,9 +34,14 @@ defmodule Milk.Tournaments do
     TournamentLog
   }
 
+  alias Milk.Notif.Notification
+
   alias Milk.Tournaments.{
     Assistant,
     Entrant,
+    Team,
+    TeamInvitation,
+    TeamMember,
     Tournament,
     TournamentChatTopic
   }
@@ -138,7 +144,9 @@ defmodule Milk.Tournaments do
     |> where([tct], tct.chat_room_id == ^chat_room_id)
     |> Repo.one()
     |> case do
-      nil -> {:error, "the tournament was not found."}
+      nil ->
+        {:error, "the tournament was not found."}
+
       topic ->
         Tournament
         |> where([t], t.id == ^topic.tournament_id)
@@ -198,22 +206,29 @@ defmodule Milk.Tournaments do
   Gets a single tournament.
 
   Raises `Ecto.NoResultsError` if the Tournament does not exist.
-
-  ## Examples
-
-      iex> get_tournament!(123)
-      %Tournament{}
-
-      iex> get_tournament!(456)
-      ** (Ecto.NoResultsError)
-
   """
   def get_tournament(id) do
-    Repo.get(Tournament, id)
-  end
+    Tournament
+    |> Repo.get(id)
+    |> Repo.preload(:team)
+    |> Repo.preload(:entrant)
+    |> Repo.preload(:assistant)
+    |> Repo.preload(:master)
+    |> (fn tournament ->
+      if tournament do
+        entrants = tournament
+        |> Map.get(:entrant)
+        |> Enum.map(fn entrant ->
+          user = entrant
+            |> Repo.preload(:user)
+            |> Map.get(:user)
+            |> Repo.preload(:auth)
 
-  def get_tournament!(id) do
-    Repo.get!(Tournament, id)
+          Map.put(entrant, :user, user)
+        end)
+        Map.put(tournament, :entrant, entrants)
+      end
+    end).()
   end
 
   @doc """
@@ -223,6 +238,23 @@ defmodule Milk.Tournaments do
     Tournament
     |> where([t], t.url == ^url)
     |> Repo.one()
+    |> Repo.preload(:team)
+    |> Repo.preload(:entrant)
+    |> Repo.preload(:assistant)
+    |> Repo.preload(:master)
+    |> (fn tournament ->
+      entrants = tournament
+        |> Map.get(:entrant)
+        |> Enum.map(fn entrant ->
+          user = entrant
+            |> Repo.preload(:user)
+            |> Map.get(:user)
+            |> Repo.preload(:auth)
+
+          Map.put(entrant, :user, user)
+        end)
+      Map.put(tournament, :entrant, entrants)
+    end).()
   end
 
   @doc """
@@ -250,7 +282,7 @@ defmodule Milk.Tournaments do
     |> where([e], e.user_id == ^user_id)
     |> Repo.all()
     |> Enum.map(fn entrant ->
-      get_tournament!(entrant.tournament_id)
+      get_tournament(entrant.tournament_id)
     end)
   end
 
@@ -264,7 +296,7 @@ defmodule Milk.Tournaments do
     |> limit(5)
     |> Repo.all()
     |> Enum.map(fn entrant ->
-      get_tournament!(entrant.tournament_id)
+      get_tournament(entrant.tournament_id)
     end)
   end
 
@@ -272,7 +304,7 @@ defmodule Milk.Tournaments do
   Get a list of master users' information of a tournament
   """
   def get_masters(tournament_id) do
-    tournament = get_tournament!(tournament_id)
+    tournament = get_tournament(tournament_id)
 
     User
     |> where([u], u.id == ^tournament.master_id)
@@ -344,7 +376,9 @@ defmodule Milk.Tournaments do
           tab_index: tab["tab_index"]
         })
       else
-        Repo.insert(create_topic(tournament, tab["topic_name"], tab["tab_index"]))
+        tournament
+        |> create_topic(tab["topic_name"], tab["tab_index"])
+        |> Repo.insert()
       end
     end)
   end
@@ -404,7 +438,7 @@ defmodule Milk.Tournaments do
   Verify password.
   """
   def verify?(tournament_id, password) do
-    tournament = get_tournament!(tournament_id)
+    tournament = get_tournament(tournament_id)
     Argon2.verify_pass(password, tournament.password)
   end
 
@@ -459,7 +493,9 @@ defmodule Milk.Tournaments do
           match_list
           |> List.flatten()
           |> length()
-        _ -> 0
+
+        _ ->
+          0
       end
 
     match_list_with_fight_result_len =
@@ -470,7 +506,9 @@ defmodule Milk.Tournaments do
           match_list
           |> List.flatten()
           |> length()
-        _ -> 0
+
+        _ ->
+          0
       end
 
     if match_list_with_fight_result_len > 16 and match_list_len <= 16 do
@@ -626,9 +664,10 @@ defmodule Milk.Tournaments do
   """
   def create_entrant(attrs \\ %{}) do
     attrs
-    |> user_exist_check()
-    |> tournament_exist_check()
-    |> not_entrant_check()
+    |> user_exists?()
+    |> tournament_exists?()
+    |> is_not_team?()
+    |> already_participant?()
     |> insert()
     |> case do
       {:ok, entrant} -> join_tournament_chat_room_as_needed(entrant, attrs)
@@ -639,7 +678,7 @@ defmodule Milk.Tournaments do
     end
   end
 
-  defp user_exist_check(attrs) do
+  defp user_exists?(attrs) do
     with false <- is_nil(attrs["user_id"]),
          true <- Repo.exists?(from u in User, where: u.id == ^attrs["user_id"]) do
       {:ok, attrs}
@@ -648,7 +687,33 @@ defmodule Milk.Tournaments do
     end
   end
 
-  defp not_entrant_check({:ok, attrs}) do
+  defp tournament_exists?({:ok, attrs}) do
+    tournament = get_tournament(attrs["tournament_id"])
+    if tournament do
+      attrs = Map.put(attrs, "tournament", tournament)
+      {:ok, attrs}
+    else
+      {:error, "undefined tournament"}
+    end
+  end
+
+  defp tournament_exists?({:error, error}) do
+    {:error, error}
+  end
+
+  defp is_not_team?({:ok, attrs}) do
+    unless attrs["tournament"].is_team do
+      {:ok, attrs}
+    else
+      {:error, "requires team"}
+    end
+  end
+
+  defp is_not_team?({:error, error}) do
+    {:error, error}
+  end
+
+  defp already_participant?({:ok, attrs}) do
     unless Repo.exists?(
              from e in Entrant,
                where:
@@ -656,23 +721,11 @@ defmodule Milk.Tournaments do
            ) do
       {:ok, attrs}
     else
-      {:error, "Already joined"}
+      {:error, "already joined"}
     end
   end
 
-  defp not_entrant_check({:error, error}) do
-    {:error, error}
-  end
-
-  defp tournament_exist_check({:ok, attrs}) do
-    if Repo.exists?(from t in Tournament, where: t.id == ^attrs["tournament_id"]) do
-      {:ok, attrs}
-    else
-      {:error, "undefined tournament"}
-    end
-  end
-
-  defp tournament_exist_check({:error, error}) do
+  defp already_participant?({:error, error}) do
     {:error, error}
   end
 
@@ -830,7 +883,8 @@ defmodule Milk.Tournaments do
       |> Map.from_struct()
       |> Map.put(:entrant_id, entrant.id)
 
-    EntrantLog.changeset(%EntrantLog{}, map)
+    %EntrantLog{}
+    |> EntrantLog.changeset(map)
     |> Repo.insert()
 
     tournament = Repo.get(Tournament, entrant.tournament_id)
@@ -886,7 +940,7 @@ defmodule Milk.Tournaments do
     renew_match_list(tournament_id, match_list, loser_list)
     updated_match_list = TournamentProgress.get_match_list(tournament_id)
     renew_match_list_with_fight_result(tournament_id, loser_list)
-    #unless is_integer(updated_match_list), do: trim_match_list_as_needed(tournament_id)
+    # unless is_integer(updated_match_list), do: trim_match_list_as_needed(tournament_id)
 
     updated_match_list
   end
@@ -928,17 +982,18 @@ defmodule Milk.Tournaments do
       |> case do
         [] ->
           {:error, nil}
+
         match ->
           match
           |> get_opponent(loser)
           |> case do
             {:ok, opponent} ->
               promote_rank(%{"tournament_id" => tournament_id, "user_id" => opponent["id"]})
+
             {:wait, nil} ->
               {:wait, nil}
           end
       end
-
     end)
   end
 
@@ -1134,14 +1189,19 @@ defmodule Milk.Tournaments do
       :ok ->
         finish_topics(tournament_id)
         finish_tournament(tournament_id, winner_user_id)
-      :error -> false
-      _ -> false
+
+      :error ->
+        false
+
+      _ ->
+        false
     end
   end
 
   defp finish_tournament(tournament_id, winner_user_id) do
-    {:ok, tournament} = tournament_id
-      |> get_tournament!()
+    {:ok, tournament} =
+      tournament_id
+      |> get_tournament()
       |> delete_tournament()
 
     tournament
@@ -1379,11 +1439,13 @@ defmodule Milk.Tournaments do
   Get group chat tabs in a tournament including log.
   """
   def get_tabs_by_tournament_id(tournament_id) do
-    topics = TournamentChatTopic
+    topics =
+      TournamentChatTopic
       |> where([t], t.tournament_id == ^tournament_id)
       |> Repo.all()
 
-    logs = TournamentChatTopicLog
+    logs =
+      TournamentChatTopicLog
       |> where([tl], tl.tournament_id == ^tournament_id)
       |> Repo.all()
 
@@ -1458,8 +1520,8 @@ defmodule Milk.Tournaments do
     tournament_id = attrs["tournament_id"]
 
     attrs
-    |> user_exist_check()
-    |> tournament_exist_check()
+    |> user_exists?()
+    |> tournament_exists?()
     |> tournament_start_check()
     |> case do
       {:ok, _} ->
@@ -1468,16 +1530,17 @@ defmodule Milk.Tournaments do
         |> Map.get(:rank)
         |> check_exponentiation_of_two()
         |> (fn {bool, rank} ->
-          updated = if bool do
-            div(rank, 2)
-          else
-            find_num_closest_exponentiation_of_two(rank)
-          end
+              updated =
+                if bool do
+                  div(rank, 2)
+                else
+                  find_num_closest_exponentiation_of_two(rank)
+                end
 
-          user_id
-          |> get_entrant_by_user_id_and_tournament_id(tournament_id)
-          |> update_entrant(%{rank: updated})
-        end).()
+              user_id
+              |> get_entrant_by_user_id_and_tournament_id(tournament_id)
+              |> update_entrant(%{rank: updated})
+            end).()
 
       {:error, error} ->
         {:error, error}
@@ -1489,8 +1552,8 @@ defmodule Milk.Tournaments do
     tournament_id = attrs["tournament_id"]
 
     attrs
-    |> user_exist_check()
-    |> tournament_exist_check()
+    |> user_exists?()
+    |> tournament_exists?()
     |> tournament_start_check()
     |> case do
       {:ok, _} ->
@@ -1875,5 +1938,180 @@ defmodule Milk.Tournaments do
     match_list = Tournamex.win_count_increment(match_list, winner_id)
     TournamentProgress.delete_match_list_with_fight_result(tournament_id)
     TournamentProgress.insert_match_list_with_fight_result(match_list, tournament_id)
+  end
+
+  @doc """
+  Create a team.
+  """
+  def create_team(tournament_id, size, leader, user_id_list) when is_list(user_id_list) do
+    %Team{}
+    |> Team.changeset(%{"tournament_id" => tournament_id, "size" => size, "name" => ""})
+    |> Repo.insert()
+    |> case do
+      {:ok, team} ->
+        create_team_leader(team.id, leader)
+        create_team_members(team.id, user_id_list)
+        {:ok, team}
+      {:error, error} ->
+        {:error, error}
+    end
+  end
+
+  defp create_team_leader(team_id, leader_id) do
+    %TeamMember{}
+    |> TeamMember.changeset(%{"team_id" => team_id, "user_id" => leader_id, "is_leader" => true, "is_invitation_confirmed" => true})
+    |> Repo.insert()
+  end
+
+  defp create_team_members(team_id, user_id_list) do
+    Enum.each(user_id_list, fn id ->
+      %TeamMember{}
+      |> TeamMember.changeset(%{"team_id" => team_id, "user_id" => id})
+      |> Repo.insert()
+    end)
+  end
+
+  @doc """
+  Get teams by tournament_id.
+  """
+  def get_teams_by_tournament_id(tournament_id) do
+    Team
+    |> where([t], t.tournament_id == ^tournament_id)
+    |> Repo.all()
+  end
+
+  @doc """
+  Get team members by team id.
+  """
+  def get_team_members_by_team_id(team_id) do
+    TeamMember
+    |> where([tm], tm.team_id == ^team_id)
+    |> Repo.all()
+  end
+
+  @doc """
+  Get teams
+  """
+  def get_teammates(tournament_id, user_id) do
+    Team
+    |> join(:inner, [t], tm in TeamMember, on: t.id == tm.team_id)
+    |> where([t, tm], t.tournament_id == ^tournament_id)
+    |> preload([t, tm], :team_member)
+    |> Repo.all()
+    |> Enum.filter(fn team ->
+      team.team_member
+      |> Enum.any?(fn member ->
+        member.user_id == user_id
+      end)
+    end)
+    |> hd()
+    |> Map.get(:team_member)
+    |> Repo.preload(:user)
+    |> Enum.map(fn member ->
+      user = Repo.preload(member.user, :auth)
+      Map.put(member, :user, user)
+    end)
+  end
+
+  @doc """
+  Get invitations for a user.
+  """
+  def get_team_invitations_by_user_id(user_id) do
+    TeamInvitation
+    |> join(:inner, [ti], tm in TeamMember, on: ti.team_member_id == tm.id)
+    |> where([ti, tm], tm.user_id == ^user_id)
+    |> Repo.all()
+  end
+
+  @doc """
+  Get confirmed teams of a tournament.
+  This is similar to get_entrants.
+  """
+  def get_confirmed_teams(tournament_id) do
+    Team
+    |> join(:inner, [t], tm in TeamMember, on: t.id == tm.team_id)
+    |> where([t, tm], t.tournament_id == ^tournament_id)
+    |> preload([t, tm], :team_member)
+    |> Repo.all()
+    |> Enum.filter(fn members_in_team ->
+      members_in_team.team_member
+      |> Enum.all?(fn member ->
+        member.is_invitation_confirmed
+      end)
+    end)
+    |> Enum.uniq_by(fn team_with_member_info ->
+      team_with_member_info.id
+    end)
+  end
+
+  @doc """
+  Check if the user has requested participation as a team.
+  """
+  def has_requested_as_team?(user_id, tournament_id) do
+    Team
+    |> join(:inner, [t], tm in TeamMember, on: t.id == tm.team_id)
+    |> where([t, tm], t.tournament_id == ^tournament_id)
+    |> preload([t, tm], :team_member)
+    |> Repo.all()
+    |> Enum.uniq_by(fn team_with_member_info ->
+      team_with_member_info.id
+    end)
+    |> Enum.any?(fn team ->
+      team
+      |> Map.get(:team_member)
+      |> Enum.any?(fn member ->
+        member.user_id == user_id
+      end)
+    end)
+  end
+
+  @doc """
+  Create team invitation
+  """
+  def create_team_invitation(team_member_id, sender_id, text) do
+    %TeamInvitation{}
+    |> TeamInvitation.changeset(%{"team_member_id" => team_member_id, "sender_id" => sender_id, "text" => text})
+    |> Repo.insert()
+    |> case do
+      {:ok, invitation} ->
+        invitation
+        |> Repo.preload(:team_member)
+        |> Repo.preload(:sender)
+        |> create_invitation_notification()
+        {:ok, invitation}
+      {:error, error} ->
+        {:error, error}
+    end
+  end
+
+  defp create_invitation_notification(invitation) do
+    %{
+      "user_id" => invitation.team_member.user_id,
+      "process_code" => 8,
+      "icon_path" => invitation.sender.icon_path,
+      "content" => invitation.sender.name,
+      "data" => invitation.team_member_id
+    }
+    |> Notif.create_notification()
+    |> case do
+      {:ok, notification} ->
+        push_invitation_notification(notification)
+    end
+  end
+
+  defp push_invitation_notification(%Notification{} = _notification) do
+    # TODO: push通知に関する処理を書く
+  end
+
+  @doc """
+  Confirm invitation.
+  """
+  def confirm_team_invitation(team_invitation_id) do
+    TeamMember
+    |> join(:inner, [tm], ti in TeamInvitation, on: tm.id == ti.team_member_id)
+    |> where([tm, ti], ti.id == ^team_invitation_id)
+    |> Repo.one()
+    |> TeamMember.changeset(%{"is_invitation_confirmed" => true})
+    |> Repo.update()
   end
 end

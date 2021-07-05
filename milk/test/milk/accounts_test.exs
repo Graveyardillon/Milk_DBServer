@@ -503,9 +503,9 @@ defmodule Milk.AccountsTest do
       |> Accounts.register_device()
       |> elem(1)
       |> (fn device ->
-        assert device.token == token
-        assert device.user_id == user.id
-      end).()
+            assert device.token == token
+            assert device.user_id == user.id
+          end).()
 
       user.id
       |> Accounts.get_devices_by_user_id()
@@ -515,8 +515,8 @@ defmodule Milk.AccountsTest do
       end)
       |> length()
       |> (fn len ->
-        assert len == 1
-      end).()
+            assert len == 1
+          end).()
     end
   end
 
@@ -529,16 +529,16 @@ defmodule Milk.AccountsTest do
       |> Accounts.register_device()
       |> elem(1)
       |> (fn device ->
-        assert device.token == token
-        assert device.user_id == user.id
-      end).()
+            assert device.token == token
+            assert device.user_id == user.id
+          end).()
 
       token
       |> Accounts.get_device()
       |> (fn device ->
-        assert device.token == token
-        assert device.user_id == user.id
-      end).()
+            assert device.token == token
+            assert device.user_id == user.id
+          end).()
     end
   end
 end

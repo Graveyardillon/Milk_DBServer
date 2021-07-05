@@ -565,9 +565,10 @@ defmodule Milk.Accounts do
   def register_device(%{"user_id" => user_id, "device_id" => device_id}) do
     attrs = %{"user_id" => user_id, "token" => device_id}
 
-    with {:ok, device} <- %Device{}
-      |> Device.changeset(attrs)
-      |> Repo.insert() do
+    with {:ok, device} <-
+           %Device{}
+           |> Device.changeset(attrs)
+           |> Repo.insert() do
       {:ok, device}
     else
       {:error, error} -> {:error, Tools.create_error_message(error.errors)}

@@ -34,6 +34,38 @@
 | tournament_id | 大会のid |
 | chat_room_id | 関連付いたチャットルームのid |
 
+## team.ex
+大会に参加するチームについてのスキーマ
+チームで参加するタイプの大会はentrantの代わりにteamを利用すると考えて良い
+### fields
+
+| フィールド名 | 説明 |
+| --- | --- |
+| name | チーム名 |
+| size | チームの最大人数 |
+| tournament_id | 参加する大会のid |
+
+## team_invitation.ex
+大会に参加するチームの招待についてのスキーマ
+
+### fields
+| フィールド名 | 説明 |
+| --- | --- |
+| destination_id | 宛先ユーザーのid |
+| sender_id | 差出人ユーザーのid |
+| team_id | 招待しているチームのid |
+| text | 招待の文章 |
+
+## team_member.ex
+大会に参加するチームのメンバーについてのスキーマ
+
+### fields
+ | フィールド名 | 説明 |
+ | --- | --- |
+ | user_id | メンバーのユーザーid |
+ | team_id | 所属しているチームのid |
+ | is_leader | チームのリーダーかどうか |
+
 ## tournament.ex
 大会自体のスキーマ
 

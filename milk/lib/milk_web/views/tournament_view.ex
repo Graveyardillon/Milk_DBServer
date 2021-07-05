@@ -8,14 +8,23 @@ defmodule MilkWeb.TournamentView do
 
   def render("users.json", %{users: users}) do
     if users != [] do
-      %{data: render_many(users, UserView, "user.json"), result: true}
+      %{
+        data: render_many(users, UserView, "user.json"),
+        result: true
+      }
     else
-      %{data: nil, result: false}
+      %{
+        data: nil,
+        result: false
+      }
     end
   end
 
   def render("index.json", %{tournament: tournament}) do
-    %{data: render_many(tournament, TournamentView, "tournament.json"), result: true}
+    %{
+      data: render_many(tournament, TournamentView, "tournament.json"),
+      result: true
+    }
   end
 
   def render("show.json", %{tournament: tournament}) do
@@ -59,48 +68,8 @@ defmodule MilkWeb.TournamentView do
       url: tournament.url,
       create_time: tournament.create_time,
       update_time: tournament.update_time,
-      is_started: tournament.is_started
-    }
-  end
-
-  def render("tournament_info.json", %{tournament: tournament, entrants: entrants}) do
-    %{
-      data: %{
-        id: tournament.id,
-        name: tournament.name,
-        thumbnail_path: tournament.thumbnail_path,
-        game_id: tournament.game_id,
-        game_name: tournament.game_name,
-        event_date: tournament.event_date,
-        start_recruiting: tournament.start_recruiting,
-        deadline: tournament.deadline,
-        type: tournament.type,
-        platform: tournament.platform_id,
-        capacity: tournament.capacity,
-        # password: tournament.password,
-        has_password: !is_nil(tournament.password),
-        description: tournament.description,
-        master_id: tournament.master_id,
-        url: tournament.url,
-        create_time: tournament.create_time,
-        update_time: tournament.update_time,
-        is_started: tournament.is_started,
-        entrants:
-          Enum.map(entrants, fn user ->
-            %{
-              id: user.id,
-              name: user.name,
-              icon_path: user.icon_path,
-              point: user.point,
-              notification_number: user.notification_number,
-              language: user.language,
-              email: user.auth.email,
-              bio: user.bio
-            }
-          end)
-      },
-      is_log: false,
-      result: true
+      is_started: tournament.is_started,
+      is_team: tournament.is_team
     }
   end
 
@@ -126,10 +95,18 @@ defmodule MilkWeb.TournamentView do
         create_time: tournament.create_time,
         update_time: tournament.update_time,
         is_started: tournament.is_started,
+        is_team: tournament.is_team,
         entrants:
-          Enum.map(tournament.entrants, fn user ->
+          Enum.map(tournament.entrant, fn entrant ->
             %{
-              user_id: user.user_id
+              id: entrant.user.id,
+              name: entrant.user.name,
+              icon_path: entrant.user.icon_path,
+              point: entrant.user.point,
+              notification_number: entrant.user.notification_number,
+              language: entrant.user.language,
+              email: entrant.user.auth.email,
+              bio: entrant.user.bio
             }
           end)
       },
@@ -224,6 +201,7 @@ defmodule MilkWeb.TournamentView do
       create_time: tournament.create_time,
       update_time: tournament.update_time,
       is_started: tournament.is_started,
+      is_team: tournament.is_team,
       entrants:
         Enum.map(tournament.entrants, fn user ->
           %{
@@ -257,6 +235,7 @@ defmodule MilkWeb.TournamentView do
         password: tournament.password,
         description: tournament.description,
         master_id: tournament.master_id,
+        is_team: tournament.is_team,
         url: tournament.url,
         create_time: tournament.create_time,
         update_time: tournament.update_time,
@@ -313,6 +292,27 @@ defmodule MilkWeb.TournamentView do
             point: master.point,
             language: master.language,
             bio: master.bio
+          }
+        end)
+    }
+  end
+
+  def render("teams.json", %{teams: teams}) do
+    %{
+      data:
+        Enum.map(teams, fn team ->
+          %{
+            name: team.name,
+            size: team.size,
+            tournament_id: team.tournament_id,
+            team_member: Enum.map(team.team_member, fn member ->
+              %{
+                user_id: member.user_id,
+                team_id: member.team_id,
+                is_leader: member.is_leader,
+                is_invitation_confirmed: member.is_invitation_confirmed
+              }
+            end)
           }
         end)
     }

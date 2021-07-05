@@ -17,6 +17,6 @@ defmodule Milk.Tournaments.Entrant do
   def changeset(entrant, attrs) do
     entrant
     |> cast(attrs, [:rank])
-    |> unique_constraint([:user_id,:tournament_id], name: :entrants_user_id_tournament_id_index)
+    |> unique_constraint([:user_id, :tournament_id], name: :entrants_user_id_tournament_id_index)
   end
 end
