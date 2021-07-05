@@ -2255,4 +2255,26 @@ defmodule Milk.TournamentsTest do
       |> assert()
     end
   end
+
+  describe "delete_team" do
+    test "works" do
+      {tournament, users} = setup_team(5)
+      team = tournament.id
+        |> Tournaments.get_teams_by_tournament_id()
+        |> hd()
+
+      team.id
+      |> Tournaments.get_team()
+      |> is_nil()
+      |> refute()
+
+      assert {:ok, deleted_team} = Tournaments.delete_team(team.id)
+      assert deleted_team.id == team.id
+
+      team.id
+      |> Tournaments.get_team()
+      |> is_nil()
+      |> assert()
+    end
+  end
 end
