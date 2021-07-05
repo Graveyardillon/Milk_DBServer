@@ -25,11 +25,23 @@ defmodule MilkWeb.TeamController do
     leader_id = Tools.to_integer_as_needed(leader_id)
     user_id_list = Enum.map(user_id_list, fn user_id -> Tools.to_integer_as_needed(user_id) end)
 
+    # 人数確認
     tournament_id
-    |> Tournaments.create_team(size, leader_id, user_id_list)
-    |> case do
-      {:ok, team} -> render(conn, "show.json", team: team)
-      {:error, error} -> render(conn, "error.json", Tools.create_error_message(error))
+    |> Tournaments.get_confirmed_teams()
+    |> length()
+    |> (fn len ->
+      tournament = Tournaments.get_tournament(tournament_id)
+      tournament.capacity <= len
+    end).()
+    |> if do
+      render(conn, "error.json", error: "over tournament size")
+    else
+      tournament_id
+      |> Tournaments.create_team(size, leader_id, user_id_list)
+      |> case do
+        {:ok, team} -> render(conn, "show.json", team: team)
+        {:error, error} -> render(conn, "error.json", error: Tools.create_error_message(error))
+      end
     end
   end
 

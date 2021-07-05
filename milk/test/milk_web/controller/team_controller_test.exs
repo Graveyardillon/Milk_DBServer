@@ -95,6 +95,65 @@ defmodule MilkWeb.TeamControllerTest do
 
       assert json_response(conn, 200)["result"]
     end
+
+    test "over tournament size", %{conn: conn} do
+      tournament = fixture_tournament(capacity: 1)
+
+      leader_id = fixture_user(num: 1).id
+      user_id_list = 2..5
+        |> Enum.to_list()
+        |> Enum.map(fn n ->
+          user = fixture_user(num: n)
+          user.id
+        end)
+
+      conn = post(
+        conn,
+        Routes.team_path(conn, :create),
+        tournament_id: tournament.id,
+        size: 5,
+        leader_id: leader_id,
+        user_id_list: user_id_list
+      )
+
+      assert json_response(conn, 200)["result"]
+      team = json_response(conn, 200)["data"]
+
+      team["id"]
+      |> Tournaments.get_team_members_by_team_id()
+      |> Enum.each(fn member ->
+        Tournaments.create_team_invitation(member.id, leader_id, "test")
+      end)
+
+      user_id_list
+      |> Enum.map(fn user_id ->
+        user_id
+        |> Tournaments.get_team_invitations_by_user_id()
+        |> hd()
+        |> Map.get(:id)
+        |> Tournaments.confirm_team_invitation()
+        |> elem(1)
+      end)
+
+      leader_id = fixture_user(num: 6)
+      user_id_list = 7..10
+        |> Enum.to_list()
+        |> Enum.map(fn n ->
+          user = fixture_user(num: n)
+          user.id
+        end)
+
+      conn = post(
+          conn,
+          Routes.team_path(conn, :create),
+          tournament_id: tournament.id,
+          size: 5,
+          leader_id: leader_id,
+          user_id_list: user_id_list
+        )
+
+      assert json_response(conn, 200)["error"] == "over tournament size"
+    end
   end
 
   describe "get_confirmed_teams & convirm_invitation" do

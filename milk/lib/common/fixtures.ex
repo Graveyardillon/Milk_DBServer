@@ -33,6 +33,14 @@ defmodule Milk.Common.Fixtures do
             0
           end
 
+        capacity = opts[:capacity]
+          |> is_nil()
+          |> unless do
+            opts[:capacity]
+          else
+            create_attrs["capacity"]
+          end
+
         is_started = opts[:is_started]
           |> is_nil()
           |> unless do
@@ -69,6 +77,7 @@ defmodule Milk.Common.Fixtures do
           |> Map.put("is_started", is_started)
           |> Map.put("master_id", master_id)
           |> Map.put("is_team", is_team)
+          |> Map.put("capacity", capacity)
           |> Tournaments.create_tournament()
 
         tournament

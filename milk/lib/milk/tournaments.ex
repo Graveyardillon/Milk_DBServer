@@ -1935,7 +1935,7 @@ defmodule Milk.Tournaments do
 
   defp create_team_leader(team_id, leader_id) do
     %TeamMember{}
-    |> TeamMember.changeset(%{"team_id" => team_id, "user_id" => leader_id, "is_leader" => true})
+    |> TeamMember.changeset(%{"team_id" => team_id, "user_id" => leader_id, "is_leader" => true, "is_invitation_confirmed" => true})
     |> Repo.insert()
   end
 
