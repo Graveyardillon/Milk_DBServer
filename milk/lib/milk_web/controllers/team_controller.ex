@@ -4,19 +4,19 @@ defmodule MilkWeb.TeamController do
   alias Common.Tools
   alias Milk.Tournaments
 
-  # @doc """
-  # Create team.
-  # """
-  # def create_team(conn, %{"tournament_id" => tournament_id, "size" => size, "leader_id", leader_id, "user_id_list" => user_id_list}) do
-  #   tournament_id = Tools.to_integer_as_needed(tournament_id)
-  #   size = Tools.to_integer_as_needed(size)
-  #   leader_id = Tools.to_integer_as_needed(leader_id)
-  #   user_id_list = Enum.map(fn user_id -> Tools.to_integer_as_needed(user_id) end)
+  @doc """
+  Create team.
+  """
+  def create(conn, %{"tournament_id" => tournament_id, "size" => size, "leader_id" => leader_id, "user_id_list" => user_id_list}) do
+    tournament_id = Tools.to_integer_as_needed(tournament_id)
+    size = Tools.to_integer_as_needed(size)
+    leader_id = Tools.to_integer_as_needed(leader_id)
+    user_id_list = Enum.map(user_id_list, fn user_id -> Tools.to_integer_as_needed(user_id) end)
 
-  #   Tournaments.create_team(tournament_id, size, leader_id, user_id_list)
+    {:ok, team} = Tournaments.create_team(tournament_id, size, leader_id, user_id_list)
 
-  #   render
-  # end
+    render(conn, "show.json", team: team)
+  end
 
   @doc """
   Get confirmed teams of a tournament.
