@@ -214,6 +214,21 @@ defmodule Milk.Tournaments do
     |> Repo.preload(:entrant)
     |> Repo.preload(:assistant)
     |> Repo.preload(:master)
+    |> (fn tournament ->
+      if tournament do
+        entrants = tournament
+        |> Map.get(:entrant)
+        |> Enum.map(fn entrant ->
+          user = entrant
+            |> Repo.preload(:user)
+            |> Map.get(:user)
+            |> Repo.preload(:auth)
+
+          Map.put(entrant, :user, user)
+        end)
+        Map.put(tournament, :entrant, entrants)
+      end
+    end).()
   end
 
   @doc """
@@ -227,6 +242,19 @@ defmodule Milk.Tournaments do
     |> Repo.preload(:entrant)
     |> Repo.preload(:assistant)
     |> Repo.preload(:master)
+    |> (fn tournament ->
+      entrants = tournament
+        |> Map.get(:entrant)
+        |> Enum.map(fn entrant ->
+          user = entrant
+            |> Repo.preload(:user)
+            |> Map.get(:user)
+            |> Repo.preload(:auth)
+
+          Map.put(entrant, :user, user)
+        end)
+      Map.put(tournament, :entrant, entrants)
+    end).()
   end
 
   @doc """

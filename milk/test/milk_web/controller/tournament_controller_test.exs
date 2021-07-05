@@ -294,6 +294,14 @@ defmodule MilkWeb.TournamentControllerTest do
             assert tournament["platform"] == @create_attrs["platform"]
             assert tournament["type"] == @create_attrs["type"]
             assert tournament["url"] == @create_attrs["url"]
+
+            tournament["entrants"]
+            |> Enum.map(fn user ->
+              assert user["id"] == tournament["master_id"]
+            end)
+            |> length()
+            |> Kernel.==(1)
+            |> assert()
           end).()
 
       ActionHistory

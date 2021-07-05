@@ -97,9 +97,16 @@ defmodule MilkWeb.TournamentView do
         is_started: tournament.is_started,
         is_team: tournament.is_team,
         entrants:
-          Enum.map(tournament.entrant, fn user ->
+          Enum.map(tournament.entrant, fn entrant ->
             %{
-              user_id: user.user_id
+              id: entrant.user.id,
+              name: entrant.user.name,
+              icon_path: entrant.user.icon_path,
+              point: entrant.user.point,
+              notification_number: entrant.user.notification_number,
+              language: entrant.user.language,
+              email: entrant.user.auth.email,
+              bio: entrant.user.bio
             }
           end)
       },

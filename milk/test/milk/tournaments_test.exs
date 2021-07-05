@@ -198,6 +198,28 @@ defmodule Milk.TournamentsTest do
   end
 
   describe "get tournament" do
+    test "get_tournament/1" do
+      tournament = fixture_tournament()
+
+      t = Tournaments.get_tournament(tournament.id)
+      assert t.capacity == tournament.capacity
+      assert t.description == tournament.description
+      assert t.name == tournament.name
+      assert t.type == tournament.type
+      assert t.url == tournament.url
+      assert t.count == 0
+      assert t.entrant == []
+      refute t.is_team
+      assert t.game_name == tournament.game_name
+    end
+
+    test "get_tournament/1 fails" do
+      1
+      |> Tournaments.get_tournament()
+      |> is_nil()
+      |> assert()
+    end
+
     test "get_tournament_by_room_id works" do
       tournament = fixture_tournament()
 
