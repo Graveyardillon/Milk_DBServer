@@ -1391,5 +1391,4 @@ defmodule MilkWeb.TournamentController do
 
     json(conn, %{result: result})
   end
-
 end

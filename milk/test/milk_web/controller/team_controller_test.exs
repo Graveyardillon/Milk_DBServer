@@ -59,6 +59,8 @@ defmodule MilkWeb.TeamControllerTest do
         assert data["tournament_id"] == tournament.id
         assert data["size"] == size
       end).()
+
+      assert json_response(conn, 200)["result"]
     end
   end
 

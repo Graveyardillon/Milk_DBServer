@@ -5,13 +5,15 @@ defmodule MilkWeb.TeamView do
 
   def render("index.json", %{teams: teams}) do
     %{
-      data: render_many(teams, TeamView, "team.json")
+      data: render_many(teams, TeamView, "team.json"),
+      result: true
     }
   end
 
   def render("show.json", %{team: team}) do
     %{
-      data: render_one(team, TeamView, "team.json")
+      data: render_one(team, TeamView, "team.json"),
+      result: true
     }
   end
 
@@ -22,5 +24,13 @@ defmodule MilkWeb.TeamView do
       size: team.size,
       tournament_id: team.tournament_id
     }
+  end
+
+  def render("error.json", %{error: error}) do
+    if error do
+      %{result: false, error: error, data: nil}
+    else
+      %{result: false, error: nil, data: nil}
+    end
   end
 end
