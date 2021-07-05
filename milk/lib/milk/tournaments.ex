@@ -1982,6 +1982,11 @@ defmodule Milk.Tournaments do
     end)
     |> hd()
     |> Map.get(:team_member)
+    |> Repo.preload(:user)
+    |> Enum.map(fn member ->
+      user = Repo.preload(member.user, :auth)
+      Map.put(member, :user, user)
+    end)
   end
 
   @doc """
