@@ -6,6 +6,7 @@ defmodule Milk.Repo.Migrations.CreateTeamTable do
       add :name, :string
       add :size, :integer
       add :tournament_id, references(:tournaments, on_delete: :delete_all)
+      add :icon_path, :string
 
       timestamps()
     end

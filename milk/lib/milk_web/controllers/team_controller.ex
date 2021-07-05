@@ -25,9 +25,12 @@ defmodule MilkWeb.TeamController do
     leader_id = Tools.to_integer_as_needed(leader_id)
     user_id_list = Enum.map(user_id_list, fn user_id -> Tools.to_integer_as_needed(user_id) end)
 
-    {:ok, team} = Tournaments.create_team(tournament_id, size, leader_id, user_id_list)
-
-    render(conn, "show.json", team: team)
+    tournament_id
+    |> Tournaments.create_team(size, leader_id, user_id_list)
+    |> case do
+      {:ok, team} -> render(conn, "show.json", team: team)
+      {:error, error} -> render(conn, "error.json", Tools.create_error_message(error))
+    end
   end
 
   @doc """
