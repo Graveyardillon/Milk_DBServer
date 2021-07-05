@@ -2223,6 +2223,11 @@ defmodule Milk.TournamentsTest do
         |> hd()
 
       team.id
+      |> Tournaments.get_team()
+      |> Map.get(:is_confirmed)
+      |> refute()
+
+      team.id
       |> Tournaments.get_team_members_by_team_id()
       |> Enum.each(fn member ->
         Tournaments.create_team_invitation(member.id, leader, "test")
@@ -2242,6 +2247,11 @@ defmodule Milk.TournamentsTest do
       end)
       |> length()
       |> Kernel.==(4)
+      |> assert()
+
+      team.id
+      |> Tournaments.get_team()
+      |> Map.get(:is_confirmed)
       |> assert()
     end
   end

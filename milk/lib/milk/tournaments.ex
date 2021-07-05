@@ -1972,6 +1972,15 @@ defmodule Milk.Tournaments do
   end
 
   @doc """
+  Get a team.
+  """
+  def get_team(team_id) do
+    Team
+    |> Repo.get(team_id)
+    |> Repo.preload(:team_member)
+  end
+
+  @doc """
   Get teams by tournament_id.
   """
   def get_teams_by_tournament_id(tournament_id) do
