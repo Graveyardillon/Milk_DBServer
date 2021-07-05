@@ -223,6 +223,10 @@ defmodule Milk.Tournaments do
     Tournament
     |> where([t], t.url == ^url)
     |> Repo.one()
+    |> Repo.preload(:team)
+    |> Repo.preload(:entrant)
+    |> Repo.preload(:assistant)
+    |> Repo.preload(:master)
   end
 
   @doc """

@@ -172,18 +172,12 @@ defmodule MilkWeb.TournamentController do
     tournament_log = Log.get_tournament_log_by_tournament_id(id)
 
     if tournament do
-      entrants =
-        Tournaments.get_entrants(tournament.id)
-        |> Enum.map(fn entrant ->
-          Accounts.get_user(entrant.user_id)
-        end)
-
       unless is_nil(user_id) do
         %{"user_id" => user_id, "game_name" => tournament.game_name, "score" => 1}
         |> Accounts.gain_score()
       end
 
-      render(conn, "tournament_info.json", tournament: tournament, entrants: entrants)
+      render(conn, "tournament_info.json", tournament: tournament)
     else
       if tournament_log do
         entrants = Log.get_entrant_logs_by_tournament_id(tournament_log.tournament_id)
@@ -1134,7 +1128,7 @@ defmodule MilkWeb.TournamentController do
   """
   def get_tournament_by_url(conn, %{"url" => url}) do
     tournament = Tournaments.get_tournament_by_url(url)
-    render(conn, "tournament_info.json", tournament: tournament, entrants: [])
+    render(conn, "tournament_info.json", tournament: tournament)
   end
 
   @doc """
