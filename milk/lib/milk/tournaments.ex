@@ -2113,5 +2113,32 @@ defmodule Milk.Tournaments do
     |> Repo.one()
     |> TeamMember.changeset(%{"is_invitation_confirmed" => true})
     |> Repo.update()
+    |> case do
+      {:ok, team_member} ->
+        verify_team_as_needed(team_member.team_id)
+        {:ok, team_member}
+      {:error, error} ->
+        {:error, error}
+    end
+  end
+
+  @doc """
+  Verify team.
+  """
+  def verify_team_as_needed(team_id) do
+    confirmed_count = TeamMember
+      |> where([tm], tm.team_id == ^team_id)
+      |> where([tm], tm.is_invitation_confirmed)
+      |> Repo.aggregate(:count)
+
+    team = Repo.get(Team, team_id)
+
+    if confirmed_count >= team.size do
+      Team
+      |> where([t], t.id == ^team_id)
+      |> Repo.one()
+      |> Team.changeset(%{"is_confirmed" => true})
+      |> Repo.update()
+    end
   end
 end

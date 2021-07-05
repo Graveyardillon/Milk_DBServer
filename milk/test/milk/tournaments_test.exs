@@ -2052,7 +2052,7 @@ defmodule Milk.TournamentsTest do
   end
 
   defp setup_team(n) do
-    tournament = fixture_tournament([is_started: false, is_team: true])
+    tournament = fixture_tournament([is_started: false, is_team: true, capacity: 2])
     users = 1..n
       |> Enum.to_list()
       |> Enum.map(fn n ->

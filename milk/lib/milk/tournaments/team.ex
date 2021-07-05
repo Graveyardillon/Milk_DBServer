@@ -10,7 +10,7 @@ defmodule Milk.Tournaments.Team do
     field :name, :string
     field :size, :integer
     field :icon_path, :string
-    field :is_confirmed, :boolean
+    field :is_confirmed, :boolean, default: false
 
     belongs_to :tournament, Tournament
     has_many :team_member, TeamMember
