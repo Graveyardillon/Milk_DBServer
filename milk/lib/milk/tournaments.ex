@@ -206,15 +206,6 @@ defmodule Milk.Tournaments do
   Gets a single tournament.
 
   Raises `Ecto.NoResultsError` if the Tournament does not exist.
-
-  ## Examples
-
-      iex> get_tournament!(123)
-      %Tournament{}
-
-      iex> get_tournament!(456)
-      ** (Ecto.NoResultsError)
-
   """
   def get_tournament(id) do
     Tournament
@@ -223,10 +214,6 @@ defmodule Milk.Tournaments do
     |> Repo.preload(:entrant)
     |> Repo.preload(:assistant)
     |> Repo.preload(:master)
-  end
-
-  def get_tournament!(id) do
-    Repo.get!(Tournament, id)
   end
 
   @doc """
@@ -263,7 +250,7 @@ defmodule Milk.Tournaments do
     |> where([e], e.user_id == ^user_id)
     |> Repo.all()
     |> Enum.map(fn entrant ->
-      get_tournament!(entrant.tournament_id)
+      get_tournament(entrant.tournament_id)
     end)
   end
 
@@ -277,7 +264,7 @@ defmodule Milk.Tournaments do
     |> limit(5)
     |> Repo.all()
     |> Enum.map(fn entrant ->
-      get_tournament!(entrant.tournament_id)
+      get_tournament(entrant.tournament_id)
     end)
   end
 
@@ -285,7 +272,7 @@ defmodule Milk.Tournaments do
   Get a list of master users' information of a tournament
   """
   def get_masters(tournament_id) do
-    tournament = get_tournament!(tournament_id)
+    tournament = get_tournament(tournament_id)
 
     User
     |> where([u], u.id == ^tournament.master_id)
@@ -419,7 +406,7 @@ defmodule Milk.Tournaments do
   Verify password.
   """
   def verify?(tournament_id, password) do
-    tournament = get_tournament!(tournament_id)
+    tournament = get_tournament(tournament_id)
     Argon2.verify_pass(password, tournament.password)
   end
 
@@ -1182,7 +1169,7 @@ defmodule Milk.Tournaments do
   defp finish_tournament(tournament_id, winner_user_id) do
     {:ok, tournament} =
       tournament_id
-      |> get_tournament!()
+      |> get_tournament()
       |> delete_tournament()
 
     tournament

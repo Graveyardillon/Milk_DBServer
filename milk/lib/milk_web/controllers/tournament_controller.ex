@@ -315,7 +315,7 @@ defmodule MilkWeb.TournamentController do
   Update a tournament.
   """
   def update(conn, %{"tournament_id" => id, "tournament" => tournament_params}) do
-    tournament = Tournaments.get_tournament!(id)
+    tournament = Tournaments.get_tournament(id)
 
     if tournament do
       case tournament_params["join"] do
@@ -1362,7 +1362,7 @@ defmodule MilkWeb.TournamentController do
 
     # FIXME: エラーハンドリング
     tournament_id
-    |> Tournaments.get_tournament!()
+    |> Tournaments.get_tournament()
     |> Tournaments.update_tournament(%{"start_notification_pid" => pid})
     |> case do
       {:ok, _tournament} -> json(conn, %{result: true})

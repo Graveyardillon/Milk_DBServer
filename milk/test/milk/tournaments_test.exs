@@ -176,7 +176,7 @@ defmodule Milk.TournamentsTest do
       opts["tournament_id"]
       |> is_nil()
       |> unless do
-        Tournaments.get_tournament!(opts["tournament_id"])
+        Tournaments.get_tournament(opts["tournament_id"])
       else
         fixture_tournament()
       end
@@ -270,12 +270,6 @@ defmodule Milk.TournamentsTest do
     test "get_tournament/1 with valid data works fine" do
       tournament = fixture_tournament()
       assert %Tournament{} = obtained_tournament = Tournaments.get_tournament(tournament.id)
-      assert obtained_tournament.id == tournament.id
-    end
-
-    test "get_tournament!/1 with valid data works fine" do
-      tournament = fixture_tournament()
-      assert %Tournament{} = obtained_tournament = Tournaments.get_tournament!(tournament.id)
       assert obtained_tournament.id == tournament.id
     end
 
