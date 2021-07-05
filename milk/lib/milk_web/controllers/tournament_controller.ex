@@ -462,7 +462,7 @@ defmodule MilkWeb.TournamentController do
   大会キャパシティチェック
   ユーザーの参加している他の大会との時間帯チェック
   TODO: そして自分がすでに参加していないか
-  TODO: チームとしてリクエストをすでに送信していないか
+  TODO: チームとしてリクエストをすでに送信していないかのテスト
   """
   def is_able_to_join(conn, %{"user_id" => user_id, "tournament_id" => tournament_id}) do
     tournament_id = Tools.to_integer_as_needed(tournament_id)
