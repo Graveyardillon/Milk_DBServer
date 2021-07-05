@@ -2146,6 +2146,34 @@ defmodule Milk.TournamentsTest do
     end
   end
 
+  describe "get_teammates" do
+    test "works" do
+      {tournament, users} = setup_team(5)
+      [leader | users] = users
+
+      another_users = 6..10
+      |> Enum.to_list()
+      |> Enum.map(fn n ->
+        fixture_user(num: n)
+      end)
+      |> Enum.map(fn user ->
+        user.id
+      end)
+
+      [another_leader | another_members] = another_users
+      Tournaments.create_team(tournament.id, 5, another_leader, another_members)
+
+      tournament.id
+      |> Tournaments.get_teammates(leader)
+      |> Enum.map(fn member ->
+        assert member.user_id in users || member.user_id == leader
+      end)
+      |> length()
+      |> Kernel.==(5)
+      |> assert()
+    end
+  end
+
   describe "get_confirmed_teams" do
     test "works" do
       {tournament, users} = setup_team(2)

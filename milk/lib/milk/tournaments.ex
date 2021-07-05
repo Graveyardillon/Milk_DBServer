@@ -1966,6 +1966,25 @@ defmodule Milk.Tournaments do
   end
 
   @doc """
+  Get teams
+  """
+  def get_teammates(tournament_id, user_id) do
+    Team
+    |> join(:inner, [t], tm in TeamMember, on: t.id == tm.team_id)
+    |> where([t, tm], t.tournament_id == ^tournament_id)
+    |> preload([t, tm], :team_member)
+    |> Repo.all()
+    |> Enum.filter(fn team ->
+      team.team_member
+      |> Enum.any?(fn member ->
+        member.user_id == user_id
+      end)
+    end)
+    |> hd()
+    |> Map.get(:team_member)
+  end
+
+  @doc """
   Get invitations for a user.
   """
   def get_team_invitations_by_user_id(user_id) do

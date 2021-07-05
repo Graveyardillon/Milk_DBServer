@@ -5,6 +5,18 @@ defmodule MilkWeb.TeamController do
   alias Milk.Tournaments
 
   @doc """
+  Get tournament members.
+  """
+  def get_teammates(conn, %{"tournament_id" => tournament_id, "user_id" => user_id}) do
+    tournament_id = Tools.to_integer_as_needed(tournament_id)
+    user_id = Tools.to_integer_as_needed(user_id)
+
+    mates = Tournaments.get_teammates(tournament_id, user_id)
+
+    render(conn, "members.json", members: mates)
+  end
+
+  @doc """
   Create team.
   """
   def create(conn, %{"tournament_id" => tournament_id, "size" => size, "leader_id" => leader_id, "user_id_list" => user_id_list}) do
