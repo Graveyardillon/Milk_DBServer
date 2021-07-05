@@ -469,20 +469,30 @@ defmodule MilkWeb.TournamentController do
     user_id = Tools.to_integer_as_needed(user_id)
 
     tournament = Tournaments.get_tournament(tournament_id)
+    entrants = Tournaments.get_entrants(tournament.id)
 
-    entrants_len =
-      tournament.id
-      |> Tournaments.get_entrants()
-      |> length()
+    # キャパシティの確認
+    result = tournament.capacity > length(entrants)
 
-    result = tournament.capacity > entrants_len
+    # 自分が参加しているかどうか
+    result = entrants
+      |> Enum.all?(fn entrant ->
+        entrant.user_id != user_id
+      end)
+      |> Kernel.and(result)
 
-    result =
-      user_id
+    # 時刻の確認（自分の主催している大会には参加できる）
+    result = user_id
       |> relevant()
       |> Enum.all?(fn t ->
         tournament.master_id == user_id || t.event_date != tournament.event_date
       end)
+      |> Kernel.and(result)
+
+    # 自分がチームとして参加しているかどうか
+    result = user_id
+      |> Tournaments.has_requested_as_team?(tournament_id)
+      |> Kernel.not()
       |> Kernel.and(result)
 
     requested? = Tournaments.has_requested_as_team?(user_id, tournament_id)

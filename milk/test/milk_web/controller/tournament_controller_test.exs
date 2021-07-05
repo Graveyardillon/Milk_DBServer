@@ -1003,6 +1003,39 @@ defmodule MilkWeb.TournamentControllerTest do
 
       refute json_response(conn, 200)["result"]
     end
+
+    test "team", %{conn: conn} do
+      tournament = fixture_tournament(is_team: true)
+      users = 1..5
+      |> Enum.to_list()
+      |> Enum.map(fn n ->
+        fixture_user(num: n)
+      end)
+      |> Enum.map(fn user ->
+        user.id
+      end)
+
+      [leader | members] = users
+      size = 5
+
+      conn =
+        get(conn, Routes.tournament_path(conn, :is_able_to_join), %{
+          user_id: leader,
+          tournament_id: tournament.id
+        })
+
+      assert json_response(conn, 200)["result"]
+
+      Tournaments.create_team(tournament.id, size, leader, members)
+
+      conn =
+        get(conn, Routes.tournament_path(conn, :is_able_to_join), %{
+          user_id: leader,
+          tournament_id: tournament.id
+        })
+
+      refute json_response(conn, 200)["result"]
+    end
   end
 
   describe "is started?" do
