@@ -180,7 +180,7 @@ defmodule MilkWeb.TournamentController do
 
       unless is_nil(user_id) do
         %{"user_id" => user_id, "game_name" => tournament.game_name, "score" => 1}
-      |> Accounts.gain_score()
+        |> Accounts.gain_score()
       end
 
       render(conn, "tournament_info.json", tournament: tournament, entrants: entrants)

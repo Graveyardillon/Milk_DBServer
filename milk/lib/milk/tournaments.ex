@@ -217,7 +217,12 @@ defmodule Milk.Tournaments do
 
   """
   def get_tournament(id) do
-    Repo.get(Tournament, id)
+    Tournament
+    |> Repo.get(id)
+    |> Repo.preload(:team)
+    |> Repo.preload(:entrant)
+    |> Repo.preload(:assistant)
+    |> Repo.preload(:master)
   end
 
   def get_tournament!(id) do
