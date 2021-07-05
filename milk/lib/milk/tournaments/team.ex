@@ -10,6 +10,7 @@ defmodule Milk.Tournaments.Team do
     field :name, :string
     field :size, :integer
     field :icon_path, :string
+    field :is_confirmed, :boolean, default: false
 
     belongs_to :tournament, Tournament
     has_many :team_member, TeamMember
@@ -20,6 +21,6 @@ defmodule Milk.Tournaments.Team do
   @doc false
   def changeset(team, attrs) do
     team
-    |> cast(attrs, [:name, :size, :tournament_id, :icon_path])
+    |> cast(attrs, [:name, :size, :tournament_id, :icon_path, :is_confirmed])
   end
 end

@@ -1,5 +1,6 @@
 defmodule Milk.TournamentsTest do
   use Milk.DataCase
+  use Milk.Common.Fixtures
   use Timex
 
   alias Milk.{
@@ -69,49 +70,6 @@ defmodule Milk.TournamentsTest do
     "tournament_id" => nil
   }
 
-  defp fixture_tournament(opts \\ []) do
-    # FIXME: ここのデフォルト値は本当はfalseのほうがよさそう
-    is_started = opts[:is_started]
-      |> is_nil()
-      |> unless do
-        opts[:is_started]
-      else
-        true
-      end
-
-    is_team = opts[:is_team]
-      |> is_nil()
-      |> unless do
-        opts[:is_team]
-      else
-        false
-      end
-
-    master_id = opts[:master_id]
-      |> is_nil()
-      |> unless do
-        opts[:master_id]
-      else
-        {:ok, user} =
-          Accounts.create_user(%{
-            "name" => "name",
-            "email" => "e@mail.com",
-            "password" => "Password123"
-          })
-
-        user.id
-      end
-
-    {:ok, tournament} =
-      @valid_attrs
-      |> Map.put("is_started", is_started)
-      |> Map.put("master_id", master_id)
-      |> Map.put("is_team", is_team)
-      |> Tournaments.create_tournament()
-
-    tournament
-  end
-
   defp fixture(:game) do
     {:ok, game} = Games.create_game(%{"title" => "Test Game"})
     game
@@ -151,26 +109,6 @@ defmodule Milk.TournamentsTest do
     topic
   end
 
-  defp fixture_user(opts \\ []) do
-    num_str =
-      opts[:num]
-      |> is_nil()
-      |> unless do
-        to_string(opts[:num])
-      else
-        "1"
-      end
-
-    {:ok, user} =
-      Accounts.create_user(%{
-        "name" => "name" <> num_str,
-        "email" => "e1" <> num_str <> "mail.com",
-        "password" => "Password123"
-      })
-
-    user
-  end
-
   defp fixture_entrant(opts \\ %{}) do
     tournament =
       opts["tournament_id"]
@@ -178,7 +116,7 @@ defmodule Milk.TournamentsTest do
       |> unless do
         Tournaments.get_tournament(opts["tournament_id"])
       else
-        fixture_tournament()
+        fixture_tournament(is_started: true)
       end
 
     user_id =
@@ -218,6 +156,13 @@ defmodule Milk.TournamentsTest do
       |> Tournaments.get_tournament()
       |> is_nil()
       |> assert()
+    end
+
+    test "get_tournament/1 (is_team)" do
+      tournament = fixture_tournament(is_team: true)
+
+      t = Tournaments.get_tournament(tournament.id)
+      IO.inspect(t)
     end
 
     test "get_tournament_by_room_id works" do
@@ -355,8 +300,8 @@ defmodule Milk.TournamentsTest do
       assert tournament.description == "some description"
       assert tournament.event_date == "2010-04-17T14:00:00Z"
       assert tournament.name == "some name"
-      assert tournament.type == 0
-      assert tournament.url == "somesomeurl"
+      assert tournament.type == 1
+      assert tournament.url == "some url"
     end
 
     test "create_tournament/1 with invalid data returns error changeset" do
@@ -367,7 +312,7 @@ defmodule Milk.TournamentsTest do
   describe "verify?" do
     test "works" do
       tournament = fixture_tournament()
-      assert Tournaments.verify?(tournament.id, "passwd")
+      assert Tournaments.verify?(tournament.id, "Password123")
       refute Tournaments.verify?(tournament.id, "wrong_pw")
     end
   end
@@ -739,7 +684,7 @@ defmodule Milk.TournamentsTest do
     test "create_entrant/1 returns a multi error when it runs with same parameter at one time." do
       # tournament and user for entrant_param
       user0 = fixture_user()
-      user1 = fixture_user(num: 0)
+      user1 = fixture_user(num: 2)
       tournament0 = fixture_tournament()
       tournament1 = fixture_tournament(master_id: user1.id)
 
@@ -2107,7 +2052,7 @@ defmodule Milk.TournamentsTest do
   end
 
   defp setup_team(n) do
-    tournament = fixture_tournament([is_started: false, is_team: true])
+    tournament = fixture_tournament([is_started: false, is_team: true, capacity: 2])
     users = 1..n
       |> Enum.to_list()
       |> Enum.map(fn n ->
@@ -2278,6 +2223,11 @@ defmodule Milk.TournamentsTest do
         |> hd()
 
       team.id
+      |> Tournaments.get_team()
+      |> Map.get(:is_confirmed)
+      |> refute()
+
+      team.id
       |> Tournaments.get_team_members_by_team_id()
       |> Enum.each(fn member ->
         Tournaments.create_team_invitation(member.id, leader, "test")
@@ -2297,6 +2247,11 @@ defmodule Milk.TournamentsTest do
       end)
       |> length()
       |> Kernel.==(4)
+      |> assert()
+
+      team.id
+      |> Tournaments.get_team()
+      |> Map.get(:is_confirmed)
       |> assert()
     end
   end

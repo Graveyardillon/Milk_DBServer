@@ -163,7 +163,6 @@ defmodule MilkWeb.TournamentController do
   @doc """
   Show tournament information.
   """
-
   def show(conn, params) do
     user_id = params["user_id"]
     id = Tools.to_integer_as_needed(params["tournament_id"])
@@ -176,6 +175,9 @@ defmodule MilkWeb.TournamentController do
         %{"user_id" => user_id, "game_name" => tournament.game_name, "score" => 1}
         |> Accounts.gain_score()
       end
+
+      team = Enum.filter(tournament.team, fn team -> team.is_confirmed end)
+      tournament = Map.put(tournament, :team, team)
 
       render(conn, "tournament_info.json", tournament: tournament)
     else

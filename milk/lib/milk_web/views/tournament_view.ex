@@ -108,6 +108,16 @@ defmodule MilkWeb.TournamentView do
               email: entrant.user.auth.email,
               bio: entrant.user.bio
             }
+          end),
+        teams:
+          Enum.map(tournament.team, fn team ->
+            %{
+              id: team.id,
+              name: team.name,
+              size: team.size,
+              icon_path: team.icon_path,
+              is_confirmed: team.is_confirmed
+            }
           end)
       },
       is_log: false,
