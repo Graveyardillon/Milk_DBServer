@@ -66,6 +66,7 @@ attrs = %{
   "password" => nil,
   "game_name" => "my awesome name",
   "is_team" => true,
+  "team_size" => 5,
   "start_recruiting" => now,
   "master_id" => user.id,
   "platform" => 1,

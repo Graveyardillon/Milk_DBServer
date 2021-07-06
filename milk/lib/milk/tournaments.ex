@@ -2150,4 +2150,13 @@ defmodule Milk.Tournaments do
       |> Repo.update()
     end
   end
+
+  @doc """
+  Delete a team
+  """
+  def delete_team(team_id) do
+    Team
+    |> Repo.get(team_id)
+    |> Repo.delete()
+  end
 end

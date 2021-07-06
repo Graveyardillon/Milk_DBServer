@@ -69,7 +69,8 @@ defmodule MilkWeb.TournamentView do
       create_time: tournament.create_time,
       update_time: tournament.update_time,
       is_started: tournament.is_started,
-      is_team: tournament.is_team
+      is_team: tournament.is_team,
+      team_size: tournament.team_size
     }
   end
 
@@ -96,6 +97,7 @@ defmodule MilkWeb.TournamentView do
         update_time: tournament.update_time,
         is_started: tournament.is_started,
         is_team: tournament.is_team,
+        team_size: tournament.team_size,
         entrants:
           Enum.map(tournament.entrant, fn entrant ->
             %{

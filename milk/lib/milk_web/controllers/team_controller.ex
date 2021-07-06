@@ -4,6 +4,18 @@ defmodule MilkWeb.TeamController do
   alias Common.Tools
   alias Milk.Tournaments
 
+  def show(conn, %{"team_id" => team_id}) do
+    team = team_id
+      |> Tools.to_integer_as_needed()
+      |> Tournaments.get_team()
+
+    unless is_nil(team) do
+      render(conn, "show.json", team: team)
+    else
+      render(conn, "error.json", error: nil)
+    end
+  end
+
   @doc """
   Get tournament members.
   """
@@ -66,6 +78,21 @@ defmodule MilkWeb.TeamController do
     |> case do
       {:ok, _invitation} ->
         json(conn, %{result: true})
+      {:error, error} ->
+        render(conn, "error.json", error: error)
+    end
+  end
+
+  @doc """
+  Delete a team
+  """
+  def delete(conn, %{"team_id" => team_id}) do
+    team_id
+    |> Tools.to_integer_as_needed()
+    |> Tournaments.delete_team()
+    |> case do
+      {:ok, team} ->
+        render(conn, "show.json", team: team)
       {:error, error} ->
         render(conn, "error.json", error: error)
     end

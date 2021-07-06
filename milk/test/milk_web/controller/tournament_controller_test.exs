@@ -545,6 +545,7 @@ defmodule MilkWeb.TournamentControllerTest do
   describe "get tournament (team)" do
     defp setup_team(n) do
       tournament = fixture_tournament([is_started: false, is_team: true, capacity: 2])
+      assert tournament.team_size == 5
       users = 1..n
         |> Enum.to_list()
         |> Enum.map(fn n ->
@@ -601,6 +602,8 @@ defmodule MilkWeb.TournamentControllerTest do
       |> length()
       |> Kernel.==(1)
       |> assert()
+
+      assert json_response(conn, 200)["data"]["team_size"] == 5
 
       users = 6..10
         |> Enum.to_list()

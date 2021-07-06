@@ -162,7 +162,6 @@ defmodule Milk.TournamentsTest do
       tournament = fixture_tournament(is_team: true)
 
       t = Tournaments.get_tournament(tournament.id)
-      IO.inspect(t)
     end
 
     test "get_tournament_by_room_id works" do
@@ -2252,6 +2251,28 @@ defmodule Milk.TournamentsTest do
       team.id
       |> Tournaments.get_team()
       |> Map.get(:is_confirmed)
+      |> assert()
+    end
+  end
+
+  describe "delete_team" do
+    test "works" do
+      {tournament, users} = setup_team(5)
+      team = tournament.id
+        |> Tournaments.get_teams_by_tournament_id()
+        |> hd()
+
+      team.id
+      |> Tournaments.get_team()
+      |> is_nil()
+      |> refute()
+
+      assert {:ok, deleted_team} = Tournaments.delete_team(team.id)
+      assert deleted_team.id == team.id
+
+      team.id
+      |> Tournaments.get_team()
+      |> is_nil()
       |> assert()
     end
   end
