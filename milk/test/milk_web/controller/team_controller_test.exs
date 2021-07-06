@@ -200,7 +200,20 @@ defmodule MilkWeb.TeamControllerTest do
 
   describe "delete" do
     test "works", %{conn: conn} do
+      {tournament, _users} = setup_team(5)
 
+      team = tournament.id
+        |> Tournaments.get_teams_by_tournament_id()
+        |> hd()
+
+      conn = get(conn, Routes.team_path(conn, :show), team_id: team.id)
+      json_response(conn, 200)
+
+      conn = delete(conn, Routes.team_path(conn, :delete), team_id: team.id)
+      assert json_response(conn, 200)["result"]
+
+      conn = get(conn, Routes.team_path(conn, :show), team_id: team.id)
+      refute json_response(conn, 200)["result"]
     end
   end
 end

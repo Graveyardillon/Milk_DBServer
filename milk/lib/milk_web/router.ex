@@ -161,6 +161,7 @@ defmodule MilkWeb.Router do
     resources "/entrant_log", EntrantLogController
     post "/entrant/rank/promote", EntrantController, :promote
 
+    get "/team", TeamController, :show
     get "/team/mates", TeamController, :get_teammates
     get "/team/confirmed_teams", TeamController, :get_confirmed_teams
     post "/team", TeamController, :create

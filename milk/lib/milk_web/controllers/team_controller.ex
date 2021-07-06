@@ -4,6 +4,18 @@ defmodule MilkWeb.TeamController do
   alias Common.Tools
   alias Milk.Tournaments
 
+  def show(conn, %{"team_id" => team_id}) do
+    team = team_id
+      |> Tools.to_integer_as_needed()
+      |> Tournaments.get_team()
+
+    unless is_nil(team) do
+      render(conn, "show.json", team: team)
+    else
+      render(conn, "error.json", error: nil)
+    end
+  end
+
   @doc """
   Get tournament members.
   """
