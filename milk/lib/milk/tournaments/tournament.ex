@@ -30,6 +30,7 @@ defmodule Milk.Tournaments.Tournament do
     field :is_started, :boolean, default: false
     field :is_team, :boolean, default: false
     field :start_recruiting, EctoDate
+    field :team_size, :integer, default: nil
 
     belongs_to :platform, Platform
     belongs_to :game, Game
@@ -62,7 +63,8 @@ defmodule Milk.Tournaments.Tournament do
       :count,
       :is_started,
       :is_team,
-      :start_recruiting
+      :start_recruiting,
+      :team_size
     ])
     |> validate_required([:name, :event_date, :capacity, :deadline, :type])
     |> foreign_key_constraint(:platform_id)
