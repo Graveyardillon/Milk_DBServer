@@ -2107,7 +2107,7 @@ defmodule Milk.Tournaments do
       "process_code" => 8,
       "icon_path" => invitation.sender.icon_path,
       "content" => invitation.sender.name,
-      "data" => invitation.team_member_id
+      "data" => invitation.id
     }
     |> Notif.create_notification()
     |> case do
