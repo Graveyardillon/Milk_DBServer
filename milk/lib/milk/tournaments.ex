@@ -1951,6 +1951,10 @@ defmodule Milk.Tournaments do
       {:ok, team} ->
         create_team_leader(team.id, leader)
         create_team_members(team.id, user_id_list)
+        |> Enum.each(fn member ->
+          create_team_invitation(member.id, leader)
+        end)
+
         {:ok, team}
       {:error, error} ->
         {:error, error}
@@ -1964,10 +1968,11 @@ defmodule Milk.Tournaments do
   end
 
   defp create_team_members(team_id, user_id_list) do
-    Enum.each(user_id_list, fn id ->
+    Enum.map(user_id_list, fn id ->
       %TeamMember{}
       |> TeamMember.changeset(%{"team_id" => team_id, "user_id" => id})
       |> Repo.insert()
+      |> elem(1)
     end)
   end
 
@@ -2077,7 +2082,10 @@ defmodule Milk.Tournaments do
   @doc """
   Create team invitation
   """
-  def create_team_invitation(team_member_id, sender_id, text) do
+  def create_team_invitation(team_member_id, sender_id) do
+    sender = Accounts.get_user(sender_id)
+    text = "#{sender.name}があなたをチームに招待しました。"
+
     %TeamInvitation{}
     |> TeamInvitation.changeset(%{"team_member_id" => team_member_id, "sender_id" => sender_id, "text" => text})
     |> Repo.insert()

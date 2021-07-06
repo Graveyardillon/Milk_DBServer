@@ -69,7 +69,7 @@ defmodule MilkWeb.TeamControllerTest do
     test "works", %{conn: conn} do
       tournament = fixture_tournament()
       size = 5
-      leader_id = fixture_user(num: 1)
+      leader_id = fixture_user(num: 1).id
       user_id_list = 2..5
         |> Enum.to_list()
         |> Enum.map(fn n ->
@@ -122,7 +122,7 @@ defmodule MilkWeb.TeamControllerTest do
       team["id"]
       |> Tournaments.get_team_members_by_team_id()
       |> Enum.each(fn member ->
-        Tournaments.create_team_invitation(member.id, leader_id, "test")
+        Tournaments.create_team_invitation(member.id, leader_id)
       end)
 
       user_id_list
@@ -175,7 +175,7 @@ defmodule MilkWeb.TeamControllerTest do
       team.id
       |> Tournaments.get_team_members_by_team_id()
       |> Enum.each(fn member ->
-        Tournaments.create_team_invitation(member.id, leader, "test")
+        Tournaments.create_team_invitation(member.id, leader)
       end)
 
       users
