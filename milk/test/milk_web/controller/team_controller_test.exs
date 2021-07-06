@@ -197,4 +197,10 @@ defmodule MilkWeb.TeamControllerTest do
       |> assert()
     end
   end
+
+  describe "delete" do
+    test "works", %{conn: conn} do
+
+    end
+  end
 end

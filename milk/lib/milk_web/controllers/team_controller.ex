@@ -70,4 +70,19 @@ defmodule MilkWeb.TeamController do
         render(conn, "error.json", error: error)
     end
   end
+
+  @doc """
+  Delete a team
+  """
+  def delete(conn, %{"team_id" => team_id}) do
+    team_id
+    |> Tools.to_integer_as_needed()
+    |> Tournaments.delete_team()
+    |> case do
+      {:ok, team} ->
+        render(conn, "show.json", team: team)
+      {:error, error} ->
+        render(conn, "error.json", error: error)
+    end
+  end
 end
