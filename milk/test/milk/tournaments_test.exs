@@ -162,7 +162,6 @@ defmodule Milk.TournamentsTest do
       tournament = fixture_tournament(is_team: true)
 
       t = Tournaments.get_tournament(tournament.id)
-      IO.inspect(t)
     end
 
     test "get_tournament_by_room_id works" do
