@@ -57,6 +57,18 @@ defmodule Milk.Common.Fixtures do
             false
           end
 
+        team_size = if is_team do
+            opts[:team_size]
+            |> is_nil()
+            |> unless do
+              opts[:team_size]
+            else
+              5
+            end
+          else
+            nil
+          end
+
         master_id = opts[:master_id]
           |> is_nil()
           |> unless do
@@ -78,6 +90,7 @@ defmodule Milk.Common.Fixtures do
           |> Map.put("master_id", master_id)
           |> Map.put("is_team", is_team)
           |> Map.put("capacity", capacity)
+          |> Map.put("team_size", team_size)
           |> Tournaments.create_tournament()
 
         tournament
