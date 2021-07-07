@@ -578,7 +578,7 @@ defmodule MilkWeb.TournamentControllerTest do
       |> Map.get(:id)
       |> Tournaments.get_team_members_by_team_id()
       |> Enum.each(fn member ->
-        Tournaments.create_team_invitation(member.id, leader, "test")
+        Tournaments.create_team_invitation(member.id, leader)
       end)
 
       users
