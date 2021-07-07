@@ -919,8 +919,16 @@ defmodule MilkWeb.TournamentController do
     tournament_id = Tools.to_integer_as_needed(tournament_id)
 
     state = Tournaments.state!(tournament_id, user_id)
+    score = if state == "IsPending" do
+      tournament_id
+      |> TournamentProgress.get_score(user_id)
+      |> case do
+        [] -> nil
+        score -> score
+      end
+    end
 
-    json(conn, %{result: true, state: state})
+    json(conn, %{result: true, state: state, score: score})
   end
 
   @doc """
