@@ -5,6 +5,7 @@ defmodule Milk.Tournaments do
   use Timex
 
   import Ecto.Query, warn: false
+  import Common.Sperm
 
   alias Ecto.Multi
   alias Common.Tools
@@ -1955,6 +1956,11 @@ defmodule Milk.Tournaments do
           create_team_invitation(member.id, leader)
         end)
 
+        team
+        |> Repo.preload(:tournament)
+        |> Repo.preload(:team_member)
+        ~> team
+
         {:ok, team}
       {:error, error} ->
         {:error, error}
@@ -2077,6 +2083,16 @@ defmodule Milk.Tournaments do
         member.user_id == user_id
       end)
     end)
+  end
+
+  @doc """
+  Get invitations of user
+  """
+  def get_invitations(user_id) do
+    TeamInvitation
+    |> join(:inner, [ti], tm in TeamMember, on: ti.team_member_id == tm.id)
+    |> where([ti, tm], tm.user_id == ^user_id)
+    |> Repo.all()
   end
 
   @doc """
