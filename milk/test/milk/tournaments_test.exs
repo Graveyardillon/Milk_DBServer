@@ -2183,6 +2183,11 @@ defmodule Milk.TournamentsTest do
       |> Tournaments.has_requested_as_team?(tournament.id)
       |> assert()
 
+      users
+      |> Enum.each(fn user ->
+        assert Tournaments.has_requested_as_team?(user, tournament.id)
+      end)
+
       another_user
       |> Tournaments.has_requested_as_team?(tournament.id)
       |> refute()

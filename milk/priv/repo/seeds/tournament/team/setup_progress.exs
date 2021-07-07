@@ -7,7 +7,7 @@ alias Milk.{
   Tournaments
 }
 
-team_n = 5
+team_n = 4
 team_size = 5
 
 Timex.now()
@@ -34,11 +34,11 @@ organizer
 |> (fn user ->
   File.cp("./priv/repo/seeds/image/damn.jpg", "./static/image/tournament_thumbnail/damn.jpg")
   attrs = %{
-    "capacity" => 5,
+    "capacity" => 4,
     "deadline" => day_after_tomorrow,
-    "description" => "test team tournament of size 5.",
+    "description" => "test team tournament of size 4.",
     "event_date" => day_after_tomorrow,
-    "name" => "test team tournament of size 5.",
+    "name" => "test team tournament of size 4.",
     "type" => 1,
     "url" => "test url",
     "thumbnail_path" => "damn",
