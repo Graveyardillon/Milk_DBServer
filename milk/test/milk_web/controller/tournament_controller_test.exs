@@ -1104,7 +1104,7 @@ defmodule MilkWeb.TournamentControllerTest do
     end
 
     test "team", %{conn: conn} do
-      tournament = fixture_tournament(is_team: true)
+      tournament = fixture_tournament(is_team: true, capacity: 1)
       users = 1..5
       |> Enum.to_list()
       |> Enum.map(fn n ->
@@ -1130,6 +1130,16 @@ defmodule MilkWeb.TournamentControllerTest do
       conn =
         get(conn, Routes.tournament_path(conn, :is_able_to_join), %{
           user_id: leader,
+          tournament_id: tournament.id
+        })
+
+      refute json_response(conn, 200)["result"]
+
+      user = fixture_user(num: 100)
+
+      conn =
+        get(conn, Routes.tournament_path(conn, :is_able_to_join), %{
+          user_id: user.id,
           tournament_id: tournament.id
         })
 

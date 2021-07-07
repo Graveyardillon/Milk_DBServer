@@ -445,8 +445,13 @@ defmodule MilkWeb.TournamentController do
     tournament = Tournaments.get_tournament(tournament_id)
     entrants = Tournaments.get_entrants(tournament.id)
 
-    # キャパシティの確認
+    # キャパシティの確認(個人)
     result = tournament.capacity > length(entrants)
+
+    # キャパシティの確認(チーム)
+    result = tournament.capacity
+      |> Kernel.>(length(tournament.team))
+      |> Kernel.and(result)
 
     # 自分が参加しているかどうか
     result = entrants
