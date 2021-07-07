@@ -2133,10 +2133,18 @@ defmodule Milk.Tournaments do
     |> case do
       {:ok, team_member} ->
         verify_team_as_needed(team_member.team_id)
+        delete_invitation_nofification(team_invitation_id)
         {:ok, team_member}
       {:error, error} ->
         {:error, error}
     end
+  end
+
+  defp delete_invitation_nofification(team_invitation_id) do
+    Notification
+    |> where([n], n.data == ^to_string(team_invitation_id))
+    |> Repo.one()
+    |> Repo.delete()
   end
 
   @doc """
