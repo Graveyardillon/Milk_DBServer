@@ -865,11 +865,22 @@ defmodule Milk.TournamentProgress do
     |> Enum.map(fn team -> team.id end)
     |> Tournaments.generate_matchlist()
     ~> {:ok, match_list}
+    |> elem(1)
+    |> insert_match_list(tournament.id)
 
     count = length(teams)
-    Tournaments.initialize_rank(match_list, count, tournament.id)
-    insert_match_list(match_list, tournament.id)
+    Tournaments.initialize_team_rank(match_list, count)
 
+    match_list
+    |> Tournaments.initialize_match_list_of_team_with_fight_result()
+    ~> match_list_with_fight_result
 
+    match_list_with_fight_result
+    |> List.flatten()
+    |> Enum.reduce(match_list_with_fight_result, fn x, acc ->
+      team = Tournaments.get_team(x["team_id"])
+
+      # leaderの情報を記載したいため、そのデータを入れる
+    end)
   end
 end

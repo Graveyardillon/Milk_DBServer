@@ -1281,8 +1281,8 @@ defmodule Milk.Tournaments do
   @doc """
   Initialize fight result of match list of teams.
   """
-  def initialize_match_list_with_fight_result_of_team(match_list) do
-
+  def initialize_match_list_of_team_with_fight_result(match_list) do
+    Tournamex.initialize_match_list_of_team_with_fight_result(match_list)
   end
 
   @doc """
