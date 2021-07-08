@@ -774,28 +774,14 @@ defmodule Milk.TournamentProgress do
   """
 
   def start_single_elimination(master_id, tournament) do
-    with {:ok, _} <- Tournaments.start(master_id, tournament.id),
-         {:ok, match_list, match_list_with_fight_result} <-
-           make_single_elimination_matches(tournament.id) do
-      with match_list <- get_match_list(tournament.id) do
-        set_time_limit_on_all_entrants(match_list, tournament.id)
-      end
-
-      {:ok, match_list, match_list_with_fight_result}
-    else
-      {:error, error, nil} -> {:error, error, nil}
-      _ -> {:error, nil, nil}
-    end
+    Tournaments.start(master_id, tournament.id)
+    make_single_elimination_matches(tournament.id)
   end
 
   def start_best_of_format(master_id, tournament) do
     Tournaments.start(master_id, tournament.id)
-
-    with {:ok, match_list} <- make_best_of_format_matches(tournament) do
-      {:ok, match_list, nil}
-    else
-      _ -> {:error, nil, nil}
-    end
+    {:ok, match_list} = make_best_of_format_matches(tournament)
+    {:ok, match_list, nil}
   end
 
   defp make_single_elimination_matches(tournament_id) do
