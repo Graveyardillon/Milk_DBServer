@@ -8,9 +8,13 @@ defmodule Milk.TournamentProgress do
   6. absence_process
   """
   import Ecto.Query, warn: false
+  import Common.Sperm
+  import Common.Comment
 
   alias Milk.{
-    Repo
+    Accounts,
+    Repo,
+    Tournaments
   }
 
   alias Milk.TournamentProgress.{
@@ -720,8 +724,6 @@ defmodule Milk.TournamentProgress do
     |> Repo.insert()
   end
 
-  # Best of x tournament match log.
-
   @doc """
   Get best of x tournament match log.
   """
@@ -751,7 +753,7 @@ defmodule Milk.TournamentProgress do
     |> Repo.insert()
   end
 
-  """
+  comment """
   match list with fight result log.
   """
 
@@ -765,5 +767,108 @@ defmodule Milk.TournamentProgress do
     %MatchListWithFightResultLog{}
     |> MatchListWithFightResultLog.changeset(attrs)
     |> Repo.insert()
+  end
+
+  comment """
+  大会スタート時に使用する関数群
+  """
+
+  def start_single_elimination(master_id, tournament) do
+    with {:ok, _} <- Tournaments.start(master_id, tournament.id),
+         {:ok, match_list, match_list_with_fight_result} <-
+           make_single_elimination_matches(tournament.id) do
+      with match_list <- get_match_list(tournament.id) do
+        set_time_limit_on_all_entrants(match_list, tournament.id)
+      end
+
+      {:ok, match_list, match_list_with_fight_result}
+    else
+      {:error, error, nil} -> {:error, error, nil}
+      _ -> {:error, nil, nil}
+    end
+  end
+
+  def start_best_of_format(master_id, tournament) do
+    Tournaments.start(master_id, tournament.id)
+
+    with {:ok, match_list} <- make_best_of_format_matches(tournament) do
+      {:ok, match_list, nil}
+    else
+      _ -> {:error, nil, nil}
+    end
+  end
+
+  defp make_single_elimination_matches(tournament_id) do
+    with {:ok, match_list} <-
+           Tournaments.get_entrants(tournament_id)
+           |> Enum.map(fn x -> x.user_id end)
+           |> Tournaments.generate_matchlist() do
+      count =
+        Tournaments.get_tournament(tournament_id)
+        |> Map.get(:count)
+
+      match_list
+      |> Tournaments.initialize_rank(count, tournament_id)
+
+      match_list
+      |> insert_match_list(tournament_id)
+
+      list_with_fight_result =
+        match_list
+        |> match_list_with_fight_result()
+
+      lis =
+        list_with_fight_result
+        |> Tournamex.match_list_to_list()
+
+      complete_list =
+        Enum.reduce(lis, list_with_fight_result, fn x, acc ->
+          user = Accounts.get_user(x["user_id"])
+
+          acc
+          |> Tournaments.put_value_on_brackets(user.id, %{"name" => user.name})
+          |> Tournaments.put_value_on_brackets(user.id, %{"win_count" => 0})
+          |> Tournaments.put_value_on_brackets(user.id, %{"icon_path" => user.icon_path})
+        end)
+        |> insert_match_list_with_fight_result(tournament_id)
+
+      {:ok, match_list, complete_list}
+    else
+      {:error, error} ->
+        {:error, error, nil}
+    end
+  end
+
+  defp match_list_with_fight_result(match_list) do
+    Tournaments.initialize_match_list_with_fight_result(match_list)
+  end
+
+  defp make_best_of_format_matches(tournament) do
+    {:ok, match_list} =
+      tournament.id
+      |> Tournaments.get_entrants()
+      |> Enum.map(fn x -> x.user_id end)
+      |> Tournaments.generate_matchlist()
+
+    count = tournament.count
+    Tournaments.initialize_rank(match_list, count, tournament.id)
+    insert_match_list(match_list, tournament.id)
+
+    match_list_with_fight_result = match_list_with_fight_result(match_list)
+
+    match_list_with_fight_result
+    |> List.flatten()
+    |> Enum.reduce(match_list_with_fight_result, fn x, acc ->
+      user = Accounts.get_user(x["user_id"])
+
+      acc
+      |> Tournaments.put_value_on_brackets(user.id, %{"name" => user.name})
+      |> Tournaments.put_value_on_brackets(user.id, %{"win_count" => 0})
+      |> Tournaments.put_value_on_brackets(user.id, %{"icon_path" => user.icon_path})
+      |> Tournaments.put_value_on_brackets(user.id, %{"round" => 0})
+    end)
+    |> insert_match_list_with_fight_result(tournament.id)
+
+    {:ok, match_list}
   end
 end

@@ -89,3 +89,5 @@
 | platform_id | 大会の扱うプラットフォームのid |
 | game_id | （今は使われていない）扱っているゲームのid |
 | master_id | 大会を開催したユーザーのid |
+
+### type
