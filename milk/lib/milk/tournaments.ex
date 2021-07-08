@@ -779,12 +779,7 @@ defmodule Milk.Tournaments do
 
   # TODO: リファクタリングできそう
   defp join_tournament_chat_room(entrant, attrs) do
-    user_id =
-      if is_binary(attrs["user_id"]) do
-        String.to_integer(attrs["user_id"])
-      else
-        attrs["user_id"]
-      end
+    user_id = Tools.to_integer_as_needed(attrs["user_id"])
 
     result =
       Chat.get_chat_rooms_by_tournament_id(entrant.tournament.id)
@@ -827,9 +822,10 @@ defmodule Milk.Tournaments do
 
   """
   def update_entrant(%Entrant{} = entrant, attrs) do
-    case entrant
-         |> Entrant.changeset(attrs)
-         |> Repo.update() do
+    entrant
+    |> Entrant.changeset(attrs)
+    |> Repo.update()
+    |> case do
       {:ok, chat_member} ->
         {:ok, chat_member}
 
@@ -1283,6 +1279,13 @@ defmodule Milk.Tournaments do
   end
 
   @doc """
+  Initialize fight result of match list of teams.
+  """
+  def initialize_match_list_with_fight_result_of_team(match_list) do
+
+  end
+
+  @doc """
   Put value on brackets.
   """
   def put_value_on_brackets(match_list, key, value) do
@@ -1712,9 +1715,7 @@ defmodule Milk.Tournaments do
     user_id
     |> get_entrant_by_user_id_and_tournament_id(tournament_id)
     |> update_entrant(%{rank: final})
-    ~> {:ok, entrant}
-
-    entrant
+    |> elem(1)
   end
 
   def initialize_rank(match_list, number_of_entrant, tournament_id, count) do
@@ -1726,14 +1727,16 @@ defmodule Milk.Tournaments do
   @doc """
   Initialize rank of teams.
   """
-  def initialize_team_rank(match_list, number_of_entrant, tournament_id, count \\ 1)
+  def initialize_team_rank(match_list, number_of_entrant, count \\ 1)
 
-  def initialize_team_rank(team_id, number_of_entrant, tournament_id, count)
+  def initialize_team_rank(team_id, number_of_entrant, count)
       when is_integer(team_id) do
     final = if number_of_entrant < count, do: number_of_entrant, else: count
 
     team_id
     |> get_team()
+    |> update_team(%{rank: final})
+    |> elem(1)
   end
 
   @doc """
@@ -2097,6 +2100,15 @@ defmodule Milk.Tournaments do
         member.user_id == user_id
       end)
     end)
+  end
+
+  @doc """
+  Updates a team.
+  """
+  def update_team(%Team{} = team, attrs) do
+    team
+    |> Team.changeset(attrs)
+    |> Repo.update()
   end
 
   @doc """
