@@ -561,12 +561,11 @@ defmodule MilkWeb.TournamentController do
     |> Tools.to_integer_as_needed()
     |> Tournaments.get_tournament()
     ~> tournament
-    |> Map.get(:type)
-    |> case do
-      1 -> start_single_elimination(master_id, tournament)
-      2 -> start_best_of_format(master_id, tournament)
-      3 -> start_best_of_format(master_id, tournament)
-      _ -> {:error, "unsupported tournament type", nil}
+    |> Map.get(:is_team)
+    |> if do
+      start_team_tournament(master_id, tournament)
+    else
+      start_tournament(master_id, tournament)
     end
     |> case do
       {:ok, match_list, match_list_with_fight_result} ->
@@ -578,13 +577,18 @@ defmodule MilkWeb.TournamentController do
     end
   end
 
-  # defp start_team_tournament(master_id) do
+  defp start_team_tournament(master_id, tournament) do
 
-  # end
+  end
 
-  # defp start_tournament() do
-
-  # end
+  defp start_tournament(master_id, tournament) do
+    case tournament.type do
+      1 -> start_single_elimination(master_id, tournament)
+      2 -> start_best_of_format(master_id, tournament)
+      3 -> start_best_of_format(master_id, tournament)
+      _ -> {:error, "unsupported tournament type", nil}
+    end
+  end
 
   defp start_single_elimination(master_id, tournament) do
     with {:ok, _} <- Tournaments.start(master_id, tournament.id),
