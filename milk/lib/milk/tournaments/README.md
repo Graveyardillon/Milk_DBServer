@@ -82,7 +82,7 @@
 | url | 大会をアプリで直接開くことのできるurl |
 | thumbnail_path | 大会のサムネイル画像が格納されている場所へのパスもしくはurl |
 | password | 大会のパスワード |
-| count | 不明 |
+| count | 大会の参加人数、チーム数 |
 | game_name | 大会で扱うゲームのタイトル |
 | is_started | 大会がすでに開始しているかどうかのbool |
 | start_recruiting | 大会の募集開始日時 |

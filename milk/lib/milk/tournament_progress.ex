@@ -770,7 +770,7 @@ defmodule Milk.TournamentProgress do
   end
 
   comment """
-  大会スタート時に使用する関数群
+  個人大会スタート時に使用する関数群
   """
 
   def start_single_elimination(master_id, tournament) do
@@ -821,13 +821,14 @@ defmodule Milk.TournamentProgress do
   defp make_best_of_format_matches(tournament) do
     tournament.id
     |> Tournaments.get_entrants()
-    |> Enum.map(fn x -> x.user_id end)
+    |> Enum.map(fn entrant -> entrant.user_id end)
     |> Tournaments.generate_matchlist()
     ~> {:ok, match_list}
+    |> elem(1)
+    |> insert_match_list(tournament.id)
 
     count = tournament.count
     Tournaments.initialize_rank(match_list, count, tournament.id)
-    insert_match_list(match_list, tournament.id)
 
     match_list_with_fight_result = match_list_with_fight_result(match_list)
 
@@ -845,5 +846,30 @@ defmodule Milk.TournamentProgress do
     |> insert_match_list_with_fight_result(tournament.id)
 
     {:ok, match_list}
+  end
+
+  comment """
+  チーム大会スタートに関する関数群
+  """
+
+  def start_team_best_of_format(master_id, tournament) do
+    Tournaments.start(master_id, tournament.id)
+    {:ok, match_list} = generate_team_best_of_format_matches(tournament)
+    {:ok, match_list, nil}
+  end
+
+  defp generate_team_best_of_format_matches(tournament) do
+    tournament.id
+    |> Tournaments.get_confirmed_teams()
+    ~> teams
+    |> Enum.map(fn team -> team.id end)
+    |> Tournaments.generate_matchlist()
+    ~> {:ok, match_list}
+
+    count = length(teams)
+    Tournaments.initialize_rank(match_list, count, tournament.id)
+    insert_match_list(match_list, tournament.id)
+
+
   end
 end

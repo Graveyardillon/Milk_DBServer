@@ -1701,17 +1701,18 @@ defmodule Milk.Tournaments do
   end
 
   @doc """
-  Initialize rank of a user.
+  Initialize rank of users.
   """
   def initialize_rank(match_list, number_of_entrant, tournament_id, count \\ 1)
 
-  def initialize_rank(match_list, number_of_entrant, tournament_id, count)
-      when is_integer(match_list) do
+  def initialize_rank(user_id, number_of_entrant, tournament_id, count)
+      when is_integer(user_id) do
     final = if number_of_entrant < count, do: number_of_entrant, else: count
 
-    {:ok, entrant} =
-      get_entrant_by_user_id_and_tournament_id(match_list, tournament_id)
-      |> update_entrant(%{rank: final})
+    user_id
+    |> get_entrant_by_user_id_and_tournament_id(tournament_id)
+    |> update_entrant(%{rank: final})
+    ~> {:ok, entrant}
 
     entrant
   end
@@ -1720,6 +1721,19 @@ defmodule Milk.Tournaments do
     Enum.map(match_list, fn x ->
       initialize_rank(x, number_of_entrant, tournament_id, count * 2)
     end)
+  end
+
+  @doc """
+  Initialize rank of teams.
+  """
+  def initialize_team_rank(match_list, number_of_entrant, tournament_id, count \\ 1)
+
+  def initialize_team_rank(team_id, number_of_entrant, tournament_id, count)
+      when is_integer(team_id) do
+    final = if number_of_entrant < count, do: number_of_entrant, else: count
+
+    team_id
+    |> get_team()
   end
 
   @doc """
