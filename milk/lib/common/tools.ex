@@ -28,6 +28,10 @@ defmodule Common.Tools do
   @doc """
   Create error message
   """
+  def create_error_message(error) when is_binary(error) do
+    error
+  end
+
   def create_error_message(error) do
     error
     |> Enum.reduce("", fn {key, value}, acc ->

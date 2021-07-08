@@ -1112,7 +1112,7 @@ defmodule Milk.Tournaments do
     master_id
     |> nil_check?(tournament_id)
     |> check_entrant_number(tournament_id)
-    |> fetch_tournament_as_needed(master_id, tournament_id)
+    |> fetch_tournament(master_id, tournament_id)
     |> start()
   end
 
@@ -1146,15 +1146,15 @@ defmodule Milk.Tournaments do
     |> length()
   end
 
-  defp fetch_tournament_as_needed(check, master_id, tournament_id) do
+  defp fetch_tournament(check, master_id, tournament_id) do
     case check do
       {:ok, nil} ->
-        tournament =
-          Tournament
-          |> where([t], t.master_id == ^master_id and t.id == ^tournament_id)
-          |> Repo.one()
-
-        unless is_nil(tournament) do
+        Tournament
+        |> where([t], t.master_id == ^master_id and t.id == ^tournament_id)
+        |> Repo.one()
+        ~> tournament
+        |> is_nil()
+        |> unless do
           {:ok, tournament}
         else
           {:error, "cannot find tournament"}

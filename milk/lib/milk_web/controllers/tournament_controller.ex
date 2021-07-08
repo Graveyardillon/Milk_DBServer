@@ -3,6 +3,8 @@ defmodule MilkWeb.TournamentController do
 
   require Logger
 
+  import Common.Sperm
+
   alias Milk.{
     Accounts,
     Chat,
@@ -551,25 +553,40 @@ defmodule MilkWeb.TournamentController do
 
   @doc """
   Start a tournament.
-  # FIXME: type増加に伴う可読性向上
   """
   def start(conn, %{"tournament" => %{"master_id" => master_id, "tournament_id" => tournament_id}}) do
     master_id = Tools.to_integer_as_needed(master_id)
 
-    tournament =
-      tournament_id
-      |> Tools.to_integer_as_needed()
-      |> Tournaments.get_tournament()
-
-    case tournament.type do
-      1 -> start_single_elimination(conn, master_id, tournament)
-      2 -> start_best_of_format(conn, master_id, tournament)
-      3 -> start_best_of_format(conn, master_id, tournament)
-      _ -> json(conn, %{error: "error", result: false})
+    tournament_id
+    |> Tools.to_integer_as_needed()
+    |> Tournaments.get_tournament()
+    ~> tournament
+    |> Map.get(:type)
+    |> case do
+      1 -> start_single_elimination(master_id, tournament)
+      2 -> start_best_of_format(master_id, tournament)
+      3 -> start_best_of_format(master_id, tournament)
+      _ -> {:error, "unsupported tournament type", nil}
+    end
+    |> case do
+      {:ok, match_list, match_list_with_fight_result} ->
+        render(conn, "match.json", %{match_list: match_list, match_list_with_fight_result: match_list_with_fight_result})
+      {:error, nil, nil} ->
+        render(conn, "error.json", error: nil)
+      {:error, error, nil} ->
+        render(conn, "error.json", error: Tools.create_error_message(error))
     end
   end
 
-  defp start_single_elimination(conn, master_id, tournament) do
+  # defp start_team_tournament(master_id) do
+
+  # end
+
+  # defp start_tournament() do
+
+  # end
+
+  defp start_single_elimination(master_id, tournament) do
     with {:ok, _} <- Tournaments.start(master_id, tournament.id),
          {:ok, match_list, match_list_with_fight_result} <-
            make_single_elimination_matches(tournament.id) do
@@ -577,26 +594,20 @@ defmodule MilkWeb.TournamentController do
         TournamentProgress.set_time_limit_on_all_entrants(match_list, tournament.id)
       end
 
-      render(conn, "match.json", %{
-        match_list: match_list,
-        match_list_with_fight_result: match_list_with_fight_result
-      })
+      {:ok, match_list, match_list_with_fight_result}
     else
-      {:error, error, nil} ->
-        render(conn, "error.json", error: error)
-
-      _ ->
-        json(conn, %{error: "error"})
+      {:error, error, nil} -> {:error, error, nil}
+      _ -> {:error, nil, nil}
     end
   end
 
-  defp start_best_of_format(conn, master_id, tournament) do
+  defp start_best_of_format(master_id, tournament) do
     Tournaments.start(master_id, tournament.id)
 
     with {:ok, match_list} <- make_best_of_format_matches(tournament) do
-      render(conn, "match.json", %{match_list: match_list, match_list_with_fight_result: nil})
+      {:ok, match_list, nil}
     else
-      _ -> json(conn, %{result: false})
+      _ -> {:error, nil, nil}
     end
   end
 
