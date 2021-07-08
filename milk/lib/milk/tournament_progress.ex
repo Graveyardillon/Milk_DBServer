@@ -785,44 +785,33 @@ defmodule Milk.TournamentProgress do
   end
 
   defp make_single_elimination_matches(tournament_id) do
-    with {:ok, match_list} <-
-           Tournaments.get_entrants(tournament_id)
-           |> Enum.map(fn x -> x.user_id end)
-           |> Tournaments.generate_matchlist() do
-      count =
-        Tournaments.get_tournament(tournament_id)
-        |> Map.get(:count)
+    Tournaments.get_entrants(tournament_id)
+    |> Enum.map(fn x -> x.user_id end)
+    |> Tournaments.generate_matchlist()
+    ~> {:ok, match_list}
 
-      match_list
-      |> Tournaments.initialize_rank(count, tournament_id)
+    Tournaments.get_tournament(tournament_id)
+    |> Map.get(:count)
+    ~> count
 
-      match_list
-      |> insert_match_list(tournament_id)
+    Tournaments.initialize_rank(match_list, count, tournament_id)
+    insert_match_list(match_list, tournament_id)
+    list_with_fight_result = match_list_with_fight_result(match_list)
 
-      list_with_fight_result =
-        match_list
-        |> match_list_with_fight_result()
+    list_with_fight_result
+    |> Tournamex.match_list_to_list()
+    |> Enum.reduce(list_with_fight_result, fn x, acc ->
+      user = Accounts.get_user(x["user_id"])
 
-      lis =
-        list_with_fight_result
-        |> Tournamex.match_list_to_list()
+      acc
+      |> Tournaments.put_value_on_brackets(user.id, %{"name" => user.name})
+      |> Tournaments.put_value_on_brackets(user.id, %{"win_count" => 0})
+      |> Tournaments.put_value_on_brackets(user.id, %{"icon_path" => user.icon_path})
+    end)
+    |> insert_match_list_with_fight_result(tournament_id)
+    ~> complete_list
 
-      complete_list =
-        Enum.reduce(lis, list_with_fight_result, fn x, acc ->
-          user = Accounts.get_user(x["user_id"])
-
-          acc
-          |> Tournaments.put_value_on_brackets(user.id, %{"name" => user.name})
-          |> Tournaments.put_value_on_brackets(user.id, %{"win_count" => 0})
-          |> Tournaments.put_value_on_brackets(user.id, %{"icon_path" => user.icon_path})
-        end)
-        |> insert_match_list_with_fight_result(tournament_id)
-
-      {:ok, match_list, complete_list}
-    else
-      {:error, error} ->
-        {:error, error, nil}
-    end
+    {:ok, match_list, complete_list}
   end
 
   defp match_list_with_fight_result(match_list) do
@@ -830,11 +819,11 @@ defmodule Milk.TournamentProgress do
   end
 
   defp make_best_of_format_matches(tournament) do
-    {:ok, match_list} =
-      tournament.id
-      |> Tournaments.get_entrants()
-      |> Enum.map(fn x -> x.user_id end)
-      |> Tournaments.generate_matchlist()
+    tournament.id
+    |> Tournaments.get_entrants()
+    |> Enum.map(fn x -> x.user_id end)
+    |> Tournaments.generate_matchlist()
+    ~> {:ok, match_list}
 
     count = tournament.count
     Tournaments.initialize_rank(match_list, count, tournament.id)
