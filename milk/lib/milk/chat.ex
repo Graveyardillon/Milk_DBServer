@@ -29,7 +29,10 @@ defmodule Milk.Chat do
   }
 
   alias Milk.Repo
-  alias Milk.Tournaments.TournamentChatTopic
+  alias Milk.Tournaments.{
+    Tournament,
+    TournamentChatTopic
+  }
 
   require Logger
 
@@ -255,6 +258,22 @@ defmodule Milk.Chat do
     ChatMember
     |> where([cm], cm.user_id == ^user_id)
     |> Repo.all()
+  end
+
+  @doc """
+  Get chat members by tournament id.
+  It can fetch members who are in the already-created chat rooms.
+  """
+  def get_uniq_chat_members_by_tournament_id(tournament_id) do
+    ChatMember
+    |> join(:inner, [cm], cr in ChatRoom, on: cm.chat_room_id == cr.id)
+    |> join(:inner, [cm, cr], tct in TournamentChatTopic, on: cr.id == tct.chat_room_id)
+    |> join(:inner, [cm, cr, tct], t in Tournament, on: t.id == tct.tournament_id)
+    |> where([cm, cr, tct, t], t.id == ^tournament_id)
+    |> Repo.all()
+    |> Enum.uniq_by(fn member ->
+      member.user_id
+    end)
   end
 
   @doc """

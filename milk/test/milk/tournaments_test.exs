@@ -1,7 +1,9 @@
 defmodule Milk.TournamentsTest do
   use Milk.DataCase
-  use Milk.Common.Fixtures
+  use Common.Fixtures
   use Timex
+
+  import Common.Sperm
 
   alias Milk.{
     Accounts,
@@ -305,6 +307,67 @@ defmodule Milk.TournamentsTest do
 
     test "create_tournament/1 with invalid data returns error changeset" do
       assert {:error, _} = Tournaments.create_tournament(@invalid_attrs)
+    end
+  end
+
+  describe "update_topics" do
+    test "works" do
+      fixture_tournament()
+      ~> tournament
+      |> Map.get(:id)
+      |> Tournaments.get_tabs_by_tournament_id()
+      |> Enum.map(fn tab ->
+        Map.new()
+        |> Map.put(:tab_index, tab.tab_index)
+        |> Map.put(:chat_room_id, tab.chat_room_id)
+        |> Map.put(:topic_name, tab.topic_name)
+      end)
+      ~> current_tabs
+
+      current_tabs
+      |> Enum.map(fn reg ->
+        reg
+        |> Enum.map(fn {k, v} -> {Atom.to_string(k), v} end)
+        |> Map.new()
+      end)
+      ~> tabs
+
+      Map.new()
+      |> Map.put("tab_index", length(current_tabs))
+      |> Map.put("chat_room_id", nil)
+      |> Map.put("topic_name", "test")
+      ~> tab
+
+      tabs = tabs ++ [tab]
+
+      assert :ok = Tournaments.update_topic(tournament, current_tabs, tabs)
+
+      tournament
+      |> Map.get(:id)
+      |> Tournaments.get_tabs_by_tournament_id()
+      |> Enum.map(fn tab ->
+        assert tab.topic_name in ["Group", "Notification", "Q&A", "test"]
+        assert tab.tournament_id == tournament.id
+        refute is_nil(tab.chat_room_id)
+      end)
+      |> length()
+      |> Kernel.==(4)
+      |> assert()
+
+      tournament
+      |> Map.get(:id)
+      |> Chat.get_chat_rooms_by_tournament_id()
+      |> Enum.each(fn room ->
+        room
+        |> Map.get(:id)
+        |> Chat.get_chat_members_of_room()
+        |> Enum.map(fn member ->
+          assert member.user_id == tournament.master_id
+        end)
+        |> length()
+        |> Kernel.==(1)
+        |> assert()
+      end)
     end
   end
 

@@ -1,6 +1,6 @@
 defmodule MilkWeb.TournamentControllerTest do
   use MilkWeb.ConnCase
-  use Milk.Common.Fixtures
+  use Common.Fixtures
 
   import Ecto.Query, warn: false
 

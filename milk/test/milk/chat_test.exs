@@ -1,10 +1,18 @@
 defmodule Milk.ChatTest do
   use Milk.DataCase
 
+  use Common.Fixtures
+
   alias Milk.Chat
   alias Milk.Accounts
-  alias Milk.Chat.{ChatRoom, Chats}
-  alias Milk.Accounts.{Auth, User}
+  alias Milk.Chat.{
+    ChatRoom,
+    Chats
+  }
+  alias Milk.Accounts.{
+    Auth,
+    User
+  }
 
   @valid_attrs %{count: 42, last_chat: "some last_chat", name: "some name"}
   @room_attrs %{count: 42, last_chat: "some last_chat", name: "some name"}
@@ -216,6 +224,20 @@ defmodule Milk.ChatTest do
                Chat.delete_chat_member(chat_member.chat_room_id, chat_member.user_id)
 
       # assert_raise Ecto.NoResultsError, fn -> Chat.get_chat_member!(chat_member.id) end
+    end
+
+    test "get_chat_members_by_tournament_id" do
+      tournament = fixture_tournament()
+
+      tournament
+      |> Map.get(:id)
+      |> Chat.get_uniq_chat_members_by_tournament_id()
+      |> Enum.map(fn member ->
+        assert member.user_id == tournament.master_id
+      end)
+      |> length()
+      |> Kernel.==(1)
+      |> assert()
     end
 
     test "sync/2 returns all chat rooms with date and id", %{chat_member: chat_member} do

@@ -343,10 +343,21 @@ defmodule Milk.Tournaments do
       }
       |> Chat.create_chat_room()
 
+    # メンバー追加
+    tournament.id
+    |> Chat.get_uniq_chat_members_by_tournament_id()
+    |> Enum.each(fn member ->
+      Chat.create_chat_member(%{"user_id" => member.user_id, "chat_room_id" => chat_room.id})
+      |> IO.inspect()
+    end)
+
     %TournamentChatTopic{tournament_id: tournament.id, chat_room_id: chat_room.id}
     |> TournamentChatTopic.changeset(%{"topic_name" => topic, "tab_index" => tab_index})
   end
 
+  @doc """
+  update tournament topics.
+  """
   # TODO: エラーハンドリング
   def update_topic(tournament, current_tabs, new_tabs) do
     currentIds =
