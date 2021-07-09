@@ -19,12 +19,13 @@ require Logger
 
 tournament = Repo.one(from t in Tournament, where: t.capacity == 4)
 
-File.cp("./priv/repo/seeds/image/2pimp.jpg", "./static/image/profile_icon/2pimp.jpg")
+file = "free-monkey"
+File.cp("./priv/repo/seeds/image/#{file}.jpg", "./static/image/profile_icon/#{file}.jpg")
 1..4
 |> Enum.map(fn n ->
   Repo.insert! %User{
     bio: "Test user for filling size 4 tournament.",
-    icon_path: "./static/image/profile_icon/2pimp.jpg",
+    icon_path: "./static/image/profile_icon/#{file}.jpg",
     id_for_show: n,
     name: to_string(n) <> "TestEntrantOfSize4Tournament"
   }
