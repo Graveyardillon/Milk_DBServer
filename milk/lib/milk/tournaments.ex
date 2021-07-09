@@ -5,6 +5,7 @@ defmodule Milk.Tournaments do
   use Timex
 
   import Ecto.Query, warn: false
+  import Common.Sperm
 
   alias Ecto.Multi
   alias Common.Tools
@@ -342,10 +343,21 @@ defmodule Milk.Tournaments do
       }
       |> Chat.create_chat_room()
 
+    # メンバー追加
+    tournament.id
+    |> Chat.get_uniq_chat_members_by_tournament_id()
+    |> Enum.each(fn member ->
+      Chat.create_chat_member(%{"user_id" => member.user_id, "chat_room_id" => chat_room.id})
+      |> IO.inspect()
+    end)
+
     %TournamentChatTopic{tournament_id: tournament.id, chat_room_id: chat_room.id}
     |> TournamentChatTopic.changeset(%{"topic_name" => topic, "tab_index" => tab_index})
   end
 
+  @doc """
+  update tournament topics.
+  """
   # TODO: エラーハンドリング
   def update_topic(tournament, current_tabs, new_tabs) do
     currentIds =
@@ -778,12 +790,7 @@ defmodule Milk.Tournaments do
 
   # TODO: リファクタリングできそう
   defp join_tournament_chat_room(entrant, attrs) do
-    user_id =
-      if is_binary(attrs["user_id"]) do
-        String.to_integer(attrs["user_id"])
-      else
-        attrs["user_id"]
-      end
+    user_id = Tools.to_integer_as_needed(attrs["user_id"])
 
     result =
       Chat.get_chat_rooms_by_tournament_id(entrant.tournament.id)
@@ -826,9 +833,10 @@ defmodule Milk.Tournaments do
 
   """
   def update_entrant(%Entrant{} = entrant, attrs) do
-    case entrant
-         |> Entrant.changeset(attrs)
-         |> Repo.update() do
+    entrant
+    |> Entrant.changeset(attrs)
+    |> Repo.update()
+    |> case do
       {:ok, chat_member} ->
         {:ok, chat_member}
 
@@ -1111,7 +1119,7 @@ defmodule Milk.Tournaments do
     master_id
     |> nil_check?(tournament_id)
     |> check_entrant_number(tournament_id)
-    |> fetch_tournament_as_needed(master_id, tournament_id)
+    |> fetch_tournament(master_id, tournament_id)
     |> start()
   end
 
@@ -1145,15 +1153,15 @@ defmodule Milk.Tournaments do
     |> length()
   end
 
-  defp fetch_tournament_as_needed(check, master_id, tournament_id) do
+  defp fetch_tournament(check, master_id, tournament_id) do
     case check do
       {:ok, nil} ->
-        tournament =
-          Tournament
-          |> where([t], t.master_id == ^master_id and t.id == ^tournament_id)
-          |> Repo.one()
-
-        unless is_nil(tournament) do
+        Tournament
+        |> where([t], t.master_id == ^master_id and t.id == ^tournament_id)
+        |> Repo.one()
+        ~> tournament
+        |> is_nil()
+        |> unless do
           {:ok, tournament}
         else
           {:error, "cannot find tournament"}
@@ -1279,6 +1287,13 @@ defmodule Milk.Tournaments do
   """
   def initialize_match_list_with_fight_result(match_list) do
     Tournamex.initialize_match_list_with_fight_result(match_list)
+  end
+
+  @doc """
+  Initialize fight result of match list of teams.
+  """
+  def initialize_match_list_of_team_with_fight_result(match_list) do
+    Tournamex.initialize_match_list_of_team_with_fight_result(match_list)
   end
 
   @doc """
@@ -1700,25 +1715,39 @@ defmodule Milk.Tournaments do
   end
 
   @doc """
-  Initialize rank of a user.
+  Initialize rank of users.
   """
   def initialize_rank(match_list, number_of_entrant, tournament_id, count \\ 1)
 
-  def initialize_rank(match_list, number_of_entrant, tournament_id, count)
-      when is_integer(match_list) do
+  def initialize_rank(user_id, number_of_entrant, tournament_id, count)
+      when is_integer(user_id) do
     final = if number_of_entrant < count, do: number_of_entrant, else: count
 
-    {:ok, entrant} =
-      get_entrant_by_user_id_and_tournament_id(match_list, tournament_id)
-      |> update_entrant(%{rank: final})
-
-    entrant
+    user_id
+    |> get_entrant_by_user_id_and_tournament_id(tournament_id)
+    |> update_entrant(%{rank: final})
+    |> elem(1)
   end
 
   def initialize_rank(match_list, number_of_entrant, tournament_id, count) do
     Enum.map(match_list, fn x ->
       initialize_rank(x, number_of_entrant, tournament_id, count * 2)
     end)
+  end
+
+  @doc """
+  Initialize rank of teams.
+  """
+  def initialize_team_rank(match_list, number_of_entrant, count \\ 1)
+
+  def initialize_team_rank(team_id, number_of_entrant, count)
+      when is_integer(team_id) do
+    final = if number_of_entrant < count, do: number_of_entrant, else: count
+
+    team_id
+    |> get_team()
+    |> update_team(%{rank: final})
+    |> elem(1)
   end
 
   @doc """
@@ -1955,6 +1984,11 @@ defmodule Milk.Tournaments do
           create_team_invitation(member.id, leader)
         end)
 
+        team
+        |> Repo.preload(:tournament)
+        |> Repo.preload(:team_member)
+        ~> team
+
         {:ok, team}
       {:error, error} ->
         {:error, error}
@@ -2077,6 +2111,25 @@ defmodule Milk.Tournaments do
         member.user_id == user_id
       end)
     end)
+  end
+
+  @doc """
+  Updates a team.
+  """
+  def update_team(%Team{} = team, attrs) do
+    team
+    |> Team.changeset(attrs)
+    |> Repo.update()
+  end
+
+  @doc """
+  Get invitations of user
+  """
+  def get_invitations(user_id) do
+    TeamInvitation
+    |> join(:inner, [ti], tm in TeamMember, on: ti.team_member_id == tm.id)
+    |> where([ti, tm], tm.user_id == ^user_id)
+    |> Repo.all()
   end
 
   @doc """

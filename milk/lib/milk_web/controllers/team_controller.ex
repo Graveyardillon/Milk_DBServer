@@ -1,6 +1,8 @@
 defmodule MilkWeb.TeamController do
   use MilkWeb, :controller
 
+  import Common.Sperm
+
   alias Common.Tools
   alias Milk.Tournaments
 
@@ -61,9 +63,10 @@ defmodule MilkWeb.TeamController do
   Get confirmed teams of a tournament.
   """
   def get_confirmed_teams(conn, %{"tournament_id" => tournament_id}) do
-    teams = tournament_id
-      |> Tools.to_integer_as_needed()
-      |> Tournaments.get_confirmed_teams()
+    tournament_id
+    |> Tools.to_integer_as_needed()
+    |> Tournaments.get_confirmed_teams()
+    ~> teams
 
     render(conn, "index.json", teams: teams)
   end

@@ -1,4 +1,4 @@
-defmodule Milk.Common.Fixtures do
+defmodule Common.Fixtures do
   alias Milk.{
     Accounts,
     Platforms,

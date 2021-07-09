@@ -57,3 +57,9 @@ mix run ./priv/repo/seeds/tournament/assistant_check.exs && \
 mix run ./priv/repo/seeds/action_history/seeder.exs && \
 mix phx.server
 ```
+
+```
+mix ecto.reset && \
+mix run ./priv/repo/seeds/tournament/team/setup_progress.exs && \
+mix phx.server
+```
