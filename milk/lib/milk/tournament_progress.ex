@@ -881,6 +881,19 @@ defmodule Milk.TournamentProgress do
       team = Tournaments.get_team(x["team_id"])
 
       # leaderの情報を記載したいため、そのデータを入れる
+      team.id
+      |> Tournaments.get_leader()
+      |> Map.get(:user)
+      ~> user
+
+      acc
+      |> Tournaments.put_value_on_brackets(user.id, %{"name" => user.name})
+      |> Tournaments.put_value_on_brackets(user.id, %{"win_count" => 0})
+      |> Tournaments.put_value_on_brackets(user.id, %{"icon_path" => user.icon_path})
+      |> Tournaments.put_value_on_brackets(user.id, %{"round" => 0})
     end)
+    |> insert_match_list_with_fight_result(tournament.id)
+
+    {:ok, match_list}
   end
 end

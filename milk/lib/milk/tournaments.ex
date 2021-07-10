@@ -2038,6 +2038,17 @@ defmodule Milk.Tournaments do
   end
 
   @doc """
+  Get leader of a team.
+  """
+  def get_leader(team_id) do
+    TeamMember
+    |> where([tm], tm.team_id == ^team_id)
+    |> where([tm], tm.is_leader)
+    |> Repo.one()
+    |> Repo.preload(:user)
+  end
+
+  @doc """
   Get teams
   """
   def get_teammates(tournament_id, user_id) do
