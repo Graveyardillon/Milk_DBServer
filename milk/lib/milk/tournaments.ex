@@ -1134,7 +1134,11 @@ defmodule Milk.Tournaments do
   defp check_entrant_number(check, tournament_id) do
     case check do
       {:ok, _} ->
-        if number_of_entrants(tournament_id) > 1 do
+        Entrant
+        |> where([e], e.tournament_id == ^tournament_id)
+        |> Repo.aggregate(:count)
+        |> Kernel.>(1)
+        |> if do
           {:ok, nil}
         else
           delete_tournament(tournament_id)
@@ -1144,13 +1148,6 @@ defmodule Milk.Tournaments do
       {:error, reason} ->
         {:error, reason}
     end
-  end
-
-  defp number_of_entrants(tournament_id) do
-    Entrant
-    |> where([e], e.tournament_id == ^tournament_id)
-    |> Repo.all()
-    |> length()
   end
 
   defp fetch_tournament(check, master_id, tournament_id) do
@@ -1186,6 +1183,20 @@ defmodule Milk.Tournaments do
       {:error, reason} ->
         {:error, reason}
     end
+  end
+
+  @doc """
+  Start a team tournament.
+  """
+  def start_team(tournament_id, master_id) do
+    master_id
+    |> nil_check?(tournament_id)
+  end
+
+  defp is_team_num_enough?(check, tournament_id) do
+    # case check do
+    #   {:ok, _} ->
+    # end
   end
 
   @doc """
