@@ -1142,7 +1142,7 @@ defmodule Milk.Tournaments do
           {:ok, nil}
         else
           delete_tournament(tournament_id)
-          {:error, "too few entrants"}
+          {:error, "short of participants"}
         end
 
       {:error, reason} ->
@@ -1188,15 +1188,30 @@ defmodule Milk.Tournaments do
   @doc """
   Start a team tournament.
   """
-  def start_team(tournament_id, master_id) do
+  def start_team_tournament(tournament_id, master_id) do
     master_id
     |> nil_check?(tournament_id)
+    |> is_team_num_enough?(tournament_id)
+    |> fetch_tournament(master_id, tournament_id)
+    |> start()
   end
 
   defp is_team_num_enough?(check, tournament_id) do
-    # case check do
-    #   {:ok, _} ->
-    # end
+    case check do
+      {:ok, _} ->
+        tournament_id
+        |> get_confirmed_teams()
+        |> length()
+        |> Kernel.>(1)
+        |> if do
+          {:ok, nil}
+        else
+          {:error, "short of teams"}
+        end
+
+      {:error, reason} ->
+        {:error, reason}
+    end
   end
 
   @doc """

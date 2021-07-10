@@ -876,7 +876,7 @@ defmodule Milk.TournamentsTest do
     test "start/2 with only one entrant returns too few entrants error.", %{
       tournament: tournament
     } do
-      assert {:error, "too few entrants"} ==
+      assert {:error, "short of participants"} ==
                Tournaments.start(tournament.master_id, tournament.id)
     end
 

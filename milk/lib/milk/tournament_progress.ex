@@ -854,7 +854,7 @@ defmodule Milk.TournamentProgress do
 
   def start_team_best_of_format(master_id, tournament) do
     master_id
-    |> Tournaments.start(tournament.id)
+    |> Tournaments.start_team_tournament(tournament.id)
     |> case do
       {:ok, _tournament} ->
         {:ok, match_list} = generate_team_best_of_format_matches(tournament)
