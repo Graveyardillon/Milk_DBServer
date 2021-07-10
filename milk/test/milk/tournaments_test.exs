@@ -2191,6 +2191,23 @@ defmodule Milk.TournamentsTest do
     end
   end
 
+  describe "get_leader" do
+    test "works" do
+      {tournament, users} = setup_team(5)
+      [leader | _users] = users
+
+      tournament.id
+      |> Tournaments.get_teams_by_tournament_id()
+      |> hd()
+      |> Map.get(:id)
+      |> Tournaments.get_leader()
+      |> (fn member ->
+        assert member.user_id == leader
+        refute is_nil(member.user.name)
+      end).()
+    end
+  end
+
   describe "get_teammates" do
     test "works" do
       {tournament, users} = setup_team(5)

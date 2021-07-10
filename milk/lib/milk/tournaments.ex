@@ -2045,6 +2045,7 @@ defmodule Milk.Tournaments do
     |> where([tm], tm.team_id == ^team_id)
     |> where([tm], tm.is_leader)
     |> Repo.one()
+    |> Repo.preload(:user)
   end
 
   @doc """
