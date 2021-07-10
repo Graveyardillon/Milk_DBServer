@@ -853,9 +853,15 @@ defmodule Milk.TournamentProgress do
   """
 
   def start_team_best_of_format(master_id, tournament) do
-    Tournaments.start(master_id, tournament.id)
-    {:ok, match_list} = generate_team_best_of_format_matches(tournament)
-    {:ok, match_list, nil}
+    master_id
+    |> Tournaments.start(tournament.id)
+    |> case do
+      {:ok, _tournament} ->
+        {:ok, match_list} = generate_team_best_of_format_matches(tournament)
+        {:ok, match_list, nil}
+      {:error, error} ->
+        {:error, error, nil}
+    end
   end
 
   defp generate_team_best_of_format_matches(tournament) do
@@ -863,6 +869,7 @@ defmodule Milk.TournamentProgress do
     |> Tournaments.get_confirmed_teams()
     ~> teams
     |> Enum.map(fn team -> team.id end)
+    |> IO.inspect(label: :teams)
     |> Tournaments.generate_matchlist()
     ~> {:ok, match_list}
     |> elem(1)
