@@ -881,6 +881,7 @@ defmodule Milk.TournamentProgress do
       team = Tournaments.get_team(x["team_id"])
 
       # leaderの情報を記載したいため、そのデータを入れる
+
     end)
   end
 end

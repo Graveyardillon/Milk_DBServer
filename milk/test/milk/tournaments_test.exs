@@ -42,6 +42,7 @@ defmodule Milk.TournamentsTest do
     "platform_id" => 1,
     "is_started" => true
   }
+
   @update_attrs %{
     capacity: 43,
     deadline: "2011-05-18T15:01:01Z",
@@ -51,6 +52,7 @@ defmodule Milk.TournamentsTest do
     type: 43,
     url: "some updated url"
   }
+
   @invalid_attrs %{
     "capacity" => nil,
     "deadline" => nil,
@@ -62,11 +64,13 @@ defmodule Milk.TournamentsTest do
     "master_id" => 1,
     "platform_id" => 1
   }
+
   @entrant_create_attrs %{
     "rank" => 42,
     "user_id" => -1,
     "tournament_id" => -1
   }
+
   @invalid_entrant_create_attrs %{
     "user_id" => nil,
     "tournament_id" => nil
@@ -2165,6 +2169,24 @@ defmodule Milk.TournamentsTest do
       end)
       |> length()
       |> Kernel.==(5)
+      |> assert()
+    end
+  end
+
+  describe "get_team_members_by_team_id" do
+    test "works" do
+      {tournament, users} = setup_team(5)
+
+      tournament.id
+      |> Tournaments.get_teams_by_tournament_id()
+      |> hd()
+      |> Map.get(:id)
+      |> Tournaments.get_team_members_by_team_id()
+      |> Enum.map(fn member ->
+        assert member.user_id in users
+      end)
+      |> length()
+      |> Kernel.==(length(users))
       |> assert()
     end
   end
