@@ -1776,6 +1776,12 @@ defmodule Milk.Tournaments do
     |> elem(1)
   end
 
+  def initialize_team_rank(match_list, number_of_teams, count) do
+    Enum.map(match_list, fn x ->
+      initialize_team_rank(x, number_of_teams, count * 2)
+    end)
+  end
+
   @doc """
   Checks tournament state.
   """
