@@ -987,19 +987,16 @@ defmodule Milk.Tournaments do
       match_list
       |> find_match(loser)
       |> case do
-        [] ->
+        [] -> {:error, nil}
+        match -> get_opponent(match, loser)
+      end
+      |> case do
+        {:ok, opponent} ->
+          promote_rank(%{"tournament_id" => tournament_id, "user_id" => opponent["id"]})
+        {:wait, nil} ->
+          {:wait, nil}
+        {:error, nil} ->
           {:error, nil}
-
-        match ->
-          match
-          |> get_opponent(loser)
-          |> case do
-            {:ok, opponent} ->
-              promote_rank(%{"tournament_id" => tournament_id, "user_id" => opponent["id"]})
-
-            {:wait, nil} ->
-              {:wait, nil}
-          end
       end
     end)
   end
