@@ -960,7 +960,7 @@ defmodule Milk.Tournaments do
 
   defp renew_match_list(tournament_id, match_list, loser_list) do
     unless is_nil(match_list) do
-      promote_winners_by_loser(tournament_id, match_list, loser_list)
+      promote_winners_by_loser!(tournament_id, match_list, loser_list)
     end
 
     renew(loser_list, tournament_id)
@@ -982,7 +982,7 @@ defmodule Milk.Tournaments do
     Tournamex.delete_loser(match_list, loser)
   end
 
-  def promote_winners_by_loser(tournament_id, match_list, losers) when is_list(losers) do
+  def promote_winners_by_loser!(tournament_id, match_list, losers) when is_list(losers) do
     Enum.each(losers, fn loser ->
       match_list
       |> find_match(loser)
@@ -1004,13 +1004,22 @@ defmodule Milk.Tournaments do
     end)
   end
 
-  def promote_winners_by_loser(tournament_id, match_list, loser) do
-    match = find_match(match_list, loser)
-
-    unless match == [] do
-      {:ok, opponent} = get_opponent(match, loser)
-
-      promote_rank(%{"tournament_id" => tournament_id, "user_id" => opponent["id"]})
+  def promote_winners_by_loser!(tournament_id, match_list, loser) do
+    match_list
+    |> find_match(loser)
+    ~> match
+    |> Kernel.==([])
+    |> unless do
+      match
+      |> get_opponent(loser)
+      |> case do
+        {:ok, opponent} ->
+          promote_rank(%{"tournament_id" => tournament_id, "user_id" => opponent["id"]})
+        {:wait, nil} ->
+          raise RuntimeError, "Expected {:ok, opponent} (got: {:wait, nil})"
+        _ ->
+          raise RuntimeError, "Unexpected Output"
+      end
     end
   end
 
