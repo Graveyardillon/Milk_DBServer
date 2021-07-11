@@ -5,6 +5,8 @@ defmodule Common.Fixtures do
     Tournaments
   }
 
+  import Common.Sperm
+
   defmacro __using__(_opts) do
     quote do
       def fixture_tournament(opts \\ []) do
@@ -94,6 +96,41 @@ defmodule Common.Fixtures do
           |> Tournaments.create_tournament()
 
         tournament
+      end
+
+      def fill_with_team(tournament_id) do
+        tournament = Tournaments.get_tournament(tournament_id)
+
+        (101)..(tournament.team_size*tournament.capacity+100)
+        |> IO.inspect()
+        |> Enum.to_list()
+        |> Enum.map(fn n ->
+          fixture_user(num: n)
+        end)
+        ~> users
+        |> Enum.map(fn user ->
+          user.id
+        end)
+        |> Enum.chunk_every(tournament.team_size)
+        |> Enum.map(fn [leader | members] ->
+          tournament.id
+          |> Tournaments.create_team(tournament.team_size, leader, members)
+          |> elem(1)
+        end)
+        |> Enum.map(fn team ->
+          team.id
+          |> Tournaments.get_team_members_by_team_id()
+          |> Enum.map(fn member ->
+            leader = Tournaments.get_leader(member.team_id)
+
+            member.id
+            |> Tournaments.create_team_invitation(leader.user_id)
+            |> elem(1)
+            |> Map.get(:id)
+            |> Tournaments.confirm_team_invitation()
+          end)
+          team
+        end)
       end
 
       def fixture_user(opts \\ []) do

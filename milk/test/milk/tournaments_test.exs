@@ -1104,7 +1104,7 @@ defmodule Milk.TournamentsTest do
       assert "IsWaitingForStart" == Tournaments.state!(tournament.id, tournament.master_id)
     end
 
-    test "state!2 returns IsInMatch" do
+    test "state!/2 returns IsInMatch" do
       %{tournament: tournament} = create_tournament_for_flow(nil)
       create_entrants(7, tournament.id)
 
@@ -1115,6 +1115,22 @@ defmodule Milk.TournamentsTest do
 
       start(tournament.master_id, tournament.id)
       assert "IsInMatch" == Tournaments.state!(tournament.id, tournament.master_id)
+    end
+  end
+
+  describe "state! (team)" do
+    test "state!/2 returns IsNotStarted" do
+      tournament = fixture_tournament(is_team: true)
+      assert "IsNotStarted" == Tournaments.state!(tournament.id, tournament.master_id)
+    end
+
+    test "state!/2 returns IsManager" do
+      tournament = fixture_tournament(is_team: true)
+      teams = fill_with_team(tournament.id)
+      assert length(teams) == tournament.capacity
+
+      Tournaments.start_team_tournament(tournament.id, tournament.master_id)
+      assert "IsManager" == Tournaments.state!(tournament.id, tournament.master_id)
     end
   end
 
