@@ -988,7 +988,15 @@ defmodule Milk.Tournaments do
       |> find_match(loser)
       |> case do
         [] -> {:error, nil}
-        match -> get_opponent(match, loser)
+        match ->
+          tournament_id
+          |> get_tournament()
+          |> Map.get(:is_team)
+          |> if do
+            get_opponent_team(match, loser)
+          else
+            get_opponent(match, loser)
+          end
       end
       |> case do
         {:ok, opponent} ->
@@ -1601,10 +1609,7 @@ defmodule Milk.Tournaments do
     end
   end
 
-  def promote_rank(attrs \\ %{}) do
-    user_id = attrs["user_id"]
-    tournament_id = attrs["tournament_id"]
-
+  def promote_rank(attrs = %{"user_id" => user_id, "tournament_id" => tournament_id}) do
     attrs
     |> user_exists?()
     |> tournament_exists?()
