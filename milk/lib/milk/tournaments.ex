@@ -348,7 +348,6 @@ defmodule Milk.Tournaments do
     |> Chat.get_uniq_chat_members_by_tournament_id()
     |> Enum.each(fn member ->
       Chat.create_chat_member(%{"user_id" => member.user_id, "chat_room_id" => chat_room.id})
-      |> IO.inspect()
     end)
 
     %TournamentChatTopic{tournament_id: tournament.id, chat_room_id: chat_room.id}
@@ -1049,9 +1048,16 @@ defmodule Milk.Tournaments do
       |> hd()
       |> (fn the_other ->
             if is_integer(the_other) do
-              opponent =
-                Accounts.get_user(the_other)
-                |> atom_user_map_to_string_map()
+              the_other
+              |> Accounts.get_user()
+              |> Map.from_struct()
+              |> Tools.atom_map_to_string_map()
+              ~> user
+              |> Map.get("auth")
+              |> Map.from_struct()
+              |> Tools.atom_map_to_string_map()
+              ~> auth
+              opponent = Map.put(user, "auth", auth)
 
               {:ok, opponent}
             else
@@ -1063,29 +1069,30 @@ defmodule Milk.Tournaments do
     end
   end
 
-  def get_opponent(match, user_id, :promote) do
-    a =
+  @doc """
+  Get opponent team.
+  """
+  def get_opponent_team(match, team_id) do
+    if Enum.member?(match, team_id) and length(match) == 2 do
       match
-      |> Enum.filter(fn x ->
-        inspect(x, charlists: false)
-        x.user_id != user_id
-      end)
+      |> Enum.filter(&(&1 != team_id))
       |> hd()
+      ~> the_other
+      |> is_integer()
+      |> if do
+        the_other
+        |> get_team()
+        |> Map.from_struct()
+        |> Tools.atom_map_to_string_map()
+        ~> opponent
 
-    inspect(a, charlists: false)
-
-    a.user_id
-    |> Accounts.get_user()
-    |> atom_user_map_to_string_map()
-  end
-
-  defp atom_user_map_to_string_map(%User{} = user) do
-    %{
-      "id" => user.id,
-      "icon_path" => user.icon_path,
-      "id_for_show" => user.id_for_show,
-      "name" => user.name
-    }
+        {:ok, opponent}
+      else
+        {:wait, nil}
+      end
+    else
+      {:error, "opponent does not exist"}
+    end
   end
 
   @doc """

@@ -1148,21 +1148,21 @@ defmodule Milk.TournamentsTest do
       assert "IsAssistant" == Tournaments.state!(tournament.id, assistant_id)
     end
 
-    # test "state!/2 returns IsLoser" do
-    #   [is_team: true, capacity: 4]
-    #   |> fixture_tournament()
-    #   ~> tournament
-    #   |> Map.get(:id)
-    #   |> fill_with_team()
-    #   |> hd()
-    #   ~> team
+    test "state!/2 returns IsLoser" do
+      [is_team: true, capacity: 4]
+      |> fixture_tournament()
+      ~> tournament
+      |> Map.get(:id)
+      |> fill_with_team()
+      |> hd()
+      ~> team
 
-    #   leader = Tournaments.get_leader(team.id)
+      leader = Tournaments.get_leader(team.id)
 
-    #   Tournaments.start_team_tournament(tournament.id, tournament.master_id)
-    #   delete_loser(tournament.id, [team.id])
-    #   assert "IsLoser" == Tournaments.state!(tournament.id, leader.id)
-    # end
+      start_team(tournament.master_id, tournament.id)
+      # delete_loser(tournament.id, [team.id])
+      # assert "IsLoser" == Tournaments.state!(tournament.id, leader.id)
+    end
   end
 
   defp start(master_id, tournament_id) do
@@ -1202,6 +1202,45 @@ defmodule Milk.TournamentsTest do
     |> TournamentProgress.insert_match_list_with_fight_result(tournament_id)
   end
 
+  defp start_team(master_id, tournament_id) do
+    Tournaments.start_team_tournament(tournament_id, master_id)
+
+    tournament_id
+    |> Tournaments.get_confirmed_teams()
+    ~> teams
+    |> Enum.map(fn team -> team.id end)
+    |> Tournaments.generate_matchlist()
+    ~> {:ok, match_list}
+    |> elem(1)
+    |> TournamentProgress.insert_match_list(tournament_id)
+
+    count = length(teams)
+    Tournaments.initialize_team_rank(match_list, count)
+
+    match_list
+    |> Tournaments.initialize_match_list_of_team_with_fight_result()
+    ~> match_list_with_fight_result
+
+    match_list_with_fight_result
+    |> List.flatten()
+    |> Enum.reduce(match_list_with_fight_result, fn x, acc ->
+      team = Tournaments.get_team(x["team_id"])
+
+      # leaderの情報を記載したいため、そのデータを入れる
+      team.id
+      |> Tournaments.get_leader()
+      |> Map.get(:user)
+      ~> user
+
+      acc
+      |> Tournaments.put_value_on_brackets(user.id, %{"name" => user.name})
+      |> Tournaments.put_value_on_brackets(user.id, %{"win_count" => 0})
+      |> Tournaments.put_value_on_brackets(user.id, %{"icon_path" => user.icon_path})
+      |> Tournaments.put_value_on_brackets(user.id, %{"round" => 0})
+    end)
+    |> TournamentProgress.insert_match_list_with_fight_result(tournament_id)
+  end
+
   defp match_list_with_fight_result(match_list) do
     Tournaments.initialize_match_list_with_fight_result(match_list)
   end
@@ -1221,6 +1260,7 @@ defmodule Milk.TournamentsTest do
   end
 
   defp renew_match_list(tournament_id, match_list, loser_list) do
+    # koko
     Tournaments.promote_winners_by_loser(tournament_id, match_list, loser_list)
     updated_match_list = Tournaments.delete_loser(match_list, loser_list)
     TournamentProgress.delete_match_list(tournament_id)

@@ -513,9 +513,7 @@ defmodule MilkWeb.TournamentController do
       |> Tournaments.get_tabs_by_tournament_id()
       |> Enum.map(fn tab ->
         chat_room = Chat.get_chat_room(tab.chat_room_id)
-          |> IO.inspect(label: :chatroom)
         member = Chat.get_member(chat_room.id, user_id)
-          |> IO.inspect(label: :menber)
 
         tab
         |> Map.put(:authority, chat_room.authority)
@@ -768,11 +766,12 @@ defmodule MilkWeb.TournamentController do
       match = Tournaments.find_match(match_list, user_id)
 
       with {:ok, opponent} <- Tournaments.get_opponent(match, user_id) do
-        json(conn, %{result: true, opponent: opponent})
+        render(conn, "opponent.json", opponent: opponent)
       else
-        # FIXME: waitのタプルの作り方微妙
-        {:wait, _} -> json(conn, %{result: false, opponent: nil, wait: true})
-        _ -> render(conn, "error.json", error: nil)
+        {:wait, _} ->
+          json(conn, %{result: false, opponent: nil, wait: true})
+        _ ->
+          render(conn, "error.json", error: nil)
       end
     else
       json(conn, %{result: false})

@@ -869,7 +869,6 @@ defmodule Milk.TournamentProgress do
     |> Tournaments.get_confirmed_teams()
     ~> teams
     |> Enum.map(fn team -> team.id end)
-    |> IO.inspect(label: :teams)
     |> Tournaments.generate_matchlist()
     ~> {:ok, match_list}
     |> elem(1)
