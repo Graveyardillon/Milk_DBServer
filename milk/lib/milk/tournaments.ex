@@ -1046,24 +1046,24 @@ defmodule Milk.Tournaments do
       match
       |> Enum.filter(&(&1 != user_id))
       |> hd()
-      |> (fn the_other ->
-            if is_integer(the_other) do
-              the_other
-              |> Accounts.get_user()
-              |> Map.from_struct()
-              |> Tools.atom_map_to_string_map()
-              ~> user
-              |> Map.get("auth")
-              |> Map.from_struct()
-              |> Tools.atom_map_to_string_map()
-              ~> auth
-              opponent = Map.put(user, "auth", auth)
+      ~> the_other
+      |> is_integer()
+      |> if do
+        the_other
+        |> Accounts.get_user()
+        |> Map.from_struct()
+        |> Tools.atom_map_to_string_map()
+        ~> user
+        |> Map.get("auth")
+        |> Map.from_struct()
+        |> Tools.atom_map_to_string_map()
+        ~> auth
+        opponent = Map.put(user, "auth", auth)
 
-              {:ok, opponent}
-            else
-              {:wait, nil}
-            end
-          end).()
+        {:ok, opponent}
+      else
+        {:wait, nil}
+      end
     else
       {:error, "opponent does not exist"}
     end

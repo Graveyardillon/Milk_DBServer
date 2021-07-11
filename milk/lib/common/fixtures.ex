@@ -102,7 +102,6 @@ defmodule Common.Fixtures do
         tournament = Tournaments.get_tournament(tournament_id)
 
         (101)..(tournament.team_size*tournament.capacity+100)
-        |> IO.inspect()
         |> Enum.to_list()
         |> Enum.map(fn n ->
           fixture_user(num: n)
