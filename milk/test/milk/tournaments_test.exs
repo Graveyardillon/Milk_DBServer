@@ -1132,6 +1132,37 @@ defmodule Milk.TournamentsTest do
       Tournaments.start_team_tournament(tournament.id, tournament.master_id)
       assert "IsManager" == Tournaments.state!(tournament.id, tournament.master_id)
     end
+
+    test "state!/2 returns IsAssistant" do
+      tournament = fixture_tournament(is_team: true)
+      fill_with_team(tournament.id)
+      assistant_id = fixture_user(num: 10).id
+
+      Tournaments.create_assistants(%{
+        "tournament_id" => tournament.id,
+        "user_id" => [assistant_id]
+      })
+
+      Tournaments.start_team_tournament(tournament.id, tournament.master_id)
+
+      assert "IsAssistant" == Tournaments.state!(tournament.id, assistant_id)
+    end
+
+    # test "state!/2 returns IsLoser" do
+    #   [is_team: true, capacity: 4]
+    #   |> fixture_tournament()
+    #   ~> tournament
+    #   |> Map.get(:id)
+    #   |> fill_with_team()
+    #   |> hd()
+    #   ~> team
+
+    #   leader = Tournaments.get_leader(team.id)
+
+    #   Tournaments.start_team_tournament(tournament.id, tournament.master_id)
+    #   delete_loser(tournament.id, [team.id])
+    #   assert "IsLoser" == Tournaments.state!(tournament.id, leader.id)
+    # end
   end
 
   defp start(master_id, tournament_id) do
