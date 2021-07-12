@@ -24,7 +24,8 @@ defmodule Milk.TournamentsTest do
   }
 
   alias Milk.Log.{
-    EntrantLog
+    EntrantLog,
+    TournamentLog
   }
 
   alias Milk.Accounts.User
@@ -1866,6 +1867,7 @@ defmodule Milk.TournamentsTest do
       |> Tournaments.get_opponent_team(another_team.id)
       ~> {:ok, another_opponent_team}
 
+      # 勝敗報告
       result = claim_score(another_team.id, another_opponent_team["id"], another_score, 0)
       assert result.validated
       refute result.completed
@@ -1907,6 +1909,43 @@ defmodule Milk.TournamentsTest do
       |> length()
       |> Kernel.==(4)
       |> assert()
+
+      # ランク確認
+      tournament.id
+      |> Tournaments.get_confirmed_teams()
+      |> Enum.each(fn team ->
+        cond do
+          team.id == your_team.id ->
+            assert team.rank == 2
+          team.id == another_team.id ->
+            assert team.rank == 2
+          true ->
+            assert team.rank == 4
+        end
+      end)
+
+      result = claim_score(your_team.id, another_team.id, your_score, 0)
+      assert result.validated
+      refute result.completed
+
+      result = claim_score(another_team.id, your_team.id, another_score, 0)
+      assert result.validated
+      assert result.validated
+
+      # match_listの最終状態確認
+      tournament.id
+      |> TournamentProgress.get_match_list()
+      |> Kernel.==([])
+      |> assert()
+
+      # match_list_with_fight_resultの最終状態確認
+      tournament.id
+      |> TournamentProgress.get_match_list_with_fight_result()
+      |> Kernel.==([])
+      |> assert()
+
+      # tournamentがlogになってるか確認
+      assert {:ok, %TournamentLog{}} = Tournaments.get_tournament_including_logs(tournament.id)
     end
   end
 
