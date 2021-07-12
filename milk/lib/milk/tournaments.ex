@@ -959,7 +959,7 @@ defmodule Milk.Tournaments do
   end
 
   defp renew_match_list(tournament_id, match_list, loser_list) do
-    unless is_nil(match_list) do
+    unless match_list == [] do
       promote_winners_by_loser!(tournament_id, match_list, loser_list)
     end
 
@@ -1008,7 +1008,7 @@ defmodule Milk.Tournaments do
           if tournament.is_team do
             Map.new()
             |> Map.put("tournament_id", tournament_id)
-            |> Map.put("team_id", opponent.id)
+            |> Map.put("team_id", opponent["id"])
             |> promote_rank()
           else
             Map.new()

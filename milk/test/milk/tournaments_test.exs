@@ -1649,6 +1649,8 @@ defmodule Milk.TournamentsTest do
       |> Map.get(:tournament_id)
       ~> tournament_id
 
+      TournamentProgress.insert_score(tournament_id, team_id, score)
+
       tournament_id
       |> TournamentProgress.get_score(opponent_team_id)
       |> case do
@@ -1662,7 +1664,7 @@ defmodule Milk.TournamentsTest do
               TournamentProgress.delete_score(tournament_id, team_id)
               TournamentProgress.delete_score(tournament_id, opponent_team_id)
               finish_as_needed(tournament_id, opponent_team_id)
-              %{valdated: true, completed: true}
+              %{validated: true, completed: true}
 
             n < score ->
               Tournaments.delete_loser_process(tournament_id, [opponent_team_id])
@@ -1721,6 +1723,13 @@ defmodule Milk.TournamentsTest do
       end)
       ~> leaders
 
+      # assert用のidリスト作成
+      teams
+      |> Enum.map(fn team ->
+        team.id
+      end)
+      ~> team_id_list
+
       # assert用の名前リスト作成
       leaders
       |> Enum.map(fn leader ->
@@ -1760,7 +1769,12 @@ defmodule Milk.TournamentsTest do
       |> Kernel.==(4)
       |> assert()
 
-      # ランク確認
+      # 初期ランク確認
+      tournament.id
+      |> Tournaments.get_confirmed_teams()
+      |> Enum.each(fn team ->
+        assert team.rank == 4
+      end)
 
       your_team = hd(teams)
       your_score = 300
@@ -1779,6 +1793,18 @@ defmodule Milk.TournamentsTest do
       result = claim_score(opponent_team["id"], your_team.id, opponent_score, 0)
       assert result.validated
       assert result.validated
+
+      # match_listの状態確認
+      tournament.id
+      |> TournamentProgress.get_match_list()
+      |> List.flatten()
+      |> Enum.map(fn cell ->
+        refute cell == opponent_team["id"]
+        assert cell in team_id_list
+      end)
+      |> length()
+      |> Kernel.==(3)
+      |> assert()
     end
   end
 

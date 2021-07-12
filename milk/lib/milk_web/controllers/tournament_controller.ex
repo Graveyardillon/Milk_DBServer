@@ -1005,6 +1005,8 @@ defmodule MilkWeb.TournamentController do
     |> Map.get(:tournament_id)
     ~> tournament_id
 
+    TournamentProgress.insert_score(tournament_id, team_id, score)
+
     tournament_id
     |> TournamentProgress.get_score(opponent_team_id)
     |> case do
