@@ -1636,7 +1636,18 @@ defmodule Milk.Tournaments do
     end
   end
 
-  def promote_rank(attrs = %{"team_id" => team_id}) do
+  def promote_rank(attrs = %{"team_id" => team_id, "tournament_id" => tournament_id}) do
+    attrs
+    |> team_exists?()
+    |> tournament_exists?()
+    |> tournament_start_check()
+    |> case do
+      {:ok, _} -> get_match_list_if_possible(tournament_id)
+      {:error, error} -> {:error, error}
+    end
+  end
+
+  def promote_rank(attrs = %{"team_id" => team_id}, :force) do
     attrs
     |> team_exists?()
     |> tournament_exists?()
