@@ -983,7 +983,7 @@ defmodule Milk.Tournaments do
   end
 
   def promote_winners_by_loser!(tournament_id, match_list, losers) when is_list(losers) do
-    Enum.each(losers, fn loser ->
+    Enum.map(losers, fn loser ->
       match_list
       |> find_match(loser)
       |> case do
@@ -1644,6 +1644,10 @@ defmodule Milk.Tournaments do
       {:ok, _} -> get_match_list_if_possible(tournament_id)
       {:error, error} -> {:error, error}
     end
+    |> case do
+      {:ok, match_list} -> update_team_rank(match_list, team_id, tournament_id)
+      {:error, error} -> {:error, error}
+    end
   end
 
   def promote_rank(attrs = %{"team_id" => team_id}, :force) do
@@ -1734,6 +1738,52 @@ defmodule Milk.Tournaments do
         user_id
         |> get_entrant_by_user_id_and_tournament_id(tournament_id)
         |> update_entrant(%{rank: updated_rank})
+
+      {:wait, nil} -> {:wait, nil}
+      {:error, _} -> {:error, nil}
+    end
+  end
+
+  defp update_team_rank(match_list, team_id, tournament_id) do
+    match_list
+    |> find_match(team_id)
+    |> get_opponent_team(team_id)
+    |> case do
+      {:ok, opponent} ->
+        opponent
+        |> Map.get("id")
+        |> get_team()
+        ~> opponent_team
+        |> Map.get(:rank)
+        ~> opponent_team_rank
+
+        team_id
+        |> get_team()
+        ~> team
+        |> Map.get(:rank)
+        |> case do
+          rank when rank > opponent_team_rank ->
+            update_team(opponent_team, %{rank: rank})
+          rank when rank < opponent_team_rank ->
+            update_team(team, %{rank: opponent_team_rank})
+          _ -> nil
+        end
+
+        opponent_team
+        |> Map.get(:rank)
+        |> check_exponentiation_of_two()
+        ~> {_bool, rank}
+        |> elem(0)
+        |> if do
+          div(rank, 2)
+        else
+          find_num_closest_exponentiation_of_two(rank)
+        end
+        ~> updated_rank
+
+        team_id
+        |> get_team()
+        |> update_team(%{rank: updated_rank})
 
       {:wait, nil} -> {:wait, nil}
       {:error, _} -> {:error, nil}

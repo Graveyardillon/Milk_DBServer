@@ -1831,6 +1831,17 @@ defmodule Milk.TournamentsTest do
       |> length()
       |> Kernel.==(4)
       |> assert()
+
+      # ランク確認
+      tournament.id
+      |> Tournaments.get_confirmed_teams()
+      |> Enum.each(fn team ->
+        if team.id == your_team.id do
+          assert team.rank == 2
+        else
+          assert team.rank == 4
+        end
+      end)
     end
   end
 
