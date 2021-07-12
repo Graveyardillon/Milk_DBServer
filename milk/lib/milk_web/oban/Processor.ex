@@ -18,20 +18,23 @@ defmodule Oban.Processer do
       _ ->
         IO.puts("undefined arg")
     end
-    
+
     IO.puts("...finished job")
   end 
 
   defp notify_tournament_start(id) do
     tournament = Tournaments.get_tournament(id)
     if tournament do 
-      tokens = 
+      devices = 
         for entrant <- Map.get(tournament, :entrant) do
           Accounts.get_devices_by_user_id(entrant.user_id)
         end
         |> List.flatten()
-      IO.inspect(tokens)
+      # IO.inspect(devices)
 
+      for device <- devices do
+        Notif.push_ios("トーナメント開始", device.token, 1, "")
+      end
     else
         IO.puts("tournament not found")
     end
