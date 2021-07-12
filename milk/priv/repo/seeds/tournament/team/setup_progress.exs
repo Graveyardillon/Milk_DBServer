@@ -39,7 +39,7 @@ organizer
     "description" => "test team tournament of size 4.",
     "event_date" => day_after_tomorrow,
     "name" => "test team tournament of size 4.",
-    "type" => 1,
+    "type" => 2,
     "url" => "test url",
     "thumbnail_path" => "damn",
     "password" => nil,

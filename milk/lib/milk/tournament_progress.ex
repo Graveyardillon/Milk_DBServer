@@ -853,9 +853,15 @@ defmodule Milk.TournamentProgress do
   """
 
   def start_team_best_of_format(master_id, tournament) do
-    Tournaments.start(master_id, tournament.id)
-    {:ok, match_list} = generate_team_best_of_format_matches(tournament)
-    {:ok, match_list, nil}
+    tournament.id
+    |> Tournaments.start_team_tournament(master_id)
+    |> case do
+      {:ok, _tournament} ->
+        {:ok, match_list} = generate_team_best_of_format_matches(tournament)
+        {:ok, match_list, nil}
+      {:error, error} ->
+        {:error, error, nil}
+    end
   end
 
   defp generate_team_best_of_format_matches(tournament) do
@@ -887,10 +893,10 @@ defmodule Milk.TournamentProgress do
       ~> user
 
       acc
-      |> Tournaments.put_value_on_brackets(user.id, %{"name" => user.name})
-      |> Tournaments.put_value_on_brackets(user.id, %{"win_count" => 0})
-      |> Tournaments.put_value_on_brackets(user.id, %{"icon_path" => user.icon_path})
-      |> Tournaments.put_value_on_brackets(user.id, %{"round" => 0})
+      |> Tournaments.put_value_on_brackets(team.id, %{"name" => user.name})
+      |> Tournaments.put_value_on_brackets(team.id, %{"win_count" => 0})
+      |> Tournaments.put_value_on_brackets(team.id, %{"icon_path" => user.icon_path})
+      |> Tournaments.put_value_on_brackets(team.id, %{"round" => 0})
     end)
     |> insert_match_list_with_fight_result(tournament.id)
 
