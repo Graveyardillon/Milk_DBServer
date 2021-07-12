@@ -893,10 +893,10 @@ defmodule Milk.TournamentProgress do
       ~> user
 
       acc
-      |> Tournaments.put_value_on_brackets(user.id, %{"name" => user.name})
-      |> Tournaments.put_value_on_brackets(user.id, %{"win_count" => 0})
-      |> Tournaments.put_value_on_brackets(user.id, %{"icon_path" => user.icon_path})
-      |> Tournaments.put_value_on_brackets(user.id, %{"round" => 0})
+      |> Tournaments.put_value_on_brackets(team.id, %{"name" => user.name})
+      |> Tournaments.put_value_on_brackets(team.id, %{"win_count" => 0})
+      |> Tournaments.put_value_on_brackets(team.id, %{"icon_path" => user.icon_path})
+      |> Tournaments.put_value_on_brackets(team.id, %{"round" => 0})
     end)
     |> insert_match_list_with_fight_result(tournament.id)
 

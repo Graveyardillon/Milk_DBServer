@@ -1647,11 +1647,49 @@ defmodule Milk.TournamentsTest do
       ~> tournament
       |> Map.get(:id)
       |> fill_with_team()
-      |> Enum.filter(fn team -> team.is_confirmed end)
-      |> length()
+      |> Enum.map(fn team ->
+        team.id
+        |> Tournaments.get_leader()
+        |> Map.get(:user)
+      end)
+      ~> leaders
+      |> Enum.map(fn leader ->
+        leader.name
+      end)
+      ~> leader_name_list
 
-      TournamentProgress.start_team_best_of_format(tournament.master_id, tournament)
-      |> IO.inspect()
+      leaders
+      |> Enum.map(fn leader ->
+        leader.icon_path
+      end)
+      ~> leader_icon_path_list
+
+      tournament.master_id
+      |> TournamentProgress.start_team_best_of_format(tournament)
+      ~> {:ok, match_list, nil}
+
+      # match_listの保存確認
+      tournament.id
+      |> TournamentProgress.get_match_list()
+      |> Kernel.==(match_list)
+      |> assert()
+
+      # match_list_with_fight_resultの保存確認
+      tournament.id
+      |> TournamentProgress.get_match_list_with_fight_result()
+      |> List.flatten()
+      |> Enum.map(fn cell ->
+        assert cell["name"] in leader_name_list
+        assert cell["icon_path"] in leader_icon_path_list
+        assert cell["win_count"] == 0
+        assert cell["round"] == 0
+        refute cell["is_loser"]
+      end)
+      |> length()
+      |> Kernel.==(4)
+      |> assert()
+
+
     end
   end
 
