@@ -1237,7 +1237,6 @@ defmodule Milk.Tournaments do
       {:ok, _} ->
         tournament_id
         |> get_confirmed_teams()
-        |> IO.inspect()
         |> length()
         |> Kernel.>(1)
         |> if do

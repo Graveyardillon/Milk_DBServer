@@ -1649,7 +1649,6 @@ defmodule Milk.TournamentsTest do
       |> fill_with_team()
       |> Enum.filter(fn team -> team.is_confirmed end)
       |> length()
-      |> IO.inspect()
 
       TournamentProgress.start_team_best_of_format(tournament.master_id, tournament)
       |> IO.inspect()

@@ -128,7 +128,7 @@ defmodule Common.Fixtures do
         |> Enum.map(fn team ->
           team.id
           |> Tournaments.get_team_members_by_team_id()
-          |> Enum.map(fn member ->
+          |> Enum.each(fn member ->
             leader = Tournaments.get_leader(member.team_id)
 
             member.id
