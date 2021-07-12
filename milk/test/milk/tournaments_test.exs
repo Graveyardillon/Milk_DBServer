@@ -1883,6 +1883,30 @@ defmodule Milk.TournamentsTest do
       |> length()
       |> Kernel.==(2)
       |> assert()
+
+      # match_list_with_fight_resultの状態確認
+      tournament.id
+      |> TournamentProgress.get_match_list_with_fight_result()
+      |> List.flatten()
+      |> Enum.map(fn cell ->
+        assert cell["name"] in leader_name_list
+        assert cell["icon_path"] in leader_icon_path_list
+        assert cell["round"] == 0
+        cond do
+          cell["team_id"] == your_team.id ->
+            refute cell["is_loser"]
+            assert cell["win_count"] == 1
+          cell["team_id"] == another_team.id ->
+            refute cell["is_loser"]
+            assert cell["win_count"] == 1
+          true ->
+            assert cell["is_loser"]
+            assert cell["win_count"] == 0
+        end
+      end)
+      |> length()
+      |> Kernel.==(4)
+      |> assert()
     end
   end
 
