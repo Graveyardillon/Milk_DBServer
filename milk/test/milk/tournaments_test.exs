@@ -1842,6 +1842,47 @@ defmodule Milk.TournamentsTest do
           assert team.rank == 4
         end
       end)
+
+      # 反対側のブロックのマッチを取得
+      tournament.id
+      |> TournamentProgress.get_match_list()
+      |> Enum.filter(fn match_or_id ->
+        match_or_id != your_team.id
+      end)
+      |> hd()
+      |> Enum.map(fn id ->
+        Tournaments.get_team(id)
+      end)
+      ~> opposite_side_teams
+
+      another_team = hd(opposite_side_teams)
+      another_score = 200
+      another_opponent_score = 10
+
+      opposite_side_teams
+      |> Enum.map(fn team ->
+        team.id
+      end)
+      |> Tournaments.get_opponent_team(another_team.id)
+      ~> {:ok, another_opponent_team}
+
+      result = claim_score(another_team.id, another_opponent_team["id"], another_score, 0)
+      assert result.validated
+      refute result.completed
+
+      result = claim_score(another_opponent_team["id"], another_team.id, another_opponent_score, 0)
+      assert result.validated
+      assert result.validated
+
+      # match_listの状態確認
+      tournament.id
+      |> TournamentProgress.get_match_list()
+      |> Enum.map(fn cell ->
+        assert cell == your_team.id || cell == another_team.id
+      end)
+      |> length()
+      |> Kernel.==(2)
+      |> assert()
     end
   end
 
