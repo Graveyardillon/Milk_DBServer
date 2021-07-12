@@ -1357,4 +1357,16 @@ defmodule MilkWeb.TournamentController do
 
     json(conn, %{result: result})
   end
+
+  defp add_push_notice_queue(conn, tournament_id, date) do
+        job = %{notify_tournament_start: tournament_id}
+        |> Oban.Processer.new(schedule_at: date)
+        |> Oban.insert()
+        |> elem(1)
+        |> IO.inspect()
+        
+        result = if Map.get(job, :errors) |> length == 0, do: true, else: false
+        id = Map.get(job, :id)
+        json(conn, %{id: id, result: result})
+  end
 end

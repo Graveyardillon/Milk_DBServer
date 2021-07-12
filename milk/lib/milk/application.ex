@@ -21,7 +21,8 @@ defmodule Milk.Application do
       Milk.ConfNum,
       Milk.Email.Auth,
       # Common.KeyValueStore,
-      {Goth, name: Milk.Goth, source: source}
+      {Goth, name: Milk.Goth, source: source},
+      {Oban, oban_config()}
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
@@ -35,5 +36,9 @@ defmodule Milk.Application do
   def config_change(changed, _new, removed) do
     MilkWeb.Endpoint.config_change(changed, removed)
     :ok
+  end
+
+  defp oban_config do
+    Application.fetch_env!(:milk, Oban)
   end
 end

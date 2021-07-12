@@ -90,7 +90,8 @@ defmodule Milk.MixProject do
       {:hackney, "~> 1.17"},
       {:credo, "~> 1.5", only: [:dev, :test], runtime: false},
       {:pigeon, "~> 1.5.1"},
-      {:kadabra, "~> 0.4.4"}
+      {:kadabra, "~> 0.4.4"},
+      {:oban, "~> 2.7"}
     ]
   end
 
