@@ -5,6 +5,8 @@ defmodule Milk.TournamentsTest do
 
   import Common.Sperm
 
+  require Logger
+
   alias Milk.{
     Accounts,
     Chat,
@@ -1641,23 +1643,92 @@ defmodule Milk.TournamentsTest do
   end
 
   describe "promote rank(team) and initialize rank(team)" do
+    defp claim_score(team_id, opponent_team_id, score, match_index) do
+      team_id
+      |> Tournaments.get_team()
+      |> Map.get(:tournament_id)
+      ~> tournament_id
+
+      tournament_id
+      |> TournamentProgress.get_score(opponent_team_id)
+      |> case do
+        n when is_integer(n) ->
+          cond do
+            n > score ->
+              Tournaments.delete_loser_process(tournament_id, [team_id])
+              Tournaments.score(tournament_id, opponent_team_id, team_id, n, score, match_index)
+              TournamentProgress.delete_match_pending_list(team_id, tournament_id)
+              TournamentProgress.delete_match_pending_list(opponent_team_id, tournament_id)
+              TournamentProgress.delete_score(tournament_id, team_id)
+              TournamentProgress.delete_score(tournament_id, opponent_team_id)
+              finish_as_needed(tournament_id, opponent_team_id)
+              %{valdated: true, completed: true}
+
+            n < score ->
+              Tournaments.delete_loser_process(tournament_id, [opponent_team_id])
+              Tournaments.score(tournament_id, team_id, opponent_team_id, score, n, match_index)
+              TournamentProgress.delete_match_pending_list(team_id, tournament_id)
+              TournamentProgress.delete_score(tournament_id, team_id)
+              TournamentProgress.delete_score(tournament_id, opponent_team_id)
+              finish_as_needed(tournament_id, opponent_team_id)
+              %{validated: true, completed: true}
+
+            true ->
+              %{validated: false, completed: true}
+          end
+        [] -> %{validated: true, completed: false}
+      end
+    end
+
+    defp finish_as_needed(tournament_id, winner_id) do
+      match_list = TournamentProgress.get_match_list(tournament_id)
+
+      if is_integer(match_list) do
+        Tournaments.finish(tournament_id, winner_id)
+
+        tournament_id
+        |> TournamentProgress.get_match_list_with_fight_result()
+        |> inspect(charlists: false)
+        |> (fn str ->
+              %{"tournament_id" => tournament_id, "match_list_with_fight_result_str" => str}
+            end).()
+        |> TournamentProgress.create_match_list_with_fight_result_log()
+
+        TournamentProgress.delete_match_list(tournament_id)
+        TournamentProgress.delete_match_list_with_fight_result(tournament_id)
+        TournamentProgress.delete_match_pending_list_of_tournament(tournament_id)
+        TournamentProgress.delete_fight_result_of_tournament(tournament_id)
+        TournamentProgress.delete_duplicate_users_all(tournament_id)
+        TournamentProgress.delete_lose_processes(tournament_id)
+      end
+
+      if match_list == [] do
+        Logger.error("Match list error on finish as needed")
+      end
+    end
+
     test "promote_rank/1 returns promoted rank with valid attrs" do
       [is_team: true, capacity: 4, type: 2]
       |> fixture_tournament()
       ~> tournament
       |> Map.get(:id)
       |> fill_with_team()
+      ~> teams
       |> Enum.map(fn team ->
         team.id
         |> Tournaments.get_leader()
         |> Map.get(:user)
       end)
       ~> leaders
+
+      # assert用の名前リスト作成
+      leaders
       |> Enum.map(fn leader ->
         leader.name
       end)
       ~> leader_name_list
 
+      # assert用のアイコンパスリスト作成
       leaders
       |> Enum.map(fn leader ->
         leader.icon_path
@@ -1668,13 +1739,13 @@ defmodule Milk.TournamentsTest do
       |> TournamentProgress.start_team_best_of_format(tournament)
       ~> {:ok, match_list, nil}
 
-      # match_listの保存確認
+      # match_listの初期状態確認
       tournament.id
       |> TournamentProgress.get_match_list()
       |> Kernel.==(match_list)
       |> assert()
 
-      # match_list_with_fight_resultの保存確認
+      # match_list_with_fight_resultの初期状態確認
       tournament.id
       |> TournamentProgress.get_match_list_with_fight_result()
       |> List.flatten()
@@ -1689,7 +1760,25 @@ defmodule Milk.TournamentsTest do
       |> Kernel.==(4)
       |> assert()
 
+      # ランク確認
 
+      your_team = hd(teams)
+      your_score = 300
+      opponent_score = 15
+
+      tournament.id
+      |> TournamentProgress.get_match_list()
+      |> Tournaments.find_match(your_team.id)
+      |> Tournaments.get_opponent_team(your_team.id)
+      ~> {:ok, opponent_team}
+
+      result = claim_score(your_team.id, opponent_team["id"], your_score, 0)
+      assert result.validated
+      refute result.completed
+
+      result = claim_score(opponent_team["id"], your_team.id, opponent_score, 0)
+      assert result.validated
+      assert result.validated
     end
   end
 
