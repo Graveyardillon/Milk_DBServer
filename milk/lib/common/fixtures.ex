@@ -71,6 +71,14 @@ defmodule Common.Fixtures do
             nil
           end
 
+        type = opts[:type]
+          |> is_nil()
+          |> unless do
+            opts[:type]
+          else
+            1
+          end
+
         master_id = opts[:master_id]
           |> is_nil()
           |> unless do
@@ -93,6 +101,7 @@ defmodule Common.Fixtures do
           |> Map.put("is_team", is_team)
           |> Map.put("capacity", capacity)
           |> Map.put("team_size", team_size)
+          |> Map.put("type", type)
           |> Tournaments.create_tournament()
 
         tournament
@@ -127,8 +136,9 @@ defmodule Common.Fixtures do
             |> elem(1)
             |> Map.get(:id)
             |> Tournaments.confirm_team_invitation()
+            |> elem(1)
           end)
-          team
+          Tournaments.get_team(team.id)
         end)
       end
 

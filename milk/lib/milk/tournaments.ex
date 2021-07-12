@@ -1237,6 +1237,7 @@ defmodule Milk.Tournaments do
       {:ok, _} ->
         tournament_id
         |> get_confirmed_teams()
+        |> IO.inspect()
         |> length()
         |> Kernel.>(1)
         |> if do
@@ -1589,7 +1590,6 @@ defmodule Milk.Tournaments do
   @doc """
   Promotes rank of a entrant.
   勝った人のランクが上がるやつ
-  FIXME: 色々リファクタリング
   """
   def promote_rank(attrs = %{"user_id" => user_id, "tournament_id" => tournament_id}, :force) do
     attrs
@@ -2185,6 +2185,7 @@ defmodule Milk.Tournaments do
     Team
     |> join(:inner, [t], tm in TeamMember, on: t.id == tm.team_id)
     |> where([t, tm], t.tournament_id == ^tournament_id)
+    |> where([t, tm], t.is_confirmed)
     |> preload([t, tm], :team_member)
     |> Repo.all()
     |> Enum.filter(fn members_in_team ->

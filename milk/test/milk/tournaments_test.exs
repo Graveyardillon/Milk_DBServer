@@ -1640,6 +1640,22 @@ defmodule Milk.TournamentsTest do
     end
   end
 
+  describe "promote rank(team) and initialize rank(team)" do
+    test "promote_rank/1 returns promoted rank with valid attrs" do
+      [is_team: true, capacity: 4, type: 2]
+      |> fixture_tournament()
+      ~> tournament
+      |> Map.get(:id)
+      |> fill_with_team()
+      |> Enum.filter(fn team -> team.is_confirmed end)
+      |> length()
+      |> IO.inspect()
+
+      TournamentProgress.start_team_best_of_format(tournament.master_id, tournament)
+      |> IO.inspect()
+    end
+  end
+
   describe "data for brackets" do
     test "data_for_brackets/1 works fine with valid list data of size 3" do
       match_list = [3, [1, 2]]
