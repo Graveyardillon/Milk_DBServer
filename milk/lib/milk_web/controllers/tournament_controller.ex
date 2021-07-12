@@ -1087,18 +1087,17 @@ defmodule MilkWeb.TournamentController do
         finish_as_needed(tournament_id, winner["id"])
 
       {:wait, nil} ->
-        match =
-          tournament_id
-          |> TournamentProgress.get_match_list()
-          |> Tournaments.find_match(target_user_id)
-          |> Kernel.--([target_user_id])
-          |> hd()
-          |> Enum.each(fn user_id ->
-            Tournaments.promote_rank(
-              %{"tournament_id" => tournament_id, "user_id" => user_id},
-              :force
-            )
-          end)
+        tournament_id
+        |> TournamentProgress.get_match_list()
+        |> Tournaments.find_match(target_user_id)
+        |> Kernel.--([target_user_id])
+        |> hd()
+        |> Enum.each(fn user_id ->
+          Tournaments.promote_rank(
+            %{"tournament_id" => tournament_id, "user_id" => user_id},
+            :force
+          )
+        end)
 
         Tournaments.delete_loser_process(tournament_id, [target_user_id])
     end

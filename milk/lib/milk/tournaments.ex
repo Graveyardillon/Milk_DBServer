@@ -1701,53 +1701,43 @@ defmodule Milk.Tournaments do
     |> get_opponent(user_id)
     |> case do
       {:ok, opponent} ->
-        opponent =
-          opponent
-          |> Map.get("id")
-          |> get_entrant_by_user_id_and_tournament_id(tournament_id)
+        opponent
+        |> Map.get("id")
+        |> get_entrant_by_user_id_and_tournament_id(tournament_id)
+        ~> opponent
+        |> Map.get(:rank)
+        ~> opponents_rank
 
-        opponents_rank = Map.get(opponent, :rank)
-
-        user =
-          user_id
-          |> get_entrant_by_user_id_and_tournament_id(tournament_id)
-
-        user
+        user_id
+        |> get_entrant_by_user_id_and_tournament_id(tournament_id)
+        ~> entrant
         |> Map.get(:rank)
         |> case do
           rank when rank > opponents_rank ->
             update_entrant(opponent, %{rank: rank})
-
           rank when rank < opponents_rank ->
-            update_entrant(user, %{rank: opponents_rank})
-
-          _ ->
-            nil
+            update_entrant(entrant, %{rank: opponents_rank})
+          _ -> nil
         end
 
-        {bool, rank} =
-          opponent
-          |> Map.get(:rank)
-          |> check_exponentiation_of_two()
+        opponent
+        |> Map.get(:rank)
+        |> check_exponentiation_of_two()
+        ~> {_bool, rank}
+        |> elem(0)
+        |> if do
+          div(rank, 2)
+        else
+          find_num_closest_exponentiation_of_two(rank)
+        end
+        ~> updated_rank
 
-        updated =
-          bool
-          |> if do
-            div(rank, 2)
-          else
-            find_num_closest_exponentiation_of_two(rank)
-          end
+        user_id
+        |> get_entrant_by_user_id_and_tournament_id(tournament_id)
+        |> update_entrant(%{rank: updated_rank})
 
-        entrant = get_entrant_by_user_id_and_tournament_id(user_id, tournament_id)
-
-        entrant
-        |> update_entrant(%{rank: updated})
-
-      {:wait, nil} ->
-        {:wait, nil}
-
-      {:error, _} ->
-        {:error, nil}
+      {:wait, nil} -> {:wait, nil}
+      {:error, _} -> {:error, nil}
     end
   end
 
