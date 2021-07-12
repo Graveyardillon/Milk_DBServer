@@ -991,19 +991,34 @@ defmodule Milk.Tournaments do
         match ->
           tournament_id
           |> get_tournament()
+          ~> tournament
           |> Map.get(:is_team)
           |> if do
-            get_opponent_team(match, loser)
+            match
+            |> get_opponent_team(loser)
+            |> Tuple.append(tournament)
           else
-            get_opponent(match, loser)
+            match
+            |> get_opponent(loser)
+            |> Tuple.append(tournament)
           end
       end
       |> case do
-        {:ok, opponent} ->
-          promote_rank(%{"tournament_id" => tournament_id, "user_id" => opponent["id"]})
-        {:wait, nil} ->
+        {:ok, opponent, tournament} ->
+          if tournament.is_team do
+            Map.new()
+            |> Map.put("tournament_id", tournament_id)
+            |> Map.put("team_id", opponent.id)
+            |> promote_rank()
+          else
+            Map.new()
+            |> Map.put("tournament_id", tournament_id)
+            |> Map.put("user_id", opponent["id"])
+            |> promote_rank()
+          end
+        {:wait, nil, _tournament} ->
           {:wait, nil}
-        {:error, nil} ->
+        {:error, nil, _tournament} ->
           {:error, nil}
       end
     end)
@@ -1574,13 +1589,9 @@ defmodule Milk.Tournaments do
   @doc """
   Promotes rank of a entrant.
   勝った人のランクが上がるやつ
-  FIXME: 引数をmapからかえたい
   FIXME: 色々リファクタリング
   """
-  def promote_rank(attrs, :force) do
-    user_id = attrs["user_id"]
-    tournament_id = attrs["tournament_id"]
-
+  def promote_rank(attrs = %{"user_id" => user_id, "tournament_id" => tournament_id}, :force) do
     attrs
     |> user_exists?()
     |> tournament_exists?()
@@ -1589,21 +1600,19 @@ defmodule Milk.Tournaments do
       {:ok, _} ->
         user_id
         |> get_entrant_by_user_id_and_tournament_id(tournament_id)
+        ~> entrant
         |> Map.get(:rank)
         |> check_exponentiation_of_two()
-        |> (fn {bool, rank} ->
-              updated =
-                if bool do
-                  div(rank, 2)
-                else
-                  find_num_closest_exponentiation_of_two(rank)
-                end
+        ~> {_bool, rank}
+        |> elem(0)
+        |> if do
+          div(rank, 2)
+        else
+          find_num_closest_exponentiation_of_two(rank)
+        end
+        ~> updated_rank
 
-              user_id
-              |> get_entrant_by_user_id_and_tournament_id(tournament_id)
-              |> update_entrant(%{rank: updated})
-            end).()
-
+        update_entrant(entrant, %{rank: updated_rank})
       {:error, error} ->
         {:error, error}
     end
@@ -1624,6 +1633,41 @@ defmodule Milk.Tournaments do
     |> case do
       {:ok, match_list} -> update_rank(match_list, user_id, tournament_id)
       {:error, error} -> {:error, error}
+    end
+  end
+
+  def promote_rank(attrs = %{"team_id" => team_id}) do
+    attrs
+    |> team_exists?()
+    |> tournament_exists?()
+    |> tournament_start_check()
+    |> case do
+      {:ok, _} ->
+        team_id
+        |> get_team()
+        ~> team
+        |> Map.get(:rank)
+        |> check_exponentiation_of_two()
+        ~> {_bool, rank}
+        |> elem(0)
+        |> if do
+          div(rank, 2)
+        else
+          find_num_closest_exponentiation_of_two(rank)
+        end
+        ~> updated_rank
+
+        update_team(team, %{rank: updated_rank})
+      {:error, error} ->
+        {:error, error}
+    end
+  end
+
+  defp team_exists?(attrs = %{"team_id" => team_id}) do
+    if Repo.exists?(from t in Team, where: t.id == ^team_id) do
+      {:ok, attrs}
+    else
+      {:error, "undefined team"}
     end
   end
 
