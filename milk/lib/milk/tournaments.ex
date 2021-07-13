@@ -348,7 +348,6 @@ defmodule Milk.Tournaments do
     |> Chat.get_uniq_chat_members_by_tournament_id()
     |> Enum.each(fn member ->
       Chat.create_chat_member(%{"user_id" => member.user_id, "chat_room_id" => chat_room.id})
-      |> IO.inspect()
     end)
 
     %TournamentChatTopic{tournament_id: tournament.id, chat_room_id: chat_room.id}
@@ -960,8 +959,8 @@ defmodule Milk.Tournaments do
   end
 
   defp renew_match_list(tournament_id, match_list, loser_list) do
-    unless is_nil(match_list) do
-      promote_winners_by_loser(tournament_id, match_list, loser_list)
+    unless match_list == [] do
+      promote_winners_by_loser!(tournament_id, match_list, loser_list)
     end
 
     renew(loser_list, tournament_id)
@@ -983,35 +982,64 @@ defmodule Milk.Tournaments do
     Tournamex.delete_loser(match_list, loser)
   end
 
-  def promote_winners_by_loser(tournament_id, match_list, losers) when is_list(losers) do
-    Enum.each(losers, fn loser ->
+  def promote_winners_by_loser!(tournament_id, match_list, losers) when is_list(losers) do
+    Enum.map(losers, fn loser ->
       match_list
       |> find_match(loser)
       |> case do
-        [] ->
-          {:error, nil}
-
+        [] -> {:error, nil}
         match ->
-          match
-          |> get_opponent(loser)
-          |> case do
-            {:ok, opponent} ->
-              promote_rank(%{"tournament_id" => tournament_id, "user_id" => opponent["id"]})
-
-            {:wait, nil} ->
-              {:wait, nil}
+          tournament_id
+          |> get_tournament()
+          ~> tournament
+          |> Map.get(:is_team)
+          |> if do
+            match
+            |> get_opponent_team(loser)
+            |> Tuple.append(tournament)
+          else
+            match
+            |> get_opponent(loser)
+            |> Tuple.append(tournament)
           end
+      end
+      |> case do
+        {:ok, opponent, tournament} ->
+          if tournament.is_team do
+            Map.new()
+            |> Map.put("tournament_id", tournament_id)
+            |> Map.put("team_id", opponent["id"])
+            |> promote_rank()
+          else
+            Map.new()
+            |> Map.put("tournament_id", tournament_id)
+            |> Map.put("user_id", opponent["id"])
+            |> promote_rank()
+          end
+        {:wait, nil, _tournament} ->
+          {:wait, nil}
+        {:error, nil, _tournament} ->
+          {:error, nil}
       end
     end)
   end
 
-  def promote_winners_by_loser(tournament_id, match_list, loser) do
-    match = find_match(match_list, loser)
-
-    unless match == [] do
-      {:ok, opponent} = get_opponent(match, loser)
-
-      promote_rank(%{"tournament_id" => tournament_id, "user_id" => opponent["id"]})
+  def promote_winners_by_loser!(tournament_id, match_list, loser) do
+    match_list
+    |> find_match(loser)
+    ~> match
+    |> Kernel.==([])
+    |> unless do
+      match
+      |> get_opponent(loser)
+      |> case do
+        {:ok, opponent} ->
+          promote_rank(%{"tournament_id" => tournament_id, "user_id" => opponent["id"]})
+        {:wait, nil} ->
+          raise RuntimeError, "Expected {:ok, opponent} (got: {:wait, nil})"
+        _ ->
+          raise RuntimeError, "Unexpected Output"
+      end
     end
   end
 
@@ -1047,45 +1075,53 @@ defmodule Milk.Tournaments do
       match
       |> Enum.filter(&(&1 != user_id))
       |> hd()
-      |> (fn the_other ->
-            if is_integer(the_other) do
-              opponent =
-                Accounts.get_user(the_other)
-                |> atom_user_map_to_string_map()
+      ~> the_other
+      |> is_integer()
+      |> if do
+        the_other
+        |> Accounts.get_user()
+        |> Map.from_struct()
+        |> Tools.atom_map_to_string_map()
+        ~> user
+        |> Map.get("auth")
+        |> Map.from_struct()
+        |> Tools.atom_map_to_string_map()
+        ~> auth
+        opponent = Map.put(user, "auth", auth)
 
-              {:ok, opponent}
-            else
-              {:wait, nil}
-            end
-          end).()
+        {:ok, opponent}
+      else
+        {:wait, nil}
+      end
     else
       {:error, "opponent does not exist"}
     end
   end
 
-  def get_opponent(match, user_id, :promote) do
-    a =
+  @doc """
+  Get opponent team.
+  """
+  def get_opponent_team(match, team_id) do
+    if Enum.member?(match, team_id) and length(match) == 2 do
       match
-      |> Enum.filter(fn x ->
-        inspect(x, charlists: false)
-        x.user_id != user_id
-      end)
+      |> Enum.filter(&(&1 != team_id))
       |> hd()
+      ~> the_other
+      |> is_integer()
+      |> if do
+        the_other
+        |> get_team()
+        |> Map.from_struct()
+        |> Tools.atom_map_to_string_map()
+        ~> opponent
 
-    inspect(a, charlists: false)
-
-    a.user_id
-    |> Accounts.get_user()
-    |> atom_user_map_to_string_map()
-  end
-
-  defp atom_user_map_to_string_map(%User{} = user) do
-    %{
-      "id" => user.id,
-      "icon_path" => user.icon_path,
-      "id_for_show" => user.id_for_show,
-      "name" => user.name
-    }
+        {:ok, opponent}
+      else
+        {:wait, nil}
+      end
+    else
+      {:error, "opponent does not exist"}
+    end
   end
 
   @doc """
@@ -1134,23 +1170,20 @@ defmodule Milk.Tournaments do
   defp check_entrant_number(check, tournament_id) do
     case check do
       {:ok, _} ->
-        if number_of_entrants(tournament_id) > 1 do
+        Entrant
+        |> where([e], e.tournament_id == ^tournament_id)
+        |> Repo.aggregate(:count)
+        |> Kernel.>(1)
+        |> if do
           {:ok, nil}
         else
           delete_tournament(tournament_id)
-          {:error, "too few entrants"}
+          {:error, "short of participants"}
         end
 
       {:error, reason} ->
         {:error, reason}
     end
-  end
-
-  defp number_of_entrants(tournament_id) do
-    Entrant
-    |> where([e], e.tournament_id == ^tournament_id)
-    |> Repo.all()
-    |> length()
   end
 
   defp fetch_tournament(check, master_id, tournament_id) do
@@ -1181,6 +1214,35 @@ defmodule Milk.Tournaments do
           |> Repo.update()
         else
           {:error, "tournament is already started"}
+        end
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  @doc """
+  Start a team tournament.
+  """
+  def start_team_tournament(tournament_id, master_id) do
+    master_id
+    |> nil_check?(tournament_id)
+    |> is_team_num_enough?(tournament_id)
+    |> fetch_tournament(master_id, tournament_id)
+    |> start()
+  end
+
+  defp is_team_num_enough?(check, tournament_id) do
+    case check do
+      {:ok, _} ->
+        tournament_id
+        |> get_confirmed_teams()
+        |> length()
+        |> Kernel.>(1)
+        |> if do
+          {:ok, nil}
+        else
+          {:error, "short of teams"}
         end
 
       {:error, reason} ->
@@ -1527,13 +1589,8 @@ defmodule Milk.Tournaments do
   @doc """
   Promotes rank of a entrant.
   勝った人のランクが上がるやつ
-  FIXME: 引数をmapからかえたい
-  FIXME: 色々リファクタリング
   """
-  def promote_rank(attrs, :force) do
-    user_id = attrs["user_id"]
-    tournament_id = attrs["tournament_id"]
-
+  def promote_rank(attrs = %{"user_id" => user_id, "tournament_id" => tournament_id}, :force) do
     attrs
     |> user_exists?()
     |> tournament_exists?()
@@ -1542,30 +1599,25 @@ defmodule Milk.Tournaments do
       {:ok, _} ->
         user_id
         |> get_entrant_by_user_id_and_tournament_id(tournament_id)
+        ~> entrant
         |> Map.get(:rank)
         |> check_exponentiation_of_two()
-        |> (fn {bool, rank} ->
-              updated =
-                if bool do
-                  div(rank, 2)
-                else
-                  find_num_closest_exponentiation_of_two(rank)
-                end
+        ~> {_bool, rank}
+        |> elem(0)
+        |> if do
+          div(rank, 2)
+        else
+          find_num_closest_exponentiation_of_two(rank)
+        end
+        ~> updated_rank
 
-              user_id
-              |> get_entrant_by_user_id_and_tournament_id(tournament_id)
-              |> update_entrant(%{rank: updated})
-            end).()
-
+        update_entrant(entrant, %{rank: updated_rank})
       {:error, error} ->
         {:error, error}
     end
   end
 
-  def promote_rank(attrs \\ %{}) do
-    user_id = attrs["user_id"]
-    tournament_id = attrs["tournament_id"]
-
+  def promote_rank(attrs = %{"user_id" => user_id, "tournament_id" => tournament_id}) do
     attrs
     |> user_exists?()
     |> tournament_exists?()
@@ -1580,6 +1632,56 @@ defmodule Milk.Tournaments do
     |> case do
       {:ok, match_list} -> update_rank(match_list, user_id, tournament_id)
       {:error, error} -> {:error, error}
+    end
+  end
+
+  def promote_rank(attrs = %{"team_id" => team_id, "tournament_id" => tournament_id}) do
+    attrs
+    |> team_exists?()
+    |> tournament_exists?()
+    |> tournament_start_check()
+    |> case do
+      {:ok, _} -> get_match_list_if_possible(tournament_id)
+      {:error, error} -> {:error, error}
+    end
+    |> case do
+      {:ok, match_list} -> update_team_rank(match_list, team_id, tournament_id)
+      {:error, error} -> {:error, error}
+    end
+  end
+
+  def promote_rank(attrs = %{"team_id" => team_id}, :force) do
+    attrs
+    |> team_exists?()
+    |> tournament_exists?()
+    |> tournament_start_check()
+    |> case do
+      {:ok, _} ->
+        team_id
+        |> get_team()
+        ~> team
+        |> Map.get(:rank)
+        |> check_exponentiation_of_two()
+        ~> {_bool, rank}
+        |> elem(0)
+        |> if do
+          div(rank, 2)
+        else
+          find_num_closest_exponentiation_of_two(rank)
+        end
+        ~> updated_rank
+
+        update_team(team, %{rank: updated_rank})
+      {:error, error} ->
+        {:error, error}
+    end
+  end
+
+  defp team_exists?(attrs = %{"team_id" => team_id}) do
+    if Repo.exists?(from t in Team, where: t.id == ^team_id) do
+      {:ok, attrs}
+    else
+      {:error, "undefined team"}
     end
   end
 
@@ -1602,53 +1704,89 @@ defmodule Milk.Tournaments do
     |> get_opponent(user_id)
     |> case do
       {:ok, opponent} ->
-        opponent =
-          opponent
-          |> Map.get("id")
-          |> get_entrant_by_user_id_and_tournament_id(tournament_id)
+        opponent
+        |> Map.get("id")
+        |> get_entrant_by_user_id_and_tournament_id(tournament_id)
+        ~> opponent
+        |> Map.get(:rank)
+        ~> opponents_rank
 
-        opponents_rank = Map.get(opponent, :rank)
-
-        user =
-          user_id
-          |> get_entrant_by_user_id_and_tournament_id(tournament_id)
-
-        user
+        user_id
+        |> get_entrant_by_user_id_and_tournament_id(tournament_id)
+        ~> entrant
         |> Map.get(:rank)
         |> case do
           rank when rank > opponents_rank ->
             update_entrant(opponent, %{rank: rank})
-
           rank when rank < opponents_rank ->
-            update_entrant(user, %{rank: opponents_rank})
-
-          _ ->
-            nil
+            update_entrant(entrant, %{rank: opponents_rank})
+          _ -> nil
         end
 
-        {bool, rank} =
-          opponent
-          |> Map.get(:rank)
-          |> check_exponentiation_of_two()
+        opponent
+        |> Map.get(:rank)
+        |> check_exponentiation_of_two()
+        ~> {_bool, rank}
+        |> elem(0)
+        |> if do
+          div(rank, 2)
+        else
+          find_num_closest_exponentiation_of_two(rank)
+        end
+        ~> updated_rank
 
-        updated =
-          bool
-          |> if do
-            div(rank, 2)
-          else
-            find_num_closest_exponentiation_of_two(rank)
-          end
+        user_id
+        |> get_entrant_by_user_id_and_tournament_id(tournament_id)
+        |> update_entrant(%{rank: updated_rank})
 
-        entrant = get_entrant_by_user_id_and_tournament_id(user_id, tournament_id)
+      {:wait, nil} -> {:wait, nil}
+      {:error, _} -> {:error, nil}
+    end
+  end
 
-        entrant
-        |> update_entrant(%{rank: updated})
+  defp update_team_rank(match_list, team_id, tournament_id) do
+    match_list
+    |> find_match(team_id)
+    |> get_opponent_team(team_id)
+    |> case do
+      {:ok, opponent} ->
+        opponent
+        |> Map.get("id")
+        |> get_team()
+        ~> opponent_team
+        |> Map.get(:rank)
+        ~> opponent_team_rank
 
-      {:wait, nil} ->
-        {:wait, nil}
+        team_id
+        |> get_team()
+        ~> team
+        |> Map.get(:rank)
+        |> case do
+          rank when rank > opponent_team_rank ->
+            update_team(opponent_team, %{rank: rank})
+          rank when rank < opponent_team_rank ->
+            update_team(team, %{rank: opponent_team_rank})
+          _ -> nil
+        end
 
-      {:error, _} ->
-        {:error, nil}
+        opponent_team
+        |> Map.get(:rank)
+        |> check_exponentiation_of_two()
+        ~> {_bool, rank}
+        |> elem(0)
+        |> if do
+          div(rank, 2)
+        else
+          find_num_closest_exponentiation_of_two(rank)
+        end
+        ~> updated_rank
+
+        team_id
+        |> get_team()
+        |> update_team(%{rank: updated_rank})
+
+      {:wait, nil} -> {:wait, nil}
+      {:error, _} -> {:error, nil}
     end
   end
 
@@ -1748,6 +1886,12 @@ defmodule Milk.Tournaments do
     |> get_team()
     |> update_team(%{rank: final})
     |> elem(1)
+  end
+
+  def initialize_team_rank(match_list, number_of_teams, count) do
+    Enum.map(match_list, fn x ->
+      initialize_team_rank(x, number_of_teams, count * 2)
+    end)
   end
 
   @doc """
@@ -2090,6 +2234,7 @@ defmodule Milk.Tournaments do
     Team
     |> join(:inner, [t], tm in TeamMember, on: t.id == tm.team_id)
     |> where([t, tm], t.tournament_id == ^tournament_id)
+    |> where([t, tm], t.is_confirmed)
     |> preload([t, tm], :team_member)
     |> Repo.all()
     |> Enum.filter(fn members_in_team ->
