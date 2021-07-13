@@ -151,7 +151,7 @@ defmodule MilkWeb.TournamentController do
           %{"user_id" => tournament.master_id, "game_name" => tournament.game_name, "score" => 7}
           |> Accounts.gain_score()
 
-          add_queue_tournament_start_push_notice(tournament.id, tournament.event_date)
+          add_queue_tournament_start_push_notice(tournament)
 
           render(conn, "create.json", tournament: tournament)
 
@@ -170,7 +170,6 @@ defmodule MilkWeb.TournamentController do
   def show(conn, params) do
     user_id = params["user_id"]
     id = Tools.to_integer_as_needed(params["tournament_id"])
-
     tournament = Tournaments.get_tournament(id)
     tournament_log = Log.get_tournament_log_by_tournament_id(id)
 
@@ -332,6 +331,7 @@ defmodule MilkWeb.TournamentController do
 
       case Tournaments.update_tournament(tournament, tournament_params) do
         {:ok, %Tournament{} = tournament} ->
+          update_queue_tournament_start_push_notice(tournament)
           render(conn, "show.json", tournament: tournament)
 
         {:error, error} ->
@@ -1360,16 +1360,28 @@ defmodule MilkWeb.TournamentController do
     json(conn, %{result: result})
   end
 
-  defp add_queue_tournament_start_push_notice(tournament_id, date) do
-    job = %{notify_tournament_start: tournament_id}
-    |> Oban.Processer.new(scheduled_at: date)
+  defp add_queue_tournament_start_push_notice(tournament) do
+    job = %{notify_tournament_start: tournament.id}
+    |> Oban.Processer.new(scheduled_at: tournament.event_date)
     |> Oban.insert()
     |> elem(1)
     |> IO.inspect()
     
     result = if Map.get(job, :errors) |> length == 0, do: true, else: false
-    id = Map.get(job, :id)
 
-    result
+    case result do
+      true -> {:ok, job.id}
+      false -> {:error, job.errors}
+    end
+  end
+
+  defp update_queue_tournament_start_push_notice(tournament) do
+    case Tournaments.get_push_notice_job(tournament.id) do
+      nil -> 
+        IO.puts("notice job not found")
+      job ->
+        Oban.cancel_job(job.id)
+        add_queue_tournament_start_push_notice(tournament)
+    end
   end
 end

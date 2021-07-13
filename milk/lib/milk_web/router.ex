@@ -188,8 +188,6 @@ defmodule MilkWeb.Router do
     post "/notification/check_all", NotifController, :check_all
     delete "/notification/delete", NotifController, :delete
 
-    post "/oban/enqueue", ObanController, :enqueue_job
-
     post "/load_test/start", LoadTestController, :start
     post "/load_test/stop", LoadTestController, :stop
     get "/load_test/download", LoadTestController, :download
