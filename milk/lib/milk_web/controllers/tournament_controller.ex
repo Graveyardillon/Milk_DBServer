@@ -1376,7 +1376,7 @@ defmodule MilkWeb.TournamentController do
   end
 
   defp update_queue_tournament_start_push_notice(tournament) do
-    case Tournaments.get_push_notice_job(tournament.id) do
+    case Tournaments.get_push_notice_job("notify_tournament_start", tournament.id) do
       nil -> 
         IO.puts("notice job not found")
       job ->
