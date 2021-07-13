@@ -151,6 +151,8 @@ defmodule MilkWeb.TournamentController do
           %{"user_id" => tournament.master_id, "game_name" => tournament.game_name, "score" => 7}
           |> Accounts.gain_score()
 
+          add_queue_tournament_start_push_notice(tournament.id, tournament.event_date)
+
           render(conn, "create.json", tournament: tournament)
 
         {:error, error} ->
@@ -1358,15 +1360,16 @@ defmodule MilkWeb.TournamentController do
     json(conn, %{result: result})
   end
 
-  defp add_push_notice_queue(conn, tournament_id, date) do
-        job = %{notify_tournament_start: tournament_id}
-        |> Oban.Processer.new(schedule_at: date)
-        |> Oban.insert()
-        |> elem(1)
-        |> IO.inspect()
-        
-        result = if Map.get(job, :errors) |> length == 0, do: true, else: false
-        id = Map.get(job, :id)
-        json(conn, %{id: id, result: result})
+  defp add_queue_tournament_start_push_notice(tournament_id, date) do
+    job = %{notify_tournament_start: tournament_id}
+    |> Oban.Processer.new(scheduled_at: date)
+    |> Oban.insert()
+    |> elem(1)
+    |> IO.inspect()
+    
+    result = if Map.get(job, :errors) |> length == 0, do: true, else: false
+    id = Map.get(job, :id)
+
+    result
   end
 end

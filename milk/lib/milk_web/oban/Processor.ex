@@ -30,10 +30,9 @@ defmodule Oban.Processer do
           Accounts.get_devices_by_user_id(entrant.user_id)
         end
         |> List.flatten()
-      # IO.inspect(devices)
 
       for device <- devices do
-        Notif.push_ios("トーナメント開始", device.token, 1, "")
+        Notif.push_ios("大会開始予定時刻になりました！", device.token, 6, "")
       end
     else
         IO.puts("tournament not found")
