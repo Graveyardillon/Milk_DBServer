@@ -2384,4 +2384,12 @@ defmodule Milk.Tournaments do
     |> Repo.get(team_id)
     |> Repo.delete()
   end
+
+  def get_push_notice_job(args, tournament_id) do
+    Oban.Job
+    |> where([j], j.state in ~w(available scheduled))
+    |> where([j], j.args[^args] == ^tournament_id)
+    |> Repo.one()
+  end
+
 end
