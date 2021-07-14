@@ -1,6 +1,6 @@
 defmodule MilkWeb.TeamControllerTest do
   use MilkWeb.ConnCase
-  use Milk.Common.Fixtures
+  use Common.Fixtures
 
   alias Milk.Tournaments
 

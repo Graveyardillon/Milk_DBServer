@@ -1,6 +1,6 @@
 defmodule MilkWeb.TournamentControllerTest do
   use MilkWeb.ConnCase
-  use Milk.Common.Fixtures
+  use Common.Fixtures
 
   import Ecto.Query, warn: false
 
@@ -1104,7 +1104,7 @@ defmodule MilkWeb.TournamentControllerTest do
     end
 
     test "team", %{conn: conn} do
-      tournament = fixture_tournament(is_team: true)
+      tournament = fixture_tournament(is_team: true, capacity: 1)
       users = 1..5
       |> Enum.to_list()
       |> Enum.map(fn n ->
@@ -1130,6 +1130,16 @@ defmodule MilkWeb.TournamentControllerTest do
       conn =
         get(conn, Routes.tournament_path(conn, :is_able_to_join), %{
           user_id: leader,
+          tournament_id: tournament.id
+        })
+
+      refute json_response(conn, 200)["result"]
+
+      user = fixture_user(num: 100)
+
+      conn =
+        get(conn, Routes.tournament_path(conn, :is_able_to_join), %{
+          user_id: user.id,
           tournament_id: tournament.id
         })
 
@@ -1280,69 +1290,6 @@ defmodule MilkWeb.TournamentControllerTest do
         "master_id" => 42,
         "name" => "some name",
         "type" => 2,
-        "join" => "true",
-        "url" => "some url",
-        "password" => "Password123",
-        "platform" => 1
-      }
-
-      Platforms.create_basic_platforms()
-
-      {:ok, user} =
-        %{"name" => "type2name", "email" => "type2e@mail.com", "password" => "Password123"}
-        |> Accounts.create_user()
-
-      {:ok, tournament} = Tournaments.create_tournament(%{create_attrs2 | "master_id" => user.id})
-
-      entrants = create_entrants(8, tournament.id)
-      entrant_id_list = Enum.map(entrants, fn entrant -> entrant.user_id end)
-
-      conn =
-        post(conn, Routes.tournament_path(conn, :start),
-          tournament: %{"master_id" => tournament.master_id, "tournament_id" => tournament.id}
-        )
-
-      json_response(conn, 200)
-      |> Map.get("data")
-      |> Map.get("match_list")
-      |> List.flatten()
-      |> Enum.map(fn user_id ->
-        assert user_id in entrant_id_list
-      end)
-      |> length()
-      |> (fn len ->
-            assert len == length(entrants)
-          end).()
-
-      tournament.id
-      |> TournamentProgress.get_match_list()
-      |> List.flatten()
-      |> Enum.map(fn user_id ->
-        assert user_id in entrant_id_list
-      end)
-      |> length()
-      |> (fn len ->
-            assert len == length(entrants)
-          end).()
-
-      tournament.id
-      |> TournamentProgress.get_match_list_with_fight_result()
-      |> List.flatten()
-      |> length()
-      |> (fn len ->
-            assert len == length(entrants)
-          end).()
-    end
-
-    test "start a tournament with valid data (type: 3)", %{conn: conn, tournament: _tournament} do
-      create_attrs2 = %{
-        "capacity" => 42,
-        "deadline" => "2010-04-17T14:00:00Z",
-        "description" => "some description",
-        "event_date" => "2010-04-17T14:00:00Z",
-        "master_id" => 42,
-        "name" => "some name",
-        "type" => 3,
         "join" => "true",
         "url" => "some url",
         "password" => "Password123",

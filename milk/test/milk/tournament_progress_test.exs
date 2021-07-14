@@ -2,7 +2,7 @@ defmodule Milk.TournamentProgressTest do
   @moduledoc """
   Redisが使えるときのみコメントアウトを解除する
   """
-  use Milk.DataCase, async: true
+  use Milk.DataCase
   use Timex
 
   alias Milk.{

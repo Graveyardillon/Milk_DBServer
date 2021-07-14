@@ -1,7 +1,11 @@
 defmodule Milk.TournamentsTest do
   use Milk.DataCase
-  use Milk.Common.Fixtures
+  use Common.Fixtures
   use Timex
+
+  import Common.Sperm
+
+  require Logger
 
   alias Milk.{
     Accounts,
@@ -20,7 +24,8 @@ defmodule Milk.TournamentsTest do
   }
 
   alias Milk.Log.{
-    EntrantLog
+    EntrantLog,
+    TournamentLog
   }
 
   alias Milk.Accounts.User
@@ -40,6 +45,7 @@ defmodule Milk.TournamentsTest do
     "platform_id" => 1,
     "is_started" => true
   }
+
   @update_attrs %{
     capacity: 43,
     deadline: "2011-05-18T15:01:01Z",
@@ -49,6 +55,7 @@ defmodule Milk.TournamentsTest do
     type: 43,
     url: "some updated url"
   }
+
   @invalid_attrs %{
     "capacity" => nil,
     "deadline" => nil,
@@ -60,11 +67,13 @@ defmodule Milk.TournamentsTest do
     "master_id" => 1,
     "platform_id" => 1
   }
+
   @entrant_create_attrs %{
     "rank" => 42,
     "user_id" => -1,
     "tournament_id" => -1
   }
+
   @invalid_entrant_create_attrs %{
     "user_id" => nil,
     "tournament_id" => nil
@@ -305,6 +314,67 @@ defmodule Milk.TournamentsTest do
 
     test "create_tournament/1 with invalid data returns error changeset" do
       assert {:error, _} = Tournaments.create_tournament(@invalid_attrs)
+    end
+  end
+
+  describe "update_topics" do
+    test "works" do
+      fixture_tournament()
+      ~> tournament
+      |> Map.get(:id)
+      |> Tournaments.get_tabs_by_tournament_id()
+      |> Enum.map(fn tab ->
+        Map.new()
+        |> Map.put(:tab_index, tab.tab_index)
+        |> Map.put(:chat_room_id, tab.chat_room_id)
+        |> Map.put(:topic_name, tab.topic_name)
+      end)
+      ~> current_tabs
+
+      current_tabs
+      |> Enum.map(fn reg ->
+        reg
+        |> Enum.map(fn {k, v} -> {Atom.to_string(k), v} end)
+        |> Map.new()
+      end)
+      ~> tabs
+
+      Map.new()
+      |> Map.put("tab_index", length(current_tabs))
+      |> Map.put("chat_room_id", nil)
+      |> Map.put("topic_name", "test")
+      ~> tab
+
+      tabs = tabs ++ [tab]
+
+      assert :ok = Tournaments.update_topic(tournament, current_tabs, tabs)
+
+      tournament
+      |> Map.get(:id)
+      |> Tournaments.get_tabs_by_tournament_id()
+      |> Enum.map(fn tab ->
+        assert tab.topic_name in ["Group", "Notification", "Q&A", "test"]
+        assert tab.tournament_id == tournament.id
+        refute is_nil(tab.chat_room_id)
+      end)
+      |> length()
+      |> Kernel.==(4)
+      |> assert()
+
+      tournament
+      |> Map.get(:id)
+      |> Chat.get_chat_rooms_by_tournament_id()
+      |> Enum.each(fn room ->
+        room
+        |> Map.get(:id)
+        |> Chat.get_chat_members_of_room()
+        |> Enum.map(fn member ->
+          assert member.user_id == tournament.master_id
+        end)
+        |> length()
+        |> Kernel.==(1)
+        |> assert()
+      end)
     end
   end
 
@@ -809,7 +879,7 @@ defmodule Milk.TournamentsTest do
     test "start/2 with only one entrant returns too few entrants error.", %{
       tournament: tournament
     } do
-      assert {:error, "too few entrants"} ==
+      assert {:error, "short of participants"} ==
                Tournaments.start(tournament.master_id, tournament.id)
     end
 
@@ -1037,7 +1107,7 @@ defmodule Milk.TournamentsTest do
       assert "IsWaitingForStart" == Tournaments.state!(tournament.id, tournament.master_id)
     end
 
-    test "state!2 returns IsInMatch" do
+    test "state!/2 returns IsInMatch" do
       %{tournament: tournament} = create_tournament_for_flow(nil)
       create_entrants(7, tournament.id)
 
@@ -1048,6 +1118,53 @@ defmodule Milk.TournamentsTest do
 
       start(tournament.master_id, tournament.id)
       assert "IsInMatch" == Tournaments.state!(tournament.id, tournament.master_id)
+    end
+  end
+
+  describe "state! (team)" do
+    test "state!/2 returns IsNotStarted" do
+      tournament = fixture_tournament(is_team: true)
+      assert "IsNotStarted" == Tournaments.state!(tournament.id, tournament.master_id)
+    end
+
+    test "state!/2 returns IsManager" do
+      tournament = fixture_tournament(is_team: true)
+      teams = fill_with_team(tournament.id)
+      assert length(teams) == tournament.capacity
+
+      Tournaments.start_team_tournament(tournament.id, tournament.master_id)
+      assert "IsManager" == Tournaments.state!(tournament.id, tournament.master_id)
+    end
+
+    test "state!/2 returns IsAssistant" do
+      tournament = fixture_tournament(is_team: true)
+      fill_with_team(tournament.id)
+      assistant_id = fixture_user(num: 10).id
+
+      Tournaments.create_assistants(%{
+        "tournament_id" => tournament.id,
+        "user_id" => [assistant_id]
+      })
+
+      Tournaments.start_team_tournament(tournament.id, tournament.master_id)
+
+      assert "IsAssistant" == Tournaments.state!(tournament.id, assistant_id)
+    end
+
+    test "state!/2 returns IsLoser" do
+      [is_team: true, capacity: 4]
+      |> fixture_tournament()
+      ~> tournament
+      |> Map.get(:id)
+      |> fill_with_team()
+      |> hd()
+      ~> team
+
+      leader = Tournaments.get_leader(team.id)
+
+      start_team(tournament.master_id, tournament.id)
+      # delete_loser(tournament.id, [team.id])
+      # assert "IsLoser" == Tournaments.state!(tournament.id, leader.id)
     end
   end
 
@@ -1088,6 +1205,45 @@ defmodule Milk.TournamentsTest do
     |> TournamentProgress.insert_match_list_with_fight_result(tournament_id)
   end
 
+  defp start_team(master_id, tournament_id) do
+    Tournaments.start_team_tournament(tournament_id, master_id)
+
+    tournament_id
+    |> Tournaments.get_confirmed_teams()
+    ~> teams
+    |> Enum.map(fn team -> team.id end)
+    |> Tournaments.generate_matchlist()
+    ~> {:ok, match_list}
+    |> elem(1)
+    |> TournamentProgress.insert_match_list(tournament_id)
+
+    count = length(teams)
+    Tournaments.initialize_team_rank(match_list, count)
+
+    match_list
+    |> Tournaments.initialize_match_list_of_team_with_fight_result()
+    ~> match_list_with_fight_result
+
+    match_list_with_fight_result
+    |> List.flatten()
+    |> Enum.reduce(match_list_with_fight_result, fn x, acc ->
+      team = Tournaments.get_team(x["team_id"])
+
+      # leaderの情報を記載したいため、そのデータを入れる
+      team.id
+      |> Tournaments.get_leader()
+      |> Map.get(:user)
+      ~> user
+
+      acc
+      |> Tournaments.put_value_on_brackets(user.id, %{"name" => user.name})
+      |> Tournaments.put_value_on_brackets(user.id, %{"win_count" => 0})
+      |> Tournaments.put_value_on_brackets(user.id, %{"icon_path" => user.icon_path})
+      |> Tournaments.put_value_on_brackets(user.id, %{"round" => 0})
+    end)
+    |> TournamentProgress.insert_match_list_with_fight_result(tournament_id)
+  end
+
   defp match_list_with_fight_result(match_list) do
     Tournaments.initialize_match_list_with_fight_result(match_list)
   end
@@ -1107,7 +1263,8 @@ defmodule Milk.TournamentsTest do
   end
 
   defp renew_match_list(tournament_id, match_list, loser_list) do
-    Tournaments.promote_winners_by_loser(tournament_id, match_list, loser_list)
+    # koko
+    Tournaments.promote_winners_by_loser!(tournament_id, match_list, loser_list)
     updated_match_list = Tournaments.delete_loser(match_list, loser_list)
     TournamentProgress.delete_match_list(tournament_id)
     TournamentProgress.insert_match_list(updated_match_list, tournament_id)
@@ -1483,6 +1640,312 @@ defmodule Milk.TournamentsTest do
       updated = Tournaments.delete_loser(match_list, opponent["id"])
 
       TournamentProgress.insert_match_list(updated, entrant.tournament_id)
+    end
+  end
+
+  describe "promote rank(team) and initialize rank(team)" do
+    defp claim_score(team_id, opponent_team_id, score, match_index) do
+      team_id
+      |> Tournaments.get_team()
+      |> Map.get(:tournament_id)
+      ~> tournament_id
+
+      TournamentProgress.insert_score(tournament_id, team_id, score)
+
+      tournament_id
+      |> TournamentProgress.get_score(opponent_team_id)
+      |> case do
+        n when is_integer(n) ->
+          cond do
+            n > score ->
+              Tournaments.delete_loser_process(tournament_id, [team_id])
+              Tournaments.score(tournament_id, opponent_team_id, team_id, n, score, match_index)
+              TournamentProgress.delete_match_pending_list(team_id, tournament_id)
+              TournamentProgress.delete_match_pending_list(opponent_team_id, tournament_id)
+              TournamentProgress.delete_score(tournament_id, team_id)
+              TournamentProgress.delete_score(tournament_id, opponent_team_id)
+              finish_as_needed(tournament_id, opponent_team_id)
+              %{validated: true, completed: true}
+
+            n < score ->
+              Tournaments.delete_loser_process(tournament_id, [opponent_team_id])
+              Tournaments.score(tournament_id, team_id, opponent_team_id, score, n, match_index)
+              TournamentProgress.delete_match_pending_list(team_id, tournament_id)
+              TournamentProgress.delete_score(tournament_id, team_id)
+              TournamentProgress.delete_score(tournament_id, opponent_team_id)
+              finish_as_needed(tournament_id, opponent_team_id)
+              %{validated: true, completed: true}
+
+            true ->
+              %{validated: false, completed: true}
+          end
+        [] -> %{validated: true, completed: false}
+      end
+    end
+
+    defp finish_as_needed(tournament_id, winner_id) do
+      match_list = TournamentProgress.get_match_list(tournament_id)
+
+      if is_integer(match_list) do
+        Tournaments.finish(tournament_id, winner_id)
+
+        tournament_id
+        |> TournamentProgress.get_match_list_with_fight_result()
+        |> inspect(charlists: false)
+        |> (fn str ->
+              %{"tournament_id" => tournament_id, "match_list_with_fight_result_str" => str}
+            end).()
+        |> TournamentProgress.create_match_list_with_fight_result_log()
+
+        TournamentProgress.delete_match_list(tournament_id)
+        TournamentProgress.delete_match_list_with_fight_result(tournament_id)
+        TournamentProgress.delete_match_pending_list_of_tournament(tournament_id)
+        TournamentProgress.delete_fight_result_of_tournament(tournament_id)
+        TournamentProgress.delete_duplicate_users_all(tournament_id)
+        TournamentProgress.delete_lose_processes(tournament_id)
+      end
+
+      if match_list == [] do
+        Logger.error("Match list error on finish as needed")
+      end
+    end
+
+    test "promote_rank/1 returns promoted rank with valid attrs" do
+      [is_team: true, capacity: 4, type: 2]
+      |> fixture_tournament()
+      ~> tournament
+      |> Map.get(:id)
+      |> fill_with_team()
+      ~> teams
+      |> Enum.map(fn team ->
+        team.id
+        |> Tournaments.get_leader()
+        |> Map.get(:user)
+      end)
+      ~> leaders
+
+      # assert用のidリスト作成
+      teams
+      |> Enum.map(fn team ->
+        team.id
+      end)
+      ~> team_id_list
+
+      # assert用の名前リスト作成
+      leaders
+      |> Enum.map(fn leader ->
+        leader.name
+      end)
+      ~> leader_name_list
+
+      # assert用のアイコンパスリスト作成
+      leaders
+      |> Enum.map(fn leader ->
+        leader.icon_path
+      end)
+      ~> leader_icon_path_list
+
+      tournament.master_id
+      |> TournamentProgress.start_team_best_of_format(tournament)
+      ~> {:ok, match_list, nil}
+
+      # match_listの初期状態確認
+      tournament.id
+      |> TournamentProgress.get_match_list()
+      |> Kernel.==(match_list)
+      |> assert()
+
+      # match_list_with_fight_resultの初期状態確認
+      tournament.id
+      |> TournamentProgress.get_match_list_with_fight_result()
+      |> List.flatten()
+      |> Enum.map(fn cell ->
+        assert cell["name"] in leader_name_list
+        assert cell["icon_path"] in leader_icon_path_list
+        assert cell["win_count"] == 0
+        assert cell["round"] == 0
+        refute cell["is_loser"]
+      end)
+      |> length()
+      |> Kernel.==(4)
+      |> assert()
+
+      # 初期ランク確認
+      tournament.id
+      |> Tournaments.get_confirmed_teams()
+      |> Enum.each(fn team ->
+        assert team.rank == 4
+      end)
+
+      your_team = hd(teams)
+      your_score = 300
+      opponent_score = 15
+
+      tournament.id
+      |> TournamentProgress.get_match_list()
+      |> Tournaments.find_match(your_team.id)
+      |> Tournaments.get_opponent_team(your_team.id)
+      ~> {:ok, opponent_team}
+
+      result = claim_score(your_team.id, opponent_team["id"], your_score, 0)
+      assert result.validated
+      refute result.completed
+
+      result = claim_score(opponent_team["id"], your_team.id, opponent_score, 0)
+      assert result.validated
+      assert result.validated
+
+      # match_listの状態確認
+      tournament.id
+      |> TournamentProgress.get_match_list()
+      |> List.flatten()
+      |> Enum.map(fn cell ->
+        refute cell == opponent_team["id"]
+        assert cell in team_id_list
+      end)
+      |> length()
+      |> Kernel.==(3)
+      |> assert()
+
+      # match_list_with_fight_resultの状態確認
+      tournament.id
+      |> TournamentProgress.get_match_list_with_fight_result()
+      |> List.flatten()
+      |> Enum.map(fn cell ->
+        assert cell["name"] in leader_name_list
+        assert cell["icon_path"] in leader_icon_path_list
+        # FIXME: ここroundはゼロでいいのかちょっとわからない
+        assert cell["round"] == 0
+
+        if cell["team_id"] == opponent_team["id"] do
+          assert cell["is_loser"]
+        else
+          refute cell["is_loser"]
+        end
+
+        if cell["team_id"] == your_team.id do
+          assert cell["win_count"] == 1
+        else
+          assert cell["win_count"] == 0
+        end
+      end)
+      |> length()
+      |> Kernel.==(4)
+      |> assert()
+
+      # ランク確認
+      tournament.id
+      |> Tournaments.get_confirmed_teams()
+      |> Enum.each(fn team ->
+        if team.id == your_team.id do
+          assert team.rank == 2
+        else
+          assert team.rank == 4
+        end
+      end)
+
+      # 反対側のブロックのマッチを取得
+      tournament.id
+      |> TournamentProgress.get_match_list()
+      |> Enum.filter(fn match_or_id ->
+        match_or_id != your_team.id
+      end)
+      |> hd()
+      |> Enum.map(fn id ->
+        Tournaments.get_team(id)
+      end)
+      ~> opposite_side_teams
+
+      another_team = hd(opposite_side_teams)
+      another_score = 200
+      another_opponent_score = 10
+
+      opposite_side_teams
+      |> Enum.map(fn team ->
+        team.id
+      end)
+      |> Tournaments.get_opponent_team(another_team.id)
+      ~> {:ok, another_opponent_team}
+
+      # 勝敗報告
+      result = claim_score(another_team.id, another_opponent_team["id"], another_score, 0)
+      assert result.validated
+      refute result.completed
+
+      result = claim_score(another_opponent_team["id"], another_team.id, another_opponent_score, 0)
+      assert result.validated
+      assert result.validated
+
+      # match_listの状態確認
+      tournament.id
+      |> TournamentProgress.get_match_list()
+      |> Enum.map(fn cell ->
+        assert cell == your_team.id || cell == another_team.id
+      end)
+      |> length()
+      |> Kernel.==(2)
+      |> assert()
+
+      # match_list_with_fight_resultの状態確認
+      tournament.id
+      |> TournamentProgress.get_match_list_with_fight_result()
+      |> List.flatten()
+      |> Enum.map(fn cell ->
+        assert cell["name"] in leader_name_list
+        assert cell["icon_path"] in leader_icon_path_list
+        assert cell["round"] == 0
+        cond do
+          cell["team_id"] == your_team.id ->
+            refute cell["is_loser"]
+            assert cell["win_count"] == 1
+          cell["team_id"] == another_team.id ->
+            refute cell["is_loser"]
+            assert cell["win_count"] == 1
+          true ->
+            assert cell["is_loser"]
+            assert cell["win_count"] == 0
+        end
+      end)
+      |> length()
+      |> Kernel.==(4)
+      |> assert()
+
+      # ランク確認
+      tournament.id
+      |> Tournaments.get_confirmed_teams()
+      |> Enum.each(fn team ->
+        cond do
+          team.id == your_team.id ->
+            assert team.rank == 2
+          team.id == another_team.id ->
+            assert team.rank == 2
+          true ->
+            assert team.rank == 4
+        end
+      end)
+
+      result = claim_score(your_team.id, another_team.id, your_score, 0)
+      assert result.validated
+      refute result.completed
+
+      result = claim_score(another_team.id, your_team.id, another_score, 0)
+      assert result.validated
+      assert result.validated
+
+      # match_listの最終状態確認
+      tournament.id
+      |> TournamentProgress.get_match_list()
+      |> Kernel.==([])
+      |> assert()
+
+      # match_list_with_fight_resultの最終状態確認
+      tournament.id
+      |> TournamentProgress.get_match_list_with_fight_result()
+      |> Kernel.==([])
+      |> assert()
+
+      # tournamentがlogになってるか確認
+      assert {:ok, %TournamentLog{}} = Tournaments.get_tournament_including_logs(tournament.id)
     end
   end
 
@@ -2106,6 +2569,41 @@ defmodule Milk.TournamentsTest do
     end
   end
 
+  describe "get_team_members_by_team_id" do
+    test "works" do
+      {tournament, users} = setup_team(5)
+
+      tournament.id
+      |> Tournaments.get_teams_by_tournament_id()
+      |> hd()
+      |> Map.get(:id)
+      |> Tournaments.get_team_members_by_team_id()
+      |> Enum.map(fn member ->
+        assert member.user_id in users
+      end)
+      |> length()
+      |> Kernel.==(length(users))
+      |> assert()
+    end
+  end
+
+  describe "get_leader" do
+    test "works" do
+      {tournament, users} = setup_team(5)
+      [leader | _users] = users
+
+      tournament.id
+      |> Tournaments.get_teams_by_tournament_id()
+      |> hd()
+      |> Map.get(:id)
+      |> Tournaments.get_leader()
+      |> (fn member ->
+        assert member.user_id == leader
+        refute is_nil(member.user.name)
+      end).()
+    end
+  end
+
   describe "get_teammates" do
     test "works" do
       {tournament, users} = setup_team(5)
@@ -2182,6 +2680,11 @@ defmodule Milk.TournamentsTest do
       leader
       |> Tournaments.has_requested_as_team?(tournament.id)
       |> assert()
+
+      users
+      |> Enum.each(fn user ->
+        assert Tournaments.has_requested_as_team?(user, tournament.id)
+      end)
 
       another_user
       |> Tournaments.has_requested_as_team?(tournament.id)

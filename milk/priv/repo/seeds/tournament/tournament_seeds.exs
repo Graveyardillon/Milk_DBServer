@@ -10,11 +10,12 @@ alias Milk.Accounts.{
   User
 }
 
-File.cp("./priv/repo/seeds/image/damn.jpg", "./static/image/profile_icon/damn.jpg")
+file = "free-engineer"
+File.cp("./priv/repo/seeds/image/#{file}.jpg", "./static/image/profile_icon/#{file}.jpg")
 
 user = Repo.insert! %User{
   bio: "Test user which has many tournaments.",
-  icon_path: "./static/image/profile_icon/damn.jpg",
+  icon_path: "./static/image/profile_icon/#{file}.jpg",
   id_for_show: -1,
   name: "TestTournamentHolder"
 }
@@ -34,16 +35,17 @@ day_after_tomorrow = Timex.now()
   |> Timex.add(Timex.Duration.from_days(2))
   |> Timex.to_datetime()
 
-File.cp("./priv/repo/seeds/image/2pimp.jpg", "./static/image/tournament_thumbnail/2pimp.jpg")
+file = "free-forest"
+File.cp("./priv/repo/seeds/image/#{file}.jpg", "./static/image/tournament_thumbnail/#{file}.jpg")
 attrs = %{
   "capacity" => 4,
   "deadline" => tomorrow,
   "description" => "test tournament of size 4.",
   "event_date" => tomorrow,
   "name" => "test tournament size 4",
-  "type" => 2,
+  "type" => 1,
   "url" => nil,
-  "thumbnail_path" => "2pimp",
+  "thumbnail_path" => file,
   "password" => nil,
   "game_name" => "my awesome name",
   "start_recruiting" => now,
@@ -53,7 +55,8 @@ attrs = %{
 }
 Tournaments.create_tournament(attrs, attrs["thumbnail_path"])
 
-File.cp("./priv/repo/seeds/image/damn.jpg", "./static/image/tournament_thumbnail/damn.jpg")
+file = "free-astro"
+File.cp("./priv/repo/seeds/image/#{file}.jpg", "./static/image/tournament_thumbnail/#{file}.jpg")
 attrs = %{
   "capacity" => 5,
   "deadline" => day_after_tomorrow,
@@ -62,7 +65,7 @@ attrs = %{
   "name" => "test tournament size 5",
   "type" => 1,
   "url" => "test url",
-  "thumbnail_path" => "damn",
+  "thumbnail_path" => file,
   "password" => nil,
   "game_name" => "my awesome name",
   "is_team" => true,
@@ -74,7 +77,8 @@ attrs = %{
 }
 Tournaments.create_tournament(attrs, attrs["thumbnail_path"])
 
-File.cp("./priv/repo/seeds/image/darksideofthemoon.jpg", "./static/image/tournament_thumbnail/darksideofthemoon.jpg")
+file = "free-monkey"
+File.cp("./priv/repo/seeds/image/#{file}.jpg", "./static/image/tournament_thumbnail/#{file}.jpg")
 attrs = %{
   "capacity" => 6,
   "deadline" => tomorrow,
@@ -83,7 +87,7 @@ attrs = %{
   "name" => "test tournament size 6",
   "type" => 2,
   "url" => nil,
-  "thumbnail_path" => "darksideofthemoon",
+  "thumbnail_path" => file,
   "password" => nil,
   "game_name" => "my awesome name",
   "start_recruiting" => now,
@@ -93,7 +97,8 @@ attrs = %{
 }
 Tournaments.create_tournament(attrs, attrs["thumbnail_path"])
 
-File.cp("./priv/repo/seeds/image/kazemachi.jpg", "./static/image/tournament_thumbnail/kazemachi.jpg")
+file = "free-sunset"
+File.cp("./priv/repo/seeds/image/#{file}.jpg", "./static/image/tournament_thumbnail/#{file}.jpg")
 attrs = %{
   "capacity" => 7,
   "deadline" => day_after_tomorrow,
@@ -102,7 +107,7 @@ attrs = %{
   "name" => "test tournament size 7",
   "type" => 1,
   "url" => nil,
-  "thumbnail_path" => "kazemachi",
+  "thumbnail_path" => file,
   "password" => "8880",
   "game_name" => "my awesome name",
   "start_recruiting" => now,
@@ -112,7 +117,8 @@ attrs = %{
 }
 Tournaments.create_tournament(attrs, attrs["thumbnail_path"])
 
-File.cp("./priv/repo/seeds/image/nevermind.jpg", "./static/image/tournament_thumbnail/nevermind.jpg")
+file = "free-wave"
+File.cp("./priv/repo/seeds/image/#{file}.jpg", "./static/image/tournament_thumbnail/#{file}.jpg")
 attrs = %{
   "capacity" => 8,
   "deadline" => tomorrow,
@@ -121,7 +127,7 @@ attrs = %{
   "name" => "test tournament size 8",
   "type" => 1,
   "url" => nil,
-  "thumbnail_path" => "nevermind",
+  "thumbnail_path" => file,
   "password" => nil,
   "game_name" => "my awesome name",
   "start_recruiting" => now,
@@ -131,7 +137,8 @@ attrs = %{
 }
 Tournaments.create_tournament(attrs, attrs["thumbnail_path"])
 
-File.cp("./priv/repo/seeds/image/solid_state_survivor.jpg", "./static/image/tournament_thumbnail/solid_state_survivor.jpg")
+file = "free-engineer"
+File.cp("./priv/repo/seeds/image/#{file}.jpg", "./static/image/tournament_thumbnail/#{file}.jpg")
 attrs = %{
   "capacity" => 32,
   "deadline" => tomorrow,
@@ -140,7 +147,7 @@ attrs = %{
   "name" => "test tournament size 32",
   "type" => 1,
   "url" => nil,
-  "thumbnail_path" => "solid_state_survivor",
+  "thumbnail_path" => file,
   "password" => nil,
   "game_name" => "my awesome name",
   "start_recruiting" => now,

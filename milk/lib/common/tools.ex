@@ -15,6 +15,17 @@ defmodule Common.Tools do
   end
 
   @doc """
+  Atom map to String map
+  """
+  def atom_map_to_string_map(map) do
+    map
+    |> Enum.map(fn {k, v} ->
+      {Atom.to_string(k), v}
+    end)
+    |> Map.new()
+  end
+
+  @doc """
   Checks if all map elements are nil
   """
   def is_all_map_elements_nil?(map) do
@@ -28,6 +39,10 @@ defmodule Common.Tools do
   @doc """
   Create error message
   """
+  def create_error_message(error) when is_binary(error) do
+    error
+  end
+
   def create_error_message(error) do
     error
     |> Enum.reduce("", fn {key, value}, acc ->

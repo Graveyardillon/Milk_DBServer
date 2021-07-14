@@ -3,6 +3,8 @@ defmodule MilkWeb.TournamentController do
 
   require Logger
 
+  import Common.Sperm
+
   alias Milk.{
     Accounts,
     Chat,
@@ -149,6 +151,8 @@ defmodule MilkWeb.TournamentController do
           %{"user_id" => tournament.master_id, "game_name" => tournament.game_name, "score" => 7}
           |> Accounts.gain_score()
 
+          add_queue_tournament_start_push_notice(tournament)
+
           render(conn, "create.json", tournament: tournament)
 
         {:error, error} ->
@@ -166,7 +170,6 @@ defmodule MilkWeb.TournamentController do
   def show(conn, params) do
     user_id = params["user_id"]
     id = Tools.to_integer_as_needed(params["tournament_id"])
-
     tournament = Tournaments.get_tournament(id)
     tournament_log = Log.get_tournament_log_by_tournament_id(id)
 
@@ -328,6 +331,7 @@ defmodule MilkWeb.TournamentController do
 
       case Tournaments.update_tournament(tournament, tournament_params) do
         {:ok, %Tournament{} = tournament} ->
+          update_queue_tournament_start_push_notice(tournament)
           render(conn, "show.json", tournament: tournament)
 
         {:error, error} ->
@@ -445,8 +449,13 @@ defmodule MilkWeb.TournamentController do
     tournament = Tournaments.get_tournament(tournament_id)
     entrants = Tournaments.get_entrants(tournament.id)
 
-    # キャパシティの確認
+    # キャパシティの確認(個人)
     result = tournament.capacity > length(entrants)
+
+    # キャパシティの確認(チーム)
+    result = tournament.capacity
+      |> Kernel.>(length(tournament.team))
+      |> Kernel.and(result)
 
     # 自分が参加しているかどうか
     result = entrants
@@ -546,127 +555,43 @@ defmodule MilkWeb.TournamentController do
 
   @doc """
   Start a tournament.
-  # FIXME: type増加に伴う可読性向上
   """
   def start(conn, %{"tournament" => %{"master_id" => master_id, "tournament_id" => tournament_id}}) do
     master_id = Tools.to_integer_as_needed(master_id)
 
-    tournament =
-      tournament_id
-      |> Tools.to_integer_as_needed()
-      |> Tournaments.get_tournament()
-
-    case tournament.type do
-      1 -> start_single_elimination(conn, master_id, tournament)
-      2 -> start_best_of_format(conn, master_id, tournament)
-      3 -> start_best_of_format(conn, master_id, tournament)
-      _ -> json(conn, %{error: "error", result: false})
-    end
-  end
-
-  defp start_single_elimination(conn, master_id, tournament) do
-    with {:ok, _} <- Tournaments.start(master_id, tournament.id),
-         {:ok, match_list, match_list_with_fight_result} <-
-           make_single_elimination_matches(tournament.id) do
-      with match_list <- TournamentProgress.get_match_list(tournament.id) do
-        TournamentProgress.set_time_limit_on_all_entrants(match_list, tournament.id)
-      end
-
-      render(conn, "match.json", %{
-        match_list: match_list,
-        match_list_with_fight_result: match_list_with_fight_result
-      })
+    tournament_id
+    |> Tools.to_integer_as_needed()
+    |> Tournaments.get_tournament()
+    ~> tournament
+    |> Map.get(:is_team)
+    |> if do
+      start_team_tournament(master_id, tournament)
     else
+      start_tournament(master_id, tournament)
+    end
+    |> case do
+      {:ok, match_list, match_list_with_fight_result} ->
+        render(conn, "match.json", %{match_list: match_list, match_list_with_fight_result: match_list_with_fight_result})
+      {:error, nil, nil} ->
+        render(conn, "error.json", error: nil)
       {:error, error, nil} ->
-        render(conn, "error.json", error: error)
-
-      _ ->
-        json(conn, %{error: "error"})
+        render(conn, "error.json", error: Tools.create_error_message(error))
     end
   end
 
-  defp start_best_of_format(conn, master_id, tournament) do
-    Tournaments.start(master_id, tournament.id)
-
-    with {:ok, match_list} <- make_best_of_format_matches(tournament) do
-      render(conn, "match.json", %{match_list: match_list, match_list_with_fight_result: nil})
-    else
-      _ -> json(conn, %{result: false})
+  defp start_team_tournament(master_id, tournament) do
+    case tournament.type do
+      2 -> TournamentProgress.start_team_best_of_format(master_id, tournament)
+      _ -> {:error, "unsupported tournament type", nil}
     end
   end
 
-  defp make_single_elimination_matches(tournament_id) do
-    with {:ok, match_list} <-
-           Tournaments.get_entrants(tournament_id)
-           |> Enum.map(fn x -> x.user_id end)
-           |> Tournaments.generate_matchlist() do
-      count =
-        Tournaments.get_tournament(tournament_id)
-        |> Map.get(:count)
-
-      match_list
-      |> Tournaments.initialize_rank(count, tournament_id)
-
-      match_list
-      |> TournamentProgress.insert_match_list(tournament_id)
-
-      list_with_fight_result =
-        match_list
-        |> match_list_with_fight_result()
-
-      lis =
-        list_with_fight_result
-        |> Tournamex.match_list_to_list()
-
-      complete_list =
-        Enum.reduce(lis, list_with_fight_result, fn x, acc ->
-          user = Accounts.get_user(x["user_id"])
-
-          acc
-          |> Tournaments.put_value_on_brackets(user.id, %{"name" => user.name})
-          |> Tournaments.put_value_on_brackets(user.id, %{"win_count" => 0})
-          |> Tournaments.put_value_on_brackets(user.id, %{"icon_path" => user.icon_path})
-        end)
-        |> TournamentProgress.insert_match_list_with_fight_result(tournament_id)
-
-      {:ok, match_list, complete_list}
-    else
-      {:error, error} ->
-        {:error, error, nil}
+  defp start_tournament(master_id, tournament) do
+    case tournament.type do
+      1 -> TournamentProgress.start_single_elimination(master_id, tournament)
+      2 -> TournamentProgress.start_best_of_format(master_id, tournament)
+      _ -> {:error, "unsupported tournament type", nil}
     end
-  end
-
-  defp match_list_with_fight_result(match_list) do
-    Tournaments.initialize_match_list_with_fight_result(match_list)
-  end
-
-  defp make_best_of_format_matches(tournament) do
-    {:ok, match_list} =
-      tournament.id
-      |> Tournaments.get_entrants()
-      |> Enum.map(fn x -> x.user_id end)
-      |> Tournaments.generate_matchlist()
-
-    count = tournament.count
-    Tournaments.initialize_rank(match_list, count, tournament.id)
-    TournamentProgress.insert_match_list(match_list, tournament.id)
-
-    match_list_with_fight_result = match_list_with_fight_result(match_list)
-
-    match_list_with_fight_result
-    |> List.flatten()
-    |> Enum.reduce(match_list_with_fight_result, fn x, acc ->
-      user = Accounts.get_user(x["user_id"])
-
-      acc
-      |> Tournaments.put_value_on_brackets(user.id, %{"name" => user.name})
-      |> Tournaments.put_value_on_brackets(user.id, %{"win_count" => 0})
-      |> Tournaments.put_value_on_brackets(user.id, %{"icon_path" => user.icon_path})
-      |> Tournaments.put_value_on_brackets(user.id, %{"round" => 0})
-    end)
-    |> TournamentProgress.insert_match_list_with_fight_result(tournament.id)
-
-    {:ok, match_list}
   end
 
   @doc """
@@ -843,11 +768,12 @@ defmodule MilkWeb.TournamentController do
       match = Tournaments.find_match(match_list, user_id)
 
       with {:ok, opponent} <- Tournaments.get_opponent(match, user_id) do
-        json(conn, %{result: true, opponent: opponent})
+        render(conn, "opponent.json", opponent: opponent)
       else
-        # FIXME: waitのタプルの作り方微妙
-        {:wait, _} -> json(conn, %{result: false, opponent: nil, wait: true})
-        _ -> render(conn, "error.json", error: nil)
+        {:wait, _} ->
+          json(conn, %{result: false, opponent: nil, wait: true})
+        _ ->
+          render(conn, "error.json", error: nil)
       end
     else
       json(conn, %{result: false})
@@ -919,8 +845,16 @@ defmodule MilkWeb.TournamentController do
     tournament_id = Tools.to_integer_as_needed(tournament_id)
 
     state = Tournaments.state!(tournament_id, user_id)
+    score = if state == "IsPending" do
+      tournament_id
+      |> TournamentProgress.get_score(user_id)
+      |> case do
+        [] -> nil
+        score -> score
+      end
+    end
 
-    json(conn, %{result: true, state: state})
+    json(conn, %{result: true, state: state, score: score})
   end
 
   @doc """
@@ -1057,6 +991,57 @@ defmodule MilkWeb.TournamentController do
     end
   end
 
+  def claim_score(conn, %{
+    "team_id" => team_id,
+    "opponent_team_id" => opponent_team_id,
+    "score" => score,
+    "match_index" => match_index
+  }) do
+    team_id = Tools.to_integer_as_needed(team_id)
+    opponent_team_id = Tools.to_integer_as_needed(opponent_team_id)
+    score = Tools.to_integer_as_needed(score)
+    match_index = Tools.to_integer_as_needed(match_index)
+
+    team_id
+    |> Tournaments.get_team()
+    |> Map.get(:tournament_id)
+    ~> tournament_id
+
+    TournamentProgress.insert_score(tournament_id, team_id, score)
+
+    tournament_id
+    |> TournamentProgress.get_score(opponent_team_id)
+    |> case do
+      n when is_integer(n) ->
+        cond do
+          n > score ->
+            Tournaments.delete_loser_process(tournament_id, [team_id])
+            Tournaments.score(tournament_id, opponent_team_id, team_id, n, score, match_index)
+            TournamentProgress.delete_match_pending_list(team_id, tournament_id)
+            TournamentProgress.delete_match_pending_list(opponent_team_id, tournament_id)
+            TournamentProgress.delete_score(tournament_id, team_id)
+            TournamentProgress.delete_score(tournament_id, opponent_team_id)
+            finish_as_needed(tournament_id, opponent_team_id)
+            json(conn, %{validated: true, completed: true})
+
+          n < score ->
+            Tournaments.delete_loser_process(tournament_id, [opponent_team_id])
+            Tournaments.score(tournament_id, team_id, opponent_team_id, score, n, match_index)
+            TournamentProgress.delete_match_pending_list(team_id, tournament_id)
+            TournamentProgress.delete_score(tournament_id, team_id)
+            TournamentProgress.delete_score(tournament_id, opponent_team_id)
+            finish_as_needed(tournament_id, opponent_team_id)
+            json(conn, %{validated: true, completed: true})
+
+          true ->
+            json(conn, %{validated: false, completed: false})
+        end
+
+      [] ->
+        json(conn, %{validated: true, completed: false})
+    end
+  end
+
   defp finish_as_needed(tournament_id, winner_id) do
     match_list = TournamentProgress.get_match_list(tournament_id)
 
@@ -1106,18 +1091,17 @@ defmodule MilkWeb.TournamentController do
         finish_as_needed(tournament_id, winner["id"])
 
       {:wait, nil} ->
-        match =
-          tournament_id
-          |> TournamentProgress.get_match_list()
-          |> Tournaments.find_match(target_user_id)
-          |> Kernel.--([target_user_id])
-          |> hd()
-          |> Enum.each(fn user_id ->
-            Tournaments.promote_rank(
-              %{"tournament_id" => tournament_id, "user_id" => user_id},
-              :force
-            )
-          end)
+        tournament_id
+        |> TournamentProgress.get_match_list()
+        |> Tournaments.find_match(target_user_id)
+        |> Kernel.--([target_user_id])
+        |> hd()
+        |> Enum.each(fn user_id ->
+          Tournaments.promote_rank(
+            %{"tournament_id" => tournament_id, "user_id" => user_id},
+            :force
+          )
+        end)
 
         Tournaments.delete_loser_process(tournament_id, [target_user_id])
     end
@@ -1374,5 +1358,29 @@ defmodule MilkWeb.TournamentController do
       |> Tournaments.verify?(password)
 
     json(conn, %{result: result})
+  end
+
+  defp add_queue_tournament_start_push_notice(tournament) do
+    job = %{notify_tournament_start: tournament.id}
+    |> Oban.Processer.new(scheduled_at: tournament.event_date)
+    |> Oban.insert()
+    |> elem(1)
+
+    result = if Map.get(job, :errors) |> length == 0, do: true, else: false
+
+    case result do
+      true -> {:ok, job.id}
+      false -> {:error, job.errors}
+    end
+  end
+
+  defp update_queue_tournament_start_push_notice(tournament) do
+    case Tournaments.get_push_notice_job("notify_tournament_start", tournament.id) do
+      nil ->
+        IO.puts("notice job not found")
+      job ->
+        Oban.cancel_job(job.id)
+        add_queue_tournament_start_push_notice(tournament)
+    end
   end
 end

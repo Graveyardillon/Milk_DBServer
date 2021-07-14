@@ -1,9 +1,11 @@
-defmodule Milk.Common.Fixtures do
+defmodule Common.Fixtures do
   alias Milk.{
     Accounts,
     Platforms,
     Tournaments
   }
+
+  import Common.Sperm
 
   defmacro __using__(_opts) do
     quote do
@@ -69,6 +71,14 @@ defmodule Milk.Common.Fixtures do
             nil
           end
 
+        type = opts[:type]
+          |> is_nil()
+          |> unless do
+            opts[:type]
+          else
+            1
+          end
+
         master_id = opts[:master_id]
           |> is_nil()
           |> unless do
@@ -91,9 +101,45 @@ defmodule Milk.Common.Fixtures do
           |> Map.put("is_team", is_team)
           |> Map.put("capacity", capacity)
           |> Map.put("team_size", team_size)
+          |> Map.put("type", type)
           |> Tournaments.create_tournament()
 
         tournament
+      end
+
+      def fill_with_team(tournament_id) do
+        tournament = Tournaments.get_tournament(tournament_id)
+
+        (101)..(tournament.team_size*tournament.capacity+100)
+        |> Enum.to_list()
+        |> Enum.map(fn n ->
+          fixture_user(num: n)
+        end)
+        ~> users
+        |> Enum.map(fn user ->
+          user.id
+        end)
+        |> Enum.chunk_every(tournament.team_size)
+        |> Enum.map(fn [leader | members] ->
+          tournament.id
+          |> Tournaments.create_team(tournament.team_size, leader, members)
+          |> elem(1)
+        end)
+        |> Enum.map(fn team ->
+          team.id
+          |> Tournaments.get_team_members_by_team_id()
+          |> Enum.each(fn member ->
+            leader = Tournaments.get_leader(member.team_id)
+
+            member.id
+            |> Tournaments.create_team_invitation(leader.user_id)
+            |> elem(1)
+            |> Map.get(:id)
+            |> Tournaments.confirm_team_invitation()
+            |> elem(1)
+          end)
+          Tournaments.get_team(team.id)
+        end)
       end
 
       def fixture_user(opts \\ []) do

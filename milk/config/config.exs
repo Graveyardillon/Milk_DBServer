@@ -62,3 +62,14 @@ config :milk, Milk.Mailer,
 config :milk, :json_file, "e-players6814-8e8eac82841c.json" |> File.read!()
 
 config :milk, :storage_bucket_id, "milk-image"
+
+config :milk, Oban,
+  repo: Milk.Repo,
+  plugins: [
+    Oban.Plugins.Pruner,
+    {Oban.Plugins.Cron,
+      crontab: [
+        # {"work", MilkWeb._Worker}
+      ]}
+  ],
+  queues: [default: 10, event: 50]

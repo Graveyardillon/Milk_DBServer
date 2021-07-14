@@ -81,7 +81,7 @@ defmodule Milk.MixProject do
       {:bamboo_smtp, "~> 3.0.0"},
       {:argon2_elixir, "~> 2.3.0"},
       {:ex_crypto, "~> 0.10.0"},
-      {:tournamex, "~> 0.1.13"},
+      {:tournamex, "~> 0.1.17"},
       {:dialyxir, "~> 1.0", only: [:dev], runtime: false},
       {:excoveralls, "~> 0.10", only: :test},
       {:redix, ">= 0.0.0"},
@@ -90,7 +90,8 @@ defmodule Milk.MixProject do
       {:hackney, "~> 1.17"},
       {:credo, "~> 1.5", only: [:dev, :test], runtime: false},
       {:pigeon, "~> 1.5.1"},
-      {:kadabra, "~> 0.4.4"}
+      {:kadabra, "~> 0.4.4"},
+      {:oban, "~> 2.7"}
     ]
   end
 

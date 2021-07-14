@@ -8,9 +8,13 @@ defmodule Milk.TournamentProgress do
   6. absence_process
   """
   import Ecto.Query, warn: false
+  import Common.Sperm
+  import Common.Comment
 
   alias Milk.{
-    Repo
+    Accounts,
+    Repo,
+    Tournaments
   }
 
   alias Milk.TournamentProgress.{
@@ -720,8 +724,6 @@ defmodule Milk.TournamentProgress do
     |> Repo.insert()
   end
 
-  # Best of x tournament match log.
-
   @doc """
   Get best of x tournament match log.
   """
@@ -751,7 +753,7 @@ defmodule Milk.TournamentProgress do
     |> Repo.insert()
   end
 
-  """
+  comment """
   match list with fight result log.
   """
 
@@ -765,5 +767,139 @@ defmodule Milk.TournamentProgress do
     %MatchListWithFightResultLog{}
     |> MatchListWithFightResultLog.changeset(attrs)
     |> Repo.insert()
+  end
+
+  comment """
+  個人大会スタート時に使用する関数群
+  """
+
+  def start_single_elimination(master_id, tournament) do
+    Tournaments.start(master_id, tournament.id)
+    make_single_elimination_matches(tournament.id)
+  end
+
+  def start_best_of_format(master_id, tournament) do
+    Tournaments.start(master_id, tournament.id)
+    {:ok, match_list} = make_best_of_format_matches(tournament)
+    {:ok, match_list, nil}
+  end
+
+  defp make_single_elimination_matches(tournament_id) do
+    Tournaments.get_entrants(tournament_id)
+    |> Enum.map(fn x -> x.user_id end)
+    |> Tournaments.generate_matchlist()
+    ~> {:ok, match_list}
+
+    Tournaments.get_tournament(tournament_id)
+    |> Map.get(:count)
+    ~> count
+
+    Tournaments.initialize_rank(match_list, count, tournament_id)
+    insert_match_list(match_list, tournament_id)
+    list_with_fight_result = match_list_with_fight_result(match_list)
+
+    list_with_fight_result
+    |> Tournamex.match_list_to_list()
+    |> Enum.reduce(list_with_fight_result, fn x, acc ->
+      user = Accounts.get_user(x["user_id"])
+
+      acc
+      |> Tournaments.put_value_on_brackets(user.id, %{"name" => user.name})
+      |> Tournaments.put_value_on_brackets(user.id, %{"win_count" => 0})
+      |> Tournaments.put_value_on_brackets(user.id, %{"icon_path" => user.icon_path})
+    end)
+    |> insert_match_list_with_fight_result(tournament_id)
+    ~> complete_list
+
+    {:ok, match_list, complete_list}
+  end
+
+  defp match_list_with_fight_result(match_list) do
+    Tournaments.initialize_match_list_with_fight_result(match_list)
+  end
+
+  defp make_best_of_format_matches(tournament) do
+    tournament.id
+    |> Tournaments.get_entrants()
+    |> Enum.map(fn entrant -> entrant.user_id end)
+    |> Tournaments.generate_matchlist()
+    ~> {:ok, match_list}
+    |> elem(1)
+    |> insert_match_list(tournament.id)
+
+    count = tournament.count
+    Tournaments.initialize_rank(match_list, count, tournament.id)
+
+    match_list_with_fight_result = match_list_with_fight_result(match_list)
+
+    match_list_with_fight_result
+    |> List.flatten()
+    |> Enum.reduce(match_list_with_fight_result, fn x, acc ->
+      user = Accounts.get_user(x["user_id"])
+
+      acc
+      |> Tournaments.put_value_on_brackets(user.id, %{"name" => user.name})
+      |> Tournaments.put_value_on_brackets(user.id, %{"win_count" => 0})
+      |> Tournaments.put_value_on_brackets(user.id, %{"icon_path" => user.icon_path})
+      |> Tournaments.put_value_on_brackets(user.id, %{"round" => 0})
+    end)
+    |> insert_match_list_with_fight_result(tournament.id)
+
+    {:ok, match_list}
+  end
+
+  comment """
+  チーム大会スタートに関する関数群
+  """
+
+  def start_team_best_of_format(master_id, tournament) do
+    tournament.id
+    |> Tournaments.start_team_tournament(master_id)
+    |> case do
+      {:ok, _tournament} ->
+        {:ok, match_list} = generate_team_best_of_format_matches(tournament)
+        {:ok, match_list, nil}
+      {:error, error} ->
+        {:error, error, nil}
+    end
+  end
+
+  defp generate_team_best_of_format_matches(tournament) do
+    tournament.id
+    |> Tournaments.get_confirmed_teams()
+    ~> teams
+    |> Enum.map(fn team -> team.id end)
+    |> Tournaments.generate_matchlist()
+    ~> {:ok, match_list}
+    |> elem(1)
+    |> insert_match_list(tournament.id)
+
+    count = length(teams)
+    Tournaments.initialize_team_rank(match_list, count)
+
+    match_list
+    |> Tournaments.initialize_match_list_of_team_with_fight_result()
+    ~> match_list_with_fight_result
+
+    match_list_with_fight_result
+    |> List.flatten()
+    |> Enum.reduce(match_list_with_fight_result, fn x, acc ->
+      team = Tournaments.get_team(x["team_id"])
+
+      # leaderの情報を記載したいため、そのデータを入れる
+      team.id
+      |> Tournaments.get_leader()
+      |> Map.get(:user)
+      ~> user
+
+      acc
+      |> Tournaments.put_value_on_brackets(team.id, %{"name" => user.name})
+      |> Tournaments.put_value_on_brackets(team.id, %{"win_count" => 0})
+      |> Tournaments.put_value_on_brackets(team.id, %{"icon_path" => user.icon_path})
+      |> Tournaments.put_value_on_brackets(team.id, %{"round" => 0})
+    end)
+    |> insert_match_list_with_fight_result(tournament.id)
+
+    {:ok, match_list}
   end
 end
