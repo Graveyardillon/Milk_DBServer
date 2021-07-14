@@ -1365,8 +1365,7 @@ defmodule MilkWeb.TournamentController do
     |> Oban.Processer.new(scheduled_at: tournament.event_date)
     |> Oban.insert()
     |> elem(1)
-    |> IO.inspect()
-    
+
     result = if Map.get(job, :errors) |> length == 0, do: true, else: false
 
     case result do
@@ -1377,7 +1376,7 @@ defmodule MilkWeb.TournamentController do
 
   defp update_queue_tournament_start_push_notice(tournament) do
     case Tournaments.get_push_notice_job("notify_tournament_start", tournament.id) do
-      nil -> 
+      nil ->
         IO.puts("notice job not found")
       job ->
         Oban.cancel_job(job.id)
