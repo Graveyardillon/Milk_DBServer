@@ -45,6 +45,7 @@ mix run ./priv/repo/seeds/relation/block_some_users.exs && \
 mix run ./priv/repo/seeds/relation/follow.exs && \
 mix run ./priv/repo/seeds/tournament/assistant_check.exs && \
 mix run ./priv/repo/seeds/action_history/seeder.exs && \
+mix run ./priv/repo/seeds/chat/chat_seed_on_tournament1.exs && \
 mix phx.server
 ```
 
