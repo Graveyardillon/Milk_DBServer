@@ -2602,6 +2602,7 @@ defmodule MilkWeb.TournamentControllerTest do
       teams
       |> hd()
       |> Map.get(:id)
+      ~> my_team
       |> Tournaments.get_leader()
       |> Map.get(:user)
       ~> me
@@ -2613,6 +2614,43 @@ defmodule MilkWeb.TournamentControllerTest do
       assert match_info["rank"] == 4
       assert is_nil(match_info["score"])
       assert match_info["state"] == "IsInMatch"
+      refute is_nil(match_info["opponent"]["id"])
+      assert Map.has_key?(match_info["opponent"], "icon_path")
+      assert is_nil(match_info["opponent"]["name"])
+
+      conn =
+        post(conn, Routes.tournament_path(conn, :start_match),
+          user_id: my_team,
+          tournament_id: tournament.id
+        )
+      assert json_response(conn, 200)["result"]
+
+      conn = get(conn, Routes.tournament_path(conn, :get_match_information), tournament_id: tournament.id, user_id: me.id)
+      match_info = json_response(conn, 200)
+
+      assert match_info["is_leader"]
+      assert match_info["rank"] == 4
+      assert is_nil(match_info["score"])
+      assert match_info["state"] == "IsWaitingForStart"
+
+      tournament.id
+      |> Tournaments.get_teammates(me.id)
+      |> Enum.filter(fn member ->
+        !member.is_leader
+      end)
+      |> hd()
+      |> Map.get(:user)
+      ~> mate
+
+      conn = get(conn, Routes.tournament_path(conn, :get_match_information), tournament_id: tournament.id, user_id: mate.id)
+      match_info = json_response(conn, 200)
+
+      refute match_info["is_leader"]
+      assert match_info["rank"] == 4
+      assert is_nil(match_info["score"])
+      assert match_info["state"] == "IsWaitingForStart"
+
+
     end
   end
 
