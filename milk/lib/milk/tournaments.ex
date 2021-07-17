@@ -2173,6 +2173,17 @@ defmodule Milk.Tournaments do
   end
 
   @doc """
+  Get team by tournament_id and user_id.
+  """
+  def get_team_by_tournament_id_and_user_id(tournament_id, user_id) do
+    Team
+    |> join(:inner, [t], tm in TeamMember, on: t.id == tm.team_id)
+    |> where([t, tm], t.tournament_id == ^tournament_id)
+    |> where([t, tm], tm.user_id == ^user_id)
+    |> Repo.one()
+  end
+
+  @doc """
   Get team members by team id.
   """
   def get_team_members_by_team_id(team_id) do

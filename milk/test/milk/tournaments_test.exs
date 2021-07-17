@@ -2537,13 +2537,14 @@ defmodule Milk.TournamentsTest do
     {tournament, users}
   end
 
-  describe "create_team and get_teams_by_tournament_id" do
+  describe "create_team and get_teams_by_tournament_id and get_team_by_tournament_id_and_user_id" do
     test "works" do
       {tournament, users} = setup_team(5)
       [leader | users] = users
 
       tournament.id
       |> Tournaments.get_teams_by_tournament_id()
+      ~> teams
       |> Enum.map(fn team ->
         assert team.tournament_id == tournament.id
       end)
@@ -2566,6 +2567,13 @@ defmodule Milk.TournamentsTest do
       |> length()
       |> Kernel.==(5)
       |> assert()
+
+      tournament.id
+      |> Tournaments.get_team_by_tournament_id_and_user_id(leader)
+      ~> team
+
+      assert team.tournament_id == tournament.id
+      assert team in teams
     end
   end
 

@@ -1233,6 +1233,33 @@ defmodule MilkWeb.TournamentController do
   end
 
   @doc """
+  Get information for match
+  - Opponent
+  - Current rank
+  - State
+  - Score(optional)
+  - Whether it is team
+  - Whether it is team leader
+  """
+  def get_match_information(conn, %{"tournament_id" => tournament_id, "user_id" => user_id}) do
+    # tournament_id = Tools.to_integer_as_needed(tournament_id)
+    # user_id = Tools.to_integer_as_needed(user_id)
+
+    # tournament_id
+    # |> Tournaments.get_tournament()
+    # ~> tournament
+    # |> Map.get(:is_team)
+    # |> if do
+    #   tournament_id
+
+
+    #   |> TournamentProgress.get_match_list()
+    #   |> Tournaments.find_match()
+    #   |> Tournaments.get_opponent_team()
+    # end
+  end
+
+  @doc """
   Finish tournament.
   """
   def finish(conn, %{"tournament_id" => tournament_id, "user_id" => user_id}) do
