@@ -348,8 +348,14 @@ defmodule MilkWeb.TournamentView do
 
   def render("match_info.json", %{opponent: opponent, rank: rank, is_team: is_team, is_leader: is_leader, score: score, state: state}) do
     %{
-      opponent: unless state == "IsAlone" do
-        %{
+      opponent: cond do
+        state == "IsAlone" -> nil
+        is_team -> %{
+            name: opponent["name"],
+            icon_path: opponent["icon_path"],
+            id: opponent["id"]
+          }
+        true -> %{
           name: opponent["name"],
           icon_path: opponent["icon_path"],
           id: opponent["id"]

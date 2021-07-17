@@ -1918,19 +1918,32 @@ defmodule Milk.Tournaments do
       tournament.id
       |> get_assistants()
       |> Enum.filter(fn assistant -> assistant.user_id == user_id end)
-      |> (fn list -> list == [] end).()
+      |> (fn list -> list != [] end).()
 
-    is_not_entrant =
-      tournament.id
-      |> get_entrants()
-      |> Enum.filter(fn entrant -> entrant.user_id == user_id end)
-      |> (fn list -> list == [] end).()
+    tournament.id
+    |> get_entrants()
+    |> Enum.map(&(&1.user_id))
+    ~> entrants
+
+    tournament.id
+    |> get_teams_by_tournament_id()
+    |> Enum.map(fn team ->
+      get_team_members_by_team_id(team.id)
+    end)
+    |> List.flatten()
+    |> Enum.map(&(&1.user_id))
+    |> Enum.concat(entrants)
+    |> Enum.filter(fn id ->
+      id == user_id
+    end)
+    |> (fn list -> list == [] end).()
+    ~> is_not_entrant
 
     cond do
       is_manager && is_not_entrant ->
         "IsManager"
 
-      (!is_manager || is_assistant) && is_not_entrant ->
+      (!is_manager && is_assistant) && is_not_entrant ->
         "IsAssistant"
 
       true ->

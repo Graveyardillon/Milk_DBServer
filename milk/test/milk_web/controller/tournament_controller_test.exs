@@ -2581,6 +2581,39 @@ defmodule MilkWeb.TournamentControllerTest do
       assert is_nil(match_info["score"])
       assert is_nil(match_info["is_leader"])
     end
+
+    test "team tournament works", %{conn: conn} do
+      tournament = fixture_tournament(capacity: 4, is_team: true, type: 2)
+      teams = fill_with_team(tournament.id)
+
+      conn =
+        post(conn, Routes.tournament_path(conn, :start),
+          tournament: %{"master_id" => tournament.master_id, "tournament_id" => tournament.id}
+        )
+      assert json_response(conn, 200)["result"]
+
+      tournament.id
+      |> TournamentProgress.get_match_list()
+      |> List.flatten()
+      |> length()
+      |> Kernel.==(4)
+      |> assert()
+
+      teams
+      |> hd()
+      |> Map.get(:id)
+      |> Tournaments.get_leader()
+      |> Map.get(:user)
+      ~> me
+
+      conn = get(conn, Routes.tournament_path(conn, :get_match_information), tournament_id: tournament.id, user_id: me.id)
+      match_info = json_response(conn, 200)
+
+      assert match_info["is_leader"]
+      assert match_info["rank"] == 4
+      assert is_nil(match_info["score"])
+      #assert match_info["state"] == "IsInMatch"
+    end
   end
 
   describe "finish" do
