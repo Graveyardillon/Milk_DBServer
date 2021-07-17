@@ -1675,6 +1675,38 @@ defmodule MilkWeb.TournamentControllerTest do
       assert json_response(conn, 200)["result"]
       assert json_response(conn, 200)["opponent"]
     end
+
+    test "get an opponent team", %{conn: conn} do
+      [is_team: true, capacity: 4, num: 900, type: 2]
+      |> fixture_tournament()
+      ~> tournament
+      |> Map.get(:id)
+      |> fill_with_team()
+      |> hd()
+      ~> my_team
+
+      conn =
+        post(conn, Routes.tournament_path(conn, :start),
+          tournament: %{"master_id" => tournament.master_id, "tournament_id" => tournament.id}
+        )
+      assert json_response(conn, 200)["result"]
+
+      tournament.id
+      |> TournamentProgress.get_match_list()
+      |> List.flatten()
+      |> length()
+      |> Kernel.==(4)
+      |> assert()
+
+      conn =
+        get(conn, Routes.tournament_path(conn, :get_opponent),
+          tournament_id: tournament.id,
+          team_id: my_team.id
+        )
+
+      assert json_response(conn, 200)["result"]
+      opponent = json_response(conn, 200)["opponent"]
+    end
   end
 
   describe "get fighting users" do
@@ -2650,7 +2682,70 @@ defmodule MilkWeb.TournamentControllerTest do
       assert is_nil(match_info["score"])
       assert match_info["state"] == "IsWaitingForStart"
 
+      conn =
+        get(conn, Routes.tournament_path(conn, :get_opponent),
+          tournament_id: tournament.id,
+          team_id: my_team
+        )
+      assert json_response(conn, 200)["result"]
+      opponent_id = json_response(conn, 200)["opponent"]["id"]
 
+      conn =
+        post(conn, Routes.tournament_path(conn, :start_match),
+          user_id: opponent_id,
+          tournament_id: tournament.id
+        )
+
+      opponent_id
+      |> Tournaments.get_team_members_by_team_id()
+      |> hd()
+      |> Map.get(:user_id)
+      ~> opponent_member
+
+      conn = get(conn, Routes.tournament_path(conn, :get_match_information), tournament_id: tournament.id, user_id: opponent_member)
+      match_info = json_response(conn, 200)
+      assert match_info["state"] == "IsPending"
+
+      my_score = 100
+      opponent_score = 5
+
+      conn =
+        post(conn, Routes.tournament_path(conn, :claim_score),
+          team_id: my_team,
+          opponent_team_id: opponent_id,
+          score: my_score,
+          match_index: 1
+        )
+
+      assert json_response(conn, 200)["validated"]
+      refute json_response(conn, 200)["completed"]
+
+      conn = get(conn, Routes.tournament_path(conn, :get_match_information), tournament_id: tournament.id, user_id: mate.id)
+      match_info = json_response(conn, 200)
+
+      refute match_info["is_leader"]
+      assert match_info["rank"] == 4
+      assert match_info["score"] == my_score
+      assert match_info["state"] == "IsPending"
+
+      conn =
+        post(conn, Routes.tournament_path(conn, :claim_score),
+          team_id: opponent_id,
+          opponent_team_id: my_team,
+          score: opponent_score,
+          match_index: 1
+        )
+
+      assert json_response(conn, 200)["completed"]
+
+      conn = get(conn, Routes.tournament_path(conn, :get_match_information), tournament_id: tournament.id, user_id: mate.id)
+      match_info = json_response(conn, 200)
+
+      assert is_nil(match_info["opponent"])
+      assert match_info["state"] == "IsAlone"
+      assert match_info["rank"] == 2
+      assert is_nil(match_info["score"])
+      refute match_info["is_leader"]
     end
   end
 

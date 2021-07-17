@@ -2443,5 +2443,4 @@ defmodule Milk.Tournaments do
     |> where([j], j.args[^args] == ^tournament_id)
     |> Repo.one()
   end
-
 end

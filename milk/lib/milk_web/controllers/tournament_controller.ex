@@ -780,6 +780,39 @@ defmodule MilkWeb.TournamentController do
     end
   end
 
+  def get_opponent(conn, %{"tournament_id" => tournament_id, "team_id" => team_id}) do
+    tournament_id = Tools.to_integer_as_needed(tournament_id)
+    team_id = Tools.to_integer_as_needed(team_id)
+
+    tournament_id
+    |> TournamentProgress.get_match_list()
+    ~> match_list
+    |> is_integer()
+    |> unless do
+      match_list
+      |> Tournaments.find_match(team_id)
+      |> Tournaments.get_opponent_team(team_id)
+      |> case do
+        {:ok, opponent} ->
+          opponent
+          |> Map.get("id")
+          |> Tournaments.get_leader()
+          |> Map.get(:user)
+          |> Map.from_struct()
+          |> Tools.atom_map_to_string_map()
+          ~> leader
+
+          render(conn, "opponent.json", opponent: opponent, leader: leader)
+        {:wait, nil} ->
+          json(conn, %{result: false, opponent: nil, wait: true})
+        _ ->
+          render(conn, "error.json", error: nil)
+      end
+    else
+      json(conn, %{result: false})
+    end
+  end
+
   @doc """
   Get fighting users.
   """
@@ -1247,6 +1280,7 @@ defmodule MilkWeb.TournamentController do
 
     tournament_id
     |> Tournaments.get_tournament()
+    ~> tournament
     |> Map.get(:is_team)
     ~> is_team
     |> if do
@@ -1287,8 +1321,17 @@ defmodule MilkWeb.TournamentController do
     ~> state
     |> Kernel.==("IsPending")
     |> if do
-      tournament_id
-      |> TournamentProgress.get_score(user_id)
+      if tournament.is_team do
+        tournament_id
+        |> Tournaments.get_team_by_tournament_id_and_user_id(user_id)
+        ~> team
+
+        tournament_id
+        |> TournamentProgress.get_score(team.id)
+      else
+        tournament_id
+        |> TournamentProgress.get_score(user_id)
+      end
       |> case do
         [] -> nil
         score -> score

@@ -36,6 +36,18 @@ defmodule MilkWeb.TournamentView do
     }
   end
 
+  def render("opponent_team.json", %{opponent: opponent, leader: leader}) do
+    %{
+      opponent: %{
+        id: opponent["id"],
+        name: opponent["name"],
+        icon_path: leader["icon_path"],
+        rank: opponent["rank"]
+      },
+      result: !is_nil(opponent) && !is_nil(leader)
+    }
+  end
+
   def render("index.json", %{tournament: tournament}) do
     %{
       data: render_many(tournament, TournamentView, "tournament.json"),
