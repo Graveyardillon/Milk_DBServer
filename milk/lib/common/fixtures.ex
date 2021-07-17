@@ -142,6 +142,25 @@ defmodule Common.Fixtures do
         end)
       end
 
+      def fill_with_entrant(tournament_id) do
+        tournament = Tournaments.get_tournament(tournament_id)
+
+        (101)..tournament.capacity+100
+        |> Enum.to_list()
+        |> Enum.map(fn n ->
+          [num: n]
+          |> fixture_user()
+          |> Map.get(:id)
+        end)
+        |> Enum.map(fn user_id ->
+          Map.new()
+          |> Map.put("user_id", user_id)
+          |> Map.put("tournament_id", tournament_id)
+          |> Tournaments.create_entrant()
+          |> elem(1)
+        end)
+      end
+
       def fixture_user(opts \\ []) do
         num_str =
           opts[:num]

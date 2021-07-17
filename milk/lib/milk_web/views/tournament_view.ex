@@ -346,7 +346,22 @@ defmodule MilkWeb.TournamentView do
     }
   end
 
-  # def render("error.json", %{error: error, msg: "Creating tournament failed"}) do
+  def render("match_info.json", %{opponent: opponent, rank: rank, is_team: is_team, is_leader: is_leader, score: score, state: state}) do
+    %{
+      opponent: unless state == "IsAlone" do
+        %{
+          name: opponent["name"],
+          icon_path: opponent["icon_path"],
+          id: opponent["id"]
+        }
+      end,
+      rank: rank,
+      is_leader: if is_team do is_leader end,
+      score: score,
+      state: state
+    }
+  end
+
   def render("error.json", %{error: error}) do
     if error do
       %{result: false, error: error, data: nil}

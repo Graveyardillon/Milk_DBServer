@@ -1242,21 +1242,61 @@ defmodule MilkWeb.TournamentController do
   - Whether it is team leader
   """
   def get_match_information(conn, %{"tournament_id" => tournament_id, "user_id" => user_id}) do
-    # tournament_id = Tools.to_integer_as_needed(tournament_id)
-    # user_id = Tools.to_integer_as_needed(user_id)
+    tournament_id = Tools.to_integer_as_needed(tournament_id)
+    user_id = Tools.to_integer_as_needed(user_id)
 
-    # tournament_id
-    # |> Tournaments.get_tournament()
-    # ~> tournament
-    # |> Map.get(:is_team)
-    # |> if do
-    #   tournament_id
+    tournament_id
+    |> Tournaments.get_tournament()
+    |> Map.get(:is_team)
+    ~> is_team
+    |> if do
+      tournament_id
+      |> Tournaments.get_team_by_tournament_id_and_user_id(user_id)
+      ~> team
 
+      team
+      |> Map.get(:tournament_id)
+      |> TournamentProgress.get_match_list()
+      |> Tournaments.find_match(team.id)
+      |> Tournaments.get_opponent_team(team.id)
+      |> elem(1)
+      ~> opponent
 
-    #   |> TournamentProgress.get_match_list()
-    #   |> Tournaments.find_match()
-    #   |> Tournaments.get_opponent_team()
-    # end
+      team.id
+      |> Tournaments.get_leader()
+      |> Map.get(:user_id)
+      |> Kernel.==(user_id)
+      ~> is_leader
+
+      {opponent, team.rank, is_leader}
+    else
+      tournament_id
+      |> TournamentProgress.get_match_list()
+      |> Tournaments.find_match(user_id)
+      |> Tournaments.get_opponent(user_id)
+      |> elem(1)
+      ~> opponent
+
+      rank = Tournaments.get_rank(tournament_id, user_id)
+      {opponent, rank, nil}
+    end
+    ~> {opponent, rank, is_leader}
+
+    tournament_id
+    |> Tournaments.state!(user_id)
+    ~> state
+    |> Kernel.==("IsPending")
+    |> if do
+      tournament_id
+      |> TournamentProgress.get_score(user_id)
+      |> case do
+        [] -> nil
+        score -> score
+      end
+    end
+    ~> score
+
+    render(conn, "match_info.json", %{opponent: opponent, rank: rank, is_team: is_team, is_leader: is_leader, score: score, state: state})
   end
 
   @doc """
