@@ -2612,7 +2612,7 @@ defmodule MilkWeb.TournamentControllerTest do
       assert match_info["is_leader"]
       assert match_info["rank"] == 4
       assert is_nil(match_info["score"])
-      #assert match_info["state"] == "IsInMatch"
+      assert match_info["state"] == "IsInMatch"
     end
   end
 

@@ -1898,7 +1898,24 @@ defmodule Milk.Tournaments do
   Checks tournament state.
   """
   def state!(tournament_id, user_id) do
-    tournament = get_tournament(tournament_id)
+    tournament_id
+    |> get_tournament()
+    ~> tournament
+    |> Map.get(:is_team)
+    |> if do
+      tournament_id
+      |> get_team_by_tournament_id_and_user_id(user_id)
+      ~> team
+      |> is_nil()
+      |> unless do
+        team.id
+      else
+        user_id
+      end
+    else
+      user_id
+    end
+    ~> id
 
     unless tournament do
       "IsFinished"
@@ -1906,7 +1923,7 @@ defmodule Milk.Tournaments do
       unless tournament.is_started do
         "IsNotStarted"
       else
-        check_is_manager?(tournament, user_id)
+        check_is_manager?(tournament, id)
       end
     end
   end
@@ -1977,14 +1994,25 @@ defmodule Milk.Tournaments do
   end
 
   defp check_wait_state?(tournament_id, user_id) do
-    match_list = TournamentProgress.get_match_list(tournament_id)
-    match = find_match(match_list, user_id)
+    tournament_id
+    |> get_tournament()
+    ~> tournament
+    |> Map.get(:id)
+    |> TournamentProgress.get_match_list()
+    |> find_match(user_id)
+    ~> match
 
-    {:ok, opponent} = get_opponent(match, user_id)
+    if tournament.is_team do
+      get_opponent_team(match, user_id)
+    else
+      get_opponent(match, user_id)
+    end
+    |> elem(1)
+    |> Map.get("id")
+    |> TournamentProgress.get_match_pending_list(tournament_id)
+    ~> opponent_pending_list
+
     pending_list = TournamentProgress.get_match_pending_list(user_id, tournament_id)
-
-    opponent_pending_list =
-      TournamentProgress.get_match_pending_list(opponent["id"], tournament_id)
 
     cond do
       pending_list == [] ->
