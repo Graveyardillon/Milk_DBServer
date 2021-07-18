@@ -1120,7 +1120,7 @@ defmodule Milk.Tournaments do
         {:wait, nil}
       end
     else
-      {:error, "opponent does not exist"}
+      {:error, "opponent team does not exist"}
     end
   end
 

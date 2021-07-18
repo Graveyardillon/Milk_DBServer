@@ -40,7 +40,7 @@ defmodule MilkWeb.TournamentView do
     %{
       opponent: %{
         id: opponent["id"],
-        name: opponent["name"],
+        name: leader["name"],
         icon_path: leader["icon_path"],
         rank: opponent["rank"]
       },
