@@ -1132,7 +1132,6 @@ defmodule Milk.TournamentsTest do
       finish_as_needed(tournament.id, entrant.user_id)
       assert "IsFinished" == Tournaments.state!(tournament.id, entrant.user_id)
     end
-
   end
 
   describe "state! (team)" do
@@ -1179,6 +1178,20 @@ defmodule Milk.TournamentsTest do
       start_team(tournament.master_id, tournament.id)
       delete_loser(tournament.id, [team.id])
       assert "IsLoser" == Tournaments.state!(tournament.id, leader.id)
+    end
+
+    test "state!/2 returns IsFinished" do
+      tournament = fixture_tournament(is_team: true, capacity: 2)
+      fill_with_team(tournament.id)
+      ~> [team | opponent_team]
+
+      leader = Tournaments.get_leader(team.id)
+      assert Map.has_key?(leader, :user)
+
+      start_team(tournament.master_id, tournament.id)
+      delete_loser(tournament.id, [hd(opponent_team).id])
+      finish_as_needed(tournament.id, team.id)
+      assert "IsFinished" == Tournaments.state!(tournament.id, leader.user_id)
     end
   end
 
