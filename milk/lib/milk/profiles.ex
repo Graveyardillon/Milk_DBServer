@@ -145,27 +145,36 @@ defmodule Milk.Profiles do
     |> Enum.filter(fn entrant_log -> entrant_log.tournament_log != nil end)
   end
 
-  def update_profile(%User{} = user, name, bio, gameList, records) do
-    Repo.update(Ecto.Changeset.change(user, name: name, bio: bio))
+  def update_profile(%User{} = user, name, bio) do
+    user
+    |> User.changeset(%{name: name, bio: bio})
+    |> Repo.update()
+  end
 
+  def update_gamelist(%User{} = user, gameList) do
     Profile
     |> where([p], p.user_id == ^user.id)
+    |> where([p], p.content_type == "game")
     |> Repo.delete_all()
 
-    if gameList != nil do
-      Enum.each(gameList, fn game ->
-        %Profile{}
-        |> Profile.changeset(%{user_id: user.id, content_id: game, content_type: "game"})
-        |> Repo.insert()
-      end)
-    end
-
-    if records != nil do
-      Enum.each(records, fn record ->
-        %Profile{}
-        |> Profile.changeset(%{user_id: user.id, content_id: record, content_type: "record"})
-        |> Repo.insert()
-      end)
-    end
+    Enum.each(gameList, fn game ->
+      %Profile{}
+      |> Profile.changeset(%{user_id: user.id, content_id: game, content_type: "game"})
+      |> Repo.insert()
+    end)
   end
+
+  def update_recordlist(%User{} = user, recordlist) do
+    Profile
+    |> where([p], p.user_id == ^user.id)
+    |> where([p], p.content_type == "record")
+    |> Repo.delete_all()
+
+    Enum.each(recordlist, fn record ->
+      %Profile{}
+      |> Profile.changeset(%{user_id: user.id, content_id: record, content_type: "record"})
+      |> Repo.insert()
+    end)
+  end
+
 end
