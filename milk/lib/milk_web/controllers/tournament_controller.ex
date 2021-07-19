@@ -780,6 +780,39 @@ defmodule MilkWeb.TournamentController do
     end
   end
 
+  def get_opponent(conn, %{"tournament_id" => tournament_id, "team_id" => team_id}) do
+    tournament_id = Tools.to_integer_as_needed(tournament_id)
+    team_id = Tools.to_integer_as_needed(team_id)
+
+    tournament_id
+    |> TournamentProgress.get_match_list()
+    ~> match_list
+    |> is_integer()
+    |> unless do
+      match_list
+      |> Tournaments.find_match(team_id)
+      |> Tournaments.get_opponent_team(team_id)
+      |> case do
+        {:ok, opponent} ->
+          opponent
+          |> Map.get("id")
+          |> Tournaments.get_leader()
+          |> Map.get(:user)
+          |> Map.from_struct()
+          |> Tools.atom_map_to_string_map()
+          ~> leader
+
+          render(conn, "opponent.json", opponent: opponent, leader: leader)
+        {:wait, nil} ->
+          json(conn, %{result: false, opponent: nil, wait: true})
+        _ ->
+          render(conn, "error.json", error: nil)
+      end
+    else
+      json(conn, %{result: false})
+    end
+  end
+
   @doc """
   Get fighting users.
   """
@@ -1230,6 +1263,83 @@ defmodule MilkWeb.TournamentController do
       |> Tournaments.get_entrants()
 
     render(conn, "entrants.json", entrants: entrants)
+  end
+
+  @doc """
+  Get information for match
+  - Opponent
+  - Current rank
+  - State
+  - Score(optional)
+  - Whether it is team
+  - Whether it is team leader
+  """
+  def get_match_information(conn, %{"tournament_id" => tournament_id, "user_id" => user_id}) do
+    tournament_id = Tools.to_integer_as_needed(tournament_id)
+    user_id = Tools.to_integer_as_needed(user_id)
+
+    tournament_id
+    |> Tournaments.get_tournament()
+    ~> tournament
+    |> Map.get(:is_team)
+    ~> is_team
+    |> if do
+      tournament_id
+      |> Tournaments.get_team_by_tournament_id_and_user_id(user_id)
+      ~> team
+
+      team
+      |> Map.get(:tournament_id)
+      |> TournamentProgress.get_match_list()
+      |> Tournaments.find_match(team.id)
+      |> Tournaments.get_opponent_team(team.id)
+      |> elem(1)
+      ~> opponent
+
+      team.id
+      |> Tournaments.get_leader()
+      |> Map.get(:user_id)
+      |> Kernel.==(user_id)
+      ~> is_leader
+
+      {opponent, team.rank, is_leader}
+    else
+      tournament_id
+      |> TournamentProgress.get_match_list()
+      |> Tournaments.find_match(user_id)
+      |> Tournaments.get_opponent(user_id)
+      |> elem(1)
+      ~> opponent
+
+      rank = Tournaments.get_rank(tournament_id, user_id)
+      {opponent, rank, nil}
+    end
+    ~> {opponent, rank, is_leader}
+
+    tournament_id
+    |> Tournaments.state!(user_id)
+    ~> state
+    |> Kernel.==("IsPending")
+    |> if do
+      if tournament.is_team do
+        tournament_id
+        |> Tournaments.get_team_by_tournament_id_and_user_id(user_id)
+        ~> team
+
+        tournament_id
+        |> TournamentProgress.get_score(team.id)
+      else
+        tournament_id
+        |> TournamentProgress.get_score(user_id)
+      end
+      |> case do
+        [] -> nil
+        score -> score
+      end
+    end
+    ~> score
+
+    render(conn, "match_info.json", %{opponent: opponent, rank: rank, is_team: is_team, is_leader: is_leader, score: score, state: state})
   end
 
   @doc """

@@ -1120,7 +1120,7 @@ defmodule Milk.Tournaments do
         {:wait, nil}
       end
     else
-      {:error, "opponent does not exist"}
+      {:error, "opponent team does not exist"}
     end
   end
 
@@ -1898,7 +1898,24 @@ defmodule Milk.Tournaments do
   Checks tournament state.
   """
   def state!(tournament_id, user_id) do
-    tournament = get_tournament(tournament_id)
+    tournament_id
+    |> get_tournament()
+    ~> tournament
+    |> Map.get(:is_team)
+    |> if do
+      tournament_id
+      |> get_team_by_tournament_id_and_user_id(user_id)
+      ~> team
+      |> is_nil()
+      |> unless do
+        team.id
+      else
+        user_id
+      end
+    else
+      user_id
+    end
+    ~> id
 
     unless tournament do
       "IsFinished"
@@ -1906,7 +1923,7 @@ defmodule Milk.Tournaments do
       unless tournament.is_started do
         "IsNotStarted"
       else
-        check_is_manager?(tournament, user_id)
+        check_is_manager?(tournament, id)
       end
     end
   end
@@ -1918,19 +1935,32 @@ defmodule Milk.Tournaments do
       tournament.id
       |> get_assistants()
       |> Enum.filter(fn assistant -> assistant.user_id == user_id end)
-      |> (fn list -> list == [] end).()
+      |> (fn list -> list != [] end).()
 
-    is_not_entrant =
-      tournament.id
-      |> get_entrants()
-      |> Enum.filter(fn entrant -> entrant.user_id == user_id end)
-      |> (fn list -> list == [] end).()
+    tournament.id
+    |> get_entrants()
+    |> Enum.map(&(&1.user_id))
+    ~> entrants
+
+    tournament.id
+    |> get_teams_by_tournament_id()
+    |> Enum.map(fn team ->
+      get_team_members_by_team_id(team.id)
+    end)
+    |> List.flatten()
+    |> Enum.map(&(&1.user_id))
+    |> Enum.concat(entrants)
+    |> Enum.filter(fn id ->
+      id == user_id
+    end)
+    |> (fn list -> list == [] end).()
+    ~> is_not_entrant
 
     cond do
       is_manager && is_not_entrant ->
         "IsManager"
 
-      (!is_manager || is_assistant) && is_not_entrant ->
+      (!is_manager && is_assistant) && is_not_entrant ->
         "IsAssistant"
 
       true ->
@@ -1964,14 +1994,25 @@ defmodule Milk.Tournaments do
   end
 
   defp check_wait_state?(tournament_id, user_id) do
-    match_list = TournamentProgress.get_match_list(tournament_id)
-    match = find_match(match_list, user_id)
+    tournament_id
+    |> get_tournament()
+    ~> tournament
+    |> Map.get(:id)
+    |> TournamentProgress.get_match_list()
+    |> find_match(user_id)
+    ~> match
 
-    {:ok, opponent} = get_opponent(match, user_id)
+    if tournament.is_team do
+      get_opponent_team(match, user_id)
+    else
+      get_opponent(match, user_id)
+    end
+    |> elem(1)
+    |> Map.get("id")
+    |> TournamentProgress.get_match_pending_list(tournament_id)
+    ~> opponent_pending_list
+
     pending_list = TournamentProgress.get_match_pending_list(user_id, tournament_id)
-
-    opponent_pending_list =
-      TournamentProgress.get_match_pending_list(opponent["id"], tournament_id)
 
     cond do
       pending_list == [] ->
@@ -2170,6 +2211,17 @@ defmodule Milk.Tournaments do
     Team
     |> where([t], t.tournament_id == ^tournament_id)
     |> Repo.all()
+  end
+
+  @doc """
+  Get team by tournament_id and user_id.
+  """
+  def get_team_by_tournament_id_and_user_id(tournament_id, user_id) do
+    Team
+    |> join(:inner, [t], tm in TeamMember, on: t.id == tm.team_id)
+    |> where([t, tm], t.tournament_id == ^tournament_id)
+    |> where([t, tm], tm.user_id == ^user_id)
+    |> Repo.one()
   end
 
   @doc """
@@ -2391,5 +2443,4 @@ defmodule Milk.Tournaments do
     |> where([j], j.args[^args] == ^tournament_id)
     |> Repo.one()
   end
-
 end
