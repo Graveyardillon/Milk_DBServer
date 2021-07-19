@@ -1119,6 +1119,10 @@ defmodule Milk.TournamentsTest do
       start(tournament.master_id, tournament.id)
       assert "IsInMatch" == Tournaments.state!(tournament.id, tournament.master_id)
     end
+
+    test "state!/2 returns IsFinished" do
+
+    end
   end
 
   describe "state! (team)" do
@@ -1163,8 +1167,8 @@ defmodule Milk.TournamentsTest do
       leader = Tournaments.get_leader(team.id)
 
       start_team(tournament.master_id, tournament.id)
-      # delete_loser(tournament.id, [team.id])
-      # assert "IsLoser" == Tournaments.state!(tournament.id, leader.id)
+      delete_loser(tournament.id, [team.id])
+      assert "IsLoser" == Tournaments.state!(tournament.id, leader.id)
     end
   end
 
