@@ -286,7 +286,8 @@ defmodule MilkWeb.TournamentView do
               name: follower.name
             }
           end)
-      }
+      },
+      result: true
     }
   end
 
