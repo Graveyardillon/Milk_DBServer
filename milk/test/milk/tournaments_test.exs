@@ -1121,8 +1121,18 @@ defmodule Milk.TournamentsTest do
     end
 
     test "state!/2 returns IsFinished" do
+      tournament = fixture_tournament(capacity: 2)
 
+      2
+      |> create_entrants(tournament.id)
+      ~> [entrant | opponent]
+
+      start(tournament.master_id, tournament.id)
+      delete_loser(tournament.id, [hd(opponent).user_id])
+      finish_as_needed(tournament.id, entrant.user_id)
+      assert "IsFinished" == Tournaments.state!(tournament.id, entrant.user_id)
     end
+
   end
 
   describe "state! (team)" do

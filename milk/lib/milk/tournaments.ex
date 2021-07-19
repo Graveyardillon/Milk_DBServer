@@ -1901,7 +1901,12 @@ defmodule Milk.Tournaments do
     tournament_id
     |> get_tournament()
     ~> tournament
-    |> Map.get(:is_team)
+    |> is_nil()
+    |> unless do
+      Map.get(tournament, :is_team)
+    else
+      false
+    end
     |> if do
       tournament_id
       |> get_team_by_tournament_id_and_user_id(user_id)
