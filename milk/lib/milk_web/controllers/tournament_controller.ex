@@ -1282,7 +1282,6 @@ defmodule MilkWeb.TournamentController do
     |> Tournaments.get_tournament_including_logs()
     |> elem(1)
     ~> tournament
-    |> IO.inspect(label: :log)
     |> Map.get(:is_team)
     ~> is_team
     |> if do

@@ -499,43 +499,6 @@ defmodule Milk.Tournaments do
     end
   end
 
-  @doc """
-  Renew match list as needed.
-  """
-  def trim_match_list_as_needed(tournament_id) do
-    match_list_len =
-      tournament_id
-      |> TournamentProgress.get_match_list()
-      |> case do
-        match_list when is_list(match_list) ->
-          match_list
-          |> List.flatten()
-          |> length()
-
-        _ ->
-          0
-      end
-
-    match_list_with_fight_result_len =
-      tournament_id
-      |> TournamentProgress.get_match_list_with_fight_result()
-      |> case do
-        match_list when is_list(match_list) ->
-          match_list
-          |> List.flatten()
-          |> length()
-
-        _ ->
-          0
-      end
-
-    if match_list_with_fight_result_len > 16 and match_list_len <= 16 do
-      new_list = TournamentProgress.get_match_list(tournament_id)
-      TournamentProgress.delete_match_list_with_fight_result(tournament_id)
-      TournamentProgress.insert_match_list_with_fight_result(new_list, tournament_id)
-    end
-  end
-
   def match_list_length(matchlist, n \\ 0) do
     Enum.reduce(matchlist, n, fn x, acc ->
       case x do
