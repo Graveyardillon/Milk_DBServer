@@ -2093,9 +2093,11 @@ defmodule Milk.Tournaments do
   Construct data with game scores for brackets.
   """
   def data_with_scores_for_flexible_brackets(tournament_id) do
-    # TODO: fix
-    match_list = TournamentProgress.get_match_list_with_fight_result_including_log(tournament_id)
-    {:ok, brackets} = Tournamex.brackets_with_fight_result(match_list)
+    tournament_id
+    |> TournamentProgress.get_match_list_with_fight_result_including_log()
+    |> Tournamex.brackets_with_fight_result()
+    |> elem(1)
+    ~> brackets
 
     # add game_scores
     brackets
@@ -2104,23 +2106,24 @@ defmodule Milk.Tournaments do
 
       Enum.map(list, fn bracket ->
         unless is_nil(bracket) do
-          user_id = bracket["user_id"]
+          id = bracket["user_id"] || bracket["team_id"]
 
-          win_game_scores =
-            tournament_id
-            |> TournamentProgress.get_best_of_x_tournament_match_logs_by_winner(user_id)
-            |> Enum.map(fn log ->
-              log.winner_score
-            end)
+          tournament_id
+          |> TournamentProgress.get_best_of_x_tournament_match_logs_by_winner(id)
+          |> Enum.map(fn log ->
+            log.winner_score
+          end)
+          ~> win_game_scores
 
           lose_game_scores =
-            tournament_id
-            |> TournamentProgress.get_best_of_x_tournament_match_logs_by_loser(user_id)
-            |> Enum.map(fn log ->
-              log.loser_score
-            end)
-
-          game_scores = win_game_scores ++ lose_game_scores
+          tournament_id
+          |> TournamentProgress.get_best_of_x_tournament_match_logs_by_loser(id)
+          |> Enum.map(fn log ->
+            log.loser_score
+          end)
+          ~> lose_game_scores
+          |> Enum.concat(win_game_scores)
+          ~> game_scores
 
           Map.put(bracket, "game_scores", game_scores)
         end

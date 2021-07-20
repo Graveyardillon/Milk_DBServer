@@ -3404,16 +3404,26 @@ defmodule MilkWeb.TournamentControllerTest do
           end).()
     end
 
-    # test "works (team)", %{conn: conn} do
-    #   tournament = fixture_tournament(is_team: true, capacity: 4)
-    #   fill_with_team(tournament.id)
+    test "works (team)", %{conn: conn} do
+      tournament = fixture_tournament(is_team: true, capacity: 4, type: 2)
+      fill_with_team(tournament.id)
 
-    #   conn = post(conn, Routes.tournament_path(conn, :start), tournament: %{master_id: tournament.master_id, tournament_id: tournament.id})
-    #   conn = get(conn, Routes.tournament_path(conn, :chunk_bracket_data_for_best_of_format), tournament_id: tournament.id)
+      conn = post(conn, Routes.tournament_path(conn, :start), tournament: %{master_id: tournament.master_id, tournament_id: tournament.id})
+      conn = get(conn, Routes.tournament_path(conn, :chunk_bracket_data_for_best_of_format), tournament_id: tournament.id)
 
-    #   json_response(conn, 200)
-    #   |> IO.inspect()
-    # end
+      assert json_response(conn, 200)["result"]
+      json_response(conn, 200)
+      |> Map.get("data")
+      |> Enum.map(fn bracket ->
+        assert bracket["game_scores"] == []
+        refute bracket["is_loser"]
+        assert Map.has_key?(bracket, "team_id")
+        refute Map.has_key?(bracket, "user_id")
+      end)
+      |> length()
+      |> Kernel.==(4)
+      |> assert()
+    end
   end
 
   describe "claim score" do
