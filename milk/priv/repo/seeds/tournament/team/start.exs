@@ -13,8 +13,4 @@ Tournament
 |> Repo.one()
 ~> tournament
 
-tournament
-|> Map.get(:id)
-|> Tournaments.start_team_tournament(tournament.master_id)
-
 TournamentProgress.start_team_best_of_format(tournament.master_id, tournament)

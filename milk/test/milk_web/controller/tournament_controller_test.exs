@@ -3409,6 +3409,15 @@ defmodule MilkWeb.TournamentControllerTest do
       fill_with_team(tournament.id)
 
       conn = post(conn, Routes.tournament_path(conn, :start), tournament: %{master_id: tournament.master_id, tournament_id: tournament.id})
+      json_response(conn, 200)
+
+      tournament.id
+      |> TournamentProgress.get_match_list_with_fight_result()
+      |> List.flatten()
+      |> length()
+      |> Kernel.==(4)
+      |> assert()
+
       conn = get(conn, Routes.tournament_path(conn, :chunk_bracket_data_for_best_of_format), tournament_id: tournament.id)
 
       assert json_response(conn, 200)["result"]
