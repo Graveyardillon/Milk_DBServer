@@ -1394,60 +1394,60 @@ defmodule MilkWeb.TournamentController do
   Bracket data for best of format.
   """
   def chunk_bracket_data_for_best_of_format(conn, %{"tournament_id" => tournament_id}) do
-    tournament_id = Tools.to_integer_as_needed(tournament_id)
-    brackets = Tournaments.data_with_scores_for_flexible_brackets(tournament_id)
-
-    count =
-      brackets
-      |> Enum.count()
-      |> Kernel.*(2)
-      |> Tournamex.Number.closest_number_to_power_of_two()
+    tournament_id
+    |> Tools.to_integer_as_needed()
+    |> Tournaments.data_with_scores_for_flexible_brackets()
+    ~> brackets
+    |> Enum.count()
+    |> Kernel.*(2)
+    |> Tournamex.Number.closest_number_to_power_of_two()
+    ~> count
 
     json(conn, %{result: true, data: brackets, count: count})
   end
 
-  @doc """
-  テスト用 Idの数だけのブラケットを返す
-  """
-  def chunk_bracket_data_for_best_of_format_test(conn, %{"tournament_id" => number}) do
-    num = Tools.to_integer_as_needed(number)
+  # @doc """
+  # テスト用 Idの数だけのブラケットを返す
+  # """
+  # def chunk_bracket_data_for_best_of_format_test(conn, %{"tournament_id" => number}) do
+  #   num = Tools.to_integer_as_needed(number)
 
-    Enum.to_list(1..num)
-    |> Tournamex.generate_matchlist()
-    |> elem(1)
-    |> IO.inspect(charlists: false)
-    |> Tournamex.brackets()
-    |> elem(1)
-    |> IO.inspect(charlists: false)
+  #   Enum.to_list(1..num)
+  #   |> Tournamex.generate_matchlist()
+  #   |> elem(1)
+  #   |> IO.inspect(charlists: false)
+  #   |> Tournamex.brackets()
+  #   |> elem(1)
+  #   |> IO.inspect(charlists: false)
 
-    match_list =
-      1..num
-      |> Enum.to_list()
-      |> Tournamex.generate_matchlist()
-      |> elem(1)
-      |> Tournamex.initialize_match_list_with_fight_result()
+  #   match_list =
+  #     1..num
+  #     |> Enum.to_list()
+  #     |> Tournamex.generate_matchlist()
+  #     |> elem(1)
+  #     |> Tournamex.initialize_match_list_with_fight_result()
 
-    match_list =
-      match_list
-      |> List.flatten()
-      |> Enum.reduce(match_list, fn x, acc ->
-        user_id = x["user_id"]
+  #   match_list =
+  #     match_list
+  #     |> List.flatten()
+  #     |> Enum.reduce(match_list, fn x, acc ->
+  #       user_id = x["user_id"]
 
-        acc
-        |> Milk.Tournaments.put_value_on_brackets(user_id, %{
-          "name" => "name" <> to_string(user_id)
-        })
-        |> Milk.Tournaments.put_value_on_brackets(user_id, %{"win_count" => 0})
-        |> Milk.Tournaments.put_value_on_brackets(user_id, %{"icon_path" => nil})
-        |> Milk.Tournaments.put_value_on_brackets(user_id, %{"round" => 0})
-        |> Milk.Tournaments.put_value_on_brackets(user_id, %{"game_scores" => [0]})
-      end)
-      |> Tournamex.brackets_with_fight_result()
-      |> elem(1)
-      |> List.flatten()
+  #       acc
+  #       |> Milk.Tournaments.put_value_on_brackets(user_id, %{
+  #         "name" => "name" <> to_string(user_id)
+  #       })
+  #       |> Milk.Tournaments.put_value_on_brackets(user_id, %{"win_count" => 0})
+  #       |> Milk.Tournaments.put_value_on_brackets(user_id, %{"icon_path" => nil})
+  #       |> Milk.Tournaments.put_value_on_brackets(user_id, %{"round" => 0})
+  #       |> Milk.Tournaments.put_value_on_brackets(user_id, %{"game_scores" => [0]})
+  #     end)
+  #     |> Tournamex.brackets_with_fight_result()
+  #     |> elem(1)
+  #     |> List.flatten()
 
-    json(conn, %{result: true, data: match_list, count: 0})
-  end
+  #   json(conn, %{result: true, data: match_list, count: 0})
+  # end
 
   @doc """
   Registers PID of start notification.

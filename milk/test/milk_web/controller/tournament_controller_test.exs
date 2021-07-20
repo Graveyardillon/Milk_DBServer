@@ -3403,6 +3403,17 @@ defmodule MilkWeb.TournamentControllerTest do
             assert length(list) == 4
           end).()
     end
+
+    # test "works (team)", %{conn: conn} do
+    #   tournament = fixture_tournament(is_team: true, capacity: 4)
+    #   fill_with_team(tournament.id)
+
+    #   conn = post(conn, Routes.tournament_path(conn, :start), tournament: %{master_id: tournament.master_id, tournament_id: tournament.id})
+    #   conn = get(conn, Routes.tournament_path(conn, :chunk_bracket_data_for_best_of_format), tournament_id: tournament.id)
+
+    #   json_response(conn, 200)
+    #   |> IO.inspect()
+    # end
   end
 
   describe "claim score" do
