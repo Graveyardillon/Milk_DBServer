@@ -5,6 +5,7 @@ defmodule MilkWeb.TournamentControllerTest do
   import Ecto.Query, warn: false
   import Common.Sperm
 
+  alias Common.Tools
   alias Milk.{
     Accounts,
     Platforms,
@@ -1004,6 +1005,98 @@ defmodule MilkWeb.TournamentControllerTest do
       |> (fn len ->
             assert len == length(tournament_id_list)
           end).()
+    end
+
+    test "works (team)", %{conn: conn} do
+      # leader, member, entrant, master
+
+      # member
+      100..105
+      |> Enum.to_list()
+      |> Enum.map(fn n ->
+        [num: n]
+        |> fixture_user()
+        |> Map.get(:id)
+      end)
+      ~> [leader | member]
+
+      member
+      |> hd()
+      |> Accounts.get_user()
+      ~> me
+
+      [is_team: true, capacity: 2, num: 5]
+      |> fixture_tournament()
+      ~> member_tournament
+      |> Map.get(:id)
+      |> Tournaments.create_team(5, leader, member)
+      |> elem(1)
+      |> Map.get(:team_member)
+      |> Enum.filter(&(!&1.is_invitation_confirmed))
+      |> Enum.map(fn member ->
+        member
+        |> Map.get(:user_id)
+        |> Tournaments.get_team_invitations_by_user_id()
+        |> hd()
+        |> Map.get(:id)
+        |> Tournaments.confirm_team_invitation()
+      end)
+
+      # leader
+      member_tournament.id
+      |> Tournaments.get_confirmed_teams()
+      |> length()
+      |> Kernel.==(1)
+      |> assert()
+
+      60..64
+      |> Enum.to_list()
+      |> Enum.map(fn n ->
+        [num: n]
+        |> fixture_user()
+        |> Map.get(:id)
+      end)
+      ~> members
+
+      [is_team: true, capacity: 2, num: 50]
+      |> fixture_tournament()
+      ~> leader_tournament
+      |> Map.get(:id)
+      |> Tournaments.create_team(5, me.id, members)
+      |> elem(1)
+      |> Map.get(:team_member)
+      |> Enum.filter(&(&1.user_id != me.id))
+      |> Enum.map(fn member ->
+        member
+        |> Map.get(:user_id)
+        |> Tournaments.get_team_invitations_by_user_id()
+        |> hd()
+        |> Map.get(:id)
+        |> Tournaments.confirm_team_invitation()
+      end)
+
+      # entrant
+      [capacity: 2, num: 500]
+      |> fixture_tournament()
+      ~> entrant_tournament
+
+      Map.new()
+      |> Map.put(:tournament_id, entrant_tournament.id)
+      |> Map.put(:user_id, me.id)
+      |> Tools.atom_map_to_string_map()
+      |> Tournaments.create_entrant()
+
+      [master_id: me.id, num: 5000]
+      |> fixture_tournament()
+      ~> master_tournament
+
+      conn
+      |> get(Routes.tournament_path(conn, :relevant, %{"user_id" => me.id}))
+      |> json_response(200)
+      |> Map.get("data")
+      |> length()
+      |> Kernel.==(4)
+      |> assert()
     end
   end
 
@@ -2892,7 +2985,6 @@ defmodule MilkWeb.TournamentControllerTest do
 
       conn = get(conn, Routes.tournament_path(conn, :get_match_information), tournament_id: tournament.id, user_id: me.id)
       match_info = json_response(conn, 200)
-      |> IO.inspect()
     end
   end
 

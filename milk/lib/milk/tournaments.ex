@@ -279,12 +279,19 @@ defmodule Milk.Tournaments do
   Get tournaments which the user participating in.
   """
   def get_participating_tournaments(user_id) do
-    Entrant
-    |> where([e], e.user_id == ^user_id)
+    Tournament
+    |> join(:inner, [t], e in Entrant, on: t.id == e.tournament_id)
+    |> where([t, e], e.user_id == ^user_id)
     |> Repo.all()
-    |> Enum.map(fn entrant ->
-      get_tournament(entrant.tournament_id)
-    end)
+    ~> entrants
+
+    Tournament
+    |> join(:inner, [t], te in Team, on: t.id == te.tournament_id)
+    |> join(:inner, [t, te], tm in TeamMember, on: te.id == tm.team_id)
+    |> where([t, te, tm], tm.user_id == ^user_id)
+    |> Repo.all()
+    |> Enum.concat(entrants)
+    |> Enum.uniq()
   end
 
   def get_participating_tournaments(user_id, offset) do
@@ -2382,6 +2389,8 @@ defmodule Milk.Tournaments do
     |> case do
       {:ok, notification} ->
         push_invitation_notification(notification)
+      {:error, error} ->
+        {:error, error}
     end
   end
 
