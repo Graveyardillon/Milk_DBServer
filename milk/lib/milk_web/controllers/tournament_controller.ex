@@ -1200,22 +1200,38 @@ defmodule MilkWeb.TournamentController do
     if tournament do
       master = Accounts.get_user(tournament.master_id)
 
-      assistants =
-        Tournaments.get_assistants(tournament.id)
-        |> Enum.map(fn assistant ->
-          Accounts.get_user(assistant.user_id)
-        end)
+      Tournaments.get_assistants(tournament.id)
+      |> Enum.map(fn assistant ->
+        Accounts.get_user(assistant.user_id)
+      end)
+      ~> assistants
 
-      entrants =
-        Tournaments.get_entrants(tournament.id)
-        |> Enum.map(fn entrant ->
-          Accounts.get_user(entrant.user_id)
-        end)
+      Tournaments.get_entrants(tournament.id)
+      |> Enum.map(fn entrant ->
+        Accounts.get_user(entrant.user_id)
+      end)
+      ~> entrants
+
+      tournament.id
+      |> Tournaments.get_confirmed_teams()
+      |> Enum.map(fn team ->
+        team
+        |> Map.get(:id)
+        |> Tournaments.get_leader()
+        |> Map.get(:user)
+        ~> user
+
+        team
+        |> Map.put(:name, user.name)
+        |> Map.put(:icon_path, user.icon_path)
+      end)
+      ~> teams
 
       render(conn, "tournament_members.json",
         master: master,
         assistants: assistants,
-        entrants: entrants
+        entrants: entrants,
+        teams: teams
       )
     else
       render(conn, "error.json", error: nil)

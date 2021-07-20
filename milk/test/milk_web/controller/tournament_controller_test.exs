@@ -2477,6 +2477,58 @@ defmodule MilkWeb.TournamentControllerTest do
             assert user["id"] == tournament.master_id
           end).()
     end
+
+    test "works (team)", %{conn: conn} do
+      [is_team: true, capacity: 4, type: 2, num: 50000]
+      |> fixture_tournament()
+      ~> tournament
+      |> Map.get(:id)
+      |> fill_with_team()
+
+      conn =
+        post(conn, Routes.tournament_path(conn, :start),
+          tournament: %{"master_id" => tournament.master_id, "tournament_id" => tournament.id}
+        )
+
+      conn =
+        get(conn, Routes.tournament_path(conn, :get_match_members), tournament_id: tournament.id)
+
+      response = json_response(conn, 200)
+      assert response["result"]
+
+      response
+      |> Map.get("data")
+      |> Map.get("master")
+      |> Map.get("data")
+      |> Map.get("id")
+      |> Kernel.==(tournament.master_id)
+      |> assert()
+
+      response
+      |> Map.get("data")
+      |> Map.get("assistants")
+      |> length()
+      |> Kernel.==(0)
+      |> assert()
+
+      response
+      |> Map.get("data")
+      |> Map.get("entrants")
+      |> length()
+      |> Kernel.==(0)
+      |> assert()
+
+      response
+      |> Map.get("data")
+      |> Map.get("teams")
+      |> Enum.map(fn team ->
+        assert team["tournament_id"] == tournament.id
+        assert Map.has_key?(team, "id")
+      end)
+      |> length()
+      |> Kernel.==(4)
+      |> assert()
+    end
   end
 
   # TODO: redisの確認を入れたい
