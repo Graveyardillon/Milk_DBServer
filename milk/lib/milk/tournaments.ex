@@ -1275,7 +1275,10 @@ defmodule Milk.Tournaments do
       |> delete_tournament()
 
     tournament
-    |> atom_tournament_map_to_string_map(winner_user_id)
+    |> Map.from_struct()
+    |> Map.put(:tournament_id, tournament.id)
+    |> Map.put(:winner_id, winner_user_id)
+    |> Tools.atom_map_to_string_map()
     |> Log.create_tournament_log()
     |> case do
       {:ok, _tournament_log} -> true

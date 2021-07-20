@@ -1282,28 +1282,33 @@ defmodule MilkWeb.TournamentController do
     |> Tournaments.get_tournament_including_logs()
     |> elem(1)
     ~> tournament
+    |> IO.inspect(label: :log)
     |> Map.get(:is_team)
     ~> is_team
     |> if do
       tournament_id
       |> Tournaments.get_team_by_tournament_id_and_user_id(user_id)
       ~> team
+      |> is_nil()
+      |> if do
+        {nil, nil, nil}
+      else
+        team
+        |> Map.get(:tournament_id)
+        |> TournamentProgress.get_match_list()
+        |> Tournaments.find_match(team.id)
+        |> Tournaments.get_opponent_team(team.id)
+        |> elem(1)
+        ~> opponent
 
-      team
-      |> Map.get(:tournament_id)
-      |> TournamentProgress.get_match_list()
-      |> Tournaments.find_match(team.id)
-      |> Tournaments.get_opponent_team(team.id)
-      |> elem(1)
-      ~> opponent
+        team.id
+        |> Tournaments.get_leader()
+        |> Map.get(:user_id)
+        |> Kernel.==(user_id)
+        ~> is_leader
 
-      team.id
-      |> Tournaments.get_leader()
-      |> Map.get(:user_id)
-      |> Kernel.==(user_id)
-      ~> is_leader
-
-      {opponent, team.rank, is_leader}
+        {opponent, team.rank, is_leader}
+      end
     else
       tournament_id
       |> TournamentProgress.get_match_list()

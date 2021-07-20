@@ -2829,6 +2829,71 @@ defmodule MilkWeb.TournamentControllerTest do
       assert is_nil(match_info["opponent"])
       assert match_info["rank"] == capacity / 2
     end
+
+    test "finish (team)", %{conn: conn} do
+      capacity = 2
+      tournament = fixture_tournament(is_team: true, capacity: capacity, type: 2)
+      teams = fill_with_team(tournament.id)
+
+      conn =
+        post(conn, Routes.tournament_path(conn, :start),
+          tournament: %{"master_id" => tournament.master_id, "tournament_id" => tournament.id}
+        )
+      assert json_response(conn, 200)["result"]
+
+      tournament.id
+      |> TournamentProgress.get_match_list()
+      |> List.flatten()
+      |> length()
+      |> Kernel.==(capacity)
+      |> assert()
+
+      teams
+      |> hd()
+      |> Map.get(:id)
+      ~> my_team
+      |> Tournaments.get_leader()
+      |> Map.get(:user)
+      ~> me
+
+      conn =
+        post(conn, Routes.tournament_path(conn, :start_match),
+          user_id: my_team,
+          tournament_id: tournament.id
+        )
+      assert json_response(conn, 200)["result"]
+
+      conn =
+        get(conn, Routes.tournament_path(conn, :get_opponent),
+          tournament_id: tournament.id,
+          team_id: my_team
+        )
+      assert json_response(conn, 200)["result"]
+      opponent_id = json_response(conn, 200)["opponent"]["id"]
+
+      my_score = 100
+      opponent_score = 5
+
+      conn =
+        post(conn, Routes.tournament_path(conn, :claim_score),
+          team_id: my_team,
+          opponent_team_id: opponent_id,
+          score: my_score,
+          match_index: 1
+        )
+
+      conn =
+        post(conn, Routes.tournament_path(conn, :claim_score),
+          team_id: opponent_id,
+          opponent_team_id: my_team,
+          score: opponent_score,
+          match_index: 1
+        )
+
+      conn = get(conn, Routes.tournament_path(conn, :get_match_information), tournament_id: tournament.id, user_id: me.id)
+      match_info = json_response(conn, 200)
+      |> IO.inspect()
+    end
   end
 
   describe "finish" do
