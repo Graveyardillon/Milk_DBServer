@@ -1279,7 +1279,8 @@ defmodule MilkWeb.TournamentController do
     user_id = Tools.to_integer_as_needed(user_id)
 
     tournament_id
-    |> Tournaments.get_tournament()
+    |> Tournaments.get_tournament_including_logs()
+    |> elem(1)
     ~> tournament
     |> Map.get(:is_team)
     ~> is_team
