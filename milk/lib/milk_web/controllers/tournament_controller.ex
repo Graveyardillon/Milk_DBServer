@@ -1324,8 +1324,14 @@ defmodule MilkWeb.TournamentController do
             ~> is_leader
 
             opponent
-            |> Map.put("name", leader.name)
-            |> Map.put("icon_path", leader.icon_path)
+            |> Map.get("id")
+            |> Tournaments.get_leader()
+            |> Map.get(:user)
+            ~> opponent_leader
+
+            opponent
+            |> Map.put("name", opponent_leader.name)
+            |> Map.put("icon_path", opponent_leader.icon_path)
             ~> opponent
 
             {opponent, team.rank, is_leader}
