@@ -2789,6 +2789,16 @@ defmodule Milk.TournamentsTest do
       |> Tournaments.get_team()
       |> Map.get(:is_confirmed)
       |> assert()
+
+      tournament.id
+      |> Chat.get_chat_rooms_by_tournament_id()
+      |> Enum.each(fn room ->
+        room.id
+        |> Chat.get_chat_members_of_room()
+        |> length()
+        |> Kernel.==(1+5)
+        |> assert()
+      end)
     end
   end
 

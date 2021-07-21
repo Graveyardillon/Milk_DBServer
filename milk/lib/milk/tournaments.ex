@@ -2412,7 +2412,6 @@ defmodule Milk.Tournaments do
     else
       {:error, "short of confirmed count: #{confirmed_count}"}
     end
-    |> IO.inspect()
     |> case do
       {:ok, team} ->
         take_members_into_chat(team.id)
