@@ -1901,19 +1901,19 @@ defmodule Milk.Tournaments do
       unless tournament.is_started do
         "IsNotStarted"
       else
-        check_is_manager?(tournament, id)
+        check_is_manager?(tournament, id, user_id)
       end
     end
   end
 
-  defp check_is_manager?(tournament, user_id) do
+  defp check_is_manager?(tournament, id, user_id) do
     is_manager = tournament.master_id == user_id
 
-    is_assistant =
-      tournament.id
-      |> get_assistants()
-      |> Enum.filter(fn assistant -> assistant.user_id == user_id end)
-      |> (fn list -> list != [] end).()
+    tournament.id
+    |> get_assistants()
+    |> Enum.filter(fn assistant -> assistant.user_id == user_id end)
+    |> (fn list -> list != [] end).()
+    ~> is_assistant
 
     tournament.id
     |> get_entrants()
@@ -1928,8 +1928,8 @@ defmodule Milk.Tournaments do
     |> List.flatten()
     |> Enum.map(&(&1.user_id))
     |> Enum.concat(entrants)
-    |> Enum.filter(fn id ->
-      id == user_id
+    |> Enum.filter(fn entrant_id ->
+      entrant_id == id
     end)
     |> (fn list -> list == [] end).()
     ~> is_not_entrant
@@ -1942,7 +1942,7 @@ defmodule Milk.Tournaments do
         "IsAssistant"
 
       true ->
-        check_has_lost?(tournament.id, user_id)
+        check_has_lost?(tournament.id, id)
     end
   end
 
@@ -2212,6 +2212,7 @@ defmodule Milk.Tournaments do
     TeamMember
     |> where([tm], tm.team_id == ^team_id)
     |> Repo.all()
+    |> Repo.preload(:user)
   end
 
   @doc """

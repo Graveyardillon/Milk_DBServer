@@ -1145,7 +1145,7 @@ defmodule Milk.TournamentsTest do
       teams = fill_with_team(tournament.id)
       assert length(teams) == tournament.capacity
 
-      Tournaments.start_team_tournament(tournament.id, tournament.master_id)
+      TournamentProgress.start_team_best_of_format(tournament.master_id, tournament)
       assert "IsManager" == Tournaments.state!(tournament.id, tournament.master_id)
     end
 
@@ -1159,9 +1159,31 @@ defmodule Milk.TournamentsTest do
         "user_id" => [assistant_id]
       })
 
-      Tournaments.start_team_tournament(tournament.id, tournament.master_id)
+      TournamentProgress.start_team_best_of_format(tournament.master_id, tournament)
 
       assert "IsAssistant" == Tournaments.state!(tournament.id, assistant_id)
+    end
+
+    test "state!/2 returns IsInMatch" do
+      tournament = fixture_tournament(is_team: true)
+      fill_with_team(tournament.id)
+      |> hd()
+      ~> team
+      |> Map.get(:id)
+      |> Tournaments.get_leader()
+      |> Map.get(:user)
+      ~> leader
+
+      team.id
+      |> Tournaments.get_team_members_by_team_id()
+      |> hd()
+      |> Map.get(:user)
+      ~> member
+
+      TournamentProgress.start_team_best_of_format(tournament.master_id, tournament)
+
+      assert "IsInMatch" == Tournaments.state!(tournament.id, leader.id)
+      assert "IsInMatch" == Tournaments.state!(tournament.id, member.id)
     end
 
     test "state!/2 returns IsLoser" do
