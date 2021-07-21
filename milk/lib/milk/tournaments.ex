@@ -2395,10 +2395,11 @@ defmodule Milk.Tournaments do
   Verify team.
   """
   def verify_team_as_needed(team_id) do
-    confirmed_count = TeamMember
-      |> where([tm], tm.team_id == ^team_id)
-      |> where([tm], tm.is_invitation_confirmed)
-      |> Repo.aggregate(:count)
+    TeamMember
+    |> where([tm], tm.team_id == ^team_id)
+    |> where([tm], tm.is_invitation_confirmed)
+    |> Repo.aggregate(:count)
+    ~> confirmed_count
 
     team = Repo.get(Team, team_id)
 
@@ -2408,7 +2409,37 @@ defmodule Milk.Tournaments do
       |> Repo.one()
       |> Team.changeset(%{"is_confirmed" => true})
       |> Repo.update()
+    else
+      {:error, "short of confirmed count: #{confirmed_count}"}
     end
+    |> IO.inspect()
+    |> case do
+      {:ok, team} ->
+        take_members_into_chat(team.id)
+        {:ok, team}
+      {:error, error} ->
+        {:error, error}
+    end
+  end
+
+  defp take_members_into_chat(team_id) do
+    TeamMember
+    |> where([tm], tm.team_id == ^team_id)
+    |> Repo.all()
+    |> Enum.each(fn member ->
+      member
+      |> Map.get(:team_id)
+      |> get_team()
+      |> Map.get(:tournament_id)
+      |> Chat.get_chat_rooms_by_tournament_id()
+      |> Enum.each(fn chat_room ->
+        Map.new()
+        |> Map.put("user_id", member.user_id)
+        |> Map.put("authority", 1)
+        |> Map.put("chat_room_id", chat_room.id)
+        |> Chat.create_chat_member()
+      end)
+    end)
   end
 
   @doc """
