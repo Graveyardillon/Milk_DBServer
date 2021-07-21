@@ -1313,27 +1313,44 @@ defmodule MilkWeb.TournamentController do
         |> TournamentProgress.get_match_list()
         |> Tournaments.find_match(team.id)
         |> Tournaments.get_opponent_team(team.id)
-        |> elem(1)
-        ~> opponent
+        |> case do
+          {:ok, opponent} ->
+            team.id
+            |> Tournaments.get_leader()
+            |> Map.get(:user)
+            ~> leader
+            |> Map.get(:id)
+            |> Kernel.==(user_id)
+            ~> is_leader
 
-        team.id
-        |> Tournaments.get_leader()
-        |> Map.get(:user_id)
-        |> Kernel.==(user_id)
-        ~> is_leader
+            opponent
+            |> Map.put("name", leader.name)
+            |> Map.put("icon_path", leader.icon_path)
+            ~> opponent
 
-        {opponent, team.rank, is_leader}
+            {opponent, team.rank, is_leader}
+          {:wait, nil} ->
+            {nil, team.rank, nil}
+          _ ->
+            {nil, nil, nil}
+        end
       end
     else
       tournament_id
       |> TournamentProgress.get_match_list()
       |> Tournaments.find_match(user_id)
       |> Tournaments.get_opponent(user_id)
-      |> elem(1)
-      ~> opponent
-
-      rank = Tournaments.get_rank(tournament_id, user_id)
-      {opponent, rank, nil}
+      |> case do
+        {:ok, opponent} ->
+          rank = Tournaments.get_rank(tournament_id, user_id)
+          {opponent, rank, nil}
+        {:wait, nil} ->
+          rank = Tournaments.get_rank(tournament_id, user_id)
+          {nil, rank, nil}
+        _ ->
+          rank = Tournaments.get_rank(tournament_id, user_id)
+          {nil, rank, nil}
+      end
     end
     ~> {opponent, rank, is_leader}
 

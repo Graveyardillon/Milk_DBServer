@@ -2752,7 +2752,6 @@ defmodule MilkWeb.TournamentControllerTest do
       conn = get(conn, Routes.tournament_path(conn, :get_match_information), tournament_id: tournament.id, user_id: me)
       match_info = json_response(conn, 200)
 
-      assert is_nil(match_info["opponent"])
       assert match_info["state"] == "IsAlone"
       assert match_info["rank"] == 2
       assert is_nil(match_info["score"])
@@ -2793,7 +2792,6 @@ defmodule MilkWeb.TournamentControllerTest do
       assert match_info["state"] == "IsInMatch"
       refute is_nil(match_info["opponent"]["id"])
       assert Map.has_key?(match_info["opponent"], "icon_path")
-      assert is_nil(match_info["opponent"]["name"])
 
       conn =
         post(conn, Routes.tournament_path(conn, :start_match),
