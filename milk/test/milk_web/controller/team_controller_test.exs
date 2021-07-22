@@ -9,8 +9,10 @@ defmodule MilkWeb.TeamControllerTest do
   end
 
   defp setup_team(n) do
-    tournament = fixture_tournament([is_started: false, is_team: true])
-    users = 1..n
+    tournament = fixture_tournament(is_started: false, is_team: true)
+
+    users =
+      1..n
       |> Enum.to_list()
       |> Enum.map(fn n ->
         fixture_user(num: n)
@@ -25,9 +27,9 @@ defmodule MilkWeb.TeamControllerTest do
     tournament.id
     |> Tournaments.create_team(size, leader, members)
     |> (fn {:ok, team} ->
-      assert team.tournament_id == tournament.id
-      assert team.size == size
-    end).()
+          assert team.tournament_id == tournament.id
+          assert team.size == size
+        end).()
 
     {tournament, users}
   end
@@ -37,23 +39,31 @@ defmodule MilkWeb.TeamControllerTest do
       tournament = fixture_tournament()
       size = 5
       leader_id = fixture_user(num: 1).id
-      user_id_list = 2..5
+
+      user_id_list =
+        2..5
         |> Enum.to_list()
         |> Enum.map(fn n ->
           user = fixture_user(num: n)
           user.id
         end)
 
-      conn = post(
-        conn,
-        Routes.team_path(conn, :create),
-        tournament_id: tournament.id,
-        size: size,
-        leader_id: leader_id,
-        user_id_list: user_id_list
-      )
+      conn =
+        post(
+          conn,
+          Routes.team_path(conn, :create),
+          tournament_id: tournament.id,
+          size: size,
+          leader_id: leader_id,
+          user_id_list: user_id_list
+        )
 
-      conn = get(conn, Routes.team_path(conn, :get_teammates), tournament_id: tournament.id, user_id: leader_id)
+      conn =
+        get(conn, Routes.team_path(conn, :get_teammates),
+          tournament_id: tournament.id,
+          user_id: leader_id
+        )
+
       json_response(conn, 200)
       |> Map.get("data")
       |> Enum.map(fn member ->
@@ -70,28 +80,31 @@ defmodule MilkWeb.TeamControllerTest do
       tournament = fixture_tournament()
       size = 5
       leader_id = fixture_user(num: 1).id
-      user_id_list = 2..5
+
+      user_id_list =
+        2..5
         |> Enum.to_list()
         |> Enum.map(fn n ->
           user = fixture_user(num: n)
           user.id
         end)
 
-      conn = post(
-        conn,
-        Routes.team_path(conn, :create),
-        tournament_id: tournament.id,
-        size: size,
-        leader_id: leader_id,
-        user_id_list: user_id_list
-      )
+      conn =
+        post(
+          conn,
+          Routes.team_path(conn, :create),
+          tournament_id: tournament.id,
+          size: size,
+          leader_id: leader_id,
+          user_id_list: user_id_list
+        )
 
       json_response(conn, 200)
       |> Map.get("data")
       |> (fn data ->
-        assert data["tournament_id"] == tournament.id
-        assert data["size"] == size
-      end).()
+            assert data["tournament_id"] == tournament.id
+            assert data["size"] == size
+          end).()
 
       assert json_response(conn, 200)["result"]
     end
@@ -100,21 +113,24 @@ defmodule MilkWeb.TeamControllerTest do
       tournament = fixture_tournament(capacity: 1)
 
       leader_id = fixture_user(num: 1).id
-      user_id_list = 2..5
+
+      user_id_list =
+        2..5
         |> Enum.to_list()
         |> Enum.map(fn n ->
           user = fixture_user(num: n)
           user.id
         end)
 
-      conn = post(
-        conn,
-        Routes.team_path(conn, :create),
-        tournament_id: tournament.id,
-        size: 5,
-        leader_id: leader_id,
-        user_id_list: user_id_list
-      )
+      conn =
+        post(
+          conn,
+          Routes.team_path(conn, :create),
+          tournament_id: tournament.id,
+          size: 5,
+          leader_id: leader_id,
+          user_id_list: user_id_list
+        )
 
       assert json_response(conn, 200)["result"]
       team = json_response(conn, 200)["data"]
@@ -136,14 +152,17 @@ defmodule MilkWeb.TeamControllerTest do
       end)
 
       leader_id = fixture_user(num: 6)
-      user_id_list = 7..10
+
+      user_id_list =
+        7..10
         |> Enum.to_list()
         |> Enum.map(fn n ->
           user = fixture_user(num: n)
           user.id
         end)
 
-      conn = post(
+      conn =
+        post(
           conn,
           Routes.team_path(conn, :create),
           tournament_id: tournament.id,
@@ -162,13 +181,15 @@ defmodule MilkWeb.TeamControllerTest do
       [leader | _members] = users
 
       conn = get(conn, Routes.team_path(conn, :get_confirmed_teams), tournament_id: tournament.id)
+
       json_response(conn, 200)
       |> Map.get("data")
       |> length()
       |> Kernel.==(0)
       |> assert()
 
-      team = tournament.id
+      team =
+        tournament.id
         |> Tournaments.get_teams_by_tournament_id()
         |> hd()
 
@@ -180,7 +201,8 @@ defmodule MilkWeb.TeamControllerTest do
 
       users
       |> Enum.each(fn user_id ->
-        id = user_id
+        id =
+          user_id
           |> Tournaments.get_team_invitations_by_user_id()
           |> hd()
           |> Map.get(:id)
@@ -190,6 +212,7 @@ defmodule MilkWeb.TeamControllerTest do
       end)
 
       conn = get(conn, Routes.team_path(conn, :get_confirmed_teams), tournament_id: tournament.id)
+
       json_response(conn, 200)
       |> Map.get("data")
       |> length()
@@ -202,7 +225,8 @@ defmodule MilkWeb.TeamControllerTest do
     test "works", %{conn: conn} do
       {tournament, _users} = setup_team(5)
 
-      team = tournament.id
+      team =
+        tournament.id
         |> Tournaments.get_teams_by_tournament_id()
         |> hd()
 

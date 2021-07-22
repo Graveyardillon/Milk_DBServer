@@ -223,6 +223,7 @@ defmodule MilkWeb.UserControllerTest do
 
       ng_text = "royalty"
       conn = get(conn, Routes.user_path(conn, :search), text: ng_text)
+
       json_response(conn, 200)
       |> Map.get("result")
       |> refute()

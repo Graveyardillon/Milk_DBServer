@@ -1166,6 +1166,7 @@ defmodule Milk.TournamentsTest do
 
     test "state!/2 returns IsInMatch" do
       tournament = fixture_tournament(is_team: true)
+
       fill_with_team(tournament.id)
       |> hd()
       ~> team
@@ -1204,6 +1205,7 @@ defmodule Milk.TournamentsTest do
 
     test "state!/2 returns IsFinished" do
       tournament = fixture_tournament(is_team: true, capacity: 2)
+
       fill_with_team(tournament.id)
       ~> [team | opponent_team]
 
@@ -1728,7 +1730,9 @@ defmodule Milk.TournamentsTest do
             true ->
               %{validated: false, completed: true}
           end
-        [] -> %{validated: true, completed: false}
+
+        [] ->
+          %{validated: true, completed: false}
       end
     end
 
@@ -1921,7 +1925,9 @@ defmodule Milk.TournamentsTest do
       assert result.validated
       refute result.completed
 
-      result = claim_score(another_opponent_team["id"], another_team.id, another_opponent_score, 0)
+      result =
+        claim_score(another_opponent_team["id"], another_team.id, another_opponent_score, 0)
+
       assert result.validated
       assert result.validated
 
@@ -1943,13 +1949,16 @@ defmodule Milk.TournamentsTest do
         assert cell["name"] in leader_name_list
         assert cell["icon_path"] in leader_icon_path_list
         assert cell["round"] == 0
+
         cond do
           cell["team_id"] == your_team.id ->
             refute cell["is_loser"]
             assert cell["win_count"] == 1
+
           cell["team_id"] == another_team.id ->
             refute cell["is_loser"]
             assert cell["win_count"] == 1
+
           true ->
             assert cell["is_loser"]
             assert cell["win_count"] == 0
@@ -1966,8 +1975,10 @@ defmodule Milk.TournamentsTest do
         cond do
           team.id == your_team.id ->
             assert team.rank == 2
+
           team.id == another_team.id ->
             assert team.rank == 2
+
           true ->
             assert team.rank == 4
         end
@@ -2563,8 +2574,10 @@ defmodule Milk.TournamentsTest do
   end
 
   defp setup_team(n) do
-    tournament = fixture_tournament([is_started: false, is_team: true, capacity: 2])
-    users = 1..n
+    tournament = fixture_tournament(is_started: false, is_team: true, capacity: 2)
+
+    users =
+      1..n
       |> Enum.to_list()
       |> Enum.map(fn n ->
         fixture_user(num: n)
@@ -2579,9 +2592,9 @@ defmodule Milk.TournamentsTest do
     tournament.id
     |> Tournaments.create_team(size, leader, members)
     |> (fn {:ok, team} ->
-      assert team.tournament_id == tournament.id
-      assert team.size == size
-    end).()
+          assert team.tournament_id == tournament.id
+          assert team.size == size
+        end).()
 
     {tournament, users}
   end
@@ -2655,9 +2668,9 @@ defmodule Milk.TournamentsTest do
       |> Map.get(:id)
       |> Tournaments.get_leader()
       |> (fn member ->
-        assert member.user_id == leader
-        refute is_nil(member.user.name)
-      end).()
+            assert member.user_id == leader
+            refute is_nil(member.user.name)
+          end).()
     end
   end
 
@@ -2666,14 +2679,15 @@ defmodule Milk.TournamentsTest do
       {tournament, users} = setup_team(5)
       [leader | users] = users
 
-      another_users = 6..10
-      |> Enum.to_list()
-      |> Enum.map(fn n ->
-        fixture_user(num: n)
-      end)
-      |> Enum.map(fn user ->
-        user.id
-      end)
+      another_users =
+        6..10
+        |> Enum.to_list()
+        |> Enum.map(fn n ->
+          fixture_user(num: n)
+        end)
+        |> Enum.map(fn user ->
+          user.id
+        end)
 
       [another_leader | another_members] = another_users
       Tournaments.create_team(tournament.id, 5, another_leader, another_members)
@@ -2700,7 +2714,8 @@ defmodule Milk.TournamentsTest do
       |> Kernel.==(0)
       |> assert()
 
-      team = tournament.id
+      team =
+        tournament.id
         |> Tournaments.get_teams_by_tournament_id()
         |> hd()
 
@@ -2754,7 +2769,8 @@ defmodule Milk.TournamentsTest do
       {tournament, users} = setup_team(5)
       [leader | users] = users
 
-      team = tournament.id
+      team =
+        tournament.id
         |> Tournaments.get_teams_by_tournament_id()
         |> hd()
 
@@ -2764,9 +2780,9 @@ defmodule Milk.TournamentsTest do
         member.id
         |> Tournaments.create_team_invitation(leader)
         |> (fn {:ok, invitation} ->
-          assert invitation.team_member_id == member.id
-          assert invitation.sender_id == leader
-        end).()
+              assert invitation.team_member_id == member.id
+              assert invitation.sender_id == leader
+            end).()
       end)
     end
   end
@@ -2776,7 +2792,8 @@ defmodule Milk.TournamentsTest do
       {tournament, users} = setup_team(5)
       [leader | users] = users
 
-      team = tournament.id
+      team =
+        tournament.id
         |> Tournaments.get_teams_by_tournament_id()
         |> hd()
 
@@ -2818,7 +2835,7 @@ defmodule Milk.TournamentsTest do
         room.id
         |> Chat.get_chat_members_of_room()
         |> length()
-        |> Kernel.==(1+5)
+        |> Kernel.==(1 + 5)
         |> assert()
       end)
     end
@@ -2827,7 +2844,9 @@ defmodule Milk.TournamentsTest do
   describe "delete_team" do
     test "works" do
       {tournament, users} = setup_team(5)
-      team = tournament.id
+
+      team =
+        tournament.id
         |> Tournaments.get_teams_by_tournament_id()
         |> hd()
 

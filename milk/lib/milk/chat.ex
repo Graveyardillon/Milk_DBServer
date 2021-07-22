@@ -29,6 +29,7 @@ defmodule Milk.Chat do
   }
 
   alias Milk.Repo
+
   alias Milk.Tournaments.{
     Tournament,
     TournamentChatTopic

@@ -753,9 +753,9 @@ defmodule Milk.TournamentProgress do
     |> Repo.insert()
   end
 
-  comment """
+  comment("""
   match list with fight result log.
-  """
+  """)
 
   def get_match_list_with_fight_result_log(tournament_id) do
     MatchListWithFightResultLog
@@ -769,9 +769,9 @@ defmodule Milk.TournamentProgress do
     |> Repo.insert()
   end
 
-  comment """
+  comment("""
   個人大会スタート時に使用する関数群
-  """
+  """)
 
   def start_single_elimination(master_id, tournament) do
     Tournaments.start(master_id, tournament.id)
@@ -848,9 +848,9 @@ defmodule Milk.TournamentProgress do
     {:ok, match_list}
   end
 
-  comment """
+  comment("""
   チーム大会スタートに関する関数群
-  """
+  """)
 
   def start_team_best_of_format(master_id, tournament) do
     tournament.id
@@ -859,6 +859,7 @@ defmodule Milk.TournamentProgress do
       {:ok, _tournament} ->
         {:ok, match_list} = generate_team_best_of_format_matches(tournament)
         {:ok, match_list, nil}
+
       {:error, error} ->
         {:error, error, nil}
     end

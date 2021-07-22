@@ -350,38 +350,59 @@ defmodule MilkWeb.TournamentView do
             name: team.name,
             size: team.size,
             tournament_id: team.tournament_id,
-            team_member: Enum.map(team.team_member, fn member ->
-              %{
-                user_id: member.user_id,
-                team_id: member.team_id,
-                is_leader: member.is_leader,
-                is_invitation_confirmed: member.is_invitation_confirmed
-              }
-            end)
+            team_member:
+              Enum.map(team.team_member, fn member ->
+                %{
+                  user_id: member.user_id,
+                  team_id: member.team_id,
+                  is_leader: member.is_leader,
+                  is_invitation_confirmed: member.is_invitation_confirmed
+                }
+              end)
           }
         end)
     }
   end
 
-  def render("match_info.json", %{opponent: opponent, rank: rank, is_team: is_team, is_leader: is_leader, score: score, state: state}) do
+  def render("match_info.json", %{
+        opponent: opponent,
+        rank: rank,
+        is_team: is_team,
+        is_leader: is_leader,
+        score: score,
+        state: state
+      }) do
     %{
-      opponent: cond do
-        is_binary(opponent) -> nil
-        is_nil(opponent) -> nil
-        state == "IsAlone" -> nil
-        is_team -> %{
-            name: opponent["name"],
-            icon_path: opponent["icon_path"],
-            id: opponent["id"]
-          }
-        true -> %{
-          name: opponent["name"],
-          icon_path: opponent["icon_path"],
-          id: opponent["id"]
-        }
-      end,
+      opponent:
+        cond do
+          is_binary(opponent) ->
+            nil
+
+          is_nil(opponent) ->
+            nil
+
+          state == "IsAlone" ->
+            nil
+
+          is_team ->
+            %{
+              name: opponent["name"],
+              icon_path: opponent["icon_path"],
+              id: opponent["id"]
+            }
+
+          true ->
+            %{
+              name: opponent["name"],
+              icon_path: opponent["icon_path"],
+              id: opponent["id"]
+            }
+        end,
       rank: rank,
-      is_leader: if is_team do is_leader end,
+      is_leader:
+        if is_team do
+          is_leader
+        end,
       score: score,
       state: state,
       is_team: is_team

@@ -453,19 +453,22 @@ defmodule MilkWeb.TournamentController do
     result = tournament.capacity > length(entrants)
 
     # キャパシティの確認(チーム)
-    result = tournament.capacity
+    result =
+      tournament.capacity
       |> Kernel.>(length(tournament.team))
       |> Kernel.and(result)
 
     # 自分が参加しているかどうか
-    result = entrants
+    result =
+      entrants
       |> Enum.all?(fn entrant ->
         entrant.user_id != user_id
       end)
       |> Kernel.and(result)
 
     # 時刻の確認（自分の主催している大会には参加できる）
-    result = user_id
+    result =
+      user_id
       |> relevant()
       |> Enum.all?(fn t ->
         tournament.master_id == user_id || t.event_date != tournament.event_date
@@ -473,7 +476,8 @@ defmodule MilkWeb.TournamentController do
       |> Kernel.and(result)
 
     # 自分がチームとして参加しているかどうか
-    result = user_id
+    result =
+      user_id
       |> Tournaments.has_requested_as_team?(tournament_id)
       |> Kernel.not()
       |> Kernel.and(result)
@@ -571,9 +575,14 @@ defmodule MilkWeb.TournamentController do
     end
     |> case do
       {:ok, match_list, match_list_with_fight_result} ->
-        render(conn, "match.json", %{match_list: match_list, match_list_with_fight_result: match_list_with_fight_result})
+        render(conn, "match.json", %{
+          match_list: match_list,
+          match_list_with_fight_result: match_list_with_fight_result
+        })
+
       {:error, nil, nil} ->
         render(conn, "error.json", error: nil)
+
       {:error, error, nil} ->
         render(conn, "error.json", error: Tools.create_error_message(error))
     end
@@ -802,6 +811,7 @@ defmodule MilkWeb.TournamentController do
       else
         {:wait, _} ->
           json(conn, %{result: false, opponent: nil, wait: true})
+
         _ ->
           render(conn, "error.json", error: nil)
       end
@@ -833,8 +843,10 @@ defmodule MilkWeb.TournamentController do
           ~> leader
 
           render(conn, "opponent.json", opponent: opponent, leader: leader)
+
         {:wait, nil} ->
           json(conn, %{result: false, opponent: nil, wait: true})
+
         _ ->
           render(conn, "error.json", error: nil)
       end
@@ -908,14 +920,16 @@ defmodule MilkWeb.TournamentController do
     tournament_id = Tools.to_integer_as_needed(tournament_id)
 
     state = Tournaments.state!(tournament_id, user_id)
-    score = if state == "IsPending" do
-      tournament_id
-      |> TournamentProgress.get_score(user_id)
-      |> case do
-        [] -> nil
-        score -> score
+
+    score =
+      if state == "IsPending" do
+        tournament_id
+        |> TournamentProgress.get_score(user_id)
+        |> case do
+          [] -> nil
+          score -> score
+        end
       end
-    end
 
     json(conn, %{result: true, state: state, score: score})
   end
@@ -1055,11 +1069,11 @@ defmodule MilkWeb.TournamentController do
   end
 
   def claim_score(conn, %{
-    "team_id" => team_id,
-    "opponent_team_id" => opponent_team_id,
-    "score" => score,
-    "match_index" => match_index
-  }) do
+        "team_id" => team_id,
+        "opponent_team_id" => opponent_team_id,
+        "score" => score,
+        "match_index" => match_index
+      }) do
     team_id = Tools.to_integer_as_needed(team_id)
     opponent_team_id = Tools.to_integer_as_needed(opponent_team_id)
     score = Tools.to_integer_as_needed(score)
@@ -1365,8 +1379,10 @@ defmodule MilkWeb.TournamentController do
             ~> opponent
 
             {opponent, team.rank, is_leader}
+
           {:wait, nil} ->
             {nil, team.rank, nil}
+
           _ ->
             {nil, nil, nil}
         end
@@ -1380,9 +1396,11 @@ defmodule MilkWeb.TournamentController do
         {:ok, opponent} ->
           rank = Tournaments.get_rank(tournament_id, user_id)
           {opponent, rank, nil}
+
         {:wait, nil} ->
           rank = Tournaments.get_rank(tournament_id, user_id)
           {nil, rank, nil}
+
         _ ->
           rank = Tournaments.get_rank(tournament_id, user_id)
           {nil, rank, nil}
@@ -1413,7 +1431,14 @@ defmodule MilkWeb.TournamentController do
     end
     ~> score
 
-    render(conn, "match_info.json", %{opponent: opponent, rank: rank, is_team: is_team, is_leader: is_leader, score: score, state: state})
+    render(conn, "match_info.json", %{
+      opponent: opponent,
+      rank: rank,
+      is_team: is_team,
+      is_leader: is_leader,
+      score: score,
+      state: state
+    })
   end
 
   @doc """
@@ -1545,10 +1570,11 @@ defmodule MilkWeb.TournamentController do
   end
 
   defp add_queue_tournament_start_push_notice(tournament) do
-    job = %{notify_tournament_start: tournament.id}
-    |> Oban.Processer.new(scheduled_at: tournament.event_date)
-    |> Oban.insert()
-    |> elem(1)
+    job =
+      %{notify_tournament_start: tournament.id}
+      |> Oban.Processer.new(scheduled_at: tournament.event_date)
+      |> Oban.insert()
+      |> elem(1)
 
     result = if Map.get(job, :errors) |> length == 0, do: true, else: false
 
@@ -1562,6 +1588,7 @@ defmodule MilkWeb.TournamentController do
     case Tournaments.get_push_notice_job("notify_tournament_start", tournament.id) do
       nil ->
         IO.puts("notice job not found")
+
       job ->
         Oban.cancel_job(job.id)
         add_queue_tournament_start_push_notice(tournament)

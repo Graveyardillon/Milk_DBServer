@@ -7,7 +7,8 @@ defmodule MilkWeb.TeamController do
   alias Milk.Tournaments
 
   def show(conn, %{"team_id" => team_id}) do
-    team = team_id
+    team =
+      team_id
       |> Tools.to_integer_as_needed()
       |> Tournaments.get_team()
 
@@ -33,7 +34,12 @@ defmodule MilkWeb.TeamController do
   @doc """
   Create team.
   """
-  def create(conn, %{"tournament_id" => tournament_id, "size" => size, "leader_id" => leader_id, "user_id_list" => user_id_list}) do
+  def create(conn, %{
+        "tournament_id" => tournament_id,
+        "size" => size,
+        "leader_id" => leader_id,
+        "user_id_list" => user_id_list
+      }) do
     tournament_id = Tools.to_integer_as_needed(tournament_id)
     size = Tools.to_integer_as_needed(size)
     leader_id = Tools.to_integer_as_needed(leader_id)
@@ -44,9 +50,9 @@ defmodule MilkWeb.TeamController do
     |> Tournaments.get_confirmed_teams()
     |> length()
     |> (fn len ->
-      tournament = Tournaments.get_tournament(tournament_id)
-      tournament.capacity <= len
-    end).()
+          tournament = Tournaments.get_tournament(tournament_id)
+          tournament.capacity <= len
+        end).()
     |> if do
       render(conn, "error.json", error: "over tournament size")
     else
@@ -81,6 +87,7 @@ defmodule MilkWeb.TeamController do
     |> case do
       {:ok, _invitation} ->
         json(conn, %{result: true})
+
       {:error, error} ->
         render(conn, "error.json", error: error)
     end
@@ -96,6 +103,7 @@ defmodule MilkWeb.TeamController do
     |> case do
       {:ok, team} ->
         render(conn, "show.json", team: team)
+
       {:error, error} ->
         render(conn, "error.json", error: error)
     end
