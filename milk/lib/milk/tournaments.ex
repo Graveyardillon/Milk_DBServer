@@ -2182,7 +2182,15 @@ defmodule Milk.Tournaments do
         team
         |> Repo.preload(:tournament)
         |> Repo.preload(:team_member)
-        ~> team
+        |> Map.get(:team_member)
+        |> Repo.preload(:user)
+        |> Enum.map(fn member ->
+          user = Repo.preload(member.user, :auth)
+          Map.put(member, :user, user)
+        end)
+        ~> team_members
+
+        team = Map.put(team, :team_member, team_members)
 
         {:ok, team}
 
@@ -2218,6 +2226,20 @@ defmodule Milk.Tournaments do
     Team
     |> Repo.get(team_id)
     |> Repo.preload(:team_member)
+    ~> team
+    |> is_nil()
+    |> unless do
+      team
+      |> Map.get(:team_member)
+      |> Repo.preload(:user)
+      |> Enum.map(fn member ->
+        user = Repo.preload(member.user, :auth)
+        Map.put(member, :user, user)
+      end)
+      ~> team_members
+
+      Map.put(team, :team_member, team_members)
+    end
   end
 
   @doc """
@@ -2306,6 +2328,21 @@ defmodule Milk.Tournaments do
     |> where([t, tm], t.is_confirmed)
     |> preload([t, tm], :team_member)
     |> Repo.all()
+    |> Enum.map(fn team ->
+      team
+      # FIXME: 不要？
+      |> Repo.preload(:team_member)
+      ~> team
+      |> Map.get(:team_member)
+      |> Repo.preload(:user)
+      |> Enum.map(fn member ->
+        user = Repo.preload(member.user, :auth)
+        Map.put(member, :user, user)
+      end)
+      ~> team_members
+
+      Map.put(team, :team_member, team_members)
+    end)
     |> Enum.filter(fn members_in_team ->
       members_in_team.team_member
       |> Enum.all?(fn member ->
@@ -2493,6 +2530,13 @@ defmodule Milk.Tournaments do
     Team
     |> Repo.get(team_id)
     |> Repo.delete()
+    |> case do
+      {:ok, team} ->
+        team = Repo.preload(team, :team_member)
+        {:ok, team}
+      {:error, error} ->
+        {:error, error}
+    end
   end
 
   def get_push_notice_job(args, tournament_id) do
