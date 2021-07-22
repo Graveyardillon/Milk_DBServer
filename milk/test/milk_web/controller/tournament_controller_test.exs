@@ -2806,7 +2806,7 @@ defmodule MilkWeb.TournamentControllerTest do
 
       conn =
         post(conn, Routes.tournament_path(conn, :start_match),
-          user_id: my_team,
+          user_id: me.id,
           tournament_id: tournament.id
         )
       assert json_response(conn, 200)["result"]
@@ -2844,9 +2844,14 @@ defmodule MilkWeb.TournamentControllerTest do
       assert json_response(conn, 200)["result"]
       opponent_id = json_response(conn, 200)["opponent"]["id"]
 
+      opponent_id
+      |> Tournaments.get_leader()
+      |> Map.get(:user)
+      ~> opponent
+
       conn =
         post(conn, Routes.tournament_path(conn, :start_match),
-          user_id: opponent_id,
+          user_id: opponent.id,
           tournament_id: tournament.id
         )
 
@@ -3012,7 +3017,7 @@ defmodule MilkWeb.TournamentControllerTest do
 
       conn =
         post(conn, Routes.tournament_path(conn, :start_match),
-          user_id: my_team,
+          user_id: me.id,
           tournament_id: tournament.id
         )
       assert json_response(conn, 200)["result"]
@@ -3024,6 +3029,17 @@ defmodule MilkWeb.TournamentControllerTest do
         )
       assert json_response(conn, 200)["result"]
       opponent_id = json_response(conn, 200)["opponent"]["id"]
+
+      opponent_id
+      |> Tournaments.get_leader()
+      |> Map.get(:user)
+      ~> opponent
+
+      conn =
+        post(conn, Routes.tournament_path(conn, :start_match),
+          user_id: opponent.id,
+          tournament_id: tournament.id
+        )
 
       my_score = 100
       opponent_score = 5

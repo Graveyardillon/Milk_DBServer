@@ -743,15 +743,45 @@ defmodule MilkWeb.TournamentController do
   """
   def start_match(conn, %{"user_id" => user_id, "tournament_id" => tournament_id}) do
     user_id = Tools.to_integer_as_needed(user_id)
-    tournament_id = Tools.to_integer_as_needed(tournament_id)
 
-    pending_list = TournamentProgress.get_match_pending_list(user_id, tournament_id)
-
-    if pending_list == [] do
-      TournamentProgress.insert_match_pending_list_table(user_id, tournament_id)
-      json(conn, %{result: true})
+    # 大会がチーム用かどうかで分岐の処理を書く
+    tournament_id
+    |> Tools.to_integer_as_needed()
+    ~> tournament_id
+    |> Tournaments.get_tournament()
+    |> Map.get(:is_team)
+    |> if do
+      start_team_match(tournament_id, user_id)
     else
-      json(conn, %{result: false})
+      start_individual_match(tournament_id, user_id)
+    end
+    ~> result
+
+    json(conn, %{result: result})
+  end
+
+  defp start_individual_match(tournament_id, user_id) do
+    user_id
+    |> TournamentProgress.get_match_pending_list(tournament_id)
+    |> Kernel.==([])
+    |> if do
+      TournamentProgress.insert_match_pending_list_table(user_id, tournament_id)
+    else
+      false
+    end
+  end
+
+  defp start_team_match(tournament_id, user_id) do
+    tournament_id
+    |> Tournaments.get_team_by_tournament_id_and_user_id(user_id)
+    |> Map.get(:id)
+    ~> team_id
+    |> TournamentProgress.get_match_pending_list(tournament_id)
+    |> Kernel.==([])
+    |> if do
+      TournamentProgress.insert_match_pending_list_table(team_id, tournament_id)
+    else
+      false
     end
   end
 
