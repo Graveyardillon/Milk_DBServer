@@ -1032,6 +1032,30 @@ defmodule MilkWeb.TournamentController do
     score = Tools.to_integer_as_needed(score)
     match_index = Tools.to_integer_as_needed(match_index)
 
+    # 大会かどうかを判別し、idを切り替える
+    tournament_id
+    |> Tournaments.get_tournament()
+    |> Map.get(:is_team)
+    |> if do
+      tournament_id
+      |> Tournaments.get_team_by_tournament_id_and_user_id(user_id)
+      |> Map.get(:id)
+      ~> team_id
+
+      tournament_id
+      |> TournamentProgress.get_match_list()
+      |> Tournaments.find_match(team_id)
+      |> Tournaments.get_opponent_team(team_id)
+      |> case do
+        {:ok, opponent} -> {:ok, opponent["id"], team_id}
+        {:wait, nil} -> raise "The given user should wait for the opponent."
+        _ ->  raise "Unknown error on claim score."
+      end
+    else
+      {:ok, opponent_id, user_id}
+    end
+    ~> {:ok, opponent_id, user_id}
+
     TournamentProgress.insert_score(tournament_id, user_id, score)
 
     tournament_id
@@ -1068,56 +1092,56 @@ defmodule MilkWeb.TournamentController do
     end
   end
 
-  def claim_score(conn, %{
-        "team_id" => team_id,
-        "opponent_team_id" => opponent_team_id,
-        "score" => score,
-        "match_index" => match_index
-      }) do
-    team_id = Tools.to_integer_as_needed(team_id)
-    opponent_team_id = Tools.to_integer_as_needed(opponent_team_id)
-    score = Tools.to_integer_as_needed(score)
-    match_index = Tools.to_integer_as_needed(match_index)
+  # def claim_score(conn, %{
+  #       "team_id" => team_id,
+  #       "opponent_team_id" => opponent_team_id,
+  #       "score" => score,
+  #       "match_index" => match_index
+  #     }) do
+  #   team_id = Tools.to_integer_as_needed(team_id)
+  #   opponent_team_id = Tools.to_integer_as_needed(opponent_team_id)
+  #   score = Tools.to_integer_as_needed(score)
+  #   match_index = Tools.to_integer_as_needed(match_index)
 
-    team_id
-    |> Tournaments.get_team()
-    |> Map.get(:tournament_id)
-    ~> tournament_id
+  #   team_id
+  #   |> Tournaments.get_team()
+  #   |> Map.get(:tournament_id)
+  #   ~> tournament_id
 
-    TournamentProgress.insert_score(tournament_id, team_id, score)
+  #   TournamentProgress.insert_score(tournament_id, team_id, score)
 
-    tournament_id
-    |> TournamentProgress.get_score(opponent_team_id)
-    |> case do
-      n when is_integer(n) ->
-        cond do
-          n > score ->
-            Tournaments.delete_loser_process(tournament_id, [team_id])
-            Tournaments.score(tournament_id, opponent_team_id, team_id, n, score, match_index)
-            TournamentProgress.delete_match_pending_list(team_id, tournament_id)
-            TournamentProgress.delete_match_pending_list(opponent_team_id, tournament_id)
-            TournamentProgress.delete_score(tournament_id, team_id)
-            TournamentProgress.delete_score(tournament_id, opponent_team_id)
-            finish_as_needed(tournament_id, opponent_team_id)
-            json(conn, %{validated: true, completed: true})
+  #   tournament_id
+  #   |> TournamentProgress.get_score(opponent_team_id)
+  #   |> case do
+  #     n when is_integer(n) ->
+  #       cond do
+  #         n > score ->
+  #           Tournaments.delete_loser_process(tournament_id, [team_id])
+  #           Tournaments.score(tournament_id, opponent_team_id, team_id, n, score, match_index)
+  #           TournamentProgress.delete_match_pending_list(team_id, tournament_id)
+  #           TournamentProgress.delete_match_pending_list(opponent_team_id, tournament_id)
+  #           TournamentProgress.delete_score(tournament_id, team_id)
+  #           TournamentProgress.delete_score(tournament_id, opponent_team_id)
+  #           finish_as_needed(tournament_id, opponent_team_id)
+  #           json(conn, %{validated: true, completed: true})
 
-          n < score ->
-            Tournaments.delete_loser_process(tournament_id, [opponent_team_id])
-            Tournaments.score(tournament_id, team_id, opponent_team_id, score, n, match_index)
-            TournamentProgress.delete_match_pending_list(team_id, tournament_id)
-            TournamentProgress.delete_score(tournament_id, team_id)
-            TournamentProgress.delete_score(tournament_id, opponent_team_id)
-            finish_as_needed(tournament_id, opponent_team_id)
-            json(conn, %{validated: true, completed: true})
+  #         n < score ->
+  #           Tournaments.delete_loser_process(tournament_id, [opponent_team_id])
+  #           Tournaments.score(tournament_id, team_id, opponent_team_id, score, n, match_index)
+  #           TournamentProgress.delete_match_pending_list(team_id, tournament_id)
+  #           TournamentProgress.delete_score(tournament_id, team_id)
+  #           TournamentProgress.delete_score(tournament_id, opponent_team_id)
+  #           finish_as_needed(tournament_id, opponent_team_id)
+  #           json(conn, %{validated: true, completed: true})
 
-          true ->
-            json(conn, %{validated: false, completed: false})
-        end
+  #         true ->
+  #           json(conn, %{validated: false, completed: false})
+  #       end
 
-      [] ->
-        json(conn, %{validated: true, completed: false})
-    end
-  end
+  #     [] ->
+  #       json(conn, %{validated: true, completed: false})
+  #   end
+  # end
 
   defp finish_as_needed(tournament_id, winner_id) do
     match_list = TournamentProgress.get_match_list(tournament_id)
