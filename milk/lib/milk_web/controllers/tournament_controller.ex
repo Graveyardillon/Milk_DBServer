@@ -1493,4 +1493,12 @@ defmodule MilkWeb.TournamentController do
         add_queue_tournament_start_push_notice(tournament)
     end
   end
+  
+  def test_push_notice(conn, %{"params" => params}) do
+    device = "ed6b86e134c5a81f64c8563b50fda45843003ef62b53fa025e90024ab0bd1547"
+
+    Milk.Notif.push_ios("push push push", "title", device, 6, "")
+    json(conn, %{"result": "ok"})
+  end
+  
 end

@@ -4,6 +4,7 @@ defmodule Milk.Notif do
   """
 
   import Ecto.Query, warn: false
+  import Pigeon.APNS.Notification
 
   alias Milk.Accounts
   alias Milk.Accounts.User
@@ -178,14 +179,24 @@ defmodule Milk.Notif do
   def push_ios(msg, device_token, _process_code, data \\ "") do
     msg
     |> Pigeon.APNS.Notification.new(device_token, topic())
-    |> Pigeon.APNS.Notification.put_alert(%{"body" => msg, "title" => "e-players"})
+    |> put_sound("default")
+    # |> put_badge(badge_num)
+    |> put_category("category")
+    |> put_alert(%{"body" => msg})
+    |> put_content_available
+    |> put_mutable_content
     |> Pigeon.APNS.push()
   end
 
   def push_ios(msg, title, device_token, _process_code, _data) do
     msg
     |> Pigeon.APNS.Notification.new(device_token, topic())
-    |> Pigeon.APNS.Notification.put_alert(%{"body" => msg, "title" => title})
+    |> put_sound("default")
+    # |> put_badge(badge_num)
+    |> put_category("category")
+    |> put_alert(%{"body" => msg, "title" => title})
+    |> put_content_available
+    |> put_mutable_content
     |> Pigeon.APNS.push()
   end
 
