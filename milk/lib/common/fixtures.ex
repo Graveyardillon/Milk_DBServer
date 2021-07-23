@@ -27,7 +27,8 @@ defmodule Common.Fixtures do
           "platform" => 1
         }
 
-        num = opts[:num]
+        num =
+          opts[:num]
           |> is_nil()
           |> unless do
             opts[:num]
@@ -35,7 +36,8 @@ defmodule Common.Fixtures do
             0
           end
 
-        capacity = opts[:capacity]
+        capacity =
+          opts[:capacity]
           |> is_nil()
           |> unless do
             opts[:capacity]
@@ -43,7 +45,8 @@ defmodule Common.Fixtures do
             create_attrs["capacity"]
           end
 
-        is_started = opts[:is_started]
+        is_started =
+          opts[:is_started]
           |> is_nil()
           |> unless do
             opts[:is_started]
@@ -51,7 +54,8 @@ defmodule Common.Fixtures do
             false
           end
 
-        is_team = opts[:is_team]
+        is_team =
+          opts[:is_team]
           |> is_nil()
           |> unless do
             opts[:is_team]
@@ -59,7 +63,8 @@ defmodule Common.Fixtures do
             false
           end
 
-        team_size = if is_team do
+        team_size =
+          if is_team do
             opts[:team_size]
             |> is_nil()
             |> unless do
@@ -71,7 +76,8 @@ defmodule Common.Fixtures do
             nil
           end
 
-        type = opts[:type]
+        type =
+          opts[:type]
           |> is_nil()
           |> unless do
             opts[:type]
@@ -79,7 +85,8 @@ defmodule Common.Fixtures do
             1
           end
 
-        master_id = opts[:master_id]
+        master_id =
+          opts[:master_id]
           |> is_nil()
           |> unless do
             opts[:master_id]
@@ -110,7 +117,7 @@ defmodule Common.Fixtures do
       def fill_with_team(tournament_id) do
         tournament = Tournaments.get_tournament(tournament_id)
 
-        (101)..(tournament.team_size*tournament.capacity+100)
+        101..(tournament.team_size * tournament.capacity + 100)
         |> Enum.to_list()
         |> Enum.map(fn n ->
           fixture_user(num: n)
@@ -138,6 +145,7 @@ defmodule Common.Fixtures do
             |> Tournaments.confirm_team_invitation()
             |> elem(1)
           end)
+
           Tournaments.get_team(team.id)
         end)
       end
@@ -145,7 +153,7 @@ defmodule Common.Fixtures do
       def fill_with_entrant(tournament_id) do
         tournament = Tournaments.get_tournament(tournament_id)
 
-        (101)..tournament.capacity+100
+        101..(tournament.capacity + 100)
         |> Enum.to_list()
         |> Enum.map(fn n ->
           [num: n]

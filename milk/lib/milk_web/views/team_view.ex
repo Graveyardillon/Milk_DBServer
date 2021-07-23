@@ -22,13 +22,8 @@ defmodule MilkWeb.TeamView do
       id: team.id,
       name: team.name,
       size: team.size,
-      tournament_id: team.tournament_id
-    }
-  end
-
-  def render("members.json", %{members: members}) do
-    %{
-      data: Enum.map(members, fn member ->
+      tournament_id: team.tournament_id,
+      team_member: Enum.map(team.team_member, fn member ->
         %{
           id: member.id,
           user_id: member.user_id,
@@ -43,7 +38,29 @@ defmodule MilkWeb.TeamView do
           is_leader: member.is_leader,
           is_invitation_confirmed: member.is_invitation_confirmed
         }
-      end),
+      end)
+    }
+  end
+
+  def render("members.json", %{members: members}) do
+    %{
+      data:
+        Enum.map(members, fn member ->
+          %{
+            id: member.id,
+            user_id: member.user_id,
+            user: %{
+              bio: member.user.bio,
+              email: member.user.auth.email,
+              icon_path: member.user.icon_path,
+              id: member.user.id,
+              name: member.user.name
+            },
+            team_id: member.team_id,
+            is_leader: member.is_leader,
+            is_invitation_confirmed: member.is_invitation_confirmed
+          }
+        end),
       result: true
     }
   end

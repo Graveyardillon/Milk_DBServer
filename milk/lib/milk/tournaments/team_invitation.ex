@@ -9,9 +9,9 @@ defmodule Milk.Tournaments.TeamInvitation do
   schema "team_invitations" do
     field :text, :string
 
-    #belongs_to :team, Team
+    # belongs_to :team, Team
     belongs_to :team_member, TeamMember
-    #belongs_to :destination, User
+    # belongs_to :destination, User
     belongs_to :sender, User
 
     timestamps()

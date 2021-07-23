@@ -5,10 +5,12 @@ defmodule Milk.ChatTest do
 
   alias Milk.Chat
   alias Milk.Accounts
+
   alias Milk.Chat.{
     ChatRoom,
     Chats
   }
+
   alias Milk.Accounts.{
     Auth,
     User

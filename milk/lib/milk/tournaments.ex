@@ -216,20 +216,23 @@ defmodule Milk.Tournaments do
     |> Repo.preload(:assistant)
     |> Repo.preload(:master)
     |> (fn tournament ->
-      if tournament do
-        entrants = tournament
-        |> Map.get(:entrant)
-        |> Enum.map(fn entrant ->
-          user = entrant
-            |> Repo.preload(:user)
-            |> Map.get(:user)
-            |> Repo.preload(:auth)
+          if tournament do
+            entrants =
+              tournament
+              |> Map.get(:entrant)
+              |> Enum.map(fn entrant ->
+                user =
+                  entrant
+                  |> Repo.preload(:user)
+                  |> Map.get(:user)
+                  |> Repo.preload(:auth)
 
-          Map.put(entrant, :user, user)
-        end)
-        Map.put(tournament, :entrant, entrants)
-      end
-    end).()
+                Map.put(entrant, :user, user)
+              end)
+
+            Map.put(tournament, :entrant, entrants)
+          end
+        end).()
   end
 
   @doc """
@@ -244,18 +247,21 @@ defmodule Milk.Tournaments do
     |> Repo.preload(:assistant)
     |> Repo.preload(:master)
     |> (fn tournament ->
-      entrants = tournament
-        |> Map.get(:entrant)
-        |> Enum.map(fn entrant ->
-          user = entrant
-            |> Repo.preload(:user)
-            |> Map.get(:user)
-            |> Repo.preload(:auth)
+          entrants =
+            tournament
+            |> Map.get(:entrant)
+            |> Enum.map(fn entrant ->
+              user =
+                entrant
+                |> Repo.preload(:user)
+                |> Map.get(:user)
+                |> Repo.preload(:auth)
 
-          Map.put(entrant, :user, user)
-        end)
-      Map.put(tournament, :entrant, entrants)
-    end).()
+              Map.put(entrant, :user, user)
+            end)
+
+          Map.put(tournament, :entrant, entrants)
+        end).()
   end
 
   @doc """
@@ -279,12 +285,19 @@ defmodule Milk.Tournaments do
   Get tournaments which the user participating in.
   """
   def get_participating_tournaments(user_id) do
-    Entrant
-    |> where([e], e.user_id == ^user_id)
+    Tournament
+    |> join(:inner, [t], e in Entrant, on: t.id == e.tournament_id)
+    |> where([t, e], e.user_id == ^user_id)
     |> Repo.all()
-    |> Enum.map(fn entrant ->
-      get_tournament(entrant.tournament_id)
-    end)
+    ~> entrants
+
+    Tournament
+    |> join(:inner, [t], te in Team, on: t.id == te.tournament_id)
+    |> join(:inner, [t, te], tm in TeamMember, on: te.id == tm.team_id)
+    |> where([t, te, tm], tm.user_id == ^user_id)
+    |> Repo.all()
+    |> Enum.concat(entrants)
+    |> Enum.uniq()
   end
 
   def get_participating_tournaments(user_id, offset) do
@@ -492,43 +505,6 @@ defmodule Milk.Tournaments do
     end
   end
 
-  @doc """
-  Renew match list as needed.
-  """
-  def trim_match_list_as_needed(tournament_id) do
-    match_list_len =
-      tournament_id
-      |> TournamentProgress.get_match_list()
-      |> case do
-        match_list when is_list(match_list) ->
-          match_list
-          |> List.flatten()
-          |> length()
-
-        _ ->
-          0
-      end
-
-    match_list_with_fight_result_len =
-      tournament_id
-      |> TournamentProgress.get_match_list_with_fight_result()
-      |> case do
-        match_list when is_list(match_list) ->
-          match_list
-          |> List.flatten()
-          |> length()
-
-        _ ->
-          0
-      end
-
-    if match_list_with_fight_result_len > 16 and match_list_len <= 16 do
-      new_list = TournamentProgress.get_match_list(tournament_id)
-      TournamentProgress.delete_match_list_with_fight_result(tournament_id)
-      TournamentProgress.insert_match_list_with_fight_result(new_list, tournament_id)
-    end
-  end
-
   def match_list_length(matchlist, n \\ 0) do
     Enum.reduce(matchlist, n, fn x, acc ->
       case x do
@@ -700,6 +676,7 @@ defmodule Milk.Tournaments do
 
   defp tournament_exists?({:ok, attrs}) do
     tournament = get_tournament(attrs["tournament_id"])
+
     if tournament do
       attrs = Map.put(attrs, "tournament", tournament)
       {:ok, attrs}
@@ -987,7 +964,9 @@ defmodule Milk.Tournaments do
       match_list
       |> find_match(loser)
       |> case do
-        [] -> {:error, nil}
+        [] ->
+          {:error, nil}
+
         match ->
           tournament_id
           |> get_tournament()
@@ -1016,8 +995,10 @@ defmodule Milk.Tournaments do
             |> Map.put("user_id", opponent["id"])
             |> promote_rank()
           end
+
         {:wait, nil, _tournament} ->
           {:wait, nil}
+
         {:error, nil, _tournament} ->
           {:error, nil}
       end
@@ -1035,8 +1016,10 @@ defmodule Milk.Tournaments do
       |> case do
         {:ok, opponent} ->
           promote_rank(%{"tournament_id" => tournament_id, "user_id" => opponent["id"]})
+
         {:wait, nil} ->
           raise RuntimeError, "Expected {:ok, opponent} (got: {:wait, nil})"
+
         _ ->
           raise RuntimeError, "Unexpected Output"
       end
@@ -1087,6 +1070,7 @@ defmodule Milk.Tournaments do
         |> Map.from_struct()
         |> Tools.atom_map_to_string_map()
         ~> auth
+
         opponent = Map.put(user, "auth", auth)
 
         {:ok, opponent}
@@ -1275,7 +1259,10 @@ defmodule Milk.Tournaments do
       |> delete_tournament()
 
     tournament
-    |> atom_tournament_map_to_string_map(winner_user_id)
+    |> Map.from_struct()
+    |> Map.put(:tournament_id, tournament.id)
+    |> Map.put(:winner_id, winner_user_id)
+    |> Tools.atom_map_to_string_map()
     |> Log.create_tournament_log()
     |> case do
       {:ok, _tournament_log} -> true
@@ -1612,6 +1599,7 @@ defmodule Milk.Tournaments do
         ~> updated_rank
 
         update_entrant(entrant, %{rank: updated_rank})
+
       {:error, error} ->
         {:error, error}
     end
@@ -1672,6 +1660,7 @@ defmodule Milk.Tournaments do
         ~> updated_rank
 
         update_team(team, %{rank: updated_rank})
+
       {:error, error} ->
         {:error, error}
     end
@@ -1718,9 +1707,12 @@ defmodule Milk.Tournaments do
         |> case do
           rank when rank > opponents_rank ->
             update_entrant(opponent, %{rank: rank})
+
           rank when rank < opponents_rank ->
             update_entrant(entrant, %{rank: opponents_rank})
-          _ -> nil
+
+          _ ->
+            nil
         end
 
         opponent
@@ -1739,8 +1731,11 @@ defmodule Milk.Tournaments do
         |> get_entrant_by_user_id_and_tournament_id(tournament_id)
         |> update_entrant(%{rank: updated_rank})
 
-      {:wait, nil} -> {:wait, nil}
-      {:error, _} -> {:error, nil}
+      {:wait, nil} ->
+        {:wait, nil}
+
+      {:error, _} ->
+        {:error, nil}
     end
   end
 
@@ -1764,9 +1759,12 @@ defmodule Milk.Tournaments do
         |> case do
           rank when rank > opponent_team_rank ->
             update_team(opponent_team, %{rank: rank})
+
           rank when rank < opponent_team_rank ->
             update_team(team, %{rank: opponent_team_rank})
-          _ -> nil
+
+          _ ->
+            nil
         end
 
         opponent_team
@@ -1785,8 +1783,11 @@ defmodule Milk.Tournaments do
         |> get_team()
         |> update_team(%{rank: updated_rank})
 
-      {:wait, nil} -> {:wait, nil}
-      {:error, _} -> {:error, nil}
+      {:wait, nil} ->
+        {:wait, nil}
+
+      {:error, _} ->
+        {:error, nil}
     end
   end
 
@@ -1901,7 +1902,12 @@ defmodule Milk.Tournaments do
     tournament_id
     |> get_tournament()
     ~> tournament
-    |> Map.get(:is_team)
+    |> is_nil()
+    |> unless do
+      Map.get(tournament, :is_team)
+    else
+      false
+    end
     |> if do
       tournament_id
       |> get_team_by_tournament_id_and_user_id(user_id)
@@ -1923,23 +1929,23 @@ defmodule Milk.Tournaments do
       unless tournament.is_started do
         "IsNotStarted"
       else
-        check_is_manager?(tournament, id)
+        check_is_manager?(tournament, id, user_id)
       end
     end
   end
 
-  defp check_is_manager?(tournament, user_id) do
+  defp check_is_manager?(tournament, id, user_id) do
     is_manager = tournament.master_id == user_id
 
-    is_assistant =
-      tournament.id
-      |> get_assistants()
-      |> Enum.filter(fn assistant -> assistant.user_id == user_id end)
-      |> (fn list -> list != [] end).()
+    tournament.id
+    |> get_assistants()
+    |> Enum.filter(fn assistant -> assistant.user_id == user_id end)
+    |> (fn list -> list != [] end).()
+    ~> is_assistant
 
     tournament.id
     |> get_entrants()
-    |> Enum.map(&(&1.user_id))
+    |> Enum.map(& &1.user_id)
     ~> entrants
 
     tournament.id
@@ -1948,10 +1954,10 @@ defmodule Milk.Tournaments do
       get_team_members_by_team_id(team.id)
     end)
     |> List.flatten()
-    |> Enum.map(&(&1.user_id))
+    |> Enum.map(& &1.user_id)
     |> Enum.concat(entrants)
-    |> Enum.filter(fn id ->
-      id == user_id
+    |> Enum.filter(fn entrant_id ->
+      entrant_id == id
     end)
     |> (fn list -> list == [] end).()
     ~> is_not_entrant
@@ -1960,11 +1966,11 @@ defmodule Milk.Tournaments do
       is_manager && is_not_entrant ->
         "IsManager"
 
-      (!is_manager && is_assistant) && is_not_entrant ->
+      !is_manager && is_assistant && is_not_entrant ->
         "IsAssistant"
 
       true ->
-        check_has_lost?(tournament.id, user_id)
+        check_has_lost?(tournament.id, id)
     end
   end
 
@@ -2078,9 +2084,11 @@ defmodule Milk.Tournaments do
   Construct data with game scores for brackets.
   """
   def data_with_scores_for_flexible_brackets(tournament_id) do
-    # TODO: fix
-    match_list = TournamentProgress.get_match_list_with_fight_result_including_log(tournament_id)
-    {:ok, brackets} = Tournamex.brackets_with_fight_result(match_list)
+    tournament_id
+    |> TournamentProgress.get_match_list_with_fight_result_including_log()
+    |> Tournamex.brackets_with_fight_result()
+    |> elem(1)
+    ~> brackets
 
     # add game_scores
     brackets
@@ -2089,23 +2097,24 @@ defmodule Milk.Tournaments do
 
       Enum.map(list, fn bracket ->
         unless is_nil(bracket) do
-          user_id = bracket["user_id"]
+          id = bracket["user_id"] || bracket["team_id"]
 
-          win_game_scores =
-            tournament_id
-            |> TournamentProgress.get_best_of_x_tournament_match_logs_by_winner(user_id)
-            |> Enum.map(fn log ->
-              log.winner_score
-            end)
+          tournament_id
+          |> TournamentProgress.get_best_of_x_tournament_match_logs_by_winner(id)
+          |> Enum.map(fn log ->
+            log.winner_score
+          end)
+          ~> win_game_scores
 
           lose_game_scores =
             tournament_id
-            |> TournamentProgress.get_best_of_x_tournament_match_logs_by_loser(user_id)
+            |> TournamentProgress.get_best_of_x_tournament_match_logs_by_loser(id)
             |> Enum.map(fn log ->
               log.loser_score
             end)
-
-          game_scores = win_game_scores ++ lose_game_scores
+            ~> lose_game_scores
+            |> Enum.concat(win_game_scores)
+            ~> game_scores
 
           Map.put(bracket, "game_scores", game_scores)
         end
@@ -2164,6 +2173,7 @@ defmodule Milk.Tournaments do
     |> case do
       {:ok, team} ->
         create_team_leader(team.id, leader)
+
         create_team_members(team.id, user_id_list)
         |> Enum.each(fn member ->
           create_team_invitation(member.id, leader)
@@ -2172,9 +2182,18 @@ defmodule Milk.Tournaments do
         team
         |> Repo.preload(:tournament)
         |> Repo.preload(:team_member)
-        ~> team
+        |> Map.get(:team_member)
+        |> Repo.preload(:user)
+        |> Enum.map(fn member ->
+          user = Repo.preload(member.user, :auth)
+          Map.put(member, :user, user)
+        end)
+        ~> team_members
+
+        team = Map.put(team, :team_member, team_members)
 
         {:ok, team}
+
       {:error, error} ->
         {:error, error}
     end
@@ -2182,7 +2201,12 @@ defmodule Milk.Tournaments do
 
   defp create_team_leader(team_id, leader_id) do
     %TeamMember{}
-    |> TeamMember.changeset(%{"team_id" => team_id, "user_id" => leader_id, "is_leader" => true, "is_invitation_confirmed" => true})
+    |> TeamMember.changeset(%{
+      "team_id" => team_id,
+      "user_id" => leader_id,
+      "is_leader" => true,
+      "is_invitation_confirmed" => true
+    })
     |> Repo.insert()
   end
 
@@ -2202,6 +2226,20 @@ defmodule Milk.Tournaments do
     Team
     |> Repo.get(team_id)
     |> Repo.preload(:team_member)
+    ~> team
+    |> is_nil()
+    |> unless do
+      team
+      |> Map.get(:team_member)
+      |> Repo.preload(:user)
+      |> Enum.map(fn member ->
+        user = Repo.preload(member.user, :auth)
+        Map.put(member, :user, user)
+      end)
+      ~> team_members
+
+      Map.put(team, :team_member, team_members)
+    end
   end
 
   @doc """
@@ -2231,6 +2269,7 @@ defmodule Milk.Tournaments do
     TeamMember
     |> where([tm], tm.team_id == ^team_id)
     |> Repo.all()
+    |> Repo.preload(:user)
   end
 
   @doc """
@@ -2289,6 +2328,21 @@ defmodule Milk.Tournaments do
     |> where([t, tm], t.is_confirmed)
     |> preload([t, tm], :team_member)
     |> Repo.all()
+    |> Enum.map(fn team ->
+      team
+      # FIXME: 不要？
+      |> Repo.preload(:team_member)
+      ~> team
+      |> Map.get(:team_member)
+      |> Repo.preload(:user)
+      |> Enum.map(fn member ->
+        user = Repo.preload(member.user, :auth)
+        Map.put(member, :user, user)
+      end)
+      ~> team_members
+
+      Map.put(team, :team_member, team_members)
+    end)
     |> Enum.filter(fn members_in_team ->
       members_in_team.team_member
       |> Enum.all?(fn member ->
@@ -2348,7 +2402,11 @@ defmodule Milk.Tournaments do
     text = "#{sender.name}があなたをチームに招待しました。"
 
     %TeamInvitation{}
-    |> TeamInvitation.changeset(%{"team_member_id" => team_member_id, "sender_id" => sender_id, "text" => text})
+    |> TeamInvitation.changeset(%{
+      "team_member_id" => team_member_id,
+      "sender_id" => sender_id,
+      "text" => text
+    })
     |> Repo.insert()
     |> case do
       {:ok, invitation} ->
@@ -2356,7 +2414,9 @@ defmodule Milk.Tournaments do
         |> Repo.preload(:team_member)
         |> Repo.preload(:sender)
         |> create_invitation_notification()
+
         {:ok, invitation}
+
       {:error, error} ->
         {:error, error}
     end
@@ -2374,6 +2434,9 @@ defmodule Milk.Tournaments do
     |> case do
       {:ok, notification} ->
         push_invitation_notification(notification)
+
+      {:error, error} ->
+        {:error, error}
     end
   end
 
@@ -2396,6 +2459,7 @@ defmodule Milk.Tournaments do
         verify_team_as_needed(team_member.team_id)
         delete_invitation_nofification(team_invitation_id)
         {:ok, team_member}
+
       {:error, error} ->
         {:error, error}
     end
@@ -2412,10 +2476,11 @@ defmodule Milk.Tournaments do
   Verify team.
   """
   def verify_team_as_needed(team_id) do
-    confirmed_count = TeamMember
-      |> where([tm], tm.team_id == ^team_id)
-      |> where([tm], tm.is_invitation_confirmed)
-      |> Repo.aggregate(:count)
+    TeamMember
+    |> where([tm], tm.team_id == ^team_id)
+    |> where([tm], tm.is_invitation_confirmed)
+    |> Repo.aggregate(:count)
+    ~> confirmed_count
 
     team = Repo.get(Team, team_id)
 
@@ -2425,7 +2490,37 @@ defmodule Milk.Tournaments do
       |> Repo.one()
       |> Team.changeset(%{"is_confirmed" => true})
       |> Repo.update()
+    else
+      {:error, "short of confirmed count: #{confirmed_count}"}
     end
+    |> case do
+      {:ok, team} ->
+        take_members_into_chat(team.id)
+        {:ok, team}
+
+      {:error, error} ->
+        {:error, error}
+    end
+  end
+
+  defp take_members_into_chat(team_id) do
+    TeamMember
+    |> where([tm], tm.team_id == ^team_id)
+    |> Repo.all()
+    |> Enum.each(fn member ->
+      member
+      |> Map.get(:team_id)
+      |> get_team()
+      |> Map.get(:tournament_id)
+      |> Chat.get_chat_rooms_by_tournament_id()
+      |> Enum.each(fn chat_room ->
+        Map.new()
+        |> Map.put("user_id", member.user_id)
+        |> Map.put("authority", 1)
+        |> Map.put("chat_room_id", chat_room.id)
+        |> Chat.create_chat_member()
+      end)
+    end)
   end
 
   @doc """
@@ -2435,6 +2530,13 @@ defmodule Milk.Tournaments do
     Team
     |> Repo.get(team_id)
     |> Repo.delete()
+    |> case do
+      {:ok, team} ->
+        team = Repo.preload(team, :team_member)
+        {:ok, team}
+      {:error, error} ->
+        {:error, error}
+    end
   end
 
   def get_push_notice_job(args, tournament_id) do
