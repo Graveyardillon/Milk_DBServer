@@ -11,7 +11,8 @@ ENV CLOUD_SQL_HOST=e-players6814:asia-northeast1:milkdb
 
 WORKDIR /opt/app
 RUN apk update \
-  && apk --no-cache --update add nodejs nodejs-npm \
+  && apk --no-cache --update add nodejs \
+  && apk add npm \
   && apk add alpine-sdk \
   && apk add libc6-compat libstdc++ \
   && mix local.rebar --force \

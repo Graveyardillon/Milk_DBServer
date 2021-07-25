@@ -3,8 +3,7 @@ import Ecto.Query, warn: false
 
 alias Milk.{
   Repo,
-  TournamentProgress,
-  Tournaments
+  TournamentProgress
 }
 alias Milk.Tournaments.Tournament
 
