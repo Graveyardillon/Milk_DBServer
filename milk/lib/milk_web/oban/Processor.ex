@@ -10,19 +10,26 @@ defmodule Oban.Processer do
   @impl Oban.Worker
   
   def perform(%Oban.Job{args: args}) do
-    IO.puts("start processing job...")
-
+   # TODO: 通知に大会情報などを含めたい
     case args do
-      %{"notify_tournament_start" => id} ->
-        notify_tournament_start(id)
+      %{"reminder_to_start_tournament" => id} ->
+        reminder_to_start_tournament(id)
+      # %{"notify_tournament_start" => id} ->
+      #   notify_tournament_start(id)
       _ ->
         IO.puts("undefined arg")
     end
-
-    IO.puts("...finished job")
   end 
 
-  defp notify_tournament_start(id) do
+  defp reminder_to_start_tournament(id) do
+    tournament = Tournaments.get_tournament(id)
+
+    params = %{"tournament_id": id}
+    device = Accounts.get_devices_by_user_id(tournament.master_id)
+    Notif.push_ios("主催している大会の開始予定時刻になりました。大会を開始してください！", "", "reminder_to_start_tournament", device, 6, params)
+  end
+
+  def notify_tournament_start(id) do
     tournament = Tournaments.get_tournament(id)
     if tournament do 
       devices = 

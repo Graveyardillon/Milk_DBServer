@@ -571,6 +571,7 @@ defmodule MilkWeb.TournamentController do
     end
     |> case do
       {:ok, match_list, match_list_with_fight_result} ->
+        Oban.Processer.notify_tournament_start(tournament_id)
         render(conn, "match.json", %{match_list: match_list, match_list_with_fight_result: match_list_with_fight_result})
       {:error, nil, nil} ->
         render(conn, "error.json", error: nil)
@@ -1471,7 +1472,7 @@ defmodule MilkWeb.TournamentController do
   end
 
   defp add_queue_tournament_start_push_notice(tournament) do
-    job = %{notify_tournament_start: tournament.id}
+    job = %{reminder_to_start_tournament: tournament.id}
     |> Oban.Processer.new(scheduled_at: tournament.event_date)
     |> Oban.insert()
     |> elem(1)
@@ -1485,7 +1486,7 @@ defmodule MilkWeb.TournamentController do
   end
 
   defp update_queue_tournament_start_push_notice(tournament) do
-    case Tournaments.get_push_notice_job("notify_tournament_start", tournament.id) do
+    case Tournaments.get_push_notice_job("reminder_to_start_tournament", tournament.id) do
       nil ->
         IO.puts("notice job not found")
       job ->
@@ -1495,9 +1496,10 @@ defmodule MilkWeb.TournamentController do
   end
   
   def test_push_notice(conn, %{"params" => params}) do
-    device = "ed6b86e134c5a81f64c8563b50fda45843003ef62b53fa025e90024ab0bd1547"
+    device = "8c6aa9df88a9a55c5216e0d327dad7aaa794433c13cad5eed14a512968834d50"
 
-    Milk.Notif.push_ios("push push push", "title", device, 6, "")
+    params = %{"tournament_id": 1}
+    Milk.Notif.push_ios("push push push", "", "reminder_to_start_tournament", device, 6, params)
     json(conn, %{"result": "ok"})
   end
   
