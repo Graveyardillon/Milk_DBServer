@@ -8,7 +8,7 @@ defmodule Oban.Processer do
   }
 
   @impl Oban.Worker
-  
+
   def perform(%Oban.Job{args: args}) do
    # TODO: 通知に大会情報などを含めたい
     case args do
@@ -31,8 +31,9 @@ defmodule Oban.Processer do
 
   def notify_tournament_start(id) do
     tournament = Tournaments.get_tournament(id)
-    if tournament do 
-      devices = 
+
+    if tournament do
+      devices =
         for entrant <- Map.get(tournament, :entrant) do
           Accounts.get_devices_by_user_id(entrant.user_id)
         end
@@ -43,7 +44,7 @@ defmodule Oban.Processer do
         Notif.push_ios("大会が始まりました！", "", "tournament_start", device.token, 6, params)
       end
     else
-        IO.puts("tournament not found")
+      IO.puts("tournament not found")
     end
   end
 end

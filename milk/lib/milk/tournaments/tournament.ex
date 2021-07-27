@@ -17,20 +17,20 @@ defmodule Milk.Tournaments.Tournament do
 
   schema "tournaments" do
     field :capacity, :integer
+    field :count, :integer, default: 0
     field :deadline, EctoDate
     field :description, :string
     field :event_date, EctoDate
-    field :name, :string
-    field :type, :integer
-    field :url, :string
-    field :thumbnail_path, :string
-    field :password, :string
-    field :count, :integer, default: 0
     field :game_name, :string
     field :is_started, :boolean, default: false
     field :is_team, :boolean, default: false
+    field :name, :string
+    field :password, :string
     field :start_recruiting, EctoDate
     field :team_size, :integer, default: nil
+    field :thumbnail_path, :string
+    field :type, :integer
+    field :url, :string
 
     belongs_to :platform, Platform
     belongs_to :game, Game
