@@ -13,8 +13,8 @@ defmodule MilkWeb.Router do
     plug :accepts, ["json"]
     if Application.get_env(:milk, :environment) == :prod do
       plug Milk.UserManager.GuardianPipeline
-    else
-      plug Milk.UserManager.GuardianPipeline
+    # else
+    #   plug Milk.UserManager.GuardianPipeline
     end
   end
 

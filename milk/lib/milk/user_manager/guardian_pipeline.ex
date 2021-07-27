@@ -45,7 +45,7 @@ defmodule Milk.UserManager.GuardianPipeline do
     ) do
       conn
     else
-      IO.inspect(conn, label: :call_conn)
+      #IO.inspect(conn, label: :call_conn)
       json(conn, %{result: false, error: "There's not a token"})
       halt(conn)
     end
