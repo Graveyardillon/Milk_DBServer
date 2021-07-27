@@ -11,12 +11,15 @@ defmodule MilkWeb.Router do
 
   pipeline :api do
     plug :accepts, ["json"]
-    # plug Milk.UserManager.GuardianPipeline
+    if Application.get_env(:milk, :environment) == :prod do
+      plug Milk.UserManager.GuardianPipeline
+    else
+      plug Milk.UserManager.GuardianPipeline
+    end
   end
 
   scope "/", MilkWeb do
     pipe_through :browser
-
     get "/", PageController, :index
   end
 

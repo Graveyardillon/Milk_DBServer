@@ -50,6 +50,7 @@ defmodule Milk.Accounts.User do
     user
     |> cast(attrs, [
       :name,
+      :bio,
       :icon_path,
       :point,
       :id_for_show,
