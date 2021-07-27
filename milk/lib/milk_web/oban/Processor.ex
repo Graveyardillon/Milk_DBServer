@@ -39,7 +39,8 @@ defmodule Oban.Processer do
         |> List.flatten()
 
       for device <- devices do
-        Notif.push_ios("参加している大会の開始予定時刻になりました。主催者の開始を待っています。", device.token, 6, "")
+      params = %{"tournament_id": id}
+        Notif.push_ios("大会が始まりました！", "", "tournament_start", device.token, 6, params)
       end
     else
         IO.puts("tournament not found")
