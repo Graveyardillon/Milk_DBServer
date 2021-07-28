@@ -220,7 +220,8 @@ defmodule MilkWeb.TournamentView do
       data:
         render_many(tournaments_info, TournamentView, "tournament_info_include_entrants.json",
           as: :tournament_info
-        )
+        ),
+      result: true
     }
   end
 
