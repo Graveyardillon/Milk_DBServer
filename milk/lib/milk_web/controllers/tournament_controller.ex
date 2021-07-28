@@ -1325,6 +1325,14 @@ defmodule MilkWeb.TournamentController do
       |> if do
         {nil, nil, nil}
       else
+        team.id
+        |> Tournaments.get_leader()
+        |> Map.get(:user)
+        ~> leader
+        |> Map.get(:id)
+        |> Kernel.==(user_id)
+        ~> is_leader
+
         team
         |> Map.get(:tournament_id)
         |> TournamentProgress.get_match_list()
@@ -1332,13 +1340,6 @@ defmodule MilkWeb.TournamentController do
         |> Tournaments.get_opponent_team(team.id)
         |> case do
           {:ok, opponent} ->
-            team.id
-            |> Tournaments.get_leader()
-            |> Map.get(:user)
-            ~> leader
-            |> Map.get(:id)
-            |> Kernel.==(user_id)
-            ~> is_leader
 
             opponent
             |> Map.get("id")
@@ -1354,10 +1355,10 @@ defmodule MilkWeb.TournamentController do
             {opponent, team.rank, is_leader}
 
           {:wait, nil} ->
-            {nil, team.rank, nil}
+            {nil, team.rank, is_leader}
 
           _ ->
-            {nil, nil, nil}
+            {nil, team.rank, is_leader}
         end
       end
     else
