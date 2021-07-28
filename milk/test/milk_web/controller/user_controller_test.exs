@@ -27,11 +27,11 @@ defmodule MilkWeb.UserControllerTest do
     test "works", %{conn: conn} do
       _user = fixture(:user)
 
-      conn = post(conn, Routes.user_path(conn, :check_username_duplication), name: "some name")
+      conn = get(conn, Routes.user_path(conn, :check_username_duplication), name: "some name")
       refute json_response(conn, 200)["is_unique"]
 
       conn =
-        post(conn, Routes.user_path(conn, :check_username_duplication), name: "WHATaUNIQUEname")
+        get(conn, Routes.user_path(conn, :check_username_duplication), name: "WHATaUNIQUEname")
 
       assert json_response(conn, 200)["is_unique"]
     end

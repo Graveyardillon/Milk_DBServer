@@ -32,7 +32,6 @@ defmodule MilkWeb.Router do
       except: [:new, :edit, :index, :show, :create, :update, :delete]
 
     get "/user/check_username_duplication", UserController, :check_username_duplication
-    post "/user/check_username_duplication", UserController, :check_username_duplication
     get "/user/get", UserController, :show
     get "/user/in_touch", UserController, :users_in_touch
     get "/user/search", UserController, :search
