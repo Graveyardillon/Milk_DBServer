@@ -1239,7 +1239,15 @@ defmodule Milk.Tournaments do
   トーナメントを終了させ、終了したトーナメントをログの方に移行して削除する
   """
   def finish(tournament_id, winner_user_id) do
-    case finish_entrants(tournament_id) do
+    tournament_id
+    |> get_tournament()
+    |> Map.get(:is_team)
+    |> if do
+      finish_teams(tournament_id)
+    else
+      finish_entrants(tournament_id)
+    end
+    |> case do
       :ok ->
         finish_topics(tournament_id)
         finish_tournament(tournament_id, winner_user_id)
@@ -1250,6 +1258,22 @@ defmodule Milk.Tournaments do
       _ ->
         false
     end
+  end
+
+  defp finish_teams(tournament_id) do
+    tournament_id
+    |> get_teams_by_tournament_id()
+    |> Enum.each(fn team ->
+
+    end)
+  end
+
+  defp finish_entrants(tournament_id) do
+    tournament_id
+    |> get_entrants()
+    |> Enum.each(fn entrant ->
+      delete_entrant(entrant)
+    end)
   end
 
   defp finish_tournament(tournament_id, winner_user_id) do
@@ -1268,14 +1292,6 @@ defmodule Milk.Tournaments do
       {:ok, _tournament_log} -> true
       {:error, _} -> false
     end
-  end
-
-  defp finish_entrants(tournament_id) do
-    tournament_id
-    |> get_entrants()
-    |> Enum.each(fn entrant ->
-      delete_entrant(entrant)
-    end)
   end
 
   defp finish_topics(tournament_id) do
@@ -2529,6 +2545,29 @@ defmodule Milk.Tournaments do
   def delete_team(team_id) do
     Team
     |> Repo.get(team_id)
+    |> Repo.delete()
+    |> case do
+      {:ok, team} ->
+        team = Repo.preload(team, :team_member)
+        {:ok, team}
+      {:error, error} ->
+        {:error, error}
+    end
+  end
+
+  @doc """
+  Delete a team and store it.
+  """
+  def delete_team_and_store(team_id) do
+    Team
+    |> Repo.get(team_id)
+    ~> team
+    |> Map.from_struct()
+    |> Map.put(:team_id, team_id)
+    |> Tools.atom_map_to_string_map()
+    |> Log.create_team_log()
+
+    team
     |> Repo.delete()
     |> case do
       {:ok, team} ->

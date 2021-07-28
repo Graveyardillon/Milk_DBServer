@@ -8,9 +8,10 @@ defmodule Milk.Log do
   alias Milk.Repo
 
   alias Milk.Log.{
+    AssistantLog,
     ChatRoomLog,
     TournamentChatTopicLog,
-    AssistantLog
+    TeamLog
   }
 
   @doc """
@@ -831,5 +832,23 @@ defmodule Milk.Log do
         attrs \\ %{}
       ) do
     TournamentChatTopicLog.changeset(tournament_chat_topic_log, attrs)
+  end
+
+  @doc """
+  Create team log
+  """
+  def create_team_log(attrs \\ %{}) do
+    %TeamLog{}
+    |> TeamLog.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  @doc """
+  Get team logs
+  """
+  def get_team_logs_by_tournament_id(tournament_id) do
+    TeamLog
+    |> where([t], t.tournament_id == ^tournament_id)
+    |> Repo.all()
   end
 end
