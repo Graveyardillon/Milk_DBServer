@@ -11,6 +11,7 @@ defmodule Milk.TournamentsTest do
     Accounts,
     Chat,
     Games,
+    Log,
     Relations,
     Repo,
     TournamentProgress,
@@ -2845,10 +2846,10 @@ defmodule Milk.TournamentsTest do
     test "works" do
       {tournament, users} = setup_team(5)
 
-      team =
-        tournament.id
-        |> Tournaments.get_teams_by_tournament_id()
-        |> hd()
+      tournament.id
+      |> Tournaments.get_teams_by_tournament_id()
+      |> hd()
+      ~> team
 
       team.id
       |> Tournaments.get_team()
@@ -2861,6 +2862,39 @@ defmodule Milk.TournamentsTest do
       team.id
       |> Tournaments.get_team()
       |> is_nil()
+      |> assert()
+    end
+  end
+
+  describe "delete team and store" do
+    test "works" do
+      {tournament, users} = setup_team(5)
+
+      tournament.id
+      |> Tournaments.get_teams_by_tournament_id()
+      |> hd()
+      ~> team
+
+      team.id
+      |> Tournaments.get_team()
+      |> is_nil()
+      |> refute()
+
+      assert {:ok, deleted_team} = Tournaments.delete_team_and_store(team.id)
+      assert deleted_team.id == team.id
+
+      team.id
+      |> Tournaments.get_team()
+      |> is_nil()
+      |> assert()
+
+      tournament.id
+      |> Log.get_team_logs_by_tournament_id()
+      |> Enum.map(fn log ->
+        assert log.tournament_id == tournament.id
+      end)
+      |> length()
+      |> Kernel.==(1)
       |> assert()
     end
   end

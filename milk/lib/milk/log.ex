@@ -4,13 +4,21 @@ defmodule Milk.Log do
   """
 
   import Ecto.Query, warn: false
+  import Common.Sperm
 
-  alias Milk.Repo
+  alias Common.Tools
+
+  alias Milk.{
+    Repo,
+    Tournaments
+  }
 
   alias Milk.Log.{
+    AssistantLog,
     ChatRoomLog,
     TournamentChatTopicLog,
-    AssistantLog
+    TeamLog,
+    TeamMemberLog
   }
 
   @doc """
@@ -831,5 +839,105 @@ defmodule Milk.Log do
         attrs \\ %{}
       ) do
     TournamentChatTopicLog.changeset(tournament_chat_topic_log, attrs)
+  end
+
+  @doc """
+  Create team log
+  """
+  def create_team_log(team_id) when is_integer(team_id) do
+    team_id
+    |> Tournaments.get_team()
+    ~> team
+    |> Map.get(:team_member)
+    |> Enum.each(fn member ->
+      member
+      |> Map.from_struct()
+      |> Tools.atom_map_to_string_map()
+      |> create_team_member_log()
+    end)
+
+    team
+    |> Map.from_struct()
+    |> Map.put(:team_id, team.id)
+    |> Tools.atom_map_to_string_map()
+    |> create_team_log()
+  end
+
+  def create_team_log(attrs) do
+    %TeamLog{}
+    |> TeamLog.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  @doc """
+  Get team logs
+  """
+  def get_team_log(id) do
+    Repo.get(TeamLog, id)
+  end
+
+  @doc """
+  Get team log by team id
+  """
+  def get_team_log_by_team_id(team_id) do
+    TeamMemberLog
+    |> where([t], t.team_id == ^team_id)
+    |> Repo.all()
+    ~> team_member_logs
+
+    TeamLog
+    |> where([t], t.team_id == ^team_id)
+    |> Repo.one()
+    |> Map.put(:team_member, team_member_logs)
+  end
+
+  @doc """
+  Get team logs by tournament id
+  """
+  def get_team_logs_by_tournament_id(tournament_id) do
+    TeamLog
+    |> where([t], t.tournament_id == ^tournament_id)
+    |> Repo.all()
+  end
+
+  @doc """
+  Get team log by tournament id and user id.
+  """
+  def get_team_log_by_tournament_id_and_user_id(tournament_id, user_id) do
+    TeamLog
+    |> where([t], t.tournament_id == ^tournament_id)
+    |> Repo.all()
+    |> Enum.filter(fn team_log ->
+      TeamMemberLog
+      |> where([t], t.team_id == ^team_log.team_id and t.user_id == ^user_id)
+      |> Repo.one()
+      |> is_nil()
+      |> Kernel.!()
+    end)
+    |> Enum.map(fn team_log ->
+      TeamMemberLog
+      |> where([t], t.team_id == ^team_log.team_id)
+      |> Repo.all()
+      ~> members
+
+      Map.put(team_log, :team_member, members)
+    end)
+    |> hd()
+  end
+
+  @doc """
+  Create team member log.
+  """
+  def create_team_member_log(attrs \\ %{}) do
+    %TeamMemberLog{}
+    |> TeamMemberLog.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  @doc """
+  Get team member log
+  """
+  def get_team_member_log(id) do
+    Repo.get(TeamMemberLog, id)
   end
 end
