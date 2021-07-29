@@ -1323,6 +1323,7 @@ defmodule MilkWeb.TournamentController do
       ~> team
       |> is_nil()
       |> if do
+
         {nil, nil, nil}
       else
         team.id

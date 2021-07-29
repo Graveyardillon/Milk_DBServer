@@ -1,5 +1,8 @@
 defmodule Milk.LogTest do
   use Milk.DataCase
+  use Common.Fixtures
+
+  import Common.Sperm
 
   alias Milk.Log
   alias Milk.Chat
@@ -349,6 +352,34 @@ defmodule Milk.LogTest do
       tournament_log = tournament_log_fixture()
       assert {:ok, %TournamentLog{}} = Log.delete_tournament_log(tournament_log)
       refute Log.get_tournament_log!(tournament_log.id)
+    end
+  end
+
+  describe "team_log" do
+    alias Milk.Log.TeamLog
+
+    test "create team log (team_id)" do
+      [is_team: true, capacity: 4, type: 2]
+      |> fixture_tournament()
+      |> Map.get(:id)
+      ~> tournament_id
+      |> fill_with_team()
+      |> Enum.map(&(&1.id))
+      ~> team_id_list
+      |> Enum.each(fn team_id ->
+        Log.create_team_log(team_id)
+      end)
+
+      team_id_list
+      |> Enum.map(fn team_id ->
+        Log.get_team_log_by_team_id(team_id)
+      end)
+      |> Enum.each(fn log ->
+        assert log.tournament_id == tournament_id
+        assert log.team_id in team_id_list
+        assert length(log.team_member) == 5
+        refute is_nil(log.rank)
+      end)
     end
   end
 end
