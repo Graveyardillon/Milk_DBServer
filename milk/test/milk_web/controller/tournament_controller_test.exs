@@ -3186,9 +3186,9 @@ defmodule MilkWeb.TournamentControllerTest do
       )
 
       match_info = json_response(conn, 200)
-      # |> IO.inspect()
-      # assert match_info["state"] == "IsFinished"
-      # assert match_info["rank"] == capacity / 2
+      assert match_info["state"] == "IsFinished"
+      assert match_info["rank"] == capacity / 2
+      assert match_info["is_leader"]
     end
   end
 

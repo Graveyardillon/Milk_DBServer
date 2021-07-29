@@ -1323,8 +1323,19 @@ defmodule MilkWeb.TournamentController do
       ~> team
       |> is_nil()
       |> if do
+        tournament_id
+        |> Log.get_team_log_by_tournament_id_and_user_id(user_id)
+        ~> team_log
+        |> Map.get(:team_member)
+        |> Enum.filter(fn member_log ->
+          member_log.is_leader
+        end)
+        |> Enum.all?(fn member_log ->
+          member_log.user_id == user_id
+        end)
+        ~> is_leader
 
-        {nil, nil, nil}
+        {nil, team_log.rank, is_leader}
       else
         team.id
         |> Tournaments.get_leader()
