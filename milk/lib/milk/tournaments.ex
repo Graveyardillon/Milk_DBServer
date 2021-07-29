@@ -1412,34 +1412,67 @@ defmodule Milk.Tournaments do
   Get fighting users.
   """
   def get_fighting_users(tournament_id) do
-    get_entrants(tournament_id)
-    |> Enum.filter(fn entrant ->
-      TournamentProgress.get_match_pending_list(entrant.user_id, tournament_id) != []
-    end)
-    |> Enum.map(fn entrant ->
-      Accounts.get_user(entrant.user_id)
-    end)
+    tournament_id
+    |> get_tournament()
+    |> Map.get(:is_team)
+    |> if do
+      tournament_id
+      |> get_confirmed_teams()
+      |> Enum.filter(fn team ->
+        team.id
+        |> TournamentProgress.get_match_pending_list(tournament_id)
+        |> Kernel.!=([])
+      end)
+    else
+      tournament_id
+      |> get_entrants()
+      |> Enum.filter(fn entrant ->
+        TournamentProgress.get_match_pending_list(entrant.user_id, tournament_id) != []
+      end)
+      |> Enum.map(fn entrant ->
+        Accounts.get_user(entrant.user_id)
+      end)
+    end
   end
 
   @doc """
   Get users waiting for fighting ones.
+  FIXME: usersと書いてあるがチームを扱う場合もある
   """
   def get_waiting_users(tournament_id) do
-    fighting_users = get_fighting_users(tournament_id)
-
     tournament_id
-    |> get_entrants()
-    |> Enum.filter(fn entrant ->
-      match_list = TournamentProgress.get_match_list(tournament_id)
-      !has_lost?(match_list, entrant.user_id)
-    end)
-    |> Enum.map(fn entrant ->
-      Accounts.get_user(entrant.user_id)
-    end)
-    |> Enum.filter(fn user ->
-      # match_pending_listに入っていないユーザー
-      !Enum.member?(fighting_users, user)
-    end)
+    |> get_tournament()
+    |> Map.get(:is_team)
+    |> if do
+      fighting_users = get_fighting_users(tournament_id)
+
+      tournament_id
+      |> get_confirmed_teams()
+      |> Enum.filter(fn team ->
+        tournament_id
+        |> TournamentProgress.get_match_list()
+        |> List.flatten()
+        ~> flatten_match_list
+
+        team.id in flatten_match_list and !Enum.member?(fighting_users, team)
+      end)
+    else
+      fighting_users = get_fighting_users(tournament_id)
+
+      tournament_id
+      |> get_entrants()
+      |> Enum.filter(fn entrant ->
+        match_list = TournamentProgress.get_match_list(tournament_id)
+        !has_lost?(match_list, entrant.user_id)
+      end)
+      |> Enum.map(fn entrant ->
+        Accounts.get_user(entrant.user_id)
+      end)
+      |> Enum.filter(fn user ->
+        # match_pending_listに入っていないユーザー
+        !Enum.member?(fighting_users, user)
+      end)
+    end
   end
 
   @doc """
