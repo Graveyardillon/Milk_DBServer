@@ -1264,7 +1264,8 @@ defmodule Milk.Tournaments do
     tournament_id
     |> get_teams_by_tournament_id()
     |> Enum.each(fn team ->
-
+      Log.create_team_log(team.id)
+      delete_team(team.id)
     end)
   end
 
