@@ -14,8 +14,6 @@ defmodule Oban.Processer do
     case args do
       %{"reminder_to_start_tournament" => id} ->
         reminder_to_start_tournament(id)
-      # %{"notify_tournament_start" => id} ->
-      #   notify_tournament_start(id)
       _ ->
         IO.puts("undefined arg")
     end
@@ -26,7 +24,7 @@ defmodule Oban.Processer do
 
     params = %{"tournament_id": id}
     device = Accounts.get_devices_by_user_id(tournament.master_id)
-    Notif.push_ios("主催している大会の開始予定時刻になりました。大会を開始してください！", "", "reminder_to_start_tournament", device, 6, params)
+    Notif.push_ios("主催している大会の開始予定時刻になりました。大会を開始してください！", "", "reminder_to_start_tournament", device.token, 6, params)
   end
 
   def notify_tournament_start(id) do
@@ -35,7 +33,9 @@ defmodule Oban.Processer do
     if tournament do
       devices =
         for entrant <- Map.get(tournament, :entrant) do
-          Accounts.get_devices_by_user_id(entrant.user_id)
+          if entrant.id != tournament.master_id do
+            Accounts.get_devices_by_user_id(entrant.user_id)
+          end
         end
         |> List.flatten()
 
