@@ -3,6 +3,8 @@ defmodule MilkWeb.ProfileController do
 
   alias Common.FileUtils
 
+  import Common.Sperm
+
   alias Milk.{
     Accounts,
     Profiles,
@@ -28,26 +30,26 @@ defmodule MilkWeb.ProfileController do
   end
 
   def update(conn, %{"profile" => profile_params}) do
-    user =
-      Map.get(profile_params, "user_id")
-      |> Accounts.get_user()
-
-    if user do
-      name = Map.get(profile_params, "name")
-      bio = Map.get(profile_params, "bio")
+    profile_params
+    |> Map.get("user_id")
+    |> Accounts.get_user()
+    ~> user
+    |> is_nil()
+    |> unless do
+      # name = Map.get(profile_params, "name")
+      # bio = Map.get(profile_params, "bio")
       gamelist = Map.get(profile_params, "gameList")
       records = Map.get(profile_params, "records")
 
-      profileResult = Profiles.update_profile(user, name, bio) 
-      |> case do 
+      Accounts.update_user(user, profile_params)
+      |> case do
         {:ok, user} ->
-          true
+          Profiles.update_gamelist(user, gamelist)
+          Profiles.update_recordlist(user, records)
+          json(conn, %{result: true, profile_result: true})
         {:error, error} ->
-          false
+          json(conn, %{result: false, error: "update failed"})
       end
-      Profiles.update_gamelist(user, gamelist)
-      Profiles.update_recordlist(user, records)
-      json(conn, %{result: true, profile_result: profileResult})
     else
       json(conn, %{result: false, error: "user not found"})
     end

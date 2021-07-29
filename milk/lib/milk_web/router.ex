@@ -11,12 +11,15 @@ defmodule MilkWeb.Router do
 
   pipeline :api do
     plug :accepts, ["json"]
-    # plug Milk.UserManager.GuardianPipeline
+    if Application.get_env(:milk, :environment) == :prod do
+      plug Milk.UserManager.GuardianPipeline
+    # else
+    #   plug Milk.UserManager.GuardianPipeline
+    end
   end
 
   scope "/", MilkWeb do
     pipe_through :browser
-
     get "/", PageController, :index
   end
 
@@ -29,7 +32,6 @@ defmodule MilkWeb.Router do
       except: [:new, :edit, :index, :show, :create, :update, :delete]
 
     get "/user/check_username_duplication", UserController, :check_username_duplication
-    post "/user/check_username_duplication", UserController, :check_username_duplication
     get "/user/get", UserController, :show
     get "/user/in_touch", UserController, :users_in_touch
     get "/user/search", UserController, :search

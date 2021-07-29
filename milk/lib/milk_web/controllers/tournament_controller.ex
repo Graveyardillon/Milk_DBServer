@@ -1325,8 +1325,28 @@ defmodule MilkWeb.TournamentController do
       ~> team
       |> is_nil()
       |> if do
-        {nil, nil, nil}
+        tournament_id
+        |> Log.get_team_log_by_tournament_id_and_user_id(user_id)
+        ~> team_log
+        |> Map.get(:team_member)
+        |> Enum.filter(fn member_log ->
+          member_log.is_leader
+        end)
+        |> Enum.all?(fn member_log ->
+          member_log.user_id == user_id
+        end)
+        ~> is_leader
+
+        {nil, team_log.rank, is_leader}
       else
+        team.id
+        |> Tournaments.get_leader()
+        |> Map.get(:user)
+        ~> leader
+        |> Map.get(:id)
+        |> Kernel.==(user_id)
+        ~> is_leader
+
         team
         |> Map.get(:tournament_id)
         |> TournamentProgress.get_match_list()
@@ -1334,13 +1354,6 @@ defmodule MilkWeb.TournamentController do
         |> Tournaments.get_opponent_team(team.id)
         |> case do
           {:ok, opponent} ->
-            team.id
-            |> Tournaments.get_leader()
-            |> Map.get(:user)
-            ~> leader
-            |> Map.get(:id)
-            |> Kernel.==(user_id)
-            ~> is_leader
 
             opponent
             |> Map.get("id")
@@ -1356,10 +1369,10 @@ defmodule MilkWeb.TournamentController do
             {opponent, team.rank, is_leader}
 
           {:wait, nil} ->
-            {nil, team.rank, nil}
+            {nil, team.rank, is_leader}
 
           _ ->
-            {nil, nil, nil}
+            {nil, team.rank, is_leader}
         end
       end
     else

@@ -4,8 +4,12 @@ defmodule Milk.Log.TeamLog do
   import Ecto.Changeset
 
   schema "team_log" do
+    field :icon_path, :string
+    field :is_confirmed, :boolean
     field :name, :string
+    field :rank, :integer
     field :size, :integer
+    field :team_id, :integer
     field :tournament_id, :integer
 
     timestamps()
@@ -14,6 +18,6 @@ defmodule Milk.Log.TeamLog do
   @doc false
   def changeset(team_log, attrs) do
     team_log
-    |> cast(attrs, [:name, :size, :team_log])
+    |> cast(attrs, [:icon_path, :is_confirmed, :name, :rank, :size, :team_id, :tournament_id])
   end
 end

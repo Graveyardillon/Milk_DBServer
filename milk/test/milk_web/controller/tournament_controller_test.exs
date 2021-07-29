@@ -2925,7 +2925,9 @@ defmodule MilkWeb.TournamentControllerTest do
         )
 
       match_info = json_response(conn, 200)
+      refute is_nil(match_info["is_leader"])
       assert match_info["state"] == "IsPending"
+      assert match_info["rank"] == 4
 
       my_score = 100
       opponent_score = 5
@@ -2980,6 +2982,17 @@ defmodule MilkWeb.TournamentControllerTest do
       assert match_info["rank"] == 2
       assert is_nil(match_info["score"])
       refute match_info["is_leader"]
+
+      conn =
+        get(conn, Routes.tournament_path(conn, :get_match_information),
+          tournament_id: tournament.id,
+          user_id: opponent_member
+        )
+
+      match_info = json_response(conn, 200)
+      refute is_nil(match_info["is_leader"])
+      assert match_info["state"] == "IsLoser"
+      assert match_info["rank"] == 4
     end
 
     test "finish (individual)", %{conn: conn} do
@@ -3174,6 +3187,8 @@ defmodule MilkWeb.TournamentControllerTest do
 
       match_info = json_response(conn, 200)
       assert match_info["state"] == "IsFinished"
+      assert match_info["rank"] == capacity / 2
+      assert match_info["is_leader"]
     end
   end
 
