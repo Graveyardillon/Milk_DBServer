@@ -132,15 +132,20 @@ defmodule MilkWeb.TournamentController do
         nil
       end
 
-    tournament_params =
-      if is_binary(tournament_params),
-        do: Poison.decode!(tournament_params),
-        else: tournament_params
+    if is_binary(tournament_params) do
+      Poison.decode!(tournament_params)
+    else
+      tournament_params
+    end
+    ~> tournament_params
 
     if is_nil(tournament_params["join"]) do
       render(conn, "error.json", error: "join parameter is nil")
     else
-      case Tournaments.create_tournament(tournament_params, thumbnail_path) do
+      tournament_params
+      |> Map.put("enabled_coin_toss", tournament_params["enabled_coin_toss"] == "true")
+      |> Tournaments.create_tournament(thumbnail_path)
+      |> case do
         {:ok, %Tournament{} = tournament} ->
           if tournament_params["join"] == "true" do
             %{"user_id" => tournament.master_id, "tournament_id" => tournament.id}
