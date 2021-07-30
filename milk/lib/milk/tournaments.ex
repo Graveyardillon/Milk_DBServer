@@ -2217,8 +2217,13 @@ defmodule Milk.Tournaments do
   Create a team.
   """
   def create_team(tournament_id, size, leader, user_id_list) when is_list(user_id_list) do
+    # リーダー情報の取得
+    leader_info = Accounts.get_user(leader)
+    leader_name = leader_info.name
+    leader_icon = leader_info.icon_path
+
     %Team{}
-    |> Team.changeset(%{"tournament_id" => tournament_id, "size" => size, "name" => ""})
+    |> Team.changeset(%{"tournament_id" => tournament_id, "size" => size, "name" => "#{leader_name}のチーム", "icon_path" => leader_icon})
     |> Repo.insert()
     |> case do
       {:ok, team} ->
