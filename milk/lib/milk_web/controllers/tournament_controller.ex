@@ -585,6 +585,8 @@ defmodule MilkWeb.TournamentController do
     end
     |> case do
       {:ok, match_list, match_list_with_fight_result} ->
+        Oban.Processer.notify_tournament_start(tournament_id)
+
         render(conn, "match.json", %{
           match_list: match_list,
           match_list_with_fight_result: match_list_with_fight_result
@@ -1617,11 +1619,10 @@ defmodule MilkWeb.TournamentController do
   end
 
   defp add_queue_tournament_start_push_notice(tournament) do
-    job =
-      %{notify_tournament_start: tournament.id}
-      |> Oban.Processer.new(scheduled_at: tournament.event_date)
-      |> Oban.insert()
-      |> elem(1)
+    job = %{reminder_to_start_tournament: tournament.id}
+    |> Oban.Processer.new(scheduled_at: tournament.event_date)
+    |> Oban.insert()
+    |> elem(1)
 
     result = if Map.get(job, :errors) |> length == 0, do: true, else: false
 
@@ -1632,7 +1633,7 @@ defmodule MilkWeb.TournamentController do
   end
 
   defp update_queue_tournament_start_push_notice(tournament) do
-    case Tournaments.get_push_notice_job("notify_tournament_start", tournament.id) do
+    case Tournaments.get_push_notice_job("reminder_to_start_tournament", tournament.id) do
       nil ->
         IO.puts("notice job not found")
 
@@ -1641,4 +1642,13 @@ defmodule MilkWeb.TournamentController do
         add_queue_tournament_start_push_notice(tournament)
     end
   end
+  
+  def test_push_notice(conn, %{"params" => params}) do
+    device = "8c6aa9df88a9a55c5216e0d327dad7aaa794433c13cad5eed14a512968834d50"
+
+    params = %{"tournament_id": 1}
+    Milk.Notif.push_ios("push push push", "", "reminder_to_start_tournament", device, 6, params)
+    json(conn, %{"result": "ok"})
+  end
+  
 end

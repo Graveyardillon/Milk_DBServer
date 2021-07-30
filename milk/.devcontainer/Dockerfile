@@ -1,4 +1,4 @@
-FROM elixir:alpine
+FROM elixir:1.10.4
 
 ARG app_name=milk
 ARG phoenix_subdir=.
