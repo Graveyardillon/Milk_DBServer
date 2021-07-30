@@ -27,89 +27,90 @@ defmodule Common.Fixtures do
           "platform" => 1
         }
 
-        num =
+        opts[:num]
+        |> is_nil()
+        |> unless do
           opts[:num]
-          |> is_nil()
-          |> unless do
-            opts[:num]
-          else
-            0
-          end
+        else
+          0
+        end
+        ~> num
 
-        capacity =
+        opts[:capacity]
+        |> is_nil()
+        |> unless do
           opts[:capacity]
-          |> is_nil()
-          |> unless do
-            opts[:capacity]
-          else
-            create_attrs["capacity"]
-          end
+        else
+          create_attrs["capacity"]
+        end
+        ~> capacity
 
-        is_started =
+        opts[:is_started]
+        |> is_nil()
+        |> unless do
           opts[:is_started]
-          |> is_nil()
-          |> unless do
-            opts[:is_started]
-          else
-            false
-          end
+        else
+          false
+        end
+        ~> is_started
 
-        is_team =
+        opts[:is_team]
+        |> is_nil()
+        |> unless do
           opts[:is_team]
+        else
+          false
+        end
+        ~> is_team
+
+        if is_team do
+          opts[:team_size]
           |> is_nil()
           |> unless do
-            opts[:is_team]
-          else
-            false
-          end
-
-        team_size =
-          if is_team do
             opts[:team_size]
-            |> is_nil()
-            |> unless do
-              opts[:team_size]
-            else
-              5
-            end
           else
-            nil
+            5
           end
+        else
+          nil
+        end
+        ~> team_size
 
-        type =
+        opts[:type]
+        |> is_nil()
+        |> unless do
           opts[:type]
-          |> is_nil()
-          |> unless do
-            opts[:type]
-          else
-            1
-          end
+        else
+          1
+        end
+        ~> type
 
-        master_id =
+        opts[:master_id]
+        |> is_nil()
+        |> unless do
           opts[:master_id]
-          |> is_nil()
-          |> unless do
-            opts[:master_id]
-          else
-            {:ok, user} =
-              Accounts.create_user(%{
-                "name" => "#{num}nname",
-                "email" => "ee#{num}@mail.com",
-                "password" => "Password123"
-              })
+        else
+          {:ok, user} =
+            Accounts.create_user(%{
+              "name" => "#{num}nname",
+              "email" => "ee#{num}@mail.com",
+              "password" => "Password123"
+            })
 
-            user.id
-          end
+          user.id
+        end
+        ~> master_id
 
-        {:ok, tournament} =
-          create_attrs
-          |> Map.put("is_started", is_started)
-          |> Map.put("master_id", master_id)
-          |> Map.put("is_team", is_team)
-          |> Map.put("capacity", capacity)
-          |> Map.put("team_size", team_size)
-          |> Map.put("type", type)
-          |> Tournaments.create_tournament()
+        create_attrs
+        |> Map.put("is_started", is_started)
+        |> Map.put("master_id", master_id)
+        |> Map.put("is_team", is_team)
+        |> Map.put("capacity", capacity)
+        |> Map.put("team_size", team_size)
+        |> Map.put("type", type)
+        |> Tournaments.create_tournament()
+        |> elem(1)
+        ~> tournament
 
         tournament
       end
