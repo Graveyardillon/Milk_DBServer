@@ -92,6 +92,7 @@ defmodule Milk.Tournaments.Tournament do
     tournament
     |> cast(attrs, [
       :name,
+      :enabled_coin_toss,
       :event_date,
       :capacity,
       :description,

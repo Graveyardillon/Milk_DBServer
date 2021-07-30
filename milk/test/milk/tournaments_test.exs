@@ -316,6 +316,13 @@ defmodule Milk.TournamentsTest do
     test "create_tournament/1 with invalid data returns error changeset" do
       assert {:error, _} = Tournaments.create_tournament(@invalid_attrs)
     end
+
+    test "create_tournament/1 (enabled coin toss)" do
+      tournament = fixture_tournament(enabled_coin_toss: true)
+      assert tournament.enabled_coin_toss
+      tournament = fixture_tournament(num: 2)
+      refute tournament.enabled_coin_toss
+    end
   end
 
   describe "update_topics" do

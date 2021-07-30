@@ -101,6 +101,15 @@ defmodule Common.Fixtures do
         end
         ~> master_id
 
+        opts[:enabled_coin_toss]
+        |> is_nil()
+        |> unless do
+          opts[:enabled_coin_toss]
+        else
+          false
+        end
+        ~> enabled_coin_toss
+
         create_attrs
         |> Map.put("is_started", is_started)
         |> Map.put("master_id", master_id)
@@ -108,6 +117,7 @@ defmodule Common.Fixtures do
         |> Map.put("capacity", capacity)
         |> Map.put("team_size", team_size)
         |> Map.put("type", type)
+        |> Map.put("enabled_coin_toss", enabled_coin_toss)
         |> Tournaments.create_tournament()
         |> elem(1)
         ~> tournament
