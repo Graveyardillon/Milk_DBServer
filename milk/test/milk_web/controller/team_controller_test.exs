@@ -37,6 +37,7 @@ defmodule MilkWeb.TeamControllerTest do
   describe "show" do
     test "works", %{conn: conn} do
       tournament = fixture_tournament(is_team: true, type: 2, capacity: 2)
+
       fill_with_team(tournament.id)
       |> Enum.each(fn team ->
         conn = get(conn, Routes.team_path(conn, :show), team_id: team.id)
@@ -47,6 +48,7 @@ defmodule MilkWeb.TeamControllerTest do
         assert Map.has_key?(team, "size")
         assert Map.has_key?(team, "team_member")
         assert Map.has_key?(team, "tournament_id")
+
         team
         |> Map.get("team_member")
         |> Enum.map(fn member ->

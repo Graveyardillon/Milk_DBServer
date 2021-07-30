@@ -365,7 +365,7 @@ defmodule Milk.LogTest do
       ~> tournament_id
       |> fill_with_team()
       ~> teams
-      |> Enum.map(&(&1.id))
+      |> Enum.map(& &1.id)
       ~> team_id_list
       |> Enum.each(fn team_id ->
         Log.create_team_log(team_id)
@@ -396,7 +396,8 @@ defmodule Milk.LogTest do
 
       team_id = hd(teams).id
 
-      assert Log.get_team_log_by_team_id(team_id) == Log.get_team_log_by_tournament_id_and_user_id(tournament_id, user_id)
+      assert Log.get_team_log_by_team_id(team_id) ==
+               Log.get_team_log_by_tournament_id_and_user_id(tournament_id, user_id)
     end
   end
 end

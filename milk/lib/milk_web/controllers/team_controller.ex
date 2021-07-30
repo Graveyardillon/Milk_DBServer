@@ -104,6 +104,7 @@ defmodule MilkWeb.TeamController do
       {:ok, team} ->
         team
         render(conn, "show.json", team: team)
+
       {:error, error} ->
         render(conn, "error.json", error: error)
     end

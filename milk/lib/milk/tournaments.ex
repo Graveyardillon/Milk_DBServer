@@ -2223,7 +2223,12 @@ defmodule Milk.Tournaments do
     leader_icon = leader_info.icon_path
 
     %Team{}
-    |> Team.changeset(%{"tournament_id" => tournament_id, "size" => size, "name" => "#{leader_name}のチーム", "icon_path" => leader_icon})
+    |> Team.changeset(%{
+      "tournament_id" => tournament_id,
+      "size" => size,
+      "name" => "#{leader_name}のチーム",
+      "icon_path" => leader_icon
+    })
     |> Repo.insert()
     |> case do
       {:ok, team} ->
@@ -2589,6 +2594,7 @@ defmodule Milk.Tournaments do
       {:ok, team} ->
         team = Repo.preload(team, :team_member)
         {:ok, team}
+
       {:error, error} ->
         {:error, error}
     end
@@ -2612,6 +2618,7 @@ defmodule Milk.Tournaments do
       {:ok, team} ->
         team = Repo.preload(team, :team_member)
         {:ok, team}
+
       {:error, error} ->
         {:error, error}
     end

@@ -15,10 +15,12 @@ defmodule MilkWeb.TournamentController do
   }
 
   alias Milk.CloudStorage.Objects
+
   alias Milk.Tournaments.{
     Team,
     Tournament
   }
+
   alias Milk.Media.Image
 
   alias Common.{
@@ -1086,7 +1088,7 @@ defmodule MilkWeb.TournamentController do
       |> case do
         {:ok, opponent} -> {:ok, opponent["id"], team_id}
         {:wait, nil} -> raise "The given user should wait for the opponent."
-        _ ->  raise "Unknown error on claim score."
+        _ -> raise "Unknown error on claim score."
       end
     else
       {:ok, opponent_id, user_id}
@@ -1388,7 +1390,6 @@ defmodule MilkWeb.TournamentController do
         |> Tournaments.get_opponent_team(team.id)
         |> case do
           {:ok, opponent} ->
-
             opponent
             |> Map.get("id")
             |> Tournaments.get_leader()
