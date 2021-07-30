@@ -205,7 +205,7 @@ defmodule Milk.NotifTest do
       hostname = Common.Tools.get_hostname()
 
       "Test Notification (#{hostname})"
-      |> Notif.push_ios(token, 1, "")
+      |> Notif.push_ios("test notification", "", token, 1)
       |> (fn notification ->
             assert notification.device_token == token
             assert notification.push_type == "alert"
