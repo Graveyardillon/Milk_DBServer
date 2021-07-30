@@ -1880,6 +1880,74 @@ defmodule MilkWeb.TournamentControllerTest do
 
       assert length(json_response(conn, 200)["data"]) == 0
     end
+
+    test "get fighting and waiting users (team)", %{conn: conn} do
+      [is_team: true, capacity: 4, num: 10, type: 2]
+      |> fixture_tournament()
+      ~> tournament
+      |> Map.get(:id)
+      |> fill_with_team()
+      ~> teams
+      |> Enum.map(fn team ->
+        team.id
+      end)
+      ~> team_id_list
+
+      my_team = hd(teams)
+
+      conn =
+        post(conn, Routes.tournament_path(conn, :start),
+          tournament: %{"master_id" => tournament.master_id, "tournament_id" => tournament.id}
+        )
+
+      conn =
+        get(conn, Routes.tournament_path(conn, :get_opponent), %{
+          "tournament_id" => tournament.id,
+          "team_id" => my_team.id
+        })
+
+      conn =
+        get(conn, Routes.tournament_path(conn, :get_fighting_users), tournament_id: tournament.id)
+
+      assert json_response(conn, 200)["result"]
+      conn
+      |> json_response(200)
+      |> Map.get("data")
+      |> length()
+      |> Kernel.==(0)
+      |> assert()
+
+      conn =
+        get(conn, Routes.tournament_path(conn, :get_waiting_users), tournament_id: tournament.id)
+
+      assert json_response(conn, 200)["result"]
+      conn
+      |> json_response(200)
+      |> Map.get("data")
+      |> Enum.map(fn team ->
+        assert team["id"] in team_id_list
+      end)
+      |> length()
+      |> Kernel.==(4)
+      |> assert()
+
+      my_member = hd(my_team.team_member)
+
+      conn =
+        post(conn, Routes.tournament_path(conn, :start_match),
+          user_id: my_member.user_id,
+          tournament_id: tournament.id
+        )
+      assert json_response(conn, 200)["result"]
+
+      conn =
+        get(conn, Routes.tournament_path(conn, :get_fighting_users), tournament_id: tournament.id)
+      assert length(json_response(conn, 200)["data"]) == 1
+
+      conn =
+        get(conn, Routes.tournament_path(conn, :get_waiting_users), tournament_id: tournament.id)
+      assert length(json_response(conn, 200)["data"]) == 3
+    end
   end
 
   describe "get waiting users" do

@@ -348,6 +348,7 @@ defmodule MilkWeb.TournamentView do
       data:
         Enum.map(teams, fn team ->
           %{
+            id: team.id,
             name: team.name,
             size: team.size,
             tournament_id: team.tournament_id,
@@ -361,7 +362,8 @@ defmodule MilkWeb.TournamentView do
                 }
               end)
           }
-        end)
+        end),
+      result: true
     }
   end
 

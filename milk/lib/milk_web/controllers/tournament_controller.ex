@@ -15,7 +15,10 @@ defmodule MilkWeb.TournamentController do
   }
 
   alias Milk.CloudStorage.Objects
-  alias Milk.Tournaments.Tournament
+  alias Milk.Tournaments.{
+    Team,
+    Tournament
+  }
   alias Milk.Media.Image
 
   alias Common.{
@@ -863,10 +866,24 @@ defmodule MilkWeb.TournamentController do
   def get_fighting_users(conn, %{"tournament_id" => tournament_id}) do
     tournament_id
     |> Tools.to_integer_as_needed()
-    |> Tournaments.get_fighting_users()
-    |> case do
-      [] -> json(conn, %{data: [], result: true})
-      users -> render(conn, "users.json", users: users)
+    |> Tournaments.get_tournament()
+    |> Map.get(:is_team)
+    |> if do
+      tournament_id
+      |> Tools.to_integer_as_needed()
+      |> Tournaments.get_fighting_users()
+      |> case do
+        [] -> json(conn, %{data: [], result: true})
+        teams -> render(conn, "teams.json", teams: teams)
+      end
+    else
+      tournament_id
+      |> Tools.to_integer_as_needed()
+      |> Tournaments.get_fighting_users()
+      |> case do
+        [] -> json(conn, %{data: [], result: true})
+        users -> render(conn, "users.json", users: users)
+      end
     end
   end
 
@@ -876,10 +893,25 @@ defmodule MilkWeb.TournamentController do
   def get_waiting_users(conn, %{"tournament_id" => tournament_id}) do
     tournament_id
     |> Tools.to_integer_as_needed()
-    |> Tournaments.get_waiting_users()
-    |> case do
-      [] -> json(conn, %{data: [], result: true})
-      users -> render(conn, "users.json", users: users)
+    |> Tournaments.get_tournament()
+    ~> tournament
+    |> Map.get(:is_team)
+    |> if do
+      tournament_id
+      |> Tools.to_integer_as_needed()
+      |> Tournaments.get_waiting_users()
+      |> case do
+        [] -> json(conn, %{data: [], result: true})
+        teams -> render(conn, "teams.json", teams: teams)
+      end
+    else
+      tournament_id
+      |> Tools.to_integer_as_needed()
+      |> Tournaments.get_waiting_users()
+      |> case do
+        [] -> json(conn, %{data: [], result: true})
+        users -> render(conn, "users.json", users: users)
+      end
     end
   end
 
@@ -1072,8 +1104,8 @@ defmodule MilkWeb.TournamentController do
             TournamentProgress.delete_match_pending_list(opponent_id, tournament_id)
             TournamentProgress.delete_score(tournament_id, user_id)
             TournamentProgress.delete_score(tournament_id, opponent_id)
-            finish_as_needed(tournament_id, opponent_id)
-            json(conn, %{validated: true, completed: true})
+            is_finished = finish_as_needed?(tournament_id, opponent_id)
+            json(conn, %{validated: true, completed: true, is_finished: is_finished})
 
           n < score ->
             Tournaments.delete_loser_process(tournament_id, [opponent_id])
@@ -1082,19 +1114,19 @@ defmodule MilkWeb.TournamentController do
             TournamentProgress.delete_match_pending_list(opponent_id, tournament_id)
             TournamentProgress.delete_score(tournament_id, user_id)
             TournamentProgress.delete_score(tournament_id, opponent_id)
-            finish_as_needed(tournament_id, user_id)
-            json(conn, %{validated: true, completed: true})
+            is_finished = finish_as_needed?(tournament_id, user_id)
+            json(conn, %{validated: true, completed: true, is_finished: is_finished})
 
           true ->
-            json(conn, %{validated: false, completed: false})
+            json(conn, %{validated: false, completed: false, is_finished: false})
         end
 
       [] ->
-        json(conn, %{validated: true, completed: false})
+        json(conn, %{validated: true, completed: false, is_finished: false})
     end
   end
 
-  defp finish_as_needed(tournament_id, winner_id) do
+  defp finish_as_needed?(tournament_id, winner_id) do
     match_list = TournamentProgress.get_match_list(tournament_id)
 
     if is_integer(match_list) do
@@ -1114,10 +1146,9 @@ defmodule MilkWeb.TournamentController do
       TournamentProgress.delete_fight_result_of_tournament(tournament_id)
       TournamentProgress.delete_duplicate_users_all(tournament_id)
       TournamentProgress.delete_lose_processes(tournament_id)
-    end
-
-    if match_list == [] do
-      Logger.error("Match list error on finish as needed")
+      true
+    else
+      false
     end
   end
 
@@ -1140,7 +1171,7 @@ defmodule MilkWeb.TournamentController do
         Tournaments.promote_rank(%{"tournament_id" => tournament_id, "user_id" => winner["id"]})
         Tournaments.score(tournament_id, winner["id"], target_user_id, 0, -1, 0)
         Tournaments.delete_loser_process(tournament_id, [target_user_id])
-        finish_as_needed(tournament_id, winner["id"])
+        finish_as_needed?(tournament_id, winner["id"])
 
       {:wait, nil} ->
         tournament_id
