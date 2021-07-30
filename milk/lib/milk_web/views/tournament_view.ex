@@ -375,7 +375,8 @@ defmodule MilkWeb.TournamentView do
         is_team: is_team,
         is_leader: is_leader,
         score: score,
-        state: state
+        state: state,
+        is_coin_head: is_coin_head
       }) do
     %{
       opponent:
@@ -410,7 +411,8 @@ defmodule MilkWeb.TournamentView do
         end,
       score: score,
       state: state,
-      is_team: is_team
+      is_team: is_team,
+      is_coin_head: is_coin_head
     }
   end
 

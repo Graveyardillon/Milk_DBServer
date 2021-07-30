@@ -1454,13 +1454,37 @@ defmodule MilkWeb.TournamentController do
     end
     ~> score
 
+    # user_idとtournament_idを足したもののhashで比較を行い、大きい方がコインの表
+    opponent
+    |> is_nil()
+    |> unless do
+      mine_str = to_string(tournament_id + user_id)
+      opponent_str = to_string(tournament_id + user_id)
+
+      :crypto.hash(:sha256, mine_str)
+      |> Base.encode16()
+      |> String.downcase()
+      ~> mine
+
+      :crypto.hash(:sha256, opponent_str)
+      |> Base.encode16()
+      |> String.downcase()
+      ~> his
+
+      mine > his
+    else
+      nil
+    end
+    ~> is_coin_head
+
     render(conn, "match_info.json", %{
       opponent: opponent,
       rank: rank,
       is_team: is_team,
       is_leader: is_leader,
       score: score,
-      state: state
+      state: state,
+      is_coin_head: is_coin_head
     })
   end
 
