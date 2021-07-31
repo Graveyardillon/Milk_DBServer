@@ -1461,7 +1461,7 @@ defmodule MilkWeb.TournamentController do
     |> is_nil()
     |> unless do
       mine_str = to_string(tournament_id + user_id)
-      opponent_str = to_string(tournament_id + user_id)
+      opponent_str = to_string(tournament_id + opponent["id"])
 
       :crypto.hash(:sha256, mine_str)
       |> Base.encode16()

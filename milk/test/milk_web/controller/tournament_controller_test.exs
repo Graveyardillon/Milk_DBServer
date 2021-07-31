@@ -3372,6 +3372,7 @@ defmodule MilkWeb.TournamentControllerTest do
       assert is_nil(match_info["custom_detail"]["multiple_selection_type"])
       assert Map.has_key?(match_info["custom_detail"], "multiple_selection_type")
       refute is_nil(match_info["is_coin_head"])
+      is_my_coin_head = match_info["is_coin_head"]
 
       conn =
         get(conn, Routes.tournament_path(conn, :get_match_information),
@@ -3394,6 +3395,10 @@ defmodule MilkWeb.TournamentControllerTest do
       assert is_nil(match_info["custom_detail"]["multiple_selection_type"])
       assert Map.has_key?(match_info["custom_detail"], "multiple_selection_type")
       refute is_nil(match_info["is_coin_head"])
+      is_opponent_coin_head = match_info["is_coin_head"]
+
+      assert is_my_coin_head || is_opponent_coin_head
+      refute is_my_coin_head && is_opponent_coin_head
     end
   end
 
