@@ -1328,6 +1328,41 @@ defmodule MilkWeb.TournamentControllerTest do
       assert json_response(conn, 200)["result"]
       assert json_response(conn, 200)["tournament_id"] == tournament["id"]
     end
+
+    test "works (team)", %{conn: conn} do
+      tournament = fixture_tournament(is_team: true, type: 2, capacity: 2)
+      teams = fill_with_team(tournament.id)
+
+      conn =
+        post(conn, Routes.tournament_path(conn, :start),
+          tournament: %{"master_id" => tournament.master_id, "tournament_id" => tournament.id}
+        )
+
+      teams
+      |> hd()
+      |> Map.get(:id)
+      ~> my_team
+      |> Tournaments.get_leader()
+      |> Map.get(:user)
+      ~> me
+
+      tournament.id
+      |> Tournaments.get_teammates(me.id)
+      |> Enum.filter(fn member ->
+        !member.is_leader
+      end)
+      |> hd()
+      |> Map.get(:user)
+      ~> mate
+
+      conn = get(conn, Routes.tournament_path(conn, :is_started_at_least_one), user_id: me.id)
+      assert json_response(conn, 200)["result"]
+      assert json_response(conn, 200)["tournament_id"] == tournament.id
+
+      conn = get(conn, Routes.tournament_path(conn, :is_started_at_least_one), user_id: mate.id)
+      assert json_response(conn, 200)["result"]
+      assert json_response(conn, 200)["tournament_id"] == tournament.id
+    end
   end
 
   describe "tournament topics" do
