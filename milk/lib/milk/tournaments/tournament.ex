@@ -21,6 +21,7 @@ defmodule Milk.Tournaments.Tournament do
     field :deadline, EctoDate
     field :description, :string
     field :enabled_coin_toss, :boolean, default: false
+    field :enabled_multiple_selection, :boolean, default: false
     field :event_date, EctoDate
     field :game_name, :string
     field :is_started, :boolean, default: false
@@ -51,6 +52,7 @@ defmodule Milk.Tournaments.Tournament do
     |> cast(attrs, [
       :name,
       :enabled_coin_toss,
+      :enabled_multiple_selection,
       :event_date,
       :capacity,
       :description,
@@ -93,6 +95,7 @@ defmodule Milk.Tournaments.Tournament do
     |> cast(attrs, [
       :name,
       :enabled_coin_toss,
+      :enabled_multiple_selection,
       :event_date,
       :capacity,
       :description,
