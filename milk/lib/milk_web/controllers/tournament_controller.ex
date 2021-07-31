@@ -1479,6 +1479,10 @@ defmodule MilkWeb.TournamentController do
     end
     ~> is_coin_head
 
+    tournament_id
+    |> Tournaments.get_custom_detail_by_tournament_id()
+    ~> custom_detail
+
     render(conn, "match_info.json", %{
       opponent: opponent,
       rank: rank,
@@ -1486,7 +1490,8 @@ defmodule MilkWeb.TournamentController do
       is_leader: is_leader,
       score: score,
       state: state,
-      is_coin_head: is_coin_head
+      is_coin_head: is_coin_head,
+      custom_detail: custom_detail
     })
   end
 

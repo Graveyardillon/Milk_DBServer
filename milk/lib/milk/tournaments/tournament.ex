@@ -43,7 +43,7 @@ defmodule Milk.Tournaments.Tournament do
     has_many :assistant, Assistant
     has_many :tournament_chat_topics, TournamentChatTopic
     has_many :team, Team
-    has_many :custom_detail, TournamentCustomDetail
+    has_one :custom_detail, TournamentCustomDetail
 
     timestamps()
   end

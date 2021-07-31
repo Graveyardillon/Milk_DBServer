@@ -219,18 +219,18 @@ defmodule Milk.Tournaments do
     |> Repo.preload(:custom_detail)
     |> (fn tournament ->
           if tournament do
-            entrants =
-              tournament
-              |> Map.get(:entrant)
-              |> Enum.map(fn entrant ->
-                user =
-                  entrant
-                  |> Repo.preload(:user)
-                  |> Map.get(:user)
-                  |> Repo.preload(:auth)
+            tournament
+            |> Map.get(:entrant)
+            |> Enum.map(fn entrant ->
+              entrant
+              |> Repo.preload(:user)
+              |> Map.get(:user)
+              |> Repo.preload(:auth)
+              ~> user
 
-                Map.put(entrant, :user, user)
-              end)
+              Map.put(entrant, :user, user)
+            end)
+            ~> entrants
 
             Map.put(tournament, :entrant, entrants)
           end
