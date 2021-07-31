@@ -110,6 +110,33 @@ defmodule Common.Fixtures do
         end
         ~> enabled_coin_toss
 
+        opts[:enabled_multiple_selection]
+        |> is_nil()
+        |> unless do
+          opts[:enabled_coin_toss]
+        else
+          false
+        end
+        ~> enabled_multiple_selection
+
+        opts[:coin_head_field]
+        |> is_nil()
+        |> unless do
+          opts[:coin_head_field]
+        else
+          nil
+        end
+        ~> coin_head_field
+
+        opts[:coin_tail_field]
+        |> is_nil()
+        |> unless do
+          opts[:coin_tail_field]
+        else
+          nil
+        end
+        ~> coin_tail_field
+
         create_attrs
         |> Map.put("is_started", is_started)
         |> Map.put("master_id", master_id)
@@ -118,6 +145,9 @@ defmodule Common.Fixtures do
         |> Map.put("team_size", team_size)
         |> Map.put("type", type)
         |> Map.put("enabled_coin_toss", enabled_coin_toss)
+        |> Map.put("enabled_multiple_selection", enabled_multiple_selection)
+        |> Map.put("coin_head_field", coin_head_field)
+        |> Map.put("coin_tail_field", coin_tail_field)
         |> Tournaments.create_tournament()
         |> elem(1)
         ~> tournament

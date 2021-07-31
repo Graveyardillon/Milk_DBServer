@@ -216,6 +216,7 @@ defmodule Milk.Tournaments do
     |> Repo.preload(:entrant)
     |> Repo.preload(:assistant)
     |> Repo.preload(:master)
+    |> Repo.preload(:custom_detail)
     |> (fn tournament ->
           if tournament do
             entrants =
@@ -2653,5 +2654,15 @@ defmodule Milk.Tournaments do
     %TournamentCustomDetail{}
     |> TournamentCustomDetail.changeset(attrs)
     |> Repo.insert()
+  end
+
+  @doc """
+  Get custom detail.
+  """
+  def get_custom_detail_by_tournament_id(tournament_id) do
+    TournamentCustomDetail
+    |> where([t], t.tournament_id == ^tournament_id)
+    |> Repo.one()
+    |> Repo.preload(:tournament)
   end
 end

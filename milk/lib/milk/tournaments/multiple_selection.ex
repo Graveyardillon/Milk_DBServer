@@ -19,7 +19,8 @@ defmodule Milk.Tournaments.MultipleSelection do
   @doc false
   def changeset(multiple_selection, attrs) do
     multiple_selection
-    |> cast(attrs, [:state, :name])
+    |> cast(attrs, [:state, :name, :tournament_id])
+    |> foreign_key_constraint(:tournament_id)
   end
 
   @doc """
