@@ -37,6 +37,7 @@ organizer
     "capacity" => 4,
     "deadline" => day_after_tomorrow,
     "description" => "test team tournament of size 4.",
+    "enabled_coin_toss" => true,
     "event_date" => day_after_tomorrow,
     "name" => "test team tournament of size 4.",
     "type" => 2,
@@ -49,7 +50,9 @@ organizer
     "start_recruiting" => now,
     "master_id" => user.id,
     "platform" => 1,
-    "game_id" => nil
+    "game_id" => nil,
+    "coin_head_field" => "先行！",
+    "coin_tail_field" => "後攻！"
   }
   Tournaments.create_tournament(attrs, attrs["thumbnail_path"])
   |> elem(1)
