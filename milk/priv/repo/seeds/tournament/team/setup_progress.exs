@@ -51,7 +51,7 @@ organizer
     "master_id" => user.id,
     "platform" => 1,
     "game_id" => nil,
-    "coin_head_field" => "先行！",
+    "coin_head_field" => "先攻！",
     "coin_tail_field" => "後攻！"
   }
   Tournaments.create_tournament(attrs, attrs["thumbnail_path"])
@@ -59,24 +59,24 @@ organizer
 end).()
 ~> tournament
 
-users
-|> Enum.map(fn user ->
-  user.id
-end)
-|> Enum.chunk_every(team_size)
-|> Enum.map(fn [leader | members] ->
-  tournament.id
-  |> Tournaments.create_team(team_size, leader, members)
-  |> elem(1)
-end)
-|> Enum.map(fn team ->
-  team.id
-  |> Tournaments.get_team_members_by_team_id()
-  |> Enum.map(fn member ->
-    member.id
-    |> Tournaments.create_team_invitation(1)
-    |> elem(1)
-    |> Map.get(:id)
-    |> Tournaments.confirm_team_invitation()
-  end)
-end)
+# users
+# |> Enum.map(fn user ->
+#   user.id
+# end)
+# |> Enum.chunk_every(team_size)
+# |> Enum.map(fn [leader | members] ->
+#   tournament.id
+#   |> Tournaments.create_team(team_size, leader, members)
+#   |> elem(1)
+# end)
+# |> Enum.map(fn team ->
+#   team.id
+#   |> Tournaments.get_team_members_by_team_id()
+#   |> Enum.map(fn member ->
+#     member.id
+#     |> Tournaments.create_team_invitation(1)
+#     |> elem(1)
+#     |> Map.get(:id)
+#     |> Tournaments.confirm_team_invitation()
+#   end)
+# end)
