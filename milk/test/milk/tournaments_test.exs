@@ -316,6 +316,22 @@ defmodule Milk.TournamentsTest do
     test "create_tournament/1 with invalid data returns error changeset" do
       assert {:error, _} = Tournaments.create_tournament(@invalid_attrs)
     end
+
+    test "create_tournament/1 (enabled coin toss)" do
+      tournament = fixture_tournament(enabled_coin_toss: true)
+      assert tournament.enabled_coin_toss
+      tournament = fixture_tournament(num: 2)
+      refute tournament.enabled_coin_toss
+    end
+
+    test "create_tournament/1 (custom detail)" do
+      tournament = fixture_tournament(enabled_coin_toss: true, coin_head_field: "head!", coin_tail_field: "tail!")
+      detail = Tournaments.get_custom_detail_by_tournament_id(tournament.id)
+
+      assert tournament.enabled_coin_toss
+      assert detail.coin_head_field == "head!"
+      assert detail.coin_tail_field == "tail!"
+    end
   end
 
   describe "update_topics" do
@@ -1166,7 +1182,7 @@ defmodule Milk.TournamentsTest do
     end
 
     test "state!/2 returns IsInMatch" do
-      tournament = fixture_tournament(is_team: true)
+      tournament = fixture_tournament(is_team: true, capacity: 4)
 
       fill_with_team(tournament.id)
       |> hd()

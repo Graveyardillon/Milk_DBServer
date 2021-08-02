@@ -15,10 +15,12 @@ defmodule MilkWeb.TournamentController do
   }
 
   alias Milk.CloudStorage.Objects
+
   alias Milk.Tournaments.{
     Team,
     Tournament
   }
+
   alias Milk.Media.Image
 
   alias Common.{
@@ -132,15 +134,20 @@ defmodule MilkWeb.TournamentController do
         nil
       end
 
-    tournament_params =
-      if is_binary(tournament_params),
-        do: Poison.decode!(tournament_params),
-        else: tournament_params
+    if is_binary(tournament_params) do
+      Poison.decode!(tournament_params)
+    else
+      tournament_params
+    end
+    ~> tournament_params
 
     if is_nil(tournament_params["join"]) do
       render(conn, "error.json", error: "join parameter is nil")
     else
-      case Tournaments.create_tournament(tournament_params, thumbnail_path) do
+      tournament_params
+      |> Map.put("enabled_coin_toss", tournament_params["enabled_coin_toss"] == "true")
+      |> Tournaments.create_tournament(thumbnail_path)
+      |> case do
         {:ok, %Tournament{} = tournament} ->
           if tournament_params["join"] == "true" do
             %{"user_id" => tournament.master_id, "tournament_id" => tournament.id}
@@ -494,17 +501,16 @@ defmodule MilkWeb.TournamentController do
   Checks if the user is related to a started tournament.
   """
   def is_started_at_least_one(conn, %{"user_id" => user_id}) do
-    user_id = Tools.to_integer_as_needed(user_id)
-
-    tournaments =
-      user_id
-      |> relevant()
-      |> Enum.filter(fn tournament ->
-        tournament.is_started
-      end)
-      |> Enum.map(fn tournament ->
-        tournament.id
-      end)
+    user_id
+    |> Tools.to_integer_as_needed()
+    |> relevant()
+    |> Enum.filter(fn tournament ->
+      tournament.is_started
+    end)
+    |> Enum.map(fn tournament ->
+      tournament.id
+    end)
+    ~> tournaments
 
     result = tournaments != []
     tournament_id = if result, do: hd(tournaments)
@@ -1083,7 +1089,7 @@ defmodule MilkWeb.TournamentController do
       |> case do
         {:ok, opponent} -> {:ok, opponent["id"], team_id}
         {:wait, nil} -> raise "The given user should wait for the opponent."
-        _ ->  raise "Unknown error on claim score."
+        _ -> raise "Unknown error on claim score."
       end
     else
       {:ok, opponent_id, user_id}
@@ -1385,7 +1391,6 @@ defmodule MilkWeb.TournamentController do
         |> Tournaments.get_opponent_team(team.id)
         |> case do
           {:ok, opponent} ->
-
             opponent
             |> Map.get("id")
             |> Tournaments.get_leader()
@@ -1450,13 +1455,52 @@ defmodule MilkWeb.TournamentController do
     end
     ~> score
 
+    # user_idとtournament_idを足したもののhashで比較を行い、大きい方がコインの表
+    opponent
+    |> is_nil()
+    |> unless do
+      if is_team do
+        opponent["id"]
+        |> Tournaments.get_leader()
+        |> Map.get(:user)
+        |> Map.get(:id)
+      else
+        opponent["id"]
+      end
+      ~> opponent_id
+
+      mine_str = to_string(tournament_id + user_id)
+      opponent_str = to_string(tournament_id + opponent_id)
+
+      :crypto.hash(:sha256, mine_str)
+      |> Base.encode16()
+      |> String.downcase()
+      ~> mine
+
+      :crypto.hash(:sha256, opponent_str)
+      |> Base.encode16()
+      |> String.downcase()
+      ~> his
+
+      mine > his
+    else
+      nil
+    end
+    ~> is_coin_head
+
+    tournament_id
+    |> Tournaments.get_custom_detail_by_tournament_id()
+    ~> custom_detail
+
     render(conn, "match_info.json", %{
       opponent: opponent,
       rank: rank,
       is_team: is_team,
       is_leader: is_leader,
       score: score,
-      state: state
+      state: state,
+      is_coin_head: is_coin_head,
+      custom_detail: custom_detail
     })
   end
 
@@ -1612,7 +1656,7 @@ defmodule MilkWeb.TournamentController do
         add_queue_tournament_start_push_notice(tournament)
     end
   end
-  
+
   def test_push_notice(conn, %{"params" => params}) do
     device = "8c6aa9df88a9a55c5216e0d327dad7aaa794433c13cad5eed14a512968834d50"
 
@@ -1620,5 +1664,4 @@ defmodule MilkWeb.TournamentController do
     Milk.Notif.push_ios("push push push", "", "reminder_to_start_tournament", device, 6, params)
     json(conn, %{"result": "ok"})
   end
-  
 end

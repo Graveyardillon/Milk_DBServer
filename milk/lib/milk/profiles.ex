@@ -176,5 +176,4 @@ defmodule Milk.Profiles do
       |> Repo.insert()
     end)
   end
-
 end

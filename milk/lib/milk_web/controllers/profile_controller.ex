@@ -47,6 +47,7 @@ defmodule MilkWeb.ProfileController do
           Profiles.update_gamelist(user, gamelist)
           Profiles.update_recordlist(user, records)
           json(conn, %{result: true, profile_result: true})
+
         {:error, error} ->
           json(conn, %{result: false, error: "update failed"})
       end

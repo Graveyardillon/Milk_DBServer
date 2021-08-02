@@ -84,6 +84,7 @@ defmodule MilkWeb.TournamentView do
       thumbnail_path: tournament.thumbnail_path,
       game_id: tournament.game_id,
       game_name: tournament.game_name,
+      enabled_coin_toss: tournament.enabled_coin_toss,
       event_date: tournament.event_date,
       start_recruiting: tournament.start_recruiting,
       deadline: tournament.deadline,
@@ -271,6 +272,7 @@ defmodule MilkWeb.TournamentView do
         thumbnail_path: tournament.thumbnail_path,
         game_id: tournament.game_id,
         game_name: tournament.game_name,
+        enabled_coin_toss: tournament.enabled_coin_toss,
         event_date: tournament.event_date,
         start_recruiting: tournament.start_recruiting,
         deadline: tournament.deadline,
@@ -373,7 +375,9 @@ defmodule MilkWeb.TournamentView do
         is_team: is_team,
         is_leader: is_leader,
         score: score,
-        state: state
+        state: state,
+        is_coin_head: is_coin_head,
+        custom_detail: custom_detail
       }) do
     %{
       opponent:
@@ -402,13 +406,22 @@ defmodule MilkWeb.TournamentView do
             }
         end,
       rank: rank,
+      result: true,
       is_leader:
         if is_team do
           is_leader
         end,
       score: score,
       state: state,
-      is_team: is_team
+      is_team: is_team,
+      is_coin_head: is_coin_head,
+      custom_detail: if custom_detail do
+        %{
+          coin_head_field: custom_detail.coin_head_field,
+          coin_tail_field: custom_detail.coin_tail_field,
+          multiple_selection_type: custom_detail.multiple_selection_type
+        }
+      end
     }
   end
 

@@ -44,7 +44,8 @@ defmodule Milk.Tournaments do
     TeamInvitation,
     TeamMember,
     Tournament,
-    TournamentChatTopic
+    TournamentChatTopic,
+    TournamentCustomDetail
   }
 
   require Integer
@@ -215,20 +216,21 @@ defmodule Milk.Tournaments do
     |> Repo.preload(:entrant)
     |> Repo.preload(:assistant)
     |> Repo.preload(:master)
+    |> Repo.preload(:custom_detail)
     |> (fn tournament ->
           if tournament do
-            entrants =
-              tournament
-              |> Map.get(:entrant)
-              |> Enum.map(fn entrant ->
-                user =
-                  entrant
-                  |> Repo.preload(:user)
-                  |> Map.get(:user)
-                  |> Repo.preload(:auth)
+            tournament
+            |> Map.get(:entrant)
+            |> Enum.map(fn entrant ->
+              entrant
+              |> Repo.preload(:user)
+              |> Map.get(:user)
+              |> Repo.preload(:auth)
+              ~> user
 
-                Map.put(entrant, :user, user)
-              end)
+              Map.put(entrant, :user, user)
+            end)
+            ~> entrants
 
             Map.put(tournament, :entrant, entrants)
           end
@@ -340,10 +342,18 @@ defmodule Milk.Tournaments do
   def create_tournament(%{"master_id" => master_id} = params, thumbnail_path \\ "") do
     id = Tools.to_integer_as_needed(master_id)
 
-    if Repo.exists?(from u in User, where: u.id == ^id) do
+    Repo.exists?(from u in User, where: u.id == ^id)
+    |> if do
       create(params, thumbnail_path)
     else
       {:error, "Undefined User"}
+    end
+    |> case do
+      {:ok, tournament} ->
+        set_details(tournament, params)
+        {:ok, tournament}
+      {:error, error} ->
+        {:error, error}
     end
   end
 
@@ -456,6 +466,12 @@ defmodule Milk.Tournaments do
       _ ->
         {:error, nil}
     end
+  end
+
+  defp set_details(tournament, params) do
+    params
+    |> Map.put("tournament_id", tournament.id)
+    |> create_custom_detail()
   end
 
   @doc """
@@ -2223,7 +2239,12 @@ defmodule Milk.Tournaments do
     leader_icon = leader_info.icon_path
 
     %Team{}
-    |> Team.changeset(%{"tournament_id" => tournament_id, "size" => size, "name" => "#{leader_name}のチーム", "icon_path" => leader_icon})
+    |> Team.changeset(%{
+      "tournament_id" => tournament_id,
+      "size" => size,
+      "name" => "#{leader_name}のチーム",
+      "icon_path" => leader_icon
+    })
     |> Repo.insert()
     |> case do
       {:ok, team} ->
@@ -2589,6 +2610,7 @@ defmodule Milk.Tournaments do
       {:ok, team} ->
         team = Repo.preload(team, :team_member)
         {:ok, team}
+
       {:error, error} ->
         {:error, error}
     end
@@ -2612,6 +2634,7 @@ defmodule Milk.Tournaments do
       {:ok, team} ->
         team = Repo.preload(team, :team_member)
         {:ok, team}
+
       {:error, error} ->
         {:error, error}
     end
@@ -2622,5 +2645,24 @@ defmodule Milk.Tournaments do
     |> where([j], j.state in ~w(available scheduled))
     |> where([j], j.args[^args] == ^tournament_id)
     |> Repo.one()
+  end
+
+  @doc """
+  Create custom detail of a tournament.
+  """
+  def create_custom_detail(attrs \\ %{}) do
+    %TournamentCustomDetail{}
+    |> TournamentCustomDetail.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  @doc """
+  Get custom detail.
+  """
+  def get_custom_detail_by_tournament_id(tournament_id) do
+    TournamentCustomDetail
+    |> where([t], t.tournament_id == ^tournament_id)
+    |> Repo.one()
+    |> Repo.preload(:tournament)
   end
 end

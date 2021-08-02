@@ -37,15 +37,15 @@ defmodule Milk.UserManager.GuardianPipeline do
   def call(conn, _default) do
     if(
       String.contains?(conn.request_path, "api/user/login") or
-      String.contains?(conn.request_path, "api/user/signup") or
-      String.contains?(conn.request_path, "api/user/signin") or
-      String.contains?(conn.method, "GET") or
-      String.contains?(conn.request_path, "api/chat/create_dialogue") or
-      String.contains?(conn.request_path, "api/notification/create")
+        String.contains?(conn.request_path, "api/user/signup") or
+        String.contains?(conn.request_path, "api/user/signin") or
+        String.contains?(conn.method, "GET") or
+        String.contains?(conn.request_path, "api/chat/create_dialogue") or
+        String.contains?(conn.request_path, "api/notification/create")
     ) do
       conn
     else
-      #IO.inspect(conn, label: :call_conn)
+      # IO.inspect(conn, label: :call_conn)
       json(conn, %{result: false, error: "There's not a token"})
       halt(conn)
     end
