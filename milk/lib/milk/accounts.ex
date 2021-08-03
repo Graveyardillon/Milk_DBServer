@@ -54,6 +54,13 @@ defmodule Milk.Accounts do
   end
 
   @doc """
+  Gets total user number.
+  """
+  def get_user_number() do
+    Repo.aggregate(User, :count)
+  end
+
+  @doc """
   Gets a single user.
 
   Raises `Ecto.NoResultsError` if the User does not exist.
