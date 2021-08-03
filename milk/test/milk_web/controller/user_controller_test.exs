@@ -1,5 +1,6 @@
 defmodule MilkWeb.UserControllerTest do
   use MilkWeb.ConnCase
+  use Common.Fixtures
 
   alias Milk.Accounts
 
@@ -21,6 +22,24 @@ defmodule MilkWeb.UserControllerTest do
 
   setup %{conn: conn} do
     {:ok, conn: put_req_header(conn, "accept", "application/json")}
+  end
+
+  describe "get user number" do
+    test "works", %{conn: conn} do
+      conn = get(conn, Routes.user_path(conn, :number))
+      assert json_response(conn, 200)["result"]
+      assert json_response(conn, 200)["num"] == 0
+
+      x = 20
+      1..x
+      |> Enum.to_list()
+      |> Enum.each(fn n ->
+        fixture_user(num: n)
+        conn = get(conn, Routes.user_path(conn, :number))
+        assert json_response(conn, 200)["result"]
+        assert json_response(conn, 200)["num"] == n
+      end)
+    end
   end
 
   describe "check username duplication" do
