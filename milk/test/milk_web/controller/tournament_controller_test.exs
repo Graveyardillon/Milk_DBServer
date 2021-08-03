@@ -387,6 +387,40 @@ defmodule MilkWeb.TournamentControllerTest do
       assert json_response(conn, 200)["result"]
       refute json_response(conn, 200)["data"]["enabled_coin_toss"]
     end
+
+    test "create tournament (custom details)", %{conn: conn} do
+      user = fixture_user(num: 2)
+
+      attrs = %{
+        "capacity" => 42,
+        "deadline" => "2010-04-17T14:00:00Z",
+        "description" => "some description",
+        "event_date" => "2010-04-17T14:00:00Z",
+        "master_id" => user.id,
+        "name" => "some name",
+        "type" => 1,
+        "join" => "true",
+        "enabled_coin_toss" => "true",
+        "coin_head_field" => "omote",
+        "coin_tail_field" => "ura",
+        "url" => "some url",
+        "platform" => 1
+      }
+
+      conn = post(conn, Routes.tournament_path(conn, :create), tournament: attrs, file: "")
+
+      assert json_response(conn, 200)["result"]
+
+      conn
+      |> json_response(200)
+      |> Map.get("data")
+      |> Map.get("id")
+      |> Tournaments.get_custom_detail_by_tournament_id()
+      ~> detail
+
+      assert detail.coin_head_field == "omote"
+      assert detail.coin_tail_field == "ura"
+    end
   end
 
   describe "get tournament" do

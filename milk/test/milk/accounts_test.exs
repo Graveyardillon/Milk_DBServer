@@ -102,6 +102,21 @@ defmodule Milk.AccountsTest do
     end
   end
 
+  describe "count users" do
+    test "count user number" do
+      assert Accounts.get_user_number() == 0
+      x = 20
+
+      1..x
+      |> Enum.to_list()
+      |> Enum.each(fn n ->
+        fixture_user(n)
+        assert Accounts.get_user_number() == n
+      end)
+      assert Accounts.get_user_number() == x
+    end
+  end
+
   describe "users create" do
     test "create_user/1 with valid data creates a user" do
       assert %User{} = user = fixture_user()
