@@ -1072,7 +1072,7 @@ defmodule MilkWeb.TournamentController do
     score = Tools.to_integer_as_needed(score)
     match_index = Tools.to_integer_as_needed(match_index)
 
-    # 大会かどうかを判別し、idを切り替える
+    # チーム大会かどうかを判別し、idを切り替える
     tournament_id
     |> Tournaments.get_tournament()
     |> Map.get(:is_team)
@@ -1124,12 +1124,37 @@ defmodule MilkWeb.TournamentController do
             json(conn, %{validated: true, completed: true, is_finished: is_finished})
 
           true ->
+            notify_on_duplicate_match(user_id, opponent_id)
             json(conn, %{validated: false, completed: false, is_finished: false})
         end
 
       [] ->
         json(conn, %{validated: true, completed: false, is_finished: false})
     end
+  end
+
+  defp notify_on_duplicate_match(user_id, opponent_id) do
+    user = Accounts.get_user(user_id)
+    opponent = Accounts.get_opponent(opponent_id)
+
+    [user_id, opponent_id]
+    |> Enum.map(fn user_id ->
+      Accounts.get_devices_by_user_id(user_id)
+    end)
+    |> List.flatten()
+    |> Enum.each(fn device ->
+      content = "#{user.name}と#{opponent.name}の報告が同じスコアになってしまっています！"
+
+      %{
+        "content" => content,
+        "process_code" => 4,
+        "user_id" => device.user_id,
+        "data" => ""
+      }
+      |> Notif.create_notification()
+
+      Notif.push_ios_with_badge(content, "重複した勝敗報告が起きています", device.user_id, device.token)
+    end)
   end
 
   defp finish_as_needed?(tournament_id, winner_id) do
