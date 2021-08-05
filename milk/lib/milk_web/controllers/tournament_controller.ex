@@ -507,15 +507,9 @@ defmodule MilkWeb.TournamentController do
     |> Enum.filter(fn tournament ->
       tournament.is_started
     end)
-    |> Enum.map(fn tournament ->
-      tournament.id
-    end)
     ~> tournaments
 
-    result = tournaments != []
-    tournament_id = if result, do: hd(tournaments)
-
-    json(conn, %{result: result, tournament_id: tournament_id})
+    render(conn, "tournament.json", tournament: List.first(tournaments))
   end
 
   @doc """

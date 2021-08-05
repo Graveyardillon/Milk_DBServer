@@ -78,30 +78,37 @@ defmodule MilkWeb.TournamentView do
   end
 
   def render("tournament.json", %{tournament: tournament}) do
+    if tournament == nil do 
+      %{ result: false }
+    else
     %{
-      id: tournament.id,
-      name: tournament.name,
-      thumbnail_path: tournament.thumbnail_path,
-      game_id: tournament.game_id,
-      game_name: tournament.game_name,
-      enabled_coin_toss: tournament.enabled_coin_toss,
-      event_date: tournament.event_date,
-      start_recruiting: tournament.start_recruiting,
-      deadline: tournament.deadline,
-      type: tournament.type,
-      platform: tournament.platform_id,
-      capacity: tournament.capacity,
-      # password: tournament.password,
-      has_password: !is_nil(tournament.password),
-      description: tournament.description,
-      master_id: tournament.master_id,
-      url: tournament.url,
-      create_time: tournament.create_time,
-      update_time: tournament.update_time,
-      is_started: tournament.is_started,
-      is_team: tournament.is_team,
-      team_size: tournament.team_size
+      result: true,
+      data: %{
+        id: tournament.id,
+        name: tournament.name,
+        thumbnail_path: tournament.thumbnail_path,
+        game_id: tournament.game_id,
+        game_name: tournament.game_name,
+        enabled_coin_toss: tournament.enabled_coin_toss,
+        event_date: tournament.event_date,
+        start_recruiting: tournament.start_recruiting,
+        deadline: tournament.deadline,
+        type: tournament.type,
+        platform: tournament.platform_id,
+        capacity: tournament.capacity,
+        # password: tournament.password,
+        has_password: !is_nil(tournament.password),
+        description: tournament.description,
+        master_id: tournament.master_id,
+        url: tournament.url,
+        create_time: tournament.create_time,
+        update_time: tournament.update_time,
+        is_started: tournament.is_started,
+        is_team: tournament.is_team,
+        team_size: tournament.team_size
+      }
     }
+    end 
   end
 
   def render("tournament_info.json", %{tournament: tournament}) do
