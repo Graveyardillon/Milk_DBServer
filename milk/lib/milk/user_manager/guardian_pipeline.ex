@@ -17,20 +17,24 @@ defmodule Milk.UserManager.GuardianPipeline do
       {:error, :token_expired} ->
         Guardian.signout(token)
         |> if do
-          json(conn, %{result: false, error: "That token is out of time"})
-          halt(conn)
+          conn
+          |> json(%{result: false, error: "That token is out of time"})
+          |> halt()
         else
-          json(conn, %{result: false, error: "That token does not exist"})
-          halt(conn)
+          conn
+          |> json(%{result: false, error: "That token does not exist"})
+          |> halt()
         end
 
       {:error, :not_exist} ->
-        json(conn, %{result: false, error: "That token can't use"})
-        halt(conn)
+        conn
+        |> json(%{result: false, error: "That token can't use"})
+        |> halt()
 
       _ ->
-        json(conn, %{result: false, error: "That token does not exist"})
-        halt(conn)
+        conn
+        |> json(%{result: false, error: "That token does not exist"})
+        |> halt()
     end
   end
 
@@ -45,9 +49,9 @@ defmodule Milk.UserManager.GuardianPipeline do
     ) do
       conn
     else
-      # IO.inspect(conn, label: :call_conn)
-      json(conn, %{result: false, error: "There's not a token"})
-      halt(conn)
+      conn
+      |> json(%{result: false, error: "There's not a token"})
+      |> halt()
     end
   end
 end
