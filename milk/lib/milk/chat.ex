@@ -630,13 +630,6 @@ defmodule Milk.Chat do
         unless device.user_id == user_id do
           tournament = Tournaments.get_tournament_by_room_id(chat_room_id)
 
-          %{
-            "content" => attrs["word"],
-            "process_code" => 4,
-            "user_id" => device.user_id,
-            "data" => ""
-          }
-
           Map.new()
           |> Map.put("content", attrs["word"])
           |> Map.put("process_code", 4)
@@ -649,8 +642,7 @@ defmodule Milk.Chat do
         end
       end)
 
-      attrs
-      |> create_chats()
+      create_chats(attrs)
     end
   end
 

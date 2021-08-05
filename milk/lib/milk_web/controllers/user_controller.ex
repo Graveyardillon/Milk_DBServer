@@ -7,6 +7,14 @@ defmodule MilkWeb.UserController do
   alias Milk.UserManager.Guardian
 
   @doc """
+  Get user number.
+  """
+  def number(conn, _params) do
+    num = Accounts.get_user_number()
+    json(conn, %{result: true, num: num})
+  end
+
+  @doc """
   Checks if username has been taken.
   """
   def check_username_duplication(conn, %{"name" => name}) do

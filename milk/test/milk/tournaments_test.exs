@@ -31,6 +31,8 @@ defmodule Milk.TournamentsTest do
 
   alias Milk.Accounts.User
 
+  @moduletag timeout: 300000
+
   # 外部キーが二つ以上の場合は %{"capacity" => 42} のようにしなければいけない
   @valid_attrs %{
     "capacity" => 42,

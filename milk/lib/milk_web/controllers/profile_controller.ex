@@ -5,6 +5,8 @@ defmodule MilkWeb.ProfileController do
 
   import Common.Sperm
 
+  alias Common.Tools
+
   alias Milk.{
     Accounts,
     Profiles,
@@ -17,7 +19,10 @@ defmodule MilkWeb.ProfileController do
   action_fallback MilkWeb.FallbackController
 
   def get_profile(conn, %{"user_id" => user_id}) do
-    user = Accounts.get_user(user_id)
+    user_id
+    |> Tools.to_integer_as_needed()
+    |> Accounts.get_user()
+    ~> user
 
     if user do
       games = Profiles.get_game_list(user)
