@@ -509,7 +509,7 @@ defmodule MilkWeb.TournamentController do
     end)
     ~> tournaments
 
-    render(conn, "tournament.json", tournament: List.first(tournaments))
+    render(conn, "tournament_result.json", tournament: List.first(tournaments))
   end
 
   @doc """
