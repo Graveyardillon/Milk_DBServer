@@ -217,6 +217,7 @@ defmodule MilkWeb.TournamentView do
   end
 
   def render("home.json", %{tournaments_info: tournaments_info}) do
+    inspect(tournaments_info)
     %{
       data:
         render_many(tournaments_info, TournamentView, "tournament_info_include_entrants.json",
@@ -227,6 +228,8 @@ defmodule MilkWeb.TournamentView do
   end
 
   def render("tournament_info_include_entrants.json", %{tournament_info: tournament}) do
+    inspect(tournament)
+
     %{
       id: tournament.id,
       name: tournament.name,
@@ -260,7 +263,22 @@ defmodule MilkWeb.TournamentView do
             email: user.auth.email,
             bio: user.bio
           }
+        end),
+      teams: if Map.has_key?(tournament, :teams) do
+        Enum.map(tournament.teams, fn team ->
+          %{
+            id: team.id,
+            name: team.name,
+            size: team.size,
+            icon_path: team.icon_path,
+            is_confirmed: team.is_confirmed,
+            rank: team.rank,
+            tournament_id: team.tournament_id
+          }
         end)
+      else
+        nil
+      end
     }
   end
 
