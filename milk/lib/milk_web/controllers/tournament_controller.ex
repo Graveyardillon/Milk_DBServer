@@ -217,17 +217,25 @@ defmodule MilkWeb.TournamentController do
     user_id = Tools.to_integer_as_needed(user_id)
     offset = Tools.to_integer_as_needed(offset)
 
-    tournaments =
-      Tournaments.home_tournament(date_offset, offset, user_id)
-      |> Enum.map(fn tournament ->
-        entrants =
-          Tournaments.get_entrants(tournament.id)
-          |> Enum.map(fn entrant ->
-            Accounts.get_user(entrant.user_id)
-          end)
-
-        Map.put(tournament, :entrants, entrants)
+    date_offset
+    |> Tournaments.home_tournament(offset, user_id)
+    |> Enum.map(fn tournament ->
+      Tournaments.get_entrants(tournament.id)
+      |> Enum.map(fn entrant ->
+        Accounts.get_user(entrant.user_id)
       end)
+      ~> entrants
+
+      Map.put(tournament, :entrants, entrants)
+    end)
+    |> Enum.map(fn tournament ->
+      tournament.id
+      |> Tournaments.get_confirmed_teams()
+      ~> teams
+
+      Map.put(tournament, :teams, teams)
+    end)
+    ~> tournaments
 
     render(conn, "home.json", tournaments_info: tournaments)
   end
