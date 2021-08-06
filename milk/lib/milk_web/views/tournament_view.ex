@@ -77,6 +77,17 @@ defmodule MilkWeb.TournamentView do
     }
   end
 
+  def render("tournament_result.json", %{tournament: tournament}) do
+    if tournament == nil do 
+      %{result: false}
+    else
+      %{
+        result: true,
+        data: render_one(tournament, TournamentView, "tournament.json")
+      }
+    end
+  end
+
   def render("tournament.json", %{tournament: tournament}) do
     %{
       id: tournament.id,
