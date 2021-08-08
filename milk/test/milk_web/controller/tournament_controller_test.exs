@@ -1345,11 +1345,11 @@ defmodule MilkWeb.TournamentControllerTest do
       tournament = json_response(conn, 200)["data"]
       conn = get(conn, Routes.tournament_path(conn, :is_started_at_least_one), user_id: user1.id)
       assert json_response(conn, 200)["result"]
-      assert json_response(conn, 200)["tournament_id"] == tournament["id"]
+      assert json_response(conn, 200)["data"]["id"] == tournament["id"]
 
       conn = get(conn, Routes.tournament_path(conn, :is_started_at_least_one), user_id: user2.id)
       refute json_response(conn, 200)["result"]
-      assert is_nil(json_response(conn, 200)["tournament_id"])
+      assert is_nil(json_response(conn, 200)["data"]["id"])
 
       %{
         "rank" => 0,
@@ -1360,7 +1360,7 @@ defmodule MilkWeb.TournamentControllerTest do
 
       conn = get(conn, Routes.tournament_path(conn, :is_started_at_least_one), user_id: user2.id)
       assert json_response(conn, 200)["result"]
-      assert json_response(conn, 200)["tournament_id"] == tournament["id"]
+      assert json_response(conn, 200)["data"]["id"] == tournament["id"]
     end
 
     test "works (team)", %{conn: conn} do
@@ -1391,11 +1391,11 @@ defmodule MilkWeb.TournamentControllerTest do
 
       conn = get(conn, Routes.tournament_path(conn, :is_started_at_least_one), user_id: me.id)
       assert json_response(conn, 200)["result"]
-      assert json_response(conn, 200)["tournament_id"] == tournament.id
+      assert json_response(conn, 200)["data"]["id"] == tournament.id
 
       conn = get(conn, Routes.tournament_path(conn, :is_started_at_least_one), user_id: mate.id)
       assert json_response(conn, 200)["result"]
-      assert json_response(conn, 200)["tournament_id"] == tournament.id
+      assert json_response(conn, 200)["data"]["id"] == tournament.id
     end
   end
 
