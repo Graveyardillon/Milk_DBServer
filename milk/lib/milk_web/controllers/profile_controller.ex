@@ -41,8 +41,6 @@ defmodule MilkWeb.ProfileController do
     ~> user
     |> is_nil()
     |> unless do
-      # name = Map.get(profile_params, "name")
-      # bio = Map.get(profile_params, "bio")
       gamelist = Map.get(profile_params, "gameList")
       records = Map.get(profile_params, "records")
 
@@ -61,20 +59,31 @@ defmodule MilkWeb.ProfileController do
     end
   end
 
+  def update_icon(conn, %{"user_id" => user_id, "file" => image}) do
+    update_icon(conn, %{"user_id" => user_id, "image" => image})
+  end
+
   def update_icon(conn, %{"user_id" => user_id, "image" => image}) do
     user = Accounts.get_user(user_id)
 
     if user do
       uuid = SecureRandom.uuid()
 
-      FileUtils.copy(image["path"], "./static/image/profile_icon/#{uuid}.png")
+      IO.inspect(image, label: :image_entity)
+      IO.inspect(image.path, label: :image_path)
+      IO.inspect("./static/image/profile_icon/#{uuid}.png", label: :justpath!)
 
-      local_path =
-        case Application.get_env(:milk, :environment) do
-          :dev -> update_account(user, uuid)
-          :test -> update_account(user, uuid)
-          _ -> update_account_prod(user, uuid)
-        end
+      FileUtils.copy(image.path, "./static/image/profile_icon/#{uuid}.png")
+      |> IO.inspect(label: :fileutils_copy)
+
+      :milk
+      |> Application.get_env(:environment)
+      |> case do
+        :dev -> update_account(user, uuid)
+        :test -> update_account(user, uuid)
+        _ -> update_account_prod(user, uuid)
+      end
+      ~> local_path
 
       json(conn, %{local_path: local_path})
     else
@@ -89,6 +98,7 @@ defmodule MilkWeb.ProfileController do
 
   defp update_account_prod(user, uuid) do
     object = Objects.upload("./static/image/profile_icon/#{uuid}.png")
+      |> IO.inspect(label: :asdf)
     File.rm("./static/image/profile_icon/#{uuid}.png")
     Accounts.update_icon_path(user, object.name)
     object.name
@@ -96,7 +106,9 @@ defmodule MilkWeb.ProfileController do
 
   def get_icon(conn, %{"path" => path}) do
     if path != "" do
-      case Application.get_env(:milk, :environment) do
+      :milk
+      |> Application.get_env(:environment)
+      |> case do
         :dev -> get_image(path)
         :test -> get_image(path)
         _ -> get_image_prod(path)
