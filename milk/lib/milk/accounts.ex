@@ -569,8 +569,8 @@ defmodule Milk.Accounts do
   Register a device token.
   TODO: update処理
   """
-  def register_device(%{"user_id" => user_id, "device_id" => device_id}) do
-    attrs = %{"user_id" => user_id, "token" => device_id}
+  def register_device(user_id, token) do
+    attrs = %{"user_id" => user_id, "token" => token}
 
     with {:ok, device} <-
            %Device{}
@@ -579,6 +579,18 @@ defmodule Milk.Accounts do
       {:ok, device}
     else
       {:error, error} -> {:error, Tools.create_error_message(error.errors)}
+    end
+  end
+  
+  @doc """
+  Unregister a device token.
+  """
+  def unregister_device(%Device{} = device) do 
+    device
+    |> Repo.delete()
+    |> case do
+      {:ok, device} -> true
+      {:error, error} -> false
     end
   end
 end
