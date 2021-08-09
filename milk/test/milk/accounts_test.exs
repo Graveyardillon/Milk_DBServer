@@ -555,14 +555,14 @@ defmodule Milk.AccountsTest do
     end
   end
 
-  describe "unregister device" do 
-    test "works" do 
+  describe "unregister device" do
+    test "works" do
       token = "tesToken0101"
       user = fixture_user()
 
-      Accounts.register_device(user.id, token)
-      
-      result = Accounts.unregister_device(token)
+      {:ok, device} = Accounts.register_device(user.id, token)
+
+      result = Accounts.unregister_device(device)
       assert result == true
     end
   end
