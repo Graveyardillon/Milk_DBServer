@@ -514,8 +514,7 @@ defmodule Milk.AccountsTest do
       token = "tesToken0101"
       user = fixture_user()
 
-      %{"user_id" => user.id, "device_id" => token}
-      |> Accounts.register_device()
+      Accounts.register_device(user.id, token)
       |> elem(1)
       |> (fn device ->
             assert device.token == token
@@ -540,8 +539,7 @@ defmodule Milk.AccountsTest do
       token = "tesToken0101"
       user = fixture_user()
 
-      %{"user_id" => user.id, "device_id" => token}
-      |> Accounts.register_device()
+      Accounts.register_device(user.id, token)
       |> elem(1)
       |> (fn device ->
             assert device.token == token
@@ -554,6 +552,18 @@ defmodule Milk.AccountsTest do
             assert device.token == token
             assert device.user_id == user.id
           end).()
+    end
+  end
+
+  describe "unregister device" do
+    test "works" do
+      token = "tesToken0101"
+      user = fixture_user()
+
+      {:ok, device} = Accounts.register_device(user.id, token)
+
+      result = Accounts.unregister_device(device)
+      assert result == true
     end
   end
 end
