@@ -9,6 +9,9 @@ defmodule Milk.CloudStorage.Objects do
     conn = GoogleApi.Storage.V1.Connection.new(token.token)
       |> IO.inspect(label: :api_new)
 
+    File.read(file_path)
+    |> IO.inspect(label: :file_path!)
+
     {:ok, object} =
       GoogleApi.Storage.V1.Api.Objects.storage_objects_insert_simple(
         conn,
