@@ -41,8 +41,6 @@ defmodule MilkWeb.ProfileController do
     ~> user
     |> is_nil()
     |> unless do
-      # name = Map.get(profile_params, "name")
-      # bio = Map.get(profile_params, "bio")
       gamelist = Map.get(profile_params, "gameList")
       records = Map.get(profile_params, "records")
 
