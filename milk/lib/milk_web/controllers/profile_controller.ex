@@ -69,12 +69,7 @@ defmodule MilkWeb.ProfileController do
     if user do
       uuid = SecureRandom.uuid()
 
-      IO.inspect(image, label: :image_entity)
-      IO.inspect(image.path, label: :image_path)
-      IO.inspect("./static/image/profile_icon/#{uuid}.png", label: :justpath!)
-
       FileUtils.copy(image.path, "./static/image/profile_icon/#{uuid}.png")
-      |> IO.inspect(label: :fileutils_copy)
 
       :milk
       |> Application.get_env(:environment)
@@ -98,7 +93,6 @@ defmodule MilkWeb.ProfileController do
 
   defp update_account_prod(user, uuid) do
     object = Objects.upload("./static/image/profile_icon/#{uuid}.png")
-      |> IO.inspect(label: :asdf)
     File.rm("./static/image/profile_icon/#{uuid}.png")
     Accounts.update_icon_path(user, object.name)
     object.name
