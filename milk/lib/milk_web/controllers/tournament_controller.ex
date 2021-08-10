@@ -1485,6 +1485,7 @@ defmodule MilkWeb.TournamentController do
     # user_idとtournament_idを足したもののhashで比較を行い、大きい方がコインの表
     opponent
     |> is_nil()
+    |> Kernel.||(!tournament.enabled_coin_toss)
     |> unless do
       if is_team do
         opponent["id"]
