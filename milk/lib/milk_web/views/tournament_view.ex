@@ -78,7 +78,7 @@ defmodule MilkWeb.TournamentView do
   end
 
   def render("tournament_result.json", %{tournament: tournament}) do
-    if tournament == nil do 
+    if tournament == nil do
       %{result: false}
     else
       %{
@@ -102,7 +102,6 @@ defmodule MilkWeb.TournamentView do
       type: tournament.type,
       platform: tournament.platform_id,
       capacity: tournament.capacity,
-      # password: tournament.password,
       has_password: !is_nil(tournament.password),
       description: tournament.description,
       master_id: tournament.master_id,
@@ -124,6 +123,7 @@ defmodule MilkWeb.TournamentView do
         game_id: tournament.game_id,
         game_name: tournament.game_name,
         event_date: tournament.event_date,
+        enabled_coin_toss: tournament.enabled_coin_toss,
         start_recruiting: tournament.start_recruiting,
         deadline: tournament.deadline,
         type: tournament.type,
