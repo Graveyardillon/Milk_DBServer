@@ -1,8 +1,13 @@
 defmodule MilkWeb.UserController do
   use MilkWeb, :controller
 
+  import Common.Sperm
+
   alias Common.Tools
-  alias Milk.Accounts
+  alias Milk.{
+    Accounts,
+    Tournaments
+  }
   alias Milk.Accounts.User
   alias Milk.UserManager.Guardian
 
@@ -139,6 +144,37 @@ defmodule MilkWeb.UserController do
   @doc """
   Search.
   """
+  def search(conn, %{"text" => text, "team_filter" => _, "tournament_id" => tournament_id}) do
+    tournament_id
+    |> Tournaments.get_teams_by_tournament_id()
+    |> Enum.map(fn team ->
+      team
+      |> Map.get(:id)
+      |> Tournaments.get_team_members_by_team_id()
+      |> Enum.map(fn member ->
+        member
+        |> Map.get(:user)
+      end)
+      |> List.flatten()
+      |> Enum.uniq()
+    end)
+    |> List.flatten()
+    |> Enum.uniq()
+    |> Enum.map(fn user ->
+      user.id
+    end)
+    ~> team_id_list
+
+    text
+    |> Accounts.search()
+    |> Enum.filter(fn user ->
+      !(user.id in team_id_list)
+    end)
+    ~> users
+
+    render(conn, "index.json", users: users)
+  end
+
   def search(conn, %{"text" => text}) do
     users = Accounts.search(text)
 

@@ -247,6 +247,24 @@ defmodule MilkWeb.UserControllerTest do
       |> Map.get("result")
       |> refute()
     end
+
+    test "team filter", %{conn: conn} do
+      tournament = fixture_tournament(is_team: true, type: 2, capacity: 3)
+      fill_with_team(tournament.id)
+
+      user = fixture_user(num: 12345)
+
+      ok_text = "name"
+      conn = get(conn, Routes.user_path(conn, :search), text: ok_text, team_filter: true, tournament_id: tournament.id)
+      assert json_response(conn, 200)["result"]
+
+      conn
+      |> json_response(200)
+      |> Map.get("data")
+      |> Enum.each(fn searched_user ->
+        assert searched_user["id"] == tournament.master_id || searched_user["id"] == user.id
+      end)
+    end
   end
 
   describe "logout" do
