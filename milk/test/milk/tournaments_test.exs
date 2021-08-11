@@ -2783,6 +2783,57 @@ defmodule Milk.TournamentsTest do
     end
   end
 
+  describe "has_confirmed_as_team?" do
+    test "works" do
+      tournament = fixture_tournament(is_team: true, type: 2)
+
+      10..15
+      |> Enum.to_list()
+      |> Enum.map(fn n ->
+        [num: n]
+        |> fixture_user()
+        |> Map.get(:id)
+      end)
+      |> Enum.chunk_every(tournament.team_size)
+      |> Enum.map(fn [leader | members] ->
+        tournament.id
+        |> Tournaments.create_team(tournament.team_size, leader, members)
+        |> elem(1)
+      end)
+      |> hd()
+      ~> team
+
+      team
+      |> Map.get(:id)
+      |> Tournaments.get_leader()
+      |> Map.get(:user_id)
+      |> Tournaments.has_confirmed_as_team?(tournament.id)
+      |> IO.inspect()
+      |> refute()
+
+      team
+      |> Map.get(:id)
+      |> Tournaments.get_team_members_by_team_id()
+      |> Enum.each(fn member ->
+        leader = Tournaments.get_leader(member.team_id)
+
+        member.id
+        |> Tournaments.create_team_invitation(leader.user_id)
+        |> elem(1)
+        |> Map.get(:id)
+        |> Tournaments.confirm_team_invitation()
+        |> elem(1)
+      end)
+
+      team
+      |> Map.get(:id)
+      |> Tournaments.get_leader()
+      |> Map.get(:user_id)
+      |> Tournaments.has_confirmed_as_team?(tournament.id)
+      |> assert()
+    end
+  end
+
   describe "create_team_invitation" do
     test "works" do
       {tournament, users} = setup_team(5)

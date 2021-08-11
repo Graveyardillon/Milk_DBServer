@@ -7,7 +7,7 @@ alias Milk.{
   Tournaments
 }
 
-team_n = 4
+team_n = 3
 team_size = 5
 
 Timex.now()

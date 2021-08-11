@@ -471,38 +471,39 @@ defmodule MilkWeb.TournamentController do
     result = tournament.capacity > length(entrants)
 
     # キャパシティの確認(チーム)
-    result =
-      tournament.capacity
-      |> Kernel.>(length(tournament.team))
-      |> Kernel.and(result)
+    tournament.capacity
+    |> Kernel.>(length(tournament.team))
+    |> Kernel.and(result)
+    ~> result
 
     # 自分が参加しているかどうか
-    result =
-      entrants
-      |> Enum.all?(fn entrant ->
-        entrant.user_id != user_id
-      end)
-      |> Kernel.and(result)
+    entrants
+    |> Enum.all?(fn entrant ->
+      entrant.user_id != user_id
+    end)
+    |> Kernel.and(result)
+    ~> result
 
     # 時刻の確認（自分の主催している大会には参加できる）
-    result =
-      user_id
-      |> relevant()
-      |> Enum.all?(fn t ->
-        tournament.master_id == user_id || t.event_date != tournament.event_date
-      end)
-      |> Kernel.and(result)
+    user_id
+    |> relevant()
+    |> Enum.all?(fn t ->
+      tournament.master_id == user_id || t.event_date != tournament.event_date
+    end)
+    |> Kernel.and(result)
+    ~> result
 
     # 自分がチームとして参加しているかどうか
-    result =
-      user_id
-      |> Tournaments.has_requested_as_team?(tournament_id)
-      |> Kernel.not()
-      |> Kernel.and(result)
+    user_id
+    |> Tournaments.has_requested_as_team?(tournament_id)
+    |> Kernel.not()
+    |> Kernel.and(result)
+    ~> result
 
     requested? = Tournaments.has_requested_as_team?(user_id, tournament_id)
+    confirmed? = Tournaments.has_confirmed_as_team?(user_id, tournament_id)
 
-    json(conn, %{result: result, has_requested_as_team: requested?})
+    json(conn, %{result: result, has_requested_as_team: requested?, has_confirmed_as_team: confirmed?})
   end
 
   @doc """
