@@ -2452,6 +2452,22 @@ defmodule Milk.Tournaments do
   end
 
   @doc """
+  Check if the user has confirmed as a team participant.
+  """
+  def has_confirmed_as_team?(user_id, tournament_id) do
+    tournament_id
+    |> get_confirmed_teams()
+    |> Enum.any?(fn team ->
+      team
+      |> Map.get(:id)
+      |> get_team_members_by_team_id()
+      |> Enum.any?(fn member ->
+        member.user_id == user_id
+      end)
+    end)
+  end
+
+  @doc """
   Updates a team.
   """
   def update_team(%Team{} = team, attrs) do

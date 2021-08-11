@@ -1245,6 +1245,8 @@ defmodule MilkWeb.TournamentControllerTest do
         })
 
       refute json_response(conn, 200)["result"]
+      refute json_response(conn, 200)["has_requested_as_team"]
+      refute json_response(conn, 200)["has_confirmed_as_team"]
 
       conn =
         get(conn, Routes.tournament_path(conn, :is_able_to_join), %{
@@ -1274,6 +1276,8 @@ defmodule MilkWeb.TournamentControllerTest do
         })
 
       refute json_response(conn, 200)["result"]
+      refute json_response(conn, 200)["has_requested_as_team"]
+      refute json_response(conn, 200)["has_confirmed_as_team"]
     end
 
     test "team", %{conn: conn} do
@@ -1299,6 +1303,8 @@ defmodule MilkWeb.TournamentControllerTest do
         })
 
       assert json_response(conn, 200)["result"]
+      refute json_response(conn, 200)["has_requested_as_team"]
+      refute json_response(conn, 200)["has_confirmed_as_team"]
 
       Tournaments.create_team(tournament.id, size, leader, members)
 
@@ -1309,6 +1315,8 @@ defmodule MilkWeb.TournamentControllerTest do
         })
 
       refute json_response(conn, 200)["result"]
+      assert json_response(conn, 200)["has_requested_as_team"]
+      refute json_response(conn, 200)["has_confirmed_as_team"]
 
       user = fixture_user(num: 100)
 
@@ -1319,6 +1327,27 @@ defmodule MilkWeb.TournamentControllerTest do
         })
 
       refute json_response(conn, 200)["result"]
+    end
+
+    test "team (confirmed)", %{conn: conn} do
+      tournament = fixture_tournament(num: 2, is_team: true, type: 2)
+
+      tournament.id
+      |> fill_with_team()
+      |> hd()
+      |> Map.get(:id)
+      |> Tournaments.get_leader()
+      ~> leader
+
+      conn =
+        get(conn, Routes.tournament_path(conn, :is_able_to_join), %{
+          user_id: leader.user_id,
+          tournament_id: tournament.id
+        })
+
+      refute json_response(conn, 200)["result"]
+      assert json_response(conn, 200)["has_requested_as_team"]
+      assert json_response(conn, 200)["has_confirmed_as_team"]
     end
   end
 
