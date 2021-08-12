@@ -798,7 +798,9 @@ defmodule MilkWeb.TournamentController do
     |> if do
       TournamentProgress.insert_match_pending_list_table(team_id, tournament_id)
     else
-      false
+      # FIXME: trueを返すことによってios側でどのユーザーでもコイントスの結果を見られるようにしているが、
+      # もっと良い処理があるかもしれない
+      true
     end
   end
 
