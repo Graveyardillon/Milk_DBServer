@@ -46,13 +46,6 @@ defmodule MilkWeb.TournamentController do
   def get_tournaments_by_master_id(conn, %{"user_id" => user_id}) do
     tournaments =
       Tournaments.get_tournaments_by_master_id(user_id)
-      |> IO.inspect()
-      |> (fn tournaments ->
-            user_id
-            |> Tournaments.get_tournaments_by_assistant_id()
-            |> Enum.concat(tournaments)
-          end).()
-      |> Enum.uniq()
       |> Enum.map(fn tournament ->
         entrants =
           Tournaments.get_entrants(tournament.id)
