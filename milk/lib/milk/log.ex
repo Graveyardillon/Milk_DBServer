@@ -566,6 +566,15 @@ defmodule Milk.Log do
   def get_assistant_log!(id), do: Repo.get!(AssistantLog, id)
 
   @doc """
+  Get assistant logs.
+  """
+  def get_assistant_logs_by_tournament_id(tournament_id) do
+    AssistantLog
+    |> where([al], al.tournament_id == ^tournament_id)
+    |> Repo.all()
+  end
+
+  @doc """
   Creates a assistant_log.
 
   ## Examples

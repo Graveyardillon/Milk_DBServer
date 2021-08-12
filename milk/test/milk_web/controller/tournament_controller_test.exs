@@ -2701,6 +2701,63 @@ defmodule MilkWeb.TournamentControllerTest do
       |> Kernel.==(4)
       |> assert()
     end
+
+    test "works (checks log as well)", %{conn: conn} do
+      tournament = fixture_tournament(capacity: 2, num: 2, type: 2)
+      [entrant1, entrant2] = fill_with_entrant(tournament.id)
+
+      conn =
+        post(conn, Routes.tournament_path(conn, :start),
+          tournament: %{"master_id" => tournament.master_id, "tournament_id" => tournament.id}
+        )
+
+      conn =
+        get(conn, Routes.tournament_path(conn, :get_match_members), tournament_id: tournament.id)
+
+      conn
+      |> json_response(200)
+      |> Map.get("data")
+      |> Map.get("entrants")
+      |> Enum.map(fn entrant ->
+        assert is_map(entrant)
+      end)
+      |> length()
+      |> Kernel.==(2)
+      |> assert()
+
+      conn =
+        post(conn, Routes.tournament_path(conn, :claim_score),
+          opponent_id: entrant1.user_id,
+          user_id: entrant2.user_id,
+          tournament_id: tournament.id,
+          score: 1,
+          match_index: 0
+        )
+
+      conn =
+        post(conn, Routes.tournament_path(conn, :claim_score),
+          opponent_id: entrant2.user_id,
+          user_id: entrant1.user_id,
+          tournament_id: tournament.id,
+          score: 2,
+          match_index: 0
+        )
+
+      conn =
+        get(conn, Routes.tournament_path(conn, :show), tournament_id: tournament.id)
+
+      conn
+      |> json_response(200)
+      |> Map.get("is_log")
+      |> assert()
+
+      conn =
+        get(conn, Routes.tournament_path(conn, :get_match_members), tournament_id: tournament.id)
+
+      conn
+      |> json_response(200)
+      |> IO.inspect()
+    end
   end
 
   # TODO: redisの確認を入れたい

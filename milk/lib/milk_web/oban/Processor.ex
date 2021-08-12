@@ -17,7 +17,7 @@ defmodule Oban.Processer do
       _ ->
         IO.puts("undefined arg")
     end
-  end 
+  end
 
   defp reminder_to_start_tournament(id) do
     tournament = Tournaments.get_tournament(id)
@@ -29,7 +29,7 @@ defmodule Oban.Processer do
         device.user_id,
         device.token,
         6,
-        tournament.name, 
+        tournament.name,
         "主催している大会の開始予定時刻になりました。大会を開始してください！",
         params
       )
@@ -39,7 +39,7 @@ defmodule Oban.Processer do
 
   def notify_tournament_start(id) do
     tournament = Tournaments.get_tournament(id)
-  IO.inspect(tournament)
+  #IO.inspect(tournament)
     if tournament do
       devices =
         for entrant <- Map.get(tournament, :entrant) do

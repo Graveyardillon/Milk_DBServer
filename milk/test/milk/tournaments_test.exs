@@ -2808,7 +2808,6 @@ defmodule Milk.TournamentsTest do
       |> Tournaments.get_leader()
       |> Map.get(:user_id)
       |> Tournaments.has_confirmed_as_team?(tournament.id)
-      |> IO.inspect()
       |> refute()
 
       team

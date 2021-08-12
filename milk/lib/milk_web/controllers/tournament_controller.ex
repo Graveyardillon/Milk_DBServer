@@ -1123,7 +1123,7 @@ defmodule MilkWeb.TournamentController do
             json(conn, %{validated: true, completed: true, is_finished: is_finished})
 
           true ->
-            notify_on_duplicate_match(user_id, opponent_id)
+            #notify_on_duplicate_match(tournament_id, user_id, opponent_id)
             json(conn, %{validated: false, completed: false, is_finished: false})
         end
 
@@ -1132,9 +1132,10 @@ defmodule MilkWeb.TournamentController do
     end
   end
 
-  defp notify_on_duplicate_match(user_id, opponent_id) do
+  # チーム対応
+  defp notify_on_duplicate_match(tournament_id, user_id, opponent_id) do
     user = Accounts.get_user(user_id)
-    opponent = Accounts.get_opponent(opponent_id)
+    opponent = Tournaments.get_opponent(opponent_id)
 
     [user_id, opponent_id]
     |> Enum.map(fn user_id ->
@@ -1273,6 +1274,7 @@ defmodule MilkWeb.TournamentController do
 
   @doc """
   Get members of a match.
+  TODO: ログの処理書き足し
   """
   def get_match_members(conn, %{"tournament_id" => tournament_id}) do
     tournament = Tournaments.get_tournament(tournament_id)
@@ -1314,7 +1316,52 @@ defmodule MilkWeb.TournamentController do
         teams: teams
       )
     else
-      render(conn, "error.json", error: nil)
+      tournament_id
+      |> Tournaments.get_tournament_including_logs()
+      |> elem(1)
+      ~> tournament_log
+      |> is_nil()
+      |> unless do
+        master = Accounts.get_user(tournament_log.master_id)
+
+        tournament_id
+        |> Log.get_entrant_logs_by_tournament_id()
+        |> Enum.map(fn entrant_log ->
+          Accounts.get_user(entrant_log.user_id)
+        end)
+        ~> entrants
+
+        tournament_id
+        |> Log.get_assistant_logs_by_tournament_id()
+        |> Enum.map(fn assistant_log ->
+          Accounts.get_user(assistant_log.user_id)
+        end)
+        ~> assistants
+
+        tournament_id
+        |> Log.get_team_logs_by_tournament_id()
+        |> Enum.map(fn team_log ->
+          team_log
+          |> Map.get(:team_id)
+          |> Tournaments.get_leader()
+          |> Map.get(:user)
+          ~> user
+
+          team_log
+          |> Map.put(:name, user.name)
+          |> Map.put(:icon_path, user.icon_path)
+        end)
+        ~> teams
+
+        render(conn, "tournament_members.json",
+          master: master,
+          assistants: assistants,
+          entrants: entrants,
+          teams: teams
+        )
+      else
+        render(conn, "error.json", error: nil)
+      end
     end
   end
 
