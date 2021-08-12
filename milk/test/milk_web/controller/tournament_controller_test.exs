@@ -157,53 +157,6 @@ defmodule MilkWeb.TournamentControllerTest do
             assert len == 1
           end).()
     end
-
-    test "including assistant", %{conn: conn, tournament: tournament} do
-      user = fixture_user()
-
-      conn =
-        post(conn, Routes.assistant_path(conn, :create),
-          assistant: %{tournament_id: tournament.id, user_id: [user.id]}
-        )
-
-      conn =
-        get(conn, Routes.tournament_path(conn, :get_tournaments_by_master_id), %{user_id: user.id})
-
-      json_response(conn, 200)
-      |> Map.get("data")
-      |> Enum.map(fn t ->
-        assert t["id"] == tournament.id
-      end)
-      |> length()
-      |> (fn len ->
-            assert len == 1
-          end).()
-    end
-
-    test "including both", %{conn: conn} do
-      tournament = fixture_tournament(num: 2)
-      tournament2 = fixture_tournament(num: 1)
-
-      conn =
-        post(conn, Routes.assistant_path(conn, :create),
-          assistant: %{tournament_id: tournament2.id, user_id: [tournament.master_id]}
-        )
-
-      conn =
-        get(conn, Routes.tournament_path(conn, :get_tournaments_by_master_id), %{
-          user_id: tournament.master_id
-        })
-
-      json_response(conn, 200)
-      |> Map.get("data")
-      |> Enum.map(fn t ->
-        assert t["id"] == tournament.id || t["id"] == tournament2.id
-      end)
-      |> length()
-      |> (fn len ->
-            assert len == 2
-          end).()
-    end
   end
 
   describe "get ongoing tournaments by master id" do
