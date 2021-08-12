@@ -12,7 +12,6 @@ defmodule MilkWeb.ConfNumController do
 
   @doc """
   Send an email for verification.
-  FIXME: emailのexist確認
   """
   def send_email(conn, %{"email" => email}) do
     exists? = Accounts.is_email_exists?(email)
