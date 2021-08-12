@@ -45,7 +45,9 @@ defmodule Milk.UserManager.GuardianPipeline do
         String.contains?(conn.request_path, "api/user/signin") or
         String.contains?(conn.method, "GET") or
         String.contains?(conn.request_path, "api/chat/create_dialogue") or
-        String.contains?(conn.request_path, "api/notification/create")
+        String.contains?(conn.request_path, "api/notification/create") or
+        String.contains?(conn.request_path, "api/conf/send_email") or
+        String.contains?(conn.request_path, "api/conf/conf_email")
     ) do
       conn
     else
