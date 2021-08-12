@@ -25,7 +25,15 @@ defmodule Oban.Processer do
     devices = Accounts.get_devices_by_user_id(tournament.master_id)
 
     for device <- devices do
-      Notif.push_ios("主催している大会の開始予定時刻になりました。大会を開始してください！", "", "reminder_to_start_tournament", device.token, 6, params)
+      Notif.push_ios(
+        device.user_id,
+        6,
+        tournament.name, 
+        "主催している大会の開始予定時刻になりました。大会を開始してください！",
+        device.token,
+        params
+      )
+      # Notif.push_ios("主催している大会の開始予定時刻になりました。大会を開始してください！", "", "reminder_to_start_tournament", device.token, 6, params)
     end
   end
 
@@ -42,8 +50,17 @@ defmodule Oban.Processer do
         |> List.flatten()
 
       for device <- devices do
-      params = %{tournament_id: id}
-        Notif.push_ios("大会が始まりました！", "", "tournament_start", device.token, 6, params)
+      IO.inspect(device)
+        params = %{tournament_id: id}
+        Notif.push_ios(
+          device.user_id,
+          7,
+          tournament.name,
+          "大会が始まりました",
+          device.token,
+          params
+        )
+        # Notif.push_ios("大会が始まりました！", "", "tournament_start", device.token, 6, params)
       end
     else
       IO.puts("tournament not found")
