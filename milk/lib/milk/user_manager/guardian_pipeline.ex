@@ -19,21 +19,25 @@ defmodule Milk.UserManager.GuardianPipeline do
         |> if do
           conn
           |> json(%{result: false, error: "That token is out of time"})
+          |> put_status(500)
           |> halt()
         else
           conn
           |> json(%{result: false, error: "That token does not exist"})
+          |> put_status(500)
           |> halt()
         end
 
       {:error, :not_exist} ->
         conn
         |> json(%{result: false, error: "That token can't use"})
+        |> put_status(500)
         |> halt()
 
       _ ->
         conn
         |> json(%{result: false, error: "That token does not exist"})
+        |> put_status(500)
         |> halt()
     end
   end
@@ -53,6 +57,7 @@ defmodule Milk.UserManager.GuardianPipeline do
     else
       conn
       |> json(%{result: false, error: "There's not a token"})
+      |> put_status(500)
       |> halt()
     end
   end
