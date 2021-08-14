@@ -456,6 +456,18 @@ defmodule MilkWeb.TournamentController do
   end
 
   @doc """
+  Get pending tournaments.
+  """
+  def pending(conn, %{"user_id" => user_id}) do
+    user_id
+    |> Tools.to_integer_as_needed()
+    |> Tournaments.get_pending_tournaments()
+    ~> tournaments
+
+    render(conn, "index.json", tournament: tournaments)
+  end
+
+  @doc """
   Check whether the user can join the tournament.
   大会キャパシティチェック
   ユーザーの参加している他の大会との時間帯チェック
