@@ -85,8 +85,20 @@ defmodule MilkWeb.TeamController do
     |> Tools.to_integer_as_needed()
     |> Tournaments.confirm_team_invitation()
     |> case do
-      {:ok, _invitation} ->
-        json(conn, %{result: true})
+      {:ok, invitation} ->
+        invitation
+        |> Map.get(:team_id)
+        |> Tournaments.get_team()
+        ~> team
+
+        json(
+          conn,
+          %{
+            result: true,
+            is_confirmed: team.is_confirmed,
+            tournament_id: team.tournament_id
+          }
+        )
 
       {:error, error} ->
         render(conn, "error.json", error: error)

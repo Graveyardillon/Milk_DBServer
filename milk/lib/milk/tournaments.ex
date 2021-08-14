@@ -2582,7 +2582,7 @@ defmodule Milk.Tournaments do
   @doc """
   Verify team.
   """
-  def verify_team_as_needed(team_id) do
+  defp verify_team_as_needed(team_id) do
     TeamMember
     |> where([tm], tm.team_id == ^team_id)
     |> where([tm], tm.is_invitation_confirmed)
