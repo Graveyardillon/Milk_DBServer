@@ -2756,7 +2756,8 @@ defmodule MilkWeb.TournamentControllerTest do
 
       conn
       |> json_response(200)
-      |> IO.inspect()
+      |> Map.get("result")
+      |> assert()
     end
   end
 
