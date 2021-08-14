@@ -2,6 +2,8 @@ defmodule MilkWeb.TeamControllerTest do
   use MilkWeb.ConnCase
   use Common.Fixtures
 
+  import Common.Sperm
+
   alias Milk.Tournaments
 
   setup %{conn: conn} do
@@ -222,10 +224,10 @@ defmodule MilkWeb.TeamControllerTest do
       |> Kernel.==(0)
       |> assert()
 
-      team =
-        tournament.id
-        |> Tournaments.get_teams_by_tournament_id()
-        |> hd()
+      tournament.id
+      |> Tournaments.get_teams_by_tournament_id()
+      |> hd()
+      ~> team
 
       team.id
       |> Tournaments.get_team_members_by_team_id()
@@ -234,15 +236,27 @@ defmodule MilkWeb.TeamControllerTest do
       end)
 
       users
+      |> Enum.reverse()
+      |> hd()
+      ~> tail_user_id
+
+      users
       |> Enum.each(fn user_id ->
-        id =
-          user_id
-          |> Tournaments.get_team_invitations_by_user_id()
-          |> hd()
-          |> Map.get(:id)
+        user_id
+        |> Tournaments.get_team_invitations_by_user_id()
+        |> hd()
+        |> Map.get(:id)
+        ~> id
 
         conn = post(conn, Routes.team_path(conn, :confirm_invitation), invitation_id: id)
         assert json_response(conn, 200)["result"]
+        assert json_response(conn, 200)["tournament_id"] == tournament.id
+
+        if user_id == tail_user_id do
+          assert json_response(conn, 200)["is_confirmed"]
+        else
+          refute json_response(conn, 200)["is_confirmed"]
+        end
       end)
 
       conn = get(conn, Routes.team_path(conn, :get_confirmed_teams), tournament_id: tournament.id)
