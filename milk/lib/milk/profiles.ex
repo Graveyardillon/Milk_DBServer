@@ -1,5 +1,6 @@
 defmodule Milk.Profiles do
   import Ecto.Query, warn: false
+  import Common.Sperm
 
   alias Milk.Accounts.{
     Profile,
@@ -10,6 +11,8 @@ defmodule Milk.Profiles do
 
   alias Milk.Log.{
     EntrantLog,
+    TeamLog,
+    TeamMemberLog,
     TournamentLog
   }
 
@@ -125,24 +128,44 @@ defmodule Milk.Profiles do
   Get added records of the user.
   """
   def get_records(user) do
-    ids =
-      Profile
-      |> where([p], p.user_id == ^user.id and p.content_type == "record")
-      |> Repo.all()
-      |> Enum.map(& &1.content_id)
+    Profile
+    |> where([p], p.user_id == ^user.id and p.content_type == "record")
+    |> Repo.all()
+    |> Enum.map(& &1.content_id)
+    ~> ids
 
     EntrantLog
     |> where([el], el.tournament_id in ^ids and el.user_id == ^user.id)
     |> Repo.all()
     |> Enum.map(fn entrant_log ->
-      tlog =
-        TournamentLog
-        |> where([tl], tl.tournament_id == ^entrant_log.tournament_id)
-        |> Repo.one()
+      TournamentLog
+      |> where([tl], tl.tournament_id == ^entrant_log.tournament_id)
+      |> Repo.one()
+      ~> tlog
 
       Map.put(entrant_log, :tournament_log, tlog)
     end)
     |> Enum.filter(fn entrant_log -> entrant_log.tournament_log != nil end)
+    ~> records
+
+    TeamMemberLog
+    |> where([tm], tm.user_id == ^user.id)
+    |> Repo.all()
+    |> Enum.map(fn member ->
+      TeamLog
+      |> where([t], t.tournament_id == ^member.tournament_id)
+      |> Repo.one()
+      ~> team_log
+
+      TournamentLog
+      |> where([tl], tl.tournament_id == ^team_log.tournament_id)
+      |> Repo.one()
+      ~> tlog
+
+      Map.put(team_log, :tournament_log, tlog)
+    end)
+    |> Enum.concat(records)
+    |> Enum.uniq()
   end
 
   def update_profile(%User{} = user, name, bio) do
