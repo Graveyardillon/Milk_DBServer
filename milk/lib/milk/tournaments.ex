@@ -1309,10 +1309,10 @@ defmodule Milk.Tournaments do
   end
 
   defp finish_tournament(tournament_id, winner_user_id) do
-    {:ok, tournament} =
-      tournament_id
-      |> get_tournament()
-      |> delete_tournament()
+    tournament_id
+    |> get_tournament()
+    |> delete_tournament()
+    ~> {:ok, tournament}
 
     tournament
     |> Map.from_struct()
