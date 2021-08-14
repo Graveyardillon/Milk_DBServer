@@ -283,19 +283,20 @@ defmodule MilkWeb.TournamentController do
   end
 
   def home(conn, %{"filter" => "entry", "user_id" => user_id}) do
-    tournaments =
-      Tournaments.get_participating_tournaments(user_id)
-      |> Enum.map(fn tournament ->
-        entrants =
-          Tournaments.get_entrants(tournament.id)
-          |> Enum.map(fn entrant ->
-            Accounts.get_user(entrant.user_id)
-          end)
+    user_id
+    |> Tournaments.get_participating_tournaments()
+    |> Enum.map(fn tournament ->
+      entrants =
+        Tournaments.get_entrants(tournament.id)
+        |> Enum.map(fn entrant ->
+          Accounts.get_user(entrant.user_id)
+        end)
 
-        Map.put(tournament, :entrants, entrants)
-      end)
-
-    if tournaments do
+      Map.put(tournament, :entrants, entrants)
+    end)
+    ~> tournaments
+    |> is_nil()
+    |> unless do
       render(conn, "home.json", tournaments_info: tournaments)
     else
       render(conn, "error.json", error: nil)
@@ -306,18 +307,18 @@ defmodule MilkWeb.TournamentController do
   Get searched tournaments as home.
   """
   def search(conn, %{"user_id" => user_id, "text" => text}) do
-    tournaments =
-      user_id
-      |> Tournaments.search(text)
-      |> Enum.map(fn tournament ->
-        entrants =
-          Tournaments.get_entrants(tournament.id)
-          |> Enum.map(fn entrant ->
-            Accounts.get_user(entrant.user_id)
-          end)
+    user_id
+    |> Tournaments.search(text)
+    |> Enum.map(fn tournament ->
+      entrants =
+        Tournaments.get_entrants(tournament.id)
+        |> Enum.map(fn entrant ->
+          Accounts.get_user(entrant.user_id)
+        end)
 
-        Map.put(tournament, :entrants, entrants)
-      end)
+      Map.put(tournament, :entrants, entrants)
+    end)
+    ~> tournaments
 
     render(conn, "home.json", tournaments_info: tournaments)
   end
@@ -385,19 +386,23 @@ defmodule MilkWeb.TournamentController do
   Get tournaments which a user is participating in.
   """
   def participating_tournaments(conn, %{"user_id" => user_id, "offset" => offset}) do
-    tournaments =
-      Tournaments.get_participating_tournaments(user_id, offset)
-      |> Enum.map(fn tournament ->
-        entrants =
-          Tournaments.get_entrants(tournament.id)
-          |> Enum.map(fn entrant ->
-            Accounts.get_user(entrant.user_id)
-          end)
+    offset = Tools.to_integer_as_needed(offset)
 
-        Map.put(tournament, :entrants, entrants)
+    user_id
+    |> Tools.to_integer_as_needed()
+    |> Tournaments.get_participating_tournaments(offset)
+    |> Enum.map(fn tournament ->
+      Tournaments.get_entrants(tournament.id)
+      |> Enum.map(fn entrant ->
+        Accounts.get_user(entrant.user_id)
       end)
+      ~> entrants
 
-    if tournaments do
+      Map.put(tournament, :entrants, entrants)
+    end)
+    ~> tournaments
+    |> is_nil()
+    |> unless do
       render(conn, "home.json", tournaments_info: tournaments)
     else
       render(conn, "error.json", error: nil)
@@ -408,11 +413,11 @@ defmodule MilkWeb.TournamentController do
     tournaments =
       Tournaments.get_participating_tournaments(user_id)
       |> Enum.map(fn tournament ->
-        entrants =
-          Tournaments.get_entrants(tournament.id)
-          |> Enum.map(fn entrant ->
-            Accounts.get_user(entrant.user_id)
-          end)
+        Tournaments.get_entrants(tournament.id)
+        |> Enum.map(fn entrant ->
+          Accounts.get_user(entrant.user_id)
+        end)
+        ~> entrants
 
         Map.put(tournament, :entrants, entrants)
       end)
@@ -428,9 +433,10 @@ defmodule MilkWeb.TournamentController do
   Get relevant tournaments.
   """
   def relevant(conn, %{"user_id" => user_id}) do
-    user_id = Tools.to_integer_as_needed(user_id)
-
-    tournaments = relevant(user_id)
+    user_id
+    |> Tools.to_integer_as_needed()
+    |> relevant()
+    ~> tournaments
 
     render(conn, "index.json", tournament: tournaments)
   end
@@ -439,14 +445,26 @@ defmodule MilkWeb.TournamentController do
     participatings = Tournaments.get_participating_tournaments(user_id)
     hostings = Tournaments.get_tournaments_by_master_id(user_id)
 
-    assistants =
-      user_id
-      |> Tournaments.get_assistants_by_user_id()
-      |> Enum.map(fn assistant ->
-        Tournaments.get_tournament(assistant.tournament_id)
-      end)
+    user_id
+    |> Tournaments.get_assistants_by_user_id()
+    |> Enum.map(fn assistant ->
+      Tournaments.get_tournament(assistant.tournament_id)
+    end)
+    ~> assistants
 
     Enum.uniq(participatings ++ hostings ++ assistants)
+  end
+
+  @doc """
+  Get pending tournaments.
+  """
+  def pending(conn, %{"user_id" => user_id}) do
+    user_id
+    |> Tools.to_integer_as_needed()
+    |> Tournaments.get_pending_tournaments()
+    ~> tournaments
+
+    render(conn, "index.json", tournament: tournaments)
   end
 
   @doc """

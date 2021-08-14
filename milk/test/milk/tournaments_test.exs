@@ -263,6 +263,54 @@ defmodule Milk.TournamentsTest do
       end)
     end
 
+    test "get_pending_tournaments/1" do
+      tournament = fixture_tournament(is_team: true, type: 2)
+      [num: 5]
+      |> fixture_user()
+      |> Map.get(:id)
+      ~> user
+
+      6..10
+      |> Enum.to_list()
+      |> Enum.map(fn n ->
+        [num: n]
+        |> fixture_user()
+        |> Map.get(:id)
+      end)
+      ~> members
+
+      tournament
+      |> Map.get(:id)
+      |> Tournaments.create_team(tournament.team_size, user, members)
+      ~> {:ok, _team}
+
+      user
+      |> Tournaments.get_pending_tournaments()
+      |> Enum.map(fn t ->
+        assert t.id == tournament.id
+      end)
+      |> length()
+      |> Kernel.==(1)
+      |> assert()
+
+      members
+      |> Enum.each(fn member ->
+        member
+        |> Tournaments.get_team_invitations_by_user_id()
+        |> Enum.each(fn invitation ->
+          invitation
+          |> Map.get(:id)
+          |> Tournaments.confirm_team_invitation()
+        end)
+      end)
+
+      user
+      |> Tournaments.get_pending_tournaments()
+      |> length()
+      |> Kernel.==(0)
+      |> assert()
+    end
+
     test "get_masters/1 with valid data works fine" do
       tournament = fixture_tournament()
 

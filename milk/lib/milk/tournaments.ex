@@ -285,6 +285,7 @@ defmodule Milk.Tournaments do
 
   @doc """
   Get tournaments which the user participating in.
+  It includes team.
   """
   def get_participating_tournaments(user_id) do
     Tournament
@@ -297,6 +298,7 @@ defmodule Milk.Tournaments do
     |> join(:inner, [t], te in Team, on: t.id == te.tournament_id)
     |> join(:inner, [t, te], tm in TeamMember, on: te.id == tm.team_id)
     |> where([t, te, tm], tm.user_id == ^user_id)
+    |> where([t, te, tm], te.is_confirmed)
     |> Repo.all()
     |> Enum.concat(entrants)
     |> Enum.uniq()
@@ -314,6 +316,19 @@ defmodule Milk.Tournaments do
     |> Enum.map(fn entrant ->
       get_tournament(entrant.tournament_id)
     end)
+  end
+
+  @doc """
+  Get pending tournaments.
+  Pending tournament means like "our team invitation for the tournament is still in progress "
+  """
+  def get_pending_tournaments(user_id) do
+    Tournament
+    |> join(:inner, [t], te in Team, on: t.id == te.tournament_id)
+    |> join(:inner, [t, te], tm in TeamMember, on: te.id == tm.team_id)
+    |> where([t, te, tm], tm.user_id == ^user_id)
+    |> where([t, te, tm], not te.is_confirmed)
+    |> Repo.all()
   end
 
   @doc """
