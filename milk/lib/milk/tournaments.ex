@@ -319,6 +319,19 @@ defmodule Milk.Tournaments do
   end
 
   @doc """
+  Get pending tournaments.
+  Pending tournament means like "our team invitation for the tournament is still in progress "
+  """
+  def get_pending_tournaments(user_id) do
+    Tournament
+    |> join(:inner, [t], te in Team, on: t.id == te.tournament_id)
+    |> join(:inner, [t, te], tm in TeamMember, on: te.id == tm.team_id)
+    |> where([t, te, tm], tm.user_id == ^user_id)
+    |> where([t, te, tm], not te.is_confirmed)
+    |> Repo.all()
+  end
+
+  @doc """
   Get a list of master users' information of a tournament
   """
   def get_masters(tournament_id) do
