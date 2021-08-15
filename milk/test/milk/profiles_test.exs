@@ -52,6 +52,9 @@ defmodule Milk.ProfilesTest do
         Tournaments.get_team(team.id)
       end)
       #~> [my_team | [opponent_team]]
+
+      # TODO: テスト記述
+      # 大会を終了させてレコードが出るか見る
     end
   end
 end
