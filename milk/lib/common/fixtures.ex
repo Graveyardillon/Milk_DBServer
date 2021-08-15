@@ -2,6 +2,7 @@ defmodule Common.Fixtures do
   alias Milk.{
     Accounts,
     Platforms,
+    TournamentProgress,
     Tournaments
   }
 
