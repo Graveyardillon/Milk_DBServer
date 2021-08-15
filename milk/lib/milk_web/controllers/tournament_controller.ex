@@ -591,26 +591,32 @@ defmodule MilkWeb.TournamentController do
     |> Tools.to_integer_as_needed()
     |> Tournaments.get_tournament()
     ~> tournament
-    |> Map.get(:is_team)
-    |> if do
-      start_team_tournament(master_id, tournament)
+    |> Map.get(:is_started)
+    |> unless do
+      tournament
+      |> Map.get(:is_team)
+      |> if do
+        start_team_tournament(master_id, tournament)
+      else
+        start_tournament(master_id, tournament)
+      end
+      |> case do
+        {:ok, match_list, match_list_with_fight_result} ->
+          Oban.Processer.notify_tournament_start(tournament_id)
+
+          render(conn, "match.json", %{
+            match_list: match_list,
+            match_list_with_fight_result: match_list_with_fight_result
+          })
+
+        {:error, nil, nil} ->
+          render(conn, "error.json", error: nil)
+
+        {:error, error, nil} ->
+          render(conn, "error.json", error: Tools.create_error_message(error))
+      end
     else
-      start_tournament(master_id, tournament)
-    end
-    |> case do
-      {:ok, match_list, match_list_with_fight_result} ->
-        Oban.Processer.notify_tournament_start(tournament_id)
-
-        render(conn, "match.json", %{
-          match_list: match_list,
-          match_list_with_fight_result: match_list_with_fight_result
-        })
-
-      {:error, nil, nil} ->
-        render(conn, "error.json", error: nil)
-
-      {:error, error, nil} ->
-        render(conn, "error.json", error: Tools.create_error_message(error))
+      render(conn, "error.json", error: "Tournament has already been started.")
     end
   end
 
