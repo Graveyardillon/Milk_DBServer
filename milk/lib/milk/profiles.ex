@@ -153,7 +153,7 @@ defmodule Milk.Profiles do
     |> Repo.all()
     |> Enum.map(fn member ->
       TeamLog
-      |> where([t], t.tournament_id == ^member.tournament_id)
+      |> where([t], t.id == ^member.team_id)
       |> Repo.one()
       ~> team_log
 
