@@ -2403,6 +2403,17 @@ defmodule Milk.Tournaments do
   end
 
   @doc """
+  Get team member by team invitation id.
+  """
+  def get_team_by_invitation_id(invitation_id) do
+    Team
+    |> join(:inner, [t], tm in TeamMember, on: t.id == tm.team_id)
+    |> join(:inner, [t, tm], ti in TeamInvitation, on: tm.id == ti.team_member_id)
+    |> where([t, tm, ti], ti.id == ^invitation_id)
+    |> Repo.one()
+  end
+
+  @doc """
   Get leader of a team.
   """
   def get_leader(team_id) do
