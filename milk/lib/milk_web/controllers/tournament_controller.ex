@@ -1560,12 +1560,23 @@ defmodule MilkWeb.TournamentController do
         |> Tournaments.get_leader()
         |> Map.get(:user)
         |> Map.get(:id)
-      else
-        opponent["id"]
-      end
-      ~> opponent_id
+        ~> opponent_id
 
-      mine_str = to_string(tournament_id + user_id)
+        tournament_id
+        |> Tournaments.get_team_by_tournament_id_and_user_id(user_id)
+        |> Map.get(:id)
+        |> Tournaments.get_leader()
+        |> Map.get(:user)
+        |> Map.get(:id)
+        ~> my_id
+
+        {my_id, opponent_id}
+      else
+        {user_id, opponent["id"]}
+      end
+      ~> {my_id, opponent_id}
+
+      mine_str = to_string(tournament_id + my_id)
       opponent_str = to_string(tournament_id + opponent_id)
 
       :crypto.hash(:sha256, mine_str)
