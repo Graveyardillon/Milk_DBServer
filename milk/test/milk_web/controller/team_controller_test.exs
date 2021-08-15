@@ -11,17 +11,17 @@ defmodule MilkWeb.TeamControllerTest do
   end
 
   defp setup_team(n) do
-    tournament = fixture_tournament(is_started: false, is_team: true)
+    tournament = fixture_tournament(is_started: false, is_team: true, team_size: n)
 
-    users =
-      1..n
-      |> Enum.to_list()
-      |> Enum.map(fn n ->
-        fixture_user(num: n)
-      end)
-      |> Enum.map(fn user ->
-        user.id
-      end)
+    1..n
+    |> Enum.to_list()
+    |> Enum.map(fn n ->
+      fixture_user(num: n)
+    end)
+    |> Enum.map(fn user ->
+      user.id
+    end)
+    ~> users
 
     [leader | members] = users
     size = n
@@ -72,17 +72,17 @@ defmodule MilkWeb.TeamControllerTest do
 
   describe "get_teammates" do
     test "works", %{conn: conn} do
-      tournament = fixture_tournament()
+      tournament = fixture_tournament(is_team: true)
       size = 5
       leader_id = fixture_user(num: 1).id
 
-      user_id_list =
-        2..5
-        |> Enum.to_list()
-        |> Enum.map(fn n ->
-          user = fixture_user(num: n)
-          user.id
-        end)
+      2..5
+      |> Enum.to_list()
+      |> Enum.map(fn n ->
+        user = fixture_user(num: n)
+        user.id
+      end)
+      ~> user_id_list
 
       conn =
         post(
@@ -113,7 +113,7 @@ defmodule MilkWeb.TeamControllerTest do
 
   describe "create_team" do
     test "works", %{conn: conn} do
-      tournament = fixture_tournament()
+      tournament = fixture_tournament(is_team: true)
       size = 5
       leader_id = fixture_user(num: 1).id
 
@@ -146,17 +146,16 @@ defmodule MilkWeb.TeamControllerTest do
     end
 
     test "over tournament size", %{conn: conn} do
-      tournament = fixture_tournament(capacity: 1)
-
+      tournament = fixture_tournament(capacity: 1, is_team: true)
       leader_id = fixture_user(num: 1).id
 
-      user_id_list =
-        2..5
-        |> Enum.to_list()
-        |> Enum.map(fn n ->
-          user = fixture_user(num: n)
-          user.id
-        end)
+      2..5
+      |> Enum.to_list()
+      |> Enum.map(fn n ->
+        user = fixture_user(num: n)
+        user.id
+      end)
+      ~> user_id_list
 
       conn =
         post(
