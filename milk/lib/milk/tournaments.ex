@@ -64,41 +64,44 @@ defmodule Milk.Tournaments do
   def home_tournament(date_offset, offset, user_id \\ nil) do
     offset = Tools.to_integer_as_needed(offset)
 
-    blocked_user_id_list =
-      if user_id do
-        user_id
-        |> Relations.blocked_users()
-        |> Enum.map(fn relation -> relation.blocked_user_id end)
-      else
-        []
-      end
+    if user_id do
+      user_id
+      |> Relations.blocked_users()
+      |> Enum.map(fn relation -> relation.blocked_user_id end)
+    else
+      []
+    end
+    ~> blocked_user_id_list
 
     Tournament
-    |> where([t], t.deadline > ^Timex.now() and t.create_time < ^date_offset)
+    #|> where([t], t.deadline > ^Timex.now() and t.create_time < ^date_offset)
     |> where([t], not (t.master_id in ^blocked_user_id_list))
     |> order_by([t], asc: :event_date)
     |> offset(^offset)
     |> limit(5)
     |> Repo.all()
     |> Repo.preload(:entrant)
+    |> Repo.preload(:team)
   end
 
   @doc """
   Returns the list of tournament which is filtered by "fav" for home screen.
   """
   def home_tournament_fav(user_id) do
-    users =
-      Relation
-      |> where([r], r.follower_id == ^user_id)
-      |> Repo.all()
-      |> Enum.map(fn relation ->
-        relation.followee_id
-      end)
+    Relation
+    |> where([r], r.follower_id == ^user_id)
+    |> Repo.all()
+    |> Enum.map(fn relation ->
+      relation.followee_id
+    end)
+    ~> users
 
     Tournament
     |> where([t], t.master_id in ^users)
     |> date_filter()
     |> Repo.all()
+    |> Repo.preload(:entrant)
+    |> Repo.preload(:team)
   end
 
   @doc """
@@ -109,6 +112,8 @@ defmodule Milk.Tournaments do
     |> where([t], t.master_id == ^user_id)
     |> date_filter()
     |> Repo.all()
+    |> Repo.preload(:entrant)
+    |> Repo.preload(:team)
   end
 
   @doc """

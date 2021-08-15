@@ -214,7 +214,9 @@ defmodule MilkWeb.TournamentController do
     date_offset
     |> Tournaments.home_tournament(offset, user_id)
     |> Enum.map(fn tournament ->
-      Tournaments.get_entrants(tournament.id)
+      tournament
+      |> Map.get(:id)
+      |> Tournaments.get_entrants()
       |> Enum.map(fn entrant ->
         Accounts.get_user(entrant.user_id)
       end)
@@ -223,7 +225,8 @@ defmodule MilkWeb.TournamentController do
       Map.put(tournament, :entrants, entrants)
     end)
     |> Enum.map(fn tournament ->
-      tournament.id
+      tournament
+      |> Map.get(:id)
       |> Tournaments.get_confirmed_teams()
       ~> teams
 
@@ -235,49 +238,57 @@ defmodule MilkWeb.TournamentController do
   end
 
   def home(conn, %{"date_offset" => date_offset, "offset" => offset}) do
-    tournaments =
-      Tournaments.home_tournament(date_offset, offset)
-      |> Enum.map(fn tournament ->
-        entrants =
-          Tournaments.get_entrants(tournament.id)
-          |> Enum.map(fn entrant ->
-            Accounts.get_user(entrant.user_id)
-          end)
-
-        Map.put(tournament, :entrants, entrants)
+    date_offset
+    |> Tournaments.home_tournament(offset)
+    |> Enum.map(fn tournament ->
+      tournament
+      |> Map.get(:id)
+      |> Tournaments.get_entrants()
+      |> Enum.map(fn entrant ->
+        Accounts.get_user(entrant.user_id)
       end)
+      ~> entrants
+
+      Map.put(tournament, :entrants, entrants)
+    end)
+    ~> tournaments
 
     render(conn, "home.json", tournaments_info: tournaments)
   end
 
   def home(conn, %{"filter" => "fav", "user_id" => user_id}) do
-    tournaments =
-      Tournaments.home_tournament_fav(user_id)
-      |> Enum.map(fn tournament ->
-        entrants =
-          Tournaments.get_entrants(tournament.id)
-          |> Enum.map(fn entrant ->
-            Accounts.get_user(entrant.user_id)
-          end)
-
-        Map.put(tournament, :entrants, entrants)
+    user_id
+    |> Tools.to_integer_as_needed()
+    |> Tournaments.home_tournament_fav()
+    |> Enum.map(fn tournament ->
+      tournament
+      |> Map.get(:id)
+      |> Tournaments.get_entrants()
+      |> Enum.map(fn entrant ->
+        Accounts.get_user(entrant.user_id)
       end)
+      ~> entrants
+
+      Map.put(tournament, :entrants, entrants)
+    end)
+    ~> tournaments
 
     render(conn, "home.json", tournaments_info: tournaments)
   end
 
   def home(conn, %{"filter" => "plan", "user_id" => user_id}) do
-    tournaments =
-      Tournaments.home_tournament_plan(user_id)
-      |> Enum.map(fn tournament ->
-        entrants =
-          Tournaments.get_entrants(tournament.id)
-          |> Enum.map(fn entrant ->
-            Accounts.get_user(entrant.user_id)
-          end)
+    user_id
+    |> Tournaments.home_tournament_plan()
+    |> Enum.map(fn tournament ->
+      entrants =
+        Tournaments.get_entrants(tournament.id)
+        |> Enum.map(fn entrant ->
+          Accounts.get_user(entrant.user_id)
+        end)
 
-        Map.put(tournament, :entrants, entrants)
-      end)
+      Map.put(tournament, :entrants, entrants)
+    end)
+    ~> tournaments
 
     render(conn, "home.json", tournaments_info: tournaments)
   end
