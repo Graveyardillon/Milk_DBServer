@@ -148,9 +148,9 @@ defmodule MilkWeb.TournamentController do
             |> Tournaments.create_entrant()
           end
 
-          tournament =
-            tournament
-            |> Map.put(:followers, Relations.get_followers(tournament.master_id))
+          tournament
+          |> Map.put(:followers, Relations.get_followers(tournament.master_id))
+          ~> tournament
 
           %{"user_id" => tournament.master_id, "game_name" => tournament.game_name, "score" => 7}
           |> Accounts.gain_score()
@@ -1310,7 +1310,31 @@ defmodule MilkWeb.TournamentController do
   def publish_url(conn, _params) do
     url = SecureRandom.urlsafe_base64()
 
-    json(conn, %{url: "e-players://e-players/tournament/" <> url, result: true})
+    # conn
+    # |> Map.get(:scheme)
+    # |> to_string()
+    # ~> scheme
+
+    # conn
+    # |> Map.get(:req_headers)
+    # |> List.pop_at(2)
+    # |> elem(0)
+    # |> elem(1)
+    # ~> host
+
+    # origin = "#{scheme}://#{host}"
+
+    :milk
+    |> Application.get_env(:environment)
+    |> case do
+      :dev -> "http://localhost:4001"
+      :test -> "http://localhost:4001"
+      _ -> "https://webserver-dot-e-players6814.an.r.appspot.com"
+    end
+    ~> origin
+
+    #json(conn, %{url: "e-players://e-players/tournament/" <> url, result: true})
+    json(conn, %{url: "#{origin}/api/tournament/url/#{url}", result: true})
   end
 
   @doc """
@@ -1749,5 +1773,11 @@ defmodule MilkWeb.TournamentController do
       params
     )
     json(conn, %{"result": "ok"})
+  end
+
+  def redirect_by_url(conn, params) do
+    url = params["url"]
+
+    json(conn, %{msg: :worked})
   end
 end

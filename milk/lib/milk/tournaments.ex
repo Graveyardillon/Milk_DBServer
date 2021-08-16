@@ -2771,8 +2771,6 @@ defmodule Milk.Tournaments do
   def update_custom_detail(detail, attrs \\ %{}) do
     detail
     |> TournamentCustomDetail.changeset(attrs)
-    |> IO.inspect()
     |> Repo.update()
-    |> IO.inspect()
   end
 end
