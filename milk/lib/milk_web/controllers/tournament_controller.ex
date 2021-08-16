@@ -340,8 +340,6 @@ defmodule MilkWeb.TournamentController do
   Update a tournament.
   """
   def update(conn, %{"tournament_id" => id, "tournament" => tournament_params}) do
-    IO.inspect(tournament_params, label: :asdf)
-
     tournament = Tournaments.get_tournament(id)
 
     if tournament do
