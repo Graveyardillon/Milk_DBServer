@@ -174,21 +174,23 @@ defmodule MilkWeb.TournamentController do
   def show(conn, params) do
     user_id = params["user_id"]
     id = Tools.to_integer_as_needed(params["tournament_id"])
+
     tournament = Tournaments.get_tournament(id)
     tournament_log = Log.get_tournament_log_by_tournament_id(id)
 
-    if tournament do
-      unless is_nil(user_id) do
-        %{"user_id" => user_id, "game_name" => tournament.game_name, "score" => 1}
-        |> Accounts.gain_score()
-      end
+    cond do
+      !is_nil(tournament) ->
+        unless is_nil(user_id) do
+          %{"user_id" => user_id, "game_name" => tournament.game_name, "score" => 1}
+          |> Accounts.gain_score()
+        end
 
-      team = Enum.filter(tournament.team, fn team -> team.is_confirmed end)
-      tournament = Map.put(tournament, :team, team)
+        team = Enum.filter(tournament.team, fn team -> team.is_confirmed end)
+        tournament = Map.put(tournament, :team, team)
 
-      render(conn, "tournament_info.json", tournament: tournament)
-    else
-      if tournament_log do
+        render(conn, "tournament_info.json", tournament: tournament)
+
+      !is_nil(tournament_log) ->
         entrants = Log.get_entrant_logs_by_tournament_id(tournament_log.tournament_id)
         tournament_log = Map.put(tournament_log, :entrants, entrants)
 
@@ -198,9 +200,9 @@ defmodule MilkWeb.TournamentController do
         end
 
         render(conn, "tournament_log.json", tournament_log: tournament_log)
-      else
+
+      true ->
         render(conn, "error.json", error: nil)
-      end
     end
   end
 
@@ -338,6 +340,8 @@ defmodule MilkWeb.TournamentController do
   Update a tournament.
   """
   def update(conn, %{"tournament_id" => id, "tournament" => tournament_params}) do
+    IO.inspect(tournament_params, label: :asdf)
+
     tournament = Tournaments.get_tournament(id)
 
     if tournament do
@@ -353,7 +357,9 @@ defmodule MilkWeb.TournamentController do
           nil
       end
 
-      case Tournaments.update_tournament(tournament, tournament_params) do
+      tournament
+      |> Tournaments.update_tournament(tournament_params)
+      |> case do
         {:ok, %Tournament{} = tournament} ->
           update_queue_tournament_start_push_notice(tournament)
           render(conn, "show.json", tournament: tournament)

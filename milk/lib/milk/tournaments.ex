@@ -515,12 +515,15 @@ defmodule Milk.Tournaments do
 
   """
   def update_tournament(%Tournament{} = tournament, attrs) do
-    attrs =
-      unless is_nil(attrs["platform"]) do
-        Map.put(attrs, "platform_id", attrs["platform"])
-      else
-        attrs
-      end
+    attrs
+    |> Map.get("platform")
+    |> is_nil()
+    |> unless do
+      Map.put(attrs, "platform_id", attrs["platform"])
+    else
+      attrs
+    end
+    ~> attrs
 
     if !attrs["game_id"] or Repo.exists?(from g in Game, where: g.id == ^attrs["game_id"]) do
       tournament
@@ -528,6 +531,7 @@ defmodule Milk.Tournaments do
       |> Repo.update()
       |> case do
         {:ok, tournament} ->
+          update_details(tournament, attrs)
           {:ok, tournament}
 
         {:error, error} ->
@@ -548,6 +552,15 @@ defmodule Milk.Tournaments do
         _ -> acc + 1
       end
     end)
+  end
+
+  defp update_details(tournament, params) do
+    params = Map.put(params, "tournament_id", tournament.id)
+
+    tournament
+    |> Map.get(:id)
+    |> get_custom_detail_by_tournament_id()
+    |> update_custom_detail(params)
   end
 
   @doc """
@@ -2750,5 +2763,16 @@ defmodule Milk.Tournaments do
     |> where([t], t.tournament_id == ^tournament_id)
     |> Repo.one()
     |> Repo.preload(:tournament)
+  end
+
+  @doc """
+  Update custom detail
+  """
+  def update_custom_detail(detail, attrs \\ %{}) do
+    detail
+    |> TournamentCustomDetail.changeset(attrs)
+    |> IO.inspect()
+    |> Repo.update()
+    |> IO.inspect()
   end
 end
