@@ -249,6 +249,7 @@ defmodule Milk.Tournaments do
     Tournament
     |> where([t], t.url == ^url)
     |> Repo.one()
+    |> Repo.preload(:custom_detail)
     |> Repo.preload(:team)
     |> Repo.preload(:entrant)
     |> Repo.preload(:assistant)
@@ -555,7 +556,10 @@ defmodule Milk.Tournaments do
   end
 
   defp update_details(tournament, params) do
-    params = Map.put(params, "tournament_id", tournament.id)
+    params
+    |> Map.put(:tournament_id, tournament.id)
+    |> Tools.atom_map_to_string_map()
+    ~> params
 
     tournament
     |> Map.get(:id)
@@ -2771,8 +2775,6 @@ defmodule Milk.Tournaments do
   def update_custom_detail(detail, attrs \\ %{}) do
     detail
     |> TournamentCustomDetail.changeset(attrs)
-    |> IO.inspect()
     |> Repo.update()
-    |> IO.inspect()
   end
 end

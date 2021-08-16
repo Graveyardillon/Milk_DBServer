@@ -20,7 +20,11 @@ defmodule Common.Tools do
   def atom_map_to_string_map(map) do
     map
     |> Enum.map(fn {k, v} ->
-      {Atom.to_string(k), v}
+      if is_atom(k) do
+        {Atom.to_string(k), v}
+      else
+        {k, v}
+      end
     end)
     |> Map.new()
   end
