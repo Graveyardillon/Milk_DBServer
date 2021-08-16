@@ -64,41 +64,44 @@ defmodule Milk.Tournaments do
   def home_tournament(date_offset, offset, user_id \\ nil) do
     offset = Tools.to_integer_as_needed(offset)
 
-    blocked_user_id_list =
-      if user_id do
-        user_id
-        |> Relations.blocked_users()
-        |> Enum.map(fn relation -> relation.blocked_user_id end)
-      else
-        []
-      end
+    if user_id do
+      user_id
+      |> Relations.blocked_users()
+      |> Enum.map(fn relation -> relation.blocked_user_id end)
+    else
+      []
+    end
+    ~> blocked_user_id_list
 
     Tournament
-    |> where([t], t.deadline > ^Timex.now() and t.create_time < ^date_offset)
+    #|> where([t], t.deadline > ^Timex.now() and t.create_time < ^date_offset)
     |> where([t], not (t.master_id in ^blocked_user_id_list))
     |> order_by([t], asc: :event_date)
     |> offset(^offset)
     |> limit(5)
     |> Repo.all()
     |> Repo.preload(:entrant)
+    |> Repo.preload(:team)
   end
 
   @doc """
   Returns the list of tournament which is filtered by "fav" for home screen.
   """
   def home_tournament_fav(user_id) do
-    users =
-      Relation
-      |> where([r], r.follower_id == ^user_id)
-      |> Repo.all()
-      |> Enum.map(fn relation ->
-        relation.followee_id
-      end)
+    Relation
+    |> where([r], r.follower_id == ^user_id)
+    |> Repo.all()
+    |> Enum.map(fn relation ->
+      relation.followee_id
+    end)
+    ~> users
 
     Tournament
     |> where([t], t.master_id in ^users)
     |> date_filter()
     |> Repo.all()
+    |> Repo.preload(:entrant)
+    |> Repo.preload(:team)
   end
 
   @doc """
@@ -109,6 +112,8 @@ defmodule Milk.Tournaments do
     |> where([t], t.master_id == ^user_id)
     |> date_filter()
     |> Repo.all()
+    |> Repo.preload(:entrant)
+    |> Repo.preload(:team)
   end
 
   @doc """
@@ -510,12 +515,15 @@ defmodule Milk.Tournaments do
 
   """
   def update_tournament(%Tournament{} = tournament, attrs) do
-    attrs =
-      unless is_nil(attrs["platform"]) do
-        Map.put(attrs, "platform_id", attrs["platform"])
-      else
-        attrs
-      end
+    attrs
+    |> Map.get("platform")
+    |> is_nil()
+    |> unless do
+      Map.put(attrs, "platform_id", attrs["platform"])
+    else
+      attrs
+    end
+    ~> attrs
 
     if !attrs["game_id"] or Repo.exists?(from g in Game, where: g.id == ^attrs["game_id"]) do
       tournament
@@ -523,6 +531,7 @@ defmodule Milk.Tournaments do
       |> Repo.update()
       |> case do
         {:ok, tournament} ->
+          update_details(tournament, attrs)
           {:ok, tournament}
 
         {:error, error} ->
@@ -543,6 +552,15 @@ defmodule Milk.Tournaments do
         _ -> acc + 1
       end
     end)
+  end
+
+  defp update_details(tournament, params) do
+    params = Map.put(params, "tournament_id", tournament.id)
+
+    tournament
+    |> Map.get(:id)
+    |> get_custom_detail_by_tournament_id()
+    |> update_custom_detail(params)
   end
 
   @doc """
@@ -2246,45 +2264,84 @@ defmodule Milk.Tournaments do
 
   @doc """
   Create a team.
+  TODO: 入力に対するバリデーションを行う
   """
   def create_team(tournament_id, size, leader, user_id_list) when is_list(user_id_list) do
-    # リーダー情報の取得
-    leader_info = Accounts.get_user(leader)
-    leader_name = leader_info.name
-    leader_icon = leader_info.icon_path
-
-    %Team{}
-    |> Team.changeset(%{
-      "tournament_id" => tournament_id,
-      "size" => size,
-      "name" => "#{leader_name}のチーム",
-      "icon_path" => leader_icon
-    })
-    |> Repo.insert()
+    # 招待をすでに受けている人は弾く
+    user_id_list
+    |> Enum.all?(fn user_id ->
+      Team
+      |> join(:inner, [t], tm in TeamMember, on: t.id == tm.team_id)
+      |> where([t, tm], t.tournament_id == ^tournament_id)
+      |> where([t, tm], tm.user_id == ^user_id)
+      |> where([t, tm], tm.is_invitation_confirmed)
+      |> Repo.all()
+      |> Kernel.==([])
+      ~> result
+    end)
+    |> (fn result ->
+      if result do
+        {:ok, nil}
+      else
+        {:error, "invalid invitation to user who is already a member of another team."}
+      end
+    end).()
     |> case do
-      {:ok, team} ->
-        create_team_leader(team.id, leader)
+      {:ok, nil} ->
+        tournament_id
+        |> get_tournament()
+        ~> tournament
 
-        create_team_members(team.id, user_id_list)
-        |> Enum.each(fn member ->
-          create_team_invitation(member.id, leader)
-        end)
+        if tournament.team_size == size do
+          {:ok, nil}
+        else
+          {:error, "invalid size"}
+        end
+      {:error, error} ->
+        {:error, error}
+    end
+    |> case do
+      {:ok, nil} ->
+        # リーダー情報の取得
+        leader_info = Accounts.get_user(leader)
+        leader_name = leader_info.name
+        leader_icon = leader_info.icon_path
 
-        team
-        |> Repo.preload(:tournament)
-        |> Repo.preload(:team_member)
-        |> Map.get(:team_member)
-        |> Repo.preload(:user)
-        |> Enum.map(fn member ->
-          user = Repo.preload(member.user, :auth)
-          Map.put(member, :user, user)
-        end)
-        ~> team_members
+        %Team{}
+        |> Team.changeset(%{
+          "tournament_id" => tournament_id,
+          "size" => size,
+          "name" => "#{leader_name}のチーム",
+          "icon_path" => leader_icon
+        })
+        |> Repo.insert()
+        |> case do
+          {:ok, team} ->
+            create_team_leader(team.id, leader)
 
-        team = Map.put(team, :team_member, team_members)
+            create_team_members(team.id, user_id_list)
+            |> Enum.each(fn member ->
+              create_team_invitation(member.id, leader)
+            end)
 
-        {:ok, team}
+            team
+            |> Repo.preload(:tournament)
+            |> Repo.preload(:team_member)
+            |> Map.get(:team_member)
+            |> Repo.preload(:user)
+            |> Enum.map(fn member ->
+              user = Repo.preload(member.user, :auth)
+              Map.put(member, :user, user)
+            end)
+            ~> team_members
 
+            team = Map.put(team, :team_member, team_members)
+
+            {:ok, team}
+
+          {:error, error} ->
+            {:error, error}
+        end
       {:error, error} ->
         {:error, error}
     end
@@ -2361,6 +2418,17 @@ defmodule Milk.Tournaments do
     |> where([tm], tm.team_id == ^team_id)
     |> Repo.all()
     |> Repo.preload(:user)
+  end
+
+  @doc """
+  Get team member by team invitation id.
+  """
+  def get_team_by_invitation_id(invitation_id) do
+    Team
+    |> join(:inner, [t], tm in TeamMember, on: t.id == tm.team_id)
+    |> join(:inner, [t, tm], ti in TeamInvitation, on: tm.id == ti.team_member_id)
+    |> where([t, tm, ti], ti.id == ^invitation_id)
+    |> Repo.one()
   end
 
   @doc """
@@ -2695,5 +2763,16 @@ defmodule Milk.Tournaments do
     |> where([t], t.tournament_id == ^tournament_id)
     |> Repo.one()
     |> Repo.preload(:tournament)
+  end
+
+  @doc """
+  Update custom detail
+  """
+  def update_custom_detail(detail, attrs \\ %{}) do
+    detail
+    |> TournamentCustomDetail.changeset(attrs)
+    |> IO.inspect()
+    |> Repo.update()
+    |> IO.inspect()
   end
 end

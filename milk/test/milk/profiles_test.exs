@@ -21,7 +21,7 @@ defmodule Milk.ProfilesTest do
       |> Map.put("tournament_id", it.id)
       |> Tournaments.create_entrant()
 
-      4..13
+      4..12
       |> Enum.to_list()
       |> Enum.map(fn n ->
         fixture_user(num: n)

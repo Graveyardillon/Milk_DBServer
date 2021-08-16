@@ -1310,15 +1310,15 @@ defmodule MilkWeb.TournamentControllerTest do
     test "team", %{conn: conn} do
       tournament = fixture_tournament(is_team: true, capacity: 1)
 
-      users =
-        1..5
-        |> Enum.to_list()
-        |> Enum.map(fn n ->
-          fixture_user(num: n)
-        end)
-        |> Enum.map(fn user ->
-          user.id
-        end)
+      1..5
+      |> Enum.to_list()
+      |> Enum.map(fn n ->
+        fixture_user(num: n)
+      end)
+      |> Enum.map(fn user ->
+        user.id
+      end)
+      ~> users
 
       [leader | members] = users
       size = 5
