@@ -631,7 +631,8 @@ defmodule Milk.Chat do
           tournament = Tournaments.get_tournament_by_room_id(chat_room_id)
 
           Map.new()
-          |> Map.put("content", attrs["word"])
+          |> Map.put("title", "大会チャットに新着があります")
+          |> Map.put("body_text", attrs["word"])
           |> Map.put("process_id", "RECEIVED_TOURNAMENT_CHAT")
           |> Map.put("user_id", device.user_id)
           |> Map.put("data", "")

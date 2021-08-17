@@ -126,13 +126,14 @@ defmodule MilkWeb.NotifController do
     end
   end
 
-  # FIXME: 権限の認証をつけるべき
-  def notify_all(conn, %{"text" => text}) do
+  # FIXME: 権限の認証をつけるべき 引数にbody_textの追加
+  def notify_all(conn, %{"text" => title}) do
     Accounts.list_user()
     |> Enum.each(fn user ->
       Map.new()
       |> Map.put("user_id", user.id)
-      |> Map.put("content", text)
+      |> Map.put("title", title)
+      # |> Map.put("body_text", body_text)
       |> Map.put("process_id", "COMMON")
       |> Map.put("data", "")
       |> Notif.create_notification()

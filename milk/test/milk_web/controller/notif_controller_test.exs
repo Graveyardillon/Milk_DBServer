@@ -27,7 +27,8 @@ defmodule MilkWeb.NotifControllerTest do
     |> Enum.to_list()
     |> Enum.map(fn n ->
       %{
-        "content" => "chore: #{n}",
+        "title" => "chore: #{n}",
+        "body_text" => "body #{n}",
         "process_id" => "COMMON",
         "data" => nil,
         "user_id" => user_id
@@ -39,51 +40,59 @@ defmodule MilkWeb.NotifControllerTest do
     [
       %{
         "user_id" => user_id,
-        "content" => "chore",
+        "title" => "chore",
+        "body_text" => "body body body",
         "data" => nil,
         "process_id" => "COMMON"
       },
       %{
         "user_id" => user_id,
-        "content" => "ビバンダム君",
+        "title" => "ビバンダム君",
+        "body_text" => "body body body",
         "data" => nil,
         "process_id" => "COMMON"
       },
       %{
         "user_id" => user_id,
-        "content" => "ライブ",
+        "title" => "ライブ",
+        "body_text" => "body body body",
         "data" => nil,
         "process_id" => "COMMON"
       },
       %{
         "user_id" => user_id,
-        "content" => "ビバンダム君",
+        "title" => "ビバンダム君",
+        "body_text" => "body body body",
         "data" => nil,
         "process_id" => "COMMMON"
       },
       %{
         "user_id" => user_id,
-        "content" => "ビバンダム君",
+        "title" => "ビバンダム君",
+        "body_text" => "TESTからチャット受信",
         "data" => nil,
         "process_id" => "RECEIVED_CHAT"
       },
       %{
         "user_id" => user_id,
-        "content" => "ビバンダム君",
+        "title" => "ビバンダム君",
+        "body_text" => "body body body",
         "data" => nil,
         "process_id" => "FOLLOWING_USER_PLANNED_TOURNAMENT",
         "icon_path" => "./static/image/tournament_thumbnail/2pimp.jpg"
       },
       %{
         "user_id" => user_id,
-        "content" => "ビバンダム君",
+        "title" => "大会開始",
+        "body_text" => "body body body",
         "data" => nil,
         "process_id" => "TOURNAMENT_START",
         "icon_path" => "2pimp"
       },
       %{
         "user_id" => user_id,
-        "content" => "",
+        "title" => "重複",
+        "body_text" => "body body body",
         "data" => nil,
         "process_id" => "DUPLICATE_CLAIM"
       }
@@ -103,7 +112,7 @@ defmodule MilkWeb.NotifControllerTest do
 
       Enum.each(1..4, fn _n ->
         %{
-          "content" => "chore",
+          "title" => "chore",
           "process_id" => "COMMON",
           "data" => nil,
           "user_id" => user.id
@@ -119,7 +128,7 @@ defmodule MilkWeb.NotifControllerTest do
       response
       |> Map.get("data")
       |> Enum.map(fn notification ->
-        assert notification["content"] == "chore"
+        assert notification["title"] == "chore"
         assert notification["process_id"] == "COMMON"
         assert is_nil(notification["data"])
         assert notification["user_id"] == user.id
@@ -136,7 +145,7 @@ defmodule MilkWeb.NotifControllerTest do
       user = fixture_user()
 
       attrs = %{
-        "content" => "chore",
+        "title" => "chore",
         "process_id" => "COMMON",
         "data" => nil,
         "user_id" => user.id
@@ -150,7 +159,7 @@ defmodule MilkWeb.NotifControllerTest do
       response
       |> Map.get("data")
       |> (fn notification ->
-            assert notification["content"] == attrs["content"]
+            assert notification["title"] == attrs["title"]
             assert notification["process_id"] == attrs["process_id"]
             assert notification["data"] == attrs["data"]
             assert notification["user_id"] == attrs["user_id"]
@@ -164,7 +173,7 @@ defmodule MilkWeb.NotifControllerTest do
       user = fixture_user()
 
       attrs = %{
-        "content" => "chore",
+        "title" => "chore",
         "process_id" => "COMMON",
         "data" => nil,
         "user_id" => user.id
@@ -192,7 +201,7 @@ defmodule MilkWeb.NotifControllerTest do
       json_response(conn, 200)
       |> Map.get("data")
       |> Enum.map(fn notification ->
-        assert notification["content"] == text
+        assert notification["title"] == text
         assert notification["user_id"] == user1.id
         assert notification["process_id"] == "COMMON"
       end)
@@ -206,7 +215,7 @@ defmodule MilkWeb.NotifControllerTest do
       json_response(conn, 200)
       |> Map.get("data")
       |> Enum.map(fn notification ->
-        assert notification["content"] == text
+        assert notification["title"] == text
         assert notification["user_id"] == user2.id
         assert notification["process_id"] == "COMMON"
       end)

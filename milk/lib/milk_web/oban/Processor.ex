@@ -54,7 +54,8 @@ defmodule Oban.Processer do
             "user_id" => device.user_id, 
             "process_id" => "TOURNAMENT_START",
             "icon_path" => "",
-            "content" => "#{tournament.name}",
+            "title" => "大会が始まりました",
+            "body_text" => "#{tournament.name}",
             "data" => tournament.id
           }
           |> Notif.create_notification()
@@ -64,9 +65,9 @@ defmodule Oban.Processer do
           Notif.push_ios(
             device.user_id,
             device.token,
-            6,
-            tournament.name,
+            "TOURNAMENT_START",
             "大会が始まりました",
+            tournament.name,
             params
           )
         end
