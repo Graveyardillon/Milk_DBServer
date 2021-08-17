@@ -2532,7 +2532,7 @@ defmodule Milk.Tournaments do
   defp create_invitation_notification(invitation) do
     %{
       "user_id" => invitation.team_member.user_id,
-      "process_code" => 8,
+      "process_id" => "TEAM_INVITE",
       "icon_path" => invitation.sender.icon_path,
       "content" => invitation.sender.name,
       "data" => invitation.id

@@ -17,7 +17,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\"notif\":{\"user_id\":1, \"content\":\"Papillon2\",\"process_code\":1,\"data\":\"something\"}}"
+          "raw": "{\"notif\":{\"user_id\":1, \"content\":\"Papillon2\",\"process_id\":\"FOLLOW_FROM\",\"data\":\"something\"}}"
         }
       }
     },
@@ -34,7 +34,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\"notif\":{\"user_id\":1, \"content\":\"Papillon2\",\"process_code\":1,\"data\":\"something\"}}"
+          "raw": "{\"notif\":{\"user_id\":1, \"content\":\"Papillon2\",\"process_id\":\"FOLLOW_FROM\",\"data\":\"something\"}}"
         }
       }
     },
@@ -51,7 +51,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\"notif\":{\"user_id\":1, \"content\":\"Papillon2\",\"process_code\":1,\"data\":\"something\"}}"
+          "raw": "{\"notif\":{\"user_id\":1, \"content\":\"Papillon2\",\"process_id\":\"FOLLOW_FROM\",\"data\":\"something\"}}"
         }
       }
     },
@@ -68,7 +68,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\"notif\":{\"user_id\":1, \"content\":\"Papillon2\",\"process_code\":4,\"data\":\"2\"}}"
+          "raw": "{\"notif\":{\"user_id\":1, \"content\":\"Papillon2\",\"process_id\":\"RECEIVED_CHAT\",\"data\":\"2\"}}"
         }
       }
     },
@@ -85,7 +85,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\"notif\":{\"user_id\":1, \"content\":\"Papillon2\",\"process_code\":4,\"data\":\"2\"}}"
+          "raw": "{\"notif\":{\"user_id\":1, \"content\":\"Papillon2\",\"process_id\":\"RECEIVED_CHAT\",\"data\":\"2\"}}"
         }
       }
     },
@@ -102,7 +102,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\"notif\":{\"user_id\":1, \"content\":\"Papillon2\",\"process_code\":5,\"data\":\"something\"}}"
+          "raw": "{\"notif\":{\"user_id\":1, \"content\":\"Papillon2\",\"process_id\":\"FOLLOWING_USER_PLANNED_TOURNAMENT\",\"data\":\"something\"}}"
         }
       }
     },
@@ -119,7 +119,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\"notif\":{\"user_id\":1, \"content\":\"Papillon2\",\"process_code\":5,\"data\":\"something\"}}"
+          "raw": "{\"notif\":{\"user_id\":1, \"content\":\"Papillon2\",\"process_id\":\"FOLLOWING_USER_PLANNED_TOURNAMENT\",\"data\":\"something\"}}"
         }
       }
     },
@@ -136,7 +136,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\"notif\":{\"user_id\":1, \"content\":\"Papillon2\",\"process_code\":5,\"data\":\"something\"}}"
+          "raw": "{\"notif\":{\"user_id\":1, \"content\":\"Papillon2\",\"process_id\":\"FOLLOWING_USER_PLANNED_TOURNAMENT\",\"data\":\"something\"}}"
         }
       }
     },
@@ -153,7 +153,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\"notif\":{\"user_id\":2, \"content\":\"Papillon1\",\"process_code\":5,\"data\":\"something\"}}"
+          "raw": "{\"notif\":{\"user_id\":2, \"content\":\"Papillon1\",\"process_id\":\"FOLLOWING_USER_PLANNED_TOURNAMENT\",\"data\":\"something\"}}"
         }
       }
     },
@@ -170,7 +170,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\"notif\":{\"user_id\":2, \"content\":\"Papillon1\",\"process_code\":5,\"data\":\"something\"}}"
+          "raw": "{\"notif\":{\"user_id\":2, \"content\":\"Papillon1\",\"process_id\":\"FOLLOWING_USER_PLANNED_TOURNAMENT\",\"data\":\"something\"}}"
         }
       }
     }

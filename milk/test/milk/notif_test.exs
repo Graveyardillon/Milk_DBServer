@@ -205,11 +205,11 @@ defmodule Milk.NotifTest do
 
       user_id = 1
       token = "f580bda8dd8ddc0e6fc3fac8f94f069aa10736bebd80e97bf1088b63d7bb4a43"
-      process_code = 0
+      process_id = "COMMON"
       title = "Test"
       message = "Test Notification (#{hostname})"
 
-      Notif.push_ios(user_id, token, process_code, title, message)
+      Notif.push_ios(user_id, token, process_id, title, message)
       |> (fn notification ->
             assert notification.device_token == token
             assert notification.push_type == "alert"

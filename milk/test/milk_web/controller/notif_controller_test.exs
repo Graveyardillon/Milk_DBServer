@@ -28,7 +28,7 @@ defmodule MilkWeb.NotifControllerTest do
     |> Enum.map(fn n ->
       %{
         "content" => "chore: #{n}",
-        "process_code" => 0,
+        "process_id" => "COMMON",
         "data" => nil,
         "user_id" => user_id
       }
@@ -41,51 +41,51 @@ defmodule MilkWeb.NotifControllerTest do
         "user_id" => user_id,
         "content" => "chore",
         "data" => nil,
-        "process_code" => 0
+        "process_id" => "COMMON"
       },
       %{
         "user_id" => user_id,
         "content" => "ビバンダム君",
         "data" => nil,
-        "process_code" => 1
+        "process_id" => "COMMON"
       },
       %{
         "user_id" => user_id,
         "content" => "ライブ",
         "data" => nil,
-        "process_code" => 2
+        "process_id" => "COMMON"
       },
       %{
         "user_id" => user_id,
         "content" => "ビバンダム君",
         "data" => nil,
-        "process_code" => 3
+        "process_id" => "COMMMON"
       },
       %{
         "user_id" => user_id,
         "content" => "ビバンダム君",
         "data" => nil,
-        "process_code" => 4
+        "process_id" => "RECEIVED_CHAT"
       },
       %{
         "user_id" => user_id,
         "content" => "ビバンダム君",
         "data" => nil,
-        "process_code" => 5,
+        "process_id" => "FOLLOWING_USER_PLANNED_TOURNAMENT",
         "icon_path" => "./static/image/tournament_thumbnail/2pimp.jpg"
       },
       %{
         "user_id" => user_id,
         "content" => "ビバンダム君",
         "data" => nil,
-        "process_code" => 6,
+        "process_id" => "TOURNAMENT_START",
         "icon_path" => "2pimp"
       },
       %{
         "user_id" => user_id,
         "content" => "",
         "data" => nil,
-        "process_code" => 7
+        "process_id" => "DUPLICATE_CLAIM"
       }
     ]
     |> Enum.each(fn notification ->
@@ -104,7 +104,7 @@ defmodule MilkWeb.NotifControllerTest do
       Enum.each(1..4, fn _n ->
         %{
           "content" => "chore",
-          "process_code" => 0,
+          "process_id" => "COMMON",
           "data" => nil,
           "user_id" => user.id
         }
@@ -120,7 +120,7 @@ defmodule MilkWeb.NotifControllerTest do
       |> Map.get("data")
       |> Enum.map(fn notification ->
         assert notification["content"] == "chore"
-        assert notification["process_code"] == 0
+        assert notification["process_id"] == "COMMON"
         assert is_nil(notification["data"])
         assert notification["user_id"] == user.id
       end)
@@ -137,7 +137,7 @@ defmodule MilkWeb.NotifControllerTest do
 
       attrs = %{
         "content" => "chore",
-        "process_code" => 0,
+        "process_id" => "COMMON",
         "data" => nil,
         "user_id" => user.id
       }
@@ -151,7 +151,7 @@ defmodule MilkWeb.NotifControllerTest do
       |> Map.get("data")
       |> (fn notification ->
             assert notification["content"] == attrs["content"]
-            assert notification["process_code"] == attrs["process_code"]
+            assert notification["process_id"] == attrs["process_id"]
             assert notification["data"] == attrs["data"]
             assert notification["user_id"] == attrs["user_id"]
           end).()
@@ -165,7 +165,7 @@ defmodule MilkWeb.NotifControllerTest do
 
       attrs = %{
         "content" => "chore",
-        "process_code" => 0,
+        "process_id" => "COMMON",
         "data" => nil,
         "user_id" => user.id
       }
@@ -194,7 +194,7 @@ defmodule MilkWeb.NotifControllerTest do
       |> Enum.map(fn notification ->
         assert notification["content"] == text
         assert notification["user_id"] == user1.id
-        assert notification["process_code"] == 0
+        assert notification["process_id"] == "COMMON"
       end)
       |> length()
       |> (fn len ->
@@ -208,7 +208,7 @@ defmodule MilkWeb.NotifControllerTest do
       |> Enum.map(fn notification ->
         assert notification["content"] == text
         assert notification["user_id"] == user2.id
-        assert notification["process_code"] == 0
+        assert notification["process_id"] == "COMMON"
       end)
       |> length()
       |> (fn len ->

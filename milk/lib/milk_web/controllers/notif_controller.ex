@@ -22,16 +22,18 @@ defmodule MilkWeb.NotifController do
         if is_nil(notification.icon_path) do
           Map.put(notification, :icon, nil)
         else
-          icon =
-            notification.process_code
-            |> case do
-              1 -> read_icon(notification.icon_path)
-              4 -> read_icon(notification.icon_path)
-              5 -> read_icon(notification.icon_path)
-              6 -> read_thumbnail(notification.icon_path)
-              _ -> nil
+          require_thumbnail = [
+            "FOLLOWING_USER_PLANNED_TOURNAMENT",
+            "TOURNAMENT_START",
+            "REMIND_TO_START_TOURNAMENT",
+            "TOURNAMENT_END"
+          ]
+          icon = 
+            if Enum.member?(require_thumbnail, notification.process_id) do
+              read_thumbnail(notification.icon_path)
+            else
+              read_icon(notification.icon_path)
             end
-
           Map.put(notification, :icon, icon)
         end
       end)
@@ -131,7 +133,7 @@ defmodule MilkWeb.NotifController do
       Map.new()
       |> Map.put("user_id", user.id)
       |> Map.put("content", text)
-      |> Map.put("process_code", 0)
+      |> Map.put("process_id", "COMMON")
       |> Map.put("data", "")
       |> Notif.create_notification()
     end)

@@ -5,51 +5,51 @@ alias Milk.Notif
     "user_id" => 1,
     "content" => "chore",
     "data" => nil,
-    "process_code" => 0
+    "process_id" => "COMMON"
   },
   %{
     "user_id" => 1,
     "content" => "ビバンダム君",
     "data" => nil,
-    "process_code" => 1
+    "process_id" => "COMMON"
   },
   %{
     "user_id" => 1,
     "content" => "ライブ",
     "data" => nil,
-    "process_code" => 2
+    "process_id" => "COMMON"
   },
   %{
     "user_id" => 1,
     "content" => "ビバンダム君",
     "data" => nil,
-    "process_code" => 3
+    "process_id" => "COMMON"
   },
   %{
     "user_id" => 1,
     "content" => "ビバンダム君",
     "data" => nil,
-    "process_code" => 4
+    "process_id" => "COMMON"
   },
   %{
     "user_id" => 1,
-    "content" => "ビバンダム君",
+    "content" => "ビバンダム君が大会主催",
     "data" => nil,
-    "process_code" => 5,
+    "process_id" => "FOLLOWING_USER_PLANNED_TOURNAMENT",
     "icon_path" => "./static/image/tournament_thumbnail/2pimp.jpg"
   },
   %{
     "user_id" => 1,
     "content" => "ビバンダム君",
     "data" => nil,
-    "process_code" => 6,
+    "process_id" => "TOURNAMENT_START",
     "icon_path" => "2pimp"
   },
   %{
     "user_id" => 1,
     "content" => "",
     "data" => nil,
-    "process_code" => 7
+    "process_id" => "DUPLICATE_CLAIM"
   }
 ]
 |> Enum.each(fn notification ->

@@ -632,7 +632,7 @@ defmodule Milk.Chat do
 
           Map.new()
           |> Map.put("content", attrs["word"])
-          |> Map.put("process_code", 4)
+          |> Map.put("process_id", "RECEIVED_TOURNAMENT_CHAT")
           |> Map.put("user_id", device.user_id)
           |> Map.put("data", "")
           |> Notif.create_notification()

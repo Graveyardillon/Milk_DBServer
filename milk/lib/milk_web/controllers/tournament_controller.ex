@@ -1165,7 +1165,7 @@ defmodule MilkWeb.TournamentController do
 
       %{
         "content" => content,
-        "process_code" => 4,
+        "process_id" => "DUPLICATE_CLAIM",
         "user_id" => device.user_id,
         "data" => ""
       }
