@@ -73,8 +73,13 @@ defmodule Milk.Tournaments do
     end
     ~> blocked_user_id_list
 
+    Timex.now()
+    |> Timex.add(Timex.Duration.from_days(1))
+    |> Timex.to_datetime()
+    ~> filter_date
+
     Tournament
-    #|> where([t], t.deadline > ^Timex.now() and t.create_time < ^date_offset)
+    |> where([t], t.deadline > ^filter_date and t.create_time < ^date_offset)
     |> where([t], not (t.master_id in ^blocked_user_id_list))
     |> order_by([t], asc: :event_date)
     |> offset(^offset)
