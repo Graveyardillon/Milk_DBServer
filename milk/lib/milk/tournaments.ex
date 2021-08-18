@@ -354,6 +354,20 @@ defmodule Milk.Tournaments do
   end
 
   @doc """
+
+  """
+  def get_tournament_by_url_token(token) do
+    Tournament
+    |> where([t], t.url_token == ^token)
+    |> Repo.one()
+    |> Repo.preload(:team)
+    |> Repo.preload(:entrant)
+    |> Repo.preload(:assistant)
+    |> Repo.preload(:master)
+    |> Repo.preload(:custom_detail)
+  end
+
+  @doc """
   Creates a tournament.
 
   ## Examples
@@ -459,6 +473,26 @@ defmodule Milk.Tournaments do
   defp create(attrs, thumbnail_path) do
     master_id = Tools.to_integer_as_needed(attrs["master_id"])
     platform_id = Tools.to_integer_as_needed(attrs["platform"])
+
+    attrs
+    |> Map.has_key?("url")
+    |> if do
+      unless attrs["url"] == "" do
+        attrs
+        |> Map.get("url")
+        |> String.split("/")
+        |> Enum.reverse()
+        |> hd()
+        ~> token
+
+        Map.put(attrs, "url_token", token)
+      else
+        attrs
+      end
+    else
+      attrs
+    end
+    ~> attrs
 
     Multi.new()
     |> Multi.insert(

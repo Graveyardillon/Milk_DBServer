@@ -34,6 +34,7 @@ defmodule Milk.Tournaments.Tournament do
     field :thumbnail_path, :string
     field :type, :integer
     field :url, :string
+    field :url_token, :string
 
     belongs_to :platform, Platform
     belongs_to :game, Game
@@ -64,6 +65,7 @@ defmodule Milk.Tournaments.Tournament do
       :password,
       :type,
       :url,
+      :url_token,
       :platform_id,
       :master_id,
       :count,
@@ -107,6 +109,7 @@ defmodule Milk.Tournaments.Tournament do
       :password,
       :type,
       :url,
+      :url_token,
       :platform_id,
       :master_id,
       :count,

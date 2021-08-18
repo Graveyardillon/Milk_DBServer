@@ -81,3 +81,5 @@ config :milk, Milk.Repo,
 config :milk, :redix_host, "localhost"
 config :milk, :redix_port, 6379
 config :milk, :environment, :dev
+
+config :milk, :domain, "http://localhost:3000"
