@@ -351,7 +351,14 @@ defmodule Milk.Tournaments do
 
   """
   def get_tournament_by_url_token(token) do
-
+    Tournament
+    |> where([t], t.url_token == ^token)
+    |> Repo.one()
+    |> Repo.preload(:team)
+    |> Repo.preload(:entrant)
+    |> Repo.preload(:assistant)
+    |> Repo.preload(:master)
+    |> Repo.preload(:custom_detail)
   end
 
   @doc """
@@ -461,7 +468,9 @@ defmodule Milk.Tournaments do
     master_id = Tools.to_integer_as_needed(attrs["master_id"])
     platform_id = Tools.to_integer_as_needed(attrs["platform"])
 
-    attrs = if Map.has_key?(attrs, "url") do
+    attrs
+    |> Map.has_key?("url")
+    |> if do
       unless attrs["url"] == "" do
         attrs
         |> Map.get("url")
@@ -477,6 +486,7 @@ defmodule Milk.Tournaments do
     else
       attrs
     end
+    ~> attrs
 
     Multi.new()
     |> Multi.insert(

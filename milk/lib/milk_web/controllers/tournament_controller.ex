@@ -1268,7 +1268,16 @@ defmodule MilkWeb.TournamentController do
   Get a tournament by url.
   """
   def get_tournament_by_url(conn, %{"url" => url}) do
-    tournament = Tournaments.get_tournament_by_url(url)
+    url
+    |> String.split("/")
+    |> Enum.reverse()
+    |> hd()
+    ~> token
+
+    token
+    |> Tournaments.get_tournament_by_url_token()
+    ~> tournament
+
     render(conn, "tournament_info.json", tournament: tournament)
   end
 
@@ -1776,18 +1785,24 @@ defmodule MilkWeb.TournamentController do
   end
 
   def redirect_by_url(conn, params) do
-    url = params["url"]
+    params
+    |> Map.get("url")
+    ~> token
+    |> Tournaments.get_tournament_by_url_token()
+    ~> tournament
 
-    # スラッシュで分割したn番目
+    domain = Application.get_env(:milk, :domain)
 
     params
     |> Map.get("os_name")
     |> case do
-      "iOS" -> "ios dayo"
-      _ -> "else dayo"
+      "iOS" ->
+        "e-players://e-players/tournament/#{token}"
+      _ ->
+        "#{domain}/tournament/information?tournament_id=#{tournament.id}"
     end
     ~> redirect_url
 
-    json(conn, %{msg: :worked, url: redirect_url})
+    json(conn, %{result: true, url: redirect_url})
   end
 end
