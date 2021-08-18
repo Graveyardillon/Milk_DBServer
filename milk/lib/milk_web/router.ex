@@ -138,6 +138,7 @@ defmodule MilkWeb.Router do
     get "/tournament/pid", TournamentController, :get_pid
     get "/tournament/verify_password", TournamentController, :verify_password
     get "/tournament/pending", TournamentController, :pending
+    get "/tournament/url/:url", TournamentController, :redirect_by_url
 
     post "/tournament/start", TournamentController, :start
     post "/tournament/register/pid", TournamentController, :register_pid_of_start_notification
@@ -158,6 +159,7 @@ defmodule MilkWeb.Router do
     post "/tournament/defeat", TournamentController, :force_to_defeat
     post "/tournament/finish", TournamentController, :finish
     put "/tournament/update", TournamentController, :update
+
     get "/tournament_log/index", TournamentLogController, :index
     post "/tournament_log/add", TournamentLogController, :create
 

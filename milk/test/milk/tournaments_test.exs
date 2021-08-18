@@ -50,13 +50,13 @@ defmodule Milk.TournamentsTest do
   }
 
   @update_attrs %{
-    capacity: 43,
-    deadline: "2011-05-18T15:01:01Z",
-    description: "some updated description",
-    event_date: "2011-05-18T15:01:01Z",
-    name: "some updated name",
-    type: 43,
-    url: "some updated url"
+    "capacity" => 43,
+    "deadline" => "2011-05-18T15:01:01Z",
+    "description" => "some updated description",
+    "event_date" => "2011-05-18T15:01:01Z",
+    "name" => "some updated name",
+    "type" => 43,
+    "url" => "some updated url"
   }
 
   @invalid_attrs %{
@@ -503,8 +503,8 @@ defmodule Milk.TournamentsTest do
 
   describe "home" do
     @home_attrs %{
-      deadline: "2031-05-18T15:01:01Z",
-      event_date: "2031-05-18T15:01:01Z"
+      "deadline" => "2031-05-18T15:01:01Z",
+      "event_date" => "2031-05-18T15:01:01Z"
     }
 
     test "home_tournament/3 with user_id" do
