@@ -1778,6 +1778,16 @@ defmodule MilkWeb.TournamentController do
   def redirect_by_url(conn, params) do
     url = params["url"]
 
-    json(conn, %{msg: :worked})
+    # スラッシュで分割したn番目
+
+    params
+    |> Map.get("os_name")
+    |> case do
+      "iOS" -> "ios dayo"
+      _ -> "else dayo"
+    end
+    ~> redirect_url
+
+    json(conn, %{msg: :worked, url: redirect_url})
   end
 end

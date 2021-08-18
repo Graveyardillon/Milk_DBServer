@@ -348,6 +348,13 @@ defmodule Milk.Tournaments do
   end
 
   @doc """
+
+  """
+  def get_tournament_by_url_token(token) do
+
+  end
+
+  @doc """
   Creates a tournament.
 
   ## Examples
@@ -453,6 +460,23 @@ defmodule Milk.Tournaments do
   defp create(attrs, thumbnail_path) do
     master_id = Tools.to_integer_as_needed(attrs["master_id"])
     platform_id = Tools.to_integer_as_needed(attrs["platform"])
+
+    attrs = if Map.has_key?(attrs, "url") do
+      unless attrs["url"] == "" do
+        attrs
+        |> Map.get("url")
+        |> String.split("/")
+        |> Enum.reverse()
+        |> hd()
+        ~> token
+
+        Map.put(attrs, "url_token", token)
+      else
+        attrs
+      end
+    else
+      attrs
+    end
 
     Multi.new()
     |> Multi.insert(
