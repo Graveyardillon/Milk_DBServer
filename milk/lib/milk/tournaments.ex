@@ -2042,21 +2042,25 @@ defmodule Milk.Tournaments do
     end
   end
 
+  # TODO: 関数名変えたい
   defp check_is_manager?(tournament, id, user_id) do
     is_manager = tournament.master_id == user_id
 
-    tournament.id
+    tournament
+    |> Map.get(:id)
     |> get_assistants()
     |> Enum.filter(fn assistant -> assistant.user_id == user_id end)
     |> (fn list -> list != [] end).()
     ~> is_assistant
 
-    tournament.id
+    tournament
+    |> Map.get(:id)
     |> get_entrants()
     |> Enum.map(& &1.user_id)
     ~> entrants
 
-    tournament.id
+    tournament
+    |> Map.get(:id)
     |> get_teams_by_tournament_id()
     |> Enum.map(fn team ->
       get_team_members_by_team_id(team.id)
@@ -2070,12 +2074,37 @@ defmodule Milk.Tournaments do
     |> (fn list -> list == [] end).()
     ~> is_not_entrant
 
+    tournament
+    |> Map.get(:is_team)
+    |> if do
+      tournament
+      |> Map.get(:id)
+      |> get_team_by_tournament_id_and_user_id(user_id)
+      ~> team
+      |> is_nil()
+      |> unless do
+        team
+        |> Map.get(:id)
+        |> get_leader()
+        |> Map.get(:user_id)
+        |> Kernel.!=(user_id)
+      else
+        false
+      end
+    else
+      false
+    end
+    ~> is_member
+
     cond do
       is_manager && is_not_entrant ->
         "IsManager"
 
       !is_manager && is_assistant && is_not_entrant ->
         "IsAssistant"
+
+      is_member ->
+        "IsMember"
 
       true ->
         check_has_lost?(tournament.id, id)
