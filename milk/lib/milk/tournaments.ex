@@ -73,8 +73,13 @@ defmodule Milk.Tournaments do
     end
     ~> blocked_user_id_list
 
+    Timex.now()
+    |> Timex.add(Timex.Duration.from_days(1))
+    |> Timex.to_datetime()
+    ~> filter_date
+
     Tournament
-    #|> where([t], t.deadline > ^Timex.now() and t.create_time < ^date_offset)
+    |> where([t], t.deadline > ^filter_date and t.create_time < ^date_offset)
     |> where([t], not (t.master_id in ^blocked_user_id_list))
     |> order_by([t], asc: :event_date)
     |> offset(^offset)
@@ -249,6 +254,7 @@ defmodule Milk.Tournaments do
     Tournament
     |> where([t], t.url == ^url)
     |> Repo.one()
+    |> Repo.preload(:custom_detail)
     |> Repo.preload(:team)
     |> Repo.preload(:entrant)
     |> Repo.preload(:assistant)
@@ -589,7 +595,10 @@ defmodule Milk.Tournaments do
   end
 
   defp update_details(tournament, params) do
-    params = Map.put(params, "tournament_id", tournament.id)
+    params
+    |> Map.put(:tournament_id, tournament.id)
+    |> Tools.atom_map_to_string_map()
+    ~> params
 
     tournament
     |> Map.get(:id)
