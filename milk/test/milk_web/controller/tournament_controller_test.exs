@@ -3210,6 +3210,9 @@ defmodule MilkWeb.TournamentControllerTest do
 
       opponent_id
       |> Tournaments.get_team_members_by_team_id()
+      |> Enum.filter(fn member ->
+        !member.is_leader
+      end)
       |> hd()
       |> Map.get(:user_id)
       ~> opponent_member
@@ -3291,7 +3294,7 @@ defmodule MilkWeb.TournamentControllerTest do
 
       match_info = json_response(conn, 200)
       refute is_nil(match_info["is_leader"])
-      assert match_info["state"] == "IsLoser"
+      assert match_info["state"] == "IsMember"
       assert match_info["rank"] == 4
     end
 
