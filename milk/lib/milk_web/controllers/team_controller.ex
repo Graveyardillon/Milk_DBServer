@@ -131,7 +131,7 @@ defmodule MilkWeb.TeamController do
     |> Tournaments.delete_team()
     |> case do
       {:ok, team} ->
-        team
+
         render(conn, "show.json", team: team)
 
       {:error, error} ->

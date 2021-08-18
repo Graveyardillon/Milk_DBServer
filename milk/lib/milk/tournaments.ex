@@ -2598,12 +2598,12 @@ defmodule Milk.Tournaments do
   end
 
   @doc """
-  Get invitations of user
+  Get invitations by team id.
   """
-  def get_invitations(user_id) do
+  def get_invitations_by_team_id(team_id) do
     TeamInvitation
     |> join(:inner, [ti], tm in TeamMember, on: ti.team_member_id == tm.id)
-    |> where([ti, tm], tm.user_id == ^user_id)
+    |> where([ti, tm], tm.team_id == ^team_id)
     |> Repo.all()
   end
 
