@@ -55,18 +55,6 @@ defmodule Milk.Notif do
   end
 
   @doc """
-  Get notification by invitation id.
-  """
-  def get_notification_by_invitation_id(invitation_id) do
-    invitation_id = to_string(invitation_id)
-
-    Notification
-    |> where([n], n.data == ^invitation_id)
-    |> where([n], n.process_code == 8)
-    |> Repo.one()
-  end
-
-  @doc """
   Gets a single notification.
 
   Raises `Ecto.NoResultsError` if the Notification does not exist.

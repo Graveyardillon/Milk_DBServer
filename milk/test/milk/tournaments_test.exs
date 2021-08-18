@@ -12,7 +12,6 @@ defmodule Milk.TournamentsTest do
     Chat,
     Games,
     Log,
-    Notif,
     Relations,
     Repo,
     TournamentProgress,
@@ -2881,41 +2880,6 @@ defmodule Milk.TournamentsTest do
       |> Tournaments.get_leader()
       |> Map.get(:user_id)
       |> Tournaments.has_confirmed_as_team?(tournament.id)
-      |> assert()
-    end
-  end
-
-  describe "get invitations by team id" do
-    test "works" do
-      tournament = fixture_tournament(is_team: true, capacity: 2, type: 2)
-      leader_id = fixture_user(num: 0).id
-
-      1..4
-      |> Enum.to_list()
-      |> Enum.map(fn n ->
-        fixture_user(num: n).id
-      end)
-      ~> user_id_list
-
-      tournament
-      |> Map.get(:id)
-      |> Tournaments.create_team(tournament.team_size, leader_id, user_id_list)
-      ~> {:ok, team}
-
-      team
-      |> Map.get(:id)
-      |> Tournaments.get_invitations_by_team_id()
-      |> Enum.map(fn invitation ->
-        invitation
-        |> Map.get(:id)
-        |> Notif.get_notification_by_invitation_id()
-        ~> notification
-
-        assert notification.data == to_string(invitation.id)
-        assert notification.process_code == 8
-      end)
-      |> length()
-      |> Kernel.==(tournament.team_size-1)
       |> assert()
     end
   end
