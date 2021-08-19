@@ -630,15 +630,16 @@ defmodule Milk.Chat do
         unless device.user_id == user_id do
           tournament = Tournaments.get_tournament_by_room_id(chat_room_id)
 
-          Map.new()
-          |> Map.put("title", "大会チャットに新着があります")
-          |> Map.put("body_text", attrs["word"])
-          |> Map.put("process_id", "RECEIVED_TOURNAMENT_CHAT")
-          |> Map.put("user_id", device.user_id)
-          |> Map.put("data", "{
-            \"tournament_id\": #{tournament.id},
-            \"chat_room_id\": #{chat_room_id}
-          }")
+          %{
+            "title" => "大会チャットに新着があります",
+            "body_text" => attrs["word"],
+            "process_id" => "RECEIVED_TOURNAMENT_CHAT",
+            "user_id" => device.user_id,
+            "data" => Jason.encode!(%{
+              tournament_id: tournament.id, 
+              chant_room_id: chant_room_id
+            })
+          }
           |> Notif.create_notification()
 
           title = "#{user.name} (in #{tournament.name})"

@@ -7,7 +7,7 @@ alias Milk.Notif
     "icon_path" => nil,
     "title" => "User1 からチーム招待されました",
     # "body_text" => "",
-    "data" => "{\"invitation_id\": 123}"
+    "data" => Jason.encode!(%{invitation_id: 999})
   },
   %{
     "user_id" => 1,

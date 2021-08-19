@@ -2675,8 +2675,10 @@ defmodule Milk.Tournaments do
       "process_id" => "TEAM_INVITE",
       "icon_path" => invitation.sender.icon_path,
       "title" => "#{invitation.sender.name} からチーム招待されました",
-      # "body_text" => "",
-      "data" => invitation.id
+      "body_text" => "",
+      "data" => Jason.encode!(%{
+        invitation_id: invitation.id
+      })
     }
     |> Notif.create_notification()
     |> case do
