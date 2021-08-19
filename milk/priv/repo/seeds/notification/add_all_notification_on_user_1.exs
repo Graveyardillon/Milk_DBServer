@@ -3,6 +3,14 @@ alias Milk.Notif
 [
   %{
     "user_id" => 1,
+    "process_id" => "TEAM_INVITE",
+    "icon_path" => nil,
+    "title" => "User1 からチーム招待されました",
+    # "body_text" => "",
+    "data" => "{\"invitation_id\": 123}"
+  },
+  %{
+    "user_id" => 1,
     "title" => "chore",
     "body_text" => "body body body",
     "data" => nil,

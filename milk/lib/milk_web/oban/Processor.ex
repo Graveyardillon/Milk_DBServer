@@ -56,7 +56,7 @@ defmodule Oban.Processer do
             "icon_path" => "",
             "title" => "大会が始まりました",
             "body_text" => "#{tournament.name}",
-            "data" => tournament.id
+            "data" => "{\"tournament_id\": #{tournament.id}}"
           }
           |> Notif.create_notification()
 

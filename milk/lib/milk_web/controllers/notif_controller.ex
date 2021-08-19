@@ -135,7 +135,7 @@ defmodule MilkWeb.NotifController do
       |> Map.put("title", title)
       # |> Map.put("body_text", body_text)
       |> Map.put("process_id", "COMMON")
-      |> Map.put("data", "")
+      # |> Map.put("data", "")
       |> Notif.create_notification()
     end)
 

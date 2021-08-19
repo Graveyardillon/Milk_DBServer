@@ -635,7 +635,10 @@ defmodule Milk.Chat do
           |> Map.put("body_text", attrs["word"])
           |> Map.put("process_id", "RECEIVED_TOURNAMENT_CHAT")
           |> Map.put("user_id", device.user_id)
-          |> Map.put("data", "")
+          |> Map.put("data", "{
+            \"tournament_id\": #{tournament.id},
+            \"chat_room_id\": #{chat_room_id}
+          }")
           |> Notif.create_notification()
 
           title = "#{user.name} (in #{tournament.name})"
