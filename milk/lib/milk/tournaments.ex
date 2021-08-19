@@ -79,7 +79,7 @@ defmodule Milk.Tournaments do
     ~> filter_date
 
     Tournament
-    |> where([t], t.deadline > ^filter_date and t.create_time < ^date_offset)
+    #|> where([t], t.deadline > ^filter_date and t.create_time < ^date_offset)
     |> where([t], not (t.master_id in ^blocked_user_id_list))
     |> order_by([t], asc: :event_date)
     |> offset(^offset)
