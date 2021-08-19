@@ -4,8 +4,8 @@ runtime: custom
 runtime_config:
   release_app: milk
 resources:
-  cpu: 1
-  memory_gb: 0.9
+  cpu: 2
+  memory_gb: 2.3
   disk_size_gb: 10
 
 instance_class: b2
