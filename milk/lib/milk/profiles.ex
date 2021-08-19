@@ -156,14 +156,17 @@ defmodule Milk.Profiles do
       |> where([t], t.id == ^member.team_id)
       |> Repo.one()
       ~> team_log
+      |> is_nil()
+      |> unless do
+        TournamentLog
+        |> where([tl], tl.tournament_id == ^team_log.tournament_id)
+        |> Repo.one()
+        ~> tlog
 
-      TournamentLog
-      |> where([tl], tl.tournament_id == ^team_log.tournament_id)
-      |> Repo.one()
-      ~> tlog
-
-      Map.put(team_log, :tournament_log, tlog)
+        Map.put(team_log, :tournament_log, tlog)
+      end
     end)
+    |> Enum.filter(fn log -> !is_nil(log) end)
     |> Enum.concat(records)
     |> Enum.uniq()
   end

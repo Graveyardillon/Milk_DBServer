@@ -50,13 +50,13 @@ defmodule Milk.TournamentsTest do
   }
 
   @update_attrs %{
-    capacity: 43,
-    deadline: "2011-05-18T15:01:01Z",
-    description: "some updated description",
-    event_date: "2011-05-18T15:01:01Z",
-    name: "some updated name",
-    type: 43,
-    url: "some updated url"
+    "capacity" => 43,
+    "deadline" => "2011-05-18T15:01:01Z",
+    "description" => "some updated description",
+    "event_date" => "2011-05-18T15:01:01Z",
+    "name" => "some updated name",
+    "type" => 43,
+    "url" => "some updated url"
   }
 
   @invalid_attrs %{
@@ -503,8 +503,8 @@ defmodule Milk.TournamentsTest do
 
   describe "home" do
     @home_attrs %{
-      deadline: "2031-05-18T15:01:01Z",
-      event_date: "2031-05-18T15:01:01Z"
+      "deadline" => "2031-05-18T15:01:01Z",
+      "event_date" => "2031-05-18T15:01:01Z"
     }
 
     test "home_tournament/3 with user_id" do
@@ -1203,12 +1203,12 @@ defmodule Milk.TournamentsTest do
 
   describe "state! (team)" do
     test "state!/2 returns IsNotStarted" do
-      tournament = fixture_tournament(is_team: true)
+      tournament = fixture_tournament(is_team: true, capacity: 8, type: 2)
       assert "IsNotStarted" == Tournaments.state!(tournament.id, tournament.master_id)
     end
 
     test "state!/2 returns IsManager" do
-      tournament = fixture_tournament(is_team: true)
+      tournament = fixture_tournament(is_team: true, capacity: 8, type: 2)
       teams = fill_with_team(tournament.id)
       assert length(teams) == tournament.capacity
 
@@ -1217,7 +1217,7 @@ defmodule Milk.TournamentsTest do
     end
 
     test "state!/2 returns IsAssistant" do
-      tournament = fixture_tournament(is_team: true)
+      tournament = fixture_tournament(is_team: true, capacity: 8, type: 2)
       fill_with_team(tournament.id)
       assistant_id = fixture_user(num: 10).id
 
@@ -1231,8 +1231,8 @@ defmodule Milk.TournamentsTest do
       assert "IsAssistant" == Tournaments.state!(tournament.id, assistant_id)
     end
 
-    test "state!/2 returns IsInMatch" do
-      tournament = fixture_tournament(is_team: true, capacity: 4)
+    test "state!/2 returns IsInMatch and IsMember" do
+      tournament = fixture_tournament(is_team: true, capacity: 4, type: 2)
 
       fill_with_team(tournament.id)
       |> hd()
@@ -1244,6 +1244,9 @@ defmodule Milk.TournamentsTest do
 
       team.id
       |> Tournaments.get_team_members_by_team_id()
+      |> Enum.filter(fn member ->
+        !member.is_leader
+      end)
       |> hd()
       |> Map.get(:user)
       ~> member
@@ -1251,11 +1254,11 @@ defmodule Milk.TournamentsTest do
       TournamentProgress.start_team_best_of_format(tournament.master_id, tournament)
 
       assert "IsInMatch" == Tournaments.state!(tournament.id, leader.id)
-      assert "IsInMatch" == Tournaments.state!(tournament.id, member.id)
+      assert "IsMember" == Tournaments.state!(tournament.id, member.id)
     end
 
     test "state!/2 returns IsLoser" do
-      [is_team: true, capacity: 4]
+      [is_team: true, capacity: 4, type: 2]
       |> fixture_tournament()
       ~> tournament
       |> Map.get(:id)
@@ -1271,7 +1274,7 @@ defmodule Milk.TournamentsTest do
     end
 
     test "state!/2 returns IsFinished" do
-      tournament = fixture_tournament(is_team: true, capacity: 2)
+      tournament = fixture_tournament(is_team: true, capacity: 2, type: 2)
 
       fill_with_team(tournament.id)
       ~> [team | opponent_team]
@@ -2641,7 +2644,7 @@ defmodule Milk.TournamentsTest do
   end
 
   defp setup_team(n) do
-    tournament = fixture_tournament(is_started: false, is_team: true, capacity: 2)
+    tournament = fixture_tournament(is_started: false, is_team: true, capacity: 2, team_size: n)
 
     users =
       1..n

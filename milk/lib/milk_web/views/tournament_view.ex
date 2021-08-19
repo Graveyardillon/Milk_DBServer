@@ -122,6 +122,13 @@ defmodule MilkWeb.TournamentView do
         thumbnail_path: tournament.thumbnail_path,
         game_id: tournament.game_id,
         game_name: tournament.game_name,
+        custom_detail: unless is_nil(tournament.custom_detail) do
+          %{
+            coin_head_field: tournament.custom_detail.coin_head_field,
+            coin_tail_field: tournament.custom_detail.coin_tail_field,
+            multiple_selection_type: tournament.custom_detail.multiple_selection_type
+          }
+        end,
         event_date: tournament.event_date,
         enabled_coin_toss: tournament.enabled_coin_toss,
         start_recruiting: tournament.start_recruiting,

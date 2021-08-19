@@ -54,3 +54,5 @@ config :pigeon, :apns,
 config :milk, :redix_host, "10.231.150.131"
 config :milk, :redix_port, 6379
 config :milk, :environment, :prod
+
+config :milk, :domain, "https://e-players-web.web.app"
