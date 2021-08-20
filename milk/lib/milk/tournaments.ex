@@ -2529,13 +2529,18 @@ defmodule Milk.Tournaments do
         member.user_id == user_id
       end)
     end)
-    |> hd()
-    |> Map.get(:team_member)
-    |> Repo.preload(:user)
-    |> Enum.map(fn member ->
-      user = Repo.preload(member.user, :auth)
-      Map.put(member, :user, user)
-    end)
+    |> case do
+      [] -> []
+      teams ->
+        teams
+        |> hd()
+        |> Map.get(:team_member)
+        |> Repo.preload(:user)
+        |> Enum.map(fn member ->
+          user = Repo.preload(member.user, :auth)
+          Map.put(member, :user, user)
+        end)
+    end
   end
 
   @doc """
