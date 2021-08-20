@@ -51,6 +51,7 @@ defmodule MilkWeb.TeamController do
     |> length()
     |> (fn len ->
           tournament = Tournaments.get_tournament(tournament_id)
+          tournament.capacity <= len
         end).()
     |> if do
       render(conn, "error.json", error: "over tournament size")
