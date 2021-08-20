@@ -637,7 +637,7 @@ defmodule Milk.Chat do
             "user_id" => device.user_id,
             "data" => Jason.encode!(%{
               tournament_id: tournament.id, 
-              chant_room_id: chant_room_id
+              chant_room_id: chat_room_id
             })
           }
           |> Notif.create_notification()
