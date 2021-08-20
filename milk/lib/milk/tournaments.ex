@@ -477,7 +477,7 @@ defmodule Milk.Tournaments do
     attrs
     |> Map.has_key?("url")
     |> if do
-      unless attrs["url"] == "" do
+      unless attrs["url"] == "" || is_nil(attrs["url"]) do
         attrs
         |> Map.get("url")
         |> String.split("/")
