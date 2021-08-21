@@ -6,6 +6,8 @@ defmodule MilkWeb.ChatsController do
     FileUtils
   }
 
+  import Common.Sperm
+
   alias Milk.Chat
   alias Milk.Chat.Chats
   alias Milk.Media.Image
@@ -87,26 +89,26 @@ defmodule MilkWeb.ChatsController do
   FIXME: chatディレクトリがない場合は作成の処理入れたいな
   """
   def upload_image(conn, %{"image" => image}) do
-    image_path =
-      if image != "" do
-        uuid = SecureRandom.uuid()
-        FileUtils.copy(image.path, "./static/image/chat/#{uuid}.jpg")
+    if image != "" do
+      uuid = SecureRandom.uuid()
+      FileUtils.copy(image["path"], "./static/image/chat/#{uuid}.jpg")
 
-        case Application.get_env(:milk, :environment) do
-          :dev ->
-            uuid
+      case Application.get_env(:milk, :environment) do
+        :dev ->
+          uuid
 
-          :test ->
-            uuid
+        :test ->
+          uuid
 
-          _ ->
-            object = Milk.CloudStorage.Objects.upload("./static/image/chat/#{uuid}.jpg")
-            File.rm("./static/image/chat/#{uuid}.jpg")
-            object.name
-        end
-      else
-        nil
+        _ ->
+          object = Milk.CloudStorage.Objects.upload("./static/image/chat/#{uuid}.jpg")
+          File.rm("./static/image/chat/#{uuid}.jpg")
+          object.name
       end
+    else
+      nil
+    end
+    ~> image_path
 
     json(conn, %{local_path: image_path})
   end

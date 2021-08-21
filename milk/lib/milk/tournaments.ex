@@ -477,7 +477,7 @@ defmodule Milk.Tournaments do
     attrs
     |> Map.has_key?("url")
     |> if do
-      unless attrs["url"] == "" do
+      unless attrs["url"] == "" || is_nil(attrs["url"]) do
         attrs
         |> Map.get("url")
         |> String.split("/")
@@ -2529,13 +2529,18 @@ defmodule Milk.Tournaments do
         member.user_id == user_id
       end)
     end)
-    |> hd()
-    |> Map.get(:team_member)
-    |> Repo.preload(:user)
-    |> Enum.map(fn member ->
-      user = Repo.preload(member.user, :auth)
-      Map.put(member, :user, user)
-    end)
+    |> case do
+      [] -> []
+      teams ->
+        teams
+        |> hd()
+        |> Map.get(:team_member)
+        |> Repo.preload(:user)
+        |> Enum.map(fn member ->
+          user = Repo.preload(member.user, :auth)
+          Map.put(member, :user, user)
+        end)
+    end
   end
 
   @doc """

@@ -56,11 +56,21 @@ defmodule MilkWeb.TeamController do
     |> if do
       render(conn, "error.json", error: "over tournament size")
     else
+      # リーダーが重複して作成されないようにする
       tournament_id
-      |> Tournaments.create_team(size, leader_id, user_id_list)
-      |> case do
-        {:ok, team} -> render(conn, "show.json", team: team)
-        {:error, error} -> render(conn, "error.json", error: Tools.create_error_message(error))
+      |> Tournaments.get_teammates(leader_id)
+      |> Enum.any?(fn member ->
+        member.user_id == leader_id
+      end)
+      |> if do
+        render(conn, "error.json", error: "duplicated request from leader")
+      else
+        tournament_id
+        |> Tournaments.create_team(size, leader_id, user_id_list)
+        |> case do
+          {:ok, team} -> render(conn, "show.json", team: team)
+          {:error, error} -> render(conn, "error.json", error: Tools.create_error_message(error))
+        end
       end
     end
   end
