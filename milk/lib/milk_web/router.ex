@@ -14,8 +14,8 @@ defmodule MilkWeb.Router do
 
     if Application.get_env(:milk, :environment) == :prod do
       plug Milk.UserManager.GuardianPipeline
-    else
-      plug Milk.UserManager.GuardianPipeline
+    # else
+    #   plug Milk.UserManager.GuardianPipeline
     end
   end
 
