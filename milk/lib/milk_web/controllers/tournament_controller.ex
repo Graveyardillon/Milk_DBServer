@@ -37,6 +37,7 @@ defmodule MilkWeb.TournamentController do
     following_users = Relations.get_following_list(user_id)
     follower_users = Relations.get_followers_list(user_id)
     users = Enum.uniq_by(following_users ++ follower_users, fn user -> user.id end)
+
     render(conn, "users.json", users: users)
   end
 
@@ -44,17 +45,21 @@ defmodule MilkWeb.TournamentController do
   Get tournaments of a specific user.
   """
   def get_tournaments_by_master_id(conn, %{"user_id" => user_id}) do
-    tournaments =
-      Tournaments.get_tournaments_by_master_id(user_id)
-      |> Enum.map(fn tournament ->
-        entrants =
-          Tournaments.get_entrants(tournament.id)
-          |> Enum.map(fn entrant ->
-            Accounts.get_user(entrant.user_id)
-          end)
-
-        Map.put(tournament, :entrants, entrants)
+    user_id
+    |> Tools.to_integer_as_needed()
+    |> Tournaments.get_tournaments_by_master_id()
+    |> Enum.map(fn tournament ->
+      tournament
+      |> Map.get(:id)
+      |> Tournaments.get_entrants()
+      |> Enum.map(fn entrant ->
+        Accounts.get_user(entrant.user_id)
       end)
+      ~> entrants
+
+      Map.put(tournament, :entrants, entrants)
+    end)
+    ~> tournaments
 
     render(conn, "home.json", tournaments_info: tournaments)
   end

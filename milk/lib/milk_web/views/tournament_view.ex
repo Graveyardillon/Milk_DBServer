@@ -8,17 +8,10 @@ defmodule MilkWeb.TournamentView do
   }
 
   def render("users.json", %{users: users}) do
-    if users != [] do
-      %{
-        data: render_many(users, UserView, "user.json"),
-        result: true
-      }
-    else
-      %{
-        data: nil,
-        result: false
-      }
-    end
+    %{
+      data: render_many(users, UserView, "user.json"),
+      result: true
+    }
   end
 
   def render("opponent.json", %{opponent: opponent}) do
@@ -462,10 +455,6 @@ defmodule MilkWeb.TournamentView do
   end
 
   def render("error.json", %{error: error}) do
-    if error do
-      %{result: false, error: error, data: nil}
-    else
-      %{result: false, error: nil, data: nil}
-    end
+    %{result: false, error: error, data: nil}
   end
 end
