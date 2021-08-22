@@ -8,7 +8,7 @@ resources:
   memory_gb: 2.3
   disk_size_gb: 10
 
-instance_class: b1
+instance_class: b2
 manual_scaling:
   instances: 1
 beta_settings:
