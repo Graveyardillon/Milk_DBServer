@@ -19,5 +19,6 @@ defmodule Milk.Accounts.ServiceReference do
     service_reference
     |> cast(attrs, [:riot_id, :twitter_id, :user_id])
     |> validate_format(:twitter_id, ~r/^@.*/)
+    |> validate_format(:riot_id, ~r/#/)
   end
 end
