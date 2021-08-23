@@ -10,6 +10,8 @@ defmodule Milk.Accounts.ServiceReference do
     field :twitter_id, :string, null: true
 
     belongs_to :user, User
+
+    timestamps()
   end
 
   @doc false

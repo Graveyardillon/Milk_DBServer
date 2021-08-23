@@ -22,6 +22,7 @@ defmodule Milk.Accounts do
     ActionHistory,
     Auth,
     Device,
+    ServiceReference,
     User
   }
 
@@ -593,5 +594,14 @@ defmodule Milk.Accounts do
       {:ok, device} -> true
       {:error, error} -> false
     end
+  end
+
+  @doc """
+  Create a new service reference.
+  """
+  def create_service_reference(attrs) do
+    %ServiceReference{}
+    |> ServiceReference.changeset(attrs)
+    |> Repo.insert()
   end
 end
