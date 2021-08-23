@@ -630,4 +630,53 @@ defmodule Milk.AccountsTest do
       |> assert()
     end
   end
+
+  describe "create and get and update external service" do
+    test "works" do
+      user = fixture_user()
+
+      content = "@papillon6814"
+      name = "Twitter"
+
+      Map.new()
+      |> Map.put(:user_id, user.id)
+      |> Map.put(:content, content)
+      |> Map.put(:name, name)
+      |> Accounts.create_external_service()
+      |> elem(1)
+      ~> external_service
+
+      assert external_service.user_id == user.id
+      assert external_service.content == content
+      assert external_service.name == name
+
+      user
+      |> Map.get(:id)
+      |> Accounts.get_external_services()
+      ~> external_services
+      |> Enum.map(fn external_service ->
+        refute is_nil(external_service.id)
+        assert external_service.user_id == user.id
+        assert external_service.content == content
+        assert external_service.name == name
+      end)
+      |> length()
+      |> Kernel.==(1)
+      |> assert()
+
+      ucontent = "@papilo123"
+      uname = "twotter"
+
+      external_services
+      |> Enum.map(fn external_service ->
+        external_service
+        |> Accounts.update_external_service(%{content: ucontent, name: uname})
+        |> elem(1)
+        ~> external_service
+
+        assert external_service.name == uname
+        assert external_service.content == ucontent
+      end)
+    end
+  end
 end

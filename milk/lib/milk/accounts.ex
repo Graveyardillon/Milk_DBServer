@@ -22,6 +22,7 @@ defmodule Milk.Accounts do
     ActionHistory,
     Auth,
     Device,
+    ExternalService,
     ServiceReference,
     User
   }
@@ -620,6 +621,33 @@ defmodule Milk.Accounts do
   def update_service_reference(%ServiceReference{} = service_reference, attrs) do
     service_reference
     |> ServiceReference.changeset(attrs)
+    |> Repo.update()
+  end
+
+  @doc """
+  Create external service.
+  """
+  def create_external_service(attrs) do
+    %ExternalService{}
+    |> ExternalService.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  @doc """
+  Get external services by user id.
+  """
+  def get_external_services(user_id) do
+    ExternalService
+    |> where([es], es.user_id == ^user_id)
+    |> Repo.all()
+  end
+
+  @doc """
+  Update external service.
+  """
+  def update_external_service(%ExternalService{} = external_service, attrs) do
+    external_service
+    |> ExternalService.changeset(attrs)
     |> Repo.update()
   end
 end
