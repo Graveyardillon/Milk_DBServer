@@ -1,6 +1,8 @@
 defmodule Milk.AccountsTest do
   use Milk.DataCase
 
+  import Common.Sperm
+
   alias Milk.{
     Accounts,
     Profiles,
@@ -564,6 +566,44 @@ defmodule Milk.AccountsTest do
 
       result = Accounts.unregister_device(device)
       assert result == true
+    end
+  end
+
+  describe "create service reference and get service reference by user id" do
+    test "works" do
+      user = fixture_user()
+      tid = "@papillon6814"
+      rid = "asfasd#asdf"
+
+      %{user_id: user.id, twitter_id: tid, riot_id: rid}
+      |> Accounts.create_service_reference()
+      |> elem(1)
+      ~> service_reference
+
+      assert service_reference.user_id == user.id
+      assert service_reference.twitter_id == tid
+      assert service_reference.riot_id == rid
+
+      user
+      |> Map.get(:id)
+      |> Accounts.get_service_reference_by_user_id()
+      ~> service_reference
+
+      assert service_reference.user_id == user.id
+      assert service_reference.twitter_id == tid
+      assert service_reference.riot_id == rid
+
+      utid = "@papillon6"
+      urid = "fff#4444"
+
+      service_reference
+      |> Accounts.update_service_reference(%{twitter_id: utid, riot_id: urid})
+      |> elem(1)
+      ~> service_reference
+
+      assert service_reference.user_id == user.id
+      assert service_reference.twitter_id == utid
+      assert service_reference.riot_id == urid
     end
   end
 end
