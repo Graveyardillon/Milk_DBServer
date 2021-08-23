@@ -114,6 +114,7 @@ defmodule MilkWeb.Router do
     get "/tournament/participating", TournamentController, :participating_tournaments
     get "/tournament/get_tabs", TournamentController, :tournament_topics
     get "/tournament/get_thumbnail", TournamentController, :get_thumbnail_image
+    get "/tournament/get_thumbnail_by_tournament_id", TournamentController, :get_thumbnail_by_tournament_id
     get "/tournament/get_match_list", TournamentController, :get_match_list
     get "/tournament/home", TournamentController, :home
     get "/tournament/home/search", TournamentController, :search

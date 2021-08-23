@@ -751,6 +751,33 @@ defmodule MilkWeb.TournamentController do
     json(conn, map)
   end
 
+  @doc """
+  Get a thumbnail image of a tournament by tournament id.
+  """
+  def get_thumbnail_by_tournament_id(conn, %{"tournament_id" => id}) do
+    case Tournaments.get_tournament(id) do 
+      nil ->
+        json(conn, %{result: false})
+      tournament -> path = tournament.thumbnail_path
+        map =
+          case Application.get_env(:milk, :environment) do
+            # coveralls-ignore-start
+            :dev ->
+              read_thumbnail(path)
+
+            # coveralls-ignore-stop
+            :test ->
+              read_thumbnail(path)
+
+            # coveralls-ignore-start
+            _ ->
+              read_thumbnail_prod(path)
+              # coveralls-ignore-stop
+          end
+        json(conn, %{result: true, b64: map.b64})
+    end
+  end
+
   defp read_thumbnail(name) do
     File.read("./static/image/tournament_thumbnail/#{name}.jpg")
     |> case do
