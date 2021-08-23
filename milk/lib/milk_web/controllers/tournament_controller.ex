@@ -37,6 +37,7 @@ defmodule MilkWeb.TournamentController do
     following_users = Relations.get_following_list(user_id)
     follower_users = Relations.get_followers_list(user_id)
     users = Enum.uniq_by(following_users ++ follower_users, fn user -> user.id end)
+
     render(conn, "users.json", users: users)
   end
 
@@ -44,17 +45,21 @@ defmodule MilkWeb.TournamentController do
   Get tournaments of a specific user.
   """
   def get_tournaments_by_master_id(conn, %{"user_id" => user_id}) do
-    tournaments =
-      Tournaments.get_tournaments_by_master_id(user_id)
-      |> Enum.map(fn tournament ->
-        entrants =
-          Tournaments.get_entrants(tournament.id)
-          |> Enum.map(fn entrant ->
-            Accounts.get_user(entrant.user_id)
-          end)
-
-        Map.put(tournament, :entrants, entrants)
+    user_id
+    |> Tools.to_integer_as_needed()
+    |> Tournaments.get_tournaments_by_master_id()
+    |> Enum.map(fn tournament ->
+      tournament
+      |> Map.get(:id)
+      |> Tournaments.get_entrants()
+      |> Enum.map(fn entrant ->
+        Accounts.get_user(entrant.user_id)
       end)
+      ~> entrants
+
+      Map.put(tournament, :entrants, entrants)
+    end)
+    ~> tournaments
 
     render(conn, "home.json", tournaments_info: tournaments)
   end
@@ -71,19 +76,20 @@ defmodule MilkWeb.TournamentController do
   ユーザーの開催予定の大会と、logから今まで開催した大会のデータを取得
   """
   def get_planned_tournaments_by_master_id(conn, %{"user_id" => user_id}) do
-    tournaments =
-      user_id
-      |> Tournaments.get_ongoing_tournaments_by_master_id()
-      |> Enum.map(fn tournament ->
-        entrants =
-          tournament.id
-          |> Tournaments.get_entrants()
-          |> Enum.map(fn entrant ->
-            Accounts.get_user(entrant.user_id)
-          end)
+    user_id
+    |> Tools.to_integer_as_needed()
+    |> Tournaments.get_ongoing_tournaments_by_master_id()
+    |> Enum.map(fn tournament ->
+      entrants =
+        tournament.id
+        |> Tournaments.get_entrants()
+        |> Enum.map(fn entrant ->
+          Accounts.get_user(entrant.user_id)
+        end)
 
-        Map.put(tournament, :entrants, entrants)
-      end)
+      Map.put(tournament, :entrants, entrants)
+    end)
+    ~> tournaments
 
     tournament_log = Tournaments.get_tournament_logs_by_master_id(user_id)
 
@@ -102,31 +108,31 @@ defmodule MilkWeb.TournamentController do
 
   def create(conn, %{"tournament" => tournament_params, "image" => image}) do
     # coveralls-ignore-start
-    thumbnail_path =
-      if image != "" do
-        uuid = SecureRandom.uuid()
-        FileUtils.copy(image.path, "./static/image/tournament_thumbnail/#{uuid}.jpg")
+    if image != "" do
+      uuid = SecureRandom.uuid()
+      FileUtils.copy(image.path, "./static/image/tournament_thumbnail/#{uuid}.jpg")
 
-        case Application.get_env(:milk, :environment) do
-          :dev ->
-            uuid
+      case Application.get_env(:milk, :environment) do
+        :dev ->
+          uuid
 
+        # coveralls-ignore-stop
+        :test ->
+          uuid
+
+        # coveralls-ignore-start
+        _ ->
+          object =
+            Milk.CloudStorage.Objects.upload("./static/image/tournament_thumbnail/#{uuid}.jpg")
+
+          File.rm("./static/image/tournament_thumbnail/#{uuid}.jpg")
+          object.name
           # coveralls-ignore-stop
-          :test ->
-            uuid
-
-          # coveralls-ignore-start
-          _ ->
-            object =
-              Milk.CloudStorage.Objects.upload("./static/image/tournament_thumbnail/#{uuid}.jpg")
-
-            File.rm("./static/image/tournament_thumbnail/#{uuid}.jpg")
-            object.name
-            # coveralls-ignore-stop
-        end
-      else
-        nil
       end
+    else
+      nil
+    end
+    ~> thumbnail_path
 
     if is_binary(tournament_params) do
       Poison.decode!(tournament_params)
@@ -157,7 +163,11 @@ defmodule MilkWeb.TournamentController do
 
           add_queue_tournament_start_push_notice(tournament)
 
-          render(conn, "create.json", tournament: tournament)
+          if tournament do
+            render(conn, "create.json", tournament: tournament)
+          else
+            render(conn, "error.json", error: nil)
+          end
 
         {:error, error} ->
           render(conn, "error.json", error: error)
