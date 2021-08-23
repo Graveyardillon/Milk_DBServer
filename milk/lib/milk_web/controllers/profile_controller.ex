@@ -23,12 +23,13 @@ defmodule MilkWeb.ProfileController do
     |> Tools.to_integer_as_needed()
     |> Accounts.get_user()
     ~> user
-
-    if user do
+    |> if do
       games = Profiles.get_game_list(user)
       records = Profiles.get_records(user)
 
-      render(conn, "profile.json", user: user, games: games, records: records)
+      service_reference = Accounts.get_service_reference_by_user_id(user.id)
+
+      render(conn, "profile.json", user: user, games: games, records: records, service_reference: service_reference)
     else
       json(conn, %{result: false, error: "user not found"})
     end

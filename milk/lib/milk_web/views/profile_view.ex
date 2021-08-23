@@ -20,7 +20,7 @@ defmodule MilkWeb.ProfileView do
     }
   end
 
-  def render("profile.json", %{user: user, games: games, records: records}) do
+  def render("profile.json", %{user: user, games: games, records: records, service_reference: service_reference}) do
     %{
       data: %{
         id: user.id,
@@ -29,7 +29,11 @@ defmodule MilkWeb.ProfileView do
         bio: user.bio,
         win_count: user.win_count,
         gameList: render_many(games, GameView, "game.json"),
-        records: render_many(records, ProfileView, "rank.json", as: :record)
+        records: render_many(records, ProfileView, "rank.json", as: :record),
+        service_reference: %{
+          twitter_id: service_reference.twitter_id,
+          riot_id: service_reference.riot_id
+        }
       },
       result: true
     }
