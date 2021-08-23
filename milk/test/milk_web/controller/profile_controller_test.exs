@@ -104,6 +104,34 @@ defmodule MilkWeb.ProfileControllerTest do
     end
   end
 
+  describe "external service" do
+    test "work", %{conn: conn} do
+      user = fixture_user()
+
+      name = "twitter"
+      content = "@apillo23"
+
+      Map.new()
+      |> Map.put(:name, name)
+      |> Map.put(:content, content)
+      |> Map.put(:user_id, user.id)
+      |> Accounts.create_external_service()
+
+      conn
+      |> get(Routes.profile_path(conn, :external_services), user_id: user.id)
+      |> json_response(200)
+      |> Map.get("data")
+      |> Enum.map(fn external_service ->
+        assert external_service["name"] == name
+        assert external_service["content"] == content
+        refute is_nil(external_service["id"])
+      end)
+      |> length()
+      |> Kernel.==(1)
+      |> assert()
+    end
+  end
+
   defp create_profile(_) do
     profile = fixture(:profile)
     %{profile: profile}

@@ -134,4 +134,13 @@ defmodule MilkWeb.ProfileController do
     records = Tournaments.get_all_tournament_records(user_id)
     render(conn, "records.json", records: records)
   end
+
+  def external_services(conn, %{"user_id" => user_id}) do
+    user_id
+    |> Tools.to_integer_as_needed()
+    |> Accounts.get_external_services()
+    ~> external_services
+
+    render(conn, "external_services.json", external_services: external_services)
+  end
 end

@@ -59,4 +59,16 @@ defmodule MilkWeb.ProfileView do
       rank: record.rank
     }
   end
+
+  def render("external_services.json", %{external_services: external_services}) do
+    %{data: render_many(external_services, ProfileView, "external_service.json", as: :external_service)}
+  end
+
+  def render("external_service.json", %{external_service: external_service}) do
+    %{
+      content: external_service.content,
+      id: external_service.id,
+      name: external_service.name
+    }
+  end
 end
