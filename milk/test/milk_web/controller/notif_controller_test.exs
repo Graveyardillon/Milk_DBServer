@@ -40,13 +40,6 @@ defmodule MilkWeb.NotifControllerTest do
     [
       %{
         "user_id" => user_id,
-        "title" => "chore",
-        "body_text" => "body body body",
-        "data" => nil,
-        "process_id" => "COMMON"
-      },
-      %{
-        "user_id" => user_id,
         "title" => "ビバンダム君",
         "body_text" => "body body body",
         "data" => nil,

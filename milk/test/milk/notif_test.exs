@@ -8,9 +8,9 @@ defmodule Milk.NotifTest do
 
   alias Milk.Notif.Notification
 
-  @valid_attrs %{"content" => "some content"}
-  @update_attrs %{"content" => "some updated content"}
-  @invalid_attrs %{"user_id" => -1, "content" => nil}
+  @valid_attrs %{"title" => "some title"}
+  @update_attrs %{"title" => "some updated title"}
+  @invalid_attrs %{"user_id" => -1, "title" => nil}
 
   defp notification_fixture(attrs \\ %{}) do
     {:ok, user} =
@@ -39,7 +39,7 @@ defmodule Milk.NotifTest do
         })
 
       Enum.each(1..4, fn _n ->
-        %{"content" => "some content"}
+        %{"title" => "some title"}
         |> Map.put("user_id", user.id)
         |> Notif.create_notification()
       end)
@@ -65,7 +65,7 @@ defmodule Milk.NotifTest do
         })
 
       Enum.each(1..4, fn _n ->
-        %{"content" => "some content", "is_checked" => true}
+        %{"title" => "some title", "is_checked" => true}
         |> Map.put("user_id", user.id)
         |> Notif.create_notification()
       end)
@@ -90,7 +90,7 @@ defmodule Milk.NotifTest do
         })
 
       Enum.each(1..4, fn _n ->
-        %{"content" => "some content"}
+        %{"title" => "some title"}
         |> Map.put("user_id", user.id)
         |> Notif.create_notification()
       end)
@@ -117,7 +117,7 @@ defmodule Milk.NotifTest do
         })
 
       Enum.each(1..4, fn _n ->
-        %{"content" => "some content", "is_checked" => true}
+        %{"title" => "some title", "is_checked" => true}
         |> Map.put("user_id", user.id)
         |> Notif.create_notification()
       end)
@@ -137,7 +137,7 @@ defmodule Milk.NotifTest do
         })
 
       Enum.each(1..4, fn _n ->
-        %{"content" => "some content"}
+        %{"title" => "some title"}
         |> Map.put("user_id", user.id)
         |> Notif.create_notification()
       end)
@@ -163,7 +163,7 @@ defmodule Milk.NotifTest do
                |> Map.put("user_id", user.id)
                |> Notif.create_notification()
 
-      assert notification.content == "some content"
+      assert notification.title == "some title"
     end
 
     test "create_notification/1 with invalid data returns error changeset" do
@@ -176,7 +176,7 @@ defmodule Milk.NotifTest do
       assert {:ok, %Notification{} = notification} =
                Notif.update_notification(notification, @update_attrs)
 
-      assert notification.content == "some updated content"
+      assert notification.title == "some updated title"
     end
 
     # FIXME: 時間の型とアソシエーション
