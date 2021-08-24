@@ -205,6 +205,8 @@ defmodule MilkWeb.Router do
 
     post "/device/register", DeviceController, :register_token
     post "/device/unregister", DeviceController, :unregister_token
+
+    post "/profile/external_service", ExternalServiceController, :create
   end
 
   scope "/debug", MilkWeb do

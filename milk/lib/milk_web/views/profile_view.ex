@@ -30,10 +30,12 @@ defmodule MilkWeb.ProfileView do
         win_count: user.win_count,
         gameList: render_many(games, GameView, "game.json"),
         records: render_many(records, ProfileView, "rank.json", as: :record),
-        service_reference: %{
-          twitter_id: service_reference.twitter_id,
-          riot_id: service_reference.riot_id
-        }
+        service_reference: unless is_nil(service_reference) do
+          %{
+            twitter_id: service_reference.twitter_id,
+            riot_id: service_reference.riot_id
+          }
+        end
       },
       result: true
     }
