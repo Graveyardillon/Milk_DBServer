@@ -2721,8 +2721,12 @@ defmodule Milk.Tournaments do
   end
 
   defp delete_invitation_nofification(team_invitation_id) do
+    %{invitation_id: team_invitation_id}
+    |> Jason.encode!()
+    ~> json_str
+
     Notification
-    |> where([n], n.data == ^to_string(team_invitation_id))
+    |> where([n], n.data == ^json_str)
     |> Repo.one()
     |> Repo.delete()
   end
