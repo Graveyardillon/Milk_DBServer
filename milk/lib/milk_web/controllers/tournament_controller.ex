@@ -1192,17 +1192,19 @@ defmodule MilkWeb.TournamentController do
     end)
     |> List.flatten()
     |> Enum.each(fn device ->
-      content = "#{user.name}と#{opponent.name}の報告が同じスコアになってしまっています！"
+      body_text = "#{user.name}と#{opponent.name}の報告が同じスコアになってしまっています！"
 
       %{
-        "content" => content,
-        "process_code" => 4,
+        "title" => "重複した勝敗報告が起きています",
+        "body_text" => body_text,
+        "process_id" => "DUPLICATE_CLAIM",
         "user_id" => device.user_id,
         "data" => ""
       }
       |> Notif.create_notification()
 
-      Notif.push_ios_with_badge(content, "重複した勝敗報告が起きています", device.user_id, device.token)
+      #FIXME
+      Notif.push_ios_with_badge(body_text, "重複した勝敗報告が起きています", device.user_id, device.token)
     end)
   end
 

@@ -1,5 +1,6 @@
 use Mix.Config
 
+config :milk, Oban, queues: false, plugins: false
 # Configure your database
 config :milk, Milk.Repo,
   username: System.get_env("MILK_TEST_USERNAME") || "postgres",
@@ -39,4 +40,3 @@ config :milk, Milk.Repo,
 
 config :milk, :environment, :test
 
-config :milk, Oban, queues: false, plugins: false

@@ -3,53 +3,68 @@ alias Milk.Notif
 [
   %{
     "user_id" => 1,
-    "content" => "chore",
-    "data" => nil,
-    "process_code" => 0
+    "process_id" => "TEAM_INVITE",
+    "icon_path" => nil,
+    "title" => "User1 からチーム招待されました",
+    # "body_text" => "",
+    "data" => Jason.encode!(%{invitation_id: 999})
   },
   %{
     "user_id" => 1,
-    "content" => "ビバンダム君",
+    "title" => "chore",
+    "body_text" => "body body body",
     "data" => nil,
-    "process_code" => 1
+    "process_id" => "COMMON"
   },
   %{
     "user_id" => 1,
-    "content" => "ライブ",
+    "title" => "ビバンダム君",
+    "body_text" => "body body body",
     "data" => nil,
-    "process_code" => 2
+    "process_id" => "COMMON"
   },
   %{
     "user_id" => 1,
-    "content" => "ビバンダム君",
+    "title" => "ライブ",
+    "body_text" => "body body body",
     "data" => nil,
-    "process_code" => 3
+    "process_id" => "COMMON"
   },
   %{
     "user_id" => 1,
-    "content" => "ビバンダム君",
+    "title" => "ビバンダム君",
+    "body_text" => "body body body",
     "data" => nil,
-    "process_code" => 4
+    "process_id" => "COMMON"
   },
   %{
     "user_id" => 1,
-    "content" => "ビバンダム君",
+    "title" => "ビバンダム君",
+    "body_text" => "body body body",
     "data" => nil,
-    "process_code" => 5,
+    "process_id" => "COMMON"
+  },
+  %{
+    "user_id" => 1,
+    "title" => "ビバンダム君が大会主催",
+    "body_text" => "body body body",
+    "data" => nil,
+    "process_id" => "FOLLOWING_USER_PLANNED_TOURNAMENT",
     "icon_path" => "./static/image/tournament_thumbnail/2pimp.jpg"
   },
   %{
     "user_id" => 1,
-    "content" => "ビバンダム君",
+    "title" => "ビバンダム君",
+    "body_text" => "body body body",
     "data" => nil,
-    "process_code" => 6,
+    "process_id" => "TOURNAMENT_START",
     "icon_path" => "2pimp"
   },
   %{
     "user_id" => 1,
-    "content" => "",
+    "title" => "重複した勝敗報告が起きています",
     "data" => nil,
-    "process_code" => 7
+    "process_id" => "DUPLICATE_CLAIM"
   }
 ]
 |> Enum.each(fn notification ->

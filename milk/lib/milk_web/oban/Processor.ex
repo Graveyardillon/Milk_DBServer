@@ -39,7 +39,7 @@ defmodule Oban.Processer do
 
   def notify_tournament_start(id) do
     tournament = Tournaments.get_tournament(id)
-  #IO.inspect(tournament)
+
     if tournament do
       devices =
         for entrant <- Map.get(tournament, :entrant) do
@@ -49,17 +49,30 @@ defmodule Oban.Processer do
 
       for device <- devices do
         if device.user_id != tournament.master_id do
+          # App Notification
+          %{
+            "user_id" => device.user_id, 
+            "process_id" => "TOURNAMENT_START",
+            "icon_path" => "",
+            "title" => "大会が始まりました",
+            "body_text" => "#{tournament.name}",
+            "data" => Jason.encode!(%{
+              tournament_id: tournament.id
+            })
+          }
+          |> Notif.create_notification()
+
+          # Push Notification
           params = %{tournament_id: id}
           Notif.push_ios(
             device.user_id,
             device.token,
-            7,
-            tournament.name,
+            "TOURNAMENT_START",
             "大会が始まりました",
+            tournament.name,
             params
           )
         end
-        # Notif.push_ios("大会が始まりました！", "", "tournament_start", device.token, 6, params)
       end
     else
       IO.puts("tournament not found")

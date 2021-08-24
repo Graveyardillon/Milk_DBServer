@@ -6,9 +6,9 @@ defmodule Milk.NotifLogTest do
   describe "notification_log" do
     alias Milk.Log.NotificationLog
 
-    @valid_attrs %{content: "some content", user_id: 42}
-    @update_attrs %{content: "some updated content", user_id: 43}
-    @invalid_attrs %{content: nil, user_id: nil}
+    @valid_attrs %{title: "some title", user_id: 42}
+    @update_attrs %{title: "some updated title", user_id: 43}
+    @invalid_attrs %{title: nil, user_id: nil}
 
     def notification_log_fixture(attrs \\ %{}) do
       {:ok, notification_log} =
@@ -23,7 +23,7 @@ defmodule Milk.NotifLogTest do
       assert {:ok, %NotificationLog{} = notification_log} =
                Log.create_notification_log(@valid_attrs)
 
-      assert notification_log.content == "some content"
+      assert notification_log.title == "some title"
       assert notification_log.user_id == 42
     end
 
@@ -37,7 +37,7 @@ defmodule Milk.NotifLogTest do
       assert {:ok, %NotificationLog{} = notification_log} =
                Log.update_notification_log(notification_log, @update_attrs)
 
-      assert notification_log.content == "some updated content"
+      assert notification_log.title == "some updated title"
       assert notification_log.user_id == 43
     end
 

@@ -4,10 +4,11 @@ defmodule Milk.Log.NotificationLog do
   import Ecto.Changeset
 
   schema "notifications_log" do
-    field :content, :string
+    field :title, :string
+    field :body_text, :string
     field :user_id, :integer
     field :data, :string
-    field :process_code, :integer
+    field :process_id, :string
 
     timestamps()
   end
@@ -15,7 +16,7 @@ defmodule Milk.Log.NotificationLog do
   @doc false
   def changeset(notification_log, attrs) do
     notification_log
-    |> cast(attrs, [:user_id, :content, :process_code, :data])
-    |> validate_required([:user_id, :content])
+    |> cast(attrs, [:user_id, :title, :body_text, :process_id, :data])
+    |> validate_required([:user_id, :title])
   end
 end
