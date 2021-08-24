@@ -13,10 +13,11 @@ defmodule MilkWeb.NotifView do
   def render("notif.json", %{notif: notif}) do
     %{
       id: notif.id,
-      content: notif.content,
+      title: notif.title,
+      body_text: notif.body_text,
       user_id: notif.user_id,
       data: notif.data,
-      process_code: notif.process_code,
+      process_id: notif.process_id,
       datetime: notif.update_time,
       is_checked: notif.is_checked,
       icon: notif.icon,

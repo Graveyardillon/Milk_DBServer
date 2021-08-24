@@ -22,16 +22,18 @@ defmodule MilkWeb.NotifController do
         if is_nil(notification.icon_path) do
           Map.put(notification, :icon, nil)
         else
-          icon =
-            notification.process_code
-            |> case do
-              1 -> read_icon(notification.icon_path)
-              4 -> read_icon(notification.icon_path)
-              5 -> read_icon(notification.icon_path)
-              6 -> read_thumbnail(notification.icon_path)
-              _ -> nil
+          require_thumbnail = [
+            "FOLLOWING_USER_PLANNED_TOURNAMENT",
+            "TOURNAMENT_START",
+            "REMIND_TO_START_TOURNAMENT",
+            "TOURNAMENT_END"
+          ]
+          icon = 
+            if Enum.member?(require_thumbnail, notification.process_id) do
+              read_thumbnail(notification.icon_path)
+            else
+              read_icon(notification.icon_path)
             end
-
           Map.put(notification, :icon, icon)
         end
       end)
@@ -124,15 +126,16 @@ defmodule MilkWeb.NotifController do
     end
   end
 
-  # FIXME: 権限の認証をつけるべき
-  def notify_all(conn, %{"text" => text}) do
+  # FIXME: 権限の認証をつけるべき 引数にbody_textの追加
+  def notify_all(conn, %{"text" => title}) do
     Accounts.list_user()
     |> Enum.each(fn user ->
       Map.new()
       |> Map.put("user_id", user.id)
-      |> Map.put("content", text)
-      |> Map.put("process_code", 0)
-      |> Map.put("data", "")
+      |> Map.put("title", title)
+      # |> Map.put("body_text", body_text)
+      |> Map.put("process_id", "COMMON")
+      # |> Map.put("data", "")
       |> Notif.create_notification()
     end)
 

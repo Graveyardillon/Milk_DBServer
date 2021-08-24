@@ -13,9 +13,10 @@ defmodule MilkWeb.NotifLogView do
   def render("notif_log.json", %{notif_log: notif}) do
     %{
       id: notif.id,
-      content: notif.content,
+      title: notif.title,
+      body_text: notif.body_text,
       user_id: notif.user_id,
-      process_code: notif.process_code,
+      process_id: notif.process_id,
       datetime: notif.update_time
     }
   end

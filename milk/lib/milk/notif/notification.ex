@@ -6,8 +6,9 @@ defmodule Milk.Notif.Notification do
   alias Milk.Accounts.User
 
   schema "notifications" do
-    field :content, :string
-    field :process_code, :integer
+    field :title, :string
+    field :body_text, :string
+    field :process_id, :string
     field :data, :string
     field :is_checked, :boolean, default: false
     field :icon_path, :string, default: nil
@@ -20,13 +21,13 @@ defmodule Milk.Notif.Notification do
   @doc false
   def changeset(notification, attrs) do
     notification
-    |> cast(attrs, [:content, :process_code, :data, :is_checked, :icon_path])
-    |> validate_required([:content])
+    |> cast(attrs, [:title, :body_text, :process_id, :data, :is_checked, :icon_path])
+    |> validate_required([:title])
   end
 
   @doc false
   def update_changeset(notification, attrs) do
     notification
-    |> cast(attrs, [:content, :process_code, :data, :is_checked, :icon_path])
+    |> cast(attrs, [:title, :body_text, :process_id, :data, :is_checked, :icon_path])
   end
 end

@@ -2677,10 +2677,13 @@ defmodule Milk.Tournaments do
   defp create_invitation_notification(invitation) do
     %{
       "user_id" => invitation.team_member.user_id,
-      "process_code" => 8,
+      "process_id" => "TEAM_INVITE",
       "icon_path" => invitation.sender.icon_path,
-      "content" => invitation.sender.name,
-      "data" => invitation.id
+      "title" => "#{invitation.sender.name} からチーム招待されました",
+      "body_text" => "",
+      "data" => Jason.encode!(%{
+        invitation_id: invitation.id
+      })
     }
     |> Notif.create_notification()
     |> case do
@@ -2718,8 +2721,12 @@ defmodule Milk.Tournaments do
   end
 
   defp delete_invitation_nofification(team_invitation_id) do
+    %{invitation_id: team_invitation_id}
+    |> Jason.encode!()
+    ~> json_str
+
     Notification
-    |> where([n], n.data == ^to_string(team_invitation_id))
+    |> where([n], n.data == ^json_str)
     |> Repo.one()
     |> Repo.delete()
   end
