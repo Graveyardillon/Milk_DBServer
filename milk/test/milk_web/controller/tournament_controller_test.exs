@@ -1135,6 +1135,7 @@ defmodule MilkWeb.TournamentControllerTest do
   describe "pending tournaments" do
     test "works", %{conn: conn} do
       tournament = fixture_tournament(is_team: true, type: 2)
+
       [num: 5]
       |> fixture_user()
       |> Map.get(:id)
@@ -1158,6 +1159,7 @@ defmodule MilkWeb.TournamentControllerTest do
           leader_id: user_id,
           user_id_list: member_id_list
         )
+
       assert json_response(conn, 200)["result"]
 
       conn =
@@ -1168,6 +1170,7 @@ defmodule MilkWeb.TournamentControllerTest do
         )
 
       assert json_response(conn, 200)["result"]
+
       conn
       |> json_response(200)
       |> Map.get("data")
@@ -1197,6 +1200,7 @@ defmodule MilkWeb.TournamentControllerTest do
         )
 
       assert json_response(conn, 200)["result"]
+
       conn
       |> json_response(200)
       |> Map.get("data")
@@ -2817,8 +2821,7 @@ defmodule MilkWeb.TournamentControllerTest do
           match_index: 0
         )
 
-      conn =
-        get(conn, Routes.tournament_path(conn, :show), tournament_id: tournament.id)
+      conn = get(conn, Routes.tournament_path(conn, :show), tournament_id: tournament.id)
 
       conn
       |> json_response(200)
@@ -3225,11 +3228,13 @@ defmodule MilkWeb.TournamentControllerTest do
 
       match_info = json_response(conn, 200)
       refute is_nil(match_info["is_leader"])
+
       if match_info["is_leader"] do
         assert match_info["state"] == "IsPending"
       else
         assert match_info["state"] == "IsMember"
       end
+
       assert match_info["rank"] == 4
 
       my_score = 100
@@ -3505,7 +3510,14 @@ defmodule MilkWeb.TournamentControllerTest do
     test "with custom_detail (team)", %{conn: conn} do
       capacity = 2
 
-      [capacity: capacity, enabled_coin_toss: true, coin_head_field: "headfield!", coin_tail_field: "tailfield!", is_team: true, type: 2]
+      [
+        capacity: capacity,
+        enabled_coin_toss: true,
+        coin_head_field: "headfield!",
+        coin_tail_field: "tailfield!",
+        is_team: true,
+        type: 2
+      ]
       ~> attrs
       |> fixture_tournament()
       |> Map.get(:id)

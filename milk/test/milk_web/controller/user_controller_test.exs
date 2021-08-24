@@ -31,6 +31,7 @@ defmodule MilkWeb.UserControllerTest do
       assert json_response(conn, 200)["num"] == 0
 
       x = 20
+
       1..x
       |> Enum.to_list()
       |> Enum.each(fn n ->
@@ -255,7 +256,14 @@ defmodule MilkWeb.UserControllerTest do
       user = fixture_user(num: 12345)
 
       ok_text = "name"
-      conn = get(conn, Routes.user_path(conn, :search), text: ok_text, team_filter: true, tournament_id: tournament.id)
+
+      conn =
+        get(conn, Routes.user_path(conn, :search),
+          text: ok_text,
+          team_filter: true,
+          tournament_id: tournament.id
+        )
+
       assert json_response(conn, 200)["result"]
 
       conn

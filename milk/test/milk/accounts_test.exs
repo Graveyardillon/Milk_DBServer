@@ -115,6 +115,7 @@ defmodule Milk.AccountsTest do
         fixture_user(n)
         assert Accounts.get_user_number() == n
       end)
+
       assert Accounts.get_user_number() == x
     end
   end

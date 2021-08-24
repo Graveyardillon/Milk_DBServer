@@ -10,10 +10,11 @@ defmodule Oban.Processer do
   @impl Oban.Worker
 
   def perform(%Oban.Job{args: args}) do
-   # TODO: 通知に大会情報などを含めたい
+    # TODO: 通知に大会情報などを含めたい
     case args do
       %{"reminder_to_start_tournament" => id} ->
         reminder_to_start_tournament(id)
+
       _ ->
         IO.puts("undefined arg")
     end
@@ -33,6 +34,7 @@ defmodule Oban.Processer do
         "主催している大会の開始予定時刻になりました。大会を開始してください！",
         params
       )
+
       # Notif.push_ios("主催している大会の開始予定時刻になりました。大会を開始してください！", "", "reminder_to_start_tournament", device.token, 6, params)
     end
   end
@@ -43,7 +45,7 @@ defmodule Oban.Processer do
     if tournament do
       devices =
         for entrant <- Map.get(tournament, :entrant) do
-            Accounts.get_devices_by_user_id(entrant.user_id)
+          Accounts.get_devices_by_user_id(entrant.user_id)
         end
         |> List.flatten()
 
@@ -51,19 +53,21 @@ defmodule Oban.Processer do
         if device.user_id != tournament.master_id do
           # App Notification
           %{
-            "user_id" => device.user_id, 
+            "user_id" => device.user_id,
             "process_id" => "TOURNAMENT_START",
             "icon_path" => "",
             "title" => "大会が始まりました",
             "body_text" => "#{tournament.name}",
-            "data" => Jason.encode!(%{
-              tournament_id: tournament.id
-            })
+            "data" =>
+              Jason.encode!(%{
+                tournament_id: tournament.id
+              })
           }
           |> Notif.create_notification()
 
           # Push Notification
           params = %{tournament_id: id}
+
           Notif.push_ios(
             device.user_id,
             device.token,

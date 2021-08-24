@@ -49,9 +49,11 @@ defmodule Milk.ProfilesTest do
           |> Tournaments.confirm_team_invitation()
           |> elem(1)
         end)
+
         Tournaments.get_team(team.id)
       end)
-      #~> [my_team | [opponent_team]]
+
+      # ~> [my_team | [opponent_team]]
 
       # TODO: テスト記述
       # 大会を終了させてレコードが出るか見る

@@ -635,10 +635,11 @@ defmodule Milk.Chat do
             "body_text" => attrs["word"],
             "process_id" => "RECEIVED_TOURNAMENT_CHAT",
             "user_id" => device.user_id,
-            "data" => Jason.encode!(%{
-              tournament_id: tournament.id, 
-              chant_room_id: chat_room_id
-            })
+            "data" =>
+              Jason.encode!(%{
+                tournament_id: tournament.id,
+                chant_room_id: chat_room_id
+              })
           }
           |> Notif.create_notification()
 

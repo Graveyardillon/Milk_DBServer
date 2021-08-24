@@ -115,13 +115,14 @@ defmodule MilkWeb.TournamentView do
         thumbnail_path: tournament.thumbnail_path,
         game_id: tournament.game_id,
         game_name: tournament.game_name,
-        custom_detail: unless is_nil(tournament.custom_detail) do
-          %{
-            coin_head_field: tournament.custom_detail.coin_head_field,
-            coin_tail_field: tournament.custom_detail.coin_tail_field,
-            multiple_selection_type: tournament.custom_detail.multiple_selection_type
-          }
-        end,
+        custom_detail:
+          unless is_nil(tournament.custom_detail) do
+            %{
+              coin_head_field: tournament.custom_detail.coin_head_field,
+              coin_tail_field: tournament.custom_detail.coin_tail_field,
+              multiple_selection_type: tournament.custom_detail.multiple_selection_type
+            }
+          end,
         event_date: tournament.event_date,
         enabled_coin_toss: tournament.enabled_coin_toss,
         start_recruiting: tournament.start_recruiting,
@@ -229,6 +230,7 @@ defmodule MilkWeb.TournamentView do
 
   def render("home.json", %{tournaments_info: tournaments_info}) do
     inspect(tournaments_info)
+
     %{
       data:
         render_many(tournaments_info, TournamentView, "tournament_info_include_entrants.json",
@@ -275,21 +277,22 @@ defmodule MilkWeb.TournamentView do
             bio: user.bio
           }
         end),
-      teams: if Map.has_key?(tournament, :teams) do
-        Enum.map(tournament.teams, fn team ->
-          %{
-            id: team.id,
-            name: team.name,
-            size: team.size,
-            icon_path: team.icon_path,
-            is_confirmed: team.is_confirmed,
-            rank: team.rank,
-            tournament_id: team.tournament_id
-          }
-        end)
-      else
-        nil
-      end
+      teams:
+        if Map.has_key?(tournament, :teams) do
+          Enum.map(tournament.teams, fn team ->
+            %{
+              id: team.id,
+              name: team.name,
+              size: team.size,
+              icon_path: team.icon_path,
+              is_confirmed: team.is_confirmed,
+              rank: team.rank,
+              tournament_id: team.tournament_id
+            }
+          end)
+        else
+          nil
+        end
     }
   end
 
@@ -444,13 +447,14 @@ defmodule MilkWeb.TournamentView do
       state: state,
       is_team: is_team,
       is_coin_head: is_coin_head,
-      custom_detail: if custom_detail do
-        %{
-          coin_head_field: custom_detail.coin_head_field,
-          coin_tail_field: custom_detail.coin_tail_field,
-          multiple_selection_type: custom_detail.multiple_selection_type
-        }
-      end
+      custom_detail:
+        if custom_detail do
+          %{
+            coin_head_field: custom_detail.coin_head_field,
+            coin_tail_field: custom_detail.coin_tail_field,
+            multiple_selection_type: custom_detail.multiple_selection_type
+          }
+        end
     }
   end
 

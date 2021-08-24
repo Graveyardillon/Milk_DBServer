@@ -7,6 +7,7 @@ defmodule Milk.Repo.Migrations.ModifyNotificationContent do
       add :title, :string
       add :body_text, :string
     end
+
     alter table("notifications_log") do
       remove :content
       add :title, :string

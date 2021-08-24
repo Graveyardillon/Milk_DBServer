@@ -29,7 +29,8 @@ defmodule Milk.Tournaments.MultipleSelection do
   def state(key \\ "not_selected") do
     %{
       not_selected: "not_selected
-    "}
+    "
+    }
     |> Map.get(key)
     ~> state
     |> is_nil()

@@ -4,10 +4,12 @@ defmodule MilkWeb.UserController do
   import Common.Sperm
 
   alias Common.Tools
+
   alias Milk.{
     Accounts,
     Tournaments
   }
+
   alias Milk.Accounts.User
   alias Milk.UserManager.Guardian
 
@@ -45,14 +47,17 @@ defmodule MilkWeb.UserController do
     |> case do
       {:ok, token, %User{} = user} ->
         Accounts.create_service_reference(%{user_id: user.id})
-        |> IO.inspect
+        |> IO.inspect()
+
         {:ok, token, user}
+
       {:error, error} ->
         {:error, error}
     end
     |> case do
       {:ok, token, %User{} = user} ->
         render(conn, "login.json", %{user: user, token: token})
+
       {:error, error} ->
         case error do
           [email: {"has already been taken", _}] ->

@@ -93,6 +93,7 @@ defmodule MilkWeb.ChatsController do
 
     if image != "" do
       uuid = SecureRandom.uuid()
+
       FileUtils.copy(image.path, "./static/image/chat/#{uuid}.jpg")
       |> IO.inspect(label: :file_utils)
 
@@ -104,11 +105,14 @@ defmodule MilkWeb.ChatsController do
           uuid
 
         _ ->
-          object = Milk.CloudStorage.Objects.upload("./static/image/chat/#{uuid}.jpg")
-          |> IO.inspect(label: :object)
+          object =
+            Milk.CloudStorage.Objects.upload("./static/image/chat/#{uuid}.jpg")
+            |> IO.inspect(label: :object)
+
           File.rm("./static/image/chat/#{uuid}.jpg")
           object.name
       end
+
       # object = Milk.CloudStorage.Objects.upload("./static/image/chat/#{uuid}.jpg")
       # |> IO.inspect(label: :object)
       # File.rm("./static/image/chat/#{uuid}.jpg")
@@ -134,6 +138,7 @@ defmodule MilkWeb.ChatsController do
       _ -> loadimg_prod(name)
     end
     ~> map
+
     # loadimg_prod(name)
     # ~> map
 
