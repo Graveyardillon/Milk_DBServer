@@ -624,6 +624,8 @@ defmodule Milk.Accounts do
     |> Repo.update()
   end
 
+  # TODO: profile更新
+
   @doc """
   Create external service.
   """
@@ -631,6 +633,13 @@ defmodule Milk.Accounts do
     %ExternalService{}
     |> ExternalService.changeset(attrs)
     |> Repo.insert()
+  end
+
+  @doc """
+  Get external service.
+  """
+  def get_external_service(id) do
+    Repo.get(ExternalService, id)
   end
 
   @doc """
@@ -649,5 +658,11 @@ defmodule Milk.Accounts do
     external_service
     |> ExternalService.changeset(attrs)
     |> Repo.update()
+  end
+
+  def delete_external_service(external_service_id) do
+    external_service_id
+    |> get_external_service()
+    |> Repo.delete()
   end
 end

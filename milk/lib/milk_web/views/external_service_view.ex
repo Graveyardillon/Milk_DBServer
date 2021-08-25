@@ -17,4 +17,8 @@ defmodule MilkWeb.ExternalServiceView do
       content: external_service.content
     }
   end
+
+  def render("error.json", %{error: error}) do
+    %{result: false, error: Tools.create_error_message(error), data: nil}
+  end
 end

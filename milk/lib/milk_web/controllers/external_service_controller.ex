@@ -3,6 +3,7 @@ defmodule MilkWeb.ExternalServiceController do
 
   import Common.Sperm
 
+  alias Common.Tools
   alias Milk.Accounts
 
   def create(conn, %{"user_id" => user_id, "name" => name, "content" => content}) do
@@ -15,6 +16,14 @@ defmodule MilkWeb.ExternalServiceController do
   end
 
   def delete(conn, %{"id" => id}) do
-
+    id
+    |> Tools.to_integer_as_needed()
+    |> Accounts.delete_external_service()
+    |> case do
+      {:ok, service} ->
+        render(conn, "show.json", external_service: service)
+      {:error, error} ->
+        render(conn, "error.json", error: error)
+    end
   end
 end

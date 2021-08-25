@@ -59,6 +59,8 @@ defmodule MilkWeb.Router do
     get "/profile/get_icon", ProfileController, :get_icon
     get "/profile/records", ProfileController, :records
     get "/profile/external_services", ProfileController, :external_services
+    post "/profile/external_service", ExternalServiceController, :create
+    delete "/profile/external_service", ExternalServiceController, :delete
 
     get "/game/list", GameController, :list
     post "/game/add", GameController, :create
@@ -205,8 +207,6 @@ defmodule MilkWeb.Router do
 
     post "/device/register", DeviceController, :register_token
     post "/device/unregister", DeviceController, :unregister_token
-
-    post "/profile/external_service", ExternalServiceController, :create
   end
 
   scope "/debug", MilkWeb do

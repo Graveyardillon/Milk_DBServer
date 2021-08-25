@@ -22,6 +22,35 @@ defmodule MilkWeb.ExternalServiceControllerTest do
       refute is_nil(response["data"]["id"])
       assert response["data"]["name"] == "twitter"
       assert response["data"]["content"] == "@papillo333"
+
+      id = response["data"]["id"]
+
+      conn = get(conn, Routes.profile_path(conn, :external_services), user_id: user.id)
+
+      conn
+      |> json_response(200)
+      |> Map.get("data")
+      |> length()
+      |> Kernel.==(1)
+      |> assert()
+
+      conn =
+        delete(conn, Routes.external_service_path(conn, :delete),
+          id: id
+        )
+
+      response = json_response(conn, 200)
+      assert response["result"]
+      assert response["data"]["id"] == id
+
+      conn = get(conn, Routes.profile_path(conn, :external_services), user_id: user.id)
+
+      conn
+      |> json_response(200)
+      |> Map.get("data")
+      |> length()
+      |> Kernel.==(0)
+      |> assert()
     end
   end
 end
