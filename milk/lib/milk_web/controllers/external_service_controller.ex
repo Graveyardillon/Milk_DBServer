@@ -13,4 +13,8 @@ defmodule MilkWeb.ExternalServiceController do
 
     render(conn, "show.json", external_service: external_service)
   end
+
+  def delete(conn, %{"id" => id}) do
+
+  end
 end
