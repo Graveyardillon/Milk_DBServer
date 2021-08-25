@@ -88,10 +88,13 @@ defmodule MilkWeb.ChatsController do
   Upload a image.
   FIXME: chatディレクトリがない場合は作成の処理入れたいな
   """
-  def upload_image(conn, %{"image" => image}) do
+  def upload_image(conn, %{"file" => image}) do
+    IO.inspect(conn, label: :conn)
+
     if image != "" do
       uuid = SecureRandom.uuid()
-      FileUtils.copy(image["path"], "./static/image/chat/#{uuid}.jpg")
+      FileUtils.copy(image.path, "./static/image/chat/#{uuid}.jpg")
+      |> IO.inspect(label: :file_utils)
 
       case Application.get_env(:milk, :environment) do
         :dev ->
@@ -102,13 +105,19 @@ defmodule MilkWeb.ChatsController do
 
         _ ->
           object = Milk.CloudStorage.Objects.upload("./static/image/chat/#{uuid}.jpg")
+          |> IO.inspect(label: :object)
           File.rm("./static/image/chat/#{uuid}.jpg")
           object.name
       end
+      # object = Milk.CloudStorage.Objects.upload("./static/image/chat/#{uuid}.jpg")
+      # |> IO.inspect(label: :object)
+      # File.rm("./static/image/chat/#{uuid}.jpg")
+      # object.name
     else
       nil
     end
     ~> image_path
+    |> IO.inspect(label: :image_path)
 
     json(conn, %{local_path: image_path})
   end
@@ -117,12 +126,16 @@ defmodule MilkWeb.ChatsController do
   Load image.
   """
   def load_image(conn, %{"path" => name}) do
-    map =
-      case Application.get_env(:milk, :environment) do
-        :dev -> loadimg(name)
-        :test -> loadimg(name)
-        _ -> loadimg_prod(name)
-      end
+    :milk
+    |> Application.get_env(:environment)
+    |> case do
+      :dev -> loadimg(name)
+      :test -> loadimg(name)
+      _ -> loadimg_prod(name)
+    end
+    ~> map
+    # loadimg_prod(name)
+    # ~> map
 
     json(conn, map)
   end
