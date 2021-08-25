@@ -14,8 +14,8 @@ defmodule MilkWeb.Router do
 
     if Application.get_env(:milk, :environment) == :prod do
       plug Milk.UserManager.GuardianPipeline
-    # else
-    #   plug Milk.UserManager.GuardianPipeline
+      # else
+      #   plug Milk.UserManager.GuardianPipeline
     end
   end
 
@@ -58,6 +58,9 @@ defmodule MilkWeb.Router do
     post "/profile/update_icon", ProfileController, :update_icon
     get "/profile/get_icon", ProfileController, :get_icon
     get "/profile/records", ProfileController, :records
+    get "/profile/external_services", ProfileController, :external_services
+    post "/profile/external_service", ExternalServiceController, :create
+    delete "/profile/external_service", ExternalServiceController, :delete
 
     get "/game/list", GameController, :list
     post "/game/add", GameController, :create

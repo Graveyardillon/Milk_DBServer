@@ -4,6 +4,7 @@ defmodule Milk.Accounts do
   """
 
   import Ecto.Query, warn: false
+  import Common.Sperm
 
   require Logger
 
@@ -21,6 +22,8 @@ defmodule Milk.Accounts do
     ActionHistory,
     Auth,
     Device,
+    ExternalService,
+    ServiceReference,
     User
   }
 
@@ -110,10 +113,10 @@ defmodule Milk.Accounts do
 
   defp get_members_in_private_rooms(rooms, my_id) do
     Enum.map(rooms, fn room ->
-      users =
-        ChatMember
-        |> where([cm], cm.chat_room_id == ^room.id and cm.user_id != ^my_id)
-        |> Repo.all()
+      ChatMember
+      |> where([cm], cm.chat_room_id == ^room.id and cm.user_id != ^my_id)
+      |> Repo.all()
+      ~> users
 
       unless length(users) == 1, do: Logger.warn("get_all_users_in_touch/1 gets too big list")
       hd(users)
@@ -143,16 +146,16 @@ defmodule Milk.Accounts do
   """
   @spec create_user(map) :: tuple()
   def create_user(attrs_without_id_for_show) do
-    attrs =
-      attrs_without_id_for_show
-      |> case do
-        %{"id_for_show" => id} ->
-          %{attrs_without_id_for_show | "id_for_show" => generate_id_for_show(id)}
+    attrs_without_id_for_show
+    |> case do
+      %{"id_for_show" => id} ->
+        %{attrs_without_id_for_show | "id_for_show" => generate_id_for_show(id)}
 
-        _ ->
-          attrs_without_id_for_show
-          |> Map.put("id_for_show", generate_id_for_show())
-      end
+      _ ->
+        attrs_without_id_for_show
+        |> Map.put("id_for_show", generate_id_for_show())
+    end
+    ~> attrs
 
     Multi.new()
     |> Multi.insert(:user, User.changeset(%User{}, attrs))
@@ -581,16 +584,85 @@ defmodule Milk.Accounts do
       {:error, error} -> {:error, Tools.create_error_message(error.errors)}
     end
   end
-  
+
   @doc """
   Unregister a device token.
   """
-  def unregister_device(%Device{} = device) do 
+  def unregister_device(%Device{} = device) do
     device
     |> Repo.delete()
     |> case do
       {:ok, device} -> true
       {:error, error} -> false
     end
+  end
+
+  @doc """
+  Create a new service reference.
+  """
+  def create_service_reference(attrs) do
+    %ServiceReference{}
+    |> ServiceReference.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  @doc """
+  Get service reference by user id.
+  """
+  def get_service_reference_by_user_id(user_id) do
+    ServiceReference
+    |> where([sr], sr.user_id == ^user_id)
+    |> Repo.one()
+  end
+
+  @doc """
+  Update service reference.
+  """
+  def update_service_reference(%ServiceReference{} = service_reference, attrs) do
+    service_reference
+    |> ServiceReference.changeset(attrs)
+    |> Repo.update()
+  end
+
+  # TODO: profile更新
+
+  @doc """
+  Create external service.
+  """
+  def create_external_service(attrs) do
+    %ExternalService{}
+    |> ExternalService.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  @doc """
+  Get external service.
+  """
+  def get_external_service(id) do
+    Repo.get(ExternalService, id)
+  end
+
+  @doc """
+  Get external services by user id.
+  """
+  def get_external_services(user_id) do
+    ExternalService
+    |> where([es], es.user_id == ^user_id)
+    |> Repo.all()
+  end
+
+  @doc """
+  Update external service.
+  """
+  def update_external_service(%ExternalService{} = external_service, attrs) do
+    external_service
+    |> ExternalService.changeset(attrs)
+    |> Repo.update()
+  end
+
+  def delete_external_service(external_service_id) do
+    external_service_id
+    |> get_external_service()
+    |> Repo.delete()
   end
 end

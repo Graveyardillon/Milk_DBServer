@@ -20,7 +20,13 @@ defmodule MilkWeb.ProfileView do
     }
   end
 
-  def render("profile.json", %{user: user, games: games, records: records}) do
+  def render("profile.json", %{
+        user: user,
+        games: games,
+        records: records,
+        service_reference: service_reference,
+        external_services: external_services
+      }) do
     %{
       data: %{
         id: user.id,
@@ -29,7 +35,18 @@ defmodule MilkWeb.ProfileView do
         bio: user.bio,
         win_count: user.win_count,
         gameList: render_many(games, GameView, "game.json"),
-        records: render_many(records, ProfileView, "rank.json", as: :record)
+        records: render_many(records, ProfileView, "rank.json", as: :record),
+        service_reference:
+          unless is_nil(service_reference) do
+            %{
+              twitter_id: service_reference.twitter_id,
+              riot_id: service_reference.riot_id
+            }
+          end,
+        external_services:
+          render_many(external_services, ProfileView, "external_service.json",
+            as: :external_service
+          )
       },
       result: true
     }
@@ -53,6 +70,21 @@ defmodule MilkWeb.ProfileView do
         winner_id: record.tournament_log.winner_id
       },
       rank: record.rank
+    }
+  end
+
+  def render("external_services.json", %{external_services: external_services}) do
+    %{
+      data:
+        render_many(external_services, ProfileView, "external_service.json", as: :external_service)
+    }
+  end
+
+  def render("external_service.json", %{external_service: external_service}) do
+    %{
+      content: external_service.content,
+      id: external_service.id,
+      name: external_service.name
     }
   end
 end

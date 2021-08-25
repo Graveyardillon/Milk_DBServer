@@ -540,7 +540,11 @@ defmodule MilkWeb.TournamentController do
     requested? = Tournaments.has_requested_as_team?(user_id, tournament_id)
     confirmed? = Tournaments.has_confirmed_as_team?(user_id, tournament_id)
 
-    json(conn, %{result: result, has_requested_as_team: requested?, has_confirmed_as_team: confirmed?})
+    json(conn, %{
+      result: result,
+      has_requested_as_team: requested?,
+      has_confirmed_as_team: confirmed?
+    })
   end
 
   @doc """
@@ -1172,7 +1176,7 @@ defmodule MilkWeb.TournamentController do
             json(conn, %{validated: true, completed: true, is_finished: is_finished})
 
           true ->
-            #notify_on_duplicate_match(tournament_id, user_id, opponent_id)
+            # notify_on_duplicate_match(tournament_id, user_id, opponent_id)
             json(conn, %{validated: false, completed: false, is_finished: false})
         end
 
@@ -1203,7 +1207,7 @@ defmodule MilkWeb.TournamentController do
       }
       |> Notif.create_notification()
 
-      #FIXME
+      # FIXME
       Notif.push_ios_with_badge(body_text, "重複した勝敗報告が起きています", device.user_id, device.token)
     end)
   end
@@ -1352,7 +1356,7 @@ defmodule MilkWeb.TournamentController do
     end
     ~> origin
 
-    #json(conn, %{url: "e-players://e-players/tournament/" <> url, result: true})
+    # json(conn, %{url: "e-players://e-players/tournament/" <> url, result: true})
     json(conn, %{url: "#{origin}/api/tournament/url/#{url}", result: true})
   end
 
@@ -1757,10 +1761,11 @@ defmodule MilkWeb.TournamentController do
   end
 
   defp add_queue_tournament_start_push_notice(tournament) do
-    job = %{reminder_to_start_tournament: tournament.id}
-    |> Oban.Processer.new(scheduled_at: tournament.event_date)
-    |> Oban.insert()
-    |> elem(1)
+    job =
+      %{reminder_to_start_tournament: tournament.id}
+      |> Oban.Processer.new(scheduled_at: tournament.event_date)
+      |> Oban.insert()
+      |> elem(1)
 
     result = if Map.get(job, :errors) |> length == 0, do: true, else: false
 
@@ -1782,7 +1787,8 @@ defmodule MilkWeb.TournamentController do
   end
 
   def test_push_notice(conn, %{"token" => token}) do
-    params = %{"tournament_id": 1}
+    params = %{tournament_id: 1}
+
     Milk.Notif.push_ios(
       2,
       token,
@@ -1791,7 +1797,8 @@ defmodule MilkWeb.TournamentController do
       "test contents",
       params
     )
-    json(conn, %{"result": "ok"})
+
+    json(conn, %{result: "ok"})
   end
 
   def redirect_by_url(conn, params) do
@@ -1808,6 +1815,7 @@ defmodule MilkWeb.TournamentController do
     |> case do
       "iOS" ->
         "e-players://e-players/tournament/#{token}"
+
       _ ->
         "#{domain}/tournament/information?tournament_id=#{tournament.id}"
     end

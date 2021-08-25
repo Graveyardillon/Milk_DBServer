@@ -1,6 +1,8 @@
 defmodule Milk.AccountsTest do
   use Milk.DataCase
 
+  import Common.Sperm
+
   alias Milk.{
     Accounts,
     Profiles,
@@ -113,6 +115,7 @@ defmodule Milk.AccountsTest do
         fixture_user(n)
         assert Accounts.get_user_number() == n
       end)
+
       assert Accounts.get_user_number() == x
     end
   end
@@ -564,6 +567,117 @@ defmodule Milk.AccountsTest do
 
       result = Accounts.unregister_device(device)
       assert result == true
+    end
+  end
+
+  describe "create service reference and get service reference by user id and update service reference" do
+    test "works" do
+      user = fixture_user()
+      tid = "@papillon6814"
+      rid = "asfasd#asdf"
+
+      %{user_id: user.id, twitter_id: tid, riot_id: rid}
+      |> Accounts.create_service_reference()
+      |> elem(1)
+      ~> service_reference
+
+      assert service_reference.user_id == user.id
+      assert service_reference.twitter_id == tid
+      assert service_reference.riot_id == rid
+
+      user
+      |> Map.get(:id)
+      |> Accounts.get_service_reference_by_user_id()
+      ~> service_reference
+
+      assert service_reference.user_id == user.id
+      assert service_reference.twitter_id == tid
+      assert service_reference.riot_id == rid
+
+      utid = "@papillon6"
+      urid = "fff#4444"
+
+      service_reference
+      |> Accounts.update_service_reference(%{twitter_id: utid, riot_id: urid})
+      |> elem(1)
+      ~> service_reference
+
+      assert service_reference.user_id == user.id
+      assert service_reference.twitter_id == utid
+      assert service_reference.riot_id == urid
+    end
+
+    test "invalid format of tid and rid" do
+      user = fixture_user()
+      tid = "papillon6814"
+      rid = "asfasdasdf"
+
+      %{user_id: user.id, twitter_id: tid, riot_id: rid}
+      |> Accounts.create_service_reference()
+      ~> {:error, error}
+
+      error
+      |> Map.get(:errors)
+      |> Keyword.get(:twitter_id)
+      |> elem(0)
+      |> Kernel.==("has invalid format")
+      |> assert()
+
+      error
+      |> Map.get(:errors)
+      |> Keyword.get(:riot_id)
+      |> elem(0)
+      |> Kernel.==("has invalid format")
+      |> assert()
+    end
+  end
+
+  describe "create and get and update external service" do
+    test "works" do
+      user = fixture_user()
+
+      content = "@papillon6814"
+      name = "Twitter"
+
+      Map.new()
+      |> Map.put(:user_id, user.id)
+      |> Map.put(:content, content)
+      |> Map.put(:name, name)
+      |> Accounts.create_external_service()
+      |> elem(1)
+      ~> external_service
+
+      assert external_service.user_id == user.id
+      assert external_service.content == content
+      assert external_service.name == name
+
+      user
+      |> Map.get(:id)
+      |> Accounts.get_external_services()
+      ~> external_services
+      |> Enum.map(fn external_service ->
+        refute is_nil(external_service.id)
+        assert external_service.user_id == user.id
+        assert external_service.content == content
+        assert external_service.name == name
+      end)
+      |> length()
+      |> Kernel.==(1)
+      |> assert()
+
+      ucontent = "@papilo123"
+      uname = "twotter"
+
+      external_services
+      |> Enum.map(fn external_service ->
+        external_service
+        |> Accounts.update_external_service(%{content: ucontent, name: uname})
+        |> elem(1)
+        ~> external_service
+
+        assert external_service.name == uname
+        assert external_service.content == ucontent
+      end)
     end
   end
 end

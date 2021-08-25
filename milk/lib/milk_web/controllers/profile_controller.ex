@@ -23,12 +23,20 @@ defmodule MilkWeb.ProfileController do
     |> Tools.to_integer_as_needed()
     |> Accounts.get_user()
     ~> user
-
-    if user do
+    |> if do
       games = Profiles.get_game_list(user)
       records = Profiles.get_records(user)
 
-      render(conn, "profile.json", user: user, games: games, records: records)
+      service_reference = Accounts.get_service_reference_by_user_id(user.id)
+      external_services = Accounts.get_external_services(user_id)
+
+      render(conn, "profile.json",
+        user: user,
+        games: games,
+        records: records,
+        service_reference: service_reference,
+        external_services: external_services
+      )
     else
       json(conn, %{result: false, error: "user not found"})
     end
@@ -132,5 +140,14 @@ defmodule MilkWeb.ProfileController do
   def records(conn, %{"user_id" => user_id}) do
     records = Tournaments.get_all_tournament_records(user_id)
     render(conn, "records.json", records: records)
+  end
+
+  def external_services(conn, %{"user_id" => user_id}) do
+    user_id
+    |> Tools.to_integer_as_needed()
+    |> Accounts.get_external_services()
+    ~> external_services
+
+    render(conn, "external_services.json", external_services: external_services)
   end
 end

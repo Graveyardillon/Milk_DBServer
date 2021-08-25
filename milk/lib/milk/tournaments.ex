@@ -79,7 +79,7 @@ defmodule Milk.Tournaments do
     ~> filter_date
 
     Tournament
-    #|> where([t], t.deadline > ^filter_date and t.create_time < ^date_offset)
+    # |> where([t], t.deadline > ^filter_date and t.create_time < ^date_offset)
     |> where([t], not (t.master_id in ^blocked_user_id_list))
     |> order_by([t], asc: :event_date)
     |> offset(^offset)
@@ -392,6 +392,7 @@ defmodule Milk.Tournaments do
       {:ok, tournament} ->
         set_details(tournament, params)
         {:ok, tournament}
+
       {:error, error} ->
         {:error, error}
     end
@@ -2352,12 +2353,12 @@ defmodule Milk.Tournaments do
       ~> result
     end)
     |> (fn result ->
-      if result do
-        {:ok, nil}
-      else
-        {:error, "invalid invitation to user who is already a member of another team."}
-      end
-    end).()
+          if result do
+            {:ok, nil}
+          else
+            {:error, "invalid invitation to user who is already a member of another team."}
+          end
+        end).()
     |> case do
       {:ok, nil} ->
         tournament_id
@@ -2369,6 +2370,7 @@ defmodule Milk.Tournaments do
         else
           {:error, "invalid size"}
         end
+
       {:error, error} ->
         {:error, error}
     end
@@ -2414,6 +2416,7 @@ defmodule Milk.Tournaments do
           {:error, error} ->
             {:error, error}
         end
+
       {:error, error} ->
         {:error, error}
     end
@@ -2530,7 +2533,9 @@ defmodule Milk.Tournaments do
       end)
     end)
     |> case do
-      [] -> []
+      [] ->
+        []
+
       teams ->
         teams
         |> hd()
@@ -2681,9 +2686,10 @@ defmodule Milk.Tournaments do
       "icon_path" => invitation.sender.icon_path,
       "title" => "#{invitation.sender.name} からチーム招待されました",
       "body_text" => "",
-      "data" => Jason.encode!(%{
-        invitation_id: invitation.id
-      })
+      "data" =>
+        Jason.encode!(%{
+          invitation_id: invitation.id
+        })
     }
     |> Notif.create_notification()
     |> case do

@@ -28,12 +28,14 @@ defmodule MilkWeb.NotifController do
             "REMIND_TO_START_TOURNAMENT",
             "TOURNAMENT_END"
           ]
-          icon = 
+
+          icon =
             if Enum.member?(require_thumbnail, notification.process_id) do
               read_thumbnail(notification.icon_path)
             else
               read_icon(notification.icon_path)
             end
+
           Map.put(notification, :icon, icon)
         end
       end)
