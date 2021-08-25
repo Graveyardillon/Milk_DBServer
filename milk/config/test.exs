@@ -39,4 +39,3 @@ config :milk, Milk.Repo,
   migration_timestamps: [type: :timestamptz, inserted_at: :create_time, updated_at: :update_time]
 
 config :milk, :environment, :test
-

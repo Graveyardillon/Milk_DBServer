@@ -31,7 +31,7 @@ defmodule Milk.TournamentsTest do
 
   alias Milk.Accounts.User
 
-  @moduletag timeout: 300000
+  @moduletag timeout: 300_000
 
   # 外部キーが二つ以上の場合は %{"capacity" => 42} のようにしなければいけない
   @valid_attrs %{
@@ -265,6 +265,7 @@ defmodule Milk.TournamentsTest do
 
     test "get_pending_tournaments/1" do
       tournament = fixture_tournament(is_team: true, type: 2)
+
       [num: 5]
       |> fixture_user()
       |> Map.get(:id)
@@ -375,7 +376,13 @@ defmodule Milk.TournamentsTest do
     end
 
     test "create_tournament/1 (custom detail)" do
-      tournament = fixture_tournament(enabled_coin_toss: true, coin_head_field: "head!", coin_tail_field: "tail!")
+      tournament =
+        fixture_tournament(
+          enabled_coin_toss: true,
+          coin_head_field: "head!",
+          coin_tail_field: "tail!"
+        )
+
       detail = Tournaments.get_custom_detail_by_tournament_id(tournament.id)
 
       assert tournament.enabled_coin_toss

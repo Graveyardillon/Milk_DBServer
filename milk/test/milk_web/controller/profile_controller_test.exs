@@ -1,5 +1,6 @@
 defmodule MilkWeb.ProfileControllerTest do
   use MilkWeb.ConnCase
+  use Common.Fixtures
 
   alias Milk.{
     Accounts,
@@ -47,57 +48,6 @@ defmodule MilkWeb.ProfileControllerTest do
       |> Profiles.create_profile()
 
     profile
-  end
-
-  def fixture_user(opts \\ []) do
-    num_str =
-      opts[:num]
-      |> is_nil()
-      |> unless do
-        to_string(opts[:num])
-      else
-        "-1"
-      end
-
-    attrs = %{
-      "icon_path" => "some icon_path",
-      "language" => "some language",
-      "name" => "some name" <> num_str,
-      "notification_number" => 42,
-      "point" => 42,
-      "password" => "Password123",
-      "email" => "e@mail.com" <> num_str
-    }
-
-    {:ok, user} = Accounts.create_user(attrs)
-    user
-  end
-
-  # defp fixture_tournament(opts \\ []) do
-  defp fixture_tournament(opts) do
-    master_id =
-      opts[:master_id]
-      |> is_nil()
-      |> unless do
-        opts[:master_id]
-      else
-        {:ok, user} =
-          Accounts.create_user(%{
-            "name" => "name",
-            "email" => "e@mail.com",
-            "password" => "Password123"
-          })
-
-        user.id
-      end
-
-    {:ok, tournament} =
-      @tournament_attrs
-      |> Map.put("is_started", false)
-      |> Map.put("master_id", master_id)
-      |> Tournaments.create_tournament()
-
-    tournament
   end
 
   setup %{conn: conn} do
@@ -151,6 +101,34 @@ defmodule MilkWeb.ProfileControllerTest do
         %{"tournament_id" => tournament_id, "user_id" => user.id, "rank" => 42}
         |> Tournaments.create_entrant()
       end)
+    end
+  end
+
+  describe "external service" do
+    test "work", %{conn: conn} do
+      user = fixture_user()
+
+      name = "twitter"
+      content = "@apillo23"
+
+      Map.new()
+      |> Map.put(:name, name)
+      |> Map.put(:content, content)
+      |> Map.put(:user_id, user.id)
+      |> Accounts.create_external_service()
+
+      conn
+      |> get(Routes.profile_path(conn, :external_services), user_id: user.id)
+      |> json_response(200)
+      |> Map.get("data")
+      |> Enum.map(fn external_service ->
+        assert external_service["name"] == name
+        assert external_service["content"] == content
+        refute is_nil(external_service["id"])
+      end)
+      |> length()
+      |> Kernel.==(1)
+      |> assert()
     end
   end
 
