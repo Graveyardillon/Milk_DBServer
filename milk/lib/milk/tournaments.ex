@@ -40,6 +40,7 @@ defmodule Milk.Tournaments do
   alias Milk.Tournaments.{
     Assistant,
     Entrant,
+    MultipleSelection,
     Team,
     TeamInvitation,
     TeamMember,
@@ -226,6 +227,7 @@ defmodule Milk.Tournaments do
     |> Repo.preload(:entrant)
     |> Repo.preload(:assistant)
     |> Repo.preload(:master)
+    |> Repo.preload(:multiple_selection)
     |> Repo.preload(:custom_detail)
     |> (fn tournament ->
           if tournament do
@@ -391,6 +393,7 @@ defmodule Milk.Tournaments do
     |> case do
       {:ok, tournament} ->
         set_details(tournament, params)
+        set_multiple_selections(tournament, params)
         {:ok, tournament}
 
       {:error, error} ->
@@ -533,6 +536,20 @@ defmodule Milk.Tournaments do
     params
     |> Map.put("tournament_id", tournament.id)
     |> create_custom_detail()
+  end
+
+  defp set_multiple_selections(tournament, params) do
+    params
+    |> Map.has_key?("multiple_selections")
+    |> if do
+      params
+      |> Map.get("multiple_selections")
+      |> Enum.map(fn selection ->
+        selection
+        |> Map.put("tournament_id", tournament.id)
+        |> create_multiple_selection()
+      end)
+    end
   end
 
   @doc """
@@ -2862,5 +2879,23 @@ defmodule Milk.Tournaments do
     detail
     |> TournamentCustomDetail.changeset(attrs)
     |> Repo.update()
+  end
+
+  @doc """
+  Create multiple_selection
+  """
+  def create_multiple_selection(attrs \\ %{}) do
+    %MultipleSelection{}
+    |> MultipleSelection.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  @doc """
+  Get multiple_selections by tournament id
+  """
+  def get_multiple_selections_by_tournament_id(tournament_id) do
+    MultipleSelection
+    |> where([ms], ms.tournament_id == ^tournament_id)
+    |> Repo.all()
   end
 end

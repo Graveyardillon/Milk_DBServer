@@ -374,6 +374,48 @@ defmodule MilkWeb.TournamentControllerTest do
       assert detail.coin_head_field == "omote"
       assert detail.coin_tail_field == "ura"
     end
+
+    test "create tournament (multiple selection)", %{conn: conn} do
+      user = fixture_user(num: 2)
+
+      attrs = %{
+        "capacity" => 42,
+        "deadline" => "2010-04-17T14:00:00Z",
+        "description" => "some description",
+        "event_date" => "2010-04-17T14:00:00Z",
+        "master_id" => user.id,
+        "name" => "some name",
+        "type" => 1,
+        "join" => "true",
+        "enabled_coin_toss" => "true",
+        "enabled_multiple_selection" => "true",
+        "coin_head_field" => "omote",
+        "coin_tail_field" => "ura",
+        "url" => "some url",
+        "platform" => 1,
+        "multiple_selections" => [
+          %{"name" => "test selection1"},
+          %{"name" => "test selection2"},
+          %{"name" => "test selection3"}
+        ]
+      }
+
+      conn = post(conn, Routes.tournament_path(conn, :create), tournament: attrs, file: "")
+
+      assert json_response(conn, 200)["result"]
+
+      conn
+      |> json_response(200)
+      |> Map.get("data")
+      |> Map.get("id")
+      ~> id
+
+      conn = get(conn, Routes.tournament_path(conn, :show), tournament_id: id)
+
+      conn
+      |> json_response(200)
+      |> IO.inspect()
+    end
   end
 
   describe "get tournament" do
