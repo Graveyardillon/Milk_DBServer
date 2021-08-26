@@ -414,7 +414,18 @@ defmodule MilkWeb.TournamentControllerTest do
 
       conn
       |> json_response(200)
-      |> IO.inspect()
+      |> Map.get("data")
+      |> Map.get("multiple_selections")
+      |> Enum.map(fn selection ->
+        assert is_binary(selection["name"])
+        assert is_integer(selection["id"])
+        assert selection["state"] == "not_selected"
+      end)
+      |> length()
+      |> Kernel.==(3)
+      |> assert()
+
+      assert json_response(conn, 200)["data"]["enabled_multiple_selection"]
     end
   end
 
