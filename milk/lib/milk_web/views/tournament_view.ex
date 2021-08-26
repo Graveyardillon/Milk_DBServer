@@ -170,6 +170,7 @@ defmodule MilkWeb.TournamentView do
               id: selection.id,
               name: selection.name,
               state: selection.state,
+              icon_path: selection.icon_path,
               tournament_id: selection.tournament_id
             }
           end)
