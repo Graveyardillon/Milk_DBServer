@@ -2909,9 +2909,19 @@ defmodule Milk.Tournaments do
       ~> img
 
       uuid = SecureRandom.uuid()
-      FileUtils.write("./static/image/options/#{uuid}.png", img)
-      |> IO.inspect()
+      path = "./static/image/options/#{uuid}.png"
+      FileUtils.write(path, img)
+
+      Milk.CloudStorage.Objects.upload("./static/image/options/#{uuid}.png")
+      |> IO.inspect(label: :object)
+      |> Map.get(:name)
+      ~> name
+
+      Map.put(attrs, "icon_path", name)
+    else
+      attrs
     end
+    ~> attrs
 
     %MultipleSelection{}
     |> MultipleSelection.changeset(attrs)
