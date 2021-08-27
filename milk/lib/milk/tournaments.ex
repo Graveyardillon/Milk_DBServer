@@ -2917,6 +2917,8 @@ defmodule Milk.Tournaments do
       |> Map.get(:name)
       ~> name
 
+      File.rm(path)
+
       Map.put(attrs, "icon_path", name)
     else
       attrs
