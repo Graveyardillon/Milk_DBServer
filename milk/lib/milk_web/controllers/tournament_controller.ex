@@ -846,6 +846,18 @@ defmodule MilkWeb.TournamentController do
   end
 
   @doc """
+  Get options by tournament id.
+  """
+  def options(conn, %{"tournament_id" => tournament_id}) do
+    tournament_id
+    |> Tools.to_integer_as_needed()
+    |> Tournaments.get_multiple_selections_by_tournament_id()
+    ~> options
+
+    render(conn, "options.json", options: options)
+  end
+
+  @doc """
   Start a single match in the tournament.
   """
   def start_match(conn, %{"user_id" => user_id, "tournament_id" => tournament_id}) do

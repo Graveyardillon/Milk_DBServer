@@ -1925,6 +1925,34 @@ defmodule MilkWeb.TournamentControllerTest do
     end
   end
 
+  describe "get options" do
+    test "works", %{conn: conn} do
+      tournament = fixture_tournament()
+
+      1..5
+      |> Enum.to_list()
+      |> Enum.each(fn n ->
+        %{"name" => "#{n}test", "tournament_id" => tournament.id, "icon_path" => "a"}
+        |> Tournaments.create_multiple_selection()
+      end)
+
+      conn = get(conn, Routes.tournament_path(conn, :options), tournament_id: tournament.id)
+
+      conn
+      |> json_response(200)
+      |> Map.get("data")
+      |> Enum.map(fn option ->
+        assert is_binary(option["name"])
+        assert is_binary(option["icon_path"])
+        refute is_nil(option["id"])
+        assert is_binary(option["state"])
+      end)
+      |> length()
+      |> Kernel.==(5)
+      |> assert()
+    end
+  end
+
   describe "start match" do
     setup [:create_tournament]
 
