@@ -89,6 +89,7 @@ defmodule Milk.Tournaments do
     |> Repo.all()
     |> Repo.preload(:entrant)
     |> Repo.preload(:team)
+    |> Repo.preload(:custom_detail)
   end
 
   @doc """
@@ -109,6 +110,7 @@ defmodule Milk.Tournaments do
     |> Repo.all()
     |> Repo.preload(:entrant)
     |> Repo.preload(:team)
+    |> Repo.preload(:custom_detail)
   end
 
   @doc """
@@ -121,6 +123,7 @@ defmodule Milk.Tournaments do
     |> Repo.all()
     |> Repo.preload(:entrant)
     |> Repo.preload(:team)
+    |> Repo.preload(:custom_detail)
   end
 
   @doc """

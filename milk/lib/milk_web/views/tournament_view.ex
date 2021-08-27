@@ -120,7 +120,8 @@ defmodule MilkWeb.TournamentView do
             %{
               coin_head_field: tournament.custom_detail.coin_head_field,
               coin_tail_field: tournament.custom_detail.coin_tail_field,
-              multiple_selection_type: tournament.custom_detail.multiple_selection_type
+              multiple_selection_type: tournament.custom_detail.multiple_selection_type,
+              multiple_selection_label: tournament.custom_detail.multiple_selection_label
             }
           end,
         event_date: tournament.event_date,
@@ -257,6 +258,15 @@ defmodule MilkWeb.TournamentView do
     %{
       id: tournament.id,
       name: tournament.name,
+      custom_detail:
+          unless is_nil(tournament.custom_detail) do
+            %{
+              coin_head_field: tournament.custom_detail.coin_head_field,
+              coin_tail_field: tournament.custom_detail.coin_tail_field,
+              multiple_selection_type: tournament.custom_detail.multiple_selection_type,
+              multiple_selection_label: tournament.custom_detail.multiple_selection_label
+            }
+          end,
       thumbnail_path: tournament.thumbnail_path,
       game_id: tournament.game_id,
       game_name: tournament.game_name,
