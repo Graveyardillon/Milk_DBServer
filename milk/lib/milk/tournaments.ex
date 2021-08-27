@@ -9,6 +9,7 @@ defmodule Milk.Tournaments do
 
   alias Ecto.Multi
   alias Common.Tools
+  alias Common.FileUtils
 
   alias Milk.{
     Accounts,
@@ -2894,6 +2895,24 @@ defmodule Milk.Tournaments do
   Create multiple_selection
   """
   def create_multiple_selection(attrs \\ %{}) do
+    attrs
+    |> Map.has_key?("icon_b64")
+    |> if do
+      attrs
+      |> Map.get("icon_b64")
+      ~> b64
+
+      # "data:image/png;base64,"
+      # |> Kernel.<>(b64)
+      b64
+      |> Base.decode64!()
+      ~> img
+
+      uuid = SecureRandom.uuid()
+      FileUtils.write("./static/image/options/#{uuid}.png", img)
+      |> IO.inspect()
+    end
+
     %MultipleSelection{}
     |> MultipleSelection.changeset(attrs)
     |> Repo.insert()
