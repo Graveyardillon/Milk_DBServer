@@ -540,15 +540,24 @@ defmodule Milk.Tournaments do
 
   defp set_multiple_selections(tournament, params) do
     params
+    |> IO.inspect()
     |> Map.has_key?("multiple_selections")
     |> if do
       params
       |> Map.get("multiple_selections")
-      |> Enum.map(fn selection ->
-        selection
-        |> Map.put("tournament_id", tournament.id)
-        |> create_multiple_selection()
-      end)
+      ~> selections
+      |> is_binary()
+      |> if do
+        selections
+        |> Poison.decode()
+        |> elem(1)
+        |> IO.inspect()
+        |> Enum.map(fn selection ->
+          selection
+          |> Map.put("tournament_id", tournament.id)
+          |> create_multiple_selection()
+        end)
+      end
     end
   end
 

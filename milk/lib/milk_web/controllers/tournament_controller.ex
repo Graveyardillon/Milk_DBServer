@@ -102,11 +102,7 @@ defmodule MilkWeb.TournamentController do
   @doc """
   Create a tournament.
   """
-  def create(conn, %{"tournament" => tournament_params, "file" => file}) do
-    create(conn, %{"tournament" => tournament_params, "image" => file})
-  end
-
-  def create(conn, %{"tournament" => tournament_params, "image" => image}) do
+  def create(conn, %{"tournament" => tournament_params, "image" => image, "options" => options}) do
     # coveralls-ignore-start
     if image != "" do
       uuid = SecureRandom.uuid()
@@ -146,6 +142,7 @@ defmodule MilkWeb.TournamentController do
     else
       tournament_params
       |> Map.put("enabled_coin_toss", tournament_params["enabled_coin_toss"] == "true")
+      |> Map.put("multiple_selections", options)
       |> Tournaments.create_tournament(thumbnail_path)
       |> case do
         {:ok, %Tournament{} = tournament} ->
@@ -176,6 +173,14 @@ defmodule MilkWeb.TournamentController do
           render(conn, "error.json", error: nil)
       end
     end
+  end
+
+  def create(conn, %{"tournament" => tournament_params, "file" => file, "options" => options}) do
+    create(conn, %{"tournament" => tournament_params, "image" => file, "options" => options})
+  end
+
+  def create(conn, %{"tournament" => tournament_params, "file" => file}) do
+    create(conn, %{"tournament" => tournament_params, "file" => file, "options" => []})
   end
 
   @doc """
