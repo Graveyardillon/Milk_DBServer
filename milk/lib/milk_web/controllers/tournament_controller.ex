@@ -894,7 +894,7 @@ defmodule MilkWeb.TournamentController do
     |> Image.get()
     |> case do
       {:ok, file} ->
-        {:ok, Base.encode(file)}
+        {:ok, Base.encode64(file)}
       {:error, error} ->
         {:error, error}
     end

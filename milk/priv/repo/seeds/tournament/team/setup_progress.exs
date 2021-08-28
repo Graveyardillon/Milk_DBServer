@@ -38,6 +38,7 @@ organizer
     "deadline" => day_after_tomorrow,
     "description" => "test team tournament of size 4.",
     "enabled_coin_toss" => true,
+    "enabled_multiple_selection" => true,
     "event_date" => day_after_tomorrow,
     "name" => "test team tournament of size 4.",
     "type" => 2,
@@ -52,7 +53,34 @@ organizer
     "platform" => 1,
     "game_id" => nil,
     "coin_head_field" => "先攻！",
-    "coin_tail_field" => "後攻！"
+    "coin_tail_field" => "後攻！",
+    "multiple_selection_label" => "マップ",
+    "multiple_selections" => [
+      %{
+        "name" => "アセント",
+        "icon_path" => "./static/image/options/ascent.png"
+      },
+      %{
+        "name" => "バインド",
+        "icon_path" => "./static/image/options/bind.png"
+      },
+      %{
+        "name" => "ブリーズ",
+        "icon_path" => "./static/image/options/breeze.png"
+      },
+      %{
+        "name" => "ヘイヴン",
+        "icon_path" => "./static/image/options/haven.png"
+      },
+      %{
+        "name" => "アイスボックス",
+        "icon_path" => "./static/image/options/icebox.png"
+      },
+      %{
+        "name" => "スプリット",
+        "icon_path" => "./static/image/options/split.png"
+      }
+    ]
   }
   Tournaments.create_tournament(attrs, attrs["thumbnail_path"])
   |> elem(1)
