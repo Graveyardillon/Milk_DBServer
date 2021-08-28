@@ -7,3 +7,12 @@
 !/image/tournament_thumbnail/kazemachi.jpg
 !/image/tournament_thumbnail/nevermind.jpg
 !/image/tournament_thumbnail/solid_state_survivor.jpg
+
+!/image/options
+/image/options/*
+!/image/options/ascent.png
+!/image/options/bind.png
+!/image/options/breeze.png
+!/image/options/haven.png
+!/image/options/icebox.png
+!/image/options/split.png
