@@ -80,12 +80,12 @@ defmodule MilkWeb.TournamentController do
     |> Tools.to_integer_as_needed()
     |> Tournaments.get_ongoing_tournaments_by_master_id()
     |> Enum.map(fn tournament ->
-      entrants =
-        tournament.id
-        |> Tournaments.get_entrants()
-        |> Enum.map(fn entrant ->
-          Accounts.get_user(entrant.user_id)
-        end)
+      tournament.id
+      |> Tournaments.get_entrants()
+      |> Enum.map(fn entrant ->
+        Accounts.get_user(entrant.user_id)
+      end)
+      ~> entrants
 
       Map.put(tournament, :entrants, entrants)
     end)
@@ -343,11 +343,13 @@ defmodule MilkWeb.TournamentController do
     user_id
     |> Tournaments.search(text)
     |> Enum.map(fn tournament ->
-      entrants =
-        Tournaments.get_entrants(tournament.id)
-        |> Enum.map(fn entrant ->
-          Accounts.get_user(entrant.user_id)
-        end)
+      tournament
+      |> Map.get(:id)
+      |> Tournaments.get_entrants()
+      |> Enum.map(fn entrant ->
+        Accounts.get_user(entrant.user_id)
+      end)
+      ~> entrants
 
       Map.put(tournament, :entrants, entrants)
     end)

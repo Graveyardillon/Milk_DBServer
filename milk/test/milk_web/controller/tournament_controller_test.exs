@@ -392,15 +392,15 @@ defmodule MilkWeb.TournamentControllerTest do
         "coin_head_field" => "omote",
         "coin_tail_field" => "ura",
         "url" => "some url",
-        "platform" => 1,
-        "multiple_selections" => [
-          %{"name" => "test selection1"},
-          %{"name" => "test selection2"},
-          %{"name" => "test selection3"}
-        ]
+        "platform" => 1
       }
+      options = [
+        %{"name" => "test selection1"},
+        %{"name" => "test selection2"},
+        %{"name" => "test selection3"}
+      ]
 
-      conn = post(conn, Routes.tournament_path(conn, :create), tournament: attrs, file: "")
+      conn = post(conn, Routes.tournament_path(conn, :create), tournament: attrs, file: "", options: options)
 
       assert json_response(conn, 200)["result"]
 

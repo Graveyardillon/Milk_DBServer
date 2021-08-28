@@ -138,6 +138,9 @@ defmodule Milk.Tournaments do
     )
     |> date_filter()
     |> Repo.all()
+    |> Repo.preload(:entrant)
+    |> Repo.preload(:team)
+    |> Repo.preload(:custom_detail)
   end
 
   defp date_filter(query) do
@@ -175,7 +178,15 @@ defmodule Milk.Tournaments do
   Returns tournaments which are filtered by master id.
   """
   def get_tournaments_by_master_id(user_id) do
-    Repo.all(from t in Tournament, where: t.master_id == ^user_id)
+    Tournament
+    |> where([t], t.master_id == ^user_id)
+    |> Repo.all()
+    |> Repo.preload(:entrant)
+    |> Repo.preload(:custom_detail)
+    |> Repo.preload(:multiple_selection)
+    |> Repo.preload(:team)
+    |> Repo.preload(:master)
+    |> Repo.preload(:assistant)
   end
 
   def get_tournament_logs_by_master_id(user_id) do
@@ -217,6 +228,11 @@ defmodule Milk.Tournaments do
     |> order_by([t], asc: :event_date)
     |> Repo.all()
     |> Repo.preload(:entrant)
+    |> Repo.preload(:custom_detail)
+    |> Repo.preload(:multiple_selection)
+    |> Repo.preload(:team)
+    |> Repo.preload(:master)
+    |> Repo.preload(:assistant)
   end
 
   @doc """
@@ -304,11 +320,18 @@ defmodule Milk.Tournaments do
   Get tournaments which the user participating in.
   It includes team.
   """
-  def get_participating_tournaments(user_id) do
+  def get_participating_tournaments(user_id, offset \\ 0) do
     Tournament
     |> join(:inner, [t], e in Entrant, on: t.id == e.tournament_id)
     |> where([t, e], e.user_id == ^user_id)
+    |> offset(^offset)
     |> Repo.all()
+    |> Repo.preload(:entrant)
+    |> Repo.preload(:custom_detail)
+    |> Repo.preload(:multiple_selection)
+    |> Repo.preload(:team)
+    |> Repo.preload(:master)
+    |> Repo.preload(:assistant)
     ~> entrants
 
     Tournament
@@ -316,24 +339,38 @@ defmodule Milk.Tournaments do
     |> join(:inner, [t, te], tm in TeamMember, on: te.id == tm.team_id)
     |> where([t, te, tm], tm.user_id == ^user_id)
     |> where([t, te, tm], te.is_confirmed)
+    |> offset(^offset)
     |> Repo.all()
+    |> Repo.preload(:entrant)
+    |> Repo.preload(:custom_detail)
+    |> Repo.preload(:multiple_selection)
+    |> Repo.preload(:team)
+    |> Repo.preload(:master)
+    |> Repo.preload(:assistant)
     |> Enum.concat(entrants)
     |> Enum.uniq()
   end
 
-  def get_participating_tournaments(user_id, offset) do
-    offset = Tools.to_integer_as_needed(offset)
+  # def get_participating_tournaments(user_id, offset) do
+  #   offset = Tools.to_integer_as_needed(offset)
 
-    Entrant
-    |> where([e], e.user_id == ^user_id)
-    |> order_by([e], asc: :tournament_id)
-    |> offset(^offset)
-    |> limit(5)
-    |> Repo.all()
-    |> Enum.map(fn entrant ->
-      get_tournament(entrant.tournament_id)
-    end)
-  end
+
+
+  #   Entrant
+  #   |> where([e], e.user_id == ^user_id)
+  #   |> order_by([e], asc: :tournament_id)
+  #   |> offset(^offset)
+  #   |> limit(5)
+  #   |> Repo.all()
+  #   |> Repo.preload(:team)
+  #   |> Repo.preload(:entrant)
+  #   |> Repo.preload(:assistant)
+  #   |> Repo.preload(:master)
+  #   |> Repo.preload(:custom_detail)
+  #   |> Enum.map(fn entrant ->
+  #     get_tournament(entrant.tournament_id)
+  #   end)
+  # end
 
   @doc """
   Get pending tournaments.
@@ -346,6 +383,12 @@ defmodule Milk.Tournaments do
     |> where([t, te, tm], tm.user_id == ^user_id)
     |> where([t, te, tm], not te.is_confirmed)
     |> Repo.all()
+    |> Repo.preload(:entrant)
+    |> Repo.preload(:custom_detail)
+    |> Repo.preload(:multiple_selection)
+    |> Repo.preload(:team)
+    |> Repo.preload(:master)
+    |> Repo.preload(:assistant)
   end
 
   @doc """
@@ -2929,7 +2972,6 @@ defmodule Milk.Tournaments do
       |> case do
         :prod ->
           Milk.CloudStorage.Objects.upload("./static/image/options/#{uuid}.png")
-          |> IO.inspect(label: :object)
           |> Map.get(:name)
           ~> name
 
