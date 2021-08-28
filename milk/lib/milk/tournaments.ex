@@ -9,6 +9,7 @@ defmodule Milk.Tournaments do
 
   alias Ecto.Multi
   alias Common.Tools
+  alias Common.FileUtils
 
   alias Milk.{
     Accounts,
@@ -40,6 +41,7 @@ defmodule Milk.Tournaments do
   alias Milk.Tournaments.{
     Assistant,
     Entrant,
+    MultipleSelection,
     Team,
     TeamInvitation,
     TeamMember,
@@ -87,6 +89,7 @@ defmodule Milk.Tournaments do
     |> Repo.all()
     |> Repo.preload(:entrant)
     |> Repo.preload(:team)
+    |> Repo.preload(:custom_detail)
   end
 
   @doc """
@@ -107,6 +110,7 @@ defmodule Milk.Tournaments do
     |> Repo.all()
     |> Repo.preload(:entrant)
     |> Repo.preload(:team)
+    |> Repo.preload(:custom_detail)
   end
 
   @doc """
@@ -119,6 +123,7 @@ defmodule Milk.Tournaments do
     |> Repo.all()
     |> Repo.preload(:entrant)
     |> Repo.preload(:team)
+    |> Repo.preload(:custom_detail)
   end
 
   @doc """
@@ -133,6 +138,9 @@ defmodule Milk.Tournaments do
     )
     |> date_filter()
     |> Repo.all()
+    |> Repo.preload(:entrant)
+    |> Repo.preload(:team)
+    |> Repo.preload(:custom_detail)
   end
 
   defp date_filter(query) do
@@ -170,7 +178,15 @@ defmodule Milk.Tournaments do
   Returns tournaments which are filtered by master id.
   """
   def get_tournaments_by_master_id(user_id) do
-    Repo.all(from t in Tournament, where: t.master_id == ^user_id)
+    Tournament
+    |> where([t], t.master_id == ^user_id)
+    |> Repo.all()
+    |> Repo.preload(:entrant)
+    |> Repo.preload(:custom_detail)
+    |> Repo.preload(:multiple_selection)
+    |> Repo.preload(:team)
+    |> Repo.preload(:master)
+    |> Repo.preload(:assistant)
   end
 
   def get_tournament_logs_by_master_id(user_id) do
@@ -212,6 +228,11 @@ defmodule Milk.Tournaments do
     |> order_by([t], asc: :event_date)
     |> Repo.all()
     |> Repo.preload(:entrant)
+    |> Repo.preload(:custom_detail)
+    |> Repo.preload(:multiple_selection)
+    |> Repo.preload(:team)
+    |> Repo.preload(:master)
+    |> Repo.preload(:assistant)
   end
 
   @doc """
@@ -226,6 +247,7 @@ defmodule Milk.Tournaments do
     |> Repo.preload(:entrant)
     |> Repo.preload(:assistant)
     |> Repo.preload(:master)
+    |> Repo.preload(:multiple_selection)
     |> Repo.preload(:custom_detail)
     |> (fn tournament ->
           if tournament do
@@ -298,11 +320,18 @@ defmodule Milk.Tournaments do
   Get tournaments which the user participating in.
   It includes team.
   """
-  def get_participating_tournaments(user_id) do
+  def get_participating_tournaments(user_id, offset \\ 0) do
     Tournament
     |> join(:inner, [t], e in Entrant, on: t.id == e.tournament_id)
     |> where([t, e], e.user_id == ^user_id)
+    |> offset(^offset)
     |> Repo.all()
+    |> Repo.preload(:entrant)
+    |> Repo.preload(:custom_detail)
+    |> Repo.preload(:multiple_selection)
+    |> Repo.preload(:team)
+    |> Repo.preload(:master)
+    |> Repo.preload(:assistant)
     ~> entrants
 
     Tournament
@@ -310,24 +339,38 @@ defmodule Milk.Tournaments do
     |> join(:inner, [t, te], tm in TeamMember, on: te.id == tm.team_id)
     |> where([t, te, tm], tm.user_id == ^user_id)
     |> where([t, te, tm], te.is_confirmed)
+    |> offset(^offset)
     |> Repo.all()
+    |> Repo.preload(:entrant)
+    |> Repo.preload(:custom_detail)
+    |> Repo.preload(:multiple_selection)
+    |> Repo.preload(:team)
+    |> Repo.preload(:master)
+    |> Repo.preload(:assistant)
     |> Enum.concat(entrants)
     |> Enum.uniq()
   end
 
-  def get_participating_tournaments(user_id, offset) do
-    offset = Tools.to_integer_as_needed(offset)
+  # def get_participating_tournaments(user_id, offset) do
+  #   offset = Tools.to_integer_as_needed(offset)
 
-    Entrant
-    |> where([e], e.user_id == ^user_id)
-    |> order_by([e], asc: :tournament_id)
-    |> offset(^offset)
-    |> limit(5)
-    |> Repo.all()
-    |> Enum.map(fn entrant ->
-      get_tournament(entrant.tournament_id)
-    end)
-  end
+
+
+  #   Entrant
+  #   |> where([e], e.user_id == ^user_id)
+  #   |> order_by([e], asc: :tournament_id)
+  #   |> offset(^offset)
+  #   |> limit(5)
+  #   |> Repo.all()
+  #   |> Repo.preload(:team)
+  #   |> Repo.preload(:entrant)
+  #   |> Repo.preload(:assistant)
+  #   |> Repo.preload(:master)
+  #   |> Repo.preload(:custom_detail)
+  #   |> Enum.map(fn entrant ->
+  #     get_tournament(entrant.tournament_id)
+  #   end)
+  # end
 
   @doc """
   Get pending tournaments.
@@ -340,6 +383,12 @@ defmodule Milk.Tournaments do
     |> where([t, te, tm], tm.user_id == ^user_id)
     |> where([t, te, tm], not te.is_confirmed)
     |> Repo.all()
+    |> Repo.preload(:entrant)
+    |> Repo.preload(:custom_detail)
+    |> Repo.preload(:multiple_selection)
+    |> Repo.preload(:team)
+    |> Repo.preload(:master)
+    |> Repo.preload(:assistant)
   end
 
   @doc """
@@ -391,6 +440,7 @@ defmodule Milk.Tournaments do
     |> case do
       {:ok, tournament} ->
         set_details(tournament, params)
+        set_multiple_selections(tournament, params)
         {:ok, tournament}
 
       {:error, error} ->
@@ -533,6 +583,38 @@ defmodule Milk.Tournaments do
     params
     |> Map.put("tournament_id", tournament.id)
     |> create_custom_detail()
+  end
+
+  defp set_multiple_selections(tournament, params) do
+    params
+    |> Map.has_key?("multiple_selections")
+    |> if do
+      params
+      |> Map.get("multiple_selections")
+      ~> selections
+
+      selections
+      |> is_binary()
+      |> if do
+        selections
+        |> Poison.decode()
+        |> elem(1)
+      else
+        selections
+      end
+      ~> selections
+
+      selections
+      |> is_list()
+      |> if do
+        selections
+        |> Enum.map(fn selection ->
+          selection
+          |> Map.put("tournament_id", tournament.id)
+          |> create_multiple_selection()
+        end)
+      end
+    end
   end
 
   @doc """
@@ -2862,5 +2944,61 @@ defmodule Milk.Tournaments do
     detail
     |> TournamentCustomDetail.changeset(attrs)
     |> Repo.update()
+  end
+
+  @doc """
+  Create multiple_selection
+  """
+  def create_multiple_selection(attrs \\ %{}) do
+    attrs
+    |> Map.has_key?("icon_b64")
+    |> if do
+      attrs
+      |> Map.get("icon_b64")
+      ~> b64
+
+      # "data:image/png;base64,"
+      # |> Kernel.<>(b64)
+      b64
+      |> Base.decode64!()
+      ~> img
+
+      uuid = SecureRandom.uuid()
+      path = "./static/image/options/#{uuid}.png"
+      FileUtils.write(path, img)
+
+      :milk
+      |> Application.get_env(:environment)
+      |> case do
+        :prod ->
+          Milk.CloudStorage.Objects.upload("./static/image/options/#{uuid}.png")
+          |> Map.get(:name)
+          ~> name
+
+          File.rm(path)
+          name
+        _ ->
+          path
+      end
+      ~> name
+
+      Map.put(attrs, "icon_path", name)
+    else
+      attrs
+    end
+    ~> attrs
+
+    %MultipleSelection{}
+    |> MultipleSelection.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  @doc """
+  Get multiple_selections by tournament id
+  """
+  def get_multiple_selections_by_tournament_id(tournament_id) do
+    MultipleSelection
+    |> where([ms], ms.tournament_id == ^tournament_id)
+    |> Repo.all()
   end
 end

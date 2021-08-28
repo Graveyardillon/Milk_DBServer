@@ -80,12 +80,12 @@ defmodule MilkWeb.TournamentController do
     |> Tools.to_integer_as_needed()
     |> Tournaments.get_ongoing_tournaments_by_master_id()
     |> Enum.map(fn tournament ->
-      entrants =
-        tournament.id
-        |> Tournaments.get_entrants()
-        |> Enum.map(fn entrant ->
-          Accounts.get_user(entrant.user_id)
-        end)
+      tournament.id
+      |> Tournaments.get_entrants()
+      |> Enum.map(fn entrant ->
+        Accounts.get_user(entrant.user_id)
+      end)
+      ~> entrants
 
       Map.put(tournament, :entrants, entrants)
     end)
@@ -102,11 +102,7 @@ defmodule MilkWeb.TournamentController do
   @doc """
   Create a tournament.
   """
-  def create(conn, %{"tournament" => tournament_params, "file" => file}) do
-    create(conn, %{"tournament" => tournament_params, "image" => file})
-  end
-
-  def create(conn, %{"tournament" => tournament_params, "image" => image}) do
+  def create(conn, %{"tournament" => tournament_params, "image" => image, "options" => options}) do
     # coveralls-ignore-start
     if image != "" do
       uuid = SecureRandom.uuid()
@@ -146,6 +142,7 @@ defmodule MilkWeb.TournamentController do
     else
       tournament_params
       |> Map.put("enabled_coin_toss", tournament_params["enabled_coin_toss"] == "true")
+      |> Map.put("multiple_selections", options)
       |> Tournaments.create_tournament(thumbnail_path)
       |> case do
         {:ok, %Tournament{} = tournament} ->
@@ -178,6 +175,14 @@ defmodule MilkWeb.TournamentController do
     end
   end
 
+  def create(conn, %{"tournament" => tournament_params, "file" => file, "options" => options}) do
+    create(conn, %{"tournament" => tournament_params, "image" => file, "options" => options})
+  end
+
+  def create(conn, %{"tournament" => tournament_params, "file" => file}) do
+    create(conn, %{"tournament" => tournament_params, "file" => file, "options" => []})
+  end
+
   @doc """
   Show tournament information.
   """
@@ -196,7 +201,12 @@ defmodule MilkWeb.TournamentController do
         end
 
         team = Enum.filter(tournament.team, fn team -> team.is_confirmed end)
-        tournament = Map.put(tournament, :team, team)
+        selections = Tournaments.get_multiple_selections_by_tournament_id(tournament.id)
+
+        tournament
+        |> Map.put(:team, team)
+        |> Map.put(:multiple_selection, selections)
+        ~> tournament
 
         render(conn, "tournament_info.json", tournament: tournament)
 
@@ -333,11 +343,13 @@ defmodule MilkWeb.TournamentController do
     user_id
     |> Tournaments.search(text)
     |> Enum.map(fn tournament ->
-      entrants =
-        Tournaments.get_entrants(tournament.id)
-        |> Enum.map(fn entrant ->
-          Accounts.get_user(entrant.user_id)
-        end)
+      tournament
+      |> Map.get(:id)
+      |> Tournaments.get_entrants()
+      |> Enum.map(fn entrant ->
+        Accounts.get_user(entrant.user_id)
+      end)
+      ~> entrants
 
       Map.put(tournament, :entrants, entrants)
     end)
@@ -769,7 +781,7 @@ defmodule MilkWeb.TournamentController do
   Get a thumbnail image of a tournament by tournament id.
   """
   def get_thumbnail_by_tournament_id(conn, %{"tournament_id" => id}) do
-    case Tournaments.get_tournament(id) do 
+    case Tournaments.get_tournament(id) do
       nil ->
         json(conn, %{result: false})
       tournament -> path = tournament.thumbnail_path
@@ -832,6 +844,61 @@ defmodule MilkWeb.TournamentController do
       json(conn, %{match_list: nil, result: false})
     else
       json(conn, %{match_list: match_list, result: true})
+    end
+  end
+
+  @doc """
+  Get options by tournament id.
+  """
+  def options(conn, %{"tournament_id" => tournament_id}) do
+    tournament_id
+    |> Tools.to_integer_as_needed()
+    |> Tournaments.get_multiple_selections_by_tournament_id()
+    ~> options
+
+    render(conn, "options.json", options: options)
+  end
+
+  @doc """
+  Get icon of an option.
+  """
+  def get_option_icon(conn, %{"path" => path}) do
+    :milk
+    |> Application.get_env(:environment)
+    |> case do
+      :dev -> load_img(path)
+      :test -> load_img(path)
+      _ -> load_img_prod(path)
+    end
+    |> case do
+      {:ok, b64} ->
+        json(conn, %{b64: b64})
+      {:error, error} ->
+        render(conn, "error.json", error: error)
+    end
+  end
+
+  defp load_img(path) do
+    path
+    |> File.read()
+    |> case do
+      {:ok, file} ->
+        {:ok, Base.encode64(file)}
+      {:error, error} ->
+        {:error, error}
+    end
+  end
+
+  defp load_img_prod(name) do
+    name
+    |> Objects.get()
+    |> Map.get(:mediaLink)
+    |> Image.get()
+    |> case do
+      {:ok, file} ->
+        {:ok, Base.encode64(file)}
+      {:error, error} ->
+        {:error, error}
     end
   end
 
@@ -1317,6 +1384,14 @@ defmodule MilkWeb.TournamentController do
 
     token
     |> Tournaments.get_tournament_by_url_token()
+    ~> tournament
+
+    team = Enum.filter(tournament.team, fn team -> team.is_confirmed end)
+    selections = Tournaments.get_multiple_selections_by_tournament_id(tournament.id)
+
+    tournament
+    |> Map.put(:team, team)
+    |> Map.put(:multiple_selection, selections)
     ~> tournament
 
     render(conn, "tournament_info.json", tournament: tournament)

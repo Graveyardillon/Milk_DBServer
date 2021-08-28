@@ -120,11 +120,13 @@ defmodule MilkWeb.TournamentView do
             %{
               coin_head_field: tournament.custom_detail.coin_head_field,
               coin_tail_field: tournament.custom_detail.coin_tail_field,
-              multiple_selection_type: tournament.custom_detail.multiple_selection_type
+              multiple_selection_type: tournament.custom_detail.multiple_selection_type,
+              multiple_selection_label: tournament.custom_detail.multiple_selection_label
             }
           end,
         event_date: tournament.event_date,
         enabled_coin_toss: tournament.enabled_coin_toss,
+        enabled_multiple_selection: tournament.enabled_multiple_selection,
         start_recruiting: tournament.start_recruiting,
         deadline: tournament.deadline,
         type: tournament.type,
@@ -161,6 +163,16 @@ defmodule MilkWeb.TournamentView do
               size: team.size,
               icon_path: team.icon_path,
               is_confirmed: team.is_confirmed
+            }
+          end),
+        multiple_selections:
+          Enum.map(tournament.multiple_selection, fn selection ->
+            %{
+              id: selection.id,
+              name: selection.name,
+              state: selection.state,
+              icon_path: selection.icon_path,
+              tournament_id: selection.tournament_id
             }
           end)
       },
@@ -246,6 +258,15 @@ defmodule MilkWeb.TournamentView do
     %{
       id: tournament.id,
       name: tournament.name,
+      custom_detail:
+          unless is_nil(tournament.custom_detail) do
+            %{
+              coin_head_field: tournament.custom_detail.coin_head_field,
+              coin_tail_field: tournament.custom_detail.coin_tail_field,
+              multiple_selection_type: tournament.custom_detail.multiple_selection_type,
+              multiple_selection_label: tournament.custom_detail.multiple_selection_label
+            }
+          end,
       thumbnail_path: tournament.thumbnail_path,
       game_id: tournament.game_id,
       game_name: tournament.game_name,
@@ -305,6 +326,7 @@ defmodule MilkWeb.TournamentView do
         game_id: tournament.game_id,
         game_name: tournament.game_name,
         enabled_coin_toss: tournament.enabled_coin_toss,
+        enabled_multiple_selection: tournament.enabled_multiple_selection,
         event_date: tournament.event_date,
         start_recruiting: tournament.start_recruiting,
         deadline: tournament.deadline,
@@ -455,6 +477,19 @@ defmodule MilkWeb.TournamentView do
             multiple_selection_type: custom_detail.multiple_selection_type
           }
         end
+    }
+  end
+
+  def render("options.json", %{options: options}) do
+    %{
+      data: Enum.map(options, fn option ->
+        %{
+          name: option.name,
+          id: option.id,
+          icon_path: option.icon_path,
+          state: option.state
+        }
+      end)
     }
   end
 
