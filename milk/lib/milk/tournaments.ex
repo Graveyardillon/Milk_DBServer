@@ -2915,12 +2915,21 @@ defmodule Milk.Tournaments do
       path = "./static/image/options/#{uuid}.png"
       FileUtils.write(path, img)
 
-      Milk.CloudStorage.Objects.upload("./static/image/options/#{uuid}.png")
-      |> IO.inspect(label: :object)
-      |> Map.get(:name)
-      ~> name
+      :milk
+      |> Application.get_env(:environment)
+      |> case do
+        :prod ->
+          Milk.CloudStorage.Objects.upload("./static/image/options/#{uuid}.png")
+          |> IO.inspect(label: :object)
+          |> Map.get(:name)
+          ~> name
 
-      File.rm(path)
+          File.rm(path)
+          name
+        _ ->
+          path
+      end
+      ~> name
 
       Map.put(attrs, "icon_path", name)
     else

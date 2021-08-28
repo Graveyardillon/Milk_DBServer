@@ -858,6 +858,49 @@ defmodule MilkWeb.TournamentController do
   end
 
   @doc """
+  Get icon of an option.
+  """
+  def get_option_icon(conn, %{"path" => path}) do
+    :milk
+    |> Application.get_env(:environment)
+    |> case do
+      :dev -> load_img(path)
+      :test -> load_img(path)
+      _ -> load_img_prod(path)
+    end
+    |> case do
+      {:ok, b64} ->
+        json(conn, %{b64: b64})
+      {:error, error} ->
+        render(conn, "error.json", error: error)
+    end
+  end
+
+  defp load_img(path) do
+    path
+    |> File.read()
+    |> case do
+      {:ok, file} ->
+        {:ok, Base.encode64(file)}
+      {:error, error} ->
+        {:error, error}
+    end
+  end
+
+  defp load_img_prod(name) do
+    name
+    |> Objects.get()
+    |> Map.get(:mediaLink)
+    |> Image.get()
+    |> case do
+      {:ok, file} ->
+        {:ok, Base.encode(file)}
+      {:error, error} ->
+        {:error, error}
+    end
+  end
+
+  @doc """
   Start a single match in the tournament.
   """
   def start_match(conn, %{"user_id" => user_id, "tournament_id" => tournament_id}) do
