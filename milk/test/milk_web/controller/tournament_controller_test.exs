@@ -374,6 +374,59 @@ defmodule MilkWeb.TournamentControllerTest do
       assert detail.coin_head_field == "omote"
       assert detail.coin_tail_field == "ura"
     end
+
+    test "create tournament (multiple selection)", %{conn: conn} do
+      user = fixture_user(num: 2)
+
+      attrs = %{
+        "capacity" => 42,
+        "deadline" => "2010-04-17T14:00:00Z",
+        "description" => "some description",
+        "event_date" => "2010-04-17T14:00:00Z",
+        "master_id" => user.id,
+        "name" => "some name",
+        "type" => 1,
+        "join" => "true",
+        "enabled_coin_toss" => "true",
+        "enabled_multiple_selection" => "true",
+        "coin_head_field" => "omote",
+        "coin_tail_field" => "ura",
+        "url" => "some url",
+        "platform" => 1
+      }
+      options = [
+        %{"name" => "test selection1"},
+        %{"name" => "test selection2"},
+        %{"name" => "test selection3"}
+      ]
+
+      conn = post(conn, Routes.tournament_path(conn, :create), tournament: attrs, file: "", options: options)
+
+      assert json_response(conn, 200)["result"]
+
+      conn
+      |> json_response(200)
+      |> Map.get("data")
+      |> Map.get("id")
+      ~> id
+
+      conn = get(conn, Routes.tournament_path(conn, :show), tournament_id: id)
+
+      conn
+      |> json_response(200)
+      |> Map.get("data")
+      |> Map.get("multiple_selections")
+      |> Enum.map(fn selection ->
+        assert is_binary(selection["name"])
+        assert is_integer(selection["id"])
+        assert selection["state"] == "not_selected"
+      end)
+      |> length()
+      |> Kernel.==(3)
+      |> assert()
+
+      assert json_response(conn, 200)["data"]["enabled_multiple_selection"]
+    end
   end
 
   describe "get tournament" do
@@ -1869,6 +1922,34 @@ defmodule MilkWeb.TournamentControllerTest do
       |> (fn len ->
             assert len == length(user_id_list)
           end).()
+    end
+  end
+
+  describe "get options" do
+    test "works", %{conn: conn} do
+      tournament = fixture_tournament()
+
+      1..5
+      |> Enum.to_list()
+      |> Enum.each(fn n ->
+        %{"name" => "#{n}test", "tournament_id" => tournament.id, "icon_path" => "a"}
+        |> Tournaments.create_multiple_selection()
+      end)
+
+      conn = get(conn, Routes.tournament_path(conn, :options), tournament_id: tournament.id)
+
+      conn
+      |> json_response(200)
+      |> Map.get("data")
+      |> Enum.map(fn option ->
+        assert is_binary(option["name"])
+        assert is_binary(option["icon_path"])
+        refute is_nil(option["id"])
+        assert is_binary(option["state"])
+      end)
+      |> length()
+      |> Kernel.==(5)
+      |> assert()
     end
   end
 
