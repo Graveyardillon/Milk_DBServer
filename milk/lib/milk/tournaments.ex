@@ -89,6 +89,14 @@ defmodule Milk.Tournaments do
     |> Repo.preload(:team)
   end
 
+  defp get_tournament_by_master_ids_for_home(users) do
+    Tournament
+    |> where([t], t.master_id in ^users)
+    |> date_filter()
+    |> Repo.all()
+    |> Repo.preload(:entrant)
+    |> Repo.preload(:team)
+  end
   @doc """
   Returns the list of tournament which is filtered by "fav" for home screen.
   """
@@ -99,26 +107,14 @@ defmodule Milk.Tournaments do
     |> Enum.map(fn relation ->
       relation.followee_id
     end)
-    ~> users
-
-    Tournament
-    |> where([t], t.master_id in ^users)
-    |> date_filter()
-    |> Repo.all()
-    |> Repo.preload(:entrant)
-    |> Repo.preload(:team)
+    |> get_tournament_by_master_ids_for_home()
   end
 
   @doc """
   Returns the list of tournament which is filtered by "plan" for home screen.
   """
   def home_tournament_plan(user_id) do
-    Tournament
-    |> where([t], t.master_id == ^user_id)
-    |> date_filter()
-    |> Repo.all()
-    |> Repo.preload(:entrant)
-    |> Repo.preload(:team)
+    get_tournament_by_master_ids_for_home([user_id])
   end
 
   @doc """
@@ -1512,9 +1508,7 @@ defmodule Milk.Tournaments do
       tournament_id
       |> get_confirmed_teams()
       |> Enum.filter(fn team ->
-        team.id
-        |> TournamentProgress.get_match_pending_list(tournament_id)
-        |> Kernel.!=([])
+        TournamentProgress.get_match_pending_list(team.id, tournament_id) != []
       end)
     else
       tournament_id
