@@ -2651,6 +2651,33 @@ defmodule Milk.Tournaments do
     |> Repo.all()
   end
 
+  def get_team_invitation(id) do
+    TeamInvitation
+    |> Repo.get(id)
+    |> Repo.preload(:sender)
+    |> Repo.preload(:team_member)
+    |> Repo.preload(team_member: :user)
+  end
+
+  def team_invitation_decline(id) do 
+    id = Tools.to_integer_as_needed(id)
+
+    TeamInvitation
+    |> Repo.get(id)
+    |> Repo.preload(:sender)
+    |> Repo.preload(:team_member)
+    |> Repo.preload(team_member: :user)
+    |> Repo.delete()
+    |> case do
+      {:ok, %TeamInvitation{} = invitation} -> 
+        delete_invitation_nofification(id)
+        create_team_invitation_result_notification(invitation, false)
+        {:ok, invitation}
+      {:error, error} ->
+        {:error, error}
+    end
+  end
+
   @doc """
   Create team invitation
   """
@@ -2717,12 +2744,45 @@ defmodule Milk.Tournaments do
     |> Repo.update()
     |> case do
       {:ok, team_member} ->
-        verify_team_as_needed(team_member.team_id)
-        delete_invitation_nofification(team_invitation_id)
-        {:ok, team_member}
-
+        with %TeamInvitation{} = invitation <- get_team_invitation(team_invitation_id) do 
+          create_team_invitation_result_notification(invitation, true)
+          delete_invitation_nofification(team_invitation_id)
+          verify_team_as_needed(team_member.team_id)
+          {:ok, team_member}
+        end
       {:error, error} ->
         {:error, error}
+    end
+  end
+
+  def create_team_invitation_result_notification(invitation, result) do 
+    case result do
+      true ->
+        %{
+          "user_id" => invitation.sender.id,
+          "process_id" => "TEAM_INVITE_RESULT",
+          "icon_path" => invitation.team_member.user.icon_path,
+          "title" => "#{invitation.team_member.user.name} がチームに参加しました",
+          "body_text" => "",
+          "data" =>
+            Jason.encode!(%{
+              invitation_id: invitation.id
+            })
+        }
+        |> Notif.create_notification()
+      false ->
+        %{
+          "user_id" => invitation.sender.id,
+          "process_id" => "TEAM_INVITE_RESULT",
+          "icon_path" => invitation.team_member.user.icon_path,
+          "title" => "#{invitation.team_member.user.name} がチームへの招待を辞退しました",
+          "body_text" => "",
+          "data" =>
+            Jason.encode!(%{
+              invitation_id: invitation.id
+            })
+        }
+        |> Notif.create_notification()
     end
   end
 
