@@ -2670,7 +2670,7 @@ defmodule Milk.Tournaments do
     |> Repo.delete()
     |> case do
       {:ok, %TeamInvitation{} = invitation} -> 
-        delete_invitation_nofification(id)
+        # delete_invitation_nofification(id)
         create_team_invitation_result_notification(invitation, false)
         {:ok, invitation}
       {:error, error} ->
@@ -2746,7 +2746,7 @@ defmodule Milk.Tournaments do
       {:ok, team_member} ->
         with %TeamInvitation{} = invitation <- get_team_invitation(team_invitation_id) do 
           create_team_invitation_result_notification(invitation, true)
-          delete_invitation_nofification(team_invitation_id)
+          # delete_invitation_nofification(team_invitation_id)
           verify_team_as_needed(team_member.team_id)
           {:ok, team_member}
         end
@@ -2786,16 +2786,16 @@ defmodule Milk.Tournaments do
     end
   end
 
-  defp delete_invitation_nofification(team_invitation_id) do
-    %{invitation_id: team_invitation_id}
-    |> Jason.encode!()
-    ~> json_str
+  # defp delete_invitation_nofification(team_invitation_id) do
+  #   %{invitation_id: team_invitation_id}
+  #   |> Jason.encode!()
+  #   ~> json_str
 
-    Notification
-    |> where([n], n.data == ^json_str)
-    |> Repo.one()
-    |> Repo.delete()
-  end
+  #   Notification
+  #   |> where([n], n.data == ^json_str)
+  #   |> Repo.one()
+  #   |> Repo.delete()
+  # end
 
   @doc """
   Verify team.
