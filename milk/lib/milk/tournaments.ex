@@ -2660,13 +2660,7 @@ defmodule Milk.Tournaments do
   end
 
   def team_invitation_decline(id) do 
-    id = Tools.to_integer_as_needed(id)
-
-    TeamInvitation
-    |> Repo.get(id)
-    |> Repo.preload(:sender)
-    |> Repo.preload(:team_member)
-    |> Repo.preload(team_member: :user)
+    get_team_invitation(id)
     |> Repo.delete()
     |> case do
       {:ok, %TeamInvitation{} = invitation} -> 
