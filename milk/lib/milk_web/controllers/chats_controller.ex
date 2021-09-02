@@ -112,11 +112,6 @@ defmodule MilkWeb.ChatsController do
           File.rm("./static/image/chat/#{uuid}.jpg")
           object.name
       end
-
-      # object = Milk.CloudStorage.Objects.upload("./static/image/chat/#{uuid}.jpg")
-      # |> IO.inspect(label: :object)
-      # File.rm("./static/image/chat/#{uuid}.jpg")
-      # object.name
     else
       nil
     end

@@ -10,6 +10,7 @@ defmodule Milk.Tournaments.MultipleSelection do
   schema "multiple_selections" do
     field :state, :string, default: "not_selected"
     field :name, :string
+    field :icon_path, :string
 
     belongs_to :tournament, Tournament
 
@@ -19,7 +20,7 @@ defmodule Milk.Tournaments.MultipleSelection do
   @doc false
   def changeset(multiple_selection, attrs) do
     multiple_selection
-    |> cast(attrs, [:state, :name, :tournament_id])
+    |> cast(attrs, [:state, :name, :tournament_id, :icon_path])
     |> foreign_key_constraint(:tournament_id)
   end
 
@@ -28,8 +29,7 @@ defmodule Milk.Tournaments.MultipleSelection do
   """
   def state(key \\ "not_selected") do
     %{
-      not_selected: "not_selected
-    "
+      not_selected: "not_selected"
     }
     |> Map.get(key)
     ~> state

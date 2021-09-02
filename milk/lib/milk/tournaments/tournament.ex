@@ -11,6 +11,7 @@ defmodule Milk.Tournaments.Tournament do
   alias Milk.Tournaments.{
     Entrant,
     Assistant,
+    MultipleSelection,
     Team,
     TournamentChatTopic,
     TournamentCustomDetail
@@ -44,6 +45,7 @@ defmodule Milk.Tournaments.Tournament do
     has_many :assistant, Assistant
     has_many :tournament_chat_topics, TournamentChatTopic
     has_many :team, Team
+    has_many :multiple_selection, MultipleSelection
     has_one :custom_detail, TournamentCustomDetail
 
     timestamps()
