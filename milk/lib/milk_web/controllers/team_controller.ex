@@ -148,4 +148,13 @@ defmodule MilkWeb.TeamController do
         render(conn, "error.json", error: error)
     end
   end
+
+  def decline_invitation(conn, %{"invitation_id" => id}) do
+    case Tournaments.team_invitation_decline(id) do
+      {:ok, %Tournaments.TeamInvitation{} = invitation} ->
+        json(conn, %{result: true})
+      {:error, error} ->
+        json(conn, %{result: false})
+    end
+  end
 end
