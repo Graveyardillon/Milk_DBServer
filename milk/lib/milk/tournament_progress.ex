@@ -6,6 +6,8 @@ defmodule Milk.TournamentProgress do
   4. fight_result
   5. duplicate_users
   6. absence_process
+  7. scores
+  8. ban order
   """
   import Ecto.Query, warn: false
   import Common.Sperm
@@ -268,7 +270,6 @@ defmodule Milk.TournamentProgress do
         @is_waiting_for_start
     end
     ~> key
-    |> IO.inspect(label: :key)
 
     conn = conn()
 
@@ -661,6 +662,11 @@ defmodule Milk.TournamentProgress do
       _ ->
         false
     end
+  end
+
+  # 8. ban order
+  def init_ban_order(tournament_id, user_id, opponent_id) do
+
   end
 
   # Single tournament match log.

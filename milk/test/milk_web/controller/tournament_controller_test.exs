@@ -3649,7 +3649,7 @@ defmodule MilkWeb.TournamentControllerTest do
       assert match_info["is_team"]
       assert match_info["opponent"]["id"] == opponent_team_id
       refute is_nil(match_info["opponent"]["name"])
-      assert match_info["state"] == "IsInMatch"
+      assert match_info["state"] == "ShouldFlipCoin"
 
       assert match_info["custom_detail"]["coin_head_field"] == attrs[:coin_head_field]
       assert match_info["custom_detail"]["coin_tail_field"] == attrs[:coin_tail_field]

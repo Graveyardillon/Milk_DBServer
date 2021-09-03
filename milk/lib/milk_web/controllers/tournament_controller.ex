@@ -1742,20 +1742,7 @@ defmodule MilkWeb.TournamentController do
       end
       ~> {my_id, opponent_id}
 
-      mine_str = to_string(tournament_id + my_id)
-      opponent_str = to_string(tournament_id + opponent_id)
-
-      :crypto.hash(:sha256, mine_str)
-      |> Base.encode16()
-      |> String.downcase()
-      ~> mine
-
-      :crypto.hash(:sha256, opponent_str)
-      |> Base.encode16()
-      |> String.downcase()
-      ~> his
-
-      mine > his
+      Tournaments.is_head_of_coin?(tournament_id, my_id, opponent_id)
     else
       nil
     end

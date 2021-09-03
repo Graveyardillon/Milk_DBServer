@@ -704,7 +704,13 @@ defmodule Milk.Tournaments do
   """
   def flip_coin(user_id, tournament_id) do
     TournamentProgress.insert_match_pending_list_table(user_id, tournament_id)
-    TournamentProgress.get_match_pending_list(user_id, tournament_id)
+
+    tournament_id
+    |> get_tournament()
+    |> Map.get(:enabled_multiple_selection)
+    |> if do
+
+    end
   end
 
   @doc """
@@ -3062,5 +3068,25 @@ defmodule Milk.Tournaments do
     MultipleSelection
     |> where([ms], ms.tournament_id == ^tournament_id)
     |> Repo.all()
+  end
+
+  @doc """
+  Calculate given user(team) is head of a flipped coin.
+  """
+  def is_head_of_coin?(tournament_id, id, opponent_id) do
+    mine_str = to_string(tournament_id + id)
+    opponent_str = to_string(tournament_id + opponent_id)
+
+    :crypto.hash(:sha256, mine_str)
+    |> Base.encode16()
+    |> String.downcase()
+    ~> mine
+
+    :crypto.hash(:sha256, opponent_str)
+    |> Base.encode16()
+    |> String.downcase()
+    ~> his
+
+    mine > his
   end
 end
