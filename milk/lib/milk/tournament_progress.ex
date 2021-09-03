@@ -294,8 +294,7 @@ defmodule Milk.TournamentProgress do
 
     with {:ok, _} <- Redix.command(conn, ["SELECT", 3]),
          {:ok, value} <- Redix.command(conn, ["HGET", tournament_id, user_id]) do
-      {b, _} = Code.eval_string(value)
-      if b, do: [{{user_id, tournament_id}}], else: []
+      unless is_nil(value), do: [{{user_id, tournament_id}, value}], else: []
     else
       {:error, %Redix.Error{message: message}} ->
         Logger.error(message)

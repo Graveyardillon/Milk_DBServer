@@ -4201,7 +4201,7 @@ defmodule MilkWeb.TournamentControllerTest do
       entrant1.user_id
       |> TournamentProgress.get_match_pending_list(tournament.id)
       |> (fn list ->
-            assert list == [{{entrant1.user_id, tournament.id}}]
+            assert list == [{{entrant1.user_id, tournament.id}, "IsWaitingForStart"}]
           end).()
 
       my_score = 13
@@ -4370,7 +4370,7 @@ defmodule MilkWeb.TournamentControllerTest do
       entrant1.user_id
       |> TournamentProgress.get_match_pending_list(tournament.id)
       |> (fn list ->
-            assert list == [{{entrant1.user_id, tournament.id}}]
+            assert list == [{{entrant1.user_id, tournament.id}, "IsWaitingForStart"}]
           end).()
 
       my_score = 13
