@@ -222,6 +222,6 @@ defmodule MilkWeb.Router do
     # ETSのデバッグ用
     post "/observe", DebugController, :observe
 
-    post "/push_notice", TournamentController, :test_push_notice
+    post "/push_notice", NotifController, :test_push_notice
   end
 end

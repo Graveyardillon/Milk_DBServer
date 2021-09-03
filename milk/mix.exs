@@ -91,7 +91,8 @@ defmodule Milk.MixProject do
       {:credo, "~> 1.5", only: [:dev, :test], runtime: false},
       {:pigeon, "~> 1.5.1"},
       {:kadabra, "~> 0.4.4"},
-      {:oban, "~> 2.7"}
+      {:oban, "~> 2.7"},
+      {:typed_struct, "~> 0.2.1"}
     ]
   end
 

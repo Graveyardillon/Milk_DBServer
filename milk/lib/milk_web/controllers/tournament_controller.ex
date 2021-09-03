@@ -1888,21 +1888,6 @@ defmodule MilkWeb.TournamentController do
     end
   end
 
-  def test_push_notice(conn, %{"token" => token}) do
-    params = %{tournament_id: 1}
-
-    Milk.Notif.push_ios(
-      2,
-      token,
-      6,
-      "test title",
-      "test contents",
-      params
-    )
-
-    json(conn, %{result: "ok"})
-  end
-
   def redirect_by_url(conn, params) do
     params
     |> Map.get("url")
