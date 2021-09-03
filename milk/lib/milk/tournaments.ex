@@ -2745,7 +2745,11 @@ defmodule Milk.Tournaments do
     get_team_invitation(id)
     |> Repo.delete()
     |> case do
-      {:ok, %TeamInvitation{} = invitation} -> 
+      {:ok, %TeamInvitation{} = invitation} ->
+        TeamMember
+        |> Repo.get(invitation.team_member_id) 
+        |> Repo.delete()
+        
         create_team_invitation_result_notification(invitation, false)
         {:ok, invitation}
       {:error, error} ->
