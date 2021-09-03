@@ -251,7 +251,6 @@ defmodule Milk.TournamentProgress do
   # the fight is not finished.
 
   @is_waiting_for_start "IsWaitingForStart"
-  @should_flip_coin "ShouldFlipCoin"
   @should_choose_map "ShouldChooseMap"
 
   def insert_match_pending_list_table(user_id, tournament_id) do
@@ -259,18 +258,16 @@ defmodule Milk.TournamentProgress do
     tournament = Tournaments.get_tournament(tournament_id)
     pending_state = get_match_pending_list(user_id, tournament_id)
 
-    should_flip_coin? = tournament.enabled_coin_toss && pending_state == []
-    should_choose_map? = tournament.enabled_multiple_selection && pending_state == @should_flip_coin
+    should_flip_coin? = tournament.enabled_coin_toss
 
     cond do
       should_flip_coin? ->
-        @should_flip_coin
-      should_choose_map? ->
         @should_choose_map
       true ->
         @is_waiting_for_start
     end
     ~> key
+    |> IO.inspect(label: :key)
 
     conn = conn()
 
@@ -294,7 +291,11 @@ defmodule Milk.TournamentProgress do
 
     with {:ok, _} <- Redix.command(conn, ["SELECT", 3]),
          {:ok, value} <- Redix.command(conn, ["HGET", tournament_id, user_id]) do
-      unless is_nil(value), do: [{{user_id, tournament_id}, value}], else: []
+      unless is_nil(value) do
+        [{{user_id, tournament_id}, value}]
+      else
+        []
+      end
     else
       {:error, %Redix.Error{message: message}} ->
         Logger.error(message)

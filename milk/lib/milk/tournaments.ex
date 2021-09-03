@@ -700,6 +700,14 @@ defmodule Milk.Tournaments do
   end
 
   @doc """
+  Flip coin request.
+  """
+  def flip_coin(user_id, tournament_id) do
+    TournamentProgress.insert_match_pending_list_table(user_id, tournament_id)
+    TournamentProgress.get_match_pending_list(user_id, tournament_id)
+  end
+
+  @doc """
   Deletes a tournament.
 
   ## Examples
@@ -2285,11 +2293,15 @@ defmodule Milk.Tournaments do
     pending_list = TournamentProgress.get_match_pending_list(user_id, tournament_id)
 
     cond do
+      pending_list == [] && tournament.enabled_coin_toss ->
+        "ShouldFlipCoin"
+
       pending_list == [] ->
         "IsInMatch"
 
       pending_list != [] && opponent_pending_list == [] ->
-        "IsWaitingForStart"
+        [{_, state}] = pending_list
+        state
 
       true ->
         "IsPending"

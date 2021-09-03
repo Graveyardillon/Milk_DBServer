@@ -1296,6 +1296,46 @@ defmodule Milk.TournamentsTest do
     end
   end
 
+  describe "state! with map select" do
+    test "returns IsInMatch -> ShouldFlipCoin -> ShouldChooseMap" do
+      tournament = fixture_tournament(is_team: true, enabled_coin_toss: true, enabled_multiple_selection: true, type: 2, capacity: 4)
+
+      tournament.id
+      |> fill_with_team()
+      |> hd()
+      ~> team
+      |> Map.get(:id)
+      |> Tournaments.get_leader()
+      |> Map.get(:user)
+      ~> leader
+
+      TournamentProgress.start_team_best_of_format(tournament.master_id, tournament)
+
+      assert "ShouldFlipCoin" == Tournaments.state!(tournament.id, leader.id)
+
+      Tournaments.flip_coin(team.id, tournament.id)
+      assert "ShouldChooseMap" == Tournaments.state!(tournament.id, leader.id)
+
+      tournament
+      |> Map.get(:id)
+      |> TournamentProgress.get_match_list()
+      |> Tournaments.find_match(team.id)
+      |> Tournaments.get_opponent_team(team.id)
+      ~> {:ok, opponent_team}
+      |> elem(1)
+      |> Map.get("id")
+      |> Tournaments.get_leader()
+      |> Map.get(:user)
+      ~> opponent_leader
+
+      assert "ShouldFlipCoin" == Tournaments.state!(tournament.id, opponent_leader.id)
+
+      Tournaments.flip_coin(opponent_team["id"], tournament.id)
+
+      #assert "ShouldFlipCoin" == Tournaments.state!(tournament.id, opponent_leader.id)
+    end
+  end
+
   defp start(master_id, tournament_id) do
     Tournaments.start(master_id, tournament_id)
 
