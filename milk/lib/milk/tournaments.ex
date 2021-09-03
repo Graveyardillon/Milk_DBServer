@@ -2757,14 +2757,10 @@ defmodule Milk.Tournaments do
   Create team invitation
   """
   def create_team_invitation(team_member_id, sender_id) do
-    sender = Accounts.get_user(sender_id)
-    text = "#{sender.name}があなたをチームに招待しました。"
-
     %TeamInvitation{}
     |> TeamInvitation.changeset(%{
       "team_member_id" => team_member_id,
       "sender_id" => sender_id,
-      "text" => text
     })
     |> Repo.insert()
     |> case do
