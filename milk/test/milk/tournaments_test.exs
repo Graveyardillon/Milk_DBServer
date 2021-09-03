@@ -1314,7 +1314,7 @@ defmodule Milk.TournamentsTest do
       assert "ShouldFlipCoin" == Tournaments.state!(tournament.id, leader.id)
 
       Tournaments.flip_coin(team.id, tournament.id)
-      assert "ShouldChooseMap" == Tournaments.state!(tournament.id, leader.id)
+      assert "IsWaitingForCoinFlip" == Tournaments.state!(tournament.id, leader.id)
 
       tournament
       |> Map.get(:id)
@@ -1332,7 +1332,8 @@ defmodule Milk.TournamentsTest do
 
       Tournaments.flip_coin(opponent_team["id"], tournament.id)
 
-      #assert "ShouldFlipCoin" == Tournaments.state!(tournament.id, opponent_leader.id)
+      assert "ShouldBan" == Tournaments.state!(tournament.id, opponent_leader.id)
+      assert "ObserveBan" == Tournaments.state!(tournament.id, opponent_leader.id)
     end
   end
 

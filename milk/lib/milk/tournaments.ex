@@ -2303,6 +2303,9 @@ defmodule Milk.Tournaments do
         [{_, state}] = pending_list
         state
 
+      pending_list != [] && tournament.enabled_multiple_selection ->
+        "asdf"
+
       true ->
         "IsPending"
     end

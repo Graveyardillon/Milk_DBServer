@@ -251,6 +251,7 @@ defmodule Milk.TournamentProgress do
   # the fight is not finished.
 
   @is_waiting_for_start "IsWaitingForStart"
+  @is_waiting_for_coin_flip "IsWaitingForCoinFlip"
   @should_choose_map "ShouldChooseMap"
 
   def insert_match_pending_list_table(user_id, tournament_id) do
@@ -262,7 +263,7 @@ defmodule Milk.TournamentProgress do
 
     cond do
       should_flip_coin? ->
-        @should_choose_map
+        @is_waiting_for_coin_flip
       true ->
         @is_waiting_for_start
     end
