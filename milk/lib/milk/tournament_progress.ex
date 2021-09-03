@@ -250,12 +250,33 @@ defmodule Milk.TournamentProgress do
   # The list contains user_id of a user who pressed start_match and
   # the fight is not finished.
 
+  @is_waiting_for_start "IsWaitingForStart"
+  @should_flip_coin "ShouldFlipCoin"
+  @should_choose_map "ShouldChooseMap"
+
   def insert_match_pending_list_table(user_id, tournament_id) do
+    # 大会タイプで分岐入れよう
+    tournament = Tournaments.get_tournament(tournament_id)
+    pending_state = get_match_pending_list(user_id, tournament_id)
+
+    should_flip_coin? = tournament.enabled_coin_toss && pending_state == []
+    should_choose_map? = tournament.enabled_multiple_selection && pending_state == @should_flip_coin
+
+    cond do
+      should_flip_coin? ->
+        @should_flip_coin
+      should_choose_map? ->
+        @should_choose_map
+      true ->
+        @is_waiting_for_start
+    end
+    ~> key
+
     conn = conn()
 
     with {:ok, _} <- Redix.command(conn, ["MULTI"]),
          {:ok, _} <- Redix.command(conn, ["SELECT", 3]),
-         {:ok, _} <- Redix.command(conn, ["HSET", tournament_id, user_id, true]),
+         {:ok, _} <- Redix.command(conn, ["HSET", tournament_id, user_id, key]),
          {:ok, _} <- Redix.command(conn, ["EXEC"]) do
       true
     else
