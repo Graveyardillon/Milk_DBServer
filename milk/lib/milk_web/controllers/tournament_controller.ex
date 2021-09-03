@@ -1301,8 +1301,15 @@ defmodule MilkWeb.TournamentController do
       }
       |> Notif.create_notification()
 
-      # FIXME
-      Notif.push_ios_with_badge(body_text, "重複した勝敗報告が起きています", device.user_id, device.token)
+      %Maps.PushIos{
+        user_id: device.user_id,
+        device_token: device.token,
+        process_id: "DUPLICATRE_CLAIM",
+        title: "重複した勝敗報告が起きています",
+        message: body_text
+      }
+      |> Milk.Notif.push_ios()
+
     end)
   end
 
