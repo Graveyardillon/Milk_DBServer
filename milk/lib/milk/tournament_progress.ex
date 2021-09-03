@@ -501,59 +501,6 @@ defmodule Milk.TournamentProgress do
     end
   end
 
-  # 6. absence_process
-  # The process manages users who did not press 'start' button for 5 mins.
-
-  @doc """
-  Set a time limit on entrant.
-  When the time limit becomes due, the user gets lost.
-  """
-  def set_time_limit_on_entrant(user_id, tournament_id) do
-    get_lost(user_id, tournament_id)
-  end
-
-  @doc """
-  Set a time limit on entrants of a tournament.
-  """
-  def set_time_limit_on_all_entrants(match_list, tournament_id) do
-    Logger.info("Set time limit on all entrants")
-
-    match_list
-    |> List.flatten()
-    |> Enum.each(fn user_id ->
-      get_lost(user_id, tournament_id)
-    end)
-  end
-
-  # TODO: 検証が不十分なためコメントアウトしておいた
-  defp get_lost(user_id, tournament_id) do
-    # Generate a process which makes a user lost
-    # pid_str =
-    #   Task.start(fn ->
-    #     5
-    #     |> Kernel.*(60)
-    #     |> Kernel.*(1000)
-    #     |> Process.sleep()
-
-    #     Tournaments.delete_loser_process(tournament_id, [user_id])
-    #   end)
-    #   |> case do
-    #     {:ok, pid} ->
-    #       pid
-    #       |> :erlang.pid_to_list()
-    #       |> inspect()
-    #   end
-
-    # conn = conn()
-
-    # with {:ok, _} <- Redix.command(conn, ["SELECT", 6]),
-    # {:ok, _} <- Redix.command(conn, ["HSET", tournament_id, user_id, pid_str]) do
-    #   true
-    # else
-    #   _ -> false
-    # end
-  end
-
   @doc """
 
   """
