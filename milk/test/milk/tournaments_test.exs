@@ -355,7 +355,7 @@ defmodule Milk.TournamentsTest do
   describe "create tournament" do
     test "create_tournament/1 with valid data creates a tournament" do
       tournament = fixture_tournament()
-      assert tournament.capacity == 42
+      assert tournament.capacity == 8
       assert tournament.deadline == "2010-04-17T14:00:00Z"
       assert tournament.description == "some description"
       assert tournament.event_date == "2010-04-17T14:00:00Z"
@@ -2614,7 +2614,7 @@ defmodule Milk.TournamentsTest do
 
   describe "data_with_scores_for_flexible_brackets" do
     test "works" do
-      tournament = fixture_tournament(is_started: false)
+      tournament = fixture_tournament(is_started: false, capacity: 10)
       create_entrants(9, tournament.id)
       Tournaments.start(tournament.master_id, tournament.id)
 

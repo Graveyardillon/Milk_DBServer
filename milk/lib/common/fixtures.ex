@@ -14,11 +14,10 @@ defmodule Common.Fixtures do
         Platforms.create_basic_platforms()
 
         create_attrs = %{
-          "capacity" => 42,
+          "capacity" => 8,
           "deadline" => "2010-04-17T14:00:00Z",
           "description" => "some description",
           "event_date" => "2010-04-17T14:00:00Z",
-          "master_id" => 42,
           "name" => "some name",
           "game_name" => "gm nm",
           "type" => 1,
