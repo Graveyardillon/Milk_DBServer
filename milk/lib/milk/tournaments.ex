@@ -433,9 +433,19 @@ defmodule Milk.Tournaments do
 
     Repo.exists?(from u in User, where: u.id == ^id)
     |> if do
-      create(params, thumbnail_path)
+      if params["enabled_multiple_selection"] && !params["enabled_coin_toss"] do
+        {:error, "Needs to enable coin toss"}
+      else
+        {:ok, nil}
+      end
     else
       {:error, "Undefined User"}
+    end
+    |> case do
+      {:ok, _} ->
+        create(params, thumbnail_path)
+      {:error, error} ->
+        {:error, error}
     end
     |> case do
       {:ok, tournament} ->
@@ -2741,11 +2751,11 @@ defmodule Milk.Tournaments do
     |> Repo.preload(team_member: :user)
   end
 
-  def team_invitation_decline(id) do 
+  def team_invitation_decline(id) do
     get_team_invitation(id)
     |> Repo.delete()
     |> case do
-      {:ok, %TeamInvitation{} = invitation} -> 
+      {:ok, %TeamInvitation{} = invitation} ->
         create_team_invitation_result_notification(invitation, false)
         {:ok, invitation}
       {:error, error} ->
@@ -2815,7 +2825,7 @@ defmodule Milk.Tournaments do
     |> Repo.update()
     |> case do
       {:ok, team_member} ->
-        with %TeamInvitation{} = invitation <- get_team_invitation(team_invitation_id) do 
+        with %TeamInvitation{} = invitation <- get_team_invitation(team_invitation_id) do
           create_team_invitation_result_notification(invitation, true)
           verify_team_as_needed(team_member.team_id)
           {:ok, team_member}
@@ -2825,7 +2835,7 @@ defmodule Milk.Tournaments do
     end
   end
 
-  def create_team_invitation_result_notification(invitation, result) do 
+  def create_team_invitation_result_notification(invitation, result) do
     case result do
       true ->
         %{
