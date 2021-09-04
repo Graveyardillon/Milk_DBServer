@@ -1406,9 +1406,6 @@ defmodule Milk.TournamentsTest do
       map = Tournaments.get_map(choose_map1)
       assert map.state == "selected"
 
-      TournamentProgress.get_ban_order(tournament.id, team.id)
-      |> IO.inspect()
-
       tournament
       |> Map.get(:id)
       |> Tournaments.is_head_of_coin?(team.id, opponent_team["id"])
@@ -1424,11 +1421,12 @@ defmodule Milk.TournamentsTest do
         Tournaments.choose_ad(leader.id, tournament.id, true)
       end
 
-      TournamentProgress.get_ban_order(tournament.id, team.id)
-      |> IO.inspect()
-
       assert "IsPending" == Tournaments.state!(tournament.id, leader.id)
       assert "IsPending" == Tournaments.state!(tournament.id, opponent_leader.id)
+
+      delete_loser(tournament.id, [opponent_team["id"]])
+      assert "IsAlone" == Tournaments.state!(tournament.id, leader.id)
+      assert "IsLoser" == Tournaments.state!(tournament.id, opponent_leader.id)
     end
   end
 

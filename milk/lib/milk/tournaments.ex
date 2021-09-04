@@ -2478,7 +2478,6 @@ defmodule Milk.Tournaments do
     tournament
     |> Map.get(:id)
     |> TournamentProgress.get_ban_order(id)
-    |> IO.inspect()
     |> case do
       0 when is_head? ->
         "ShouldBan"
