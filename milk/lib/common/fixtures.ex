@@ -237,8 +237,6 @@ defmodule Common.Fixtures do
             "password" => "Password123"
           })
 
-        {:ok, _} = Accounts.create_service_reference(%{user_id: user.id})
-
         user
       end
     end

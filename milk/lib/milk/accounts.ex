@@ -597,33 +597,6 @@ defmodule Milk.Accounts do
     end
   end
 
-  @doc """
-  Create a new service reference.
-  """
-  def create_service_reference(attrs) do
-    %ServiceReference{}
-    |> ServiceReference.changeset(attrs)
-    |> Repo.insert()
-  end
-
-  @doc """
-  Get service reference by user id.
-  """
-  def get_service_reference_by_user_id(user_id) do
-    ServiceReference
-    |> where([sr], sr.user_id == ^user_id)
-    |> Repo.one()
-  end
-
-  @doc """
-  Update service reference.
-  """
-  def update_service_reference(%ServiceReference{} = service_reference, attrs) do
-    service_reference
-    |> ServiceReference.changeset(attrs)
-    |> Repo.update()
-  end
-
   # TODO: profile更新
 
   @doc """
