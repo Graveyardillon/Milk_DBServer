@@ -1415,10 +1415,20 @@ defmodule Milk.TournamentsTest do
       |> if do
         assert "ObserveBan" == Tournaments.state!(tournament.id, leader.id)
         assert "ShouldChooseA/D" == Tournaments.state!(tournament.id, opponent_leader.id)
+
+        Tournaments.choose_ad(opponent_leader.id, tournament.id, true)
       else
         assert "ShouldChooseA/D" == Tournaments.state!(tournament.id, leader.id)
         assert "ObserveBan" == Tournaments.state!(tournament.id, opponent_leader.id)
+
+        Tournaments.choose_ad(leader.id, tournament.id, true)
       end
+
+      TournamentProgress.get_ban_order(tournament.id, team.id)
+      |> IO.inspect()
+
+      assert "IsPending" == Tournaments.state!(tournament.id, leader.id)
+      assert "IsPending" == Tournaments.state!(tournament.id, opponent_leader.id)
     end
   end
 

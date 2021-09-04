@@ -735,7 +735,7 @@ defmodule Milk.Tournaments do
   end
 
   @doc """
-  Choose a map.
+  Ban a map.
   """
   def ban_maps(user_id, tournament_id, map_id_list) when is_list(map_id_list) do
     if state!(tournament_id, user_id) == "ShouldBan" do
@@ -762,6 +762,9 @@ defmodule Milk.Tournaments do
     end
   end
 
+  @doc """
+  Choose a map.
+  """
   def choose_maps(user_id, tournament_id, map_id_list) when is_list(map_id_list) do
     if state!(tournament_id, user_id) == "ShouldChooseMap" do
       map_id_list
@@ -775,6 +778,29 @@ defmodule Milk.Tournaments do
         {:ok, nil}
       else
         {:error, "error on choosing maps"}
+      end
+    else
+      {:error, "invalid state"}
+    end
+    |> case do
+      {:ok, nil} ->
+        renew_state_after_choosing_maps(user_id, tournament_id)
+      {:error, error} ->
+        {:error, error}
+    end
+  end
+
+  @doc """
+  Choose A/D
+  """
+  def choose_ad(user_id, tournament_id, is_attack_side) do
+    if state!(tournament_id, user_id) == "ShouldChooseA/D" do
+      user_id
+      |> TournamentProgress.insert_is_attacker_side(tournament_id, is_attack_side)
+      |> if do
+        {:ok, nil}
+      else
+        {:error, "failed to insert is_attacker_side"}
       end
     else
       {:error, "invalid state"}
@@ -2470,6 +2496,8 @@ defmodule Milk.Tournaments do
         "ObserveBan"
       3 ->
         "ShouldChooseA/D"
+      4 ->
+        "IsPending"
     end
   end
 
