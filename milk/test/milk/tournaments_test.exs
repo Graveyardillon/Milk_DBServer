@@ -1340,18 +1340,15 @@ defmodule Milk.TournamentsTest do
 
       Tournaments.flip_coin(opponent_leader.id, tournament.id)
 
-      IO.inspect(opponent_leader.id, label: :uid)
-      IO.inspect(tournament.id, label: :tid)
-
       tournament
       |> Map.get(:id)
       |> Tournaments.is_head_of_coin?(team.id, opponent_team["id"])
       |> if do
-        assert "ShouldBan" == Tournaments.state!(tournament.id, team.id)
-        assert "ObserveBan" == Tournaments.state!(tournament.id, opponent_team["id"])
+        assert "ShouldBan" == Tournaments.state!(tournament.id, leader.id)
+        assert "ObserveBan" == Tournaments.state!(tournament.id, opponent_leader.id)
       else
-        assert "ObserveBan" == Tournaments.state!(tournament.id, team.id)
-        assert "ShouldBan" == Tournaments.state!(tournament.id, opponent_team["id"])
+        assert "ObserveBan" == Tournaments.state!(tournament.id, leader.id)
+        assert "ShouldBan" == Tournaments.state!(tournament.id, opponent_leader.id)
       end
     end
   end

@@ -2339,21 +2339,6 @@ defmodule Milk.Tournaments do
   end
 
   defp check_map_ban_state(tournament, id) do
-    # IO.inspect(user_id)
-    # IO.inspect(tournament.id)
-
-    # tournament
-    # |> Map.get(:is_team)
-    # |> if do
-    #   tournament
-    #   |> Map.get(:id)
-    #   |> get_team_by_tournament_id_and_user_id(user_id)
-    #   |> Map.get(:id)
-    # else
-    #   user_id
-    # end
-    # ~> id
-
     tournament
     |> Map.get(:is_team)
     |> if do
