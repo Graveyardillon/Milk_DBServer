@@ -1313,8 +1313,10 @@ defmodule Milk.TournamentsTest do
 
       assert "ShouldFlipCoin" == Tournaments.state!(tournament.id, leader.id)
 
-      Tournaments.flip_coin(team.id, tournament.id)
+      Tournaments.flip_coin(leader.id, tournament.id)
       assert "IsWaitingForCoinFlip" == Tournaments.state!(tournament.id, leader.id)
+
+      assert TournamentProgress.get_ban_order(tournament.id, team.id) == 0
 
       tournament
       |> Map.get(:id)
@@ -1328,12 +1330,29 @@ defmodule Milk.TournamentsTest do
       |> Map.get(:user)
       ~> opponent_leader
 
+      tournament
+      |> Map.get(:id)
+      |> TournamentProgress.get_ban_order(opponent_team["id"])
+      |> is_nil()
+      |> assert()
+
       assert "ShouldFlipCoin" == Tournaments.state!(tournament.id, opponent_leader.id)
 
-      Tournaments.flip_coin(opponent_team["id"], tournament.id)
+      Tournaments.flip_coin(opponent_leader.id, tournament.id)
 
-      # assert "ShouldBan" == Tournaments.state!(tournament.id, opponent_leader.id)
-      # assert "ObserveBan" == Tournaments.state!(tournament.id, opponent_leader.id)
+      IO.inspect(opponent_leader.id, label: :uid)
+      IO.inspect(tournament.id, label: :tid)
+
+      tournament
+      |> Map.get(:id)
+      |> Tournaments.is_head_of_coin?(team.id, opponent_team["id"])
+      |> if do
+        assert "ShouldBan" == Tournaments.state!(tournament.id, team.id)
+        assert "ObserveBan" == Tournaments.state!(tournament.id, opponent_team["id"])
+      else
+        assert "ObserveBan" == Tournaments.state!(tournament.id, team.id)
+        assert "ShouldBan" == Tournaments.state!(tournament.id, opponent_team["id"])
+      end
     end
   end
 

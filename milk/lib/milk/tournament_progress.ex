@@ -665,8 +665,43 @@ defmodule Milk.TournamentProgress do
   end
 
   # 8. ban order
-  def init_ban_order(tournament_id, user_id, opponent_id) do
+  # 0 -> 1 -> 2 -> 3 -> 4
+  def init_ban_order(tournament_id, id) do
+    conn = conn()
 
+    with {:ok, _} <- Redix.command(conn, ["MULTI"]),
+        {:ok, _} <- Redix.command(conn, ["SELECT", 8]),
+        {:ok, _} <- Redix.command(conn, ["HSET", tournament_id, id, 0]),
+        {:ok, _} <- Redix.command(conn, ["EXEC"]) do
+      true
+    else
+      {:error, %Redix.Error{message: message}} ->
+        Logger.error(message)
+        false
+
+      _ ->
+        false
+    end
+  end
+
+  def get_ban_order(tournament_id, id) do
+    conn = conn()
+
+    with {:ok, _} <- Redix.command(conn, ["SELECT", 8]),
+         {:ok, value} <- Redix.command(conn, ["HGET", tournament_id, id]) do
+      unless is_nil(value) do
+        value
+        |> Integer.parse()
+        |> elem(0)
+      end
+    else
+      {:error, %Redix.Error{message: message}} ->
+        Logger.error(message)
+        []
+
+      _ ->
+        []
+    end
   end
 
   # Single tournament match log.

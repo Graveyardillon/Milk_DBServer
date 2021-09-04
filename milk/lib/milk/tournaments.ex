@@ -703,13 +703,34 @@ defmodule Milk.Tournaments do
   Flip coin request.
   """
   def flip_coin(user_id, tournament_id) do
-    TournamentProgress.insert_match_pending_list_table(user_id, tournament_id)
-
     tournament_id
     |> get_tournament()
+    ~> tournament
+    |> Map.get(:is_team)
+    |> if do
+      tournament_id
+      |> get_team_by_tournament_id_and_user_id(user_id)
+      |> Map.get(:id)
+    else
+      user_id
+    end
+    ~> id
+
+    TournamentProgress.insert_match_pending_list_table(id, tournament_id)
+
+    tournament
     |> Map.get(:enabled_multiple_selection)
     |> if do
-
+      # multiple_selection_typeを取得
+      tournament
+      |> Map.get(:custom_detail)
+      |> Map.get(:multiple_selection_type)
+      |> case do
+        "VLCBAN" ->
+          TournamentProgress.init_ban_order(tournament_id, id)
+        _ ->
+          TournamentProgress.init_ban_order(tournament_id, id)
+      end
     end
   end
 
@@ -2252,51 +2273,51 @@ defmodule Milk.Tournaments do
     end
   end
 
-  defp check_has_lost?(tournament_id, user_id) do
+  defp check_has_lost?(tournament_id, id) do
     case TournamentProgress.get_match_list(tournament_id) do
       [] ->
         "IsFinished"
 
       match_list ->
-        if has_lost?(match_list, user_id) do
+        if has_lost?(match_list, id) do
           "IsLoser"
         else
-          check_is_alone?(tournament_id, user_id)
+          check_is_alone?(tournament_id, id)
         end
     end
   end
 
-  defp check_is_alone?(tournament_id, user_id) do
+  defp check_is_alone?(tournament_id, id) do
     match_list = TournamentProgress.get_match_list(tournament_id)
-    match = find_match(match_list, user_id)
+    match = find_match(match_list, id)
 
     cond do
       is_alone?(match) -> "IsAlone"
       match == [] -> "IsLoser"
-      true -> check_wait_state?(tournament_id, user_id)
+      true -> check_wait_state?(tournament_id, id)
     end
   end
 
-  defp check_wait_state?(tournament_id, user_id) do
+  defp check_wait_state?(tournament_id, id) do
     tournament_id
     |> get_tournament()
     ~> tournament
     |> Map.get(:id)
     |> TournamentProgress.get_match_list()
-    |> find_match(user_id)
+    |> find_match(id)
     ~> match
 
     if tournament.is_team do
-      get_opponent_team(match, user_id)
+      get_opponent_team(match, id)
     else
-      get_opponent(match, user_id)
+      get_opponent(match, id)
     end
     |> elem(1)
     |> Map.get("id")
     |> TournamentProgress.get_match_pending_list(tournament_id)
     ~> opponent_pending_list
 
-    pending_list = TournamentProgress.get_match_pending_list(user_id, tournament_id)
+    pending_list = TournamentProgress.get_match_pending_list(id, tournament_id)
 
     cond do
       pending_list == [] && tournament.enabled_coin_toss ->
@@ -2310,10 +2331,57 @@ defmodule Milk.Tournaments do
         state
 
       pending_list != [] && tournament.enabled_multiple_selection ->
-        "asdf"
+        check_map_ban_state(tournament, id)
 
       true ->
         "IsPending"
+    end
+  end
+
+  defp check_map_ban_state(tournament, id) do
+    # IO.inspect(user_id)
+    # IO.inspect(tournament.id)
+
+    # tournament
+    # |> Map.get(:is_team)
+    # |> if do
+    #   tournament
+    #   |> Map.get(:id)
+    #   |> get_team_by_tournament_id_and_user_id(user_id)
+    #   |> Map.get(:id)
+    # else
+    #   user_id
+    # end
+    # ~> id
+
+    tournament
+    |> Map.get(:is_team)
+    |> if do
+      tournament
+      |> Map.get(:id)
+      |> TournamentProgress.get_match_list()
+      |> find_match(id)
+      |> get_opponent_team(id)
+    else
+      tournament
+      |> Map.get(:id)
+      |> TournamentProgress.get_match_list()
+      |> find_match(id)
+      |> get_opponent(id)
+    end
+    ~> {:ok, opponent}
+
+    is_head? = is_head_of_coin?(tournament.id, id, opponent["id"])
+
+    tournament
+    |> Map.get(:id)
+    |> TournamentProgress.get_ban_order(id)
+    |> IO.inspect()
+    |> case do
+      0 when is_head? ->
+        "ShouldBan"
+      0 ->
+        "ObserveBan"
     end
   end
 
