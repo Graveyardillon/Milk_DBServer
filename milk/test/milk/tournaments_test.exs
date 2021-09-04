@@ -1355,31 +1355,31 @@ defmodule Milk.TournamentsTest do
       |> Tournaments.is_head_of_coin?(team.id, opponent_team["id"])
       |> if do
         assert "ShouldBan" == Tournaments.state!(tournament.id, leader.id)
-        assert "ObserveBan" == Tournaments.state!(tournament.id, opponent_leader.id)
+        assert "ShouldObserveBan" == Tournaments.state!(tournament.id, opponent_leader.id)
 
         Tournaments.ban_maps(leader.id, tournament.id, ban_map_id_list1)
 
-        assert "ObserveBan" == Tournaments.state!(tournament.id, leader.id)
+        assert "ShouldObserveBan" == Tournaments.state!(tournament.id, leader.id)
         assert "ShouldBan" == Tournaments.state!(tournament.id, opponent_leader.id)
 
         Tournaments.ban_maps(opponent_leader.id, tournament.id, ban_map_id_list2)
 
         assert "ShouldChooseMap" == Tournaments.state!(tournament.id, leader.id)
-        assert "ObserveBan" == Tournaments.state!(tournament.id, opponent_leader.id)
+        assert "ShouldObserveBan" == Tournaments.state!(tournament.id, opponent_leader.id)
 
         Tournaments.choose_maps(leader.id, tournament.id, [choose_map1])
       else
-        assert "ObserveBan" == Tournaments.state!(tournament.id, leader.id)
+        assert "ShouldObserveBan" == Tournaments.state!(tournament.id, leader.id)
         assert "ShouldBan" == Tournaments.state!(tournament.id, opponent_leader.id)
 
         Tournaments.ban_maps(opponent_leader.id, tournament.id, ban_map_id_list1)
 
         assert "ShouldBan" == Tournaments.state!(tournament.id, leader.id)
-        assert "ObserveBan" == Tournaments.state!(tournament.id, opponent_leader.id)
+        assert "ShouldObserveBan" == Tournaments.state!(tournament.id, opponent_leader.id)
 
         Tournaments.ban_maps(leader.id, tournament.id, ban_map_id_list2)
 
-        assert "ObserveBan" == Tournaments.state!(tournament.id, leader.id)
+        assert "ShouldObserveBan" == Tournaments.state!(tournament.id, leader.id)
         assert "ShouldChooseMap" == Tournaments.state!(tournament.id, opponent_leader.id)
 
         Tournaments.choose_maps(opponent_leader.id, tournament.id, [choose_map1])
@@ -1410,13 +1410,13 @@ defmodule Milk.TournamentsTest do
       |> Map.get(:id)
       |> Tournaments.is_head_of_coin?(team.id, opponent_team["id"])
       |> if do
-        assert "ObserveBan" == Tournaments.state!(tournament.id, leader.id)
+        assert "ShouldObserveA/D" == Tournaments.state!(tournament.id, leader.id)
         assert "ShouldChooseA/D" == Tournaments.state!(tournament.id, opponent_leader.id)
 
         Tournaments.choose_ad(opponent_leader.id, tournament.id, true)
       else
         assert "ShouldChooseA/D" == Tournaments.state!(tournament.id, leader.id)
-        assert "ObserveBan" == Tournaments.state!(tournament.id, opponent_leader.id)
+        assert "ShouldObserveA/D" == Tournaments.state!(tournament.id, opponent_leader.id)
 
         Tournaments.choose_ad(leader.id, tournament.id, true)
       end

@@ -2482,17 +2482,17 @@ defmodule Milk.Tournaments do
       0 when is_head? ->
         "ShouldBan"
       0 ->
-        "ObserveBan"
+        "ShouldObserveBan"
       1 when is_head? ->
-        "ObserveBan"
+        "ShouldObserveBan"
       1 ->
         "ShouldBan"
       2 when is_head? ->
         "ShouldChooseMap"
       2 ->
-        "ObserveBan"
+        "ShouldObserveBan"
       3 when is_head? ->
-        "ObserveBan"
+        "ShouldObserveA/D"
       3 ->
         "ShouldChooseA/D"
       4 ->
