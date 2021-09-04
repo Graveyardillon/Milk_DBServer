@@ -749,6 +749,31 @@ defmodule Milk.Tournaments do
       |> if do
         {:ok, nil}
       else
+        {:error, "error on banning maps"}
+      end
+    else
+      {:error, "invalid state"}
+    end
+    |> case do
+      {:ok, nil} ->
+        renew_state_after_choosing_maps(user_id, tournament_id)
+      {:error, error} ->
+        {:error, error}
+    end
+  end
+
+  def choose_maps(user_id, tournament_id, map_id_list) when is_list(map_id_list) do
+    if state!(tournament_id, user_id) == "ShouldChooseMap" do
+      map_id_list
+      |> Enum.each(fn map_id ->
+        map_id
+        |> get_map()
+        |> update_multiple_selection(%{"state" => "selected"})
+      end)
+      |> Kernel.==(:ok)
+      |> if do
+        {:ok, nil}
+      else
         {:error, "error on choosing maps"}
       end
     else
