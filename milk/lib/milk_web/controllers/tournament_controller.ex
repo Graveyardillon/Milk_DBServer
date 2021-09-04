@@ -1279,6 +1279,18 @@ defmodule MilkWeb.TournamentController do
     end
   end
 
+  @doc """
+  Flip Coin.
+  """
+  def flip_coin(conn, %{"tournament_id" => tournament_id, "user_id" => user_id}) do
+    tournament_id = Tools.to_integer_as_needed(tournament_id)
+    user_id = Tools.to_integer_as_needed(user_id)
+
+    result = Tournaments.flip_coin(user_id, tournament_id)
+
+    json(conn, %{result: result})
+  end
+
   # チーム対応
   defp notify_on_duplicate_match(tournament_id, user_id, opponent_id) do
     user = Accounts.get_user(user_id)
