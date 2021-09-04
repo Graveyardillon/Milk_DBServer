@@ -202,14 +202,16 @@ defmodule Milk.NotifTest do
     test "ios" do
       # Device token of Papillon6814's iPhone 8
       hostname = Common.Tools.get_hostname()
-
-      user_id = 1
       token = "f580bda8dd8ddc0e6fc3fac8f94f069aa10736bebd80e97bf1088b63d7bb4a43"
-      process_id = "COMMON"
-      title = "Test"
-      message = "Test Notification (#{hostname})"
 
-      Notif.push_ios(user_id, token, process_id, title, message)
+      %Maps.PushIos{
+        user_id: 1,
+        device_token: token,
+        process_id: "COMMON",
+        title: "Test",
+        message: "Test Notification (#{hostname})"
+      }
+      |> Milk.Notif.push_ios()
       |> (fn notification ->
             assert notification.device_token == token
             assert notification.push_type == "alert"
