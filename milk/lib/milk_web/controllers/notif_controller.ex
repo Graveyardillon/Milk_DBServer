@@ -2,6 +2,7 @@ defmodule MilkWeb.NotifController do
   use MilkWeb, :controller
 
   alias Common.Tools
+  alias Maps
 
   alias Milk.{
     Accounts,
@@ -153,5 +154,22 @@ defmodule MilkWeb.NotifController do
     end)
 
     json(conn, %{result: true})
+  end
+
+  def test_push_notice(conn, %{"token" => token}) do
+    params = %{"tournament_id" => 1}
+
+    %Maps.PushIos{
+      user_id: 1,
+      device_token: token,
+      process_id: "TOURNAMENT_START",
+      title: "test notice",
+      message: "test noticeeeee",
+      params: params
+    }
+    |> Milk.Notif.push_ios()
+    
+
+    json(conn, %{result: "ok"})
   end
 end

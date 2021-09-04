@@ -1301,8 +1301,15 @@ defmodule MilkWeb.TournamentController do
       }
       |> Notif.create_notification()
 
-      # FIXME
-      Notif.push_ios_with_badge(body_text, "重複した勝敗報告が起きています", device.user_id, device.token)
+      %Maps.PushIos{
+        user_id: device.user_id,
+        device_token: device.token,
+        process_id: "DUPLICATRE_CLAIM",
+        title: "重複した勝敗報告が起きています",
+        message: body_text
+      }
+      |> Milk.Notif.push_ios()
+
     end)
   end
 
@@ -1873,21 +1880,6 @@ defmodule MilkWeb.TournamentController do
         Oban.cancel_job(job.id)
         add_queue_tournament_start_push_notice(tournament)
     end
-  end
-
-  def test_push_notice(conn, %{"token" => token}) do
-    params = %{tournament_id: 1}
-
-    Milk.Notif.push_ios(
-      2,
-      token,
-      6,
-      "test title",
-      "test contents",
-      params
-    )
-
-    json(conn, %{result: "ok"})
   end
 
   def redirect_by_url(conn, params) do
