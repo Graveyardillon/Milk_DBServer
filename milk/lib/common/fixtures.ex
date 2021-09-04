@@ -137,6 +137,15 @@ defmodule Common.Fixtures do
         end
         ~> coin_tail_field
 
+        opts[:maps]
+        |> is_nil()
+        |> unless do
+          opts[:maps]
+        else
+          nil
+        end
+        ~> maps
+
         create_attrs
         |> Map.put("is_started", is_started)
         |> Map.put("master_id", master_id)
@@ -148,6 +157,7 @@ defmodule Common.Fixtures do
         |> Map.put("enabled_multiple_selection", enabled_multiple_selection)
         |> Map.put("coin_head_field", coin_head_field)
         |> Map.put("coin_tail_field", coin_tail_field)
+        |> Map.put("multiple_selections", maps)
         |> Tournaments.create_tournament()
         |> elem(1)
         ~> tournament

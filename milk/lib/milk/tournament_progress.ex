@@ -684,6 +684,23 @@ defmodule Milk.TournamentProgress do
     end
   end
 
+  def insert_ban_order(tournament_id, id, order) when is_integer(order) do
+    conn = conn()
+
+    with {:ok, _} <- Redix.command(conn, ["MULTI"]),
+      {:ok, _} <- Redix.command(conn, ["SELECT", 8]),
+      {:ok, _} <- Redix.command(conn, ["HSET", tournament_id, id, order]),
+      {:ok, _} <- Redix.command(conn, ["EXEC"]) do
+    else
+      {:error, %Redix.Error{message: message}} ->
+        Logger.error(message)
+        false
+
+      _ ->
+        false
+    end
+  end
+
   def get_ban_order(tournament_id, id) do
     conn = conn()
 
@@ -701,6 +718,24 @@ defmodule Milk.TournamentProgress do
 
       _ ->
         []
+    end
+  end
+
+  def delete_ban_order(tournament_id, id) do
+    conn = conn()
+
+    with {:ok, _} <- Redix.command(conn, ["MULTI"]),
+      {:ok, _} <- Redix.command(conn, ["SELECT", 8]),
+      {:ok, _} <- Redix.command(conn, ["HDEL", tournament_id, id]),
+      {:ok, _} <- Redix.command(conn, ["EXEC"]) do
+        true
+    else
+      {:error, %Redix.Error{message: message}} ->
+        Logger.error(message)
+        false
+
+      _ ->
+        false
     end
   end
 

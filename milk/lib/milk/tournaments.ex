@@ -735,6 +735,72 @@ defmodule Milk.Tournaments do
   end
 
   @doc """
+  Choose a map.
+  """
+  def ban_maps(user_id, tournament_id, map_id_list) when is_list(map_id_list) do
+    if state!(tournament_id, user_id) == "ShouldBan" do
+      map_id_list
+      |> Enum.each(fn map_id ->
+        map_id
+        |> get_map()
+        |> update_multiple_selection(%{"state" => "banned"})
+      end)
+      |> Kernel.==(:ok)
+      |> if do
+        {:ok, nil}
+      else
+        {:error, "error on choosing maps"}
+      end
+    else
+      {:error, "invalid state"}
+    end
+    |> case do
+      {:ok, nil} ->
+        renew_state_after_choosing_maps(user_id, tournament_id)
+      {:error, error} ->
+        {:error, error}
+    end
+  end
+
+  defp renew_state_after_choosing_maps(user_id, tournament_id) do
+    tournament_id
+    |> get_tournament()
+    ~> tournament
+    |> Map.get(:is_team)
+    |> if do
+      tournament
+      |> Map.get(:id)
+      |> get_team_by_tournament_id_and_user_id(user_id)
+      |> Map.get(:id)
+    else
+      user_id
+    end
+    ~> id
+
+    tournament
+    |> Map.get(:is_team)
+    |> if do
+      tournament_id
+      |> TournamentProgress.get_match_list()
+      |> find_match(id)
+      |> get_opponent_team(id)
+    else
+      tournament_id
+      |> TournamentProgress.get_match_list()
+      |> find_match(id)
+      |> get_opponent(id)
+    end
+    ~> {:ok, opponent}
+
+    order = TournamentProgress.get_ban_order(tournament_id, id)
+    opponent_order = TournamentProgress.get_ban_order(tournament_id, opponent["id"])
+    TournamentProgress.delete_ban_order(tournament_id, id)
+    TournamentProgress.delete_ban_order(tournament_id, opponent["id"])
+    TournamentProgress.insert_ban_order(tournament_id, id, order+1)
+    TournamentProgress.insert_ban_order(tournament_id, opponent["id"], opponent_order+1)
+  end
+
+  @doc """
   Deletes a tournament.
 
   ## Examples
@@ -2367,6 +2433,18 @@ defmodule Milk.Tournaments do
         "ShouldBan"
       0 ->
         "ObserveBan"
+      1 when is_head? ->
+        "ObserveBan"
+      1 ->
+        "ShouldBan"
+      2 when is_head? ->
+        "ShouldChooseMap"
+      2 ->
+        "ObserveBan"
+      3 when is_head? ->
+        "ObserveBan"
+      3 ->
+        "ShouldChooseA/D"
     end
   end
 
@@ -3115,12 +3193,30 @@ defmodule Milk.Tournaments do
   end
 
   @doc """
+  Get a map.
+  """
+  def get_map(map_id) do
+    MultipleSelection
+    |> where([ms], ms.id == ^map_id)
+    |> Repo.one()
+  end
+
+  @doc """
   Get multiple_selections by tournament id
   """
   def get_multiple_selections_by_tournament_id(tournament_id) do
     MultipleSelection
     |> where([ms], ms.tournament_id == ^tournament_id)
     |> Repo.all()
+  end
+
+  @doc """
+  Update map.
+  """
+  def update_multiple_selection(%MultipleSelection{} = map, attrs) do
+    map
+    |> MultipleSelection.changeset(attrs)
+    |> Repo.update()
   end
 
   @doc """

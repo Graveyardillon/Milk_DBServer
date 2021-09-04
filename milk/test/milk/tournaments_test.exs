@@ -1298,7 +1298,8 @@ defmodule Milk.TournamentsTest do
 
   describe "state! with map select" do
     test "returns IsInMatch -> ShouldFlipCoin -> ShouldChooseMap" do
-      tournament = fixture_tournament(is_team: true, enabled_coin_toss: true, enabled_multiple_selection: true, type: 2, capacity: 4)
+      maps = [%{"name" => "map1"}, %{"name" => "map2"}, %{"name" => "map3"}, %{"name" => "map4"}]
+      tournament = fixture_tournament(is_team: true, enabled_coin_toss: true, enabled_multiple_selection: true, type: 2, capacity: 4, maps: maps)
 
       tournament.id
       |> fill_with_team()
@@ -1341,15 +1342,47 @@ defmodule Milk.TournamentsTest do
       Tournaments.flip_coin(opponent_leader.id, tournament.id)
 
       tournament
+        |> Map.get(:id)
+        |> Tournaments.get_multiple_selections_by_tournament_id()
+        |> Enum.take(2)
+        |> Enum.map(fn map ->
+          map.id
+        end)
+        ~> map_id_list
+
+      tournament
       |> Map.get(:id)
       |> Tournaments.is_head_of_coin?(team.id, opponent_team["id"])
       |> if do
         assert "ShouldBan" == Tournaments.state!(tournament.id, leader.id)
         assert "ObserveBan" == Tournaments.state!(tournament.id, opponent_leader.id)
+
+        Tournaments.ban_maps(leader.id, tournament.id, map_id_list)
+
+        assert "ObserveBan" == Tournaments.state!(tournament.id, leader.id)
+        assert "ShouldBan" == Tournaments.state!(tournament.id, opponent_leader.id)
+
+        Tournaments.ban_maps(opponent_leader.id, tournament.id, map_id_list)
+
+        assert "ShouldChooseMap" == Tournaments.state!(tournament.id, leader.id)
+        assert "ObserveBan" == Tournaments.state!(tournament.id, opponent_leader.id)
       else
         assert "ObserveBan" == Tournaments.state!(tournament.id, leader.id)
         assert "ShouldBan" == Tournaments.state!(tournament.id, opponent_leader.id)
+
+        Tournaments.ban_maps(opponent_leader.id, tournament.id, map_id_list)
+
+        assert "ShouldBan" == Tournaments.state!(tournament.id, leader.id)
+        assert "ObserveBan" == Tournaments.state!(tournament.id, opponent_leader.id)
+
+        Tournaments.ban_maps(leader.id, tournament.id, map_id_list)
+
+        assert "ObserveBan" == Tournaments.state!(tournament.id, leader.id)
+        assert "ShouldChooseMap" == Tournaments.state!(tournament.id, opponent_leader.id)
       end
+
+      TournamentProgress.get_ban_order(tournament.id, team.id)
+      |> IO.inspect()
     end
   end
 
