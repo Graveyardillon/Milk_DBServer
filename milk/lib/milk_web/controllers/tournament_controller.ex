@@ -940,6 +940,23 @@ defmodule MilkWeb.TournamentController do
   end
 
   @doc """
+  Choose a map.
+  """
+  def choose_ad(conn, %{"user_id" => user_id, "tournament_id" => tournament_id, "is_attacker_side" => is_attacker_side}) do
+    user_id = Tools.to_integer_as_needed(user_id)
+    tournament_id = Tools.to_integer_as_needed(tournament_id)
+
+    user_id
+    |> Tournaments.choose_ad(tournament_id, is_attacker_side == "1")
+    |> case do
+      {:ok, nil} ->
+        json(conn, %{result: true})
+      {:error, error} ->
+        render(conn, "error.json", error: error)
+    end
+  end
+
+  @doc """
   Start a single match in the tournament.
   """
   def start_match(conn, %{"user_id" => user_id, "tournament_id" => tournament_id}) do
