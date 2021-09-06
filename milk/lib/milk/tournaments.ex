@@ -2782,8 +2782,8 @@ defmodule Milk.Tournaments do
       "user_id" => invitation.team_member.user_id,
       "process_id" => "TEAM_INVITE",
       "icon_path" => invitation.sender.icon_path,
-      "title" => "",
-      "body_text" => "#{invitation.sender.name} からチーム招待されました",
+      "title" => "#{invitation.sender.name} からチーム招待されました",
+      "body_text" => "",
       "data" =>
         Jason.encode!(%{
           invitation_id: invitation.id
@@ -2846,8 +2846,8 @@ defmodule Milk.Tournaments do
           "user_id" => invitation.sender.id,
           "process_id" => "TEAM_INVITE_RESULT",
           "icon_path" => invitation.team_member.user.icon_path,
-          "title" => "",
-          "body_text" => "#{invitation.team_member.user.name} がチームに参加しました",
+          "title" => "#{invitation.team_member.user.name} がチームに参加しました",
+          "body_text" => "",
           "data" =>
             Jason.encode!(%{
               invitation_id: invitation.id
@@ -2872,8 +2872,8 @@ defmodule Milk.Tournaments do
           "user_id" => invitation.sender.id,
           "process_id" => "TEAM_INVITE_RESULT",
           "icon_path" => invitation.team_member.user.icon_path,
-          "title" => "",
-          "body_text" => "#{invitation.team_member.user.name} がチームへの招待を辞退しました",
+          "title" => "#{invitation.team_member.user.name} がチームへの招待を辞退しました",
+          "body_text" => "",
           "data" =>
             Jason.encode!(%{
               invitation_id: invitation.id
