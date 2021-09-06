@@ -93,42 +93,37 @@ defmodule MilkWeb.TeamController do
   def confirm_invitation(conn, %{"invitation_id" => invitation_id}) do
     invitation_id = Tools.to_integer_as_needed(invitation_id)
 
-    # 大会のチーム数が埋まってないか確認
-    invitation_id
-    |> Tournaments.get_team_by_invitation_id()
-    |> Map.get(:tournament_id)
-    |> Tournaments.get_tournament()
-    ~> tournament
-    |> Map.get(:id)
-    |> Tournaments.get_confirmed_teams()
-    |> length()
-    ~> teams_count
+    with %Tournaments.Team{} = team <- Tournaments.get_team_by_invitation_id(invitation_id) do
+      with %Tournaments.Tournament{} = tournament <- Tournaments.get_tournament(team.tournament_id) do
+        confirmed_team_count = 
+          tournament.id 
+          |> Tournaments.get_confirmed_teams()
+          |> length()
 
-    if tournament.capacity > teams_count do
-      invitation_id
-      |> Tools.to_integer_as_needed()
-      |> Tournaments.confirm_team_invitation()
-      |> case do
-        {:ok, invitation} ->
-          invitation
-          |> Map.get(:team_id)
-          |> Tournaments.get_team()
-          ~> team
+        if tournament.capacity > confirmed_team_count do 
+          invitation_id
+          |> Tournaments.confirm_team_invitation()
+          |> case do 
+            {:ok, invitation} ->
+              invitation
+              |> Map.get(:team_id)
+              |> Tournaments.get_team()
+              ~> team
 
-          json(
-            conn,
-            %{
-              result: true,
-              is_confirmed: team.is_confirmed,
-              tournament_id: team.tournament_id
-            }
-          )
-
-        {:error, error} ->
-          render(conn, "error.json", error: error)
+              json(conn, %{
+                result: true,
+                is_confirmed: team.is_confirmed,
+                tournament_id: team.tournament_id
+              })
+            {:error, error} -> 
+              render(conn, "error.json", error: error)
+          end
+        end
+      else
+        nil -> render(conn, "error.json", error: "tournament not found")
       end
     else
-      render(conn, "error.json", error: "full of teams")
+      nil -> render(conn, "error.json", error: "team not found")
     end
   end
 
