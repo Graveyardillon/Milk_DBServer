@@ -854,6 +854,7 @@ defmodule MilkWeb.TournamentController do
     tournament_id
     |> Tools.to_integer_as_needed()
     |> Tournaments.get_multiple_selections_by_tournament_id()
+    |> IO.inspect()
     ~> options
 
     render(conn, "options.json", options: options)
@@ -899,6 +900,24 @@ defmodule MilkWeb.TournamentController do
         {:ok, Base.encode64(file)}
       {:error, error} ->
         {:error, error}
+    end
+  end
+
+  @doc """
+  Ban maps.
+  """
+  def ban_maps(conn, %{"user_id" => user_id, "tournament_id" => tournament_id, "map_id_list" => map_id_list}) do
+    user_id = Tools.to_integer_as_needed(user_id)
+    tournament_id = Tools.to_integer_as_needed(tournament_id)
+    map_id_list = Enum.map(map_id_list, fn id -> Tools.to_integer_as_needed(id) end)
+
+    user_id
+    |> Tournaments.ban_maps(tournament_id, map_id_list)
+    |> case do
+      {:ok, nil} ->
+        json(conn, %{result: true})
+      {:error, error} ->
+        render(conn, "error.json", error: error)
     end
   end
 

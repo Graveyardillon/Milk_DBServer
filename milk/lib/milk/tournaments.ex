@@ -849,6 +849,8 @@ defmodule Milk.Tournaments do
     TournamentProgress.delete_ban_order(tournament_id, opponent["id"])
     TournamentProgress.insert_ban_order(tournament_id, id, order+1)
     TournamentProgress.insert_ban_order(tournament_id, opponent["id"], opponent_order+1)
+
+    {:ok, nil}
   end
 
   @doc """
