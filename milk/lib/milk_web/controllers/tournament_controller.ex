@@ -922,6 +922,24 @@ defmodule MilkWeb.TournamentController do
   end
 
   @doc """
+  Choose a map.
+  """
+  def choose_map(conn, %{"user_id" => user_id, "tournament_id" => tournament_id, "map_id" => map_id}) do
+    user_id = Tools.to_integer_as_needed(user_id)
+    tournament_id = Tools.to_integer_as_needed(tournament_id)
+    map_id = Tools.to_integer_as_needed(map_id)
+
+    user_id
+    |> Tournaments.choose_maps(tournament_id, [map_id])
+    |> case do
+      {:ok, nil} ->
+        json(conn, %{result: true})
+      {:error, error} ->
+        render(conn, "error.json", error: error)
+    end
+  end
+
+  @doc """
   Start a single match in the tournament.
   """
   def start_match(conn, %{"user_id" => user_id, "tournament_id" => tournament_id}) do
