@@ -3446,16 +3446,18 @@ defmodule Milk.Tournaments do
     |> Map.get("id")
     ~> opponent_id
 
-    opponent_id > my_id
-    |> if do
+    #IO.inspect("#{opponent_id} | #{my_id}")
+    if opponent_id > my_id do
       {opponent_id, my_id}
     else
       {my_id, opponent_id}
     end
     ~> {large_id, small_id}
+    #|> IO.inspect()
 
     tournament_id
     |> get_map_selections(small_id, large_id)
+    #|> IO.inspect(label: :mpselections)
     |> Enum.map(fn map_selection ->
       map_selection
       |> Map.get(:map)
@@ -3471,6 +3473,7 @@ defmodule Milk.Tournaments do
     ~> maps
 
     map_selections
+    #|> IO.inspect(label: :selections)
     |> Enum.concat(maps)
     |> Enum.uniq_by(fn map ->
       map.id
