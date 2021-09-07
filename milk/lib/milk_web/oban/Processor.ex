@@ -24,20 +24,20 @@ defmodule Oban.Processer do
     tournament = Tournaments.get_tournament(id)
     devices = Accounts.get_devices_by_user_id(tournament.master_id)
 
-    for device <- devices do
-      %{
-        "user_id" => device.user_id,
-        "process_id" => "REMIND_TO_START_TOURNAMENT",
-        "icon_path" => tournament.icon_path,
-        "title" => tournament.name,
-        "body_text" => "主催している大会の開始予定時刻になりました。大会を開始してください！",
-        "data" =>
-          Jason.encode!(%{
-            tournament_id: tournament.id
-          })
-      }
-      |> Notif.create_notification()
+    %{
+      "user_id" => tournament.master_id,
+      "process_id" => "REMIND_TO_START_TOURNAMENT",
+      "icon_path" => tournament.icon_path,
+      "title" => tournament.name,
+      "body_text" => "主催している大会の開始予定時刻になりました。大会を開始してください！",
+      "data" =>
+        Jason.encode!(%{
+          tournament_id: tournament.id
+        })
+    }
+    |> Notif.create_notification()
 
+    for device <- devices do
       %Maps.PushIos{
         user_id: device.user_id,
         device_token: device.token,
