@@ -736,6 +736,9 @@ defmodule Milk.Tournaments do
 
   @doc """
   Ban a map.
+
+  チーム戦の場合は自身のチームidと相手のチームid
+  個人戦の場合は自身のuser_idと相手のuser_idを使う
   """
   def ban_maps(user_id, tournament_id, map_id_list) when is_list(map_id_list) do
     if state!(tournament_id, user_id) == "ShouldBan" do

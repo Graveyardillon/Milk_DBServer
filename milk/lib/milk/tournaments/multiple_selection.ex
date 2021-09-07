@@ -7,7 +7,7 @@ defmodule Milk.Tournaments.MultipleSelection do
   alias Milk.Tournaments.Tournament
   alias Milk.Contants.Tournament.MultipleSelection
 
-  schema "multiple_selections" do
+  schema "maps" do
     field :state, :string, default: "not_selected"
     field :name, :string
     field :icon_path, :string
