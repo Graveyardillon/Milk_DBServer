@@ -3481,10 +3481,19 @@ defmodule Milk.Tournaments do
   Get selected map by tournament id.
   """
   def get_selected_map(tournament_id) do
-    tournament_id
-    |> get_maps_by_tournament_id()
+    MapSelection
+    |> join(:inner, [ms], m in Milk.Tournaments.Map, on: ms.map_id == m.id)
+    |> where([ms, m], m.tournament_id == ^tournament_id)
+    |> Repo.all()
+    |> Repo.preload(:map)
     |> Enum.filter(fn map ->
       map.state == "selected"
+    end)
+    ~> map_selections
+    |> Enum.map(fn map_selection ->
+      map_selection
+      |> Map.get(:map)
+      |> Map.put(:state, map_selection.state)
     end)
     ~> maps
     |> length()
