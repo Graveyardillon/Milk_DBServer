@@ -3089,9 +3089,23 @@ defmodule Milk.Tournaments do
       {:ok, notification} ->
         push_invitation_notification(notification)
 
+
       {:error, error} ->
         {:error, error}
     end
+
+    for device <- Accounts.get_devices_by_user_id(invitation.team_member.user_id) do
+      %Maps.PushIos{
+        user_id: invitation.team_member.user_id,
+        device_token: device.token,
+        process_id: "TEAM_INVITE",
+        title: "",
+        message: "#{invitation.sender.name} からチーム招待されました",
+        params: %{"invitation_id" => invitation.id}
+      }
+      |> Milk.Notif.push_ios()
+    end
+
   end
 
   defp push_invitation_notification(%Notification{} = _notification) do
@@ -3120,7 +3134,7 @@ defmodule Milk.Tournaments do
     end
   end
 
-  def create_team_invitation_result_notification(invitation, result) do
+  def create_team_invitation_result_notification(invitation, result) do #TODO: 大会名などを含めたい
     case result do
       true ->
         %{
@@ -3135,6 +3149,19 @@ defmodule Milk.Tournaments do
             })
         }
         |> Notif.create_notification()
+
+        for device <- Accounts.get_devices_by_user_id(invitation.sender.id) do
+          %Maps.PushIos{
+            user_id: invitation.sender.id,
+            device_token: device.token,
+            process_id: "TEAM_INVITE_RESULT",
+            title: "",
+            message: "#{invitation.team_member.user.name} がチームに参加しました",
+            params: %{"invitation_id" => invitation.id}
+          }
+          |> Milk.Notif.push_ios()
+        end
+
       false ->
         %{
           "user_id" => invitation.sender.id,
@@ -3148,6 +3175,19 @@ defmodule Milk.Tournaments do
             })
         }
         |> Notif.create_notification()
+
+        for device <- Accounts.get_devices_by_user_id(invitation.sender.id) do
+          %Maps.PushIos{
+            user_id: invitation.sender.id,
+            device_token: device.token,
+            process_id: "TEAM_INVITE_RESULT",
+            title: "",
+            message: "#{invitation.team_member.user.name} がチームへの招待を辞退しました",
+            params: %{"invitation_id" => invitation.id}
+          }
+          |> Milk.Notif.push_ios()
+        end
+
     end
   end
 
