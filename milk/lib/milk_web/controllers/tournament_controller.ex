@@ -1825,6 +1825,14 @@ defmodule MilkWeb.TournamentController do
     |> Tournaments.get_custom_detail_by_tournament_id()
     ~> custom_detail
 
+    tournament_id
+    |> Tournaments.get_selected_map()
+    |> case do
+      {:ok, map} -> map
+      {:error, _} -> nil
+    end
+    ~> map
+
     render(conn, "match_info.json", %{
       opponent: opponent,
       rank: rank,
@@ -1832,6 +1840,7 @@ defmodule MilkWeb.TournamentController do
       is_leader: is_leader,
       score: score,
       state: state,
+      map: map,
       is_coin_head: is_coin_head,
       custom_detail: custom_detail
     })

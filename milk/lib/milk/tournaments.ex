@@ -3265,6 +3265,24 @@ defmodule Milk.Tournaments do
   end
 
   @doc """
+  Get selected map by tournament id.
+  """
+  def get_selected_map(tournament_id) do
+    tournament_id
+    |> get_multiple_selections_by_tournament_id()
+    |> Enum.filter(fn map ->
+      map.state == "selected"
+    end)
+    ~> maps
+    |> length()
+    |> case do
+      1 -> {:ok, hd(maps)}
+      0 -> {:error, "not selected any maps"}
+      n -> {:error, "selected too many maps (length: #{n})"}
+    end
+  end
+
+  @doc """
   Update map.
   """
   def update_multiple_selection(%MultipleSelection{} = map, attrs) do
