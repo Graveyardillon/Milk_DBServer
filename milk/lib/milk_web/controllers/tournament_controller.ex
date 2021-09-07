@@ -201,7 +201,14 @@ defmodule MilkWeb.TournamentController do
         end
 
         team = Enum.filter(tournament.team, fn team -> team.is_confirmed end)
-        selections = Tournaments.get_multiple_selections_by_tournament_id(tournament.id)
+
+        tournament
+        |> Map.get(:id)
+        |> Tournaments.get_maps_by_tournament_id()
+        |> Enum.map(fn map ->
+          Map.put(map, :state, "not_selected")
+        end)
+        ~> selections
 
         tournament
         |> Map.put(:team, team)
@@ -850,11 +857,22 @@ defmodule MilkWeb.TournamentController do
   @doc """
   Get options by tournament id.
   """
+  def options(conn, %{"tournament_id" => tournament_id, "user_id" => user_id}) do
+    tournament_id = Tools.to_integer_as_needed(tournament_id)
+    user_id = Tools.to_integer_as_needed(user_id)
+
+    options = Tournaments.get_selectable_maps_by_tournament_id_and_user_id(tournament_id, user_id)
+
+    render(conn, "options.json", options: options)
+  end
+
   def options(conn, %{"tournament_id" => tournament_id}) do
     tournament_id
     |> Tools.to_integer_as_needed()
-    |> Tournaments.get_multiple_selections_by_tournament_id()
-    |> IO.inspect()
+    |> Tournaments.get_maps_by_tournament_id()
+    |> Enum.map(fn map ->
+      Map.put(map, :state, "not_selected")
+    end)
     ~> options
 
     render(conn, "options.json", options: options)
@@ -1460,7 +1478,7 @@ defmodule MilkWeb.TournamentController do
     ~> tournament
 
     team = Enum.filter(tournament.team, fn team -> team.is_confirmed end)
-    selections = Tournaments.get_multiple_selections_by_tournament_id(tournament.id)
+    selections = Tournaments.get_maps_by_tournament_id(tournament.id)
 
     tournament
     |> Map.put(:team, team)

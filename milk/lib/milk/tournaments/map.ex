@@ -1,14 +1,12 @@
-defmodule Milk.Tournaments.MultipleSelection do
+defmodule Milk.Tournaments.Map do
   use Milk.Schema
 
   import Ecto.Changeset
   import Common.Sperm
 
   alias Milk.Tournaments.Tournament
-  alias Milk.Contants.Tournament.MultipleSelection
 
   schema "maps" do
-    field :state, :string, default: "not_selected"
     field :name, :string
     field :icon_path, :string
 
@@ -18,9 +16,9 @@ defmodule Milk.Tournaments.MultipleSelection do
   end
 
   @doc false
-  def changeset(multiple_selection, attrs) do
-    multiple_selection
-    |> cast(attrs, [:state, :name, :tournament_id, :icon_path])
+  def changeset(map, attrs) do
+    map
+    |> cast(attrs, [:name, :tournament_id, :icon_path])
     |> foreign_key_constraint(:tournament_id)
   end
 

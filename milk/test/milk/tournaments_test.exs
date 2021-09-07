@@ -1343,7 +1343,8 @@ defmodule Milk.TournamentsTest do
 
       tournament
       |> Map.get(:id)
-      |> Tournaments.get_multiple_selections_by_tournament_id()
+      #|> Tournaments.get_maps_by_tournament_id()
+      |> Tournaments.get_selectable_maps_by_tournament_id_and_user_id(leader.id)
       |> Enum.map(fn map ->
         map.id
       end)
@@ -1384,6 +1385,13 @@ defmodule Milk.TournamentsTest do
 
         Tournaments.choose_maps(opponent_leader.id, tournament.id, [choose_map1])
       end
+
+      if team.id > opponent_team["id"] do
+        {team.id, opponent_team["id"]}
+      else
+        {opponent_team["id"], team.id}
+      end
+      ~> {large_id, small_id}
 
       ban_map_id_list1
       |> Enum.map(fn map_id ->

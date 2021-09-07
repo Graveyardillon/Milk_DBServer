@@ -41,7 +41,7 @@ defmodule Milk.Tournaments do
   alias Milk.Tournaments.{
     Assistant,
     Entrant,
-    MultipleSelection,
+    MapSelection,
     Team,
     TeamInvitation,
     TeamMember,
@@ -741,12 +741,50 @@ defmodule Milk.Tournaments do
   個人戦の場合は自身のuser_idと相手のuser_idを使う
   """
   def ban_maps(user_id, tournament_id, map_id_list) when is_list(map_id_list) do
+    # small_idとlarge_idを取得
+    tournament = get_tournament(tournament_id)
+
+    tournament
+    |> Map.get(:is_team)
+    |> if do
+      tournament_id
+      |> get_team_by_tournament_id_and_user_id(user_id)
+      |> Map.get(:id)
+    else
+      user_id
+    end
+    ~> my_id
+
+    tournament
+    |> Map.get(:is_team)
+    |> if do
+      tournament_id
+      |> TournamentProgress.get_match_list()
+      |> find_match(my_id)
+      |> get_opponent_team(my_id)
+    else
+      tournament_id
+      |> TournamentProgress.get_match_list()
+      |> find_match(my_id)
+      |> get_opponent(my_id)
+    end
+    |> elem(1)
+    |> Map.get("id")
+    ~> opponent_id
+
+    if my_id > opponent_id do
+      {my_id, opponent_id}
+    else
+      {opponent_id, my_id}
+    end
+    ~> {large_id, small_id}
+
     if state!(tournament_id, user_id) == "ShouldBan" do
       map_id_list
       |> Enum.each(fn map_id ->
-        map_id
-        |> get_map()
-        |> update_multiple_selection(%{"state" => "banned"})
+        %MapSelection{}
+        |> MapSelection.changeset(%{"map_id" => map_id, "state" => "banned", "large_id" => large_id, "small_id" => small_id})
+        |> Repo.insert()
       end)
       |> Kernel.==(:ok)
       |> if do
@@ -769,12 +807,50 @@ defmodule Milk.Tournaments do
   Choose a map.
   """
   def choose_maps(user_id, tournament_id, map_id_list) when is_list(map_id_list) do
+    # small_idとlarge_idを取得
+    tournament = get_tournament(tournament_id)
+
+    tournament
+    |> Map.get(:is_team)
+    |> if do
+      tournament_id
+      |> get_team_by_tournament_id_and_user_id(user_id)
+      |> Map.get(:id)
+    else
+      user_id
+    end
+    ~> my_id
+
+    tournament
+    |> Map.get(:is_team)
+    |> if do
+      tournament_id
+      |> TournamentProgress.get_match_list()
+      |> find_match(my_id)
+      |> get_opponent_team(my_id)
+    else
+      tournament_id
+      |> TournamentProgress.get_match_list()
+      |> find_match(my_id)
+      |> get_opponent(my_id)
+    end
+    |> elem(1)
+    |> Map.get("id")
+    ~> opponent_id
+
+    if my_id > opponent_id do
+      {my_id, opponent_id}
+    else
+      {opponent_id, my_id}
+    end
+    ~> {large_id, small_id}
+
     if state!(tournament_id, user_id) == "ShouldChooseMap" do
       map_id_list
       |> Enum.each(fn map_id ->
-        map_id
-        |> get_map()
-        |> update_multiple_selection(%{"state" => "selected"})
+        %MapSelection{}
+        |> MapSelection.changeset(%{"map_id" => map_id, "state" => "selected", "large_id" => large_id, "small_id" => small_id})
+        |> Repo.insert()
       end)
       |> Kernel.==(:ok)
       |> if do
@@ -3244,8 +3320,8 @@ defmodule Milk.Tournaments do
     end
     ~> attrs
 
-    %MultipleSelection{}
-    |> MultipleSelection.changeset(attrs)
+    %Milk.Tournaments.Map{}
+    |> Milk.Tournaments.Map.changeset(attrs)
     |> Repo.insert()
   end
 
@@ -3253,18 +3329,112 @@ defmodule Milk.Tournaments do
   Get a map.
   """
   def get_map(map_id) do
-    MultipleSelection
+    MapSelection
+    |> where([ms], ms.map_id == ^map_id)
+    |> Repo.one()
+    |> Repo.preload(:map)
+    ~> map_selection
+
+    Milk.Tournaments.Map
     |> where([ms], ms.id == ^map_id)
     |> Repo.one()
+    ~> map
+
+    unless is_nil(map_selection) do
+      map_selection
+      |> Map.get(:map)
+      |> Map.put(:state, map_selection.state)
+    else
+      Map.put(map, :state, "not_selected")
+    end
   end
 
   @doc """
   Get multiple_selections by tournament id
   """
-  def get_multiple_selections_by_tournament_id(tournament_id) do
-    MultipleSelection
+  def get_maps_by_tournament_id(tournament_id) do
+    Milk.Tournaments.Map
     |> where([ms], ms.tournament_id == ^tournament_id)
     |> Repo.all()
+  end
+
+  @doc """
+  Get map selections.
+  """
+  def get_map_selections(tournament_id, small_id, large_id) do
+    MapSelection
+    |> join(:inner, [ms], m in Milk.Tournaments.Map, on: ms.map_id == m.id)
+    |> where([ms, m], ms.large_id == ^large_id)
+    |> where([ms, m], ms.small_id == ^small_id)
+    |> Repo.all()
+    |> Repo.preload(:map)
+  end
+
+  @doc """
+  Get selectable maps by user id and tournament id.
+  """
+  def get_selectable_maps_by_tournament_id_and_user_id(tournament_id, user_id) do
+    tournament_id
+    |> get_tournament()
+    ~> tournament
+
+    tournament
+    |> Map.get(:is_team)
+    |> if do
+      tournament_id
+      |> get_team_by_tournament_id_and_user_id(user_id)
+      |> Map.get(:id)
+    else
+      user_id
+    end
+    ~> my_id
+
+    tournament
+    |> Map.get(:is_team)
+    |> if do
+      tournament_id
+      |> TournamentProgress.get_match_list()
+      |> find_match(my_id)
+      |> get_opponent_team(my_id)
+    else
+      tournament_id
+      |> TournamentProgress.get_match_list()
+      |> find_match(my_id)
+      |> get_opponent(my_id)
+    end
+    |> elem(1)
+    |> Map.get("id")
+    ~> opponent_id
+
+    opponent_id > my_id
+    |> if do
+      {opponent_id, my_id}
+    else
+      {my_id, opponent_id}
+    end
+    ~> {large_id, small_id}
+
+    tournament_id
+    |> get_map_selections(small_id, large_id)
+    |> Enum.map(fn map_selection ->
+      map_selection
+      |> Map.get(:map)
+      |> Map.put(:state, map_selection.state)
+    end)
+    ~> map_selections
+
+    tournament_id
+    |> get_maps_by_tournament_id()
+    |> Enum.map(fn map ->
+      Map.put(map, :state, "not_selected")
+    end)
+    ~> maps
+
+    map_selections
+    |> Enum.concat(maps)
+    |> Enum.uniq_by(fn map ->
+      map.id
+    end)
   end
 
   @doc """
@@ -3272,7 +3442,7 @@ defmodule Milk.Tournaments do
   """
   def get_selected_map(tournament_id) do
     tournament_id
-    |> get_multiple_selections_by_tournament_id()
+    |> get_maps_by_tournament_id()
     |> Enum.filter(fn map ->
       map.state == "selected"
     end)
@@ -3288,9 +3458,9 @@ defmodule Milk.Tournaments do
   @doc """
   Update map.
   """
-  def update_multiple_selection(%MultipleSelection{} = map, attrs) do
+  def update_multiple_selection(%Milk.Tournaments.Map{} = map, attrs) do
     map
-    |> MultipleSelection.changeset(attrs)
+    |> Milk.Tournaments.Map.changeset(attrs)
     |> Repo.update()
   end
 
