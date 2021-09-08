@@ -162,8 +162,12 @@ defmodule MilkWeb.Router do
     post "/tournament/claim_win", TournamentController, :claim_win
     post "/tournament/claim_lose", TournamentController, :claim_lose
     post "/tournament/claim_score", TournamentController, :claim_score
+    post "/tournament/flip_coin", TournamentController, :flip_coin
     post "/tournament/defeat", TournamentController, :force_to_defeat
     post "/tournament/finish", TournamentController, :finish
+    post "/tournament/ban_maps", TournamentController, :ban_maps
+    post "/tournament/choose_map", TournamentController, :choose_map
+    post "/tournament/choose_ad", TournamentController, :choose_ad
     put "/tournament/update", TournamentController, :update
 
     get "/tournament_log/index", TournamentLogController, :index

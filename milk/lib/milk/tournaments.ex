@@ -41,7 +41,7 @@ defmodule Milk.Tournaments do
   alias Milk.Tournaments.{
     Assistant,
     Entrant,
-    MultipleSelection,
+    MapSelection,
     Team,
     TeamInvitation,
     TeamMember,
@@ -433,9 +433,19 @@ defmodule Milk.Tournaments do
 
     Repo.exists?(from u in User, where: u.id == ^id)
     |> if do
-      create(params, thumbnail_path)
+      if params["enabled_multiple_selection"] && !params["enabled_coin_toss"] do
+        {:error, "Needs to enable coin toss"}
+      else
+        {:ok, nil}
+      end
     else
       {:error, "Undefined User"}
+    end
+    |> case do
+      {:ok, _} ->
+        create(params, thumbnail_path)
+      {:error, error} ->
+        {:error, error}
     end
     |> case do
       {:ok, tournament} ->
@@ -687,6 +697,276 @@ defmodule Milk.Tournaments do
     |> Map.get(:id)
     |> get_custom_detail_by_tournament_id()
     |> update_custom_detail(params)
+  end
+
+  @doc """
+  Flip coin request.
+  """
+  def flip_coin(user_id, tournament_id) do
+    tournament_id
+    |> get_tournament()
+    ~> tournament
+    |> Map.get(:is_team)
+    |> if do
+      tournament_id
+      |> get_team_by_tournament_id_and_user_id(user_id)
+      |> Map.get(:id)
+    else
+      user_id
+    end
+    ~> id
+
+    TournamentProgress.insert_match_pending_list_table(id, tournament_id)
+
+    tournament
+    |> Map.get(:enabled_multiple_selection)
+    |> if do
+      # multiple_selection_typeを取得
+      tournament
+      |> Map.get(:custom_detail)
+      |> Map.get(:multiple_selection_type)
+      |> case do
+        "VLCBAN" ->
+          delete_map_selections(tournament_id, id)
+          TournamentProgress.delete_is_attacker_side(id, tournament_id)
+          TournamentProgress.delete_ban_order(tournament_id, id)
+          TournamentProgress.init_ban_order(tournament_id, id)
+        _ ->
+          delete_map_selections(tournament_id, id)
+          TournamentProgress.delete_is_attacker_side(id, tournament_id)
+          TournamentProgress.delete_ban_order(tournament_id, id)
+          TournamentProgress.init_ban_order(tournament_id, id)
+      end
+    end
+  end
+
+  @doc """
+  Ban a map.
+
+  チーム戦の場合は自身のチームidと相手のチームid
+  個人戦の場合は自身のuser_idと相手のuser_idを使う
+  """
+  def ban_maps(user_id, tournament_id, map_id_list) when is_list(map_id_list) do
+    # small_idとlarge_idを取得
+    tournament = get_tournament(tournament_id)
+
+    tournament
+    |> Map.get(:is_team)
+    |> if do
+      tournament_id
+      |> get_team_by_tournament_id_and_user_id(user_id)
+      |> Map.get(:id)
+    else
+      user_id
+    end
+    ~> my_id
+
+    tournament
+    |> Map.get(:is_team)
+    |> if do
+      tournament_id
+      |> TournamentProgress.get_match_list()
+      |> find_match(my_id)
+      |> get_opponent_team(my_id)
+    else
+      tournament_id
+      |> TournamentProgress.get_match_list()
+      |> find_match(my_id)
+      |> get_opponent(my_id)
+    end
+    |> elem(1)
+    |> Map.get("id")
+    ~> opponent_id
+
+    if my_id > opponent_id do
+      {my_id, opponent_id}
+    else
+      {opponent_id, my_id}
+    end
+    ~> {large_id, small_id}
+
+    if state!(tournament_id, user_id) == "ShouldBan" do
+      map_id_list
+      |> Enum.each(fn map_id ->
+        %MapSelection{}
+        |> MapSelection.changeset(%{"map_id" => map_id, "state" => "banned", "large_id" => large_id, "small_id" => small_id})
+        |> Repo.insert()
+      end)
+      |> Kernel.==(:ok)
+      |> if do
+        {:ok, nil}
+      else
+        {:error, "error on banning maps"}
+      end
+    else
+      {:error, "invalid state"}
+    end
+    |> case do
+      {:ok, nil} ->
+        renew_state_after_choosing_maps(user_id, tournament_id)
+      {:error, error} ->
+        {:error, error}
+    end
+  end
+
+  @doc """
+  Choose a map.
+  """
+  def choose_maps(user_id, tournament_id, map_id_list) when is_list(map_id_list) do
+    # small_idとlarge_idを取得
+    tournament = get_tournament(tournament_id)
+
+    tournament
+    |> Map.get(:is_team)
+    |> if do
+      tournament_id
+      |> get_team_by_tournament_id_and_user_id(user_id)
+      |> Map.get(:id)
+    else
+      user_id
+    end
+    ~> my_id
+
+    tournament
+    |> Map.get(:is_team)
+    |> if do
+      tournament_id
+      |> TournamentProgress.get_match_list()
+      |> find_match(my_id)
+      |> get_opponent_team(my_id)
+    else
+      tournament_id
+      |> TournamentProgress.get_match_list()
+      |> find_match(my_id)
+      |> get_opponent(my_id)
+    end
+    |> elem(1)
+    |> Map.get("id")
+    ~> opponent_id
+
+    if my_id > opponent_id do
+      {my_id, opponent_id}
+    else
+      {opponent_id, my_id}
+    end
+    ~> {large_id, small_id}
+
+    if state!(tournament_id, user_id) == "ShouldChooseMap" do
+      map_id_list
+      |> Enum.each(fn map_id ->
+        %MapSelection{}
+        |> MapSelection.changeset(%{"map_id" => map_id, "state" => "selected", "large_id" => large_id, "small_id" => small_id})
+        |> Repo.insert()
+      end)
+      |> Kernel.==(:ok)
+      |> if do
+        {:ok, nil}
+      else
+        {:error, "error on choosing maps"}
+      end
+    else
+      {:error, "invalid state"}
+    end
+    |> case do
+      {:ok, nil} ->
+        renew_state_after_choosing_maps(user_id, tournament_id)
+      {:error, error} ->
+        {:error, error}
+    end
+  end
+
+  @doc """
+  Choose A/D
+  """
+  def choose_ad(user_id, tournament_id, is_attack_side) do
+    tournament_id
+    |> get_tournament()
+    ~> tournament
+    |> Map.get(:is_team)
+    |> if do
+      tournament_id
+      |> get_team_by_tournament_id_and_user_id(user_id)
+      |> Map.get(:id)
+    else
+      user_id
+    end
+    ~> my_id
+
+    tournament
+    |> Map.get(:is_team)
+    |> if do
+      tournament_id
+      |> TournamentProgress.get_match_list()
+      |> find_match(my_id)
+      |> get_opponent_team(my_id)
+    else
+      tournament_id
+      |> TournamentProgress.get_match_list()
+      |> find_match(my_id)
+      |> get_opponent(my_id)
+    end
+    |> elem(1)
+    |> Map.get("id")
+    ~> opponent_id
+
+    if state!(tournament_id, user_id) == "ShouldChooseA/D" do
+      has_me_inserted = TournamentProgress.insert_is_attacker_side(my_id, tournament_id, is_attack_side)
+      has_opponent_inserted = TournamentProgress.insert_is_attacker_side(opponent_id, tournament_id, !is_attack_side)
+
+      if has_me_inserted && has_opponent_inserted do
+        {:ok, nil}
+      else
+        {:error, "failed to insert is_attacker_side"}
+      end
+    else
+      {:error, "invalid state"}
+    end
+    |> case do
+      {:ok, nil} ->
+        renew_state_after_choosing_maps(user_id, tournament_id)
+      {:error, error} ->
+        {:error, error}
+    end
+  end
+
+  defp renew_state_after_choosing_maps(user_id, tournament_id) do
+    tournament_id
+    |> get_tournament()
+    ~> tournament
+    |> Map.get(:is_team)
+    |> if do
+      tournament
+      |> Map.get(:id)
+      |> get_team_by_tournament_id_and_user_id(user_id)
+      |> Map.get(:id)
+    else
+      user_id
+    end
+    ~> id
+
+    tournament
+    |> Map.get(:is_team)
+    |> if do
+      tournament_id
+      |> TournamentProgress.get_match_list()
+      |> find_match(id)
+      |> get_opponent_team(id)
+    else
+      tournament_id
+      |> TournamentProgress.get_match_list()
+      |> find_match(id)
+      |> get_opponent(id)
+    end
+    ~> {:ok, opponent}
+
+    order = TournamentProgress.get_ban_order(tournament_id, id)
+    opponent_order = TournamentProgress.get_ban_order(tournament_id, opponent["id"])
+    TournamentProgress.delete_ban_order(tournament_id, id)
+    TournamentProgress.delete_ban_order(tournament_id, opponent["id"])
+    TournamentProgress.insert_ban_order(tournament_id, id, order+1)
+    TournamentProgress.insert_ban_order(tournament_id, opponent["id"], opponent_order+1)
+
+    {:ok, nil}
   end
 
   @doc """
@@ -2228,60 +2508,112 @@ defmodule Milk.Tournaments do
     end
   end
 
-  defp check_has_lost?(tournament_id, user_id) do
+  defp check_has_lost?(tournament_id, id) do
     case TournamentProgress.get_match_list(tournament_id) do
       [] ->
         "IsFinished"
 
       match_list ->
-        if has_lost?(match_list, user_id) do
+        if has_lost?(match_list, id) do
           "IsLoser"
         else
-          check_is_alone?(tournament_id, user_id)
+          check_is_alone?(tournament_id, id)
         end
     end
   end
 
-  defp check_is_alone?(tournament_id, user_id) do
+  defp check_is_alone?(tournament_id, id) do
     match_list = TournamentProgress.get_match_list(tournament_id)
-    match = find_match(match_list, user_id)
+    match = find_match(match_list, id)
 
     cond do
       is_alone?(match) -> "IsAlone"
       match == [] -> "IsLoser"
-      true -> check_wait_state?(tournament_id, user_id)
+      true -> check_wait_state?(tournament_id, id)
     end
   end
 
-  defp check_wait_state?(tournament_id, user_id) do
+  defp check_wait_state?(tournament_id, id) do
     tournament_id
     |> get_tournament()
     ~> tournament
     |> Map.get(:id)
     |> TournamentProgress.get_match_list()
-    |> find_match(user_id)
+    |> find_match(id)
     ~> match
 
     if tournament.is_team do
-      get_opponent_team(match, user_id)
+      get_opponent_team(match, id)
     else
-      get_opponent(match, user_id)
+      get_opponent(match, id)
     end
     |> elem(1)
     |> Map.get("id")
     |> TournamentProgress.get_match_pending_list(tournament_id)
     ~> opponent_pending_list
 
-    pending_list = TournamentProgress.get_match_pending_list(user_id, tournament_id)
+    pending_list = TournamentProgress.get_match_pending_list(id, tournament_id)
 
     cond do
+      pending_list == [] && tournament.enabled_coin_toss ->
+        "ShouldFlipCoin"
+
       pending_list == [] ->
         "IsInMatch"
 
       pending_list != [] && opponent_pending_list == [] ->
-        "IsWaitingForStart"
+        [{_, state}] = pending_list
+        state
+
+      pending_list != [] && tournament.enabled_multiple_selection ->
+        check_map_ban_state(tournament, id)
 
       true ->
+        "IsPending"
+    end
+  end
+
+  defp check_map_ban_state(tournament, id) do
+    tournament
+    |> Map.get(:is_team)
+    |> if do
+      tournament
+      |> Map.get(:id)
+      |> TournamentProgress.get_match_list()
+      |> find_match(id)
+      |> get_opponent_team(id)
+    else
+      tournament
+      |> Map.get(:id)
+      |> TournamentProgress.get_match_list()
+      |> find_match(id)
+      |> get_opponent(id)
+    end
+    ~> {:ok, opponent}
+
+    is_head? = is_head_of_coin?(tournament.id, id, opponent["id"])
+
+    tournament
+    |> Map.get(:id)
+    |> TournamentProgress.get_ban_order(id)
+    |> case do
+      0 when is_head? ->
+        "ShouldBan"
+      0 ->
+        "ShouldObserveBan"
+      1 when is_head? ->
+        "ShouldObserveBan"
+      1 ->
+        "ShouldBan"
+      2 when is_head? ->
+        "ShouldChooseMap"
+      2 ->
+        "ShouldObserveBan"
+      3 when is_head? ->
+        "ShouldObserveA/D"
+      3 ->
+        "ShouldChooseA/D"
+      4 ->
         "IsPending"
     end
   end
@@ -2741,11 +3073,11 @@ defmodule Milk.Tournaments do
     |> Repo.preload(team_member: :user)
   end
 
-  def team_invitation_decline(id) do 
+  def team_invitation_decline(id) do
     get_team_invitation(id)
     |> Repo.delete()
     |> case do
-      {:ok, %TeamInvitation{} = invitation} -> 
+      {:ok, %TeamInvitation{} = invitation} ->
         create_team_invitation_result_notification(invitation, false)
         {:ok, invitation}
       {:error, error} ->
@@ -2793,7 +3125,7 @@ defmodule Milk.Tournaments do
     |> case do
       {:ok, notification} ->
         push_invitation_notification(notification)
-        
+
 
       {:error, error} ->
         {:error, error}
@@ -2805,9 +3137,9 @@ defmodule Milk.Tournaments do
         device_token: device.token,
         process_id: "TEAM_INVITE",
         title: "",
-        message: "#{invitation.sender.name} からチーム招待されました", 
+        message: "#{invitation.sender.name} からチーム招待されました",
         params: %{"invitation_id" => invitation.id}
-      } 
+      }
       |> Milk.Notif.push_ios()
     end
 
@@ -2829,7 +3161,7 @@ defmodule Milk.Tournaments do
     |> Repo.update()
     |> case do
       {:ok, team_member} ->
-        with %TeamInvitation{} = invitation <- get_team_invitation(team_invitation_id) do 
+        with %TeamInvitation{} = invitation <- get_team_invitation(team_invitation_id) do
           create_team_invitation_result_notification(invitation, true)
           verify_team_as_needed(team_member.team_id)
           {:ok, team_member}
@@ -2861,9 +3193,9 @@ defmodule Milk.Tournaments do
             device_token: device.token,
             process_id: "TEAM_INVITE_RESULT",
             title: "",
-            message: "#{invitation.team_member.user.name} がチームに参加しました", 
+            message: "#{invitation.team_member.user.name} がチームに参加しました",
             params: %{"invitation_id" => invitation.id}
-          } 
+          }
           |> Milk.Notif.push_ios()
         end
 
@@ -2887,9 +3219,9 @@ defmodule Milk.Tournaments do
             device_token: device.token,
             process_id: "TEAM_INVITE_RESULT",
             title: "",
-            message: "#{invitation.team_member.user.name} がチームへの招待を辞退しました", 
+            message: "#{invitation.team_member.user.name} がチームへの招待を辞退しました",
             params: %{"invitation_id" => invitation.id}
-          } 
+          }
           |> Milk.Notif.push_ios()
         end
 
@@ -3065,17 +3397,200 @@ defmodule Milk.Tournaments do
     end
     ~> attrs
 
-    %MultipleSelection{}
-    |> MultipleSelection.changeset(attrs)
+    %Milk.Tournaments.Map{}
+    |> Milk.Tournaments.Map.changeset(attrs)
     |> Repo.insert()
+  end
+
+  @doc """
+  Get a map.
+  """
+  def get_map(map_id) do
+    MapSelection
+    |> where([ms], ms.map_id == ^map_id)
+    |> Repo.one()
+    |> Repo.preload(:map)
+    ~> map_selection
+
+    Milk.Tournaments.Map
+    |> where([ms], ms.id == ^map_id)
+    |> Repo.one()
+    ~> map
+
+    unless is_nil(map_selection) do
+      map_selection
+      |> Map.get(:map)
+      |> Map.put(:state, map_selection.state)
+    else
+      Map.put(map, :state, "not_selected")
+    end
   end
 
   @doc """
   Get multiple_selections by tournament id
   """
-  def get_multiple_selections_by_tournament_id(tournament_id) do
-    MultipleSelection
+  def get_maps_by_tournament_id(tournament_id) do
+    Milk.Tournaments.Map
     |> where([ms], ms.tournament_id == ^tournament_id)
     |> Repo.all()
+  end
+
+  @doc """
+  Get map selections.
+  """
+  def get_map_selections(tournament_id, small_id, large_id) do
+    MapSelection
+    |> join(:inner, [ms], m in Milk.Tournaments.Map, on: ms.map_id == m.id)
+    |> where([ms, m], ms.large_id == ^large_id)
+    |> where([ms, m], ms.small_id == ^small_id)
+    |> Repo.all()
+    |> Repo.preload(:map)
+  end
+
+  @doc """
+  Get selectable maps by user id and tournament id.
+  """
+  def get_selectable_maps_by_tournament_id_and_user_id(tournament_id, user_id) do
+    tournament_id
+    |> get_tournament()
+    ~> tournament
+
+    tournament
+    |> Map.get(:is_team)
+    |> if do
+      tournament_id
+      |> get_team_by_tournament_id_and_user_id(user_id)
+      |> Map.get(:id)
+    else
+      user_id
+    end
+    ~> my_id
+
+    tournament
+    |> Map.get(:is_team)
+    |> if do
+      tournament_id
+      |> TournamentProgress.get_match_list()
+      |> find_match(my_id)
+      |> get_opponent_team(my_id)
+    else
+      tournament_id
+      |> TournamentProgress.get_match_list()
+      |> find_match(my_id)
+      |> get_opponent(my_id)
+    end
+    |> elem(1)
+    |> Map.get("id")
+    ~> opponent_id
+
+    if opponent_id > my_id do
+      {opponent_id, my_id}
+    else
+      {my_id, opponent_id}
+    end
+    ~> {large_id, small_id}
+
+    tournament_id
+    |> get_map_selections(small_id, large_id)
+    #|> IO.inspect(label: :mpselections)
+    |> Enum.map(fn map_selection ->
+      map_selection
+      |> Map.get(:map)
+      |> Map.put(:state, map_selection.state)
+    end)
+    ~> map_selections
+
+    tournament_id
+    |> get_maps_by_tournament_id()
+    |> Enum.map(fn map ->
+      Map.put(map, :state, "not_selected")
+    end)
+    ~> maps
+
+    map_selections
+    #|> IO.inspect(label: :selections)
+    |> Enum.concat(maps)
+    |> Enum.uniq_by(fn map ->
+      map.id
+    end)
+  end
+
+  @doc """
+  Get selected map by tournament id.
+  """
+  def get_selected_map(tournament_id, id) do
+    MapSelection
+    |> join(:inner, [ms], m in Milk.Tournaments.Map, on: ms.map_id == m.id)
+    |> where([ms, m], m.tournament_id == ^tournament_id)
+    |> where([ms, m], ms.large_id == ^id or ms.small_id == ^id)
+    |> Repo.all()
+    |> Repo.preload(:map)
+    |> Enum.filter(fn map ->
+      map.state == "selected"
+    end)
+    ~> map_selections
+    |> Enum.map(fn map_selection ->
+      map_selection
+      |> Map.get(:map)
+      |> Map.put(:state, map_selection.state)
+    end)
+    ~> maps
+    |> IO.inspect(label: :maps)
+    |> length()
+    |> case do
+      1 -> {:ok, hd(maps)}
+      0 -> {:error, "not selected any maps"}
+      n -> {:error, "selected too many maps (length: #{n})"}
+    end
+  end
+
+  @doc """
+  Delete map selection.
+  """
+  def delete_map_selection(%MapSelection{} = map_selection) do
+    Repo.delete(map_selection)
+  end
+
+  @doc """
+  Delete map selections
+  """
+  def delete_map_selections(tournament_id, id) do
+    MapSelection
+    |> join(:inner, [ms], m in Milk.Tournaments.Map, on: ms.map_id == m.id)
+    |> where([ms, m], ms.large_id == ^id or ms.small_id == ^id)
+    |> where([ms, m], m.tournament_id == ^tournament_id)
+    |> Repo.all()
+    |> Enum.each(fn map_selection ->
+      delete_map_selection(map_selection)
+    end)
+  end
+
+  @doc """
+  Update map.
+  """
+  def update_multiple_selection(%Milk.Tournaments.Map{} = map, attrs) do
+    map
+    |> Milk.Tournaments.Map.changeset(attrs)
+    |> Repo.update()
+  end
+
+  @doc """
+  Calculate given user(team) is head of a flipped coin.
+  """
+  def is_head_of_coin?(tournament_id, id, opponent_id) do
+    mine_str = to_string(tournament_id + id)
+    opponent_str = to_string(tournament_id + opponent_id)
+
+    :crypto.hash(:sha256, mine_str)
+    |> Base.encode16()
+    |> String.downcase()
+    ~> mine
+
+    :crypto.hash(:sha256, opponent_str)
+    |> Base.encode16()
+    |> String.downcase()
+    ~> his
+
+    mine > his
   end
 end

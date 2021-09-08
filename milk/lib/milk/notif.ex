@@ -188,7 +188,6 @@ defmodule Milk.Notif do
     |> put_content_available
     |> put_mutable_content
     |> Pigeon.APNS.push()
-    |> IO.inspect()
   end
 
   def push_ios_with_badge(msg, title, user_id, device_token) do

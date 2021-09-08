@@ -5,6 +5,7 @@
 マッチが表示 (IsInMatch)
 コイントス (ShouldFlipCoin)
 マップ選択 (ShouldChooseMap)
+待ち（IsWaitingForStart）
 === 対戦 ===
 スコア報告 (IsPending)
 勝利 -> 次の対戦 (IsInMatchに戻る)

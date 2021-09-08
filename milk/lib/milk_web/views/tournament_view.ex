@@ -428,8 +428,10 @@ defmodule MilkWeb.TournamentView do
         rank: rank,
         is_team: is_team,
         is_leader: is_leader,
+        is_attacker_side: is_attacker_side,
         score: score,
         state: state,
+        map: map,
         is_coin_head: is_coin_head,
         custom_detail: custom_detail
       }) do
@@ -465,10 +467,19 @@ defmodule MilkWeb.TournamentView do
         if is_team do
           is_leader
         end,
+      is_attacker_side: is_attacker_side,
       score: score,
       state: state,
       is_team: is_team,
       is_coin_head: is_coin_head,
+      map: if map do
+        %{
+          state: map.state,
+          name: map.name,
+          icon_path: map.icon_path,
+          id: map.id
+        }
+      end,
       custom_detail:
         if custom_detail do
           %{

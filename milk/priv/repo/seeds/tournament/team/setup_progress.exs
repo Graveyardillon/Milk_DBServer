@@ -52,8 +52,8 @@ organizer
     "master_id" => user.id,
     "platform" => 1,
     "game_id" => nil,
-    "coin_head_field" => "先攻！",
-    "coin_tail_field" => "後攻！",
+    "coin_head_field" => "マップ選択",
+    "coin_tail_field" => "A/D選択",
     "multiple_selection_label" => "マップ",
     "multiple_selections" => [
       %{
