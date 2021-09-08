@@ -862,7 +862,6 @@ defmodule MilkWeb.TournamentController do
     user_id = Tools.to_integer_as_needed(user_id)
 
     options = Tournaments.get_selectable_maps_by_tournament_id_and_user_id(tournament_id, user_id)
-      |> IO.inspect()
 
     render(conn, "options.json", options: options)
   end

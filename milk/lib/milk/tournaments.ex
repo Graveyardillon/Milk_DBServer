@@ -727,10 +727,12 @@ defmodule Milk.Tournaments do
       |> Map.get(:multiple_selection_type)
       |> case do
         "VLCBAN" ->
+          delete_map_selections(tournament_id, id)
           TournamentProgress.delete_is_attacker_side(id, tournament_id)
           TournamentProgress.delete_ban_order(tournament_id, id)
           TournamentProgress.init_ban_order(tournament_id, id)
         _ ->
+          delete_map_selections(tournament_id, id)
           TournamentProgress.delete_is_attacker_side(id, tournament_id)
           TournamentProgress.delete_ban_order(tournament_id, id)
           TournamentProgress.init_ban_order(tournament_id, id)
@@ -3481,14 +3483,12 @@ defmodule Milk.Tournaments do
     |> Map.get("id")
     ~> opponent_id
 
-    #IO.inspect("#{opponent_id} | #{my_id}")
     if opponent_id > my_id do
       {opponent_id, my_id}
     else
       {my_id, opponent_id}
     end
     ~> {large_id, small_id}
-    #|> IO.inspect()
 
     tournament_id
     |> get_map_selections(small_id, large_id)
@@ -3542,6 +3542,27 @@ defmodule Milk.Tournaments do
       0 -> {:error, "not selected any maps"}
       n -> {:error, "selected too many maps (length: #{n})"}
     end
+  end
+
+  @doc """
+  Delete map selection.
+  """
+  def delete_map_selection(%MapSelection{} = map_selection) do
+    Repo.delete(map_selection)
+  end
+
+  @doc """
+  Delete map selections
+  """
+  def delete_map_selections(tournament_id, id) do
+    MapSelection
+    |> join(:inner, [ms], m in Milk.Tournaments.Map, on: ms.map_id == m.id)
+    |> where([ms, m], ms.large_id == ^id or ms.small_id == ^id)
+    |> where([ms, m], m.tournament_id == ^tournament_id)
+    |> Repo.all()
+    |> Enum.each(fn map_selection ->
+      delete_map_selection(map_selection)
+    end)
   end
 
   @doc """
