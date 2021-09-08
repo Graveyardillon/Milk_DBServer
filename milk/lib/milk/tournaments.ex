@@ -727,8 +727,12 @@ defmodule Milk.Tournaments do
       |> Map.get(:multiple_selection_type)
       |> case do
         "VLCBAN" ->
+          TournamentProgress.delete_is_attacker_side(id, tournament_id)
+          TournamentProgress.delete_ban_order(tournament_id, id)
           TournamentProgress.init_ban_order(tournament_id, id)
         _ ->
+          TournamentProgress.delete_is_attacker_side(id, tournament_id)
+          TournamentProgress.delete_ban_order(tournament_id, id)
           TournamentProgress.init_ban_order(tournament_id, id)
       end
     end
@@ -3514,10 +3518,11 @@ defmodule Milk.Tournaments do
   @doc """
   Get selected map by tournament id.
   """
-  def get_selected_map(tournament_id) do
+  def get_selected_map(tournament_id, id) do
     MapSelection
     |> join(:inner, [ms], m in Milk.Tournaments.Map, on: ms.map_id == m.id)
     |> where([ms, m], m.tournament_id == ^tournament_id)
+    |> where([ms, m], ms.large_id == ^id or ms.small_id == ^id)
     |> Repo.all()
     |> Repo.preload(:map)
     |> Enum.filter(fn map ->
@@ -3530,6 +3535,7 @@ defmodule Milk.Tournaments do
       |> Map.put(:state, map_selection.state)
     end)
     ~> maps
+    |> IO.inspect(label: :maps)
     |> length()
     |> case do
       1 -> {:ok, hd(maps)}

@@ -1845,25 +1845,37 @@ defmodule MilkWeb.TournamentController do
     ~> custom_detail
 
     tournament_id
-    |> Tournaments.get_selected_map()
-    |> case do
-      {:ok, map} -> map
-      {:error, _} -> nil
-    end
-    ~> map
-
-    tournament_id
     |> Tournaments.get_tournament()
-    |> Map.get(:is_team)
-    |> if do
+    ~> tournament
+    |> is_nil()
+    |> unless do
+      tournament
+      |> Map.get(:is_team)
+      |> if do
+        tournament_id
+        |> Tournaments.get_team_by_tournament_id_and_user_id(user_id)
+        |> Map.get(:id)
+      else
+        user_id
+      end
+      ~> id
+      |> TournamentProgress.is_attacker_side?(tournament_id)
+      ~> is_attacker_side
+
       tournament_id
-      |> Tournaments.get_team_by_tournament_id_and_user_id(user_id)
-      |> Map.get(:id)
+      |> Tournaments.get_selected_map(id)
+      |> IO.inspect(label: :map)
+      |> case do
+        {:ok, map} -> map
+        {:error, _} -> nil
+      end
+      ~> map
+
+      {is_attacker_side, map}
     else
-      user_id
+      {nil, nil}
     end
-    |> TournamentProgress.is_attacker_side?(tournament_id)
-    ~> is_attacker_side
+    ~> {is_attacker_side, map}
 
     render(conn, "match_info.json", %{
       opponent: opponent,

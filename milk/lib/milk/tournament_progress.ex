@@ -782,6 +782,24 @@ defmodule Milk.TournamentProgress do
     end
   end
 
+  def delete_is_attacker_side(id, tournament_id) do
+    conn = conn()
+
+    with {:ok, _} <- Redix.command(conn, ["MULTI"]),
+      {:ok, _} <- Redix.command(conn, ["SELECT", 9]),
+      {:ok, _} <- Redix.command(conn, ["HDEL", tournament_id, id]),
+      {:ok, _} <- Redix.command(conn, ["EXEC"]) do
+        true
+    else
+      {:error, %Redix.Error{message: message}} ->
+        Logger.error(message)
+        false
+
+      _ ->
+        false
+    end
+  end
+
   # Single tournament match log.
   # Single tournament match log stores a progress information.
 
