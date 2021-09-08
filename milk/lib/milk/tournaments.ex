@@ -875,6 +875,7 @@ defmodule Milk.Tournaments do
   def choose_ad(user_id, tournament_id, is_attack_side) do
     tournament_id
     |> get_tournament()
+    ~> tournament
     |> Map.get(:is_team)
     |> if do
       tournament_id
@@ -885,10 +886,28 @@ defmodule Milk.Tournaments do
     end
     ~> my_id
 
+    tournament
+    |> Map.get(:is_team)
+    |> if do
+      tournament_id
+      |> TournamentProgress.get_match_list()
+      |> find_match(my_id)
+      |> get_opponent_team(my_id)
+    else
+      tournament_id
+      |> TournamentProgress.get_match_list()
+      |> find_match(my_id)
+      |> get_opponent(my_id)
+    end
+    |> elem(1)
+    |> Map.get("id")
+    ~> opponent_id
+
     if state!(tournament_id, user_id) == "ShouldChooseA/D" do
-      my_id
-      |> TournamentProgress.insert_is_attacker_side(tournament_id, is_attack_side)
-      |> if do
+      has_me_inserted = TournamentProgress.insert_is_attacker_side(my_id, tournament_id, is_attack_side)
+      has_opponent_inserted = TournamentProgress.insert_is_attacker_side(opponent_id, tournament_id, !is_attack_side)
+
+      if has_me_inserted && has_opponent_inserted do
         {:ok, nil}
       else
         {:error, "failed to insert is_attacker_side"}
