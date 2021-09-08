@@ -162,7 +162,7 @@ defmodule MilkWeb.NotifController do
     %Maps.PushIos{
       user_id: 1,
       device_token: token,
-      process_id: "TOURNAMENT_START",
+      process_id: "COMMON",
       title: "test notice",
       message: "test noticeeeee",
       params: params
