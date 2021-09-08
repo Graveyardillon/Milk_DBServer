@@ -428,6 +428,7 @@ defmodule MilkWeb.TournamentView do
         rank: rank,
         is_team: is_team,
         is_leader: is_leader,
+        is_attacker_side: is_attacker_side,
         score: score,
         state: state,
         map: map,
@@ -466,6 +467,7 @@ defmodule MilkWeb.TournamentView do
         if is_team do
           is_leader
         end,
+      is_attacker_side: is_attacker_side,
       score: score,
       state: state,
       is_team: is_team,

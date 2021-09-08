@@ -1852,11 +1852,25 @@ defmodule MilkWeb.TournamentController do
     end
     ~> map
 
+    tournament_id
+    |> Tournaments.get_tournament()
+    |> Map.get(:is_team)
+    |> if do
+      tournament_id
+      |> Tournaments.get_team_by_tournament_id_and_user_id(user_id)
+      |> Map.get(:id)
+    else
+      user_id
+    end
+    |> TournamentProgress.is_attacker_side?(tournament_id)
+    ~> is_attacker_side
+
     render(conn, "match_info.json", %{
       opponent: opponent,
       rank: rank,
       is_team: is_team,
       is_leader: is_leader,
+      is_attacker_side: is_attacker_side,
       score: score,
       state: state,
       map: map,

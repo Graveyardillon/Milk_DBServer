@@ -873,8 +873,20 @@ defmodule Milk.Tournaments do
   Choose A/D
   """
   def choose_ad(user_id, tournament_id, is_attack_side) do
-    if state!(tournament_id, user_id) == "ShouldChooseA/D" do
+    tournament_id
+    |> get_tournament()
+    |> Map.get(:is_team)
+    |> if do
+      tournament_id
+      |> get_team_by_tournament_id_and_user_id(user_id)
+      |> Map.get(:id)
+    else
       user_id
+    end
+    ~> my_id
+
+    if state!(tournament_id, user_id) == "ShouldChooseA/D" do
+      my_id
       |> TournamentProgress.insert_is_attacker_side(tournament_id, is_attack_side)
       |> if do
         {:ok, nil}
