@@ -144,7 +144,7 @@ defmodule Milk.Accounts do
   @doc """
   Creates a user.
   """
-  @spec create_user(map) :: tuple()
+  @spec create_user(map, boolean) :: tuple()
   def create_user(attrs, is_oauth \\ false) do
     attrs = put_id_for_show(attrs)
 
@@ -411,7 +411,8 @@ defmodule Milk.Accounts do
         )
 
       {:error, :token_expired} ->
-        Guardian.signout(token)
+        token
+        |> Guardian.signout()
         |> if do
           "That token is expired"
         else
@@ -433,9 +434,7 @@ defmodule Milk.Accounts do
         else
           nil
         end
-
-      x ->
-        x
+      x -> x
     end
   end
 

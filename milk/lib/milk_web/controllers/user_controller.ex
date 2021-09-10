@@ -75,11 +75,27 @@ defmodule MilkWeb.UserController do
   @doc """
   Signin with discord.
   """
-  def signin_with_discord(conn, %{"email" => email, "username" => username, "discriminator" => discriminator}) do
-    if Accounts.email_exists?(email) do
-
+  def signin_with_discord(conn, %{"email" => email, "username" => username, "discriminator" => _discriminator}) do
+    email
+    |> Accounts.email_exists?()
+    |> if do
+      user = Accounts.get_user_by_email(email)
+      {:ok, user}
     else
-
+      Map.new()
+      |> Map.put("email", email)
+      |> Map.put("name", username)
+      |> Accounts.create_user(true)
+    end
+    |> case do
+      {:ok, %User{} = user} -> generate_token(user)
+      x -> x
+    end
+    |> case do
+      {:ok, token, %User{} = user} ->
+        render(conn, "login.json", %{user: user, token: token})
+      {:error, error} ->
+        render(conn, "error.json", error: error)
     end
   end
 

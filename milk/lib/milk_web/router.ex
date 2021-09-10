@@ -42,6 +42,7 @@ defmodule MilkWeb.Router do
     post "/user/in_touch", UserController, :get_users_in_touch
     post "/user/signup", UserController, :create
     post "/user/signin", UserController, :login
+    post "/user/signin_with_discord", UserController, :signin_with_discord
     post "/user/login_forced", UserController, :login_forced
     post "/user/logout", UserController, :logout
     post "/user/change_password", UserController, :change_password
