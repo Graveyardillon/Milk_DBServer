@@ -3535,7 +3535,6 @@ defmodule Milk.Tournaments do
       |> Map.put(:state, map_selection.state)
     end)
     ~> maps
-    |> IO.inspect(label: :maps)
     |> length()
     |> case do
       1 -> {:ok, hd(maps)}

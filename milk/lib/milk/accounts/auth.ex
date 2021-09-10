@@ -8,6 +8,8 @@ defmodule Milk.Accounts.Auth do
   schema "auth" do
     field :email, :string
     field :password, :string
+    field :is_oauth, :boolean
+
     belongs_to :user, User
 
     timestamps()
@@ -16,7 +18,7 @@ defmodule Milk.Accounts.Auth do
   @doc false
   def changeset(auth, attrs) do
     auth
-    |> cast(attrs, [:email, :password])
+    |> cast(attrs, [:email, :password, :is_oauth])
     |> validate_required([:email, :password])
     |> validate_length(:password, min: 8)
     # パスワードは半角英数大文字小文字をそれぞれ一文字以上含む
@@ -28,7 +30,7 @@ defmodule Milk.Accounts.Auth do
   @doc false
   def changeset_update(auth, attrs) do
     auth
-    |> cast(attrs, [:email, :password])
+    |> cast(attrs, [:email, :password, :is_oauth])
     |> unique_constraint(:email)
     |> validate_length(:password, min: 8)
     # パスワードは半角英数大文字小文字をそれぞれ一文字以上含む

@@ -73,6 +73,17 @@ defmodule MilkWeb.UserController do
   end
 
   @doc """
+  Signin with discord.
+  """
+  def signin_with_discord(conn, %{"email" => email, "username" => username, "discriminator" => discriminator}) do
+    if Accounts.email_exists?(email) do
+
+    else
+
+    end
+  end
+
+  @doc """
   Login process.
   """
   def login(conn, %{"user" => user_params}) do

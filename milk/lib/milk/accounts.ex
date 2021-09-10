@@ -52,8 +52,7 @@ defmodule Milk.Accounts do
   Lists all users.
   """
   def list_user() do
-    User
-    |> Repo.all()
+    Repo.all(User)
   end
 
   @doc """
@@ -137,8 +136,10 @@ defmodule Milk.Accounts do
   @doc """
   Checks if given email address exists.
   """
-  def is_email_exists?(email) do
-    Repo.exists?(from a in Auth, where: a.email == ^email)
+  def email_exists?(email) do
+    Auth
+    |> where([a], a.email == ^email)
+    |> Repo.exists?()
   end
 
   @doc """
@@ -437,11 +438,10 @@ defmodule Milk.Accounts do
   @spec login(map) :: tuple()
   def login(user) do
     password = user["password"]
-    # usernameかemailか
-    if String.match?(
-         user["email_or_username"],
-         ~r/^[[:word:]\-._]+@[[:word:]\-_.]+\.[[:alpha:]]+$/
-       ) do
+
+    user["email_or_username"]
+    |> String.match?(~r/^[[:word:]\-._]+@[[:word:]\-_.]+\.[[:alpha:]]+$/)
+    |> if do
       get_valid_user(user, password, :email)
     else
       get_valid_user(user, password, :username)
@@ -455,14 +455,6 @@ defmodule Milk.Accounts do
       _ ->
         {:error, nil}
     end
-  end
-
-  defp where_mode(query, :email, user) do
-    where(query, [u, a], a.email == ^user["email_or_username"])
-  end
-
-  defp where_mode(query, :username, user) do
-    where(query, [u, a], u.name == ^user["email_or_username"])
   end
 
   defp get_valid_user(user, password, mode) do
@@ -481,6 +473,14 @@ defmodule Milk.Accounts do
           _ -> nil
         end
     end
+  end
+
+  defp where_mode(query, :email, user) do
+    where(query, [u, a], a.email == ^user["email_or_username"])
+  end
+
+  defp where_mode(query, :username, user) do
+    where(query, [u, a], u.name == ^user["email_or_username"])
   end
 
   # def login(user) do
@@ -544,6 +544,7 @@ defmodule Milk.Accounts do
 
   @doc """
   Gain 5 score.
+  レコメンドシステム用にスコアを取得する関数
   """
   def gain_score(%{"user_id" => user_id, "game_name" => game_name, "score" => gain}) do
     %{"user_id" => user_id, "game_name" => game_name, "gain" => gain}

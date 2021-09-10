@@ -1863,7 +1863,6 @@ defmodule MilkWeb.TournamentController do
 
       tournament_id
       |> Tournaments.get_selected_map(id)
-      |> IO.inspect(label: :map)
       |> case do
         {:ok, map} -> map
         {:error, _} -> nil
