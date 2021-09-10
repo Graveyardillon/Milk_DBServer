@@ -162,8 +162,12 @@ defmodule MilkWeb.Router do
     post "/tournament/claim_win", TournamentController, :claim_win
     post "/tournament/claim_lose", TournamentController, :claim_lose
     post "/tournament/claim_score", TournamentController, :claim_score
+    post "/tournament/flip_coin", TournamentController, :flip_coin
     post "/tournament/defeat", TournamentController, :force_to_defeat
     post "/tournament/finish", TournamentController, :finish
+    post "/tournament/ban_maps", TournamentController, :ban_maps
+    post "/tournament/choose_map", TournamentController, :choose_map
+    post "/tournament/choose_ad", TournamentController, :choose_ad
     put "/tournament/update", TournamentController, :update
 
     get "/tournament_log/index", TournamentLogController, :index
@@ -182,6 +186,7 @@ defmodule MilkWeb.Router do
     get "/team/confirmed_teams", TeamController, :get_confirmed_teams
     post "/team", TeamController, :create
     post "/team/invitation_confirm", TeamController, :confirm_invitation
+    post "/team/invitation_decline", TeamController, :decline_invitation
     delete "/team", TeamController, :delete
 
     resources "/assistant", AssistantController,
@@ -221,6 +226,6 @@ defmodule MilkWeb.Router do
     # ETSのデバッグ用
     post "/observe", DebugController, :observe
 
-    post "/push_notice", TournamentController, :test_push_notice
+    post "/push_notice", NotifController, :test_push_notice
   end
 end

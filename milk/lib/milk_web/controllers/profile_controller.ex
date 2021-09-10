@@ -27,14 +27,12 @@ defmodule MilkWeb.ProfileController do
       games = Profiles.get_game_list(user)
       records = Profiles.get_records(user)
 
-      service_reference = Accounts.get_service_reference_by_user_id(user.id)
       external_services = Accounts.get_external_services(user_id)
 
       render(conn, "profile.json",
         user: user,
         games: games,
         records: records,
-        service_reference: service_reference,
         external_services: external_services
       )
     else

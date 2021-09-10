@@ -1,4 +1,9 @@
 defmodule Milk.Tournaments.TournamentCustomDetail do
+  @moduledoc """
+  multiple_selection_type
+  - VLCBAN
+  """
+
   use Milk.Schema
 
   import Ecto.Changeset

@@ -75,8 +75,3 @@ Enum.reduce(lis, list_with_fight_result, fn x, acc ->
   |> Tournaments.put_value_on_brackets(user.id, %{"icon_path" => user.icon_path})
 end)
 |> TournamentProgress.insert_match_list_with_fight_result(tournament.id)
-
-with match_list <- TournamentProgress.get_match_list(tournament.id) do
-  Logger.info("Set time limit on all entrants")
-  TournamentProgress.set_time_limit_on_all_entrants(match_list, tournament.id)
-end

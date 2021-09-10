@@ -46,8 +46,6 @@ defmodule MilkWeb.UserController do
     end
     |> case do
       {:ok, token, %User{} = user} ->
-        Accounts.create_service_reference(%{user_id: user.id})
-
         {:ok, token, user}
 
       {:error, error} ->

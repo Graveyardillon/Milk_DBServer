@@ -6,6 +6,8 @@ defmodule Milk.Notif do
   import Ecto.Query, warn: false
   import Pigeon.APNS.Notification
 
+  alias Maps
+
   alias Milk.Accounts
   alias Milk.Accounts.User
   alias Milk.Log.NotificationLog
@@ -176,14 +178,13 @@ defmodule Milk.Notif do
   @doc """
   Send push notification to iOS device.
   """
-  def push_ios(user_id, device_token, process_id, title, message, params \\ %{}) do
-    badge_num = count_unchecked_notifications(user_id)
-
-    Pigeon.APNS.Notification.new(message, device_token, topic())
+  def push_ios(%Maps.PushIos{} = push_ios) do
+    badge_num = count_unchecked_notifications(push_ios.user_id)
+    Pigeon.APNS.Notification.new("push_notice", push_ios.device_token, topic())
     |> put_sound("default")
     |> put_badge(badge_num)
-    |> put_category(process_id)
-    |> put_alert(Map.merge(%{"body" => message, "title" => title}, params))
+    |> put_category(push_ios.process_id)
+    |> put_alert(Map.merge(%{"body" => push_ios.message, "title" => push_ios.title}, push_ios.params))
     |> put_content_available
     |> put_mutable_content
     |> Pigeon.APNS.push()

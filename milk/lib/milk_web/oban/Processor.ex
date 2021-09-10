@@ -22,20 +22,31 @@ defmodule Oban.Processer do
 
   defp reminder_to_start_tournament(id) do
     tournament = Tournaments.get_tournament(id)
-    params = %{tournament_id: id}
     devices = Accounts.get_devices_by_user_id(tournament.master_id)
 
-    for device <- devices do
-      Notif.push_ios(
-        device.user_id,
-        device.token,
-        6,
-        tournament.name,
-        "主催している大会の開始予定時刻になりました。大会を開始してください！",
-        params
-      )
+    %{
+      "user_id" => tournament.master_id,
+      "process_id" => "REMIND_TO_START_TOURNAMENT",
+      "icon_path" => tournament.icon_path,
+      "title" => tournament.name,
+      "body_text" => "主催している大会の開始予定時刻になりました。大会を開始してください！",
+      "data" =>
+        Jason.encode!(%{
+          tournament_id: tournament.id
+        })
+    }
+    |> Notif.create_notification()
 
-      # Notif.push_ios("主催している大会の開始予定時刻になりました。大会を開始してください！", "", "reminder_to_start_tournament", device.token, 6, params)
+    for device <- devices do
+      %Maps.PushIos{
+        user_id: device.user_id,
+        device_token: device.token,
+        process_id: "REMIND_TO_START_TOURNAMENT",
+        title: tournament.name,
+        message: "主催している大会の開始予定時刻になりました。大会を開始してください！",
+        params: %{"tournament_id" => id}
+      }
+      |> Milk.Notif.push_ios()
     end
   end
 
@@ -66,16 +77,15 @@ defmodule Oban.Processer do
           |> Notif.create_notification()
 
           # Push Notification
-          params = %{tournament_id: id}
-
-          Notif.push_ios(
-            device.user_id,
-            device.token,
-            "TOURNAMENT_START",
-            "大会が始まりました",
-            tournament.name,
-            params
-          )
+          %Maps.PushIos{
+            user_id: device.user_id,
+            device_token: device.token,
+            process_id: "TOURNAMENT_START",
+            title: tournament.name,
+            message: "大会が始まりました",
+            params: %{"tournament_id" => id}
+          }
+          |> Milk.Notif.push_ios()
         end
       end
     else

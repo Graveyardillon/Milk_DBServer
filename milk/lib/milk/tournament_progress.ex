@@ -6,6 +6,9 @@ defmodule Milk.TournamentProgress do
   4. fight_result
   5. duplicate_users
   6. absence_process
+  7. scores
+  8. ban order
+  9. a/d state
   """
   import Ecto.Query, warn: false
   import Common.Sperm
@@ -250,12 +253,30 @@ defmodule Milk.TournamentProgress do
   # The list contains user_id of a user who pressed start_match and
   # the fight is not finished.
 
+  @is_waiting_for_start "IsWaitingForStart"
+  @is_waiting_for_coin_flip "IsWaitingForCoinFlip"
+  @should_choose_map "ShouldChooseMap"
+
   def insert_match_pending_list_table(user_id, tournament_id) do
+    # 大会タイプで分岐入れよう
+    tournament = Tournaments.get_tournament(tournament_id)
+    pending_state = get_match_pending_list(user_id, tournament_id)
+
+    should_flip_coin? = tournament.enabled_coin_toss
+
+    cond do
+      should_flip_coin? ->
+        @is_waiting_for_coin_flip
+      true ->
+        @is_waiting_for_start
+    end
+    ~> key
+
     conn = conn()
 
     with {:ok, _} <- Redix.command(conn, ["MULTI"]),
          {:ok, _} <- Redix.command(conn, ["SELECT", 3]),
-         {:ok, _} <- Redix.command(conn, ["HSET", tournament_id, user_id, true]),
+         {:ok, _} <- Redix.command(conn, ["HSET", tournament_id, user_id, key]),
          {:ok, _} <- Redix.command(conn, ["EXEC"]) do
       true
     else
@@ -273,8 +294,11 @@ defmodule Milk.TournamentProgress do
 
     with {:ok, _} <- Redix.command(conn, ["SELECT", 3]),
          {:ok, value} <- Redix.command(conn, ["HGET", tournament_id, user_id]) do
-      {b, _} = Code.eval_string(value)
-      if b, do: [{{user_id, tournament_id}}], else: []
+      unless is_nil(value) do
+        [{{user_id, tournament_id}, value}]
+      else
+        []
+      end
     else
       {:error, %Redix.Error{message: message}} ->
         Logger.error(message)
@@ -501,59 +525,6 @@ defmodule Milk.TournamentProgress do
     end
   end
 
-  # 6. absence_process
-  # The process manages users who did not press 'start' button for 5 mins.
-
-  @doc """
-  Set a time limit on entrant.
-  When the time limit becomes due, the user gets lost.
-  """
-  def set_time_limit_on_entrant(user_id, tournament_id) do
-    get_lost(user_id, tournament_id)
-  end
-
-  @doc """
-  Set a time limit on entrants of a tournament.
-  """
-  def set_time_limit_on_all_entrants(match_list, tournament_id) do
-    Logger.info("Set time limit on all entrants")
-
-    match_list
-    |> List.flatten()
-    |> Enum.each(fn user_id ->
-      get_lost(user_id, tournament_id)
-    end)
-  end
-
-  # TODO: 検証が不十分なためコメントアウトしておいた
-  defp get_lost(user_id, tournament_id) do
-    # Generate a process which makes a user lost
-    # pid_str =
-    #   Task.start(fn ->
-    #     5
-    #     |> Kernel.*(60)
-    #     |> Kernel.*(1000)
-    #     |> Process.sleep()
-
-    #     Tournaments.delete_loser_process(tournament_id, [user_id])
-    #   end)
-    #   |> case do
-    #     {:ok, pid} ->
-    #       pid
-    #       |> :erlang.pid_to_list()
-    #       |> inspect()
-    #   end
-
-    # conn = conn()
-
-    # with {:ok, _} <- Redix.command(conn, ["SELECT", 6]),
-    # {:ok, _} <- Redix.command(conn, ["HSET", tournament_id, user_id, pid_str]) do
-    #   true
-    # else
-    #   _ -> false
-    # end
-  end
-
   @doc """
 
   """
@@ -684,6 +655,141 @@ defmodule Milk.TournamentProgress do
          {:ok, _} <- Redix.command(conn, ["HDEL", tournament_id, user_id]),
          {:ok, _} <- Redix.command(conn, ["EXEC"]) do
       true
+    else
+      {:error, %Redix.Error{message: message}} ->
+        Logger.error(message)
+        false
+
+      _ ->
+        false
+    end
+  end
+
+  # 8. ban order
+  # 0 -> 1 -> 2 -> 3 -> 4
+  def init_ban_order(tournament_id, id) do
+    conn = conn()
+
+    with {:ok, _} <- Redix.command(conn, ["MULTI"]),
+        {:ok, _} <- Redix.command(conn, ["SELECT", 8]),
+        {:ok, _} <- Redix.command(conn, ["HSET", tournament_id, id, 0]),
+        {:ok, _} <- Redix.command(conn, ["EXEC"]) do
+      true
+    else
+      {:error, %Redix.Error{message: message}} ->
+        Logger.error(message)
+        false
+
+      _ ->
+        false
+    end
+  end
+
+  def insert_ban_order(tournament_id, id, order) when is_integer(order) do
+    conn = conn()
+
+    with {:ok, _} <- Redix.command(conn, ["MULTI"]),
+      {:ok, _} <- Redix.command(conn, ["SELECT", 8]),
+      {:ok, _} <- Redix.command(conn, ["HSET", tournament_id, id, order]),
+      {:ok, _} <- Redix.command(conn, ["EXEC"]) do
+    else
+      {:error, %Redix.Error{message: message}} ->
+        Logger.error(message)
+        false
+
+      _ ->
+        false
+    end
+  end
+
+  def get_ban_order(tournament_id, id) do
+    conn = conn()
+
+    with {:ok, _} <- Redix.command(conn, ["SELECT", 8]),
+         {:ok, value} <- Redix.command(conn, ["HGET", tournament_id, id]) do
+      unless is_nil(value) do
+        value
+        |> Integer.parse()
+        |> elem(0)
+      end
+    else
+      {:error, %Redix.Error{message: message}} ->
+        Logger.error(message)
+        []
+
+      _ ->
+        []
+    end
+  end
+
+  def delete_ban_order(tournament_id, id) do
+    conn = conn()
+
+    with {:ok, _} <- Redix.command(conn, ["MULTI"]),
+      {:ok, _} <- Redix.command(conn, ["SELECT", 8]),
+      {:ok, _} <- Redix.command(conn, ["HDEL", tournament_id, id]),
+      {:ok, _} <- Redix.command(conn, ["EXEC"]) do
+        true
+    else
+      {:error, %Redix.Error{message: message}} ->
+        Logger.error(message)
+        false
+
+      _ ->
+        false
+    end
+  end
+
+  # 9. a/d state
+  # attacker side or defender side.
+  def insert_is_attacker_side(id, tournament_id, is_attacker_side) when is_boolean(is_attacker_side) do
+    conn = conn()
+
+    with {:ok, _} <- Redix.command(conn, ["MULTI"]),
+      {:ok, _} <- Redix.command(conn, ["SELECT", 9]),
+      {:ok, _} <- Redix.command(conn, ["HSET", tournament_id, id, is_attacker_side]),
+      {:ok, _} <- Redix.command(conn, ["EXEC"]) do
+      true
+    else
+      {:error, %Redix.Error{message: message}} ->
+        Logger.error(message)
+        false
+
+      _ ->
+        false
+    end
+  end
+
+  def is_attacker_side?(id, tournament_id) do
+    conn = conn()
+
+    with {:ok, _} <- Redix.command(conn, ["SELECT", 9]),
+      {:ok, value} <- Redix.command(conn, ["HGET", tournament_id, id]) do
+      unless is_nil(value) do
+        value
+        |> Code.eval_string()
+        |> elem(0)
+      else
+        nil
+      end
+    else
+      {:error, %Redix.Error{message: message}} ->
+        Logger.error(message)
+        nil
+
+      _ ->
+        nil
+    end
+  end
+
+  def delete_is_attacker_side(id, tournament_id) do
+    conn = conn()
+
+    with {:ok, _} <- Redix.command(conn, ["MULTI"]),
+      {:ok, _} <- Redix.command(conn, ["SELECT", 9]),
+      {:ok, _} <- Redix.command(conn, ["HDEL", tournament_id, id]),
+      {:ok, _} <- Redix.command(conn, ["EXEC"]) do
+        true
     else
       {:error, %Redix.Error{message: message}} ->
         Logger.error(message)
