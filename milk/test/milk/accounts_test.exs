@@ -133,6 +133,26 @@ defmodule Milk.AccountsTest do
     test "create_user/1 with invalid data returns error changeset" do
       assert {:error, error} = Accounts.create_user(@invalid_attrs)
     end
+
+    test "create_user/1 with duplicated email" do
+      attrs = %{
+        "icon_path" => "some icon_path",
+        "language" => "some language",
+        "name" => "some name",
+        "notification_number" => 42,
+        "point" => 42,
+        "email" => "some@email.com",
+        "logout_fl" => true,
+        "password" => "S1ome password"
+      }
+
+      Accounts.create_user(attrs)
+
+      attrs
+      |> Map.put("name", "anotherOne")
+      |> Accounts.create_user()
+      |> IO.inspect(label: :two)
+    end
   end
 
   describe "users update" do

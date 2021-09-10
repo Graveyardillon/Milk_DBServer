@@ -18,7 +18,7 @@ defmodule Milk.Accounts.Auth do
   @doc false
   def changeset(auth, attrs) do
     auth
-    |> cast(attrs, [:email, :password, :is_oauth])
+    |> cast(attrs, [:email, :password])
     |> validate_required([:email, :password])
     |> validate_length(:password, min: 8)
     # パスワードは半角英数大文字小文字をそれぞれ一文字以上含む
@@ -30,12 +30,20 @@ defmodule Milk.Accounts.Auth do
   @doc false
   def changeset_update(auth, attrs) do
     auth
-    |> cast(attrs, [:email, :password, :is_oauth])
+    |> cast(attrs, [:email, :password])
     |> unique_constraint(:email)
     |> validate_length(:password, min: 8)
     # パスワードは半角英数大文字小文字をそれぞれ一文字以上含む
     |> validate_format(:password, ~r/\A(?=.*?[a-z])(?=.*?[A-Z])(?=.*?\d)[a-zA-Z\d]/)
     |> put_password_hash()
+  end
+
+  @doc false
+  def changeset_discord(auth, attrs) do
+    auth
+    |> cast(attrs, [:email, :is_oauth])
+    |> put_change(:is_oauth, true)
+    |> validate_required(:email)
   end
 
   defp put_password_hash(

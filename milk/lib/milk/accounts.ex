@@ -150,18 +150,17 @@ defmodule Milk.Accounts do
     attrs_without_id_for_show
     |> case do
       %{"id_for_show" => id} ->
-        %{attrs_without_id_for_show | "id_for_show" => generate_id_for_show(id)}
-
+        Map.put(attrs_without_id_for_show, "id_for_show", generate_id_for_show(id))
       _ ->
-        attrs_without_id_for_show
-        |> Map.put("id_for_show", generate_id_for_show())
+        Map.put(attrs_without_id_for_show, "id_for_show", generate_id_for_show())
     end
     ~> attrs
 
     Multi.new()
     |> Multi.insert(:user, User.changeset(%User{}, attrs))
     |> Multi.insert(:auth, fn %{user: user} ->
-      Ecto.build_assoc(user, :auth)
+      user
+      |> Ecto.build_assoc(:auth)
       |> Auth.changeset(attrs)
     end)
     |> Repo.transaction()
@@ -173,7 +172,8 @@ defmodule Milk.Accounts do
   end
 
   defp generate_id_for_show() do
-    Enum.random(0..999_999)
+    0..999_999
+    |> Enum.random()
     |> generate_id_for_show()
   end
 
@@ -182,7 +182,10 @@ defmodule Milk.Accounts do
   end
 
   defp generate_id_for_show(tmp_id) do
-    unless Repo.exists?(from u in User, where: u.id_for_show == ^tmp_id) do
+    User
+    |> where([u], u.id_for_show == ^tmp_id)
+    |> Repo.exists?()
+    |> unless do
       tmp_id
     else
       generate_id_for_show(tmp_id + 1)
@@ -221,9 +224,9 @@ defmodule Milk.Accounts do
   Change a password.
   """
   def change_password_by_email(email, new_password) do
-    user = get_user_by_email(email)
-
-    user.auth
+    user
+    |> get_user_by_email()
+    |> Map.get(:auth)
     |> Auth.changeset(%{password: new_password})
     |> Repo.update()
   end
@@ -305,16 +308,16 @@ defmodule Milk.Accounts do
 
     if user && !is_binary(user) do
       if is_list(user.chat_member) do
-        member =
-          Enum.map(user.chat_member, fn x ->
-            %{
-              chat_room_id: x.chat_room_id,
-              user_id: x.user_id,
-              authority: x.authority,
-              create_time: x.create_time,
-              update_time: x.update_time
-            }
-          end)
+        Enum.map(user.chat_member, fn x ->
+          %{
+            chat_room_id: x.chat_room_id,
+            user_id: x.user_id,
+            authority: x.authority,
+            create_time: x.create_time,
+            update_time: x.update_time
+          }
+        end)
+        ~> member
 
         Repo.insert_all(ChatMemberLog, member)
 
@@ -329,16 +332,16 @@ defmodule Milk.Accounts do
       end
 
       if is_list(user.entrant) do
-        entrant =
-          Enum.map(user.entrant, fn x ->
-            %{
-              user_id: x.user_id,
-              tournament_id: x.tournament_id,
-              rank: x.rank,
-              create_time: x.create_time,
-              update_time: x.update_time
-            }
-          end)
+        Enum.map(user.entrant, fn x ->
+          %{
+            user_id: x.user_id,
+            tournament_id: x.tournament_id,
+            rank: x.rank,
+            create_time: x.create_time,
+            update_time: x.update_time
+          }
+        end)
+        ~> entrant
 
         Repo.insert_all(EntrantLog, entrant)
 

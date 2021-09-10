@@ -230,7 +230,8 @@ defmodule MilkWeb.UserController do
   def delete(conn, %{"id" => id, "password" => password, "email" => email, "token" => token}) do
     id = Tools.to_integer_as_needed(id)
 
-    Accounts.delete_user(id, password, email, token)
+    id
+    |> Accounts.delete_user(password, email, token)
     |> case do
       {:ok, _} ->
         Guardian.revoke(token)
@@ -246,9 +247,9 @@ defmodule MilkWeb.UserController do
   Change password with email and given token.
   """
   def change_password(conn, %{"email" => email, "token" => token, "new_password" => new_password}) do
-    gotten_token =
-      Milk.Email.Auth.get_token()
-      |> Map.get(email)
+    Milk.Email.Auth.get_token()
+    |> Map.get(email)
+    ~> gotten_token
 
     if gotten_token == token do
       Accounts.change_password_by_email(email, new_password)
