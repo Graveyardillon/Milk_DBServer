@@ -23,7 +23,6 @@ defmodule Milk.Accounts do
     Auth,
     Device,
     ExternalService,
-    ServiceReference,
     User
   }
 
@@ -146,28 +145,36 @@ defmodule Milk.Accounts do
   Creates a user.
   """
   @spec create_user(map) :: tuple()
-  def create_user(attrs_without_id_for_show) do
-    attrs_without_id_for_show
-    |> case do
-      %{"id_for_show" => id} ->
-        Map.put(attrs_without_id_for_show, "id_for_show", generate_id_for_show(id))
-      _ ->
-        Map.put(attrs_without_id_for_show, "id_for_show", generate_id_for_show())
-    end
-    ~> attrs
+  def create_user(attrs, is_oauth \\ false) do
+    attrs = put_id_for_show(attrs)
 
     Multi.new()
     |> Multi.insert(:user, User.changeset(%User{}, attrs))
     |> Multi.insert(:auth, fn %{user: user} ->
-      user
-      |> Ecto.build_assoc(:auth)
-      |> Auth.changeset(attrs)
+      if is_oauth do
+        user
+        |> Ecto.build_assoc(:auth)
+        |> Auth.changeset_discord(attrs)
+      else
+        user
+        |> Ecto.build_assoc(:auth)
+        |> Auth.changeset(attrs)
+      end
     end)
     |> Repo.transaction()
     |> case do
       {:ok, user} -> {:ok, Map.put(user.user, :auth, %Auth{email: user.auth.email})}
       {:error, _, error, _data} -> {:error, error.errors}
       _ -> {:error, nil}
+    end
+  end
+
+  defp put_id_for_show(attrs) do
+    case attrs do
+      %{"id_for_show" => id} ->
+        Map.put(attrs, "id_for_show", generate_id_for_show(id))
+      _ ->
+        Map.put(attrs, "id_for_show", generate_id_for_show())
     end
   end
 
@@ -224,7 +231,7 @@ defmodule Milk.Accounts do
   Change a password.
   """
   def change_password_by_email(email, new_password) do
-    user
+    email
     |> get_user_by_email()
     |> Map.get(:auth)
     |> Auth.changeset(%{password: new_password})
@@ -596,8 +603,8 @@ defmodule Milk.Accounts do
     device
     |> Repo.delete()
     |> case do
-      {:ok, device} -> true
-      {:error, error} -> false
+      {:ok, _device} -> true
+      {:error, _error} -> false
     end
   end
 

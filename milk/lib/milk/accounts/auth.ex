@@ -6,8 +6,8 @@ defmodule Milk.Accounts.Auth do
   alias Milk.Accounts.User
 
   schema "auth" do
-    field :email, :string
-    field :password, :string
+    field :email, :string, null: false
+    field :password, :string, null: false
     field :is_oauth, :boolean
 
     belongs_to :user, User

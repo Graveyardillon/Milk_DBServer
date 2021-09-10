@@ -9,6 +9,7 @@ defmodule MilkWeb.TournamentController do
     Accounts,
     Chat,
     Log,
+    Notif,
     Relations,
     TournamentProgress,
     Tournaments
@@ -16,10 +17,7 @@ defmodule MilkWeb.TournamentController do
 
   alias Milk.CloudStorage.Objects
 
-  alias Milk.Tournaments.{
-    Team,
-    Tournament
-  }
+  alias Milk.Tournaments.Tournament
 
   alias Milk.Media.Image
 
@@ -1118,7 +1116,6 @@ defmodule MilkWeb.TournamentController do
     tournament_id
     |> Tools.to_integer_as_needed()
     |> Tournaments.get_tournament()
-    ~> tournament
     |> Map.get(:is_team)
     |> if do
       tournament_id
@@ -1364,9 +1361,9 @@ defmodule MilkWeb.TournamentController do
   end
 
   # チーム対応
-  defp notify_on_duplicate_match(tournament_id, user_id, opponent_id) do
+  defp notify_on_duplicate_match(_tournament_id, user_id, opponent_id) do
     user = Accounts.get_user(user_id)
-    opponent = Tournaments.get_opponent(opponent_id)
+    opponent = Accounts.get_user(opponent_id)
 
     [user_id, opponent_id]
     |> Enum.map(fn user_id ->
@@ -1731,7 +1728,6 @@ defmodule MilkWeb.TournamentController do
         team.id
         |> Tournaments.get_leader()
         |> Map.get(:user)
-        ~> leader
         |> Map.get(:id)
         |> Kernel.==(user_id)
         ~> is_leader

@@ -93,7 +93,6 @@ defmodule MilkWeb.ChatsController do
       uuid = SecureRandom.uuid()
 
       FileUtils.copy(image.path, "./static/image/chat/#{uuid}.jpg")
-      |> IO.inspect(label: :file_utils)
 
       case Application.get_env(:milk, :environment) do
         :dev ->
@@ -105,7 +104,6 @@ defmodule MilkWeb.ChatsController do
         _ ->
           object =
             Milk.CloudStorage.Objects.upload("./static/image/chat/#{uuid}.jpg")
-            |> IO.inspect(label: :object)
 
           File.rm("./static/image/chat/#{uuid}.jpg")
           object.name
@@ -114,7 +112,6 @@ defmodule MilkWeb.ChatsController do
       nil
     end
     ~> image_path
-    |> IO.inspect(label: :image_path)
 
     json(conn, %{local_path: image_path})
   end
