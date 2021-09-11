@@ -152,4 +152,28 @@ defmodule MilkWeb.TeamController do
         json(conn, %{result: false})
     end
   end
+
+  def add_members(conn, %{"team_id" => team_id, "user_id_list" => user_id_list}) do
+    team_id
+    |> Tournaments.get_team()
+    ~> team
+    |> is_nil()
+    |> unless do
+      leader = Enum.find(team.team_member, fn x -> x.is_leader == true end)
+      total = length(team.team_member) + length(user_id_list)
+      
+      cond do
+        total <= team.size ->
+          Tournaments.create_team_members(team_id, user_id_list) 
+          |> Enum.each(fn member ->
+              Tournaments.create_team_invitation(member.id, leader.user_id) 
+          end) 
+          json(conn, %{result: true})
+        total > team.size ->
+          render(conn, "error.json", error: "invalid size")
+      end
+    else
+      render(conn, "error.json", error: nil)
+    end
+  end
 end

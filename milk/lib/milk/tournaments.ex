@@ -2515,7 +2515,7 @@ defmodule Milk.Tournaments do
     |> Repo.insert()
   end
 
-  defp create_team_members(team_id, user_id_list) do
+  def create_team_members(team_id, user_id_list) do
     Enum.map(user_id_list, fn id ->
       %TeamMember{}
       |> TeamMember.changeset(%{"team_id" => team_id, "user_id" => id})
