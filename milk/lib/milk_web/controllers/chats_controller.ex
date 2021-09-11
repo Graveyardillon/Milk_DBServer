@@ -89,8 +89,6 @@ defmodule MilkWeb.ChatsController do
   FIXME: chatディレクトリがない場合は作成の処理入れたいな
   """
   def upload_image(conn, %{"file" => image}) do
-    IO.inspect(conn, label: :conn)
-
     if image != "" do
       uuid = SecureRandom.uuid()
 

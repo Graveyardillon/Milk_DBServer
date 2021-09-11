@@ -1587,6 +1587,7 @@ defmodule MilkWeb.TournamentControllerTest do
     setup [:create_tournament]
 
     test "start a tournament with valid data (type: 1)", %{conn: conn, tournament: tournament} do
+      tournament = fixture_tournament(capacity: 12, num: 1000)
       _entrants = create_entrants(12, tournament.id)
 
       conn =
@@ -3648,7 +3649,7 @@ defmodule MilkWeb.TournamentControllerTest do
       assert match_info["is_team"]
       assert match_info["opponent"]["id"] == opponent_team_id
       refute is_nil(match_info["opponent"]["name"])
-      assert match_info["state"] == "IsInMatch"
+      assert match_info["state"] == "ShouldFlipCoin"
 
       assert match_info["custom_detail"]["coin_head_field"] == attrs[:coin_head_field]
       assert match_info["custom_detail"]["coin_tail_field"] == attrs[:coin_tail_field]
@@ -3671,7 +3672,7 @@ defmodule MilkWeb.TournamentControllerTest do
       assert match_info["is_team"]
       assert match_info["opponent"]["id"] == my_team.id
       refute is_nil(match_info["opponent"]["name"])
-      assert match_info["state"] == "IsInMatch"
+      assert match_info["state"] == "ShouldFlipCoin"
 
       assert match_info["custom_detail"]["coin_head_field"] == attrs[:coin_head_field]
       assert match_info["custom_detail"]["coin_tail_field"] == attrs[:coin_tail_field]
@@ -4200,7 +4201,7 @@ defmodule MilkWeb.TournamentControllerTest do
       entrant1.user_id
       |> TournamentProgress.get_match_pending_list(tournament.id)
       |> (fn list ->
-            assert list == [{{entrant1.user_id, tournament.id}}]
+            assert list == [{{entrant1.user_id, tournament.id}, "IsWaitingForStart"}]
           end).()
 
       my_score = 13
@@ -4369,7 +4370,7 @@ defmodule MilkWeb.TournamentControllerTest do
       entrant1.user_id
       |> TournamentProgress.get_match_pending_list(tournament.id)
       |> (fn list ->
-            assert list == [{{entrant1.user_id, tournament.id}}]
+            assert list == [{{entrant1.user_id, tournament.id}, "IsWaitingForStart"}]
           end).()
 
       my_score = 13
@@ -4470,7 +4471,7 @@ defmodule MilkWeb.TournamentControllerTest do
   end
 
   defp create_tournament(_) do
-    tournament = fixture_tournament()
+    tournament = fixture_tournament(capacity: 20)
     %{tournament: tournament}
   end
 

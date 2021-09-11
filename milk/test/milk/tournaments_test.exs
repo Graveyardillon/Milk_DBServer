@@ -355,7 +355,7 @@ defmodule Milk.TournamentsTest do
   describe "create tournament" do
     test "create_tournament/1 with valid data creates a tournament" do
       tournament = fixture_tournament()
-      assert tournament.capacity == 42
+      assert tournament.capacity == 8
       assert tournament.deadline == "2010-04-17T14:00:00Z"
       assert tournament.description == "some description"
       assert tournament.event_date == "2010-04-17T14:00:00Z"
@@ -1293,6 +1293,148 @@ defmodule Milk.TournamentsTest do
       delete_loser(tournament.id, [hd(opponent_team).id])
       finish_as_needed(tournament.id, team.id)
       assert "IsFinished" == Tournaments.state!(tournament.id, leader.user_id)
+    end
+  end
+
+  describe "state! with map select" do
+    test "returns IsInMatch -> ShouldFlipCoin -> ShouldChooseMap" do
+      maps = [%{"name" => "map1"}, %{"name" => "map2"}, %{"name" => "map3"}, %{"name" => "map4"}, %{"name" => "map5"}, %{"name" => "map6"}]
+      tournament = fixture_tournament(is_team: true, enabled_coin_toss: true, enabled_multiple_selection: true, type: 2, capacity: 4, maps: maps)
+
+      tournament.id
+      |> fill_with_team()
+      |> hd()
+      ~> team
+      |> Map.get(:id)
+      |> Tournaments.get_leader()
+      |> Map.get(:user)
+      ~> leader
+
+      TournamentProgress.start_team_best_of_format(tournament.master_id, tournament)
+
+      assert "ShouldFlipCoin" == Tournaments.state!(tournament.id, leader.id)
+
+      Tournaments.flip_coin(leader.id, tournament.id)
+      assert "IsWaitingForCoinFlip" == Tournaments.state!(tournament.id, leader.id)
+
+      assert TournamentProgress.get_ban_order(tournament.id, team.id) == 0
+
+      tournament
+      |> Map.get(:id)
+      |> TournamentProgress.get_match_list()
+      |> Tournaments.find_match(team.id)
+      |> Tournaments.get_opponent_team(team.id)
+      ~> {:ok, opponent_team}
+      |> elem(1)
+      |> Map.get("id")
+      |> Tournaments.get_leader()
+      |> Map.get(:user)
+      ~> opponent_leader
+
+      tournament
+      |> Map.get(:id)
+      |> TournamentProgress.get_ban_order(opponent_team["id"])
+      |> is_nil()
+      |> assert()
+
+      assert "ShouldFlipCoin" == Tournaments.state!(tournament.id, opponent_leader.id)
+
+      Tournaments.flip_coin(opponent_leader.id, tournament.id)
+
+      tournament
+      |> Map.get(:id)
+      #|> Tournaments.get_maps_by_tournament_id()
+      |> Tournaments.get_selectable_maps_by_tournament_id_and_user_id(leader.id)
+      |> Enum.map(fn map ->
+        map.id
+      end)
+      |> Enum.chunk_every(2)
+      ~> [ban_map_id_list1, ban_map_id_list2, [choose_map1, _]]
+
+      tournament
+      |> Map.get(:id)
+      |> Tournaments.is_head_of_coin?(team.id, opponent_team["id"])
+      |> if do
+        assert "ShouldBan" == Tournaments.state!(tournament.id, leader.id)
+        assert "ShouldObserveBan" == Tournaments.state!(tournament.id, opponent_leader.id)
+
+        Tournaments.ban_maps(leader.id, tournament.id, ban_map_id_list1)
+
+        assert "ShouldObserveBan" == Tournaments.state!(tournament.id, leader.id)
+        assert "ShouldBan" == Tournaments.state!(tournament.id, opponent_leader.id)
+
+        Tournaments.ban_maps(opponent_leader.id, tournament.id, ban_map_id_list2)
+
+        assert "ShouldChooseMap" == Tournaments.state!(tournament.id, leader.id)
+        assert "ShouldObserveBan" == Tournaments.state!(tournament.id, opponent_leader.id)
+
+        Tournaments.choose_maps(leader.id, tournament.id, [choose_map1])
+      else
+        assert "ShouldObserveBan" == Tournaments.state!(tournament.id, leader.id)
+        assert "ShouldBan" == Tournaments.state!(tournament.id, opponent_leader.id)
+
+        Tournaments.ban_maps(opponent_leader.id, tournament.id, ban_map_id_list1)
+
+        assert "ShouldBan" == Tournaments.state!(tournament.id, leader.id)
+        assert "ShouldObserveBan" == Tournaments.state!(tournament.id, opponent_leader.id)
+
+        Tournaments.ban_maps(leader.id, tournament.id, ban_map_id_list2)
+
+        assert "ShouldObserveBan" == Tournaments.state!(tournament.id, leader.id)
+        assert "ShouldChooseMap" == Tournaments.state!(tournament.id, opponent_leader.id)
+
+        Tournaments.choose_maps(opponent_leader.id, tournament.id, [choose_map1])
+      end
+
+      if team.id > opponent_team["id"] do
+        {team.id, opponent_team["id"]}
+      else
+        {opponent_team["id"], team.id}
+      end
+      ~> {large_id, small_id}
+
+      ban_map_id_list1
+      |> Enum.map(fn map_id ->
+        map = Tournaments.get_map(map_id)
+        assert map.state == "banned"
+      end)
+      |> length()
+      |> Kernel.==(2)
+      |> assert()
+
+      ban_map_id_list2
+      |> Enum.map(fn map_id ->
+        map = Tournaments.get_map(map_id)
+        assert map.state == "banned"
+      end)
+      |> length()
+      |> Kernel.==(2)
+      |> assert()
+
+      map = Tournaments.get_map(choose_map1)
+      assert map.state == "selected"
+
+      tournament
+      |> Map.get(:id)
+      |> Tournaments.is_head_of_coin?(team.id, opponent_team["id"])
+      |> if do
+        assert "ShouldObserveA/D" == Tournaments.state!(tournament.id, leader.id)
+        assert "ShouldChooseA/D" == Tournaments.state!(tournament.id, opponent_leader.id)
+
+        Tournaments.choose_ad(opponent_leader.id, tournament.id, true)
+      else
+        assert "ShouldChooseA/D" == Tournaments.state!(tournament.id, leader.id)
+        assert "ShouldObserveA/D" == Tournaments.state!(tournament.id, opponent_leader.id)
+
+        Tournaments.choose_ad(leader.id, tournament.id, true)
+      end
+
+      assert "IsPending" == Tournaments.state!(tournament.id, leader.id)
+      assert "IsPending" == Tournaments.state!(tournament.id, opponent_leader.id)
+
+      delete_loser(tournament.id, [opponent_team["id"]])
+      assert "IsAlone" == Tournaments.state!(tournament.id, leader.id)
+      assert "IsLoser" == Tournaments.state!(tournament.id, opponent_leader.id)
     end
   end
 
@@ -2614,7 +2756,7 @@ defmodule Milk.TournamentsTest do
 
   describe "data_with_scores_for_flexible_brackets" do
     test "works" do
-      tournament = fixture_tournament(is_started: false)
+      tournament = fixture_tournament(is_started: false, capacity: 10)
       create_entrants(9, tournament.id)
       Tournaments.start(tournament.master_id, tournament.id)
 
