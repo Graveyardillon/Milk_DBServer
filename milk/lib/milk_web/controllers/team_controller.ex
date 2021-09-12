@@ -94,16 +94,17 @@ defmodule MilkWeb.TeamController do
     invitation_id = Tools.to_integer_as_needed(invitation_id)
 
     with %Tournaments.Team{} = team <- Tournaments.get_team_by_invitation_id(invitation_id) do
-      with %Tournaments.Tournament{} = tournament <- Tournaments.get_tournament(team.tournament_id) do
-        confirmed_team_count = 
-          tournament.id 
+      with %Tournaments.Tournament{} = tournament <-
+             Tournaments.get_tournament(team.tournament_id) do
+        confirmed_team_count =
+          tournament.id
           |> Tournaments.get_confirmed_teams()
           |> length()
 
-        if tournament.capacity > confirmed_team_count do 
+        if tournament.capacity > confirmed_team_count do
           invitation_id
           |> Tournaments.confirm_team_invitation()
-          |> case do 
+          |> case do
             {:ok, invitation} ->
               invitation
               |> Map.get(:team_id)
@@ -115,7 +116,8 @@ defmodule MilkWeb.TeamController do
                 is_confirmed: team.is_confirmed,
                 tournament_id: team.tournament_id
               })
-            {:error, error} -> 
+
+            {:error, error} ->
               render(conn, "error.json", error: error)
           end
         end
@@ -148,6 +150,7 @@ defmodule MilkWeb.TeamController do
     case Tournaments.team_invitation_decline(id) do
       {:ok, %Tournaments.TeamInvitation{} = invitation} ->
         json(conn, %{result: true})
+
       {:error, error} ->
         json(conn, %{result: false})
     end

@@ -22,6 +22,7 @@ defmodule MilkWeb.ExternalServiceController do
     |> case do
       {:ok, service} ->
         render(conn, "show.json", external_service: service)
+
       {:error, error} ->
         render(conn, "error.json", error: error)
     end

@@ -1298,8 +1298,24 @@ defmodule Milk.TournamentsTest do
 
   describe "state! with map select" do
     test "returns IsInMatch -> ShouldFlipCoin -> ShouldChooseMap" do
-      maps = [%{"name" => "map1"}, %{"name" => "map2"}, %{"name" => "map3"}, %{"name" => "map4"}, %{"name" => "map5"}, %{"name" => "map6"}]
-      tournament = fixture_tournament(is_team: true, enabled_coin_toss: true, enabled_multiple_selection: true, type: 2, capacity: 4, maps: maps)
+      maps = [
+        %{"name" => "map1"},
+        %{"name" => "map2"},
+        %{"name" => "map3"},
+        %{"name" => "map4"},
+        %{"name" => "map5"},
+        %{"name" => "map6"}
+      ]
+
+      tournament =
+        fixture_tournament(
+          is_team: true,
+          enabled_coin_toss: true,
+          enabled_multiple_selection: true,
+          type: 2,
+          capacity: 4,
+          maps: maps
+        )
 
       tournament.id
       |> fill_with_team()
@@ -1343,7 +1359,7 @@ defmodule Milk.TournamentsTest do
 
       tournament
       |> Map.get(:id)
-      #|> Tournaments.get_maps_by_tournament_id()
+      # |> Tournaments.get_maps_by_tournament_id()
       |> Tournaments.get_selectable_maps_by_tournament_id_and_user_id(leader.id)
       |> Enum.map(fn map ->
         map.id

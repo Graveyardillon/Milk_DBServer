@@ -24,7 +24,13 @@ defmodule Milk.Tournaments.TournamentCustomDetail do
   @doc false
   def changeset(tournament_custom_detail, attrs) do
     tournament_custom_detail
-    |> cast(attrs, [:coin_head_field, :coin_tail_field, :multiple_selection_label, :multiple_selection_type, :tournament_id])
+    |> cast(attrs, [
+      :coin_head_field,
+      :coin_tail_field,
+      :multiple_selection_label,
+      :multiple_selection_type,
+      :tournament_id
+    ])
     |> foreign_key_constraint(:tournament_id)
   end
 end

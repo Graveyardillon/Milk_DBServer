@@ -173,6 +173,7 @@ defmodule Milk.Accounts do
     case attrs do
       %{"id_for_show" => id} ->
         Map.put(attrs, "id_for_show", generate_id_for_show(id))
+
       _ ->
         Map.put(attrs, "id_for_show", generate_id_for_show())
     end
@@ -434,7 +435,9 @@ defmodule Milk.Accounts do
         else
           nil
         end
-      x -> x
+
+      x ->
+        x
     end
   end
 

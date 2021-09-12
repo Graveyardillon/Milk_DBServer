@@ -102,8 +102,7 @@ defmodule MilkWeb.ChatsController do
           uuid
 
         _ ->
-          object =
-            Milk.CloudStorage.Objects.upload("./static/image/chat/#{uuid}.jpg")
+          object = Milk.CloudStorage.Objects.upload("./static/image/chat/#{uuid}.jpg")
 
           File.rm("./static/image/chat/#{uuid}.jpg")
           object.name

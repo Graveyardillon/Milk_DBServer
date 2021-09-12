@@ -354,8 +354,6 @@ defmodule Milk.Tournaments do
   # def get_participating_tournaments(user_id, offset) do
   #   offset = Tools.to_integer_as_needed(offset)
 
-
-
   #   Entrant
   #   |> where([e], e.user_id == ^user_id)
   #   |> order_by([e], asc: :tournament_id)
@@ -444,6 +442,7 @@ defmodule Milk.Tournaments do
     |> case do
       {:ok, _} ->
         create(params, thumbnail_path)
+
       {:error, error} ->
         {:error, error}
     end
@@ -731,6 +730,7 @@ defmodule Milk.Tournaments do
           TournamentProgress.delete_is_attacker_side(id, tournament_id)
           TournamentProgress.delete_ban_order(tournament_id, id)
           TournamentProgress.init_ban_order(tournament_id, id)
+
         _ ->
           delete_map_selections(tournament_id, id)
           TournamentProgress.delete_is_attacker_side(id, tournament_id)
@@ -789,7 +789,12 @@ defmodule Milk.Tournaments do
       map_id_list
       |> Enum.each(fn map_id ->
         %MapSelection{}
-        |> MapSelection.changeset(%{"map_id" => map_id, "state" => "banned", "large_id" => large_id, "small_id" => small_id})
+        |> MapSelection.changeset(%{
+          "map_id" => map_id,
+          "state" => "banned",
+          "large_id" => large_id,
+          "small_id" => small_id
+        })
         |> Repo.insert()
       end)
       |> Kernel.==(:ok)
@@ -804,6 +809,7 @@ defmodule Milk.Tournaments do
     |> case do
       {:ok, nil} ->
         renew_state_after_choosing_maps(user_id, tournament_id)
+
       {:error, error} ->
         {:error, error}
     end
@@ -855,7 +861,12 @@ defmodule Milk.Tournaments do
       map_id_list
       |> Enum.each(fn map_id ->
         %MapSelection{}
-        |> MapSelection.changeset(%{"map_id" => map_id, "state" => "selected", "large_id" => large_id, "small_id" => small_id})
+        |> MapSelection.changeset(%{
+          "map_id" => map_id,
+          "state" => "selected",
+          "large_id" => large_id,
+          "small_id" => small_id
+        })
         |> Repo.insert()
       end)
       |> Kernel.==(:ok)
@@ -870,6 +881,7 @@ defmodule Milk.Tournaments do
     |> case do
       {:ok, nil} ->
         renew_state_after_choosing_maps(user_id, tournament_id)
+
       {:error, error} ->
         {:error, error}
     end
@@ -910,8 +922,11 @@ defmodule Milk.Tournaments do
     ~> opponent_id
 
     if state!(tournament_id, user_id) == "ShouldChooseA/D" do
-      has_me_inserted = TournamentProgress.insert_is_attacker_side(my_id, tournament_id, is_attack_side)
-      has_opponent_inserted = TournamentProgress.insert_is_attacker_side(opponent_id, tournament_id, !is_attack_side)
+      has_me_inserted =
+        TournamentProgress.insert_is_attacker_side(my_id, tournament_id, is_attack_side)
+
+      has_opponent_inserted =
+        TournamentProgress.insert_is_attacker_side(opponent_id, tournament_id, !is_attack_side)
 
       if has_me_inserted && has_opponent_inserted do
         {:ok, nil}
@@ -924,6 +939,7 @@ defmodule Milk.Tournaments do
     |> case do
       {:ok, nil} ->
         renew_state_after_choosing_maps(user_id, tournament_id)
+
       {:error, error} ->
         {:error, error}
     end
@@ -963,8 +979,8 @@ defmodule Milk.Tournaments do
     opponent_order = TournamentProgress.get_ban_order(tournament_id, opponent["id"])
     TournamentProgress.delete_ban_order(tournament_id, id)
     TournamentProgress.delete_ban_order(tournament_id, opponent["id"])
-    TournamentProgress.insert_ban_order(tournament_id, id, order+1)
-    TournamentProgress.insert_ban_order(tournament_id, opponent["id"], opponent_order+1)
+    TournamentProgress.insert_ban_order(tournament_id, id, order + 1)
+    TournamentProgress.insert_ban_order(tournament_id, opponent["id"], opponent_order + 1)
 
     {:ok, nil}
   end
@@ -2599,20 +2615,28 @@ defmodule Milk.Tournaments do
     |> case do
       0 when is_head? ->
         "ShouldBan"
+
       0 ->
         "ShouldObserveBan"
+
       1 when is_head? ->
         "ShouldObserveBan"
+
       1 ->
         "ShouldBan"
+
       2 when is_head? ->
         "ShouldChooseMap"
+
       2 ->
         "ShouldObserveBan"
+
       3 when is_head? ->
         "ShouldObserveA/D"
+
       3 ->
         "ShouldChooseA/D"
+
       4 ->
         "IsPending"
     end
@@ -3080,6 +3104,7 @@ defmodule Milk.Tournaments do
       {:ok, %TeamInvitation{} = invitation} ->
         create_team_invitation_result_notification(invitation, false)
         {:ok, invitation}
+
       {:error, error} ->
         {:error, error}
     end
@@ -3092,7 +3117,7 @@ defmodule Milk.Tournaments do
     %TeamInvitation{}
     |> TeamInvitation.changeset(%{
       "team_member_id" => team_member_id,
-      "sender_id" => sender_id,
+      "sender_id" => sender_id
     })
     |> Repo.insert()
     |> case do
@@ -3126,7 +3151,6 @@ defmodule Milk.Tournaments do
       {:ok, notification} ->
         push_invitation_notification(notification)
 
-
       {:error, error} ->
         {:error, error}
     end
@@ -3142,7 +3166,6 @@ defmodule Milk.Tournaments do
       }
       |> Milk.Notif.push_ios()
     end
-
   end
 
   defp push_invitation_notification(%Notification{} = _notification) do
@@ -3166,12 +3189,14 @@ defmodule Milk.Tournaments do
           verify_team_as_needed(team_member.team_id)
           {:ok, team_member}
         end
+
       {:error, error} ->
         {:error, error}
     end
   end
 
-  def create_team_invitation_result_notification(invitation, result) do #TODO: 大会名などを含めたい
+  # TODO: 大会名などを含めたい
+  def create_team_invitation_result_notification(invitation, result) do
     case result do
       true ->
         %{
@@ -3224,7 +3249,6 @@ defmodule Milk.Tournaments do
           }
           |> Milk.Notif.push_ios()
         end
-
     end
   end
 
@@ -3386,6 +3410,7 @@ defmodule Milk.Tournaments do
 
           File.rm(path)
           name
+
         _ ->
           path
       end
@@ -3492,7 +3517,7 @@ defmodule Milk.Tournaments do
 
     tournament_id
     |> get_map_selections(small_id, large_id)
-    #|> IO.inspect(label: :mpselections)
+    # |> IO.inspect(label: :mpselections)
     |> Enum.map(fn map_selection ->
       map_selection
       |> Map.get(:map)
@@ -3508,7 +3533,7 @@ defmodule Milk.Tournaments do
     ~> maps
 
     map_selections
-    #|> IO.inspect(label: :selections)
+    # |> IO.inspect(label: :selections)
     |> Enum.concat(maps)
     |> Enum.uniq_by(fn map ->
       map.id

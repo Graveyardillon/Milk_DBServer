@@ -137,7 +137,6 @@ defmodule Milk.AccountsTest do
 
   describe "create oauth user" do
     test "create" do
-
     end
   end
 

@@ -118,7 +118,12 @@ defmodule MilkWeb.UserControllerTest do
       username = "discordkun"
       discriminator = "#1234"
 
-      conn = post(conn, Routes.user_path(conn, :signin_with_discord), %{email: email, username: username, discriminator: discriminator})
+      conn =
+        post(conn, Routes.user_path(conn, :signin_with_discord), %{
+          email: email,
+          username: username,
+          discriminator: discriminator
+        })
 
       response = json_response(conn, 200)
 
