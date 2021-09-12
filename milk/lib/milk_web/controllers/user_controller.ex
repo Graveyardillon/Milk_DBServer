@@ -86,7 +86,7 @@ defmodule MilkWeb.UserController do
     |> Accounts.email_exists?()
     |> if do
       user = Accounts.get_user_by_email(email)
-      {:ok, user}
+      {:ok, :already, user}
     else
       Map.new()
       |> Map.put("email", email)
@@ -94,6 +94,8 @@ defmodule MilkWeb.UserController do
       |> Accounts.create_user(true)
     end
     |> case do
+      {:ok, :already, %User{} = user} ->
+        {:ok, user}
       {:ok, %User{} = user} ->
         %{user_id: user.id, discord_id: discord_id}
         |> Discord.create_discord_user()
