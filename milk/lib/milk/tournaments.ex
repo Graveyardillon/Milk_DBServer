@@ -431,7 +431,7 @@ defmodule Milk.Tournaments do
 
     Repo.exists?(from u in User, where: u.id == ^id)
     |> if do
-      if params["enabled_multiple_selection"] == "true" && params["enabled_coin_toss"] != "true" do
+      if params["enabled_multiple_selection"] && !params["enabled_coin_toss"] do
         {:error, "Needs to enable coin toss"}
       else
         {:ok, nil}

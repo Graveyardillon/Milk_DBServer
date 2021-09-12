@@ -117,9 +117,11 @@ defmodule MilkWeb.UserControllerTest do
       email = "discord@mail.com"
       username = "discordkun"
       discriminator = "#1234"
+      discord_id = "1234321"
 
       conn =
         post(conn, Routes.user_path(conn, :signin_with_discord), %{
+          discord_id: discord_id,
           email: email,
           username: username,
           discriminator: discriminator

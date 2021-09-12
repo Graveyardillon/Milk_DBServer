@@ -140,6 +140,7 @@ defmodule MilkWeb.TournamentController do
     else
       tournament_params
       |> Map.put("enabled_coin_toss", tournament_params["enabled_coin_toss"] == "true")
+      |> Map.put("enabled_multiple_selection", tournament_params["enabled_multiple_selection"] == "true")
       |> Map.put("multiple_selections", options)
       |> Tournaments.create_tournament(thumbnail_path)
       |> case do
