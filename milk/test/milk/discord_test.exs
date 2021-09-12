@@ -6,6 +6,16 @@ defmodule Milk.DiscordTest do
 
   alias Milk.Discord
 
+  describe "get_discord_user_by_user_id_and_discord_id" do
+    test "works" do
+      discord_user = fixture_discord_user()
+
+      du = Discord.get_discord_user_by_user_id_and_discord_id(discord_user.user_id, discord_user.discord_id)
+      assert du.user_id == discord_user.user_id
+      assert du.discord_id == discord_user.discord_id
+    end
+  end
+
   describe "create_discord_user" do
     test "works" do
       user = fixture_user()
