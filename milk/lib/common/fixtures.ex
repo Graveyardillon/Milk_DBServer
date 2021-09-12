@@ -1,6 +1,7 @@
 defmodule Common.Fixtures do
   alias Milk.{
     Accounts,
+    Discord,
     Platforms,
     TournamentProgress,
     Tournaments
@@ -238,6 +239,18 @@ defmodule Common.Fixtures do
           })
 
         user
+      end
+
+      def fixture_discord_user(_ \\ []) do
+        user = fixture_user()
+
+        discord_id = "1"
+
+        %{user_id: user.id, discord_id: discord_id}
+        |> Discord.create_discord_user()
+        ~> {:ok, discord_user}
+
+        discord_user
       end
     end
   end

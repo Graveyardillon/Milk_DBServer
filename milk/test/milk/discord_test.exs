@@ -17,4 +17,14 @@ defmodule Milk.DiscordTest do
       assert discord_user.user_id == user.id
     end
   end
+
+  describe "associated?" do
+    test "works" do
+      discord_user = fixture_discord_user()
+      user = fixture_user(num: 2)
+
+      assert Discord.associated?(discord_user.user_id)
+      refute Discord.associated?(user.id)
+    end
+  end
 end
