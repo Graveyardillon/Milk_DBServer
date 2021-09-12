@@ -14,4 +14,12 @@ defmodule Milk.Discord do
     |> DiscordUser.changeset(attrs)
     |> Repo.insert()
   end
+
+  def associated?(user_id) do
+    DiscordUser
+    |> where([du], du.user_id == ^user_id)
+    |> Repo.one()
+    |> is_nil()
+    |> Kernel.!()
+  end
 end
