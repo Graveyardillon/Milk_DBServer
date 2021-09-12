@@ -1,11 +1,11 @@
-defmodule Milk.Accounts.DiscordUser do
+defmodule Milk.Discord.User do
   use Milk.Schema
 
   import Ecto.Changeset
 
   alias Milk.Accounts.User
 
-  schema "discord_user" do
+  schema "discord_users" do
     # 入る数字は整数だけどサイズの問題があってstringにした
     field :discord_id, :string
 

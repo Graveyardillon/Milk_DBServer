@@ -7,6 +7,7 @@ defmodule MilkWeb.UserController do
 
   alias Milk.{
     Accounts,
+    Discord,
     Tournaments
   }
 
@@ -93,8 +94,13 @@ defmodule MilkWeb.UserController do
       |> Accounts.create_user(true)
     end
     |> case do
-      {:ok, %User{} = user} -> {:ok, user}
-      # discord idを登録
+      {:ok, %User{} = user} ->
+        %{user_id: user.id, discord_id: discord_id}
+        |> Discord.create_discord_user()
+        |> case do
+          {:ok, _} -> {:ok, user}
+          x -> x
+        end
       x -> x
     end
     |> case do
