@@ -429,7 +429,9 @@ defmodule Milk.Tournaments do
   def create_tournament(%{"master_id" => master_id} = params, thumbnail_path \\ "") do
     id = Tools.to_integer_as_needed(master_id)
 
-    Repo.exists?(from u in User, where: u.id == ^id)
+    User
+    |> where([u], u.id == ^id)
+    |> Repo.exists?()
     |> if do
       if params["enabled_multiple_selection"] && !params["enabled_coin_toss"] do
         {:error, "Needs to enable coin toss"}

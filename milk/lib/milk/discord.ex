@@ -18,8 +18,12 @@ defmodule Milk.Discord do
   def associated?(user_id) do
     DiscordUser
     |> where([du], du.user_id == ^user_id)
-    |> Repo.one()
-    |> is_nil()
-    |> Kernel.!()
+    |> Repo.exists?()
+  end
+
+  def associate(user_id, discord_id) do
+    # 同じuser_id discord_idでassociateしていればalready associated
+    # user_idだけいけてればupdate
+    # どちらもダメならinsert
   end
 end
