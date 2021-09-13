@@ -42,10 +42,11 @@ defmodule Milk.Discord do
       member
       |> Map.get(:user_id)
       |> Accounts.get_user()
-      |> IO.inspect()
       |> Map.get(:discord)
     end)
-    |> IO.inspect()
+    |> Enum.all?(fn discord ->
+      !is_nil(discord)
+    end)
   end
 
   @doc """

@@ -3,7 +3,6 @@ defmodule Common.Fixtures do
     Accounts,
     Discord,
     Platforms,
-    TournamentProgress,
     Tournaments
   }
 
@@ -222,29 +221,38 @@ defmodule Common.Fixtures do
       end
 
       def fixture_user(opts \\ []) do
-        num_str =
-          opts[:num]
-          |> is_nil()
-          |> unless do
-            to_string(opts[:num])
-          else
-            "0"
-          end
+        opts[:num]
+        |> is_nil()
+        |> unless do
+          to_string(opts[:num])
+        else
+          "0"
+        end
+        ~> num_str
 
-        {:ok, user} =
-          Accounts.create_user(%{
-            "name" => "name" <> num_str,
-            "email" => "e1" <> num_str <> "mail.com",
-            "password" => "Password123"
-          })
+        Accounts.create_user(%{
+          "name" => "name" <> num_str,
+          "email" => "e1" <> num_str <> "mail.com",
+          "password" => "Password123"
+        })
+        ~> {:ok, user}
 
         user
       end
 
-      def fixture_discord_user(_ \\ []) do
-        user = fixture_user()
+      def fixture_discord_user(opts \\ []) do
+        opts[:num]
+        |> is_nil()
+        |> unless do
+          to_string(opts[:num])
+        else
+          "0"
+        end
+        ~> num
 
-        discord_id = "1"
+        user = fixture_user(num: num)
+
+        discord_id = to_string(num)
 
         %{user_id: user.id, discord_id: discord_id}
         |> Discord.create_discord_user()

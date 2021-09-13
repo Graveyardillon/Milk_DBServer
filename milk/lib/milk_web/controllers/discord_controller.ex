@@ -8,7 +8,6 @@ defmodule MilkWeb.DiscordController do
     user_id
     |> Tools.to_integer_as_needed()
     |> Discord.associate(discord_id)
-    |> IO.inspect()
     |> case do
       {:ok, _} -> json(conn, %{result: true})
       {:error, error} -> render(conn, "error.json", error: error)
