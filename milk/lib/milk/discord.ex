@@ -38,14 +38,13 @@ defmodule Milk.Discord do
   def all_team_members_associated?(team_id) do
     team_id
     |> Tournaments.get_team_members_by_team_id()
-    |> Enum.map(fn member ->
+    |> Enum.all?(fn member ->
       member
       |> Map.get(:user_id)
       |> Accounts.get_user()
       |> Map.get(:discord)
-    end)
-    |> Enum.all?(fn discord ->
-      !is_nil(discord)
+      |> is_nil()
+      |> Kernel.!()
     end)
   end
 
