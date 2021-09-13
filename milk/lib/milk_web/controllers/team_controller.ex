@@ -69,11 +69,18 @@ defmodule MilkWeb.TeamController do
       |> if do
         render(conn, "error.json", error: "duplicated request from leader")
       else
-        tournament_id
-        |> Tournaments.create_team(size, leader_id, user_id_list)
-        |> case do
-          {:ok, team} -> render(conn, "show.json", team: team)
-          {:error, error} -> render(conn, "error.json", error: Tools.create_error_message(error))
+        associated? = Discord.associated?(leader_id)
+        tournament = Tournaments.get_tournament(tournament_id)
+
+        if !is_nil(tournament.discord_server_id) && !associated? do
+          render(conn, "error.json", error: "user is not associated with discord")
+        else
+          tournament_id
+          |> Tournaments.create_team(size, leader_id, user_id_list)
+          |> case do
+            {:ok, team} -> render(conn, "show.json", team: team)
+            {:error, error} -> render(conn, "error.json", error: Tools.create_error_message(error))
+          end
         end
       end
     end
@@ -117,8 +124,8 @@ defmodule MilkWeb.TeamController do
           |> Discord.associated?()
           ~> associated?
 
-          if !is_nil(tournament.discord_server_id) && associated? do
-            render(conn, "error.json", error: "the user is not associated with discord")
+          if !is_nil(tournament.discord_server_id) && !associated? do
+            render(conn, "error.json", error: "user is not associated with discord")
           else
             invitation_id
             |> Tournaments.confirm_team_invitation()
