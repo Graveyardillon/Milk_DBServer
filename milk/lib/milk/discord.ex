@@ -5,7 +5,11 @@ defmodule Milk.Discord do
 
   alias Milk.Discord.User, as: DiscordUser
 
-  alias Milk.Repo
+  alias Milk.{
+    Accounts,
+    Repo,
+    Tournaments
+  }
 
   import Ecto.Query, warn: false
 
@@ -26,6 +30,22 @@ defmodule Milk.Discord do
     |> where([du], du.user_id == ^user_id)
     |> where([du], du.discord_id == ^discord_id)
     |> Repo.one()
+  end
+
+  @doc """
+  Validate the all team members are associated with discord.
+  """
+  def all_team_members_associated?(team_id) do
+    team_id
+    |> Tournaments.get_team_members_by_team_id()
+    |> Enum.map(fn member ->
+      member
+      |> Map.get(:user_id)
+      |> Accounts.get_user()
+      |> IO.inspect()
+      |> Map.get(:discord)
+    end)
+    |> IO.inspect()
   end
 
   @doc """
@@ -55,10 +75,12 @@ defmodule Milk.Discord do
     cond do
       !is_nil(discord_user) ->
         {:error, "already associated"}
+
       associated?(user_id) ->
         user_id
         |> get_discord_user_by_user_id()
         |> update_discord_user(%{discord_id: discord_id})
+
       true ->
         Map.new()
         |> Map.put(:user_id, user_id)

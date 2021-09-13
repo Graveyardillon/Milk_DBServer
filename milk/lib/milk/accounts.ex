@@ -76,16 +76,23 @@ defmodule Milk.Accounts do
 
   """
   @spec get_user(integer) :: Accounts.t()
-  def get_user(id),
-    do:
-      Repo.one(from u in User, join: a in assoc(u, :auth), where: u.id == ^id, preload: [auth: a])
+  def get_user(user_id) do
+    User
+    |> join(:inner, [u], a in Auth, on: u.id == a.user_id)
+    |> where([u, a], u.id == ^user_id)
+    |> Repo.one()
+    |> Repo.preload(:auth)
+    |> Repo.preload(:discord)
+  end
 
   @doc """
   Checks name duplication.
   """
   @spec check_duplication?(binary) :: boolean
   def check_duplication?(name) do
-    Repo.exists?(from u in User, where: u.name == ^name)
+    User
+    |> where([u], u.name == ^name)
+    |> Repo.exists?()
   end
 
   @doc """

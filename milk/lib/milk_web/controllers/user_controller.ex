@@ -96,6 +96,7 @@ defmodule MilkWeb.UserController do
     |> case do
       {:ok, :already, %User{} = user} ->
         {:ok, user}
+
       {:ok, %User{} = user} ->
         %{user_id: user.id, discord_id: discord_id}
         |> Discord.create_discord_user()
@@ -103,7 +104,9 @@ defmodule MilkWeb.UserController do
           {:ok, _} -> {:ok, user}
           x -> x
         end
-      x -> x
+
+      x ->
+        x
     end
     |> case do
       {:ok, %User{} = user} -> generate_token(user)

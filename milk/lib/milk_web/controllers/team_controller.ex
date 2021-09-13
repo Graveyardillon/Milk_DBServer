@@ -96,12 +96,14 @@ defmodule MilkWeb.TeamController do
     with %Tournaments.Team{} = team <- Tournaments.get_team_by_invitation_id(invitation_id) do
       with %Tournaments.Tournament{} = tournament <-
              Tournaments.get_tournament(team.tournament_id) do
-        confirmed_team_count =
-          tournament.id
-          |> Tournaments.get_confirmed_teams()
-          |> length()
+        tournament.id
+        |> Tournaments.get_confirmed_teams()
+        |> length()
+        ~> confirmed_team_count
 
         if tournament.capacity > confirmed_team_count do
+          # チーム承認の前にdiscordのvalidationを入れる
+
           invitation_id
           |> Tournaments.confirm_team_invitation()
           |> case do
