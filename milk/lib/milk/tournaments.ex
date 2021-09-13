@@ -2847,7 +2847,7 @@ defmodule Milk.Tournaments do
     |> Repo.insert()
   end
 
-  defp create_team_members(team_id, user_id_list) do
+  def create_team_members(team_id, user_id_list) do
     Enum.map(user_id_list, fn id ->
       %TeamMember{}
       |> TeamMember.changeset(%{"team_id" => team_id, "user_id" => id})
@@ -3073,11 +3073,14 @@ defmodule Milk.Tournaments do
     |> Repo.preload(team_member: :user)
   end
 
-  def team_invitation_decline(id) do
-    get_team_invitation(id)
+  def team_invitation_decline(id) do 
+    id
+    |> get_team_invitation()
+    ~> invitation
+    |> Map.get(:team_member)
     |> Repo.delete()
     |> case do
-      {:ok, %TeamInvitation{} = invitation} ->
+      {:ok, %TeamMember{} = member} -> 
         create_team_invitation_result_notification(invitation, false)
         {:ok, invitation}
       {:error, error} ->
