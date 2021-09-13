@@ -4,7 +4,11 @@ defmodule MilkWeb.TeamController do
   import Common.Sperm
 
   alias Common.Tools
-  alias Milk.Tournaments
+  alias Milk.{
+    Accounts,
+    Discord,
+    Tournaments
+  }
 
   def show(conn, %{"team_id" => team_id}) do
     team_id
@@ -96,6 +100,7 @@ defmodule MilkWeb.TeamController do
     with %Tournaments.Team{} = team <- Tournaments.get_team_by_invitation_id(invitation_id) do
       with %Tournaments.Tournament{} = tournament <-
              Tournaments.get_tournament(team.tournament_id) do
+
         tournament.id
         |> Tournaments.get_confirmed_teams()
         |> length()
@@ -103,24 +108,36 @@ defmodule MilkWeb.TeamController do
 
         if tournament.capacity > confirmed_team_count do
           # チーム承認の前にdiscordのvalidationを入れる
-
           invitation_id
-          |> Tournaments.confirm_team_invitation()
-          |> case do
-            {:ok, invitation} ->
-              invitation
-              |> Map.get(:team_id)
-              |> Tournaments.get_team()
-              ~> team
+          |> Tournaments.get_team_invitation()
+          |> Map.get(:team_member)
+          |> Map.get(:user_id)
+          |> Accounts.get_user()
+          |> Map.get(:id)
+          |> Discord.associated?()
+          ~> associated?
 
-              json(conn, %{
-                result: true,
-                is_confirmed: team.is_confirmed,
-                tournament_id: team.tournament_id
-              })
+          if !is_nil(tournament.discord_server_id) && associated? do
+            render(conn, "error.json", error: "the user is not associated with discord")
+          else
+            invitation_id
+            |> Tournaments.confirm_team_invitation()
+            |> case do
+              {:ok, invitation} ->
+                invitation
+                |> Map.get(:team_id)
+                |> Tournaments.get_team()
+                ~> team
 
-            {:error, error} ->
-              render(conn, "error.json", error: error)
+                json(conn, %{
+                  result: true,
+                  is_confirmed: team.is_confirmed,
+                  tournament_id: team.tournament_id
+                })
+
+              {:error, error} ->
+                render(conn, "error.json", error: error)
+            end
           end
         end
       else

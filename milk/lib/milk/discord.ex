@@ -33,6 +33,11 @@ defmodule Milk.Discord do
   end
 
   @doc """
+  Validate the team member is associated with discord
+  """
+
+
+  @doc """
   Validate the all team members are associated with discord.
   """
   def all_team_members_associated?(team_id) do
@@ -41,10 +46,7 @@ defmodule Milk.Discord do
     |> Enum.all?(fn member ->
       member
       |> Map.get(:user_id)
-      |> Accounts.get_user()
-      |> Map.get(:discord)
-      |> is_nil()
-      |> Kernel.!()
+      |> associated?()
     end)
   end
 
