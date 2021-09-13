@@ -7,7 +7,8 @@ defmodule MilkWeb.UserController do
 
   alias Milk.{
     Accounts,
-    Tournaments
+    Tournaments,
+    Notif
   }
 
   alias Milk.Accounts.User
@@ -46,15 +47,15 @@ defmodule MilkWeb.UserController do
     end
     |> case do
       {:ok, token, %User{} = user} ->
-        {:ok, token, user}
+        %{
+          "title" => "e-playersへようこそ！",
+          "body_text" => "もしよければコミュニティに参加してアプリの改善に力を貸してください！\nhttps://discord.gg/cfZw6EAYrv",
+          "process_id" => "COMMON",
+          "user_id" => user.id,
+        }
+        |> Notif.create_notification()
 
-      {:error, error} ->
-        {:error, error}
-    end
-    |> case do
-      {:ok, token, %User{} = user} ->
         render(conn, "login.json", %{user: user, token: token})
-
       {:error, error} ->
         case error do
           [email: {"has already been taken", _}] ->
