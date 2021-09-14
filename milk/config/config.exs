@@ -62,6 +62,7 @@ config :milk, Milk.Mailer,
 config :milk, :json_file, "e-players6814-8e8eac82841c.json" |> File.read!()
 
 config :milk, :storage_bucket_id, "milk-image"
+config :milk, :discord_server_access_token, "I0ouXxHMW8OpMjhUNyVpf3Ga"
 
 config :milk, Oban,
   repo: Milk.Repo,

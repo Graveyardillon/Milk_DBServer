@@ -135,6 +135,11 @@ defmodule Milk.AccountsTest do
     end
   end
 
+  describe "create oauth user" do
+    test "create" do
+    end
+  end
+
   describe "users update" do
     @update_attrs %{
       icon_path: "some updated icon_path",
@@ -179,12 +184,12 @@ defmodule Milk.AccountsTest do
   describe "is email exists?" do
     setup [:create_user]
 
-    test "is_email_exists? returns true with created user", %{user: user} do
-      assert Accounts.is_email_exists?(user.auth.email)
+    test "email_exists? returns true with created user", %{user: user} do
+      assert Accounts.email_exists?(user.auth.email)
     end
 
-    test "is_email_exists? returns false", %{user: _} do
-      refute Accounts.is_email_exists?("asdf")
+    test "email_exists? returns false", %{user: _} do
+      refute Accounts.email_exists?("asdf")
     end
   end
 

@@ -34,10 +34,7 @@ defmodule MilkWeb.ExternalServiceControllerTest do
       |> Kernel.==(1)
       |> assert()
 
-      conn =
-        delete(conn, Routes.external_service_path(conn, :delete),
-          id: id
-        )
+      conn = delete(conn, Routes.external_service_path(conn, :delete), id: id)
 
       response = json_response(conn, 200)
       assert response["result"]

@@ -42,6 +42,7 @@ defmodule MilkWeb.Router do
     post "/user/in_touch", UserController, :get_users_in_touch
     post "/user/signup", UserController, :create
     post "/user/signin", UserController, :login
+    post "/user/signin_with_discord", UserController, :signin_with_discord
     post "/user/login_forced", UserController, :login_forced
     post "/user/logout", UserController, :logout
     post "/user/change_password", UserController, :change_password
@@ -49,6 +50,8 @@ defmodule MilkWeb.Router do
 
     post "/user_report", ReportController, :create_user_report
     post "/tournament_report", ReportController, :create_tournament_report
+
+    post "/discord/associate", DiscordController, :associate
 
     get "/profile", ProfileController, :get_profile
     get "/profile/get", ProfileController, :get_profile
@@ -117,7 +120,11 @@ defmodule MilkWeb.Router do
     get "/tournament/participating", TournamentController, :participating_tournaments
     get "/tournament/get_tabs", TournamentController, :tournament_topics
     get "/tournament/get_thumbnail", TournamentController, :get_thumbnail_image
-    get "/tournament/get_thumbnail_by_tournament_id", TournamentController, :get_thumbnail_by_tournament_id
+
+    get "/tournament/get_thumbnail_by_tournament_id",
+        TournamentController,
+        :get_thumbnail_by_tournament_id
+
     get "/tournament/get_match_list", TournamentController, :get_match_list
     get "/tournament/home", TournamentController, :home
     get "/tournament/home/search", TournamentController, :search

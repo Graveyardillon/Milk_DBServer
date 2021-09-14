@@ -24,7 +24,8 @@ defmodule MilkWeb.ProfileView do
         user: user,
         games: games,
         records: records,
-        external_services: external_services
+        external_services: external_services,
+        associated_with_discord: associated_with_discord
       }) do
     %{
       data: %{
@@ -38,7 +39,8 @@ defmodule MilkWeb.ProfileView do
         external_services:
           render_many(external_services, ProfileView, "external_service.json",
             as: :external_service
-          )
+          ),
+        associated_with_discord: associated_with_discord
       },
       result: true
     }

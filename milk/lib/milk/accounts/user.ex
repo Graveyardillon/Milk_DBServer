@@ -4,6 +4,7 @@ defmodule Milk.Accounts.User do
   import Ecto.Changeset
 
   alias Milk.Accounts.Auth
+  alias Milk.Discord.User, as: DiscordUser
 
   alias Milk.Chat.{
     Chats,
@@ -33,6 +34,7 @@ defmodule Milk.Accounts.User do
     field :language, :string, default: "japan"
 
     has_one :auth, Auth
+    has_one :discord, DiscordUser
     has_many :chat, Chats
     many_to_many :chat_room, ChatRoom, join_through: "chat_member"
     has_many :chat_member, ChatMember

@@ -6,8 +6,10 @@ defmodule Milk.Accounts.Auth do
   alias Milk.Accounts.User
 
   schema "auth" do
-    field :email, :string
-    field :password, :string
+    field :email, :string, null: false
+    field :password, :string, null: false
+    field :is_oauth, :boolean
+
     belongs_to :user, User
 
     timestamps()
@@ -34,6 +36,14 @@ defmodule Milk.Accounts.Auth do
     # パスワードは半角英数大文字小文字をそれぞれ一文字以上含む
     |> validate_format(:password, ~r/\A(?=.*?[a-z])(?=.*?[A-Z])(?=.*?\d)[a-zA-Z\d]/)
     |> put_password_hash()
+  end
+
+  @doc false
+  def changeset_discord(auth, attrs) do
+    auth
+    |> cast(attrs, [:email, :is_oauth])
+    |> put_change(:is_oauth, true)
+    |> validate_required(:email)
   end
 
   defp put_password_hash(

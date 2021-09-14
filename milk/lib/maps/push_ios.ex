@@ -8,6 +8,5 @@ defmodule Maps.PushIos do
     field :title, String.t(), default: "e-players"
     field :message, String.t(), default: ""
     field :params, map(), default: %{}
-
   end
 end

@@ -23,7 +23,6 @@ defmodule Milk.Accounts do
     Auth,
     Device,
     ExternalService,
-    ServiceReference,
     User
   }
 
@@ -52,8 +51,7 @@ defmodule Milk.Accounts do
   Lists all users.
   """
   def list_user() do
-    User
-    |> Repo.all()
+    Repo.all(User)
   end
 
   @doc """
@@ -78,16 +76,23 @@ defmodule Milk.Accounts do
 
   """
   @spec get_user(integer) :: Accounts.t()
-  def get_user(id),
-    do:
-      Repo.one(from u in User, join: a in assoc(u, :auth), where: u.id == ^id, preload: [auth: a])
+  def get_user(user_id) do
+    User
+    |> join(:inner, [u], a in Auth, on: u.id == a.user_id)
+    |> where([u, a], u.id == ^user_id)
+    |> Repo.one()
+    |> Repo.preload(:auth)
+    |> Repo.preload(:discord)
+  end
 
   @doc """
   Checks name duplication.
   """
   @spec check_duplication?(binary) :: boolean
   def check_duplication?(name) do
-    Repo.exists?(from u in User, where: u.name == ^name)
+    User
+    |> where([u], u.name == ^name)
+    |> Repo.exists?()
   end
 
   @doc """
@@ -137,31 +142,31 @@ defmodule Milk.Accounts do
   @doc """
   Checks if given email address exists.
   """
-  def is_email_exists?(email) do
-    Repo.exists?(from a in Auth, where: a.email == ^email)
+  def email_exists?(email) do
+    Auth
+    |> where([a], a.email == ^email)
+    |> Repo.exists?()
   end
 
   @doc """
   Creates a user.
   """
-  @spec create_user(map) :: tuple()
-  def create_user(attrs_without_id_for_show) do
-    attrs_without_id_for_show
-    |> case do
-      %{"id_for_show" => id} ->
-        %{attrs_without_id_for_show | "id_for_show" => generate_id_for_show(id)}
-
-      _ ->
-        attrs_without_id_for_show
-        |> Map.put("id_for_show", generate_id_for_show())
-    end
-    ~> attrs
+  @spec create_user(map, boolean) :: tuple()
+  def create_user(attrs, is_oauth \\ false) do
+    attrs = put_id_for_show(attrs)
 
     Multi.new()
     |> Multi.insert(:user, User.changeset(%User{}, attrs))
     |> Multi.insert(:auth, fn %{user: user} ->
-      Ecto.build_assoc(user, :auth)
-      |> Auth.changeset(attrs)
+      if is_oauth do
+        user
+        |> Ecto.build_assoc(:auth)
+        |> Auth.changeset_discord(attrs)
+      else
+        user
+        |> Ecto.build_assoc(:auth)
+        |> Auth.changeset(attrs)
+      end
     end)
     |> Repo.transaction()
     |> case do
@@ -171,8 +176,19 @@ defmodule Milk.Accounts do
     end
   end
 
+  defp put_id_for_show(attrs) do
+    case attrs do
+      %{"id_for_show" => id} ->
+        Map.put(attrs, "id_for_show", generate_id_for_show(id))
+
+      _ ->
+        Map.put(attrs, "id_for_show", generate_id_for_show())
+    end
+  end
+
   defp generate_id_for_show() do
-    Enum.random(0..999_999)
+    0..999_999
+    |> Enum.random()
     |> generate_id_for_show()
   end
 
@@ -181,7 +197,10 @@ defmodule Milk.Accounts do
   end
 
   defp generate_id_for_show(tmp_id) do
-    unless Repo.exists?(from u in User, where: u.id_for_show == ^tmp_id) do
+    User
+    |> where([u], u.id_for_show == ^tmp_id)
+    |> Repo.exists?()
+    |> unless do
       tmp_id
     else
       generate_id_for_show(tmp_id + 1)
@@ -220,9 +239,9 @@ defmodule Milk.Accounts do
   Change a password.
   """
   def change_password_by_email(email, new_password) do
-    user = get_user_by_email(email)
-
-    user.auth
+    email
+    |> get_user_by_email()
+    |> Map.get(:auth)
     |> Auth.changeset(%{password: new_password})
     |> Repo.update()
   end
@@ -304,16 +323,16 @@ defmodule Milk.Accounts do
 
     if user && !is_binary(user) do
       if is_list(user.chat_member) do
-        member =
-          Enum.map(user.chat_member, fn x ->
-            %{
-              chat_room_id: x.chat_room_id,
-              user_id: x.user_id,
-              authority: x.authority,
-              create_time: x.create_time,
-              update_time: x.update_time
-            }
-          end)
+        Enum.map(user.chat_member, fn x ->
+          %{
+            chat_room_id: x.chat_room_id,
+            user_id: x.user_id,
+            authority: x.authority,
+            create_time: x.create_time,
+            update_time: x.update_time
+          }
+        end)
+        ~> member
 
         Repo.insert_all(ChatMemberLog, member)
 
@@ -328,16 +347,16 @@ defmodule Milk.Accounts do
       end
 
       if is_list(user.entrant) do
-        entrant =
-          Enum.map(user.entrant, fn x ->
-            %{
-              user_id: x.user_id,
-              tournament_id: x.tournament_id,
-              rank: x.rank,
-              create_time: x.create_time,
-              update_time: x.update_time
-            }
-          end)
+        Enum.map(user.entrant, fn x ->
+          %{
+            user_id: x.user_id,
+            tournament_id: x.tournament_id,
+            rank: x.rank,
+            create_time: x.create_time,
+            update_time: x.update_time
+          }
+        end)
+        ~> entrant
 
         Repo.insert_all(EntrantLog, entrant)
 
@@ -400,7 +419,8 @@ defmodule Milk.Accounts do
         )
 
       {:error, :token_expired} ->
-        Guardian.signout(token)
+        token
+        |> Guardian.signout()
         |> if do
           "That token is expired"
         else
@@ -437,11 +457,10 @@ defmodule Milk.Accounts do
   @spec login(map) :: tuple()
   def login(user) do
     password = user["password"]
-    # usernameかemailか
-    if String.match?(
-         user["email_or_username"],
-         ~r/^[[:word:]\-._]+@[[:word:]\-_.]+\.[[:alpha:]]+$/
-       ) do
+
+    user["email_or_username"]
+    |> String.match?(~r/^[[:word:]\-._]+@[[:word:]\-_.]+\.[[:alpha:]]+$/)
+    |> if do
       get_valid_user(user, password, :email)
     else
       get_valid_user(user, password, :username)
@@ -455,14 +474,6 @@ defmodule Milk.Accounts do
       _ ->
         {:error, nil}
     end
-  end
-
-  defp where_mode(query, :email, user) do
-    where(query, [u, a], a.email == ^user["email_or_username"])
-  end
-
-  defp where_mode(query, :username, user) do
-    where(query, [u, a], u.name == ^user["email_or_username"])
   end
 
   defp get_valid_user(user, password, mode) do
@@ -481,6 +492,14 @@ defmodule Milk.Accounts do
           _ -> nil
         end
     end
+  end
+
+  defp where_mode(query, :email, user) do
+    where(query, [u, a], a.email == ^user["email_or_username"])
+  end
+
+  defp where_mode(query, :username, user) do
+    where(query, [u, a], u.name == ^user["email_or_username"])
   end
 
   # def login(user) do
@@ -544,6 +563,7 @@ defmodule Milk.Accounts do
 
   @doc """
   Gain 5 score.
+  レコメンドシステム用にスコアを取得する関数
   """
   def gain_score(%{"user_id" => user_id, "game_name" => game_name, "score" => gain}) do
     %{"user_id" => user_id, "game_name" => game_name, "gain" => gain}
@@ -592,8 +612,8 @@ defmodule Milk.Accounts do
     device
     |> Repo.delete()
     |> case do
-      {:ok, device} -> true
-      {:error, error} -> false
+      {:ok, _device} -> true
+      {:error, _error} -> false
     end
   end
 

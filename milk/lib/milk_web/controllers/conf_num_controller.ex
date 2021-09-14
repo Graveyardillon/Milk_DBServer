@@ -14,7 +14,7 @@ defmodule MilkWeb.ConfNumController do
   Send an email for verification.
   """
   def send_email(conn, %{"email" => email}) do
-    exists? = Accounts.is_email_exists?(email)
+    exists? = Accounts.email_exists?(email)
 
     if exists? do
       number =

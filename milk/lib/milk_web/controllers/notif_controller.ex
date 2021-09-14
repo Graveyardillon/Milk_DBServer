@@ -168,7 +168,6 @@ defmodule MilkWeb.NotifController do
       params: params
     }
     |> Milk.Notif.push_ios()
-    
 
     json(conn, %{result: "ok"})
   end

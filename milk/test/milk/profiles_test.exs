@@ -4,10 +4,7 @@ defmodule Milk.ProfilesTest do
 
   import Common.Sperm
 
-  alias Milk.{
-    TournamentProgress,
-    Tournaments
-  }
+  alias Milk.Tournaments
 
   describe "get records" do
     test "works (both team and individual)" do

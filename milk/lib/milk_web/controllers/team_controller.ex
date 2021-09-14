@@ -4,7 +4,11 @@ defmodule MilkWeb.TeamController do
   import Common.Sperm
 
   alias Common.Tools
-  alias Milk.Tournaments
+  alias Milk.{
+    Accounts,
+    Discord,
+    Tournaments
+  }
 
   def show(conn, %{"team_id" => team_id}) do
     team_id
@@ -65,11 +69,18 @@ defmodule MilkWeb.TeamController do
       |> if do
         render(conn, "error.json", error: "duplicated request from leader")
       else
-        tournament_id
-        |> Tournaments.create_team(size, leader_id, user_id_list)
-        |> case do
-          {:ok, team} -> render(conn, "show.json", team: team)
-          {:error, error} -> render(conn, "error.json", error: Tools.create_error_message(error))
+        associated? = Discord.associated?(leader_id)
+        tournament = Tournaments.get_tournament(tournament_id)
+
+        if !is_nil(tournament.discord_server_id) && !associated? do
+          render(conn, "error.json", error: "user is not associated with discord")
+        else
+          tournament_id
+          |> Tournaments.create_team(size, leader_id, user_id_list)
+          |> case do
+            {:ok, team} -> render(conn, "show.json", team: team)
+            {:error, error} -> render(conn, "error.json", error: Tools.create_error_message(error))
+          end
         end
       end
     end
@@ -94,29 +105,46 @@ defmodule MilkWeb.TeamController do
     invitation_id = Tools.to_integer_as_needed(invitation_id)
 
     with %Tournaments.Team{} = team <- Tournaments.get_team_by_invitation_id(invitation_id) do
-      with %Tournaments.Tournament{} = tournament <- Tournaments.get_tournament(team.tournament_id) do
-        confirmed_team_count = 
-          tournament.id 
-          |> Tournaments.get_confirmed_teams()
-          |> length()
+      with %Tournaments.Tournament{} = tournament <-
+             Tournaments.get_tournament(team.tournament_id) do
 
-        if tournament.capacity > confirmed_team_count do 
+        tournament.id
+        |> Tournaments.get_confirmed_teams()
+        |> length()
+        ~> confirmed_team_count
+
+        if tournament.capacity > confirmed_team_count do
+          # チーム承認の前にdiscordのvalidationを入れる
           invitation_id
-          |> Tournaments.confirm_team_invitation()
-          |> case do 
-            {:ok, invitation} ->
-              invitation
-              |> Map.get(:team_id)
-              |> Tournaments.get_team()
-              ~> team
+          |> Tournaments.get_team_invitation()
+          |> Map.get(:team_member)
+          |> Map.get(:user_id)
+          |> Accounts.get_user()
+          |> Map.get(:id)
+          |> Discord.associated?()
+          ~> associated?
 
-              json(conn, %{
-                result: true,
-                is_confirmed: team.is_confirmed,
-                tournament_id: team.tournament_id
-              })
-            {:error, error} -> 
-              render(conn, "error.json", error: error)
+          if !is_nil(tournament.discord_server_id) && !associated? do
+            render(conn, "error.json", error: "user is not associated with discord")
+          else
+            invitation_id
+            |> Tournaments.confirm_team_invitation()
+            |> case do
+              {:ok, invitation} ->
+                invitation
+                |> Map.get(:team_id)
+                |> Tournaments.get_team()
+                ~> team
+
+                json(conn, %{
+                  result: true,
+                  is_confirmed: team.is_confirmed,
+                  tournament_id: team.tournament_id
+                })
+
+              {:error, error} ->
+                render(conn, "error.json", error: error)
+            end
           end
         end
       else
@@ -148,6 +176,7 @@ defmodule MilkWeb.TeamController do
     case Tournaments.team_invitation_decline(id) do
       {:ok, %Tournaments.TeamInvitation{} = invitation} ->
         json(conn, %{result: true})
+
       {:error, error} ->
         json(conn, %{result: false})
     end

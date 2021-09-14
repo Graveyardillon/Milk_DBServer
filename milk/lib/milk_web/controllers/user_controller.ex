@@ -7,6 +7,7 @@ defmodule MilkWeb.UserController do
 
   alias Milk.{
     Accounts,
+    Discord,
     Tournaments,
     Notif
   }
@@ -70,6 +71,54 @@ defmodule MilkWeb.UserController do
           _ ->
             render(conn, "error.json", error: error)
         end
+    end
+  end
+
+  @doc """
+  Signin with discord.
+  """
+  def signin_with_discord(conn, %{
+        "email" => email,
+        "username" => username,
+        "discriminator" => _discriminator,
+        "discord_id" => discord_id
+      }) do
+    email
+    |> Accounts.email_exists?()
+    |> if do
+      user = Accounts.get_user_by_email(email)
+      {:ok, :already, user}
+    else
+      Map.new()
+      |> Map.put("email", email)
+      |> Map.put("name", username)
+      |> Accounts.create_user(true)
+    end
+    |> case do
+      {:ok, :already, %User{} = user} ->
+        {:ok, user}
+
+      {:ok, %User{} = user} ->
+        %{user_id: user.id, discord_id: discord_id}
+        |> Discord.create_discord_user()
+        |> case do
+          {:ok, _} -> {:ok, user}
+          x -> x
+        end
+
+      x ->
+        x
+    end
+    |> case do
+      {:ok, %User{} = user} -> generate_token(user)
+      x -> x
+    end
+    |> case do
+      {:ok, token, %User{} = user} ->
+        render(conn, "login.json", %{user: user, token: token})
+
+      {:error, error} ->
+        render(conn, "error.json", error: error)
     end
   end
 
@@ -220,7 +269,8 @@ defmodule MilkWeb.UserController do
   def delete(conn, %{"id" => id, "password" => password, "email" => email, "token" => token}) do
     id = Tools.to_integer_as_needed(id)
 
-    Accounts.delete_user(id, password, email, token)
+    id
+    |> Accounts.delete_user(password, email, token)
     |> case do
       {:ok, _} ->
         Guardian.revoke(token)
@@ -236,9 +286,9 @@ defmodule MilkWeb.UserController do
   Change password with email and given token.
   """
   def change_password(conn, %{"email" => email, "token" => token, "new_password" => new_password}) do
-    gotten_token =
-      Milk.Email.Auth.get_token()
-      |> Map.get(email)
+    Milk.Email.Auth.get_token()
+    |> Map.get(email)
+    ~> gotten_token
 
     if gotten_token == token do
       Accounts.change_password_by_email(email, new_password)

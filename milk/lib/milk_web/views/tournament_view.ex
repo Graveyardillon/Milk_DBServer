@@ -259,14 +259,14 @@ defmodule MilkWeb.TournamentView do
       id: tournament.id,
       name: tournament.name,
       custom_detail:
-          unless is_nil(tournament.custom_detail) do
-            %{
-              coin_head_field: tournament.custom_detail.coin_head_field,
-              coin_tail_field: tournament.custom_detail.coin_tail_field,
-              multiple_selection_type: tournament.custom_detail.multiple_selection_type,
-              multiple_selection_label: tournament.custom_detail.multiple_selection_label
-            }
-          end,
+        unless is_nil(tournament.custom_detail) do
+          %{
+            coin_head_field: tournament.custom_detail.coin_head_field,
+            coin_tail_field: tournament.custom_detail.coin_tail_field,
+            multiple_selection_type: tournament.custom_detail.multiple_selection_type,
+            multiple_selection_label: tournament.custom_detail.multiple_selection_label
+          }
+        end,
       thumbnail_path: tournament.thumbnail_path,
       game_id: tournament.game_id,
       game_name: tournament.game_name,
@@ -472,14 +472,15 @@ defmodule MilkWeb.TournamentView do
       state: state,
       is_team: is_team,
       is_coin_head: is_coin_head,
-      map: if map do
-        %{
-          state: map.state,
-          name: map.name,
-          icon_path: map.icon_path,
-          id: map.id
-        }
-      end,
+      map:
+        if map do
+          %{
+            state: map.state,
+            name: map.name,
+            icon_path: map.icon_path,
+            id: map.id
+          }
+        end,
       custom_detail:
         if custom_detail do
           %{
@@ -493,14 +494,15 @@ defmodule MilkWeb.TournamentView do
 
   def render("options.json", %{options: options}) do
     %{
-      data: Enum.map(options, fn option ->
-        %{
-          name: option.name,
-          id: option.id,
-          icon_path: option.icon_path,
-          state: option.state
-        }
-      end)
+      data:
+        Enum.map(options, fn option ->
+          %{
+            name: option.name,
+            id: option.id,
+            icon_path: option.icon_path,
+            state: option.state
+          }
+        end)
     }
   end
 

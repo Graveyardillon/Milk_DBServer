@@ -644,16 +644,17 @@ defmodule Milk.Chat do
           |> Notif.create_notification()
 
           title = "#{user.name} (in #{tournament.name})"
+
           %Maps.PushIos{
             user_id: device.user_id,
             device_token: device.token,
             process_id: "RECEIVED_TOURNAMENT_CHAT",
             title: title,
-            message: attrs["word"],
+            message: attrs["word"]
           }
           |> Notif.push_ios()
-          # Notif.push_ios_with_badge(attrs["word"], title, device.user_id, device.token)
 
+          # Notif.push_ios_with_badge(attrs["word"], title, device.user_id, device.token)
         end
       end)
 

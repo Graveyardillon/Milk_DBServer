@@ -9,6 +9,7 @@ defmodule MilkWeb.TournamentController do
     Accounts,
     Chat,
     Log,
+    Notif,
     Relations,
     TournamentProgress,
     Tournaments
@@ -16,10 +17,7 @@ defmodule MilkWeb.TournamentController do
 
   alias Milk.CloudStorage.Objects
 
-  alias Milk.Tournaments.{
-    Team,
-    Tournament
-  }
+  alias Milk.Tournaments.Tournament
 
   alias Milk.Media.Image
 
@@ -142,6 +140,10 @@ defmodule MilkWeb.TournamentController do
     else
       tournament_params
       |> Map.put("enabled_coin_toss", tournament_params["enabled_coin_toss"] == "true")
+      |> Map.put(
+        "enabled_multiple_selection",
+        tournament_params["enabled_multiple_selection"] == "true"
+      )
       |> Map.put("multiple_selections", options)
       |> Tournaments.create_tournament(thumbnail_path)
       |> case do
@@ -791,7 +793,10 @@ defmodule MilkWeb.TournamentController do
     case Tournaments.get_tournament(id) do
       nil ->
         json(conn, %{result: false})
-      tournament -> path = tournament.thumbnail_path
+
+      tournament ->
+        path = tournament.thumbnail_path
+
         map =
           case Application.get_env(:milk, :environment) do
             # coveralls-ignore-start
@@ -807,6 +812,7 @@ defmodule MilkWeb.TournamentController do
               read_thumbnail_prod(path)
               # coveralls-ignore-stop
           end
+
         json(conn, %{result: true, b64: map.b64})
     end
   end
@@ -892,6 +898,7 @@ defmodule MilkWeb.TournamentController do
     |> case do
       {:ok, b64} ->
         json(conn, %{b64: b64})
+
       {:error, error} ->
         render(conn, "error.json", error: error)
     end
@@ -903,6 +910,7 @@ defmodule MilkWeb.TournamentController do
     |> case do
       {:ok, file} ->
         {:ok, Base.encode64(file)}
+
       {:error, error} ->
         {:error, error}
     end
@@ -916,6 +924,7 @@ defmodule MilkWeb.TournamentController do
     |> case do
       {:ok, file} ->
         {:ok, Base.encode64(file)}
+
       {:error, error} ->
         {:error, error}
     end
@@ -924,7 +933,11 @@ defmodule MilkWeb.TournamentController do
   @doc """
   Ban maps.
   """
-  def ban_maps(conn, %{"user_id" => user_id, "tournament_id" => tournament_id, "map_id_list" => map_id_list}) do
+  def ban_maps(conn, %{
+        "user_id" => user_id,
+        "tournament_id" => tournament_id,
+        "map_id_list" => map_id_list
+      }) do
     user_id = Tools.to_integer_as_needed(user_id)
     tournament_id = Tools.to_integer_as_needed(tournament_id)
     map_id_list = Enum.map(map_id_list, fn id -> Tools.to_integer_as_needed(id) end)
@@ -934,6 +947,7 @@ defmodule MilkWeb.TournamentController do
     |> case do
       {:ok, nil} ->
         json(conn, %{result: true})
+
       {:error, error} ->
         render(conn, "error.json", error: error)
     end
@@ -942,7 +956,11 @@ defmodule MilkWeb.TournamentController do
   @doc """
   Choose a map.
   """
-  def choose_map(conn, %{"user_id" => user_id, "tournament_id" => tournament_id, "map_id" => map_id}) do
+  def choose_map(conn, %{
+        "user_id" => user_id,
+        "tournament_id" => tournament_id,
+        "map_id" => map_id
+      }) do
     user_id = Tools.to_integer_as_needed(user_id)
     tournament_id = Tools.to_integer_as_needed(tournament_id)
     map_id = Tools.to_integer_as_needed(map_id)
@@ -952,6 +970,7 @@ defmodule MilkWeb.TournamentController do
     |> case do
       {:ok, nil} ->
         json(conn, %{result: true})
+
       {:error, error} ->
         render(conn, "error.json", error: error)
     end
@@ -960,7 +979,11 @@ defmodule MilkWeb.TournamentController do
   @doc """
   Choose a map.
   """
-  def choose_ad(conn, %{"user_id" => user_id, "tournament_id" => tournament_id, "is_attacker_side" => is_attacker_side}) do
+  def choose_ad(conn, %{
+        "user_id" => user_id,
+        "tournament_id" => tournament_id,
+        "is_attacker_side" => is_attacker_side
+      }) do
     user_id = Tools.to_integer_as_needed(user_id)
     tournament_id = Tools.to_integer_as_needed(tournament_id)
 
@@ -969,6 +992,7 @@ defmodule MilkWeb.TournamentController do
     |> case do
       {:ok, nil} ->
         json(conn, %{result: true})
+
       {:error, error} ->
         render(conn, "error.json", error: error)
     end
@@ -1118,7 +1142,6 @@ defmodule MilkWeb.TournamentController do
     tournament_id
     |> Tools.to_integer_as_needed()
     |> Tournaments.get_tournament()
-    ~> tournament
     |> Map.get(:is_team)
     |> if do
       tournament_id
@@ -1364,9 +1387,9 @@ defmodule MilkWeb.TournamentController do
   end
 
   # チーム対応
-  defp notify_on_duplicate_match(tournament_id, user_id, opponent_id) do
+  defp notify_on_duplicate_match(_tournament_id, user_id, opponent_id) do
     user = Accounts.get_user(user_id)
-    opponent = Tournaments.get_opponent(opponent_id)
+    opponent = Accounts.get_user(opponent_id)
 
     [user_id, opponent_id]
     |> Enum.map(fn user_id ->
@@ -1393,7 +1416,6 @@ defmodule MilkWeb.TournamentController do
         message: body_text
       }
       |> Milk.Notif.push_ios()
-
     end)
   end
 
@@ -1731,7 +1753,6 @@ defmodule MilkWeb.TournamentController do
         team.id
         |> Tournaments.get_leader()
         |> Map.get(:user)
-        ~> leader
         |> Map.get(:id)
         |> Kernel.==(user_id)
         ~> is_leader
@@ -1863,7 +1884,6 @@ defmodule MilkWeb.TournamentController do
 
       tournament_id
       |> Tournaments.get_selected_map(id)
-      |> IO.inspect(label: :map)
       |> case do
         {:ok, map} -> map
         {:error, _} -> nil

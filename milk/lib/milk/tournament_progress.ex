@@ -267,6 +267,7 @@ defmodule Milk.TournamentProgress do
     cond do
       should_flip_coin? ->
         @is_waiting_for_coin_flip
+
       true ->
         @is_waiting_for_start
     end
@@ -671,9 +672,9 @@ defmodule Milk.TournamentProgress do
     conn = conn()
 
     with {:ok, _} <- Redix.command(conn, ["MULTI"]),
-        {:ok, _} <- Redix.command(conn, ["SELECT", 8]),
-        {:ok, _} <- Redix.command(conn, ["HSET", tournament_id, id, 0]),
-        {:ok, _} <- Redix.command(conn, ["EXEC"]) do
+         {:ok, _} <- Redix.command(conn, ["SELECT", 8]),
+         {:ok, _} <- Redix.command(conn, ["HSET", tournament_id, id, 0]),
+         {:ok, _} <- Redix.command(conn, ["EXEC"]) do
       true
     else
       {:error, %Redix.Error{message: message}} ->
@@ -689,9 +690,9 @@ defmodule Milk.TournamentProgress do
     conn = conn()
 
     with {:ok, _} <- Redix.command(conn, ["MULTI"]),
-      {:ok, _} <- Redix.command(conn, ["SELECT", 8]),
-      {:ok, _} <- Redix.command(conn, ["HSET", tournament_id, id, order]),
-      {:ok, _} <- Redix.command(conn, ["EXEC"]) do
+         {:ok, _} <- Redix.command(conn, ["SELECT", 8]),
+         {:ok, _} <- Redix.command(conn, ["HSET", tournament_id, id, order]),
+         {:ok, _} <- Redix.command(conn, ["EXEC"]) do
     else
       {:error, %Redix.Error{message: message}} ->
         Logger.error(message)
@@ -726,10 +727,10 @@ defmodule Milk.TournamentProgress do
     conn = conn()
 
     with {:ok, _} <- Redix.command(conn, ["MULTI"]),
-      {:ok, _} <- Redix.command(conn, ["SELECT", 8]),
-      {:ok, _} <- Redix.command(conn, ["HDEL", tournament_id, id]),
-      {:ok, _} <- Redix.command(conn, ["EXEC"]) do
-        true
+         {:ok, _} <- Redix.command(conn, ["SELECT", 8]),
+         {:ok, _} <- Redix.command(conn, ["HDEL", tournament_id, id]),
+         {:ok, _} <- Redix.command(conn, ["EXEC"]) do
+      true
     else
       {:error, %Redix.Error{message: message}} ->
         Logger.error(message)
@@ -742,13 +743,14 @@ defmodule Milk.TournamentProgress do
 
   # 9. a/d state
   # attacker side or defender side.
-  def insert_is_attacker_side(id, tournament_id, is_attacker_side) when is_boolean(is_attacker_side) do
+  def insert_is_attacker_side(id, tournament_id, is_attacker_side)
+      when is_boolean(is_attacker_side) do
     conn = conn()
 
     with {:ok, _} <- Redix.command(conn, ["MULTI"]),
-      {:ok, _} <- Redix.command(conn, ["SELECT", 9]),
-      {:ok, _} <- Redix.command(conn, ["HSET", tournament_id, id, is_attacker_side]),
-      {:ok, _} <- Redix.command(conn, ["EXEC"]) do
+         {:ok, _} <- Redix.command(conn, ["SELECT", 9]),
+         {:ok, _} <- Redix.command(conn, ["HSET", tournament_id, id, is_attacker_side]),
+         {:ok, _} <- Redix.command(conn, ["EXEC"]) do
       true
     else
       {:error, %Redix.Error{message: message}} ->
@@ -764,7 +766,7 @@ defmodule Milk.TournamentProgress do
     conn = conn()
 
     with {:ok, _} <- Redix.command(conn, ["SELECT", 9]),
-      {:ok, value} <- Redix.command(conn, ["HGET", tournament_id, id]) do
+         {:ok, value} <- Redix.command(conn, ["HGET", tournament_id, id]) do
       unless is_nil(value) do
         value
         |> Code.eval_string()
@@ -786,10 +788,10 @@ defmodule Milk.TournamentProgress do
     conn = conn()
 
     with {:ok, _} <- Redix.command(conn, ["MULTI"]),
-      {:ok, _} <- Redix.command(conn, ["SELECT", 9]),
-      {:ok, _} <- Redix.command(conn, ["HDEL", tournament_id, id]),
-      {:ok, _} <- Redix.command(conn, ["EXEC"]) do
-        true
+         {:ok, _} <- Redix.command(conn, ["SELECT", 9]),
+         {:ok, _} <- Redix.command(conn, ["HDEL", tournament_id, id]),
+         {:ok, _} <- Redix.command(conn, ["EXEC"]) do
+      true
     else
       {:error, %Redix.Error{message: message}} ->
         Logger.error(message)
