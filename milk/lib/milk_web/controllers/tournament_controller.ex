@@ -1,5 +1,6 @@
 defmodule MilkWeb.TournamentController do
   use MilkWeb, :controller
+  use Timex
 
   require Logger
 
@@ -525,8 +526,16 @@ defmodule MilkWeb.TournamentController do
     tournament = Tournaments.get_tournament(tournament_id)
     entrants = Tournaments.get_entrants(tournament.id)
 
+    # Deadlineの確認
+    tournament.deadline
+    |> Kernel.< Timex.now()
+    ~> result
+
     # キャパシティの確認(個人)
-    result = tournament.capacity > length(entrants)
+    tournament.capacity 
+    |> Kernel.>(length(entrants))
+    |> Kernel.and(result)
+    ~> result
 
     # キャパシティの確認(チーム)
     tournament.capacity
