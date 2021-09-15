@@ -1,5 +1,6 @@
 defmodule MilkWeb.TournamentController do
   use MilkWeb, :controller
+  use Timex
 
   require Logger
 
@@ -526,7 +527,9 @@ defmodule MilkWeb.TournamentController do
     entrants = Tournaments.get_entrants(tournament.id)
 
     # キャパシティの確認(個人)
-    result = tournament.capacity > length(entrants)
+    tournament.capacity 
+    |> Kernel.>(length(entrants))
+    ~> result
 
     # キャパシティの確認(チーム)
     tournament.capacity
@@ -546,7 +549,7 @@ defmodule MilkWeb.TournamentController do
     user_id
     |> relevant()
     |> Enum.all?(fn t ->
-      tournament.master_id == user_id || t.event_date != tournament.event_date
+      tournament.master_id == user_id || t.event_date != tournament.event_date || t.deadline != tournament.deadline
     end)
     |> Kernel.and(result)
     ~> result
