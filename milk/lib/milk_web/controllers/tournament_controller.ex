@@ -526,9 +526,15 @@ defmodule MilkWeb.TournamentController do
     tournament = Tournaments.get_tournament(tournament_id)
     entrants = Tournaments.get_entrants(tournament.id)
 
+    # Deadlineの確認
+    tournament.deadline
+    |> Kernel.< Timex.now()
+    ~> result
+
     # キャパシティの確認(個人)
     tournament.capacity 
     |> Kernel.>(length(entrants))
+    |> Kernel.and(result)
     ~> result
 
     # キャパシティの確認(チーム)
@@ -549,7 +555,7 @@ defmodule MilkWeb.TournamentController do
     user_id
     |> relevant()
     |> Enum.all?(fn t ->
-      tournament.master_id == user_id || t.event_date != tournament.event_date || t.deadline != tournament.deadline
+      tournament.master_id == user_id || t.event_date != tournament.event_date
     end)
     |> Kernel.and(result)
     ~> result
