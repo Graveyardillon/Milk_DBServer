@@ -529,7 +529,7 @@ defmodule MilkWeb.TournamentController do
 
     # Deadlineの確認
     tournament.deadline
-    |> Kernel.<(Timex.now())
+    |> Kernel.>(Timex.now())
     ~> result
 
     # キャパシティの確認(個人)
