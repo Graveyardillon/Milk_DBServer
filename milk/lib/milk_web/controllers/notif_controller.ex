@@ -62,20 +62,20 @@ defmodule MilkWeb.NotifController do
     File.read(path)
   end
 
-  defp read_icon_prod(name) do
-    name
+  defp read_icon_prod(path) do
+    path
     |> Objects.get()
     |> Map.get(:mediaLink)
     |> Image.get()
   end
 
-  defp read_thumbnail(name) do
+  defp read_thumbnail(path) do
     :milk
     |> Application.get_env(:environment)
     |> case do
-      :dev -> read_thumbnail_dev(name)
-      :test -> read_thumbnail_dev(name)
-      _ -> read_thumbnail_prod(name)
+      :dev -> read_thumbnail_dev(path)
+      :test -> read_thumbnail_dev(path)
+      _ -> read_thumbnail_prod(path)
     end
     |> case do
       %{b64: b64} -> b64
@@ -83,8 +83,8 @@ defmodule MilkWeb.NotifController do
     end
   end
 
-  defp read_thumbnail_dev(name) do
-    File.read("./static/image/tournament_thumbnail/#{name}.jpg")
+  defp read_thumbnail_dev(path) do
+    File.read(path)
     |> case do
       {:ok, file} ->
         b64 = Base.encode64(file)
@@ -95,8 +95,8 @@ defmodule MilkWeb.NotifController do
     end
   end
 
-  defp read_thumbnail_prod(name) do
-    name
+  defp read_thumbnail_prod(path) do
+    path
     |> Objects.get()
     |> Map.get(:mediaLink)
     |> Image.get()

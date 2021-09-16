@@ -296,7 +296,7 @@ defmodule Milk.Accounts do
   end
 
   defp rm(old_icon_path) do
-    File.rm("./static/image/profile_icon/#{old_icon_path}.png")
+    File.rm("./static/image/profile_icon/#{old_icon_path}.jpg")
   end
 
   defp rm_prod(old_icon_path) do
