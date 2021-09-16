@@ -223,6 +223,9 @@ defmodule MilkWeb.Router do
 
     post "/device/register", DeviceController, :register_token
     post "/device/unregister", DeviceController, :unregister_token
+
+    get "/image/thumbnail", ImageController, :get_thumbnail
+    get "/image/icon", ImageController, :get_icon
   end
 
   scope "/debug", MilkWeb do
