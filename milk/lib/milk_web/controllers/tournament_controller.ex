@@ -827,8 +827,8 @@ defmodule MilkWeb.TournamentController do
     end
   end
 
-  defp read_thumbnail(name) do
-    File.read("./static/image/tournament_thumbnail/#{name}.jpg")
+  defp read_thumbnail(path) do
+    File.read(path)
     |> case do
       {:ok, file} ->
         b64 = Base.encode64(file)
@@ -840,8 +840,8 @@ defmodule MilkWeb.TournamentController do
   end
 
   #  coveralls-ignore-start
-  defp read_thumbnail_prod(name) do
-    object = Objects.get(name)
+  defp read_thumbnail_prod(path) do
+    object = Objects.get(path)
 
     case Image.get(object.mediaLink) do
       {:ok, file} ->
