@@ -3395,21 +3395,21 @@ defmodule Milk.Tournaments do
       |> Map.get("icon_b64")
       ~> b64
 
-      # "data:image/png;base64,"
+      # "data:image/jpg;base64,"
       # |> Kernel.<>(b64)
       b64
       |> Base.decode64!()
       ~> img
 
       uuid = SecureRandom.uuid()
-      path = "./static/image/options/#{uuid}.png"
+      path = "./static/image/options/#{uuid}.jpg"
       FileUtils.write(path, img)
 
       :milk
       |> Application.get_env(:environment)
       |> case do
         :prod ->
-          Milk.CloudStorage.Objects.upload("./static/image/options/#{uuid}.png")
+          Milk.CloudStorage.Objects.upload("./static/image/options/#{uuid}.jpg")
           |> Map.get(:name)
           ~> name
 
