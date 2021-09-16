@@ -84,3 +84,5 @@ config :milk, :redix_port, 6379
 config :milk, :environment, :prod
 
 config :milk, :domain, "https://e-players-web.web.app"
+
+config :milk, :discord_server, nil
