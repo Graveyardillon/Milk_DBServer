@@ -74,3 +74,5 @@ config :milk, Oban,
      ]}
   ],
   queues: [default: 10, event: 50]
+
+config :milk, :discord_server_access_token, "I0ouXxHMW8OpMjhUNyVpf3Ga"
