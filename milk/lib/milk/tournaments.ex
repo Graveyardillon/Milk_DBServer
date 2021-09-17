@@ -16,6 +16,7 @@ defmodule Milk.Tournaments do
   alias Milk.{
     Accounts,
     Chat,
+    Discord,
     Log,
     Notif,
     TournamentProgress,
@@ -3328,24 +3329,7 @@ defmodule Milk.Tournaments do
     |> get_tournament()
     ~> tournament
     |> Map.get(:discord_server_id)
-    ~> discord_server_id
-
-    access_token = Application.get_env(:milk, :discord_server_access_token)
-    url = "#{Application.get_env(:milk, :discord_server)}/invitation_link"
-
-    params = Jason.encode!(%{server_id: discord_server_id, access_token: access_token})
-
-    url
-    |> HTTPoison.post(params, "Content-Type": "application/json")
-    |> case do
-      {:ok, response} ->
-        response
-        |> Map.get(:body)
-        |> Jason.decode()
-        |> elem(1)
-        |> Map.get("url")
-      {:error, error} -> raise "Failed to get invitation link, #{error}"
-    end
+    |> Discord.create_invitation_link()
     ~> url
 
     team
@@ -3355,8 +3339,8 @@ defmodule Milk.Tournaments do
       %{
         "user_id" => member.user_id,
         "process_id" => "DISCORD_SERVER_INVITATION",
-        "icon_path" => member.user.icon_path,
-        "title" => "#{tournament.name}からDiscordサーバーへの招待を受け取りました",
+        "icon_path" => tournament.thumbnail_path,
+        "title" => "#{tournament.name}のDiscordサーバーへの招待を受け取りました",
         "body_text" => "",
         "data" =>
           Jason.encode!(%{
@@ -3364,7 +3348,6 @@ defmodule Milk.Tournaments do
           })
       }
       |> Notif.create_notification()
-      |> IO.inspect()
       |> case do
         {:ok, notification} ->
           push_invitation_notification(notification)

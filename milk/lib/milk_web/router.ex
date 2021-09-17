@@ -52,6 +52,7 @@ defmodule MilkWeb.Router do
     post "/tournament_report", ReportController, :create_tournament_report
 
     get "/discord/team_name", DiscordController, :team_name
+    post "/discord/resend_invitation_links", DiscordController, :resend_invitation_links
     post "/discord/associate", DiscordController, :associate
     post "/discord/create_invitation_link", DiscordController, :create_invitation_link
     delete "/discord/dissociate", DiscordController, :dissociate

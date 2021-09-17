@@ -7,6 +7,7 @@ defmodule MilkWeb.DiscordController do
   alias Milk.{
     Accounts,
     Discord,
+    Notif,
     Tournaments
   }
 
@@ -71,6 +72,38 @@ defmodule MilkWeb.DiscordController do
         json(conn, %{result: true, url: json["url"]})
       {:error, error} ->
         render(conn, "error.json", error: error)
+    end
+  end
+
+  def resend_invitation_links(conn, %{"team_id" => team_id}) do
+    team_id
+    |> Tools.to_integer_as_needed()
+    |> Tournaments.get_team()
+    ~> team
+    |> Map.get(:tournament_id)
+    |> Tournaments.get_tournament()
+    ~> tournament
+
+    invitation_link = Discord.create_invitation_link!(tournament.discord_server_id)
+
+    team_id
+    |> Tournaments.get_team_members_by_team_id()
+    |> Enum.each(fn member ->
+      %{
+        "user_id" => member.user_id,
+        "process_id" => "DISCORD_SERVER_INVITATION",
+        "icon_path" => tournament.thumbnail_path,
+        "title" => "#{tournament.name}のDiscordサーバーへの招待を受け取りました",
+        "body_text" => "",
+        "data" => Jason.encode!(%{
+          url: invitation_link
+        })
+      }
+      |> Notif.create_notification()
+    end)
+    |> case do
+      :ok -> json(conn, %{result: true})
+      _ -> render(conn, "error.json", error: nil)
     end
   end
 end

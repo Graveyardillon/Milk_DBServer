@@ -103,7 +103,27 @@ defmodule Milk.Discord do
   @doc """
   Delete discord user.
   """
-  def delete_discord_user(%DiscordUser{} = discord_user) do
+  def delete_discord_user!(%DiscordUser{} = discord_user) do
     Repo.delete(discord_user)
+  end
+
+  def create_invitation_link!(server_id) do
+    access_token = Application.get_env(:milk, :discord_server_access_token)
+    url = "#{Application.get_env(:milk, :discord_server)}/invitation_link"
+
+    params = Jason.encode!(%{server_id: server_id, access_token: access_token})
+
+    url
+    |> HTTPoison.post(params, "Content-Type": "application/json")
+    |> case do
+      {:ok, response} ->
+        response
+        |> Map.get(:body)
+        |> Jason.decode()
+        |> elem(1)
+        |> Map.get("url")
+      {:error, error} ->
+        raise "Failed to get invitation link, #{error}"
+    end
   end
 end
