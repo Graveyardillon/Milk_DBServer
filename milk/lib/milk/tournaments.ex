@@ -8,8 +8,10 @@ defmodule Milk.Tournaments do
   import Common.Sperm
 
   alias Ecto.Multi
-  alias Common.Tools
-  alias Common.FileUtils
+  alias Common.{
+    FileUtils,
+    Tools
+  }
 
   alias Milk.{
     Accounts,
@@ -3099,14 +3101,14 @@ defmodule Milk.Tournaments do
     |> Repo.preload(team_member: :user)
   end
 
-  def team_invitation_decline(id) do 
+  def team_invitation_decline(id) do
     id
     |> get_team_invitation()
     ~> invitation
     |> Map.get(:team_member)
     |> Repo.delete()
     |> case do
-      {:ok, %TeamMember{} = member} -> 
+      {:ok, %TeamMember{} = member} ->
         create_team_invitation_result_notification(invitation, false)
         {:ok, invitation}
 
@@ -3280,7 +3282,8 @@ defmodule Milk.Tournaments do
     end
     |> case do
       {:ok, team} ->
-        take_members_into_chat(team.id)
+        take_members_into_chat(team)
+        invite_members_to_discord_as_needed(team)
         {:ok, team}
 
       {:error, error} ->
@@ -3288,9 +3291,9 @@ defmodule Milk.Tournaments do
     end
   end
 
-  defp take_members_into_chat(team_id) do
+  defp take_members_into_chat(team) do
     TeamMember
-    |> where([tm], tm.team_id == ^team_id)
+    |> where([tm], tm.team_id == ^team.id)
     |> Repo.all()
     |> Enum.each(fn member ->
       member
@@ -3305,6 +3308,58 @@ defmodule Milk.Tournaments do
         |> Map.put("chat_room_id", chat_room.id)
         |> Chat.create_chat_member()
       end)
+    end)
+  end
+
+  defp invite_members_to_discord_as_needed(team) do
+    team
+    |> Map.get(:tournament_id)
+    |> get_tournament()
+    ~> tournament
+    |> Map.get(:discord_server_id)
+    ~> discord_server_id
+
+    access_token = Application.get_env(:milk, :discord_server_access_token)
+    url = "#{Application.get_env(:milk, :discord_server)}/invitation_link"
+
+    params = Jason.encode!(%{server_id: discord_server_id, access_token: access_token})
+
+    url
+    |> HTTPoison.post(params, "Content-Type": "application/json")
+    |> case do
+      {:ok, response} ->
+        response
+        |> Map.get(:body)
+        |> Jason.decode()
+        |> elem(1)
+        |> Map.get("url")
+      {:error, error} -> raise "Failed to get invitation link, #{error}"
+    end
+    ~> url
+
+    team
+    |> Map.get(:id)
+    |> get_team_members_by_team_id()
+    |> Enum.each(fn member ->
+      %{
+        "user_id" => member.user_id,
+        "process_id" => "DISCORD_SERVER_INVITATION",
+        "icon_path" => member.user.icon_path,
+        "title" => "#{tournament.name}からDiscordサーバーへの招待を受け取りました",
+        "body_text" => "",
+        "data" =>
+          Jason.encode!(%{
+            url: url
+          })
+      }
+      |> Notif.create_notification()
+      |> IO.inspect()
+      |> case do
+        {:ok, notification} ->
+          push_invitation_notification(notification)
+        {:error, error} ->
+          {:error, error}
+      end
     end)
   end
 
