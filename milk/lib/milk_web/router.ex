@@ -53,6 +53,7 @@ defmodule MilkWeb.Router do
 
     post "/discord/associate", DiscordController, :associate
     post "/discord/create_invitation_link", DiscordController, :create_invitation_link
+    delete "/discord/dissociate", DiscordController, :dissociate
 
     get "/profile", ProfileController, :get_profile
     get "/profile/get", ProfileController, :get_profile

@@ -99,4 +99,11 @@ defmodule Milk.Discord do
     |> DiscordUser.changeset(attrs)
     |> Repo.update()
   end
+
+  @doc """
+  Delete discord user.
+  """
+  def delete_discord_user(%DiscordUser{} = discord_user) do
+    Repo.delete(discord_user)
+  end
 end

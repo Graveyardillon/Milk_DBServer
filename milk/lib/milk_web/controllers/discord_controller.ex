@@ -19,6 +19,17 @@ defmodule MilkWeb.DiscordController do
     end
   end
 
+  def dissociate(conn, %{"user_id" => user_id}) do
+    user_id
+    |> Tools.to_integer_as_needed()
+    |> Discord.get_discord_user_by_user_id()
+    |> Discord.delete_discord_user()
+    |> case do
+      {:ok, _} -> json(conn, %{result: true})
+      {:error, error} -> render(conn, "error.json", error: error)
+    end
+  end
+
   def create_invitation_link(conn, %{"tournament_id" => tournament_id}) do
     tournament_id
     |> Tools.to_integer_as_needed()
