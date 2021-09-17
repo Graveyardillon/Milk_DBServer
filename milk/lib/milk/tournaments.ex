@@ -155,7 +155,18 @@ defmodule Milk.Tournaments do
   Returns the list of tournament specified with a game id.
   """
   def get_tournament_by_game_id(game_id) do
-    Repo.all(from t in Tournament, where: t.game_id == ^game_id)
+    Tournament
+    |> where([t], t.game_id == ^game_id)
+    |> Repo.all()
+  end
+
+  @doc """
+  Get tournament by discord server id
+  """
+  def get_tournament_by_discord_server_id(discord_server_id) do
+    Tournament
+    |> where([t], t.discord_server_id == ^discord_server_id)
+    |> Repo.one()
   end
 
   @doc """

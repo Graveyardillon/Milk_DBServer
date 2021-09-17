@@ -5,9 +5,26 @@ defmodule MilkWeb.DiscordController do
 
   alias Common.Tools
   alias Milk.{
+    Accounts,
     Discord,
     Tournaments
   }
+
+  def team_name(conn, %{"discord_user_id" => discord_user_id, "discord_server_id" => discord_server_id}) do
+    discord_user_id
+    |> Accounts.get_user_by_discord_id()
+    |> IO.inspect()
+    ~> user
+
+    discord_server_id
+    |> Tournaments.get_tournament_by_discord_server_id()
+    |> IO.inspect()
+    ~> tournament
+
+    team = Tournaments.get_team_by_tournament_id_and_user_id(tournament.id, user.id)
+
+    json(conn, %{result: true, team_name: team.name})
+  end
 
   def associate(conn, %{"user_id" => user_id, "discord_id" => discord_id}) do
     user_id
