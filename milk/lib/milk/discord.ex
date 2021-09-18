@@ -103,7 +103,7 @@ defmodule Milk.Discord do
   @doc """
   Delete discord user.
   """
-  def delete_discord_user!(%DiscordUser{} = discord_user) do
+  def delete_discord_user(%DiscordUser{} = discord_user) do
     Repo.delete(discord_user)
   end
 

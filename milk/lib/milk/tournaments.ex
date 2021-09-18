@@ -2813,21 +2813,23 @@ defmodule Milk.Tournaments do
             {:error, "invalid invitation to user who is already a member of another team."}
           end
         end).()
-    |> case do
-      {:ok, nil} ->
-        tournament_id
-        |> get_tournament()
-        ~> tournament
+    # NOTE: チームの人数によるバリデーションをオフにしてある
+    # |> case do
+    #   {:ok, nil} ->
+    #     # tournament_id
+    #     |> get_tournament()
+    #     ~> tournament
 
-        if tournament.team_size == size do
-          {:ok, nil}
-        else
-          {:error, "invalid size"}
-        end
 
-      {:error, error} ->
-        {:error, error}
-    end
+    #     if tournament.team_size == size do
+    #       {:ok, nil}
+    #     else
+    #       {:error, "invalid size"}
+    #     end
+
+    #   {:error, error} ->
+    #     {:error, error}
+    # end
     |> case do
       {:ok, nil} ->
         # リーダー情報の取得
@@ -3329,32 +3331,35 @@ defmodule Milk.Tournaments do
     |> get_tournament()
     ~> tournament
     |> Map.get(:discord_server_id)
-    |> Discord.create_invitation_link()
-    ~> url
+    ~> server_id
+    |> is_nil()
+    |> unless do
+      url = Discord.create_invitation_link!(server_id)
 
-    team
-    |> Map.get(:id)
-    |> get_team_members_by_team_id()
-    |> Enum.each(fn member ->
-      %{
-        "user_id" => member.user_id,
-        "process_id" => "DISCORD_SERVER_INVITATION",
-        "icon_path" => tournament.thumbnail_path,
-        "title" => "#{tournament.name}のDiscordサーバーへの招待を受け取りました",
-        "body_text" => "",
-        "data" =>
-          Jason.encode!(%{
-            url: url
-          })
-      }
-      |> Notif.create_notification()
-      |> case do
-        {:ok, notification} ->
-          push_invitation_notification(notification)
-        {:error, error} ->
-          {:error, error}
-      end
-    end)
+      team
+      |> Map.get(:id)
+      |> get_team_members_by_team_id()
+      |> Enum.each(fn member ->
+        %{
+          "user_id" => member.user_id,
+          "process_id" => "DISCORD_SERVER_INVITATION",
+          "icon_path" => tournament.thumbnail_path,
+          "title" => "#{tournament.name}のDiscordサーバーへの招待を受け取りました",
+          "body_text" => "",
+          "data" =>
+            Jason.encode!(%{
+              url: url
+            })
+        }
+        |> Notif.create_notification()
+        |> case do
+          {:ok, notification} ->
+            push_invitation_notification(notification)
+          {:error, error} ->
+            {:error, error}
+        end
+      end)
+    end
   end
 
   @doc """
