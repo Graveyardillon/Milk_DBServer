@@ -36,6 +36,15 @@ defmodule Common.Fixtures do
         end
         ~> num
 
+        opts[:deadline]
+        |> is_nil()
+        |> unless do
+          opts[:deadline]
+        else
+          create_attrs["deadline"]
+        end
+        ~> deadline
+
         opts[:capacity]
         |> is_nil()
         |> unless do
@@ -153,6 +162,7 @@ defmodule Common.Fixtures do
         |> Map.put("capacity", capacity)
         |> Map.put("team_size", team_size)
         |> Map.put("type", type)
+        |> Map.put("deadline", deadline)
         |> Map.put("enabled_coin_toss", enabled_coin_toss)
         |> Map.put("enabled_multiple_selection", enabled_multiple_selection)
         |> Map.put("coin_head_field", coin_head_field)

@@ -528,14 +528,10 @@ defmodule MilkWeb.TournamentController do
     entrants = Tournaments.get_entrants(tournament.id)
 
     # Deadlineの確認
-    IO.inspect(tournament.deadline |> Milk.EctoDate.dump())
-    IO.inspect(Timex.now())
-
     tournament.deadline
     |> Milk.EctoDate.dump()
     |> elem(1)
     |> DateTime.compare(Timex.now())
-    |> IO.inspect()
     |> Kernel.!=(:lt)
     ~> result
 
