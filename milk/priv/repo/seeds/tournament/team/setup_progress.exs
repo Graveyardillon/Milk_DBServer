@@ -43,7 +43,7 @@ organizer
     "name" => "test team tournament of size 4.",
     "type" => 2,
     "url" => "test url",
-    "thumbnail_path" => "damn",
+    "thumbnail_path" => "./static/image/tournament_thumbnail/damn.jpg",
     "password" => nil,
     "game_name" => "my awesome name",
     "is_team" => true,
