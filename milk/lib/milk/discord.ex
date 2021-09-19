@@ -143,4 +143,68 @@ defmodule Milk.Discord do
       HTTPoison.post(url, params, "Content-Type": "application/json")
     end
   end
+
+  @doc """
+  Send notification on start match
+  """
+  def send_tournament_start_match(server_id, team_a_name, team_b_name) when is_binary(server_id) do
+    unless is_nil(server_id) do
+      discord_server_url = Application.get_env(:milk, :discord_server)
+      access_token = Application.get_env(:milk, :discord_server_access_token)
+
+      url = "#{discord_server_url}/start_match"
+
+      Map.new()
+      |> Map.put(:server_id, server_id)
+      |> Map.put(:access_token, access_token)
+      |> Map.put(:team_a_name, team_a_name)
+      |> Map.put(:team_b_name, team_b_name)
+      |> Jason.encode!()
+      ~> params
+
+      HTTPoison.post(url, params, "Content-Type": "application/json")
+    end
+  end
+
+  def send_tournament_finish_match(server_id, team_a_name, team_b_name, team_a_score, team_b_score) when is_binary(server_id) do
+    unless is_nil(server_id) do
+      discord_server_url = Application.get_env(:milk, :discord_server)
+      access_token = Application.get_env(:milk, :discord_server_access_token)
+
+      url = "#{discord_server_url}/finish_match"
+
+      Map.new()
+      |> Map.put(:server_id, server_id)
+      |> Map.put(:access_token, access_token)
+      |> Map.put(:team_a_name, team_a_name)
+      |> Map.put(:team_b_name, team_b_name)
+      |> Map.put(:team_a_score, team_a_score)
+      |> Map.put(:team_b_score, team_b_score)
+      |> Jason.encode!()
+      ~> params
+
+      HTTPoison.post(url, params, "Content-Type": "application/json")
+    end
+  end
+
+  @doc """
+  Sending notification on tournament finish
+  """
+  def send_tournament_finish(server_id, tournament_name, winner_name) when is_binary(server_id) do
+    unless is_nil(server_id) do
+      discord_server_url = Application.get_env(:milk, :discord_server)
+      access_token = Application.get_env(:milk, :discord_server_access_token)
+
+      url = "#{discord_server_url}/finish_tournament"
+
+      Map.new()
+      |> Map.put(:server_id, server_id)
+      |> Map.put(:tournament_name, tournament_name)
+      |> Map.put(:winner_name, winner_name)
+      |> Jason.encode!()
+      ~> params
+
+      HTTPoison.post(url, params, "Content-Type": "application/json")
+    end
+  end
 end
