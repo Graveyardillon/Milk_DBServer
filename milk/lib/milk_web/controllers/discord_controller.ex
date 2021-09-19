@@ -77,7 +77,6 @@ defmodule MilkWeb.DiscordController do
     team_id
     |> Tools.to_integer_as_needed()
     |> Tournaments.get_team()
-    ~> team
     |> Map.get(:tournament_id)
     |> Tournaments.get_tournament()
     ~> tournament

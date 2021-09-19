@@ -164,7 +164,6 @@ defmodule MilkWeb.TeamController do
     |> Tournaments.delete_team()
     |> case do
       {:ok, team} ->
-        team
         render(conn, "show.json", team: team)
 
       {:error, error} ->
@@ -174,10 +173,10 @@ defmodule MilkWeb.TeamController do
 
   def decline_invitation(conn, %{"invitation_id" => id}) do
     case Tournaments.team_invitation_decline(id) do
-      {:ok, %Tournaments.TeamInvitation{} = invitation} ->
+      {:ok, %Tournaments.TeamInvitation{} = _invitation} ->
         json(conn, %{result: true})
 
-      {:error, error} ->
+      {:error, _error} ->
         json(conn, %{result: false})
     end
   end
@@ -190,13 +189,13 @@ defmodule MilkWeb.TeamController do
     |> unless do
       leader = Enum.find(team.team_member, fn x -> x.is_leader == true end)
       total = length(team.team_member) + length(user_id_list)
-      
+
       cond do
         total <= team.size ->
-          Tournaments.create_team_members(team_id, user_id_list) 
+          Tournaments.create_team_members(team_id, user_id_list)
           |> Enum.each(fn member ->
-              Tournaments.create_team_invitation(member.id, leader.user_id) 
-          end) 
+              Tournaments.create_team_invitation(member.id, leader.user_id)
+          end)
           json(conn, %{result: true})
         total > team.size ->
           render(conn, "error.json", error: "invalid size")

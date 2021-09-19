@@ -66,7 +66,7 @@ defmodule Milk.Tournaments do
   @doc """
   Returns the list of tournament for home screen.
   """
-  def home_tournament(date_offset, offset, user_id \\ nil) do
+  def home_tournament(_date_offset, offset, user_id \\ nil) do
     offset = Tools.to_integer_as_needed(offset)
 
     if user_id do
@@ -81,7 +81,7 @@ defmodule Milk.Tournaments do
     Timex.now()
     |> Timex.add(Timex.Duration.from_days(1))
     |> Timex.to_datetime()
-    ~> filter_date
+    ~> _filter_date
 
     Tournament
     # |> where([t], t.deadline > ^filter_date and t.create_time < ^date_offset)
@@ -1793,25 +1793,6 @@ defmodule Milk.Tournaments do
     end)
   end
 
-  defp atom_tournament_map_to_string_map(%Tournament{} = tournament, winner_id) do
-    %{
-      "master_id" => tournament.master_id,
-      "tournament_id" => tournament.id,
-      "name" => tournament.name,
-      "type" => tournament.type,
-      "deadline" => tournament.deadline,
-      "url" => tournament.url,
-      "description" => tournament.description,
-      "event_date" => tournament.event_date,
-      "game_id" => tournament.game_id,
-      "game_name" => tournament.game_name,
-      "winner_id" => winner_id,
-      "capacity" => tournament.capacity,
-      "thumbnail_path" => tournament.thumbnail_path,
-      "entrant" => tournament.entrant
-    }
-  end
-
   defp atom_topic_map_to_string_map(%TournamentChatTopic{} = topic) do
     %{
       "tournament_id" => topic.tournament_id,
@@ -2276,7 +2257,7 @@ defmodule Milk.Tournaments do
     end
   end
 
-  defp update_team_rank(match_list, team_id, tournament_id) do
+  defp update_team_rank(match_list, team_id, _tournament_id) do
     match_list
     |> find_match(team_id)
     |> get_opponent_team(team_id)
@@ -2732,15 +2713,14 @@ defmodule Milk.Tournaments do
           end)
           ~> win_game_scores
 
-          lose_game_scores =
-            tournament_id
-            |> TournamentProgress.get_best_of_x_tournament_match_logs_by_loser(id)
-            |> Enum.map(fn log ->
-              log.loser_score
-            end)
-            ~> lose_game_scores
-            |> Enum.concat(win_game_scores)
-            ~> game_scores
+          tournament_id
+          |> TournamentProgress.get_best_of_x_tournament_match_logs_by_loser(id)
+          |> Enum.map(fn log ->
+            log.loser_score
+          end)
+          ~> _lose_game_scores
+          |> Enum.concat(win_game_scores)
+          ~> game_scores
 
           Map.put(bracket, "game_scores", game_scores)
         end
@@ -2804,7 +2784,7 @@ defmodule Milk.Tournaments do
       |> where([t, tm], tm.is_invitation_confirmed)
       |> Repo.all()
       |> Kernel.==([])
-      ~> result
+      ~> _result
     end)
     |> (fn result ->
           if result do
@@ -3122,7 +3102,7 @@ defmodule Milk.Tournaments do
     |> Map.get(:team_member)
     |> Repo.delete()
     |> case do
-      {:ok, %TeamMember{} = member} ->
+      {:ok, %TeamMember{} = _member} ->
         create_team_invitation_result_notification(invitation, false)
         {:ok, invitation}
 
@@ -3273,9 +3253,6 @@ defmodule Milk.Tournaments do
     end
   end
 
-  @doc """
-  Verify team.
-  """
   defp verify_team_as_needed(team_id) do
     TeamMember
     |> where([tm], tm.team_id == ^team_id)
@@ -3522,7 +3499,7 @@ defmodule Milk.Tournaments do
   @doc """
   Get map selections.
   """
-  def get_map_selections(tournament_id, small_id, large_id) do
+  def get_map_selections(_tournament_id, small_id, large_id) do
     MapSelection
     |> join(:inner, [ms], m in Milk.Tournaments.Map, on: ms.map_id == m.id)
     |> where([ms, m], ms.large_id == ^large_id)
@@ -3612,7 +3589,6 @@ defmodule Milk.Tournaments do
     |> Enum.filter(fn map ->
       map.state == "selected"
     end)
-    ~> map_selections
     |> Enum.map(fn map_selection ->
       map_selection
       |> Map.get(:map)
