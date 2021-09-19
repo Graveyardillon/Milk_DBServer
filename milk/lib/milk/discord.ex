@@ -5,8 +5,9 @@ defmodule Milk.Discord do
 
   alias Milk.Discord.User, as: DiscordUser
 
+  import Common.Sperm
+
   alias Milk.{
-    Accounts,
     Repo,
     Tournaments
   }
@@ -31,11 +32,6 @@ defmodule Milk.Discord do
     |> where([du], du.discord_id == ^discord_id)
     |> Repo.one()
   end
-
-  @doc """
-  Validate the team member is associated with discord
-  """
-
 
   @doc """
   Validate the all team members are associated with discord.
@@ -199,6 +195,7 @@ defmodule Milk.Discord do
 
       Map.new()
       |> Map.put(:server_id, server_id)
+      |> Map.put(:access_token, access_token)
       |> Map.put(:tournament_name, tournament_name)
       |> Map.put(:winner_name, winner_name)
       |> Jason.encode!()

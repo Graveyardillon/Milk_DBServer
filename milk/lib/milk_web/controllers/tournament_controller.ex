@@ -9,6 +9,7 @@ defmodule MilkWeb.TournamentController do
   alias Milk.{
     Accounts,
     Chat,
+    Discord,
     Log,
     Notif,
     Relations,
@@ -1377,7 +1378,7 @@ defmodule MilkWeb.TournamentController do
             json(conn, %{validated: true, completed: true, is_finished: is_finished})
 
           true ->
-            # notify_on_duplicate_match(tournament_id, user_id, opponent_id)
+            notify_on_duplicate_match(tournament_id, user_id, opponent_id)
             json(conn, %{validated: false, completed: false, is_finished: false})
         end
 
