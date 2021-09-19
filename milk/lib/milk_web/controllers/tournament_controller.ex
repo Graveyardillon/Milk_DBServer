@@ -666,6 +666,7 @@ defmodule MilkWeb.TournamentController do
       |> case do
         {:ok, match_list, match_list_with_fight_result} ->
           Oban.Processer.notify_tournament_start(tournament_id)
+          Discord.send_tournament_create_notification(tournament.discord_server_id)
 
           render(conn, "match.json", %{
             match_list: match_list,
