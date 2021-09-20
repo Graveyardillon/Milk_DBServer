@@ -77,15 +77,15 @@ defmodule MilkWeb.ProfileController do
 
     if user do
       uuid = SecureRandom.uuid()
-
-      FileUtils.copy(image.path, "./static/image/profile_icon/#{uuid}.jpg")
+      new_path = "./static/image/profile_icon/#{uuid}.jpg"
+      FileUtils.copy(image.path, new_path)
 
       :milk
       |> Application.get_env(:environment)
       |> case do
-        :dev -> update_account(user, uuid)
-        :test -> update_account(user, uuid)
-        _ -> update_account_prod(user, uuid)
+        :dev -> update_account(user, new_path)
+        :test -> update_account(user, new_path)
+        _ -> update_account_prod(user, new_path)
       end
       ~> local_path
 
@@ -95,16 +95,16 @@ defmodule MilkWeb.ProfileController do
     end
   end
 
-  defp update_account(user, uuid) do
-    Accounts.update_icon_path(user, "./static/image/profile_icon/#{uuid}.jpg")
-    uuid
+  defp update_account(user, path) do
+    Accounts.update_icon_path(user, path)
+    path
   end
 
-  defp update_account_prod(user, uuid) do
-    object = Objects.upload("./static/image/profile_icon/#{uuid}.jpg")
-    File.rm("./static/image/profile_icon/#{uuid}.jpg")
-    Accounts.update_icon_path(user, object.name)
-    object.name
+  defp update_account_prod(user, path) do
+    object = Objects.upload(path)
+    File.rm(path)
+    Accounts.update_icon_path(user, path)
+    path
   end
 
   def get_icon(conn, %{"path" => path}) do
