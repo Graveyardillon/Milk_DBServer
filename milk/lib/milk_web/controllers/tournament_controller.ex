@@ -1020,6 +1020,7 @@ defmodule MilkWeb.TournamentController do
 
     # 大会がチーム用かどうかで分岐の処理を書く
     result = start_each_match(user_id, tournament_id)
+    notify_discord_on_start_match_as_needed(tournament_id, user_id)
 
     json(conn, %{result: result})
   end
@@ -1062,6 +1063,48 @@ defmodule MilkWeb.TournamentController do
       # FIXME: trueを返すことによってios側でどのユーザーでもコイントスの結果を見られるようにしているが、
       # もっと良い処理があるかもしれない
       true
+    end
+  end
+
+  defp notify_discord_on_start_match_as_needed(tournament_id, user_id) do
+    tournament_id
+    |> Tournaments.get_tournament()
+    ~> tournament
+    |> Map.get(:discord_server_id)
+    ~> server_id
+    |> is_nil()
+    |> unless do
+      tournament
+      |> Map.get(:is_team)
+      |> if do
+        team = Tournaments.get_team_by_tournament_id_and_user_id(tournament_id, user_id)
+
+        tournament_id
+        |> TournamentProgress.get_match_list()
+        |> Tournaments.find_match(team.id)
+        |> Tournaments.get_opponent_team(team.id)
+        ~> opponent_team
+
+        {team.id, opponent_team["id"], team.name, opponent_team["name"]}
+      else
+        user = Accounts.get_user(user_id)
+
+        tournament_id
+        |> TournamentProgress.get_match_list()
+        |> Tournaments.find_match(user_id)
+        |> Tournaments.get_opponent_team(user_id)
+        ~> opponent
+
+        {user.id, opponent["id"], user.name, opponent["name"]}
+      end
+      ~> {a_id, b_id, a_name, b_name}
+
+      pending_list = TournamentProgress.get_match_pending_list(a_id, tournament_id)
+      opponent_pending_list = TournamentProgress.get_match_pending_list(b_id, tournament_id)
+
+      if pending_list != [] && opponent_pending_list != [] do
+        Discord.send_tournament_start_match(server_id, a_name, b_name)
+      end
     end
   end
 
