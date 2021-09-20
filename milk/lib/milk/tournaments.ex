@@ -731,7 +731,7 @@ defmodule Milk.Tournaments do
     end
     ~> id
 
-    TournamentProgress.insert_match_pending_list_table(id, tournament_id)
+    # TournamentProgress.insert_match_pending_list_table(id, tournament_id)
 
     tournament
     |> Map.get(:enabled_multiple_selection)
@@ -741,7 +741,7 @@ defmodule Milk.Tournaments do
       |> Map.get(:custom_detail)
       |> Map.get(:multiple_selection_type)
       |> case do
-        "VLCBAN" ->
+        "VLC" ->
           delete_map_selections(tournament_id, id)
           TournamentProgress.delete_is_attacker_side(id, tournament_id)
           TournamentProgress.delete_ban_order(tournament_id, id)

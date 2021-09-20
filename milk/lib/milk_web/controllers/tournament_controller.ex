@@ -1016,8 +1016,16 @@ defmodule MilkWeb.TournamentController do
   """
   def start_match(conn, %{"user_id" => user_id, "tournament_id" => tournament_id}) do
     user_id = Tools.to_integer_as_needed(user_id)
+    tournament_id = Tools.to_integer_as_needed(tournament_id)
 
     # 大会がチーム用かどうかで分岐の処理を書く
+    result = start_each_match(user_id, tournament_id)
+
+    json(conn, %{result: result})
+  end
+
+  # FIXME: 臨時の命名
+  defp start_each_match(user_id, tournament_id) do
     tournament_id
     |> Tools.to_integer_as_needed()
     ~> tournament_id
@@ -1028,9 +1036,6 @@ defmodule MilkWeb.TournamentController do
     else
       start_individual_match(tournament_id, user_id)
     end
-    ~> result
-
-    json(conn, %{result: result})
   end
 
   defp start_individual_match(tournament_id, user_id) do
@@ -1394,7 +1399,14 @@ defmodule MilkWeb.TournamentController do
     tournament_id = Tools.to_integer_as_needed(tournament_id)
     user_id = Tools.to_integer_as_needed(user_id)
 
-    result = Tournaments.flip_coin(user_id, tournament_id)
+    user_id
+    |> start_each_match(tournament_id)
+    |> if do
+      Tournaments.flip_coin(user_id, tournament_id)
+    else
+      false
+    end
+    ~> result
 
     json(conn, %{result: result})
   end
