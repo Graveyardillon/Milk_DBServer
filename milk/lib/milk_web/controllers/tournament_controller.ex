@@ -1083,7 +1083,7 @@ defmodule MilkWeb.TournamentController do
         |> TournamentProgress.get_match_list()
         |> Tournaments.find_match(team.id)
         |> Tournaments.get_opponent_team(team.id)
-        ~> opponent_team
+        ~> {:ok, opponent_team}
 
         {team.id, opponent_team["id"], team.name, opponent_team["name"]}
       else
@@ -1092,8 +1092,8 @@ defmodule MilkWeb.TournamentController do
         tournament_id
         |> TournamentProgress.get_match_list()
         |> Tournaments.find_match(user_id)
-        |> Tournaments.get_opponent_team(user_id)
-        ~> opponent
+        |> Tournaments.get_opponent(user_id)
+        ~> {:ok, opponent}
 
         {user.id, opponent["id"], user.name, opponent["name"]}
       end
@@ -1103,7 +1103,7 @@ defmodule MilkWeb.TournamentController do
       opponent_pending_list = TournamentProgress.get_match_pending_list(b_id, tournament_id)
 
       if pending_list != [] && opponent_pending_list != [] do
-        Discord.send_tournament_start_match(server_id, a_name, b_name)
+        Discord.send_tournament_start_match_notification(server_id, a_name, b_name)
       end
     end
   end
@@ -1426,12 +1426,45 @@ defmodule MilkWeb.TournamentController do
             json(conn, %{validated: true, completed: true, is_finished: is_finished})
 
           true ->
+            notify_discord_on_duplicate_claim_as_needed(tournament_id, user_id, opponent_id, score)
             notify_on_duplicate_match(tournament_id, user_id, opponent_id)
             json(conn, %{validated: false, completed: false, is_finished: false})
         end
 
       [] ->
         json(conn, %{validated: true, completed: false, is_finished: false})
+    end
+  end
+
+  defp notify_discord_on_duplicate_claim_as_needed(tournament_id, user_id, opponent_id, score) do
+    tournament_id
+    |> Tournaments.get_tournament()
+    ~> tournament
+    |> Map.get(:is_team)
+    |> if do
+      team = Tournaments.get_team_by_tournament_id_and_user_id(tournament_id, user_id)
+
+      tournament_id
+      |> TournamentProgress.get_match_list()
+      |> Tournaments.find_match(team.id)
+      |> Tournaments.get_opponent_team(team.id)
+      |> case do
+        {:ok, opponent} -> {:ok, opponent["name"], team.name}
+        {:wait, nil} -> raise "The given user should wait for the opponent."
+        _ -> raise "Unknown error on claim score."
+      end
+    else
+      user = Accounts.get_user(user_id)
+      opponent = Accounts.get_user(opponent_id)
+
+      {:ok, opponent["name"], user.name}
+    end
+    ~> {:ok, opponent_name, name}
+
+    unless is_nil(tournament.discord_server_id) do
+      tournament
+      |> Map.get(:discord_server_id)
+      |> Discord.send_tournament_duplicate_claim_notification(name, opponent_name, score)
     end
   end
 
