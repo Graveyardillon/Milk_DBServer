@@ -1402,10 +1402,12 @@ defmodule MilkWeb.TournamentController do
 
     tournament_id
     |> TournamentProgress.get_score(opponent_id)
+    ~> opponent_score
     |> case do
       n when is_integer(n) ->
         cond do
           n > score ->
+            notify_discord_on_match_finished_as_needed(tournament_id, user_id, opponent_id, score, opponent_score)
             Tournaments.delete_loser_process(tournament_id, [user_id])
             Tournaments.score(tournament_id, opponent_id, user_id, n, score, match_index)
             TournamentProgress.delete_match_pending_list(user_id, tournament_id)
@@ -1416,6 +1418,7 @@ defmodule MilkWeb.TournamentController do
             json(conn, %{validated: true, completed: true, is_finished: is_finished})
 
           n < score ->
+            notify_discord_on_match_finished_as_needed(tournament_id, user_id, opponent_id, score, opponent_score)
             Tournaments.delete_loser_process(tournament_id, [opponent_id])
             Tournaments.score(tournament_id, user_id, opponent_id, score, n, match_index)
             TournamentProgress.delete_match_pending_list(user_id, tournament_id)
@@ -1436,13 +1439,13 @@ defmodule MilkWeb.TournamentController do
     end
   end
 
-  defp notify_discord_on_duplicate_claim_as_needed(tournament_id, user_id, opponent_id, score) do
+  defp notify_discord_on_match_finished_as_needed(tournament_id, id, opponent_id, score, opponent_score) do
     tournament_id
     |> Tournaments.get_tournament()
     ~> tournament
     |> Map.get(:is_team)
     |> if do
-      team = Tournaments.get_team_by_tournament_id_and_user_id(tournament_id, user_id)
+      team = Tournaments.get_team_by_tournament_id_and_user_id(tournament_id, id)
 
       tournament_id
       |> TournamentProgress.get_match_list()
@@ -1454,7 +1457,39 @@ defmodule MilkWeb.TournamentController do
         _ -> raise "Unknown error on claim score."
       end
     else
-      user = Accounts.get_user(user_id)
+      user = Accounts.get_user(id)
+      opponent = Accounts.get_user(opponent_id)
+
+      {:ok, opponent["name"], user.name}
+    end
+    ~> {:ok, opponent_name, name}
+
+    unless is_nil(tournament.discord_server_id) do
+      tournament
+      |> Map.get(:discord_server_id)
+      |> Discord.send_tournament_finish_match_notification(name, opponent_name, score, opponent_score)
+    end
+  end
+
+  defp notify_discord_on_duplicate_claim_as_needed(tournament_id, id, opponent_id, score) do
+    tournament_id
+    |> Tournaments.get_tournament()
+    ~> tournament
+    |> Map.get(:is_team)
+    |> if do
+      team = Tournaments.get_team_by_tournament_id_and_user_id(tournament_id, id)
+
+      tournament_id
+      |> TournamentProgress.get_match_list()
+      |> Tournaments.find_match(team.id)
+      |> Tournaments.get_opponent_team(team.id)
+      |> case do
+        {:ok, opponent} -> {:ok, opponent["name"], team.name}
+        {:wait, nil} -> raise "The given user should wait for the opponent."
+        _ -> raise "Unknown error on claim score."
+      end
+    else
+      user = Accounts.get_user(id)
       opponent = Accounts.get_user(opponent_id)
 
       {:ok, opponent["name"], user.name}
