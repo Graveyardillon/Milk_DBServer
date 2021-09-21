@@ -19,96 +19,96 @@ defmodule MilkWeb.NotifController do
     notifs =
       user_id
       |> Notif.list_notification()
-      |> Enum.map(fn notification ->
-        if is_nil(notification.icon_path) do
-          Map.put(notification, :icon, nil)
-        else
-          require_thumbnail = [
-            "FOLLOWING_USER_PLANNED_TOURNAMENT",
-            "TOURNAMENT_START",
-            "REMIND_TO_START_TOURNAMENT",
-            "TOURNAMENT_END"
-          ]
+      # |> Enum.map(fn notification ->
+      #   if is_nil(notification.icon_path) do
+      #     Map.put(notification, :icon, nil)
+      #   else
+      #     require_thumbnail = [
+      #       "FOLLOWING_USER_PLANNED_TOURNAMENT",
+      #       "TOURNAMENT_START",
+      #       "REMIND_TO_START_TOURNAMENT",
+      #       "TOURNAMENT_END"
+      #     ]
 
-          icon =
-            if Enum.member?(require_thumbnail, notification.process_id) do
-              read_thumbnail(notification.icon_path)
-            else
-              read_icon(notification.icon_path)
-            end
+      #     icon =
+      #       if Enum.member?(require_thumbnail, notification.process_id) do
+      #         read_thumbnail(notification.icon_path)
+      #       else
+      #         read_icon(notification.icon_path)
+      #       end
 
-          Map.put(notification, :icon, icon)
-        end
-      end)
+      #     Map.put(notification, :icon, icon)
+      #   end
+      # end)
 
     render(conn, "list.json", notif: notifs)
   end
 
-  defp read_icon(path) do
-    :milk
-    |> Application.get_env(:environment)
-    |> case do
-      :dev -> read_icon_dev(path)
-      :test -> read_icon_dev(path)
-      _ -> read_icon_prod(path)
-    end
-    |> case do
-      {:ok, file} -> Base.encode64(file)
-      {:error, _} -> nil
-    end
-  end
+  # defp read_icon(path) do
+  #   :milk
+  #   |> Application.get_env(:environment)
+  #   |> case do
+  #     :dev -> read_icon_dev(path)
+  #     :test -> read_icon_dev(path)
+  #     _ -> read_icon_prod(path)
+  #   end
+  #   |> case do
+  #     {:ok, file} -> Base.encode64(file)
+  #     {:error, _} -> nil
+  #   end
+  # end
 
-  defp read_icon_dev(path) do
-    File.read(path)
-  end
+  # defp read_icon_dev(path) do
+  #   File.read(path)
+  # end
 
-  defp read_icon_prod(path) do
-    path
-    |> Objects.get()
-    |> Map.get(:mediaLink)
-    |> Image.get()
-  end
+  # defp read_icon_prod(path) do
+  #   path
+  #   |> Objects.get()
+  #   |> Map.get(:mediaLink)
+  #   |> Image.get()
+  # end
 
-  defp read_thumbnail(path) do
-    :milk
-    |> Application.get_env(:environment)
-    |> case do
-      :dev -> read_thumbnail_dev(path)
-      :test -> read_thumbnail_dev(path)
-      _ -> read_thumbnail_prod(path)
-    end
-    |> case do
-      %{b64: b64} -> b64
-      %{error: _} -> nil
-    end
-  end
+  # defp read_thumbnail(path) do
+  #   :milk
+  #   |> Application.get_env(:environment)
+  #   |> case do
+  #     :dev -> read_thumbnail_dev(path)
+  #     :test -> read_thumbnail_dev(path)
+  #     _ -> read_thumbnail_prod(path)
+  #   end
+  #   |> case do
+  #     %{b64: b64} -> b64
+  #     %{error: _} -> nil
+  #   end
+  # end
 
-  defp read_thumbnail_dev(path) do
-    File.read(path)
-    |> case do
-      {:ok, file} ->
-        b64 = Base.encode64(file)
-        %{b64: b64}
+  # defp read_thumbnail_dev(path) do
+  #   File.read(path)
+  #   |> case do
+  #     {:ok, file} ->
+  #       b64 = Base.encode64(file)
+  #       %{b64: b64}
 
-      {:error, _} ->
-        %{error: "image not found"}
-    end
-  end
+  #     {:error, _} ->
+  #       %{error: "image not found"}
+  #   end
+  # end
 
-  defp read_thumbnail_prod(path) do
-    path
-    |> Objects.get()
-    |> Map.get(:mediaLink)
-    |> Image.get()
-    |> case do
-      {:ok, file} ->
-        b64 = Base.encode64(file)
-        %{b64: b64}
+  # defp read_thumbnail_prod(path) do
+  #   path
+  #   |> Objects.get()
+  #   |> Map.get(:mediaLink)
+  #   |> Image.get()
+  #   |> case do
+  #     {:ok, file} ->
+  #       b64 = Base.encode64(file)
+  #       %{b64: b64}
 
-      _ ->
-        %{error: "image not found"}
-    end
-  end
+  #     _ ->
+  #       %{error: "image not found"}
+  #   end
+  # end
 
   def create(conn, %{"notif" => notif}) do
     {:ok, notif} = Notif.create_notification(notif)
