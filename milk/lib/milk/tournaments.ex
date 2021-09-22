@@ -8,12 +8,15 @@ defmodule Milk.Tournaments do
   import Common.Sperm
 
   alias Ecto.Multi
-  alias Common.Tools
-  alias Common.FileUtils
+  alias Common.{
+    FileUtils,
+    Tools
+  }
 
   alias Milk.{
     Accounts,
     Chat,
+    Discord,
     Log,
     Notif,
     TournamentProgress,
@@ -63,7 +66,7 @@ defmodule Milk.Tournaments do
   @doc """
   Returns the list of tournament for home screen.
   """
-  def home_tournament(date_offset, offset, user_id \\ nil) do
+  def home_tournament(_date_offset, offset, user_id \\ nil) do
     offset = Tools.to_integer_as_needed(offset)
 
     if user_id do
@@ -78,7 +81,7 @@ defmodule Milk.Tournaments do
     Timex.now()
     |> Timex.add(Timex.Duration.from_days(1))
     |> Timex.to_datetime()
-    ~> filter_date
+    ~> _filter_date
 
     Tournament
     # |> where([t], t.deadline > ^filter_date and t.create_time < ^date_offset)
@@ -153,7 +156,18 @@ defmodule Milk.Tournaments do
   Returns the list of tournament specified with a game id.
   """
   def get_tournament_by_game_id(game_id) do
-    Repo.all(from t in Tournament, where: t.game_id == ^game_id)
+    Tournament
+    |> where([t], t.game_id == ^game_id)
+    |> Repo.all()
+  end
+
+  @doc """
+  Get tournament by discord server id
+  """
+  def get_tournament_by_discord_server_id(discord_server_id) do
+    Tournament
+    |> where([t], t.discord_server_id == ^discord_server_id)
+    |> Repo.one()
   end
 
   @doc """
@@ -183,7 +197,7 @@ defmodule Milk.Tournaments do
     |> Repo.all()
     |> Repo.preload(:entrant)
     |> Repo.preload(:custom_detail)
-    |> Repo.preload(:multiple_selection)
+    |> Repo.preload(:map)
     |> Repo.preload(:team)
     |> Repo.preload(:master)
     |> Repo.preload(:assistant)
@@ -229,7 +243,7 @@ defmodule Milk.Tournaments do
     |> Repo.all()
     |> Repo.preload(:entrant)
     |> Repo.preload(:custom_detail)
-    |> Repo.preload(:multiple_selection)
+    |> Repo.preload(:map)
     |> Repo.preload(:team)
     |> Repo.preload(:master)
     |> Repo.preload(:assistant)
@@ -247,7 +261,7 @@ defmodule Milk.Tournaments do
     |> Repo.preload(:entrant)
     |> Repo.preload(:assistant)
     |> Repo.preload(:master)
-    |> Repo.preload(:multiple_selection)
+    |> Repo.preload(:map)
     |> Repo.preload(:custom_detail)
     |> (fn tournament ->
           if tournament do
@@ -328,7 +342,7 @@ defmodule Milk.Tournaments do
     |> Repo.all()
     |> Repo.preload(:entrant)
     |> Repo.preload(:custom_detail)
-    |> Repo.preload(:multiple_selection)
+    |> Repo.preload(:map)
     |> Repo.preload(:team)
     |> Repo.preload(:master)
     |> Repo.preload(:assistant)
@@ -343,7 +357,7 @@ defmodule Milk.Tournaments do
     |> Repo.all()
     |> Repo.preload(:entrant)
     |> Repo.preload(:custom_detail)
-    |> Repo.preload(:multiple_selection)
+    |> Repo.preload(:map)
     |> Repo.preload(:team)
     |> Repo.preload(:master)
     |> Repo.preload(:assistant)
@@ -383,7 +397,7 @@ defmodule Milk.Tournaments do
     |> Repo.all()
     |> Repo.preload(:entrant)
     |> Repo.preload(:custom_detail)
-    |> Repo.preload(:multiple_selection)
+    |> Repo.preload(:map)
     |> Repo.preload(:team)
     |> Repo.preload(:master)
     |> Repo.preload(:assistant)
@@ -433,7 +447,7 @@ defmodule Milk.Tournaments do
     |> where([u], u.id == ^id)
     |> Repo.exists?()
     |> if do
-      if params["enabled_multiple_selection"] && !params["enabled_coin_toss"] do
+      if params["enabled_map"] && !params["enabled_coin_toss"] do
         {:error, "Needs to enable coin toss"}
       else
         {:ok, nil}
@@ -451,7 +465,7 @@ defmodule Milk.Tournaments do
     |> case do
       {:ok, tournament} ->
         set_details(tournament, params)
-        set_multiple_selections(tournament, params)
+        set_maps(tournament, params)
         {:ok, tournament}
 
       {:error, error} ->
@@ -596,12 +610,12 @@ defmodule Milk.Tournaments do
     |> create_custom_detail()
   end
 
-  defp set_multiple_selections(tournament, params) do
+  defp set_maps(tournament, params) do
     params
-    |> Map.has_key?("multiple_selections")
+    |> Map.has_key?("maps")
     |> if do
       params
-      |> Map.get("multiple_selections")
+      |> Map.get("maps")
       ~> selections
 
       selections
@@ -622,7 +636,7 @@ defmodule Milk.Tournaments do
         |> Enum.map(fn selection ->
           selection
           |> Map.put("tournament_id", tournament.id)
-          |> create_multiple_selection()
+          |> create_map()
         end)
       end
     end
@@ -720,14 +734,13 @@ defmodule Milk.Tournaments do
     TournamentProgress.insert_match_pending_list_table(id, tournament_id)
 
     tournament
-    |> Map.get(:enabled_multiple_selection)
+    |> Map.get(:enabled_map)
     |> if do
-      # multiple_selection_typeを取得
       tournament
       |> Map.get(:custom_detail)
-      |> Map.get(:multiple_selection_type)
+      |> Map.get(:map_selection_type)
       |> case do
-        "VLCBAN" ->
+        "VLT" ->
           delete_map_selections(tournament_id, id)
           TournamentProgress.delete_is_attacker_side(id, tournament_id)
           TournamentProgress.delete_ban_order(tournament_id, id)
@@ -1779,25 +1792,6 @@ defmodule Milk.Tournaments do
     end)
   end
 
-  defp atom_tournament_map_to_string_map(%Tournament{} = tournament, winner_id) do
-    %{
-      "master_id" => tournament.master_id,
-      "tournament_id" => tournament.id,
-      "name" => tournament.name,
-      "type" => tournament.type,
-      "deadline" => tournament.deadline,
-      "url" => tournament.url,
-      "description" => tournament.description,
-      "event_date" => tournament.event_date,
-      "game_id" => tournament.game_id,
-      "game_name" => tournament.game_name,
-      "winner_id" => winner_id,
-      "capacity" => tournament.capacity,
-      "thumbnail_path" => tournament.thumbnail_path,
-      "entrant" => tournament.entrant
-    }
-  end
-
   defp atom_topic_map_to_string_map(%TournamentChatTopic{} = topic) do
     %{
       "tournament_id" => topic.tournament_id,
@@ -2262,7 +2256,7 @@ defmodule Milk.Tournaments do
     end
   end
 
-  defp update_team_rank(match_list, team_id, tournament_id) do
+  defp update_team_rank(match_list, team_id, _tournament_id) do
     match_list
     |> find_match(team_id)
     |> get_opponent_team(team_id)
@@ -2583,7 +2577,7 @@ defmodule Milk.Tournaments do
         [{_, state}] = pending_list
         state
 
-      pending_list != [] && tournament.enabled_multiple_selection ->
+      pending_list != [] && tournament.enabled_map ->
         check_map_ban_state(tournament, id)
 
       true ->
@@ -2718,15 +2712,14 @@ defmodule Milk.Tournaments do
           end)
           ~> win_game_scores
 
-          lose_game_scores =
-            tournament_id
-            |> TournamentProgress.get_best_of_x_tournament_match_logs_by_loser(id)
-            |> Enum.map(fn log ->
-              log.loser_score
-            end)
-            ~> lose_game_scores
-            |> Enum.concat(win_game_scores)
-            ~> game_scores
+          tournament_id
+          |> TournamentProgress.get_best_of_x_tournament_match_logs_by_loser(id)
+          |> Enum.map(fn log ->
+            log.loser_score
+          end)
+          ~> _lose_game_scores
+          |> Enum.concat(win_game_scores)
+          ~> game_scores
 
           Map.put(bracket, "game_scores", game_scores)
         end
@@ -2790,7 +2783,7 @@ defmodule Milk.Tournaments do
       |> where([t, tm], tm.is_invitation_confirmed)
       |> Repo.all()
       |> Kernel.==([])
-      ~> result
+      ~> _result
     end)
     |> (fn result ->
           if result do
@@ -2799,21 +2792,23 @@ defmodule Milk.Tournaments do
             {:error, "invalid invitation to user who is already a member of another team."}
           end
         end).()
-    |> case do
-      {:ok, nil} ->
-        tournament_id
-        |> get_tournament()
-        ~> tournament
+    # NOTE: チームの人数によるバリデーションをオフにしてある
+    # |> case do
+    #   {:ok, nil} ->
+    #     # tournament_id
+    #     |> get_tournament()
+    #     ~> tournament
 
-        if tournament.team_size == size do
-          {:ok, nil}
-        else
-          {:error, "invalid size"}
-        end
 
-      {:error, error} ->
-        {:error, error}
-    end
+    #     if tournament.team_size == size do
+    #       {:ok, nil}
+    #     else
+    #       {:error, "invalid size"}
+    #     end
+
+    #   {:error, error} ->
+    #     {:error, error}
+    # end
     |> case do
       {:ok, nil} ->
         # リーダー情報の取得
@@ -3099,14 +3094,14 @@ defmodule Milk.Tournaments do
     |> Repo.preload(team_member: :user)
   end
 
-  def team_invitation_decline(id) do 
+  def team_invitation_decline(id) do
     id
     |> get_team_invitation()
     ~> invitation
     |> Map.get(:team_member)
     |> Repo.delete()
     |> case do
-      {:ok, %TeamMember{} = member} -> 
+      {:ok, %TeamMember{} = _member} ->
         create_team_invitation_result_notification(invitation, false)
         {:ok, invitation}
 
@@ -3257,9 +3252,6 @@ defmodule Milk.Tournaments do
     end
   end
 
-  @doc """
-  Verify team.
-  """
   defp verify_team_as_needed(team_id) do
     TeamMember
     |> where([tm], tm.team_id == ^team_id)
@@ -3280,7 +3272,8 @@ defmodule Milk.Tournaments do
     end
     |> case do
       {:ok, team} ->
-        take_members_into_chat(team.id)
+        take_members_into_chat(team)
+        invite_members_to_discord_as_needed(team)
         {:ok, team}
 
       {:error, error} ->
@@ -3288,9 +3281,9 @@ defmodule Milk.Tournaments do
     end
   end
 
-  defp take_members_into_chat(team_id) do
+  defp take_members_into_chat(team) do
     TeamMember
-    |> where([tm], tm.team_id == ^team_id)
+    |> where([tm], tm.team_id == ^team.id)
     |> Repo.all()
     |> Enum.each(fn member ->
       member
@@ -3306,6 +3299,43 @@ defmodule Milk.Tournaments do
         |> Chat.create_chat_member()
       end)
     end)
+  end
+
+  defp invite_members_to_discord_as_needed(team) do
+    team
+    |> Map.get(:tournament_id)
+    |> get_tournament()
+    ~> tournament
+    |> Map.get(:discord_server_id)
+    ~> server_id
+    |> is_nil()
+    |> unless do
+      url = Discord.create_invitation_link!(server_id)
+
+      team
+      |> Map.get(:id)
+      |> get_team_members_by_team_id()
+      |> Enum.each(fn member ->
+        %{
+          "user_id" => member.user_id,
+          "process_id" => "DISCORD_SERVER_INVITATION",
+          "icon_path" => tournament.thumbnail_path,
+          "title" => "#{tournament.name}のDiscordサーバーへの招待を受け取りました",
+          "body_text" => "",
+          "data" =>
+            Jason.encode!(%{
+              url: url
+            })
+        }
+        |> Notif.create_notification()
+        |> case do
+          {:ok, notification} ->
+            push_invitation_notification(notification)
+          {:error, error} ->
+            {:error, error}
+        end
+      end)
+    end
   end
 
   @doc """
@@ -3385,21 +3415,17 @@ defmodule Milk.Tournaments do
   end
 
   @doc """
-  Create multiple_selection
+  Create map
   """
-  def create_multiple_selection(attrs \\ %{}) do
+  def create_map(attrs \\ %{}) do
     attrs
     |> Map.has_key?("icon_b64")
     |> if do
-      attrs
-      |> Map.get("icon_b64")
-      ~> b64
+      b64 = attrs["icon_b64"]
 
       # "data:image/jpg;base64,"
       # |> Kernel.<>(b64)
-      b64
-      |> Base.decode64!()
-      ~> img
+      img = Base.decode64!(b64)
 
       uuid = SecureRandom.uuid()
       path = "./static/image/options/#{uuid}.jpg"
@@ -3457,7 +3483,7 @@ defmodule Milk.Tournaments do
   end
 
   @doc """
-  Get multiple_selections by tournament id
+  Get maps by tournament id
   """
   def get_maps_by_tournament_id(tournament_id) do
     Milk.Tournaments.Map
@@ -3468,7 +3494,7 @@ defmodule Milk.Tournaments do
   @doc """
   Get map selections.
   """
-  def get_map_selections(tournament_id, small_id, large_id) do
+  def get_map_selections(_tournament_id, small_id, large_id) do
     MapSelection
     |> join(:inner, [ms], m in Milk.Tournaments.Map, on: ms.map_id == m.id)
     |> where([ms, m], ms.large_id == ^large_id)
@@ -3558,7 +3584,6 @@ defmodule Milk.Tournaments do
     |> Enum.filter(fn map ->
       map.state == "selected"
     end)
-    ~> map_selections
     |> Enum.map(fn map_selection ->
       map_selection
       |> Map.get(:map)
@@ -3597,7 +3622,7 @@ defmodule Milk.Tournaments do
   @doc """
   Update map.
   """
-  def update_multiple_selection(%Milk.Tournaments.Map{} = map, attrs) do
+  def update_map(%Milk.Tournaments.Map{} = map, attrs) do
     map
     |> Milk.Tournaments.Map.changeset(attrs)
     |> Repo.update()

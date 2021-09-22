@@ -51,8 +51,11 @@ defmodule MilkWeb.Router do
     post "/user_report", ReportController, :create_user_report
     post "/tournament_report", ReportController, :create_tournament_report
 
+    get "/discord/team_name", DiscordController, :team_name
+    post "/discord/resend_invitation_links", DiscordController, :resend_invitation_links
     post "/discord/associate", DiscordController, :associate
     post "/discord/create_invitation_link", DiscordController, :create_invitation_link
+    delete "/discord/dissociate", DiscordController, :dissociate
 
     get "/profile", ProfileController, :get_profile
     get "/profile/get", ProfileController, :get_profile
@@ -151,8 +154,8 @@ defmodule MilkWeb.Router do
     get "/tournament/verify_password", TournamentController, :verify_password
     get "/tournament/pending", TournamentController, :pending
     get "/tournament/url/:url", TournamentController, :redirect_by_url
-    get "/tournament/options", TournamentController, :options
-    get "/tournament/option_icon", TournamentController, :get_option_icon
+    get "/tournament/maps", TournamentController, :options
+    get "/tournament/map_icon", TournamentController, :get_option_icon
 
     post "/tournament/start", TournamentController, :start
     post "/tournament/register/pid", TournamentController, :register_pid_of_start_notification

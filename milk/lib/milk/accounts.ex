@@ -18,6 +18,8 @@ defmodule Milk.Accounts do
     Tournaments
   }
 
+  alias Milk.Discord.User, as: DiscordUser
+
   alias Milk.Accounts.{
     ActionHistory,
     Auth,
@@ -83,6 +85,18 @@ defmodule Milk.Accounts do
     |> Repo.one()
     |> Repo.preload(:auth)
     |> Repo.preload(:discord)
+  end
+
+  @doc """
+  Get user by discord id
+  #FIXME: 複数のアカウントが同じdiscord idを使ってログインすることを想定していない。
+  データベースに制約をつけて、associateの処理に変更を加える必要がある。
+  """
+  def get_user_by_discord_id(discord_id) do
+    User
+    |> join(:inner, [u], du in DiscordUser, on: u.id == du.user_id)
+    |> where([u, du], du.discord_id == ^discord_id)
+    |> Repo.one()
   end
 
   @doc """

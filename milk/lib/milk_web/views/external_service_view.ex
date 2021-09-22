@@ -1,6 +1,7 @@
 defmodule MilkWeb.ExternalServiceView do
   use MilkWeb, :view
 
+  alias Common.Tools
   alias MilkWeb.ExternalServiceView
 
   def render("show.json", %{external_service: external_service}) do

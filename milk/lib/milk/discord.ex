@@ -5,8 +5,9 @@ defmodule Milk.Discord do
 
   alias Milk.Discord.User, as: DiscordUser
 
+  import Common.Sperm
+
   alias Milk.{
-    Accounts,
     Repo,
     Tournaments
   }
@@ -31,11 +32,6 @@ defmodule Milk.Discord do
     |> where([du], du.discord_id == ^discord_id)
     |> Repo.one()
   end
-
-  @doc """
-  Validate the team member is associated with discord
-  """
-
 
   @doc """
   Validate the all team members are associated with discord.
@@ -98,5 +94,155 @@ defmodule Milk.Discord do
     discord_user
     |> DiscordUser.changeset(attrs)
     |> Repo.update()
+  end
+
+  @doc """
+  Delete discord user.
+  """
+  def delete_discord_user(%DiscordUser{} = discord_user) do
+    Repo.delete(discord_user)
+  end
+
+  def create_invitation_link!(server_id) do
+    access_token = Application.get_env(:milk, :discord_server_access_token)
+    url = "#{Application.get_env(:milk, :discord_server)}/invitation_link"
+
+    params = Jason.encode!(%{server_id: server_id, access_token: access_token})
+
+    url
+    |> HTTPoison.post(params, "Content-Type": "application/json")
+    |> case do
+      {:ok, response} ->
+        response
+        |> Map.get(:body)
+        |> Jason.decode()
+        |> elem(1)
+        |> Map.get("url")
+      {:error, error} ->
+        raise "Failed to get invitation link, #{error}"
+    end
+  end
+
+  # Discord server 通知周り
+
+  @doc """
+  Send notification on tournament start.
+  """
+  def send_tournament_create_notification(server_id) when is_binary(server_id) do
+    discord_server_url = Application.get_env(:milk, :discord_server)
+    access_token = Application.get_env(:milk, :discord_server_access_token)
+
+    url = "#{discord_server_url}/tournament_start"
+    params = Jason.encode!(%{server_id: server_id, access_token: access_token})
+
+    HTTPoison.post(url, params, "Content-Type": "application/json")
+  end
+
+  def send_tournament_create_notification(_) do
+    {:error, "need to provide server id in binary."}
+  end
+
+  @doc """
+  Send notification on start match
+  """
+  def send_tournament_start_match_notification(server_id, a_name, b_name) when is_binary(server_id) do
+    discord_server_url = Application.get_env(:milk, :discord_server)
+    access_token = Application.get_env(:milk, :discord_server_access_token)
+
+    url = "#{discord_server_url}/start_match"
+
+    Map.new()
+    |> Map.put(:server_id, server_id)
+    |> Map.put(:access_token, access_token)
+    |> Map.put(:team_a_name, a_name)
+    |> Map.put(:team_b_name, b_name)
+    |> Jason.encode!()
+    ~> params
+
+    HTTPoison.post(url, params, "Content-Type": "application/json")
+  end
+
+  def send_tournament_start_match_notification(_, _, _) do
+    {:error, "need to provide server id in binary."}
+  end
+
+  @doc """
+  Send notification on duplication claim.
+  """
+  def send_tournament_duplicate_claim_notification(server_id, a_name, b_name, score) when is_binary(server_id) do
+    discord_server_url = Application.get_env(:milk, :discord_server)
+    access_token = Application.get_env(:milk, :discord_server_access_token)
+
+    url = "#{discord_server_url}/duplicate_claim"
+
+    Map.new()
+    |> Map.put(:server_id, server_id)
+    |> Map.put(:access_token, access_token)
+    |> Map.put(:a_name, a_name)
+    |> Map.put(:b_name, b_name)
+    |> Map.put(:score, score)
+    |> Jason.encode!()
+    ~> params
+
+    HTTPoison.post(url, params, "Content-Type": "application/json")
+    |> IO.inspect()
+  end
+
+  def send_tournament_duplicate_claim_notification(_, _, _, _) do
+    {:error, "need to provide server id in binary."}
+  end
+
+  @doc """
+  Send notification on finish match.
+  """
+  def send_tournament_finish_match_notification(server_id, a_name, b_name, a_score, b_score) when is_binary(server_id) do
+    unless is_nil(server_id) do
+      discord_server_url = Application.get_env(:milk, :discord_server)
+      access_token = Application.get_env(:milk, :discord_server_access_token)
+
+      url = "#{discord_server_url}/finish_match"
+
+      Map.new()
+      |> Map.put(:server_id, server_id)
+      |> Map.put(:access_token, access_token)
+      |> Map.put(:team_a_name, a_name)
+      |> Map.put(:team_b_name, b_name)
+      |> Map.put(:team_a_score, a_score)
+      |> Map.put(:team_b_score, b_score)
+      |> Jason.encode!()
+      ~> params
+
+      HTTPoison.post(url, params, "Content-Type": "application/json")
+    end
+  end
+
+  def send_tournament_finish_match_notification(_, _, _, _, _) do
+    {:error, "need to provide server id in binary."}
+  end
+
+  @doc """
+  Sending notification on tournament finish
+  """
+  def send_tournament_finish(server_id, tournament_name, winner_name) when is_binary(server_id) do
+    unless is_nil(server_id) do
+      discord_server_url = Application.get_env(:milk, :discord_server)
+      access_token = Application.get_env(:milk, :discord_server_access_token)
+
+      url = "#{discord_server_url}/finish_tournament"
+
+      Map.new()
+      |> Map.put(:server_id, server_id)
+      |> Map.put(:access_token, access_token)
+      |> Map.put(:tournament_name, tournament_name)
+      |> Map.put(:winner_name, winner_name)
+      |> Jason.encode!()
+      ~> params
+
+      HTTPoison.post(url, params, "Content-Type": "application/json")
+    end
+  end
+
+  def send_tournament_finish(_, _, _) do
+    {:error, "need to provide server id in binary."}
   end
 end

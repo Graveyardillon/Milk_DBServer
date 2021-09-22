@@ -255,12 +255,12 @@ defmodule Milk.TournamentProgress do
 
   @is_waiting_for_start "IsWaitingForStart"
   @is_waiting_for_coin_flip "IsWaitingForCoinFlip"
-  @should_choose_map "ShouldChooseMap"
+  # @should_choose_map "ShouldChooseMap"
 
   def insert_match_pending_list_table(user_id, tournament_id) do
     # 大会タイプで分岐入れよう
     tournament = Tournaments.get_tournament(tournament_id)
-    pending_state = get_match_pending_list(user_id, tournament_id)
+    _pending_state = get_match_pending_list(user_id, tournament_id)
 
     should_flip_coin? = tournament.enabled_coin_toss
 

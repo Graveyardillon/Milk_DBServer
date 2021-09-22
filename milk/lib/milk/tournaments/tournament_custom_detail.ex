@@ -13,8 +13,7 @@ defmodule Milk.Tournaments.TournamentCustomDetail do
   schema "tournament_custom_details" do
     field :coin_head_field, :string
     field :coin_tail_field, :string
-    field :multiple_selection_label, :string
-    field :multiple_selection_type, :string
+    field :map_rule, :string
 
     belongs_to :tournament, Tournament
 
@@ -27,8 +26,7 @@ defmodule Milk.Tournaments.TournamentCustomDetail do
     |> cast(attrs, [
       :coin_head_field,
       :coin_tail_field,
-      :multiple_selection_label,
-      :multiple_selection_type,
+      :map_rule,
       :tournament_id
     ])
     |> foreign_key_constraint(:tournament_id)

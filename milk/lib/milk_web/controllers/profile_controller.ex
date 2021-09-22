@@ -53,14 +53,15 @@ defmodule MilkWeb.ProfileController do
       gamelist = Map.get(profile_params, "gameList")
       records = Map.get(profile_params, "records")
 
-      Accounts.update_user(user, profile_params)
+      user
+      |> Accounts.update_user(profile_params)
       |> case do
         {:ok, user} ->
           Profiles.update_gamelist(user, gamelist)
           Profiles.update_recordlist(user, records)
           json(conn, %{result: true, profile_result: true})
 
-        {:error, error} ->
+        {:error, _error} ->
           json(conn, %{result: false, error: "update failed"})
       end
     else
