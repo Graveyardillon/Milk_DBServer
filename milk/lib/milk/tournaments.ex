@@ -741,7 +741,7 @@ defmodule Milk.Tournaments do
       |> Map.get(:custom_detail)
       |> Map.get(:multiple_selection_type)
       |> case do
-        "VLC" ->
+        "VLT" ->
           delete_map_selections(tournament_id, id)
           TournamentProgress.delete_is_attacker_side(id, tournament_id)
           TournamentProgress.delete_ban_order(tournament_id, id)
