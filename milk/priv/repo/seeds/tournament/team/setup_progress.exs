@@ -38,7 +38,7 @@ organizer
     "deadline" => day_after_tomorrow,
     "description" => "test team tournament of size 4.",
     "enabled_coin_toss" => true,
-    "enabled_multiple_selection" => true,
+    "enabled_map" => true,
     "event_date" => day_after_tomorrow,
     "name" => "test team tournament of size 4.",
     "type" => 2,
@@ -54,8 +54,8 @@ organizer
     "game_id" => nil,
     "coin_head_field" => "マップ選択",
     "coin_tail_field" => "A/D選択",
-    "multiple_selection_label" => "マップ",
-    "multiple_selections" => [
+    #"multiple_selection_label" => "マップ",
+    "maps" => [
       %{
         "name" => "アセント",
         "icon_path" => "./static/image/options/ascent.png"

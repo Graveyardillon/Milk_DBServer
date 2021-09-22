@@ -197,7 +197,7 @@ defmodule Milk.Tournaments do
     |> Repo.all()
     |> Repo.preload(:entrant)
     |> Repo.preload(:custom_detail)
-    |> Repo.preload(:multiple_selection)
+    |> Repo.preload(:map)
     |> Repo.preload(:team)
     |> Repo.preload(:master)
     |> Repo.preload(:assistant)
@@ -243,7 +243,7 @@ defmodule Milk.Tournaments do
     |> Repo.all()
     |> Repo.preload(:entrant)
     |> Repo.preload(:custom_detail)
-    |> Repo.preload(:multiple_selection)
+    |> Repo.preload(:map)
     |> Repo.preload(:team)
     |> Repo.preload(:master)
     |> Repo.preload(:assistant)
@@ -261,7 +261,7 @@ defmodule Milk.Tournaments do
     |> Repo.preload(:entrant)
     |> Repo.preload(:assistant)
     |> Repo.preload(:master)
-    |> Repo.preload(:multiple_selection)
+    |> Repo.preload(:map)
     |> Repo.preload(:custom_detail)
     |> (fn tournament ->
           if tournament do
@@ -342,7 +342,7 @@ defmodule Milk.Tournaments do
     |> Repo.all()
     |> Repo.preload(:entrant)
     |> Repo.preload(:custom_detail)
-    |> Repo.preload(:multiple_selection)
+    |> Repo.preload(:map)
     |> Repo.preload(:team)
     |> Repo.preload(:master)
     |> Repo.preload(:assistant)
@@ -357,7 +357,7 @@ defmodule Milk.Tournaments do
     |> Repo.all()
     |> Repo.preload(:entrant)
     |> Repo.preload(:custom_detail)
-    |> Repo.preload(:multiple_selection)
+    |> Repo.preload(:map)
     |> Repo.preload(:team)
     |> Repo.preload(:master)
     |> Repo.preload(:assistant)
@@ -397,7 +397,7 @@ defmodule Milk.Tournaments do
     |> Repo.all()
     |> Repo.preload(:entrant)
     |> Repo.preload(:custom_detail)
-    |> Repo.preload(:multiple_selection)
+    |> Repo.preload(:map)
     |> Repo.preload(:team)
     |> Repo.preload(:master)
     |> Repo.preload(:assistant)
@@ -447,7 +447,7 @@ defmodule Milk.Tournaments do
     |> where([u], u.id == ^id)
     |> Repo.exists?()
     |> if do
-      if params["enabled_multiple_selection"] && !params["enabled_coin_toss"] do
+      if params["enabled_map"] && !params["enabled_coin_toss"] do
         {:error, "Needs to enable coin toss"}
       else
         {:ok, nil}
@@ -465,7 +465,7 @@ defmodule Milk.Tournaments do
     |> case do
       {:ok, tournament} ->
         set_details(tournament, params)
-        set_multiple_selections(tournament, params)
+        set_maps(tournament, params)
         {:ok, tournament}
 
       {:error, error} ->
@@ -610,12 +610,12 @@ defmodule Milk.Tournaments do
     |> create_custom_detail()
   end
 
-  defp set_multiple_selections(tournament, params) do
+  defp set_maps(tournament, params) do
     params
-    |> Map.has_key?("multiple_selections")
+    |> Map.has_key?("maps")
     |> if do
       params
-      |> Map.get("multiple_selections")
+      |> Map.get("maps")
       ~> selections
 
       selections
@@ -636,7 +636,7 @@ defmodule Milk.Tournaments do
         |> Enum.map(fn selection ->
           selection
           |> Map.put("tournament_id", tournament.id)
-          |> create_multiple_selection()
+          |> create_map()
         end)
       end
     end
@@ -731,15 +731,14 @@ defmodule Milk.Tournaments do
     end
     ~> id
 
-    # TournamentProgress.insert_match_pending_list_table(id, tournament_id)
+    TournamentProgress.insert_match_pending_list_table(id, tournament_id)
 
     tournament
-    |> Map.get(:enabled_multiple_selection)
+    |> Map.get(:enabled_map)
     |> if do
-      # multiple_selection_typeを取得
       tournament
       |> Map.get(:custom_detail)
-      |> Map.get(:multiple_selection_type)
+      |> Map.get(:map_selection_type)
       |> case do
         "VLT" ->
           delete_map_selections(tournament_id, id)
@@ -2578,7 +2577,7 @@ defmodule Milk.Tournaments do
         [{_, state}] = pending_list
         state
 
-      pending_list != [] && tournament.enabled_multiple_selection ->
+      pending_list != [] && tournament.enabled_map ->
         check_map_ban_state(tournament, id)
 
       true ->
@@ -3416,21 +3415,17 @@ defmodule Milk.Tournaments do
   end
 
   @doc """
-  Create multiple_selection
+  Create map
   """
-  def create_multiple_selection(attrs \\ %{}) do
+  def create_map(attrs \\ %{}) do
     attrs
     |> Map.has_key?("icon_b64")
     |> if do
-      attrs
-      |> Map.get("icon_b64")
-      ~> b64
+      b64 = attrs["icon_b64"]
 
       # "data:image/jpg;base64,"
       # |> Kernel.<>(b64)
-      b64
-      |> Base.decode64!()
-      ~> img
+      img = Base.decode64!(b64)
 
       uuid = SecureRandom.uuid()
       path = "./static/image/options/#{uuid}.jpg"
@@ -3488,7 +3483,7 @@ defmodule Milk.Tournaments do
   end
 
   @doc """
-  Get multiple_selections by tournament id
+  Get maps by tournament id
   """
   def get_maps_by_tournament_id(tournament_id) do
     Milk.Tournaments.Map
@@ -3627,7 +3622,7 @@ defmodule Milk.Tournaments do
   @doc """
   Update map.
   """
-  def update_multiple_selection(%Milk.Tournaments.Map{} = map, attrs) do
+  def update_map(%Milk.Tournaments.Map{} = map, attrs) do
     map
     |> Milk.Tournaments.Map.changeset(attrs)
     |> Repo.update()

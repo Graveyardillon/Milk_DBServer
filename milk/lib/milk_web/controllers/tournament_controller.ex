@@ -102,7 +102,7 @@ defmodule MilkWeb.TournamentController do
   @doc """
   Create a tournament.
   """
-  def create(conn, %{"tournament" => tournament_params, "image" => image, "options" => options}) do
+  def create(conn, %{"tournament" => tournament_params, "image" => image, "maps" => maps}) do
     # coveralls-ignore-start
     if image != "" do
       uuid = SecureRandom.uuid()
@@ -126,8 +126,6 @@ defmodule MilkWeb.TournamentController do
           object.name
           # coveralls-ignore-stop
       end
-    else
-      nil
     end
     ~> thumbnail_path
 
@@ -144,10 +142,10 @@ defmodule MilkWeb.TournamentController do
       tournament_params
       |> Map.put("enabled_coin_toss", tournament_params["enabled_coin_toss"] == "true")
       |> Map.put(
-        "enabled_multiple_selection",
-        tournament_params["enabled_multiple_selection"] == "true"
+        "enabled_map",
+        tournament_params["enabled_map"] == "true"
       )
-      |> Map.put("multiple_selections", options)
+      |> Map.put("maps", maps)
       |> Tournaments.create_tournament(thumbnail_path)
       |> case do
         {:ok, %Tournament{} = tournament} ->
@@ -180,12 +178,12 @@ defmodule MilkWeb.TournamentController do
     end
   end
 
-  def create(conn, %{"tournament" => tournament_params, "file" => file, "options" => options}) do
-    create(conn, %{"tournament" => tournament_params, "image" => file, "options" => options})
+  def create(conn, %{"tournament" => tournament_params, "file" => file, "maps" => maps}) do
+    create(conn, %{"tournament" => tournament_params, "image" => file, "maps" => maps})
   end
 
   def create(conn, %{"tournament" => tournament_params, "file" => file}) do
-    create(conn, %{"tournament" => tournament_params, "file" => file, "options" => []})
+    create(conn, %{"tournament" => tournament_params, "file" => file, "maps" => []})
   end
 
   @doc """
@@ -217,7 +215,7 @@ defmodule MilkWeb.TournamentController do
 
         tournament
         |> Map.put(:team, team)
-        |> Map.put(:multiple_selection, selections)
+        |> Map.put(:map, selections)
         ~> tournament
 
         render(conn, "tournament_info.json", tournament: tournament)
@@ -1396,9 +1394,9 @@ defmodule MilkWeb.TournamentController do
     else
       {:ok, opponent_id, user_id}
     end
-    ~> {:ok, opponent_id, user_id}
+    ~> {:ok, opponent_id, id}
 
-    TournamentProgress.insert_score(tournament_id, user_id, score)
+    TournamentProgress.insert_score(tournament_id, id, score)
 
     tournament_id
     |> TournamentProgress.get_score(opponent_id)
@@ -1407,30 +1405,30 @@ defmodule MilkWeb.TournamentController do
       n when is_integer(n) ->
         cond do
           n > score ->
-            notify_discord_on_match_finished_as_needed(tournament_id, user_id, opponent_id, score, opponent_score)
-            Tournaments.delete_loser_process(tournament_id, [user_id])
-            Tournaments.score(tournament_id, opponent_id, user_id, n, score, match_index)
-            TournamentProgress.delete_match_pending_list(user_id, tournament_id)
+            notify_discord_on_match_finished_as_needed(tournament_id, id, opponent_id, score, opponent_score)
+            Tournaments.delete_loser_process(tournament_id, [id])
+            Tournaments.score(tournament_id, opponent_id, id, n, score, match_index)
+            TournamentProgress.delete_match_pending_list(id, tournament_id)
             TournamentProgress.delete_match_pending_list(opponent_id, tournament_id)
-            TournamentProgress.delete_score(tournament_id, user_id)
+            TournamentProgress.delete_score(tournament_id, id)
             TournamentProgress.delete_score(tournament_id, opponent_id)
             is_finished = finish_as_needed?(tournament_id, opponent_id)
             json(conn, %{validated: true, completed: true, is_finished: is_finished})
 
           n < score ->
-            notify_discord_on_match_finished_as_needed(tournament_id, user_id, opponent_id, score, opponent_score)
+            notify_discord_on_match_finished_as_needed(tournament_id, id, opponent_id, score, opponent_score)
             Tournaments.delete_loser_process(tournament_id, [opponent_id])
-            Tournaments.score(tournament_id, user_id, opponent_id, score, n, match_index)
-            TournamentProgress.delete_match_pending_list(user_id, tournament_id)
+            Tournaments.score(tournament_id, id, opponent_id, score, n, match_index)
+            TournamentProgress.delete_match_pending_list(id, tournament_id)
             TournamentProgress.delete_match_pending_list(opponent_id, tournament_id)
-            TournamentProgress.delete_score(tournament_id, user_id)
+            TournamentProgress.delete_score(tournament_id, id)
             TournamentProgress.delete_score(tournament_id, opponent_id)
-            is_finished = finish_as_needed?(tournament_id, user_id)
+            is_finished = finish_as_needed?(tournament_id, id)
             json(conn, %{validated: true, completed: true, is_finished: is_finished})
 
           true ->
-            notify_discord_on_duplicate_claim_as_needed(tournament_id, user_id, opponent_id, score)
-            notify_on_duplicate_match(tournament_id, user_id, opponent_id)
+            notify_discord_on_duplicate_claim_as_needed(tournament_id, id, opponent_id, score)
+            notify_on_duplicate_match(tournament_id, id, opponent_id)
             json(conn, %{validated: false, completed: false, is_finished: false})
         end
 
@@ -1445,7 +1443,7 @@ defmodule MilkWeb.TournamentController do
     ~> tournament
     |> Map.get(:is_team)
     |> if do
-      team = Tournaments.get_team_by_tournament_id_and_user_id(tournament_id, id)
+      team = Tournaments.get_team(id)
 
       tournament_id
       |> TournamentProgress.get_match_list()
@@ -1460,7 +1458,7 @@ defmodule MilkWeb.TournamentController do
       user = Accounts.get_user(id)
       opponent = Accounts.get_user(opponent_id)
 
-      {:ok, opponent["name"], user.name}
+      {:ok, opponent.name, user.name}
     end
     ~> {:ok, opponent_name, name}
 
@@ -1477,7 +1475,7 @@ defmodule MilkWeb.TournamentController do
     ~> tournament
     |> Map.get(:is_team)
     |> if do
-      team = Tournaments.get_team_by_tournament_id_and_user_id(tournament_id, id)
+      team = Tournaments.get_team(id)
 
       tournament_id
       |> TournamentProgress.get_match_list()
@@ -1492,7 +1490,7 @@ defmodule MilkWeb.TournamentController do
       user = Accounts.get_user(id)
       opponent = Accounts.get_user(opponent_id)
 
-      {:ok, opponent["name"], user.name}
+      {:ok, opponent.name, user.name}
     end
     ~> {:ok, opponent_name, name}
 
@@ -1640,7 +1638,7 @@ defmodule MilkWeb.TournamentController do
 
     tournament
     |> Map.put(:team, team)
-    |> Map.put(:multiple_selection, selections)
+    |> Map.put(:map, selections)
     ~> tournament
 
     render(conn, "tournament_info.json", tournament: tournament)

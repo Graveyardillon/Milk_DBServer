@@ -119,14 +119,14 @@ defmodule Common.Fixtures do
         end
         ~> enabled_coin_toss
 
-        opts[:enabled_multiple_selection]
+        opts[:enabled_map]
         |> is_nil()
         |> unless do
           opts[:enabled_coin_toss]
         else
           false
         end
-        ~> enabled_multiple_selection
+        ~> enabled_map
 
         opts[:coin_head_field]
         |> is_nil()
@@ -164,10 +164,10 @@ defmodule Common.Fixtures do
         |> Map.put("type", type)
         |> Map.put("deadline", deadline)
         |> Map.put("enabled_coin_toss", enabled_coin_toss)
-        |> Map.put("enabled_multiple_selection", enabled_multiple_selection)
+        |> Map.put("enabled_map", enabled_map)
         |> Map.put("coin_head_field", coin_head_field)
         |> Map.put("coin_tail_field", coin_tail_field)
-        |> Map.put("multiple_selections", maps)
+        |> Map.put("maps", maps)
         |> Tournaments.create_tournament()
         |> elem(1)
         ~> tournament
