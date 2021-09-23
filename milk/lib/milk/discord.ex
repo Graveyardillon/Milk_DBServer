@@ -143,6 +143,29 @@ defmodule Milk.Discord do
   end
 
   @doc """
+  Send notification on added team to the server
+  """
+  def send_tournament_add_team_notification(server_id, team_name) do
+    discord_server_url = Application.get_env(:milk, :discord_server)
+    access_token = Application.get_env(:milk, :discord_server_access_token)
+
+    url = "#{discord_server_url}/add_team"
+
+    Map.new()
+    |> Map.put(:server_id, server_id)
+    |> Map.put(:access_token, access_token)
+    |> Map.put(:team_name, team_name)
+    |> Jason.encode!()
+    ~> params
+
+    HTTPoison.post(url, params, "Content-Type": "application/json")
+  end
+
+  def send_tournament_start_match_notification(_, _) do
+    {:error, "need to provide server id in binary."}
+  end
+
+  @doc """
   Send notification on start match
   """
   def send_tournament_start_match_notification(server_id, a_name, b_name) when is_binary(server_id) do

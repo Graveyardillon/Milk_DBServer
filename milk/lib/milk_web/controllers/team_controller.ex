@@ -135,6 +135,7 @@ defmodule MilkWeb.TeamController do
                 |> Map.get(:team_id)
                 |> Tournaments.get_team()
                 ~> team
+                |> send_add_team_discord_notification()
 
                 json(conn, %{
                   result: true,
@@ -152,6 +153,18 @@ defmodule MilkWeb.TeamController do
       end
     else
       nil -> render(conn, "error.json", error: "team not found")
+    end
+  end
+
+  defp send_add_team_discord_notification(team) do
+    team
+    |> Map.get(:tournament_id)
+    |> Tournaments.get_tournament()
+    |> Map.get(:discord_server_id)
+    ~> discord_server_id
+    |> is_nil()
+    |> unless do
+      Discord.send_add_team_discord_notification(discord_server_id, team.name)
     end
   end
 
