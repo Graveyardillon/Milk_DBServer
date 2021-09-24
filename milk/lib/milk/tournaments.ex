@@ -8,6 +8,7 @@ defmodule Milk.Tournaments do
   import Common.Sperm
 
   alias Ecto.Multi
+
   alias Common.{
     FileUtils,
     Tools
@@ -2796,7 +2797,6 @@ defmodule Milk.Tournaments do
     #     |> get_tournament()
     #     ~> tournament
 
-
     #     if tournament.team_size == size do
     #       {:ok, nil}
     #     else
@@ -3328,6 +3328,7 @@ defmodule Milk.Tournaments do
         |> case do
           {:ok, notification} ->
             push_invitation_notification(notification)
+
           {:error, error} ->
             {:error, error}
         end

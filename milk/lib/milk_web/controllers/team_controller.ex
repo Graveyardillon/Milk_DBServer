@@ -4,6 +4,7 @@ defmodule MilkWeb.TeamController do
   import Common.Sperm
 
   alias Common.Tools
+
   alias Milk.{
     Accounts,
     Discord,
@@ -78,8 +79,11 @@ defmodule MilkWeb.TeamController do
           tournament_id
           |> Tournaments.create_team(size, leader_id, user_id_list)
           |> case do
-            {:ok, team} -> render(conn, "show.json", team: team)
-            {:error, error} -> render(conn, "error.json", error: Tools.create_error_message(error))
+            {:ok, team} ->
+              render(conn, "show.json", team: team)
+
+            {:error, error} ->
+              render(conn, "error.json", error: Tools.create_error_message(error))
           end
         end
       end
@@ -107,7 +111,6 @@ defmodule MilkWeb.TeamController do
     with %Tournaments.Team{} = team <- Tournaments.get_team_by_invitation_id(invitation_id) do
       with %Tournaments.Tournament{} = tournament <-
              Tournaments.get_tournament(team.tournament_id) do
-
         tournament.id
         |> Tournaments.get_confirmed_teams()
         |> length()
@@ -207,9 +210,11 @@ defmodule MilkWeb.TeamController do
         total <= team.size ->
           Tournaments.create_team_members(team_id, user_id_list)
           |> Enum.each(fn member ->
-              Tournaments.create_team_invitation(member.id, leader.user_id)
+            Tournaments.create_team_invitation(member.id, leader.user_id)
           end)
+
           json(conn, %{result: true})
+
         total > team.size ->
           render(conn, "error.json", error: "invalid size")
       end

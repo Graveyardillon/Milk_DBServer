@@ -51,7 +51,8 @@ defmodule MilkWeb.TournamentView do
 
   def render("show.json", %{tournament: tournament}) do
     %{
-      data: render_one(tournament, TournamentView, "tournament.json", msg: "Tournament was created!"),
+      data:
+        render_one(tournament, TournamentView, "tournament.json", msg: "Tournament was created!"),
       result: true
     }
   end

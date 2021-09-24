@@ -1371,7 +1371,8 @@ defmodule MilkWeb.TournamentControllerTest do
     end
 
     test "team", %{conn: conn} do
-      tournament = fixture_tournament(is_team: true, capacity: 1, deadline: "2100-04-17T14:00:00Z")
+      tournament =
+        fixture_tournament(is_team: true, capacity: 1, deadline: "2100-04-17T14:00:00Z")
 
       1..5
       |> Enum.to_list()

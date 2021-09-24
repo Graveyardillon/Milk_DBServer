@@ -4,6 +4,7 @@ defmodule MilkWeb.DiscordController do
   import Common.Sperm
 
   alias Common.Tools
+
   alias Milk.{
     Accounts,
     Discord,
@@ -11,7 +12,10 @@ defmodule MilkWeb.DiscordController do
     Tournaments
   }
 
-  def team_name(conn, %{"discord_user_id" => discord_user_id, "discord_server_id" => discord_server_id}) do
+  def team_name(conn, %{
+        "discord_user_id" => discord_user_id,
+        "discord_server_id" => discord_server_id
+      }) do
     discord_user_id
     |> Accounts.get_user_by_discord_id()
     ~> user
@@ -68,6 +72,7 @@ defmodule MilkWeb.DiscordController do
         ~> {:ok, json}
 
         json(conn, %{result: true, url: json["url"]})
+
       {:error, error} ->
         render(conn, "error.json", error: error)
     end
@@ -92,9 +97,10 @@ defmodule MilkWeb.DiscordController do
         "icon_path" => tournament.thumbnail_path,
         "title" => "#{tournament.name}のDiscordサーバーへの招待を受け取りました",
         "body_text" => "",
-        "data" => Jason.encode!(%{
-          url: invitation_link
-        })
+        "data" =>
+          Jason.encode!(%{
+            url: invitation_link
+          })
       }
       |> Notif.create_notification()
     end)
