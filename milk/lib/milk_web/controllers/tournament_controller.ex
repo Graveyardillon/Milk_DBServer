@@ -140,10 +140,13 @@ defmodule MilkWeb.TournamentController do
       render(conn, "error.json", error: "join parameter is nil")
     else
       tournament_params
-      |> Map.put("enabled_coin_toss", tournament_params["enabled_coin_toss"] == "true")
+      |> Map.put(
+        "enabled_coin_toss",
+        tournament_params["enabled_coin_toss"] == "true" || tournament_params["enabled_coin_toss"] == true
+      )
       |> Map.put(
         "enabled_map",
-        tournament_params["enabled_map"] == "true"
+        tournament_params["enabled_map"] == "true" || tournament_params["enabled_map"] == true
       )
       |> Map.put("maps", maps)
       |> Tournaments.create_tournament(thumbnail_path)
