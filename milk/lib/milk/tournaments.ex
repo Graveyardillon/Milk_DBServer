@@ -3421,8 +3421,8 @@ defmodule Milk.Tournaments do
     |> if do
       b64 = attrs["icon_b64"]
 
-      # "data:image/jpg;base64,"
-      # |> Kernel.<>(b64)
+      # XXX: inspectしないとb64が正常に読み込まれないことがある
+      inspect(b64)
       img = Base.decode64!(b64)
 
       uuid = SecureRandom.uuid()
