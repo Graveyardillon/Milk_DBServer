@@ -1055,9 +1055,6 @@ defmodule Milk.Tournaments do
 
     if assistant, do: Repo.insert_all(AssistantLog, assistant)
 
-    # TournamentLog.changeset(%TournamentLog{}, Map.from_struct(tournament))
-    # |> Repo.insert()
-
     Repo.delete(tournament)
   end
 

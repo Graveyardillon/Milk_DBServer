@@ -128,7 +128,7 @@ defmodule Milk.Discord do
   @doc """
   Send notification on tournament start.
   """
-  def send_tournament_create_notification(server_id) when is_binary(server_id) do
+  def send_tournament_start_notification(server_id) when is_binary(server_id) do
     discord_server_url = Application.get_env(:milk, :discord_server)
     access_token = Application.get_env(:milk, :discord_server_access_token)
 
@@ -138,8 +138,8 @@ defmodule Milk.Discord do
     HTTPoison.post(url, params, "Content-Type": "application/json")
   end
 
-  def send_tournament_create_notification(_) do
-    {:error, "need to provide server id in binary."}
+  def send_tournament_start_notification(_) do
+    {:error, "need to provide server id in binary format."}
   end
 
   @doc """
@@ -162,7 +162,7 @@ defmodule Milk.Discord do
   end
 
   def send_tournament_start_match_notification(_, _) do
-    {:error, "need to provide server id in binary."}
+    {:error, "need to provide server id in binary format."}
   end
 
   @doc """
@@ -186,7 +186,57 @@ defmodule Milk.Discord do
   end
 
   def send_tournament_start_match_notification(_, _, _) do
-    {:error, "need to provide server id in binary."}
+    {:error, "need to provide server id in binary format."}
+  end
+
+  @doc """
+  Send notification on ban maps.
+  """
+  def send_tournament_ban_map_notification(server_id, a_name, b_name, banned_map_names) when is_binary(server_id) and is_list(banned_map_names) do
+    discord_server_url = Application.get_env(:milk, :discord_server)
+    access_token = Application.get_env(:milk, :discord_server_access_token)
+
+    url = "#{discord_server_url}/ban_maps"
+
+    Map.new()
+    |> Map.put(:server_id, server_id)
+    |> Map.put(:access_token, access_token)
+    |> Map.put(:a_name, a_name)
+    |> Map.put(:b_name, b_name)
+    |> Map.put(:banned_map_names, banned_map_names)
+    |> Jason.encode!()
+    ~> params
+
+    HTTPoison.post(url, params, "Content-Type": "application/json")
+  end
+
+  def send_tournament_ban_map_notification(_, _, _, _) do
+    {:error, "need to provide server id in binary format and banned map names in list."}
+  end
+
+  @doc """
+  Send notification on choose maps.
+  """
+  def send_tournament_choose_map_notification(server_id, a_name, b_name, map_name) when is_binary(server_id) do
+    discord_server_url = Application.get_env(:milk, :discord_server)
+    access_token = Application.get_env(:milk, :discord_server_access_token)
+
+    url = "#{discord_server_url}/choose_map"
+
+    Map.new()
+    |> Map.put(:server_id, server_id)
+    |> Map.put(:access_token, access_token)
+    |> Map.put(:a_name, a_name)
+    |> Map.put(:b_name, b_name)
+    |> Map.put(:map_name, map_name)
+    |> Jason.encode!()
+    ~> params
+
+    HTTPoison.post(url, params, "Content-Type": "application/json")
+  end
+
+  def send_tournament_choose_map_notification(_, _, _, _) do
+    {:error, "need to provide server id in binary format."}
   end
 
   @doc """
@@ -208,11 +258,10 @@ defmodule Milk.Discord do
     ~> params
 
     HTTPoison.post(url, params, "Content-Type": "application/json")
-    |> IO.inspect()
   end
 
   def send_tournament_duplicate_claim_notification(_, _, _, _) do
-    {:error, "need to provide server id in binary."}
+    {:error, "need to provide server id in binary format."}
   end
 
   @doc """
@@ -240,13 +289,13 @@ defmodule Milk.Discord do
   end
 
   def send_tournament_finish_match_notification(_, _, _, _, _) do
-    {:error, "need to provide server id in binary."}
+    {:error, "need to provide server id in binary format."}
   end
 
   @doc """
   Sending notification on tournament finish
   """
-  def send_tournament_finish(server_id, tournament_name, winner_name) when is_binary(server_id) do
+  def send_tournament_finish_notification(server_id, tournament_name, winner_name) when is_binary(server_id) do
     unless is_nil(server_id) do
       discord_server_url = Application.get_env(:milk, :discord_server)
       access_token = Application.get_env(:milk, :discord_server_access_token)
@@ -265,7 +314,28 @@ defmodule Milk.Discord do
     end
   end
 
-  def send_tournament_finish(_, _, _) do
-    {:error, "need to provide server id in binary."}
+  def send_tournament_finish_notification(_, _, _) do
+    {:error, "need to provide server id in binary format."}
+  end
+
+  @doc """
+  Sending notification on tournament delete
+  """
+  def send_tournament_delete_notification(server_id) when is_binary(server_id) do
+    discord_server_url = Application.get_env(:milk, :discord_server)
+    access_token = Application.get_env(:milk, :discord_server_access_token)
+
+    url = "#{discord_server_url}/delete_tournament"
+
+    Map.new()
+    |> Map.put(:server_id, server_id)
+    |> Jason.encode!()
+    ~> params
+
+    HTTPoison.post(url, params, "Content-Type": "application/json")
+  end
+
+  def send_tournament_delete_notification(_) do
+    {:error, "need to provide server id in binary format."}
   end
 end
