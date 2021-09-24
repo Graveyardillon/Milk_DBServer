@@ -161,13 +161,20 @@ defmodule MilkWeb.TeamController do
 
   defp send_add_team_discord_notification(team) do
     team
-    |> Map.get(:tournament_id)
-    |> Tournaments.get_tournament()
-    |> Map.get(:discord_server_id)
-    ~> discord_server_id
-    |> is_nil()
-    |> unless do
-      Discord.send_tournament_add_team_notification(discord_server_id, team.name)
+    |> Map.get(:id)
+    |> Tournaments.get_team()
+    ~> team
+    |> Map.get(:is_confirmed)
+    |> if do
+      team
+      |> Map.get(:tournament_id)
+      |> Tournaments.get_tournament()
+      |> Map.get(:discord_server_id)
+      ~> discord_server_id
+      |> is_nil()
+      |> unless do
+        Discord.send_tournament_add_team_notification(discord_server_id, team.name)
+      end
     end
   end
 
