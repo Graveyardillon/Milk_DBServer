@@ -52,11 +52,12 @@ defmodule MilkWeb.UserController do
           "title" => "e-playersへようこそ！",
           "body_text" => "もしよければコミュニティに参加してアプリの改善に力を貸してください！\nhttps://discord.gg/cfZw6EAYrv",
           "process_id" => "COMMON",
-          "user_id" => user.id,
+          "user_id" => user.id
         }
         |> Notif.create_notification()
 
         render(conn, "login.json", %{user: user, token: token})
+
       {:error, error} ->
         case error do
           [email: {"has already been taken", _}] ->

@@ -140,10 +140,13 @@ defmodule MilkWeb.TournamentController do
       render(conn, "error.json", error: "join parameter is nil")
     else
       tournament_params
-      |> Map.put("enabled_coin_toss", tournament_params["enabled_coin_toss"] == "true")
+      |> Map.put(
+        "enabled_coin_toss",
+        tournament_params["enabled_coin_toss"] == "true" || tournament_params["enabled_coin_toss"] == true
+      )
       |> Map.put(
         "enabled_map",
-        tournament_params["enabled_map"] == "true"
+        tournament_params["enabled_map"] == "true" || tournament_params["enabled_map"] == true
       )
       |> Map.put("maps", maps)
       |> Tournaments.create_tournament(thumbnail_path)
@@ -408,12 +411,25 @@ defmodule MilkWeb.TournamentController do
   @doc """
   Deletes a tournament.
   """
-  def delete(conn, %{"tournament_id" => id}) do
-    with {:ok, %Tournament{}} <- Tournaments.delete_tournament(id) do
-      # send_resp(conn, :no_content, "")
+  def delete(conn, %{"tournament_id" => tournament_id}) do
+    tournament = Tournaments.get_tournament(tournament_id)
+
+    with {:ok, %Tournament{}} <- Tournaments.delete_tournament(tournament_id) do
+      notify_discord_on_start_match_as_needed(tournament)
       json(conn, %{result: true})
     else
+      {:error, error} -> render(conn, "error.json", error: error)
       _ -> render(conn, "error.json", error: nil)
+    end
+  end
+
+  defp notify_discord_on_start_match_as_needed(tournament) do
+    tournament
+    |> Map.get(:discord_server_id)
+    ~> server_id
+    |> is_nil()
+    |> unless do
+      Discord.send_tournament_delete_notification(server_id)
     end
   end
 
@@ -665,7 +681,7 @@ defmodule MilkWeb.TournamentController do
       |> case do
         {:ok, match_list, match_list_with_fight_result} ->
           Oban.Processer.notify_tournament_start(tournament_id)
-          Discord.send_tournament_create_notification(tournament.discord_server_id)
+          Discord.send_tournament_start_notification(tournament.discord_server_id)
 
           render(conn, "match.json", %{
             match_list: match_list,
@@ -784,9 +800,11 @@ defmodule MilkWeb.TournamentController do
       # coveralls-ignore-start
       :dev ->
         read_thumbnail(path)
+
       # coveralls-ignore-stop
       :test ->
         read_thumbnail(path)
+
       # coveralls-ignore-start
       _ ->
         read_thumbnail_prod(path)
@@ -957,10 +975,67 @@ defmodule MilkWeb.TournamentController do
     |> Tournaments.ban_maps(tournament_id, map_id_list)
     |> case do
       {:ok, nil} ->
+        notify_discord_on_ban_maps_as_needed!(user_id, tournament_id, map_id_list)
         json(conn, %{result: true})
 
       {:error, error} ->
         render(conn, "error.json", error: error)
+    end
+  end
+
+  defp notify_discord_on_ban_maps_as_needed!(user_id, tournament_id, map_id_list) do
+    tournament_id
+    |> Tournaments.get_tournament()
+    ~> tournament
+    |> Map.get(:discord_server_id)
+    ~> server_id
+    |> is_nil()
+    |> unless do
+      tournament
+      |> Map.get(:is_team)
+      |> if do
+        tournament_id
+        |> Tournaments.get_team_by_tournament_id_and_user_id(user_id)
+        ~> team
+
+        tournament_id
+        |> TournamentProgress.get_match_list()
+        |> Tournaments.find_match(team.id)
+        |> Tournaments.get_opponent_team(team.id)
+        |> case do
+          {:ok, opponent} -> {:ok, opponent["name"], team.name}
+          {:wait, nil} -> raise "The given user should not wait for the opponent."
+          _ -> raise "Unknown error"
+        end
+      else
+        user = Accounts.get_user(user_id)
+
+        tournament_id
+        |> TournamentProgress.get_match_list()
+        |> Tournaments.find_match(user_id)
+        |> Tournaments.get_opponent(user_id)
+        |> case do
+          {:ok, opponent} -> {:ok, opponent["name"], user.name}
+          {:wait, nil} -> raise "The given user should not wait for the opponent."
+          _ -> raise "Unknown error"
+        end
+      end
+      ~> {:ok, opponent_name, name}
+
+      map_id_list
+      |> Enum.map(fn map_id ->
+        map_id
+        |> Tournaments.get_map()
+        |> Map.get(:name)
+      end)
+      ~> banned_map_names
+
+      Discord.send_tournament_ban_map_notification(
+        server_id,
+        name,
+        opponent_name,
+        banned_map_names
+      )
     end
   end
 
@@ -980,10 +1055,56 @@ defmodule MilkWeb.TournamentController do
     |> Tournaments.choose_maps(tournament_id, [map_id])
     |> case do
       {:ok, nil} ->
+        notify_discord_on_choose_map_as_needed!(user_id, tournament_id, map_id)
         json(conn, %{result: true})
 
       {:error, error} ->
         render(conn, "error.json", error: error)
+    end
+  end
+
+  def notify_discord_on_choose_map_as_needed!(user_id, tournament_id, map_id) do
+    tournament_id
+    |> Tournaments.get_tournament()
+    ~> tournament
+    |> Map.get(:discord_server_id)
+    ~> server_id
+    |> is_nil()
+    |> unless do
+      tournament
+      |> Map.get(:is_team)
+      |> if do
+        tournament_id
+        |> Tournaments.get_team_by_tournament_id_and_user_id(user_id)
+        ~> team
+
+        tournament_id
+        |> TournamentProgress.get_match_list()
+        |> Tournaments.find_match(team.id)
+        |> Tournaments.get_opponent_team(team.id)
+        |> case do
+          {:ok, opponent} -> {:ok, opponent["name"], team.name}
+          {:wait, nil} -> raise "The given user should not wait for the opponent."
+          _ -> raise "Unknown error"
+        end
+      else
+        user = Accounts.get_user(user_id)
+
+        tournament_id
+        |> TournamentProgress.get_match_list()
+        |> Tournaments.find_match(user_id)
+        |> Tournaments.get_opponent(user_id)
+        |> case do
+          {:ok, opponent} -> {:ok, opponent["name"], user.name}
+          {:wait, nil} -> raise "The given user should not wait for the opponent."
+          _ -> raise "Unknown error"
+        end
+      end
+      ~> {:ok, opponent_name, name}
+
+      map_name = Tournaments.get_map(map_id).name
+
+      Discord.send_tournament_choose_map_notification(server_id, name, opponent_name, map_name)
     end
   end
 
@@ -1002,10 +1123,59 @@ defmodule MilkWeb.TournamentController do
     |> Tournaments.choose_ad(tournament_id, is_attacker_side == "1")
     |> case do
       {:ok, nil} ->
+        notify_discord_on_choose_ad_as_needed!(user_id, tournament_id, is_attacker_side)
         json(conn, %{result: true})
 
       {:error, error} ->
         render(conn, "error.json", error: error)
+    end
+  end
+
+  def notify_discord_on_choose_ad_as_needed!(user_id, tournament_id, is_attacker_side) do
+    tournament_id
+    |> Tournaments.get_tournament()
+    ~> tournament
+    |> Map.get(:discord_server_id)
+    ~> server_id
+    |> is_nil()
+    |> unless do
+      tournament
+      |> Map.get(:is_team)
+      |> if do
+        tournament_id
+        |> Tournaments.get_team_by_tournament_id_and_user_id(user_id)
+        ~> team
+
+        tournament_id
+        |> TournamentProgress.get_match_list()
+        |> Tournaments.find_match(team.id)
+        |> Tournaments.get_opponent_team(team.id)
+        |> case do
+          {:ok, opponent} -> {:ok, opponent["name"], team.name}
+          {:wait, nil} -> raise "The given user should not wait for the opponent."
+          _ -> raise "Unknown error"
+        end
+      else
+        user = Accounts.get_user(user_id)
+
+        tournament_id
+        |> TournamentProgress.get_match_list()
+        |> Tournaments.find_match(user_id)
+        |> Tournaments.get_opponent(user_id)
+        |> case do
+          {:ok, opponent} -> {:ok, opponent["name"], user.name}
+          {:wait, nil} -> raise "The given user should not wait for the opponent."
+          _ -> raise "Unknown error"
+        end
+      end
+      ~> {:ok, opponent_name, name}
+
+      Discord.send_tournament_choose_ad_notification(
+        server_id,
+        name,
+        opponent_name,
+        is_attacker_side
+      )
     end
   end
 
@@ -1388,7 +1558,7 @@ defmodule MilkWeb.TournamentController do
       |> Tournaments.get_opponent_team(team_id)
       |> case do
         {:ok, opponent} -> {:ok, opponent["id"], team_id}
-        {:wait, nil} -> raise "The given user should wait for the opponent."
+        {:wait, nil} -> raise "The given user should not wait for the opponent."
         _ -> raise "Unknown error on claim score."
       end
     else
@@ -1405,7 +1575,14 @@ defmodule MilkWeb.TournamentController do
       n when is_integer(n) ->
         cond do
           n > score ->
-            notify_discord_on_match_finished_as_needed(tournament_id, id, opponent_id, score, opponent_score)
+            notify_discord_on_match_finished_as_needed(
+              tournament_id,
+              id,
+              opponent_id,
+              score,
+              opponent_score
+            )
+
             Tournaments.delete_loser_process(tournament_id, [id])
             Tournaments.score(tournament_id, opponent_id, id, n, score, match_index)
             TournamentProgress.delete_match_pending_list(id, tournament_id)
@@ -1416,7 +1593,14 @@ defmodule MilkWeb.TournamentController do
             json(conn, %{validated: true, completed: true, is_finished: is_finished})
 
           n < score ->
-            notify_discord_on_match_finished_as_needed(tournament_id, id, opponent_id, score, opponent_score)
+            notify_discord_on_match_finished_as_needed(
+              tournament_id,
+              id,
+              opponent_id,
+              score,
+              opponent_score
+            )
+
             Tournaments.delete_loser_process(tournament_id, [opponent_id])
             Tournaments.score(tournament_id, id, opponent_id, score, n, match_index)
             TournamentProgress.delete_match_pending_list(id, tournament_id)
@@ -1437,7 +1621,13 @@ defmodule MilkWeb.TournamentController do
     end
   end
 
-  defp notify_discord_on_match_finished_as_needed(tournament_id, id, opponent_id, score, opponent_score) do
+  defp notify_discord_on_match_finished_as_needed(
+         tournament_id,
+         id,
+         opponent_id,
+         score,
+         opponent_score
+       ) do
     tournament_id
     |> Tournaments.get_tournament()
     ~> tournament
@@ -1465,7 +1655,12 @@ defmodule MilkWeb.TournamentController do
     unless is_nil(tournament.discord_server_id) do
       tournament
       |> Map.get(:discord_server_id)
-      |> Discord.send_tournament_finish_match_notification(name, opponent_name, score, opponent_score)
+      |> Discord.send_tournament_finish_match_notification(
+        name,
+        opponent_name,
+        score,
+        opponent_score
+      )
     end
   end
 

@@ -8,6 +8,7 @@ defmodule Milk.Tournaments do
   import Common.Sperm
 
   alias Ecto.Multi
+
   alias Common.{
     FileUtils,
     Tools
@@ -1054,9 +1055,6 @@ defmodule Milk.Tournaments do
       end)
 
     if assistant, do: Repo.insert_all(AssistantLog, assistant)
-
-    # TournamentLog.changeset(%TournamentLog{}, Map.from_struct(tournament))
-    # |> Repo.insert()
 
     Repo.delete(tournament)
   end
@@ -2799,7 +2797,6 @@ defmodule Milk.Tournaments do
     #     |> get_tournament()
     #     ~> tournament
 
-
     #     if tournament.team_size == size do
     #       {:ok, nil}
     #     else
@@ -3331,6 +3328,7 @@ defmodule Milk.Tournaments do
         |> case do
           {:ok, notification} ->
             push_invitation_notification(notification)
+
           {:error, error} ->
             {:error, error}
         end
@@ -3423,8 +3421,8 @@ defmodule Milk.Tournaments do
     |> if do
       b64 = attrs["icon_b64"]
 
-      # "data:image/jpg;base64,"
-      # |> Kernel.<>(b64)
+      # XXX: inspectしないとb64が正常に読み込まれないことがある
+      inspect(b64)
       img = Base.decode64!(b64)
 
       uuid = SecureRandom.uuid()
