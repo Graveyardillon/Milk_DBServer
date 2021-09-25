@@ -1,5 +1,6 @@
 defmodule Milk.Media.Image do
   alias Milk.CloudStorage.Objects
+  #alias Milk.Media.Image
 
   def get(url) do
     %HTTPoison.Response{body: body} = HTTPoison.get!(url)
@@ -20,13 +21,9 @@ defmodule Milk.Media.Image do
   def read_image_prod(path) do
     object = Objects.get(path)
 
-    path
-    |> Objects.get()
-    |> Image.get()
-
     case get(object.mediaLink) do
       {:ok, image} ->
-        image
+        {:ok, image}
 
       _ ->
         {:error, "image not found"}

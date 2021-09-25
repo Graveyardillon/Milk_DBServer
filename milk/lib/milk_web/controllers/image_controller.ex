@@ -19,7 +19,7 @@ defmodule MilkWeb.ImageController do
     case result do
       {:ok, image} ->
         conn
-        |> put_resp_content_type("image/jpg", nil)
+        |> put_resp_content_type("image/jpg")
         |> send_resp(200, image)
 
       {:error, error} ->

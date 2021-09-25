@@ -3546,7 +3546,6 @@ defmodule Milk.Tournaments do
 
     tournament_id
     |> get_map_selections(small_id, large_id)
-    # |> IO.inspect(label: :mpselections)
     |> Enum.map(fn map_selection ->
       map_selection
       |> Map.get(:map)
@@ -3562,7 +3561,6 @@ defmodule Milk.Tournaments do
     ~> maps
 
     map_selections
-    # |> IO.inspect(label: :selections)
     |> Enum.concat(maps)
     |> Enum.uniq_by(fn map ->
       map.id
