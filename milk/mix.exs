@@ -92,7 +92,8 @@ defmodule Milk.MixProject do
       {:pigeon, "~> 1.5.1"},
       {:kadabra, "~> 0.4.4"},
       {:oban, "~> 2.7"},
-      {:typed_struct, "~> 0.2.1"}
+      {:typed_struct, "~> 0.2.1"},
+      {:ex_image_info, "~> 0.2.4"}
     ]
   end
 
