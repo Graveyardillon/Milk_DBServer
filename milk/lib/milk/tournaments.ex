@@ -2825,7 +2825,8 @@ defmodule Milk.Tournaments do
           {:ok, team} ->
             create_team_leader(team.id, leader)
 
-            create_team_members(team.id, user_id_list)
+            team.id
+            |> create_team_members(user_id_list)
             |> Enum.each(fn member ->
               create_team_invitation(member.id, leader)
             end)

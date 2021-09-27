@@ -134,8 +134,7 @@ defmodule MilkWeb.TeamController do
             |> Tournaments.confirm_team_invitation()
             |> case do
               {:ok, invitation} ->
-                invitation
-                |> Map.get(:team_id)
+                invitation.team_id
                 |> Tournaments.get_team()
                 ~> team
                 |> send_add_team_discord_notification()
