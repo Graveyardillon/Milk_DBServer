@@ -3423,10 +3423,7 @@ defmodule Milk.Tournaments do
       b64 = attrs["icon_b64"]
 
       # XXX: inspectしないとb64が正常に読み込まれないことがある
-      b64
-      |> IO.inspect(label: :b64)
-      |> inspect()
-      |> IO.inspect()
+      inspect(b64)
       img = Base.decode64!(b64)
 
       uuid = SecureRandom.uuid()
