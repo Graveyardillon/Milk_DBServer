@@ -8,7 +8,8 @@ defmodule Milk.Media.Image do
   end
 
   def read_image(path) do
-    File.read(path)
+    path
+    |> File.read()
     |> case do
       {:ok, image} ->
         {:ok, image}
@@ -19,9 +20,11 @@ defmodule Milk.Media.Image do
   end
 
   def read_image_prod(path) do
-    object = Objects.get(path)
-
-    case get(object.mediaLink) do
+    path
+    |> Objects.get()
+    |> Map.get(:mediaLink)
+    |> get()
+    |> case do
       {:ok, image} ->
         {:ok, image}
 
