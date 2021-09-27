@@ -3437,7 +3437,8 @@ defmodule Milk.Tournaments do
       |> Application.get_env(:environment)
       |> case do
         :prod ->
-          Milk.CloudStorage.Objects.upload("./static/image/options/#{uuid}.jpg")
+          "./static/image/options/#{uuid}.jpg"
+          |> Milk.CloudStorage.Objects.upload()
           |> IO.inspect(label: :cloud_storage_upload)
           |> Map.get(:name)
           ~> name
