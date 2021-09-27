@@ -108,9 +108,12 @@ defmodule Milk.Discord do
     url = "#{Application.get_env(:milk, :discord_server)}/invitation_link"
 
     params = Jason.encode!(%{server_id: server_id, access_token: access_token})
+      |> IO.inspect(label: :params_in_create_invitation_link)
 
     url
+    |> IO.inspect(label: :url_in_create_invitation_link!)
     |> HTTPoison.post(params, "Content-Type": "application/json")
+    |> IO.inspect(label: :create_invitation_link)
     |> case do
       {:ok, response} ->
         response

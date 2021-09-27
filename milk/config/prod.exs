@@ -20,8 +20,6 @@ config :milk, MilkWeb.Endpoint,
 # Do not print debug messages in production
 config :logger, level: :info
 
-IO.inspect(System.get_env("CLOUD_SQL_HOST"), label: :host)
-
 config :milk, Milk.Repo,
   username: "postgres",
   password: "postgres",
@@ -85,4 +83,4 @@ config :milk, :environment, :prod
 
 config :milk, :domain, "https://e-players-web.web.app"
 
-config :milk, :discord_server, "https://discordserver-dot-e-players6814.an.r.appspot.com/"
+config :milk, :discord_server, "https://discordserver-dot-e-players6814.an.r.appspot.com"
