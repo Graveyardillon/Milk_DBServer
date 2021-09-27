@@ -3159,7 +3159,7 @@ defmodule Milk.TournamentsTest do
 
   describe "delete team and store" do
     test "works" do
-      {tournament, users} = setup_team(5)
+      {tournament, _users} = setup_team(5)
 
       tournament.id
       |> Tournaments.get_teams_by_tournament_id()

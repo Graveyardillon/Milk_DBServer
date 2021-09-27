@@ -3423,7 +3423,10 @@ defmodule Milk.Tournaments do
       b64 = attrs["icon_b64"]
 
       # XXX: inspectしないとb64が正常に読み込まれないことがある
-      inspect(b64)
+      b64
+      |> IO.inspect(label: :b64)
+      |> inspect()
+      |> IO.inspect()
       img = Base.decode64!(b64)
 
       uuid = SecureRandom.uuid()
@@ -3435,6 +3438,7 @@ defmodule Milk.Tournaments do
       |> case do
         :prod ->
           Milk.CloudStorage.Objects.upload("./static/image/options/#{uuid}.jpg")
+          |> IO.inspect(label: :cloud_storage_upload)
           |> Map.get(:name)
           ~> name
 

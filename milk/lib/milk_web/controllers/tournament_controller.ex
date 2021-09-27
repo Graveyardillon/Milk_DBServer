@@ -157,9 +157,8 @@ defmodule MilkWeb.TournamentController do
             |> Tournaments.create_entrant()
           end
 
-          tournament
-          |> Map.put(:followers, Relations.get_followers(tournament.master_id))
-          ~> tournament
+          followers = Relations.get_followers(tournament.master_id)
+          tournament = Map.put(tournament, :followers, followers)
 
           %{"user_id" => tournament.master_id, "game_name" => tournament.game_name, "score" => 7}
           |> Accounts.gain_score()
