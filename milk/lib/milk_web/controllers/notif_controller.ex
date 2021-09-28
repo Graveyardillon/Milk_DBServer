@@ -16,30 +16,29 @@ defmodule MilkWeb.NotifController do
   def get_list(conn, %{"user_id" => user_id}) do
     user_id = Tools.to_integer_as_needed(user_id)
 
-    notifs =
-      user_id
-      |> Notif.list_notification()
-      # |> Enum.map(fn notification ->
-      #   if is_nil(notification.icon_path) do
-      #     Map.put(notification, :icon, nil)
-      #   else
-      #     require_thumbnail = [
-      #       "FOLLOWING_USER_PLANNED_TOURNAMENT",
-      #       "TOURNAMENT_START",
-      #       "REMIND_TO_START_TOURNAMENT",
-      #       "TOURNAMENT_END"
-      #     ]
+    notifs = Notif.list_notification(user_id)
 
-      #     icon =
-      #       if Enum.member?(require_thumbnail, notification.process_id) do
-      #         read_thumbnail(notification.icon_path)
-      #       else
-      #         read_icon(notification.icon_path)
-      #       end
+    # |> Enum.map(fn notification ->
+    #   if is_nil(notification.icon_path) do
+    #     Map.put(notification, :icon, nil)
+    #   else
+    #     require_thumbnail = [
+    #       "FOLLOWING_USER_PLANNED_TOURNAMENT",
+    #       "TOURNAMENT_START",
+    #       "REMIND_TO_START_TOURNAMENT",
+    #       "TOURNAMENT_END"
+    #     ]
 
-      #     Map.put(notification, :icon, icon)
-      #   end
-      # end)
+    #     icon =
+    #       if Enum.member?(require_thumbnail, notification.process_id) do
+    #         read_thumbnail(notification.icon_path)
+    #       else
+    #         read_icon(notification.icon_path)
+    #       end
+
+    #     Map.put(notification, :icon, icon)
+    #   end
+    # end)
 
     render(conn, "list.json", notif: notifs)
   end

@@ -25,7 +25,7 @@ defmodule MilkWeb.ImageController do
         conn
         |> put_resp_content_type("image/jpg", nil)
         |> send_resp(200, image)
-        
+
       {:error, error} ->
         json(conn, %{error: error})
     end

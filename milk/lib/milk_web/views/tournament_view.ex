@@ -51,7 +51,8 @@ defmodule MilkWeb.TournamentView do
 
   def render("show.json", %{tournament: tournament}) do
     %{
-      data: render_one(tournament, TournamentView, "tournament.json", msg: "Tournament was created!"),
+      data:
+        render_one(tournament, TournamentView, "tournament.json", msg: "Tournament was created!"),
       result: true
     }
   end
@@ -86,6 +87,7 @@ defmodule MilkWeb.TournamentView do
       id: tournament.id,
       name: tournament.name,
       thumbnail_path: tournament.thumbnail_path,
+      discord_server_id: tournament.discord_server_id,
       game_id: tournament.game_id,
       game_name: tournament.game_name,
       enabled_coin_toss: tournament.enabled_coin_toss,
@@ -120,15 +122,15 @@ defmodule MilkWeb.TournamentView do
             %{
               coin_head_field: tournament.custom_detail.coin_head_field,
               coin_tail_field: tournament.custom_detail.coin_tail_field,
-              multiple_selection_type: tournament.custom_detail.multiple_selection_type,
-              multiple_selection_label: tournament.custom_detail.multiple_selection_label
+              map_rule: tournament.custom_detail.map_rule
             }
           end,
         event_date: tournament.event_date,
         enabled_coin_toss: tournament.enabled_coin_toss,
-        enabled_multiple_selection: tournament.enabled_multiple_selection,
+        enabled_map: tournament.enabled_map,
         start_recruiting: tournament.start_recruiting,
         deadline: tournament.deadline,
+        discord_server_id: tournament.discord_server_id,
         type: tournament.type,
         platform: tournament.platform_id,
         capacity: tournament.capacity,
@@ -165,14 +167,14 @@ defmodule MilkWeb.TournamentView do
               is_confirmed: team.is_confirmed
             }
           end),
-        multiple_selections:
-          Enum.map(tournament.multiple_selection, fn selection ->
+        maps:
+          Enum.map(tournament.map, fn map ->
             %{
-              id: selection.id,
-              name: selection.name,
-              state: selection.state,
-              icon_path: selection.icon_path,
-              tournament_id: selection.tournament_id
+              id: map.id,
+              name: map.name,
+              state: map.state,
+              icon_path: map.icon_path,
+              tournament_id: map.tournament_id
             }
           end)
       },
@@ -263,8 +265,7 @@ defmodule MilkWeb.TournamentView do
           %{
             coin_head_field: tournament.custom_detail.coin_head_field,
             coin_tail_field: tournament.custom_detail.coin_tail_field,
-            multiple_selection_type: tournament.custom_detail.multiple_selection_type,
-            multiple_selection_label: tournament.custom_detail.multiple_selection_label
+            map_rule: tournament.custom_detail.map_rule
           }
         end,
       thumbnail_path: tournament.thumbnail_path,
@@ -326,7 +327,7 @@ defmodule MilkWeb.TournamentView do
         game_id: tournament.game_id,
         game_name: tournament.game_name,
         enabled_coin_toss: tournament.enabled_coin_toss,
-        enabled_multiple_selection: tournament.enabled_multiple_selection,
+        enabled_map: tournament.enabled_map,
         event_date: tournament.event_date,
         start_recruiting: tournament.start_recruiting,
         deadline: tournament.deadline,
@@ -486,7 +487,7 @@ defmodule MilkWeb.TournamentView do
           %{
             coin_head_field: custom_detail.coin_head_field,
             coin_tail_field: custom_detail.coin_tail_field,
-            multiple_selection_type: custom_detail.multiple_selection_type
+            map_rule: custom_detail.map_rule
           }
         end
     }

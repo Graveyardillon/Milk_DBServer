@@ -1311,7 +1311,7 @@ defmodule Milk.TournamentsTest do
         fixture_tournament(
           is_team: true,
           enabled_coin_toss: true,
-          enabled_multiple_selection: true,
+          enabled_map: true,
           type: 2,
           capacity: 4,
           maps: maps

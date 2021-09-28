@@ -388,7 +388,7 @@ defmodule MilkWeb.TournamentControllerTest do
         "type" => 1,
         "join" => "true",
         "enabled_coin_toss" => "true",
-        "enabled_multiple_selection" => "true",
+        "enabled_map" => "true",
         "coin_head_field" => "omote",
         "coin_tail_field" => "ura",
         "url" => "some url",
@@ -405,7 +405,7 @@ defmodule MilkWeb.TournamentControllerTest do
         post(conn, Routes.tournament_path(conn, :create),
           tournament: attrs,
           file: "",
-          options: options
+          maps: options
         )
 
       assert json_response(conn, 200)["result"]
@@ -421,7 +421,7 @@ defmodule MilkWeb.TournamentControllerTest do
       conn
       |> json_response(200)
       |> Map.get("data")
-      |> Map.get("multiple_selections")
+      |> Map.get("maps")
       |> Enum.map(fn selection ->
         assert is_binary(selection["name"])
         assert is_integer(selection["id"])
@@ -431,7 +431,7 @@ defmodule MilkWeb.TournamentControllerTest do
       |> Kernel.==(3)
       |> assert()
 
-      assert json_response(conn, 200)["data"]["enabled_multiple_selection"]
+      assert json_response(conn, 200)["data"]["enabled_map"]
     end
   end
 
@@ -1371,7 +1371,8 @@ defmodule MilkWeb.TournamentControllerTest do
     end
 
     test "team", %{conn: conn} do
-      tournament = fixture_tournament(is_team: true, capacity: 1)
+      tournament =
+        fixture_tournament(is_team: true, capacity: 1, deadline: "2100-04-17T14:00:00Z")
 
       1..5
       |> Enum.to_list()
@@ -1940,7 +1941,7 @@ defmodule MilkWeb.TournamentControllerTest do
       |> Enum.to_list()
       |> Enum.each(fn n ->
         %{"name" => "#{n}test", "tournament_id" => tournament.id, "icon_path" => "a"}
-        |> Tournaments.create_multiple_selection()
+        |> Tournaments.create_map()
       end)
 
       conn = get(conn, Routes.tournament_path(conn, :options), tournament_id: tournament.id)
@@ -3659,8 +3660,8 @@ defmodule MilkWeb.TournamentControllerTest do
 
       assert match_info["custom_detail"]["coin_head_field"] == attrs[:coin_head_field]
       assert match_info["custom_detail"]["coin_tail_field"] == attrs[:coin_tail_field]
-      assert is_nil(match_info["custom_detail"]["multiple_selection_type"])
-      assert Map.has_key?(match_info["custom_detail"], "multiple_selection_type")
+      assert is_nil(match_info["custom_detail"]["map_rule"])
+      assert Map.has_key?(match_info["custom_detail"], "map_rule")
       refute is_nil(match_info["is_coin_head"])
       is_my_coin_head = match_info["is_coin_head"]
 
@@ -3682,8 +3683,8 @@ defmodule MilkWeb.TournamentControllerTest do
 
       assert match_info["custom_detail"]["coin_head_field"] == attrs[:coin_head_field]
       assert match_info["custom_detail"]["coin_tail_field"] == attrs[:coin_tail_field]
-      assert is_nil(match_info["custom_detail"]["multiple_selection_type"])
-      assert Map.has_key?(match_info["custom_detail"], "multiple_selection_type")
+      assert is_nil(match_info["custom_detail"]["map_rule"])
+      assert Map.has_key?(match_info["custom_detail"], "map_rule")
       refute is_nil(match_info["is_coin_head"])
       is_opponent_coin_head = match_info["is_coin_head"]
 

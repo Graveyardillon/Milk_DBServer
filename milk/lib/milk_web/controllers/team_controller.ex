@@ -4,6 +4,7 @@ defmodule MilkWeb.TeamController do
   import Common.Sperm
 
   alias Common.Tools
+
   alias Milk.{
     Accounts,
     Discord,
@@ -78,8 +79,11 @@ defmodule MilkWeb.TeamController do
           tournament_id
           |> Tournaments.create_team(size, leader_id, user_id_list)
           |> case do
-            {:ok, team} -> render(conn, "show.json", team: team)
-            {:error, error} -> render(conn, "error.json", error: Tools.create_error_message(error))
+            {:ok, team} ->
+              render(conn, "show.json", team: team)
+
+            {:error, error} ->
+              render(conn, "error.json", error: Tools.create_error_message(error))
           end
         end
       end
@@ -107,7 +111,6 @@ defmodule MilkWeb.TeamController do
     with %Tournaments.Team{} = team <- Tournaments.get_team_by_invitation_id(invitation_id) do
       with %Tournaments.Tournament{} = tournament <-
              Tournaments.get_tournament(team.tournament_id) do
-
         tournament.id
         |> Tournaments.get_confirmed_teams()
         |> length()
@@ -135,6 +138,7 @@ defmodule MilkWeb.TeamController do
                 |> Map.get(:team_id)
                 |> Tournaments.get_team()
                 ~> team
+                |> send_add_team_discord_notification()
 
                 json(conn, %{
                   result: true,
@@ -155,6 +159,25 @@ defmodule MilkWeb.TeamController do
     end
   end
 
+  defp send_add_team_discord_notification(team) do
+    team
+    |> Map.get(:id)
+    |> Tournaments.get_team()
+    ~> team
+    |> Map.get(:is_confirmed)
+    |> if do
+      team
+      |> Map.get(:tournament_id)
+      |> Tournaments.get_tournament()
+      |> Map.get(:discord_server_id)
+      ~> discord_server_id
+      |> is_nil()
+      |> unless do
+        Discord.send_tournament_add_team_notification(discord_server_id, team.name)
+      end
+    end
+  end
+
   @doc """
   Delete a team
   """
@@ -164,7 +187,6 @@ defmodule MilkWeb.TeamController do
     |> Tournaments.delete_team()
     |> case do
       {:ok, team} ->
-        team
         render(conn, "show.json", team: team)
 
       {:error, error} ->
@@ -174,10 +196,10 @@ defmodule MilkWeb.TeamController do
 
   def decline_invitation(conn, %{"invitation_id" => id}) do
     case Tournaments.team_invitation_decline(id) do
-      {:ok, %Tournaments.TeamInvitation{} = invitation} ->
+      {:ok, %Tournaments.TeamInvitation{} = _invitation} ->
         json(conn, %{result: true})
 
-      {:error, error} ->
+      {:error, _error} ->
         json(conn, %{result: false})
     end
   end
@@ -190,14 +212,16 @@ defmodule MilkWeb.TeamController do
     |> unless do
       leader = Enum.find(team.team_member, fn x -> x.is_leader == true end)
       total = length(team.team_member) + length(user_id_list)
-      
+
       cond do
         total <= team.size ->
-          Tournaments.create_team_members(team_id, user_id_list) 
+          Tournaments.create_team_members(team_id, user_id_list)
           |> Enum.each(fn member ->
-              Tournaments.create_team_invitation(member.id, leader.user_id) 
-          end) 
+            Tournaments.create_team_invitation(member.id, leader.user_id)
+          end)
+
           json(conn, %{result: true})
+
         total > team.size ->
           render(conn, "error.json", error: "invalid size")
       end

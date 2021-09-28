@@ -2,7 +2,6 @@ defmodule Milk.Tournaments.MapSelection do
   use Milk.Schema
 
   import Ecto.Changeset
-  import Common.Sperm
 
   schema "map_selections" do
     field :state, :string, default: "not_selected"

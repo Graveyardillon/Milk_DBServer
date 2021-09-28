@@ -23,7 +23,7 @@ defmodule Milk.Tournaments.Tournament do
     field :description, :string
     field :discord_server_id, :string
     field :enabled_coin_toss, :boolean, default: false
-    field :enabled_multiple_selection, :boolean, default: false
+    field :enabled_map, :boolean, default: false
     field :event_date, EctoDate
     field :game_name, :string
     field :is_started, :boolean, default: false
@@ -45,7 +45,7 @@ defmodule Milk.Tournaments.Tournament do
     has_many :assistant, Assistant
     has_many :tournament_chat_topics, TournamentChatTopic
     has_many :team, Team
-    has_many :multiple_selection, Milk.Tournaments.Map
+    has_many :map, Milk.Tournaments.Map
     has_one :custom_detail, TournamentCustomDetail
 
     timestamps()
@@ -61,7 +61,7 @@ defmodule Milk.Tournaments.Tournament do
       :deadline,
       :discord_server_id,
       :enabled_coin_toss,
-      :enabled_multiple_selection,
+      :enabled_map,
       :event_date,
       :game_name,
       :thumbnail_path,
@@ -102,7 +102,7 @@ defmodule Milk.Tournaments.Tournament do
     |> cast(attrs, [
       :name,
       :enabled_coin_toss,
-      :enabled_multiple_selection,
+      :enabled_map,
       :event_date,
       :capacity,
       :description,
