@@ -805,25 +805,25 @@ defmodule MilkWeb.TournamentController do
         json(conn, %{result: false})
 
       tournament ->
-        path = tournament.thumbnail_path
+        tournament.thumbnail_path
+        |> ImageController.get_by_path()
+        # map =
+        #   case Application.get_env(:milk, :environment) do
+        #     # coveralls-ignore-start
+        #     :dev ->
+        #       read_thumbnail(path)
 
-        map =
-          case Application.get_env(:milk, :environment) do
-            # coveralls-ignore-start
-            :dev ->
-              read_thumbnail(path)
+        #     # coveralls-ignore-stop
+        #     :test ->
+        #       read_thumbnail(path)
 
-            # coveralls-ignore-stop
-            :test ->
-              read_thumbnail(path)
+        #     # coveralls-ignore-start
+        #     _ ->
+        #       read_thumbnail_prod(path)
+        #       # coveralls-ignore-stop
+        #   end
 
-            # coveralls-ignore-start
-            _ ->
-              read_thumbnail_prod(path)
-              # coveralls-ignore-stop
-          end
-
-        json(conn, %{result: true, b64: map.b64})
+        # json(conn, %{result: true, b64: map.b64})
     end
   end
 

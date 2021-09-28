@@ -122,10 +122,6 @@ defmodule MilkWeb.Router do
     get "/tournament/get_tabs", TournamentController, :tournament_topics
     get "/tournament/get_thumbnail", TournamentController, :get_thumbnail_image
 
-    get "/tournament/get_thumbnail_by_tournament_id",
-        TournamentController,
-        :get_thumbnail_by_tournament_id
-
     get "/tournament/get_match_list", TournamentController, :get_match_list
     get "/tournament/home", TournamentController, :home
     get "/tournament/home/search", TournamentController, :search
@@ -226,6 +222,7 @@ defmodule MilkWeb.Router do
     post "/device/unregister", DeviceController, :unregister_token
 
     get "/image/path", ImageController, :get_by_path
+    get "/image/get_thumbnail_by_tournament_id", ImageController, :get_thumbnail_by_tournament_id
   end
 
   scope "/debug", MilkWeb do
