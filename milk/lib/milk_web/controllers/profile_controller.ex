@@ -104,7 +104,7 @@ defmodule MilkWeb.ProfileController do
   defp update_account_prod(user, path) do
     object = Objects.upload(path)
     File.rm(path)
-    Accounts.update_icon_path(user, path)
+    Accounts.update_icon_path(user, object.name)
     path
   end
 

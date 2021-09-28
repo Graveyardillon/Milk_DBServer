@@ -155,7 +155,7 @@ defmodule MilkWeb.Router do
     get "/tournament/pending", TournamentController, :pending
     get "/tournament/url/:url", TournamentController, :redirect_by_url
     get "/tournament/maps", TournamentController, :options
-    get "/tournament/map_icon", TournamentController, :get_option_icon
+    get "/tournament/map_icon", TournamentController, :get_map_icon
 
     post "/tournament/start", TournamentController, :start
     post "/tournament/register/pid", TournamentController, :register_pid_of_start_notification

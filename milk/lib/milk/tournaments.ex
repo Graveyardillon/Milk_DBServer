@@ -2825,7 +2825,8 @@ defmodule Milk.Tournaments do
           {:ok, team} ->
             create_team_leader(team.id, leader)
 
-            create_team_members(team.id, user_id_list)
+            team.id
+            |> create_team_members(user_id_list)
             |> Enum.each(fn member ->
               create_team_invitation(member.id, leader)
             end)
@@ -3433,7 +3434,9 @@ defmodule Milk.Tournaments do
       |> Application.get_env(:environment)
       |> case do
         :prod ->
-          Milk.CloudStorage.Objects.upload("./static/image/options/#{uuid}.jpg")
+          "./static/image/options/#{uuid}.jpg"
+          |> Milk.CloudStorage.Objects.upload()
+          |> IO.inspect(label: :cloud_storage_upload)
           |> Map.get(:name)
           ~> name
 
@@ -3546,7 +3549,6 @@ defmodule Milk.Tournaments do
 
     tournament_id
     |> get_map_selections(small_id, large_id)
-    # |> IO.inspect(label: :mpselections)
     |> Enum.map(fn map_selection ->
       map_selection
       |> Map.get(:map)
@@ -3562,7 +3564,6 @@ defmodule Milk.Tournaments do
     ~> maps
 
     map_selections
-    # |> IO.inspect(label: :selections)
     |> Enum.concat(maps)
     |> Enum.uniq_by(fn map ->
       map.id

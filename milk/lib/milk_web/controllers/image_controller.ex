@@ -3,24 +3,35 @@ defmodule MilkWeb.ImageController do
 
   alias Milk.Media.Image
 
+  require ExImageInfo
+
   def get_by_path(conn, %{"path" => path}) do
-    result =
-      case Application.get_env(:milk, :environment) do
-        :dev ->
-          Image.read_image(path)
+    :milk
+    |> Application.get_env(:environment)
+    |> case do
+      :dev ->
+        Image.read_image(path)
 
-        :test ->
-          Image.read_image(path)
+      :test ->
+        Image.read_image(path)
 
-        _ ->
-          Image.read_image_prod(path)
-      end
-
-    case result do
+      _ ->
+        Image.read_image_prod(path)
+    end
+    |> case do
       {:ok, image} ->
-        conn
-        |> put_resp_content_type("image/jpg", nil)
-        |> send_resp(200, image)
+        image
+        |> ExImageInfo.info()
+        |> case do
+          {"image/png", _, _, _} ->
+            conn
+            |> put_resp_content_type("image/png")
+            |> send_resp(200, image)
+          _ ->
+            conn
+            |> put_resp_content_type("image/jpg")
+            |> send_resp(200, image)
+        end
 
       {:error, error} ->
         json(conn, %{error: error})

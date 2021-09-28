@@ -157,9 +157,8 @@ defmodule MilkWeb.TournamentController do
             |> Tournaments.create_entrant()
           end
 
-          tournament
-          |> Map.put(:followers, Relations.get_followers(tournament.master_id))
-          ~> tournament
+          followers = Relations.get_followers(tournament.master_id)
+          tournament = Map.put(tournament, :followers, followers)
 
           %{"user_id" => tournament.master_id, "game_name" => tournament.game_name, "score" => 7}
           |> Accounts.gain_score()
@@ -916,46 +915,22 @@ defmodule MilkWeb.TournamentController do
   @doc """
   Get icon of an option.
   """
-  def get_option_icon(conn, %{"path" => path}) do
+  def get_map_icon(conn, %{"path" => path}) do
     :milk
     |> Application.get_env(:environment)
     |> case do
-      :dev -> load_img(path)
-      :test -> load_img(path)
-      _ -> load_img_prod(path)
+      :dev -> Image.read_image(path)
+      :test -> Image.read_image(path)
+      _ -> Image.read_image_prod(path)
     end
+    |> IO.inspect(label: :get_map_icon)
     |> case do
-      {:ok, b64} ->
+      {:ok, image} ->
+        b64 = Base.encode64(image)
         json(conn, %{b64: b64})
 
       {:error, error} ->
         render(conn, "error.json", error: error)
-    end
-  end
-
-  defp load_img(path) do
-    path
-    |> File.read()
-    |> case do
-      {:ok, file} ->
-        {:ok, Base.encode64(file)}
-
-      {:error, error} ->
-        {:error, error}
-    end
-  end
-
-  defp load_img_prod(name) do
-    name
-    |> Objects.get()
-    |> Map.get(:mediaLink)
-    |> Image.get()
-    |> case do
-      {:ok, file} ->
-        {:ok, Base.encode64(file)}
-
-      {:error, error} ->
-        {:error, error}
     end
   end
 

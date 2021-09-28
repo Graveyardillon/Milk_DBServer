@@ -5,8 +5,6 @@ defmodule Milk.TournamentsTest do
 
   import Common.Sperm
 
-  require Logger
-
   alias Milk.{
     Accounts,
     Chat,
@@ -30,6 +28,8 @@ defmodule Milk.TournamentsTest do
   }
 
   alias Milk.Accounts.User
+
+  require Logger
 
   @moduletag timeout: 300_000
 
@@ -90,11 +90,11 @@ defmodule Milk.TournamentsTest do
   defp fixture(:assistant) do
     user = fixture_user()
 
-    {:ok, tournament} =
-      @valid_attrs
-      |> Map.put("master_id", user.id)
-      |> Map.put("is_started", false)
-      |> Tournaments.create_tournament()
+    @valid_attrs
+    |> Map.put("master_id", user.id)
+    |> Map.put("is_started", false)
+    |> Tournaments.create_tournament()
+    ~> {:ok, tournament}
 
     assistant_attrs = %{
       "tournament_id" => tournament.id,
@@ -109,14 +109,13 @@ defmodule Milk.TournamentsTest do
     tournament = fixture_tournament()
     {:ok, chat_room} = Chat.create_chat_room(%{"name" => "name"})
 
-    {:ok, topic} =
-      %{
-        "topic_name" => "name",
-        "tournament_id" => tournament.id,
-        "chat_room_id" => chat_room.id,
-        "tab_index" => 1
-      }
-      |> Tournaments.create_tournament_chat_topic()
+    Map.new()
+    |> Map.put("topic_name", "name")
+    |> Map.put("tournament_id", tournament.id)
+    |> Map.put("chat_room_id", chat_room.id)
+    |> Map.put("tab_index", 1)
+    |> Tournaments.create_tournament_chat_topic()
+    ~> {:ok, topic}
 
     topic
   end
@@ -131,18 +130,20 @@ defmodule Milk.TournamentsTest do
         fixture_tournament(is_started: true)
       end
 
-    user_id =
+    opts["user_id"]
+    |> is_nil()
+    |> unless do
       opts["user_id"]
-      |> is_nil()
-      |> unless do
-        opts["user_id"]
-      else
-        tournament.master_id
-      end
+    else
+      tournament.master_id
+    end
+    ~> user_id
 
-    {:ok, entrant} =
-      %{@entrant_create_attrs | "tournament_id" => tournament.id, "user_id" => user_id}
-      |> Tournaments.create_entrant()
+    @entrant_create_attrs
+    |> Map.put("tournament_id", tournament.id)
+    |> Map.put("user_id", user_id)
+    |> Tournaments.create_entrant()
+    ~> {:ok, entrant}
 
     entrant
   end
@@ -173,7 +174,7 @@ defmodule Milk.TournamentsTest do
     test "get_tournament/1 (is_team)" do
       tournament = fixture_tournament(is_team: true)
 
-      t = Tournaments.get_tournament(tournament.id)
+      assert %Tournament{} = Tournaments.get_tournament(tournament.id)
     end
 
     test "get_tournament_by_room_id works" do
@@ -191,7 +192,8 @@ defmodule Milk.TournamentsTest do
     end
 
     test "get_tournament_by_room_id returns nil" do
-      Tournaments.get_tournament_by_room_id(-1)
+      -1
+      |> Tournaments.get_tournament_by_room_id()
       |> Kernel.==({:error, "the tournament was not found."})
       |> assert()
     end
@@ -213,7 +215,12 @@ defmodule Milk.TournamentsTest do
     test "get_tournaments_by_master_id/1 fails to return tournaments of a user" do
       user = fixture_user()
       _tournament = fixture_tournament()
-      assert length(Tournaments.get_tournaments_by_master_id(user.id)) == 0
+
+      user.id
+      |> Tournaments.get_tournaments_by_master_id()
+      |> length()
+      |> Kernel.==(0)
+      |> assert()
     end
 
     test "get_tournaments_by_assistant_id/1 fails to returns tournaments of a user" do
@@ -1407,7 +1414,7 @@ defmodule Milk.TournamentsTest do
       else
         {opponent_team["id"], team.id}
       end
-      ~> {large_id, small_id}
+      ~> {_large_id, _small_id}
 
       ban_map_id_list1
       |> Enum.map(fn map_id ->
@@ -2941,7 +2948,7 @@ defmodule Milk.TournamentsTest do
   describe "get_confirmed_teams" do
     test "works" do
       {tournament, users} = setup_team(2)
-      [leader | members] = users
+      [leader | _members] = users
 
       tournament.id
       |> Tournaments.get_confirmed_teams()
@@ -3052,7 +3059,7 @@ defmodule Milk.TournamentsTest do
   describe "create_team_invitation" do
     test "works" do
       {tournament, users} = setup_team(5)
-      [leader | users] = users
+      [leader | _users] = users
 
       team =
         tournament.id
@@ -3128,7 +3135,7 @@ defmodule Milk.TournamentsTest do
 
   describe "delete_team" do
     test "works" do
-      {tournament, users} = setup_team(5)
+      {tournament, _users} = setup_team(5)
 
       tournament.id
       |> Tournaments.get_teams_by_tournament_id()
@@ -3152,7 +3159,7 @@ defmodule Milk.TournamentsTest do
 
   describe "delete team and store" do
     test "works" do
-      {tournament, users} = setup_team(5)
+      {tournament, _users} = setup_team(5)
 
       tournament.id
       |> Tournaments.get_teams_by_tournament_id()

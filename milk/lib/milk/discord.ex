@@ -108,9 +108,12 @@ defmodule Milk.Discord do
     url = "#{Application.get_env(:milk, :discord_server)}/invitation_link"
 
     params = Jason.encode!(%{server_id: server_id, access_token: access_token})
+      |> IO.inspect(label: :params_in_create_invitation_link)
 
     url
+    |> IO.inspect(label: :url_in_create_invitation_link!)
     |> HTTPoison.post(params, "Content-Type": "application/json")
+    |> IO.inspect(label: :create_invitation_link)
     |> case do
       {:ok, response} ->
         response
@@ -146,7 +149,7 @@ defmodule Milk.Discord do
   @doc """
   Send notification on added team to the server
   """
-  def send_tournament_add_team_notification(server_id, team_name) do
+  def send_tournament_add_team_notification(server_id, team_name) when is_binary(server_id) do
     discord_server_url = Application.get_env(:milk, :discord_server)
     access_token = Application.get_env(:milk, :discord_server_access_token)
 
