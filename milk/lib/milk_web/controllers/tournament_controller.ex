@@ -2116,15 +2116,15 @@ defmodule MilkWeb.TournamentController do
       |> Tournaments.get_opponent(user_id)
       |> case do
         {:ok, opponent} ->
-          rank = Tournaments.get_rank(tournament_id, user_id)
+          {:ok, rank} = Tournaments.get_rank(tournament_id, user_id)
           {opponent, rank, nil}
 
         {:wait, nil} ->
-          rank = Tournaments.get_rank(tournament_id, user_id)
+          {:ok, rank} = Tournaments.get_rank(tournament_id, user_id)
           {nil, rank, nil}
 
         _ ->
-          rank = Tournaments.get_rank(tournament_id, user_id)
+          {:ok, rank} = Tournaments.get_rank(tournament_id, user_id)
           {nil, rank, nil}
       end
     end

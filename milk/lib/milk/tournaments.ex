@@ -1373,11 +1373,13 @@ defmodule Milk.Tournaments do
   Get a rank of a user.
   """
   def get_rank(tournament_id, user_id) do
-    with entrant <- get_entrant_including_logs(tournament_id, user_id),
-         false <- is_nil(entrant) do
-      Map.get(entrant, :rank)
+    tournament_id
+    |> get_entrant_including_logs(user_id)
+    ~> entrant
+    |> if do
+      {:ok, entrant.rank}
     else
-      true -> {:error, "entrant is not found"}
+      {:error, "entrant is not found"}
     end
   end
 
