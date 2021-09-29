@@ -414,7 +414,7 @@ defmodule MilkWeb.TournamentController do
     tournament = Tournaments.get_tournament(tournament_id)
 
     with {:ok, %Tournament{}} <- Tournaments.delete_tournament(tournament_id) do
-      notify_discord_on_start_match_as_needed(tournament)
+      notify_discord_on_deleting_tournament_as_needed(tournament)
       json(conn, %{result: true})
     else
       {:error, error} -> render(conn, "error.json", error: error)
@@ -422,7 +422,7 @@ defmodule MilkWeb.TournamentController do
     end
   end
 
-  defp notify_discord_on_start_match_as_needed(tournament) do
+  defp notify_discord_on_deleting_tournament_as_needed(tournament) do
     tournament
     |> Map.get(:discord_server_id)
     ~> server_id
