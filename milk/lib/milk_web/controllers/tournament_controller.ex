@@ -2153,25 +2153,20 @@ defmodule MilkWeb.TournamentController do
     end
     ~> score
 
-    # user_idとtournament_idを足したもののhashで比較を行い、大きい方がコインの表
+    #  hashの比較を行うために、opponent_idとmy_idを取り出す。
+    #  それぞれ個人戦ならuser_idでチーム戦ならteam_idとなる。
     opponent
     |> is_nil()
     |> Kernel.||(!tournament.enabled_coin_toss)
     |> unless do
       if is_team do
-        opponent["id"]
-        |> Tournaments.get_leader()
-        |> Map.get(:user)
-        |> Map.get(:id)
-        ~> opponent_id
-
         tournament_id
         |> Tournaments.get_team_by_tournament_id_and_user_id(user_id)
         |> Map.get(:id)
-        |> Tournaments.get_leader()
-        |> Map.get(:user)
-        |> Map.get(:id)
-        ~> my_id
+        ~> team_id
+
+        opponent_id = opponent["id"]
+        my_id = team_id
 
         {my_id, opponent_id}
       else
