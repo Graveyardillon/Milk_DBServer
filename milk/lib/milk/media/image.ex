@@ -1,6 +1,6 @@
 defmodule Milk.Media.Image do
   alias Milk.CloudStorage.Objects
-  #alias Milk.Media.Image
+  # alias Milk.Media.Image
 
   def get(url) do
     %HTTPoison.Response{body: body} = HTTPoison.get!(url)

@@ -743,6 +743,7 @@ defmodule Milk.Tournaments do
       |> case do
         "VLT" ->
           TournamentProgress.init_ban_order(tournament_id, id)
+
         _ ->
           TournamentProgress.init_ban_order(tournament_id, id)
       end
@@ -2459,7 +2460,7 @@ defmodule Milk.Tournaments do
         get_team_members_by_team_id(team.id)
       end)
       |> List.flatten()
-      |> Enum.map(&(&1.user_id))
+      |> Enum.map(& &1.user_id)
       |> Enum.all?(fn team_member_user_id ->
         team_member_user_id != user_id
       end)
@@ -2467,7 +2468,7 @@ defmodule Milk.Tournaments do
       tournament
       |> Map.get(:id)
       |> get_entrants()
-      |> Enum.map(&(&1.user_id))
+      |> Enum.map(& &1.user_id)
       |> Enum.all?(fn entrant_user_id ->
         entrant_user_id != user_id
       end)
@@ -3631,7 +3632,11 @@ defmodule Milk.Tournaments do
   @doc """
   Calculate given user(team) is head of a flipped coin.
   """
-  def is_head_of_coin?(tournament_id, id, opponent_id) do
+  def is_head_of_coin?(tournament_id, id, opponent_id)
+      when is_integer(tournament_id)
+      and is_integer(id)
+      and is_integer(opponent_id) do
+
     mine_str = to_string(tournament_id + id)
     opponent_str = to_string(tournament_id + opponent_id)
 

@@ -27,6 +27,7 @@ defmodule MilkWeb.ImageController do
             conn
             |> put_resp_content_type("image/png")
             |> send_resp(200, image)
+
           _ ->
             conn
             |> put_resp_content_type("image/jpg")

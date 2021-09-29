@@ -1,4 +1,4 @@
- defmodule Milk.UserManager.GuardianPipeline do
+defmodule Milk.UserManager.GuardianPipeline do
   use MilkWeb, :controller
 
   import Plug.Conn
@@ -60,14 +60,14 @@
 
   defp check_guardian_routing(conn) do
     String.contains?(conn.request_path, "api/user/login") or
-    String.contains?(conn.request_path, "api/user/signup") or
-    String.contains?(conn.request_path, "api/user/signin") or
-    String.contains?(conn.request_path, "api/user/logout") or
-    String.contains?(conn.request_path, "api/user/signin_with_discord") or
-    String.contains?(conn.method, "GET") or
-    String.contains?(conn.request_path, "api/chat/create_dialogue") or
-    String.contains?(conn.request_path, "api/notification/create") or
-    String.contains?(conn.request_path, "api/conf/send_email") or
-    String.contains?(conn.request_path, "api/conf/conf_email")
+      String.contains?(conn.request_path, "api/user/signup") or
+      String.contains?(conn.request_path, "api/user/signin") or
+      String.contains?(conn.request_path, "api/user/logout") or
+      String.contains?(conn.request_path, "api/user/signin_with_discord") or
+      String.contains?(conn.method, "GET") or
+      String.contains?(conn.request_path, "api/chat/create_dialogue") or
+      String.contains?(conn.request_path, "api/notification/create") or
+      String.contains?(conn.request_path, "api/conf/send_email") or
+      String.contains?(conn.request_path, "api/conf/conf_email")
   end
 end

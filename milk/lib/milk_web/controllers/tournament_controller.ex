@@ -142,7 +142,8 @@ defmodule MilkWeb.TournamentController do
       tournament_params
       |> Map.put(
         "enabled_coin_toss",
-        tournament_params["enabled_coin_toss"] == "true" || tournament_params["enabled_coin_toss"] == true
+        tournament_params["enabled_coin_toss"] == "true" ||
+          tournament_params["enabled_coin_toss"] == true
       )
       |> Map.put(
         "enabled_map",
@@ -1094,7 +1095,10 @@ defmodule MilkWeb.TournamentController do
     tournament_id = Tools.to_integer_as_needed(tournament_id)
 
     user_id
-    |> Tournaments.choose_ad(tournament_id, is_attacker_side == "1" || is_attacker_side == true || is_attacker_side == "true")
+    |> Tournaments.choose_ad(
+      tournament_id,
+      is_attacker_side == "1" || is_attacker_side == true || is_attacker_side == "true"
+    )
     |> case do
       {:ok, nil} ->
         notify_discord_on_choose_ad_as_needed!(user_id, tournament_id, is_attacker_side)
