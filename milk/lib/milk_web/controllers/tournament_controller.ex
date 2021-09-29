@@ -891,25 +891,25 @@ defmodule MilkWeb.TournamentController do
   @doc """
   Get options by tournament id.
   """
-  def options(conn, %{"tournament_id" => tournament_id, "user_id" => user_id}) do
+  def maps(conn, %{"tournament_id" => tournament_id, "user_id" => user_id}) do
     tournament_id = Tools.to_integer_as_needed(tournament_id)
     user_id = Tools.to_integer_as_needed(user_id)
 
-    options = Tournaments.get_selectable_maps_by_tournament_id_and_user_id(tournament_id, user_id)
+    maps = Tournaments.get_selectable_maps_by_tournament_id_and_user_id(tournament_id, user_id)
 
-    render(conn, "options.json", options: options)
+    render(conn, "maps.json", maps: maps)
   end
 
-  def options(conn, %{"tournament_id" => tournament_id}) do
+  def maps(conn, %{"tournament_id" => tournament_id}) do
     tournament_id
     |> Tools.to_integer_as_needed()
     |> Tournaments.get_maps_by_tournament_id()
     |> Enum.map(fn map ->
       Map.put(map, :state, "not_selected")
     end)
-    ~> options
+    ~> maps
 
-    render(conn, "options.json", options: options)
+    render(conn, "maps.json", maps: maps)
   end
 
   @doc """
@@ -1094,7 +1094,7 @@ defmodule MilkWeb.TournamentController do
     tournament_id = Tools.to_integer_as_needed(tournament_id)
 
     user_id
-    |> Tournaments.choose_ad(tournament_id, is_attacker_side == "1")
+    |> Tournaments.choose_ad(tournament_id, is_attacker_side == "1" || is_attacker_side == true || is_attacker_side == "true")
     |> case do
       {:ok, nil} ->
         notify_discord_on_choose_ad_as_needed!(user_id, tournament_id, is_attacker_side)
@@ -1563,6 +1563,12 @@ defmodule MilkWeb.TournamentController do
             TournamentProgress.delete_match_pending_list(opponent_id, tournament_id)
             TournamentProgress.delete_score(tournament_id, id)
             TournamentProgress.delete_score(tournament_id, opponent_id)
+            Tournaments.delete_map_selections(tournament_id, id)
+            Tournaments.delete_map_selections(tournament_id, opponent_id)
+            TournamentProgress.delete_is_attacker_side(id, tournament_id)
+            TournamentProgress.delete_is_attacker_side(opponent_id, tournament_id)
+            TournamentProgress.delete_ban_order(tournament_id, id)
+            TournamentProgress.delete_ban_order(tournament_id, opponent_id)
             is_finished = finish_as_needed?(tournament_id, opponent_id)
             json(conn, %{validated: true, completed: true, is_finished: is_finished})
 
@@ -1581,6 +1587,12 @@ defmodule MilkWeb.TournamentController do
             TournamentProgress.delete_match_pending_list(opponent_id, tournament_id)
             TournamentProgress.delete_score(tournament_id, id)
             TournamentProgress.delete_score(tournament_id, opponent_id)
+            Tournaments.delete_map_selections(tournament_id, id)
+            Tournaments.delete_map_selections(tournament_id, opponent_id)
+            TournamentProgress.delete_is_attacker_side(id, tournament_id)
+            TournamentProgress.delete_is_attacker_side(opponent_id, tournament_id)
+            TournamentProgress.delete_ban_order(tournament_id, id)
+            TournamentProgress.delete_ban_order(tournament_id, opponent_id)
             is_finished = finish_as_needed?(tournament_id, id)
             json(conn, %{validated: true, completed: true, is_finished: is_finished})
 

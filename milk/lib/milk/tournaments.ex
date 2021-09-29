@@ -742,15 +742,8 @@ defmodule Milk.Tournaments do
       |> Map.get(:map_selection_type)
       |> case do
         "VLT" ->
-          delete_map_selections(tournament_id, id)
-          TournamentProgress.delete_is_attacker_side(id, tournament_id)
-          TournamentProgress.delete_ban_order(tournament_id, id)
           TournamentProgress.init_ban_order(tournament_id, id)
-
         _ ->
-          delete_map_selections(tournament_id, id)
-          TournamentProgress.delete_is_attacker_side(id, tournament_id)
-          TournamentProgress.delete_ban_order(tournament_id, id)
           TournamentProgress.init_ban_order(tournament_id, id)
       end
     end
@@ -876,14 +869,13 @@ defmodule Milk.Tournaments do
     if state!(tournament_id, user_id) == "ShouldChooseMap" do
       map_id_list
       |> Enum.each(fn map_id ->
-        %MapSelection{}
-        |> MapSelection.changeset(%{
+        %{
           "map_id" => map_id,
           "state" => "selected",
           "large_id" => large_id,
           "small_id" => small_id
-        })
-        |> Repo.insert()
+        }
+        |> create_map_selection()
       end)
       |> Kernel.==(:ok)
       |> if do
@@ -3489,6 +3481,15 @@ defmodule Milk.Tournaments do
     Milk.Tournaments.Map
     |> where([ms], ms.tournament_id == ^tournament_id)
     |> Repo.all()
+  end
+
+  @doc """
+  Create map selection.
+  """
+  def create_map_selection(attrs \\ %{}) do
+    %MapSelection{}
+    |> MapSelection.changeset(attrs)
+    |> Repo.insert()
   end
 
   @doc """

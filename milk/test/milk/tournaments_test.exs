@@ -3189,4 +3189,23 @@ defmodule Milk.TournamentsTest do
       |> assert()
     end
   end
+
+  # describe "initialize map selections" do
+  #   user1 = fixture_user(num: 1)
+  #   user2 = fixture_user(num: 2)
+  #   tournament = fixture_tournament()
+
+  #   1..5
+  #   |> Enum.to_list()
+  #   |> Enum.each(fn n ->
+  #     Map.new()
+  #     |> Map.put("name", "map#{n}")
+  #     |> Map.put("tournament_id", tournament.id)
+  #     |> Tournaments.create_map()
+  #   end)
+
+  #   tournament.id
+  #   |> Tournaments.get_maps_by_tournament_id()
+  #   |> IO.inspect()
+  # end
 end
