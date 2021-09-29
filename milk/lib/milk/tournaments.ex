@@ -2462,7 +2462,6 @@ defmodule Milk.Tournaments do
       |> List.flatten()
       |> Enum.map(&(&1.user_id))
       |> Enum.all?(fn team_member_user_id ->
-        #IO.inspect("#{team_member_user_id} | #{user_id}")
         team_member_user_id != user_id
       end)
     else
