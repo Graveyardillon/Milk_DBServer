@@ -923,7 +923,6 @@ defmodule MilkWeb.TournamentController do
       :test -> Image.read_image(path)
       _ -> Image.read_image_prod(path)
     end
-    |> IO.inspect(label: :get_map_icon)
     |> case do
       {:ok, image} ->
         b64 = Base.encode64(image)
