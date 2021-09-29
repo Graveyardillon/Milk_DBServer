@@ -1738,6 +1738,12 @@ defmodule MilkWeb.TournamentController do
     match_list = TournamentProgress.get_match_list(tournament_id)
 
     if is_integer(match_list) do
+      # Finishの処理
+
+      tournament_id
+      |> Tournaments.get_tournament()
+      |> notify_discord_on_deleting_tournament_as_needed()
+
       Tournaments.finish(tournament_id, winner_id)
 
       tournament_id
