@@ -10,19 +10,11 @@ defmodule MilkWeb.EntrantController do
     Tournaments
   }
 
-  alias Milk.Tournaments.Entrant
-
-  # action_fallback MilkWeb.FallbackController
-
-  def index(conn, _params) do
-    entrant = Tournaments.list_entrant()
-
-    if entrant do
-      render(conn, "index.json", entrant: entrant)
-    else
-      render(conn, "error.json", error: nil)
-    end
-  end
+  alias Milk.Tournaments.{
+    Entrant,
+    Team,
+    Tournament
+  }
 
   @doc """
   Create an entrant.
@@ -70,6 +62,9 @@ defmodule MilkWeb.EntrantController do
     end
   end
 
+  @doc """
+  Update an entrant.
+  """
   def update(conn, %{"id" => id, "entrant" => entrant_params}) do
     entrant = Tournaments.get_entrant!(id)
 
@@ -89,6 +84,9 @@ defmodule MilkWeb.EntrantController do
     end
   end
 
+  @doc """
+  Delete an entrant.
+  """
   def delete(conn, %{"tournament_id" => tournament_id, "user_id" => user_id}) do
     case Tournaments.delete_entrant(tournament_id, user_id) do
       {:ok, entrant} ->
@@ -99,36 +97,39 @@ defmodule MilkWeb.EntrantController do
     end
   end
 
+  @doc """
+  Show rank.
+  """
   def show_rank(conn, %{"tournament_id" => tournament_id, "user_id" => user_id}) do
     tournament_id = Tools.to_integer_as_needed(tournament_id)
     user_id = Tools.to_integer_as_needed(user_id)
 
-    tournament = Tournaments.get_tournament(tournament_id)
-
-    if tournament do
-      tournament
-      |> Map.get(:is_team)
-      |> if do
-        tournament_id
-        |> Tournaments.get_team_by_tournament_id_and_user_id(user_id)
-        ~> team
-        |> if do
-          {:ok, team.rank}
-        else
-          {:error, "team is nil"}
-        end
-      else
-        Tournaments.get_rank(tournament_id, user_id)
-      end
-    else
-      {:error, "tournament is nil"}
-    end
+    tournament_id
+    |> Tournaments.get_tournament()
+    |> get_rank_by_tournament(user_id)
     |> case do
       {:ok, rank} -> render(conn, "rank.json", rank: rank)
-      {:error, msg} -> render(conn, "error.json", error: msg)
+      {:error, error} -> render(conn, "error.json", error: error)
     end
   end
 
+  defp get_rank_by_tournament(%Tournament{} = tournament, user_id) do
+    if tournament.is_team do
+      tournament.id
+      |> Tournaments.get_team_by_tournament_id_and_user_id(user_id)
+      |> get_rank_by_team()
+    else
+      Tournaments.get_rank(tournament.id, user_id)
+    end
+  end
+  defp get_rank_by_tournament(nil, _), do: {:error, "tournament is nil"}
+
+  defp get_rank_by_team(%Team{} = team), do: {:ok, team.rank}
+  defp get_rank_by_team(nil), do: {:error, "team is nil"}
+
+  @doc """
+  promote rank.
+  """
   def promote(conn, attrs) do
     case Tournaments.promote_rank(attrs) do
       {:ok, entrant} -> render(conn, "rank.json", rank: entrant.rank)
