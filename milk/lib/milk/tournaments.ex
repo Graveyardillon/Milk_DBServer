@@ -2441,7 +2441,6 @@ defmodule Milk.Tournaments do
     end
   end
 
-  # TODO: 関数名変えたい
   defp check_user_role(tournament, id, user_id) do
     is_manager = tournament.master_id == user_id
 
@@ -2473,7 +2472,6 @@ defmodule Milk.Tournaments do
         entrant_user_id != user_id
       end)
     end
-    |> IO.inspect(label: :is_not_entrant)
     ~> is_not_entrant
 
     tournament
