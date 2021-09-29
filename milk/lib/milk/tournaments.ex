@@ -2436,13 +2436,13 @@ defmodule Milk.Tournaments do
       unless tournament.is_started do
         "IsNotStarted"
       else
-        check_is_manager?(tournament, id, user_id)
+        check_user_role(tournament, id, user_id)
       end
     end
   end
 
   # TODO: 関数名変えたい
-  defp check_is_manager?(tournament, id, user_id) do
+  defp check_user_role(tournament, id, user_id) do
     is_manager = tournament.master_id == user_id
 
     tournament
@@ -2452,25 +2452,29 @@ defmodule Milk.Tournaments do
     |> (fn list -> list != [] end).()
     ~> is_assistant
 
-    tournament
-    |> Map.get(:id)
-    |> get_entrants()
-    |> Enum.map(& &1.user_id)
-    ~> entrants
-
-    tournament
-    |> Map.get(:id)
-    |> get_teams_by_tournament_id()
-    |> Enum.map(fn team ->
-      get_team_members_by_team_id(team.id)
-    end)
-    |> List.flatten()
-    |> Enum.map(& &1.user_id)
-    |> Enum.concat(entrants)
-    |> Enum.filter(fn entrant_id ->
-      entrant_id == id
-    end)
-    |> (fn list -> list == [] end).()
+    if tournament.is_team do
+      tournament
+      |> Map.get(:id)
+      |> get_teams_by_tournament_id()
+      |> Enum.map(fn team ->
+        get_team_members_by_team_id(team.id)
+      end)
+      |> List.flatten()
+      |> Enum.map(&(&1.user_id))
+      |> Enum.all?(fn team_member_user_id ->
+        #IO.inspect("#{team_member_user_id} | #{user_id}")
+        team_member_user_id != user_id
+      end)
+    else
+      tournament
+      |> Map.get(:id)
+      |> get_entrants()
+      |> Enum.map(&(&1.user_id))
+      |> Enum.all?(fn entrant_user_id ->
+        entrant_user_id != user_id
+      end)
+    end
+    |> IO.inspect(label: :is_not_entrant)
     ~> is_not_entrant
 
     tournament
