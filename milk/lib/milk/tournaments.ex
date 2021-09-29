@@ -1053,19 +1053,6 @@ defmodule Milk.Tournaments do
   end
 
   @doc """
-  Returns the list of entrant.
-
-  ## Examples
-
-      iex> list_entrant()
-      [%Entrant{}, ...]
-
-  """
-  def list_entrant() do
-    Repo.all(Entrant)
-  end
-
-  @doc """
   Gets a single entrant.
 
   Raises `Ecto.NoResultsError` if the Entrant does not exist.

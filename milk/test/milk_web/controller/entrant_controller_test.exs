@@ -70,13 +70,6 @@ defmodule MilkWeb.EntrantControllerTest do
     {:ok, conn: put_req_header(conn, "accept", "application/json")}
   end
 
-  describe "index" do
-    test "lists all entrant", %{conn: conn} do
-      conn = get(conn, Routes.entrant_path(conn, :index))
-      assert json_response(conn, 200)["data"] == []
-    end
-  end
-
   describe "create entrant" do
     test "renders entrant when data is valid", %{conn: conn} do
       {:ok, tournament} = fixture(:tournament)
