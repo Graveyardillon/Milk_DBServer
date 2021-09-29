@@ -1,6 +1,8 @@
 defmodule MilkWeb.EntrantController do
   use MilkWeb, :controller
 
+  import Common.Sperm
+
   alias Common.Tools
 
   alias Milk.{
@@ -101,9 +103,29 @@ defmodule MilkWeb.EntrantController do
     tournament_id = Tools.to_integer_as_needed(tournament_id)
     user_id = Tools.to_integer_as_needed(user_id)
 
-    case Tournaments.get_rank(tournament_id, user_id) do
+    tournament = Tournaments.get_tournament(tournament_id)
+
+    if tournament do
+      tournament
+      |> Map.get(:is_team)
+      |> if do
+        tournament_id
+        |> Tournaments.get_team_by_tournament_id_and_user_id(user_id)
+        ~> team
+        |> if do
+          {:ok, team.rank}
+        else
+          {:error, "team is nil"}
+        end
+      else
+        Tournaments.get_rank(tournament_id, user_id)
+      end
+    else
+      {:error, "tournament is nil"}
+    end
+    |> case do
+      {:ok, rank} -> render(conn, "rank.json", rank: rank)
       {:error, msg} -> render(conn, "error.json", error: msg)
-      rank -> render(conn, "rank.json", rank: rank)
     end
   end
 

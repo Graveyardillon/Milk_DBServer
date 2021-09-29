@@ -1944,7 +1944,7 @@ defmodule MilkWeb.TournamentControllerTest do
         |> Tournaments.create_map()
       end)
 
-      conn = get(conn, Routes.tournament_path(conn, :options), tournament_id: tournament.id)
+      conn = get(conn, Routes.tournament_path(conn, :maps), tournament_id: tournament.id)
 
       conn
       |> json_response(200)

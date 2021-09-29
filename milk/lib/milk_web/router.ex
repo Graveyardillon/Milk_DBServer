@@ -154,7 +154,7 @@ defmodule MilkWeb.Router do
     get "/tournament/verify_password", TournamentController, :verify_password
     get "/tournament/pending", TournamentController, :pending
     get "/tournament/url/:url", TournamentController, :redirect_by_url
-    get "/tournament/maps", TournamentController, :options
+    get "/tournament/maps", TournamentController, :maps
     get "/tournament/map_icon", TournamentController, :get_map_icon
 
     post "/tournament/start", TournamentController, :start

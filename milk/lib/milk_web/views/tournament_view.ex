@@ -493,15 +493,15 @@ defmodule MilkWeb.TournamentView do
     }
   end
 
-  def render("options.json", %{options: options}) do
+  def render("maps.json", %{maps: maps}) do
     %{
       data:
-        Enum.map(options, fn option ->
+        Enum.map(maps, fn map ->
           %{
-            name: option.name,
-            id: option.id,
-            icon_path: option.icon_path,
-            state: option.state
+            name: map.name,
+            id: map.id,
+            icon_path: map.icon_path,
+            state: map.state
           }
         end)
     }

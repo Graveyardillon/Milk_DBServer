@@ -1059,7 +1059,7 @@ defmodule Milk.TournamentsTest do
     setup [:create_entrant]
 
     test "get_rank/2 returns entrant's rank when data is valid", %{entrant: entrant} do
-      assert Tournaments.get_rank(entrant.tournament_id, entrant.user_id) == entrant.rank
+      assert Tournaments.get_rank(entrant.tournament_id, entrant.user_id) == {:ok, entrant.rank}
     end
 
     test "get_rank/2 returns error with invalid tournament_id", %{entrant: entrant} do
@@ -1856,7 +1856,7 @@ defmodule Milk.TournamentsTest do
       TournamentProgress.insert_match_list(match_list, entrant.tournament_id)
 
       assert {:ok, _promoted} = Tournaments.promote_rank(attrs)
-      assert Tournaments.get_rank(entrant.tournament_id, entrant.user_id) == 4
+      assert Tournaments.get_rank(entrant.tournament_id, entrant.user_id) == {:ok, 4}
 
       {:ok, opponent} =
         match_list
@@ -1889,7 +1889,7 @@ defmodule Milk.TournamentsTest do
       TournamentProgress.insert_match_list(match_list, entrant.tournament_id)
 
       assert {:ok, _promoted} = Tournaments.promote_rank(attrs)
-      assert Tournaments.get_rank(entrant.tournament_id, entrant.user_id) == 2
+      assert Tournaments.get_rank(entrant.tournament_id, entrant.user_id) == {:ok, 2}
 
       {:ok, opponent} =
         match_list
@@ -1922,7 +1922,7 @@ defmodule Milk.TournamentsTest do
       TournamentProgress.insert_match_list(match_list, entrant.tournament_id)
 
       assert {:ok, _promoted} = Tournaments.promote_rank(attrs)
-      assert Tournaments.get_rank(entrant.tournament_id, entrant.user_id) == 1
+      assert Tournaments.get_rank(entrant.tournament_id, entrant.user_id) == {:ok, 1}
 
       {:ok, opponent} =
         match_list
