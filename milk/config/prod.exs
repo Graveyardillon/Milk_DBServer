@@ -20,8 +20,6 @@ config :milk, MilkWeb.Endpoint,
 # Do not print debug messages in production
 config :logger, level: :info
 
-IO.inspect(System.get_env("CLOUD_SQL_HOST"), label: :host)
-
 config :milk, Milk.Repo,
   username: "postgres",
   password: "postgres",
@@ -35,7 +33,7 @@ config :milk, Milk.Repo,
 
 config :pigeon, :apns,
   apns_default: %{
-    key: "lib/milk-0.1.3/priv/cert/AuthKey_MHN824H499.p8",
+    key: "lib/milk-2.0.18/priv/cert/AuthKey_MHN824H499.p8",
     key_identifier: "MHN824H499",
     team_id: "6ZMC8WKZZQ",
     mode: :prod
@@ -85,4 +83,4 @@ config :milk, :environment, :prod
 
 config :milk, :domain, "https://e-players-web.web.app"
 
-config :milk, :discord_server, nil
+config :milk, :discord_server, "https://discordserver-dot-e-players6814.an.r.appspot.com"

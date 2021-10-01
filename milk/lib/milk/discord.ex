@@ -146,7 +146,7 @@ defmodule Milk.Discord do
   @doc """
   Send notification on added team to the server
   """
-  def send_tournament_add_team_notification(server_id, team_name) do
+  def send_tournament_add_team_notification(server_id, team_name) when is_binary(server_id) do
     discord_server_url = Application.get_env(:milk, :discord_server)
     access_token = Application.get_env(:milk, :discord_server_access_token)
 

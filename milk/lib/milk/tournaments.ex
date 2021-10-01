@@ -742,15 +742,9 @@ defmodule Milk.Tournaments do
       |> Map.get(:map_selection_type)
       |> case do
         "VLT" ->
-          delete_map_selections(tournament_id, id)
-          TournamentProgress.delete_is_attacker_side(id, tournament_id)
-          TournamentProgress.delete_ban_order(tournament_id, id)
           TournamentProgress.init_ban_order(tournament_id, id)
 
         _ ->
-          delete_map_selections(tournament_id, id)
-          TournamentProgress.delete_is_attacker_side(id, tournament_id)
-          TournamentProgress.delete_ban_order(tournament_id, id)
           TournamentProgress.init_ban_order(tournament_id, id)
       end
     end
@@ -876,14 +870,13 @@ defmodule Milk.Tournaments do
     if state!(tournament_id, user_id) == "ShouldChooseMap" do
       map_id_list
       |> Enum.each(fn map_id ->
-        %MapSelection{}
-        |> MapSelection.changeset(%{
+        %{
           "map_id" => map_id,
           "state" => "selected",
           "large_id" => large_id,
           "small_id" => small_id
-        })
-        |> Repo.insert()
+        }
+        |> create_map_selection()
       end)
       |> Kernel.==(:ok)
       |> if do
@@ -1057,19 +1050,6 @@ defmodule Milk.Tournaments do
     if assistant, do: Repo.insert_all(AssistantLog, assistant)
 
     Repo.delete(tournament)
-  end
-
-  @doc """
-  Returns the list of entrant.
-
-  ## Examples
-
-      iex> list_entrant()
-      [%Entrant{}, ...]
-
-  """
-  def list_entrant() do
-    Repo.all(Entrant)
   end
 
   @doc """
@@ -1380,11 +1360,13 @@ defmodule Milk.Tournaments do
   Get a rank of a user.
   """
   def get_rank(tournament_id, user_id) do
-    with entrant <- get_entrant_including_logs(tournament_id, user_id),
-         false <- is_nil(entrant) do
-      Map.get(entrant, :rank)
+    tournament_id
+    |> get_entrant_including_logs(user_id)
+    ~> entrant
+    |> if do
+      {:ok, entrant.rank}
     else
-      true -> {:error, "entrant is not found"}
+      {:error, "entrant is not found"}
     end
   end
 
@@ -2444,13 +2426,12 @@ defmodule Milk.Tournaments do
       unless tournament.is_started do
         "IsNotStarted"
       else
-        check_is_manager?(tournament, id, user_id)
+        check_user_role(tournament, id, user_id)
       end
     end
   end
 
-  # TODO: 関数名変えたい
-  defp check_is_manager?(tournament, id, user_id) do
+  defp check_user_role(tournament, id, user_id) do
     is_manager = tournament.master_id == user_id
 
     tournament
@@ -2460,25 +2441,27 @@ defmodule Milk.Tournaments do
     |> (fn list -> list != [] end).()
     ~> is_assistant
 
-    tournament
-    |> Map.get(:id)
-    |> get_entrants()
-    |> Enum.map(& &1.user_id)
-    ~> entrants
-
-    tournament
-    |> Map.get(:id)
-    |> get_teams_by_tournament_id()
-    |> Enum.map(fn team ->
-      get_team_members_by_team_id(team.id)
-    end)
-    |> List.flatten()
-    |> Enum.map(& &1.user_id)
-    |> Enum.concat(entrants)
-    |> Enum.filter(fn entrant_id ->
-      entrant_id == id
-    end)
-    |> (fn list -> list == [] end).()
+    if tournament.is_team do
+      tournament
+      |> Map.get(:id)
+      |> get_teams_by_tournament_id()
+      |> Enum.map(fn team ->
+        get_team_members_by_team_id(team.id)
+      end)
+      |> List.flatten()
+      |> Enum.map(& &1.user_id)
+      |> Enum.all?(fn team_member_user_id ->
+        team_member_user_id != user_id
+      end)
+    else
+      tournament
+      |> Map.get(:id)
+      |> get_entrants()
+      |> Enum.map(& &1.user_id)
+      |> Enum.all?(fn entrant_user_id ->
+        entrant_user_id != user_id
+      end)
+    end
     ~> is_not_entrant
 
     tournament
@@ -2825,7 +2808,8 @@ defmodule Milk.Tournaments do
           {:ok, team} ->
             create_team_leader(team.id, leader)
 
-            create_team_members(team.id, user_id_list)
+            team.id
+            |> create_team_members(user_id_list)
             |> Enum.each(fn member ->
               create_team_invitation(member.id, leader)
             end)
@@ -3433,7 +3417,8 @@ defmodule Milk.Tournaments do
       |> Application.get_env(:environment)
       |> case do
         :prod ->
-          Milk.CloudStorage.Objects.upload("./static/image/options/#{uuid}.jpg")
+          "./static/image/options/#{uuid}.jpg"
+          |> Milk.CloudStorage.Objects.upload()
           |> Map.get(:name)
           ~> name
 
@@ -3487,6 +3472,15 @@ defmodule Milk.Tournaments do
     Milk.Tournaments.Map
     |> where([ms], ms.tournament_id == ^tournament_id)
     |> Repo.all()
+  end
+
+  @doc """
+  Create map selection.
+  """
+  def create_map_selection(attrs \\ %{}) do
+    %MapSelection{}
+    |> MapSelection.changeset(attrs)
+    |> Repo.insert()
   end
 
   @doc """
@@ -3546,7 +3540,6 @@ defmodule Milk.Tournaments do
 
     tournament_id
     |> get_map_selections(small_id, large_id)
-    # |> IO.inspect(label: :mpselections)
     |> Enum.map(fn map_selection ->
       map_selection
       |> Map.get(:map)
@@ -3562,7 +3555,6 @@ defmodule Milk.Tournaments do
     ~> maps
 
     map_selections
-    # |> IO.inspect(label: :selections)
     |> Enum.concat(maps)
     |> Enum.uniq_by(fn map ->
       map.id
@@ -3629,7 +3621,11 @@ defmodule Milk.Tournaments do
   @doc """
   Calculate given user(team) is head of a flipped coin.
   """
-  def is_head_of_coin?(tournament_id, id, opponent_id) do
+  def is_head_of_coin?(tournament_id, id, opponent_id)
+      when is_integer(tournament_id)
+      and is_integer(id)
+      and is_integer(opponent_id) do
+
     mine_str = to_string(tournament_id + id)
     opponent_str = to_string(tournament_id + opponent_id)
 

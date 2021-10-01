@@ -11,8 +11,8 @@ defmodule Common.FileUtils do
     File.cp(file_path, cp_path)
   end
 
-  def write(file_name, raw) do
-    dir = Path.dirname(file_name)
+  def write(file_path, raw) do
+    dir = Path.dirname(file_path)
 
     dir
     |> File.dir?()
@@ -20,6 +20,6 @@ defmodule Common.FileUtils do
       File.mkdir_p(dir)
     end
 
-    File.write("#{file_name}", raw)
+    File.write(file_path, raw)
   end
 end

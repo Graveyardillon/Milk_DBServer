@@ -70,13 +70,6 @@ defmodule MilkWeb.EntrantControllerTest do
     {:ok, conn: put_req_header(conn, "accept", "application/json")}
   end
 
-  describe "index" do
-    test "lists all entrant", %{conn: conn} do
-      conn = get(conn, Routes.entrant_path(conn, :index))
-      assert json_response(conn, 200)["data"] == []
-    end
-  end
-
   describe "create entrant" do
     test "renders entrant when data is valid", %{conn: conn} do
       {:ok, tournament} = fixture(:tournament)
@@ -173,7 +166,7 @@ defmodule MilkWeb.EntrantControllerTest do
 
     test "renders error with invalid tournament_id", %{conn: conn, entrant: entrant} do
       conn = get(conn, Routes.entrant_path(conn, :show_rank, -1, entrant.user_id))
-      assert json_response(conn, 200)["error"] == "entrant is not found"
+      assert json_response(conn, 200)["error"] == "tournament is nil"
     end
 
     test "renders error with invalid user_id", %{conn: conn, entrant: entrant} do
@@ -183,7 +176,7 @@ defmodule MilkWeb.EntrantControllerTest do
 
     test "renders error when data is invalid", %{conn: conn} do
       conn = get(conn, Routes.entrant_path(conn, :show_rank, -1, -1))
-      assert json_response(conn, 200)["error"] == "entrant is not found"
+      assert json_response(conn, 200)["error"] == "tournament is nil"
     end
   end
 

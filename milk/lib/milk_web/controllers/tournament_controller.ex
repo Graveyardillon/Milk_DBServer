@@ -142,7 +142,8 @@ defmodule MilkWeb.TournamentController do
       tournament_params
       |> Map.put(
         "enabled_coin_toss",
-        tournament_params["enabled_coin_toss"] == "true" || tournament_params["enabled_coin_toss"] == true
+        tournament_params["enabled_coin_toss"] == "true" ||
+          tournament_params["enabled_coin_toss"] == true
       )
       |> Map.put(
         "enabled_map",
@@ -157,9 +158,8 @@ defmodule MilkWeb.TournamentController do
             |> Tournaments.create_entrant()
           end
 
-          tournament
-          |> Map.put(:followers, Relations.get_followers(tournament.master_id))
-          ~> tournament
+          followers = Relations.get_followers(tournament.master_id)
+          tournament = Map.put(tournament, :followers, followers)
 
           %{"user_id" => tournament.master_id, "game_name" => tournament.game_name, "score" => 7}
           |> Accounts.gain_score()
@@ -415,7 +415,7 @@ defmodule MilkWeb.TournamentController do
     tournament = Tournaments.get_tournament(tournament_id)
 
     with {:ok, %Tournament{}} <- Tournaments.delete_tournament(tournament_id) do
-      notify_discord_on_start_match_as_needed(tournament)
+      notify_discord_on_deleting_tournament_as_needed(tournament)
       json(conn, %{result: true})
     else
       {:error, error} -> render(conn, "error.json", error: error)
@@ -423,7 +423,7 @@ defmodule MilkWeb.TournamentController do
     end
   end
 
-  defp notify_discord_on_start_match_as_needed(tournament) do
+  defp notify_discord_on_deleting_tournament_as_needed(tournament) do
     tournament
     |> Map.get(:discord_server_id)
     ~> server_id
@@ -810,70 +810,45 @@ defmodule MilkWeb.TournamentController do
   @doc """
   Get options by tournament id.
   """
-  def options(conn, %{"tournament_id" => tournament_id, "user_id" => user_id}) do
+  def maps(conn, %{"tournament_id" => tournament_id, "user_id" => user_id}) do
     tournament_id = Tools.to_integer_as_needed(tournament_id)
     user_id = Tools.to_integer_as_needed(user_id)
 
-    options = Tournaments.get_selectable_maps_by_tournament_id_and_user_id(tournament_id, user_id)
+    maps = Tournaments.get_selectable_maps_by_tournament_id_and_user_id(tournament_id, user_id)
 
-    render(conn, "options.json", options: options)
+    render(conn, "maps.json", maps: maps)
   end
 
-  def options(conn, %{"tournament_id" => tournament_id}) do
+  def maps(conn, %{"tournament_id" => tournament_id}) do
     tournament_id
     |> Tools.to_integer_as_needed()
     |> Tournaments.get_maps_by_tournament_id()
     |> Enum.map(fn map ->
       Map.put(map, :state, "not_selected")
     end)
-    ~> options
+    ~> maps
 
-    render(conn, "options.json", options: options)
+    render(conn, "maps.json", maps: maps)
   end
 
   @doc """
   Get icon of an option.
   """
-  def get_option_icon(conn, %{"path" => path}) do
+  def get_map_icon(conn, %{"path" => path}) do
     :milk
     |> Application.get_env(:environment)
     |> case do
-      :dev -> load_img(path)
-      :test -> load_img(path)
-      _ -> load_img_prod(path)
+      :dev -> Image.read_image(path)
+      :test -> Image.read_image(path)
+      _ -> Image.read_image_prod(path)
     end
     |> case do
-      {:ok, b64} ->
+      {:ok, image} ->
+        b64 = Base.encode64(image)
         json(conn, %{b64: b64})
 
       {:error, error} ->
         render(conn, "error.json", error: error)
-    end
-  end
-
-  defp load_img(path) do
-    path
-    |> File.read()
-    |> case do
-      {:ok, file} ->
-        {:ok, Base.encode64(file)}
-
-      {:error, error} ->
-        {:error, error}
-    end
-  end
-
-  defp load_img_prod(name) do
-    name
-    |> Objects.get()
-    |> Map.get(:mediaLink)
-    |> Image.get()
-    |> case do
-      {:ok, file} ->
-        {:ok, Base.encode64(file)}
-
-      {:error, error} ->
-        {:error, error}
     end
   end
 
@@ -1038,7 +1013,10 @@ defmodule MilkWeb.TournamentController do
     tournament_id = Tools.to_integer_as_needed(tournament_id)
 
     user_id
-    |> Tournaments.choose_ad(tournament_id, is_attacker_side == "1")
+    |> Tournaments.choose_ad(
+      tournament_id,
+      is_attacker_side == "1" || is_attacker_side == true || is_attacker_side == "true"
+    )
     |> case do
       {:ok, nil} ->
         notify_discord_on_choose_ad_as_needed!(user_id, tournament_id, is_attacker_side)
@@ -1507,6 +1485,12 @@ defmodule MilkWeb.TournamentController do
             TournamentProgress.delete_match_pending_list(opponent_id, tournament_id)
             TournamentProgress.delete_score(tournament_id, id)
             TournamentProgress.delete_score(tournament_id, opponent_id)
+            Tournaments.delete_map_selections(tournament_id, id)
+            Tournaments.delete_map_selections(tournament_id, opponent_id)
+            TournamentProgress.delete_is_attacker_side(id, tournament_id)
+            TournamentProgress.delete_is_attacker_side(opponent_id, tournament_id)
+            TournamentProgress.delete_ban_order(tournament_id, id)
+            TournamentProgress.delete_ban_order(tournament_id, opponent_id)
             is_finished = finish_as_needed?(tournament_id, opponent_id)
             json(conn, %{validated: true, completed: true, is_finished: is_finished})
 
@@ -1525,6 +1509,12 @@ defmodule MilkWeb.TournamentController do
             TournamentProgress.delete_match_pending_list(opponent_id, tournament_id)
             TournamentProgress.delete_score(tournament_id, id)
             TournamentProgress.delete_score(tournament_id, opponent_id)
+            Tournaments.delete_map_selections(tournament_id, id)
+            Tournaments.delete_map_selections(tournament_id, opponent_id)
+            TournamentProgress.delete_is_attacker_side(id, tournament_id)
+            TournamentProgress.delete_is_attacker_side(opponent_id, tournament_id)
+            TournamentProgress.delete_ban_order(tournament_id, id)
+            TournamentProgress.delete_ban_order(tournament_id, opponent_id)
             is_finished = finish_as_needed?(tournament_id, id)
             json(conn, %{validated: true, completed: true, is_finished: is_finished})
 
@@ -1670,6 +1660,12 @@ defmodule MilkWeb.TournamentController do
     match_list = TournamentProgress.get_match_list(tournament_id)
 
     if is_integer(match_list) do
+      # Finishの処理
+
+      tournament_id
+      |> Tournaments.get_tournament()
+      |> notify_discord_on_deleting_tournament_as_needed()
+
       Tournaments.finish(tournament_id, winner_id)
 
       tournament_id
@@ -2038,15 +2034,15 @@ defmodule MilkWeb.TournamentController do
       |> Tournaments.get_opponent(user_id)
       |> case do
         {:ok, opponent} ->
-          rank = Tournaments.get_rank(tournament_id, user_id)
+          {:ok, rank} = Tournaments.get_rank(tournament_id, user_id)
           {opponent, rank, nil}
 
         {:wait, nil} ->
-          rank = Tournaments.get_rank(tournament_id, user_id)
+          {:ok, rank} = Tournaments.get_rank(tournament_id, user_id)
           {nil, rank, nil}
 
         _ ->
-          rank = Tournaments.get_rank(tournament_id, user_id)
+          {:ok, rank} = Tournaments.get_rank(tournament_id, user_id)
           {nil, rank, nil}
       end
     end
@@ -2075,25 +2071,20 @@ defmodule MilkWeb.TournamentController do
     end
     ~> score
 
-    # user_idとtournament_idを足したもののhashで比較を行い、大きい方がコインの表
+    #  hashの比較を行うために、opponent_idとmy_idを取り出す。
+    #  それぞれ個人戦ならuser_idでチーム戦ならteam_idとなる。
     opponent
     |> is_nil()
     |> Kernel.||(!tournament.enabled_coin_toss)
     |> unless do
       if is_team do
-        opponent["id"]
-        |> Tournaments.get_leader()
-        |> Map.get(:user)
-        |> Map.get(:id)
-        ~> opponent_id
-
         tournament_id
         |> Tournaments.get_team_by_tournament_id_and_user_id(user_id)
         |> Map.get(:id)
-        |> Tournaments.get_leader()
-        |> Map.get(:user)
-        |> Map.get(:id)
-        ~> my_id
+        ~> team_id
+
+        opponent_id = opponent["id"]
+        my_id = team_id
 
         {my_id, opponent_id}
       else

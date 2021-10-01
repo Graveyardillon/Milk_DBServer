@@ -3,8 +3,10 @@ defmodule MilkWeb.ImageController do
 
   alias Milk.Media.Image
   alias Milk.Tournaments
-  
-  def load_image(path) do
+
+  require ExImageInfo
+
+  defp load_image(path) do
     case Application.get_env(:milk, :environment) do
       :dev ->
         Image.read_image(path)
@@ -22,9 +24,19 @@ defmodule MilkWeb.ImageController do
     |> load_image()
     |> case do
       {:ok, image} ->
-        conn
-        |> put_resp_content_type("image/jpg", nil)
-        |> send_resp(200, image)
+        image
+        |> ExImageInfo.info()
+        |> case do
+          {"image/png", _, _, _} ->
+            conn
+            |> put_resp_content_type("image/png")
+            |> send_resp(200, image)
+
+          _ ->
+            conn
+            |> put_resp_content_type("image/jpg")
+            |> send_resp(200, image)
+        end
 
       {:error, error} ->
         json(conn, %{error: error})
