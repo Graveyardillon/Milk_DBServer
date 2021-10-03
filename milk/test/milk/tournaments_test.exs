@@ -703,15 +703,6 @@ defmodule Milk.TournamentsTest do
   describe "get entrant" do
     setup [:create_entrant]
 
-    test "list_entrant/0 works fine" do
-      assert entrants = Tournaments.list_entrant()
-      assert is_list(entrants)
-
-      Enum.each(entrants, fn entrant ->
-        assert %Entrant{} = entrant
-      end)
-    end
-
     test "get_entrant!/1 work with valid data", %{entrant: entrant} do
       assert %Entrant{} = obtained_entrant = Tournaments.get_entrant!(entrant.id)
       assert obtained_entrant.id == entrant.id

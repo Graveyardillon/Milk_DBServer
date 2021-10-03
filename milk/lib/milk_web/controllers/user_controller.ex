@@ -93,7 +93,7 @@ defmodule MilkWeb.UserController do
       Map.new()
       |> Map.put("email", email)
       |> Map.put("name", username)
-      |> Accounts.create_user(true)
+      |> Accounts.create_user("discord")
     end
     |> case do
       {:ok, :already, %User{} = user} ->

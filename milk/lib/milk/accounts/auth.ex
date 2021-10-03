@@ -8,7 +8,7 @@ defmodule Milk.Accounts.Auth do
   schema "auth" do
     field :email, :string, null: false
     field :password, :string, null: false
-    field :is_oauth, :boolean
+    field :service_name, :string
 
     belongs_to :user, User
 
@@ -41,8 +41,8 @@ defmodule Milk.Accounts.Auth do
   @doc false
   def changeset_discord(auth, attrs) do
     auth
-    |> cast(attrs, [:email, :is_oauth])
-    |> put_change(:is_oauth, true)
+    |> cast(attrs, [:email, :service_name])
+    |> put_change(:service_name, "discord")
     |> validate_required(:email)
   end
 

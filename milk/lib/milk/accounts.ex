@@ -165,21 +165,22 @@ defmodule Milk.Accounts do
   @doc """
   Creates a user.
   """
-  @spec create_user(map, boolean) :: tuple()
-  def create_user(attrs, is_oauth \\ false) do
+  @spec create_user(map, binary) :: tuple()
+  def create_user(attrs, service_name \\ "e-players") do
     attrs = put_id_for_show(attrs)
 
     Multi.new()
     |> Multi.insert(:user, User.changeset(%User{}, attrs))
     |> Multi.insert(:auth, fn %{user: user} ->
-      if is_oauth do
-        user
-        |> Ecto.build_assoc(:auth)
-        |> Auth.changeset_discord(attrs)
-      else
-        user
-        |> Ecto.build_assoc(:auth)
-        |> Auth.changeset(attrs)
+      case service_name do
+        "discord" ->
+          user
+          |> Ecto.build_assoc(:auth)
+          |> Auth.changeset_discord(attrs)
+        _ ->
+          user
+          |> Ecto.build_assoc(:auth)
+          |> Auth.changeset(attrs)
       end
     end)
     |> Repo.transaction()
