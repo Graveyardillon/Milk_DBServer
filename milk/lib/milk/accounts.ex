@@ -469,7 +469,6 @@ defmodule Milk.Accounts do
   @doc """
   Login function.
   """
-  # FIXME: specの型を細かく指定したい
   # @spec login(map | nil) :: {:ok, _, binary} | {:error, nil, nil}
   @spec login(map) :: tuple()
   def login(user) do
