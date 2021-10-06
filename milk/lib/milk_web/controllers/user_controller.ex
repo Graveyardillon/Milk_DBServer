@@ -217,11 +217,22 @@ defmodule MilkWeb.UserController do
     |> Guardian.decode_and_verify()
     |> case do
       {:ok, _claims} ->
-        result = Accounts.logout(id)
+        result = logout?(id)
         json(conn, %{result: result})
 
       _ ->
         json(conn, %{result: false})
+    end
+  end
+
+  def logout(conn, %{"id" => id}) do
+    json(conn, %{result: logout?(id)})
+  end
+
+  defp logout?(user_id) do
+    case Accounts.logout(user_id) do
+      {:ok, _} -> true
+      _ -> false
     end
   end
 

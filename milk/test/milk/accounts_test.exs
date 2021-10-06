@@ -331,7 +331,7 @@ defmodule Milk.AccountsTest do
       }
 
       {:ok, %User{}} = Accounts.login(login_params)
-      assert Accounts.logout(user.id)
+      assert {:ok, _} = Accounts.logout(user.id)
     end
   end
 
