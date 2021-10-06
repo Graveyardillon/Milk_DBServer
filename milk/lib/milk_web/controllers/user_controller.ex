@@ -76,7 +76,7 @@ defmodule MilkWeb.UserController do
   end
 
   @doc """
-  Signin with discord.
+  Sign in with discord.
   """
   def signin_with_discord(conn, %{
         "email" => email,
@@ -121,6 +121,13 @@ defmodule MilkWeb.UserController do
       {:error, error} ->
         render(conn, "error.json", error: error)
     end
+  end
+
+  @doc """
+  Sign in with apple.
+  """
+  def signin_with_apple(conn, %{"email" => email, "user_name" => user_name, "apple_id" => apple_id}) do
+
   end
 
   @doc """

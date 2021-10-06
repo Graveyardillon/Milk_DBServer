@@ -89,7 +89,7 @@ defmodule Milk.Accounts do
 
   @doc """
   Get user by discord id
-  #FIXME: 複数のアカウントが同じdiscord idを使ってログインすることを想定していない。
+  # HACK: 複数のアカウントが同じdiscord idを使ってログインすることを想定していない。
   データベースに制約をつけて、associateの処理に変更を加える必要がある。
   """
   def get_user_by_discord_id(discord_id) do
