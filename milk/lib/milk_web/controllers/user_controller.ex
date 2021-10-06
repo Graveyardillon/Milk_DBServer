@@ -96,7 +96,7 @@ defmodule MilkWeb.UserController do
       create_user(email, username, "discord")
     end
     |> case do
-      {:ok, :already, %User{} = user} -> {:ok, user}
+      {:ok, :already, %User{} = user} -> pass_obtained_user(user)
       {:ok, %User{} = user} -> create_user_with_discord(user, discord_id)
       errors -> errors
     end
@@ -117,6 +117,8 @@ defmodule MilkWeb.UserController do
     user = Accounts.get_user_by_email(email)
     {:ok, :already, user}
   end
+
+  defp pass_obtained_user(user), do: {:ok, user}
 
   defp create_user_with_discord(%User{} = user, discord_id) do
     %{user_id: user.id, discord_id: discord_id}
@@ -139,7 +141,7 @@ defmodule MilkWeb.UserController do
       create_user(email, username, "apple")
     end
     |> case do
-      {:ok, :already, %User{} = user} -> {:ok, user}
+      {:ok, :already, %User{} = user} -> pass_obtained_user(user)
       {:ok, %User{} = user} -> create_user_with_apple(user, apple_id)
       errors -> errors
     end
