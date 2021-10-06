@@ -9,15 +9,6 @@ defmodule Milk.Apple do
   import Ecto.Query, warn: false
 
   @doc """
-  Get user by apple id.
-  """
-  def get_apple_user_by_apple_id(apple_id) do
-    AppleUser
-    |> where([au], au.apple_id == ^apple_id)
-    |> Repo.one()
-  end
-
-  @doc """
   Create a apple user.
   """
   def create_apple_user(attrs) do
