@@ -39,10 +39,9 @@ defmodule Milk.Accounts.Auth do
   end
 
   @doc false
-  def changeset_discord(auth, attrs) do
+  def changeset_oauth(auth, attrs) do
     auth
     |> cast(attrs, [:email, :service_name])
-    |> put_change(:service_name, "discord")
     |> validate_required(:email)
   end
 
@@ -54,7 +53,5 @@ defmodule Milk.Accounts.Auth do
 
   defp put_password_hash(changeset), do: changeset
 
-  def create_pass(password) do
-    Argon2.hash_pwd_salt(password)
-  end
+  def create_pass(password), do: Argon2.hash_pwd_salt(password)
 end

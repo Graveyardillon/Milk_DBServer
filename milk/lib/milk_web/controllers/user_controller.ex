@@ -7,6 +7,7 @@ defmodule MilkWeb.UserController do
 
   alias Milk.{
     Accounts,
+    Apple,
     Discord,
     Tournaments,
     Notif
@@ -101,7 +102,7 @@ defmodule MilkWeb.UserController do
     end
     |> case do
       {:ok, %User{} = user} -> generate_token(user)
-      x -> x
+      errors -> errors
     end
     |> case do
       {:ok, token, %User{} = user} ->
@@ -118,20 +119,18 @@ defmodule MilkWeb.UserController do
   end
 
   defp create_user_with_discord(%User{} = user, discord_id) do
-    Map.new()
-    |> Map.put(:user_id, user.id)
-    |> Map.put(:discord_id, discord_id)
+    %{user_id: user.id, discord_id: discord_id}
     |> Discord.create_discord_user()
     |> case do
       {:ok, _} -> {:ok, user}
-      errors -> errors
+      {:error, error} -> {:error, error}
     end
   end
 
   @doc """
   Sign in with apple.
   """
-  def signin_with_apple(conn, %{"email" => email, "user_name" => username, "apple_id" => apple_id}) do
+  def signin_with_apple(conn, %{"email" => email, "username" => username, "apple_id" => apple_id}) do
     email
     |> Accounts.email_exists?()
     |> if do
@@ -140,16 +139,30 @@ defmodule MilkWeb.UserController do
       create_user(email, username, "apple")
     end
     |> case do
-      {:ok, :already, %User{} = user} ->
-        {:ok, user}
+      {:ok, :already, %User{} = user} -> {:ok, user}
+      {:ok, %User{} = user} -> create_user_with_apple(user, apple_id)
+      errors -> errors
+    end
+    |> case do
+      {:ok, %User{} = user} -> generate_token(user)
+      errors -> errors
+    end
+    |> case do
+      {:ok, token, %User{} = user} ->
+        render(conn, "login.json", %{user: user, token: token})
 
-      {:ok, %User{} = user} ->
-
+      {:error, error} ->
+        render(conn, "error.json", error: error)
     end
   end
 
   defp create_user_with_apple(%User{} = user, apple_id) do
-
+    %{user_id: user.id, apple_id: apple_id}
+    |> Apple.create_apple_user()
+    |> case do
+      {:ok, _} -> {:ok, user}
+      {:error, error} -> {:error, error}
+    end
   end
 
   @doc """

@@ -172,16 +172,7 @@ defmodule Milk.Accounts do
     Multi.new()
     |> Multi.insert(:user, User.changeset(%User{}, attrs))
     |> Multi.insert(:auth, fn %{user: user} ->
-      case service_name do
-        "discord" ->
-          user
-          |> Ecto.build_assoc(:auth)
-          |> Auth.changeset_discord(attrs)
-        _ ->
-          user
-          |> Ecto.build_assoc(:auth)
-          |> Auth.changeset(attrs)
-      end
+      apply_changeset_of_oauth(user, attrs, service_name)
     end)
     |> Repo.transaction()
     |> case do
@@ -207,9 +198,7 @@ defmodule Milk.Accounts do
     |> generate_id_for_show()
   end
 
-  defp generate_id_for_show(1_000_000) do
-    generate_id_for_show(0)
-  end
+  defp generate_id_for_show(1_000_000), do: generate_id_for_show(0)
 
   defp generate_id_for_show(tmp_id) do
     User
@@ -220,6 +209,19 @@ defmodule Milk.Accounts do
     else
       generate_id_for_show(tmp_id + 1)
     end
+  end
+
+  defp apply_changeset_of_oauth(user, attrs, "e-players") do
+    user
+    |> Ecto.build_assoc(:auth)
+    |> Auth.changeset(attrs)
+  end
+
+  defp apply_changeset_of_oauth(user, attrs, service_name) do
+    user
+    |> Map.put("service_name", service_name)
+    |> Ecto.build_assoc(:auth)
+    |> Auth.changeset_oauth(attrs)
   end
 
   @doc """

@@ -141,6 +141,32 @@ defmodule MilkWeb.UserControllerTest do
     end
   end
 
+  describe "sign in with apple" do
+    test "works", %{conn: conn} do
+      email = "apple@icloud.com"
+      username = "applechan"
+      apple_id = email
+
+      conn = post(conn, Routes.user_path(conn, :signin_with_apple), %{
+        email: email,
+        username: username,
+        apple_id: apple_id
+      })
+
+      response = json_response(conn, 200)
+
+      assert response["result"]
+      assert is_binary(response["token"])
+
+      data = response["data"]
+
+      assert data["email"] == email
+      assert data["language"] == "japan"
+      assert data["name"] == username
+      refute is_nil(data["id"])
+    end
+  end
+
   describe "users in touch" do
     test "works", %{conn: conn} do
       {:ok, user1} =
