@@ -14,6 +14,7 @@ defmodule MilkWeb.UserController do
   }
 
   alias Milk.Accounts.User
+  alias Milk.Apple.User, as: AppleUser
   alias Milk.UserManager.Guardian
 
   @doc """
@@ -159,6 +160,20 @@ defmodule MilkWeb.UserController do
     end
   end
 
+  # NOTE: ユーザー作成はできない
+  def signin_with_apple(conn, %{"apple_id" => apple_id}) do
+    apple_id
+    |> Apple.get_apple_user_by_apple_id()
+    |> signin_with_apple_user()
+    |> case do
+      {:ok, token, %User{} = user} ->
+        render(conn, "login.json", %{user: user, token: token})
+
+      {:error, error} ->
+        render(conn, "error.json", error: error)
+    end
+  end
+
   defp create_user_with_apple(%User{} = user, apple_id) do
     %{user_id: user.id, apple_id: apple_id}
     |> Apple.create_apple_user()
@@ -166,6 +181,15 @@ defmodule MilkWeb.UserController do
       {:ok, _} -> {:ok, user}
       {:error, error} -> {:error, error}
     end
+  end
+
+  defp signin_with_apple_user(%AppleUser{} = apple_user) do
+    apple_user.user_id
+    |> Accounts.get_user()
+    |> generate_token()
+  end
+  defp signin_with_apple_user(_) do
+    {:error, "apple user does not exist"}
   end
 
   @doc """
