@@ -516,27 +516,9 @@ defmodule Milk.Accounts do
     where(query, [u, a], u.name == ^user["email_or_username"])
   end
 
-  # def login(user) do
-  #   password = Auth.create_pass(user["password"])
-  #   #usernameかemailか
-  #   if String.match?(user["email_or_username"], ~r/^[[:word:]\-._]+@[[:word:]\-_.]+\.[[:alpha:]]+$/) do
-  #     case Repo.one(from u in User, join: a in assoc(u, :auth), where: a.email == ^user["email_or_username"] and a.password == ^password and u.logout_fl, preload: [auth: a]) do
-  #       nil -> Repo.one(from u in User, join: a in assoc(u, :auth), where: a.name == ^user["email_or_username"] and a.password == ^password and u.logout_fl, preload: [auth: a])
-  #       %User{} = userinfo -> userinfo
-  #     end
-  #   else
-  #     Repo.one(from u in User, join: a in assoc(u, :auth), where: a.name == ^user["email_or_username"] and a.password == ^password and u.logout_fl, preload: [auth: a])
-  #   end
-  #   |>case do
-  #     %User{} = user ->
-  #       user
-  #       |> User.changeset(%{logout_fl: false})
-  #       |> Repo.update
-  #       user
-  #     _ -> nil
-  #   end
-  # end
-
+  @doc """
+  Force to login.
+  """
   def login_forced(user) do
     user = get_valid_user(%{"email_or_username" => user["email"]}, user["password"], :email)
 
@@ -552,17 +534,18 @@ defmodule Milk.Accounts do
   @doc """
   Logout function
   """
-  def logout(id) do
-    user = Repo.one(from u in User, where: u.id == ^id and not u.logout_fl)
-
-    if user do
+  def logout(user_id) do
+    User
+    |> where([u], u.id == ^user_id)
+    |> where([u], not u.logout_fl)
+    |> Repo.one()
+    ~> user
+    |> if do
       user
       |> User.changeset(%{logout_fl: true})
       |> Repo.update()
-
-      true
     else
-      false
+      {:error, "user does not exist"}
     end
   end
 
