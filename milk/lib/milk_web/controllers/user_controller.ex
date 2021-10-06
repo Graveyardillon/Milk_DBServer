@@ -75,40 +75,29 @@ defmodule MilkWeb.UserController do
     end
   end
 
+  # NOTE: アカウント作成のためのラッパー関数
+  defp create_user(email, username, service_name \\ "e-players") do
+    Map.new()
+    |> Map.put("email", email)
+    |> Map.put("name", username)
+    |> Accounts.create_user(service_name)
+  end
+
   @doc """
   Sign in with discord.
   """
-  def signin_with_discord(conn, %{
-        "email" => email,
-        "username" => username,
-        "discriminator" => _discriminator,
-        "discord_id" => discord_id
-      }) do
+  def signin_with_discord(conn, %{"email" => email, "username" => username, "discriminator" => _, "discord_id" => discord_id}) do
     email
     |> Accounts.email_exists?()
     |> if do
-      user = Accounts.get_user_by_email(email)
-      {:ok, :already, user}
+      get_user_by_email(email)
     else
-      Map.new()
-      |> Map.put("email", email)
-      |> Map.put("name", username)
-      |> Accounts.create_user("discord")
+      create_user(email, username, "discord")
     end
     |> case do
-      {:ok, :already, %User{} = user} ->
-        {:ok, user}
-
-      {:ok, %User{} = user} ->
-        %{user_id: user.id, discord_id: discord_id}
-        |> Discord.create_discord_user()
-        |> case do
-          {:ok, _} -> {:ok, user}
-          x -> x
-        end
-
-      x ->
-        x
+      {:ok, :already, %User{} = user} -> {:ok, user}
+      {:ok, %User{} = user} -> create_user_with_discord(user, discord_id)
+      errors -> errors
     end
     |> case do
       {:ok, %User{} = user} -> generate_token(user)
@@ -123,10 +112,43 @@ defmodule MilkWeb.UserController do
     end
   end
 
+  defp get_user_by_email(email) do
+    user = Accounts.get_user_by_email(email)
+    {:ok, :already, user}
+  end
+
+  defp create_user_with_discord(%User{} = user, discord_id) do
+    Map.new()
+    |> Map.put(:user_id, user.id)
+    |> Map.put(:discord_id, discord_id)
+    |> Discord.create_discord_user()
+    |> case do
+      {:ok, _} -> {:ok, user}
+      errors -> errors
+    end
+  end
+
   @doc """
   Sign in with apple.
   """
-  def signin_with_apple(conn, %{"email" => email, "user_name" => user_name, "apple_id" => apple_id}) do
+  def signin_with_apple(conn, %{"email" => email, "user_name" => username, "apple_id" => apple_id}) do
+    email
+    |> Accounts.email_exists?()
+    |> if do
+      get_user_by_email(email)
+    else
+      create_user(email, username, "apple")
+    end
+    |> case do
+      {:ok, :already, %User{} = user} ->
+        {:ok, user}
+
+      {:ok, %User{} = user} ->
+
+    end
+  end
+
+  defp create_user_with_apple(%User{} = user, apple_id) do
 
   end
 
