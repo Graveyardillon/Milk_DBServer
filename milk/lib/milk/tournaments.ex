@@ -1710,17 +1710,9 @@ defmodule Milk.Tournaments do
     else
       finish_entrants(tournament_id)
     end
-    |> case do
-      :ok ->
-        finish_topics(tournament_id)
-        finish_tournament(tournament_id, winner_user_id)
 
-      :error ->
-        false
-
-      _ ->
-        false
-    end
+    finish_topics(tournament_id)
+    finish_tournament(tournament_id, winner_user_id)
   end
 
   defp finish_teams(tournament_id) do
