@@ -135,12 +135,10 @@ defmodule MilkWeb.UserController do
   NOTE: 必要に応じてユーザー作成もできる関数
   """
   def signin_with_apple(conn, %{"email" => email, "username" => username, "apple_id" => apple_id}) do
-    email
-    |> Accounts.email_exists?()
-    |> if do
-      get_user_by_email(email)
-    else
-      create_user(email, username, "apple")
+    cond do
+      Accounts.email_exists?(email) -> get_user_by_email(email)
+      Apple.apple_user_exists?(apple_id) -> get_user_by_apple_id(apple_id)
+      :else -> create_user(email, username, "apple")
     end
     |> case do
       {:ok, :already, %User{} = user} -> pass_obtained_user(user)
@@ -172,6 +170,15 @@ defmodule MilkWeb.UserController do
       {:error, error} ->
         render(conn, "error.json", error: error)
     end
+  end
+
+  defp get_user_by_apple_id(apple_id) do
+    apple_id
+    |> Apple.get_apple_user_by_apple_id()
+    |> Map.get(:user_id)
+    |> Accounts.get_user()
+    ~> user
+    {:ok, :already, user}
   end
 
   defp create_user_with_apple(%User{} = user, apple_id) do

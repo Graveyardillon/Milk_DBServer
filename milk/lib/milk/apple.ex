@@ -8,6 +8,12 @@ defmodule Milk.Apple do
 
   import Ecto.Query, warn: false
 
+  def apple_user_exists?(apple_id) do
+    AppleUser
+    |> where([au], au.apple_id == ^apple_id)
+    |> Repo.exists?()
+  end
+
   @doc """
   Get user by apple id.
   """
