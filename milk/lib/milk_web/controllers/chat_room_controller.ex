@@ -95,7 +95,7 @@ defmodule MilkWeb.ChatRoomController do
         }
       end)
 
-    if chat_with_user do
+    unless length(chat_with_user) == 0 do
       render(conn, "chat_rooms_with_user.json", info: chat_with_user)
     else
       render(conn, "error.json", error: nil)
