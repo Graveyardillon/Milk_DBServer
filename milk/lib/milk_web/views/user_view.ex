@@ -63,7 +63,9 @@ defmodule MilkWeb.UserView do
       notification_number: user.notification_number,
       language: user.language,
       email: user.auth.email,
-      bio: user.bio
+      bio: user.bio,
+      birthday: user.birthday,
+      birthday_private: user.birthday_private
     }
   end
 end
