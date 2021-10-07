@@ -1021,7 +1021,7 @@ defmodule Milk.Tournaments do
           preload: [assistant: a, entrant: e]
       )
 
-    entrant =
+    entrants =
       Enum.map(tournament.entrant, fn x ->
         %{
           rank: x.rank,
@@ -1032,9 +1032,9 @@ defmodule Milk.Tournaments do
         }
       end)
 
-    if entrant, do: Repo.insert_all(EntrantLog, entrant)
+    unless entrants == [], do: Repo.insert_all(EntrantLog, entrants)
 
-    assistant =
+    assistants =
       Enum.map(tournament.assistant, fn x ->
         %{
           user_id: x.user_id,
@@ -1044,7 +1044,7 @@ defmodule Milk.Tournaments do
         }
       end)
 
-    if assistant, do: Repo.insert_all(AssistantLog, assistant)
+    unless assistants == [], do: Repo.insert_all(AssistantLog, assistants)
 
     Repo.delete(tournament)
   end
