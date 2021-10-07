@@ -95,11 +95,12 @@ defmodule MilkWeb.ChatRoomController do
         }
       end)
 
-    if chat_with_user do
-      render(conn, "chat_rooms_with_user.json", info: chat_with_user)
-    else
-      render(conn, "error.json", error: nil)
-    end
+    render(conn, "chat_rooms_with_user.json", info: chat_with_user)
+    # unless length(chat_with_user) == 0 do
+    #   render(conn, "chat_rooms_with_user.json", info: chat_with_user)
+    # else
+    #   render(conn, "error.json", error: nil)
+    # end
   end
 
   def private_room(conn, %{"my_id" => my_id, "partner_id" => partner_id}) do

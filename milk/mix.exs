@@ -82,7 +82,7 @@ defmodule Milk.MixProject do
       {:argon2_elixir, "~> 2.3.0"},
       {:ex_crypto, "~> 0.10.0"},
       {:tournamex, "~> 0.1.17"},
-      {:dialyxir, "~> 1.0", only: [:dev], runtime: false},
+      {:dialyxir, "~> 1.0", only: [:dev, :test], runtime: false},
       {:excoveralls, "~> 0.10", only: :test},
       {:redix, ">= 0.0.0"},
       {:google_api_storage, "~> 0.29"},
@@ -107,7 +107,12 @@ defmodule Milk.MixProject do
     [
       "ecto.setup": ["ecto.create", "ecto.migrate"],
       "ecto.reset": ["ecto.drop", "ecto.setup", "run -e Milk.TournamentProgress.flushall"],
-      test: ["ecto.create --quiet", "ecto.migrate", "test"],
+      test: [
+        "ecto.create --quiet",
+        "ecto.migrate",
+        "dialyzer",
+        "test"
+      ],
       check: [
         "compile --warnings-as-errors",
         "format --check-formatted",

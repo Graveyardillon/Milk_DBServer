@@ -235,9 +235,6 @@ defmodule MilkWeb.Router do
     get "/tournament/debug_match_list", TournamentController, :debug_match_list
     post "/assistant/get", AssistantController, :show
 
-    # ETSのデバッグ用
-    post "/observe", DebugController, :observe
-
     post "/push_notice", NotifController, :test_push_notice
   end
 end

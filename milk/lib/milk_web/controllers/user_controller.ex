@@ -234,7 +234,6 @@ defmodule MilkWeb.UserController do
       |> case do
         {:ok, token, _full_claims} -> {:ok, token, user}
         {:error, error} -> {:error, error}
-        _ -> {:error, nil}
       end
     else
       {:error, "user is nil"}

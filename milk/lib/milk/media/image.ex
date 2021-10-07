@@ -24,12 +24,5 @@ defmodule Milk.Media.Image do
     |> Objects.get()
     |> Map.get(:mediaLink)
     |> __MODULE__.get()
-    |> case do
-      {:ok, image} ->
-        {:ok, image}
-
-      _ ->
-        {:error, "image not found"}
-    end
   end
 end

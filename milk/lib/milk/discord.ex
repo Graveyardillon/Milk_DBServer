@@ -299,24 +299,22 @@ defmodule Milk.Discord do
   """
   def send_tournament_finish_match_notification(server_id, a_name, b_name, a_score, b_score)
       when is_binary(server_id) do
-    unless is_nil(server_id) do
-      discord_server_url = Application.get_env(:milk, :discord_server)
-      access_token = Application.get_env(:milk, :discord_server_access_token)
+    discord_server_url = Application.get_env(:milk, :discord_server)
+    access_token = Application.get_env(:milk, :discord_server_access_token)
 
-      url = "#{discord_server_url}/finish_match"
+    url = "#{discord_server_url}/finish_match"
 
-      Map.new()
-      |> Map.put(:server_id, server_id)
-      |> Map.put(:access_token, access_token)
-      |> Map.put(:team_a_name, a_name)
-      |> Map.put(:team_b_name, b_name)
-      |> Map.put(:team_a_score, a_score)
-      |> Map.put(:team_b_score, b_score)
-      |> Jason.encode!()
-      ~> params
+    Map.new()
+    |> Map.put(:server_id, server_id)
+    |> Map.put(:access_token, access_token)
+    |> Map.put(:team_a_name, a_name)
+    |> Map.put(:team_b_name, b_name)
+    |> Map.put(:team_a_score, a_score)
+    |> Map.put(:team_b_score, b_score)
+    |> Jason.encode!()
+    ~> params
 
-      HTTPoison.post(url, params, "Content-Type": "application/json")
-    end
+    HTTPoison.post(url, params, "Content-Type": "application/json")
   end
 
   def send_tournament_finish_match_notification(_, _, _, _, _) do

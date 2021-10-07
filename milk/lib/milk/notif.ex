@@ -5,6 +5,7 @@ defmodule Milk.Notif do
 
   import Ecto.Query, warn: false
   import Pigeon.APNS.Notification
+  import Common.Sperm
 
   alias Maps
 
@@ -85,16 +86,15 @@ defmodule Milk.Notif do
 
   """
   def create_notification(attrs \\ %{}) do
-    data =
-      attrs["data"]
-      |> is_nil()
-      |> unless do
-        if is_integer(attrs["data"]) do
-          to_string(attrs["data"])
-        else
-          attrs["data"]
-        end
+    attrs["data"]
+    |> if do
+      if is_integer(attrs["data"]) do
+        to_string(attrs["data"])
+      else
+        attrs["data"]
       end
+    end
+    ~> data
 
     attrs = Map.put(attrs, "data", data)
 

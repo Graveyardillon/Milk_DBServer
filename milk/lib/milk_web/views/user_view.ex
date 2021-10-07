@@ -37,9 +37,6 @@ defmodule MilkWeb.UserView do
 
         {:error, _error} ->
           %{result: false, error: "can't get token", data: nil}
-
-        _ ->
-          %{result: false, data: nil}
       end
     else
       %{data: nil, result: false}

@@ -17,10 +17,10 @@ defmodule MilkWeb.ChatsController do
   TODO: 認証
   """
   def get_all_chats(conn, %{"room_id" => room_id}) do
-    chat_list =
-      room_id
-      |> Tools.to_integer_as_needed()
-      |> Chat.get_all_chat_by_room_id_including_log()
+    room_id
+    |> Tools.to_integer_as_needed()
+    |> Chat.get_all_chat_by_room_id_including_log()
+    ~> chat_list
 
     render(conn, "index.json", chat: chat_list)
   end
@@ -148,14 +148,9 @@ defmodule MilkWeb.ChatsController do
   defp loadimg_prod(name) do
     object = Objects.get(name)
 
-    case Image.get(object.mediaLink) do
-      {:ok, file} ->
-        b64 = Base.encode64(file)
-        %{b64: b64}
-
-      _ ->
-        %{error: "image not found"}
-    end
+    {:ok, file} = Image.get(object.mediaLink)
+    b64 = Base.encode64(file)
+    %{b64: b64}
   end
 
   @doc """
