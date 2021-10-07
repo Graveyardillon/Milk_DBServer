@@ -1790,9 +1790,8 @@ defmodule MilkWeb.TournamentController do
         |> Kernel.--([target_user_id])
         |> hd()
         |> Enum.each(fn user_id ->
-          Tournaments.promote_rank(
-            %{"tournament_id" => tournament_id, "user_id" => user_id},
-            :force
+          Tournaments.force_to_promote_rank(
+            %{"tournament_id" => tournament_id, "user_id" => user_id}
           )
         end)
 

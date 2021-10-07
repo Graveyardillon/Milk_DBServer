@@ -1127,11 +1127,17 @@ defmodule Milk.Tournaments do
   end
 
   defp user_exists?(attrs) do
-    with false <- is_nil(attrs["user_id"]),
-         true <- Repo.exists?(from u in User, where: u.id == ^attrs["user_id"]) do
-      {:ok, attrs}
+    if attrs["user_id"] do
+      User
+      |> where([u], u.id == ^attrs["id"])
+      |> Repo.exists?()
+      |> if do
+        {:ok, attrs}
+      else
+        {:error, "undefined user"}
+      end
     else
-      _ -> {:error, "undefined user"}
+      {:error, "invalid attrs"}
     end
   end
 
@@ -2063,7 +2069,7 @@ defmodule Milk.Tournaments do
   Promotes rank of a entrant.
   勝った人のランクが上がるやつ
   """
-  def promote_rank(attrs = %{"user_id" => user_id, "tournament_id" => tournament_id}, :force) do
+  def force_to_promote_rank(attrs = %{"user_id" => user_id, "tournament_id" => tournament_id}) do
     attrs
     |> user_exists?()
     |> tournament_exists?()
@@ -2085,6 +2091,34 @@ defmodule Milk.Tournaments do
         ~> updated_rank
 
         update_entrant(entrant, %{rank: updated_rank})
+
+      {:error, error} ->
+        {:error, error}
+    end
+  end
+
+  def force_to_promote_rank(attrs = %{"team_id" => team_id}) do
+    attrs
+    |> team_exists?()
+    |> tournament_exists?()
+    |> tournament_start_check()
+    |> case do
+      {:ok, _} ->
+        team_id
+        |> get_team()
+        ~> team
+        |> Map.get(:rank)
+        |> check_exponentiation_of_two()
+        ~> {_bool, rank}
+        |> elem(0)
+        |> if do
+          div(rank, 2)
+        else
+          find_num_closest_exponentiation_of_two(rank)
+        end
+        ~> updated_rank
+
+        update_team(team, %{rank: updated_rank})
 
       {:error, error} ->
         {:error, error}
@@ -2121,34 +2155,6 @@ defmodule Milk.Tournaments do
     |> case do
       {:ok, match_list} -> update_team_rank(match_list, team_id, tournament_id)
       {:error, error} -> {:error, error}
-    end
-  end
-
-  def promote_rank(attrs = %{"team_id" => team_id}, :force) do
-    attrs
-    |> team_exists?()
-    |> tournament_exists?()
-    |> tournament_start_check()
-    |> case do
-      {:ok, _} ->
-        team_id
-        |> get_team()
-        ~> team
-        |> Map.get(:rank)
-        |> check_exponentiation_of_two()
-        ~> {_bool, rank}
-        |> elem(0)
-        |> if do
-          div(rank, 2)
-        else
-          find_num_closest_exponentiation_of_two(rank)
-        end
-        ~> updated_rank
-
-        update_team(team, %{rank: updated_rank})
-
-      {:error, error} ->
-        {:error, error}
     end
   end
 
@@ -2485,7 +2491,7 @@ defmodule Milk.Tournaments do
       is_member ->
         "IsMember"
 
-      true ->
+      :else ->
         check_has_lost?(tournament.id, id)
     end
   end
@@ -2550,7 +2556,7 @@ defmodule Milk.Tournaments do
       pending_list != [] && tournament.enabled_map ->
         check_map_ban_state(tournament, id)
 
-      true ->
+      :else ->
         "IsPending"
     end
   end
