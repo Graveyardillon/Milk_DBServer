@@ -1127,9 +1127,9 @@ defmodule Milk.Tournaments do
   end
 
   defp user_exists?(attrs) do
-    if attrs["user_id"] do
+    unless is_nil(attrs["user_id"]) do
       User
-      |> where([u], u.id == ^attrs["id"])
+      |> where([u], u.id == ^attrs["user_id"])
       |> Repo.exists?()
       |> if do
         {:ok, attrs}
