@@ -7,14 +7,14 @@ defmodule Milk.CloudStorage.Objects do
     {:ok, token} = Goth.fetch(Milk.Goth)
     conn = GoogleApi.Storage.V1.Connection.new(token.token)
 
-    File.read(file_path)
+    basename = Path.basename(file_path)
 
     {:ok, object} =
       GoogleApi.Storage.V1.Api.Objects.storage_objects_insert_simple(
         conn,
         @bucket_id,
         "multipart",
-        %{name: Path.basename(file_path)},
+        %GoogleApi.Storage.V1.Model.Object{name: basename},
         file_path
       )
 
