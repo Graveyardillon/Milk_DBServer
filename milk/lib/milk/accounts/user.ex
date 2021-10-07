@@ -24,6 +24,8 @@ defmodule Milk.Accounts.User do
 
   schema "users" do
     field :bio, :string, default: nil
+    field :birthday, EctoDate
+    field :birthday_private, :boolean, default: true
     field :icon_path, :string
     field :id_for_show, :integer
     field :name, :string
@@ -53,6 +55,8 @@ defmodule Milk.Accounts.User do
     |> cast(attrs, [
       :name,
       :bio,
+      :birthday,
+      :birthday_private,
       :icon_path,
       :point,
       :id_for_show,
