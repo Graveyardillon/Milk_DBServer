@@ -161,16 +161,11 @@ defmodule MilkWeb.TournamentController do
           followers = Relations.get_followers(tournament.master_id)
           tournament = Map.put(tournament, :followers, followers)
 
-          %{"user_id" => tournament.master_id, "game_name" => tournament.game_name, "score" => 7}
-          |> Accounts.gain_score()
+          Accounts.gain_score( %{"user_id" => tournament.master_id, "game_name" => tournament.game_name, "score" => 7})
 
           add_queue_tournament_start_push_notice(tournament)
 
-          if tournament do
-            render(conn, "create.json", tournament: tournament)
-          else
-            render(conn, "error.json", error: nil)
-          end
+          render(conn, "create.json", tournament: tournament)
 
         {:error, error} ->
           render(conn, "error.json", error: error)
@@ -309,15 +304,9 @@ defmodule MilkWeb.TournamentController do
   #  coveralls-ignore-start
   defp read_thumbnail_prod(path) do
     object = Objects.get(path)
-
-    case Image.get(object.mediaLink) do
-      {:ok, file} ->
-        b64 = Base.encode64(file)
-        %{b64: b64}
-
-      _ ->
-        %{error: "image not found"}
-    end
+    {:ok, file} = Image.get(object.mediaLink)
+    b64 = Base.encode64(file)
+    %{b64: b64}
   end
 
   # coveralls-ignore-stop
@@ -424,7 +413,8 @@ defmodule MilkWeb.TournamentController do
       Map.put(tournament, :entrants, entrants)
     end)
     ~> tournaments
-    |> is_nil()
+    |> length()
+    |> Kernel.==(0)
     |> unless do
       render(conn, "home.json", tournaments_info: tournaments)
     else
@@ -547,7 +537,8 @@ defmodule MilkWeb.TournamentController do
       Map.put(tournament, :entrants, entrants)
     end)
     ~> tournaments
-    |> is_nil()
+    |> length()
+    |> Kernel.==(0)
     |> unless do
       render(conn, "home.json", tournaments_info: tournaments)
     else
@@ -556,19 +547,19 @@ defmodule MilkWeb.TournamentController do
   end
 
   def participating_tournaments(conn, %{"user_id" => user_id}) do
-    tournaments =
-      Tournaments.get_participating_tournaments(user_id)
-      |> Enum.map(fn tournament ->
-        Tournaments.get_entrants(tournament.id)
-        |> Enum.map(fn entrant ->
-          Accounts.get_user(entrant.user_id)
-        end)
-        ~> entrants
-
-        Map.put(tournament, :entrants, entrants)
+    Tournaments.get_participating_tournaments(user_id)
+    |> Enum.map(fn tournament ->
+      Tournaments.get_entrants(tournament.id)
+      |> Enum.map(fn entrant ->
+        Accounts.get_user(entrant.user_id)
       end)
+      ~> entrants
 
-    if tournaments do
+      Map.put(tournament, :entrants, entrants)
+    end)
+    ~> tournaments
+
+    unless length(tournaments) == 0 do
       render(conn, "home.json", tournaments_info: tournaments)
     else
       render(conn, "error.json", error: nil)

@@ -104,9 +104,7 @@ defmodule MilkWeb.DiscordController do
       }
       |> Notif.create_notification()
     end)
-    |> case do
-      :ok -> json(conn, %{result: true})
-      _ -> render(conn, "error.json", error: nil)
-    end
+
+    json(conn, %{result: true})
   end
 end
