@@ -89,7 +89,7 @@ defmodule Milk.Accounts do
 
   @doc """
   Get user by discord id
-  #FIXME: 複数のアカウントが同じdiscord idを使ってログインすることを想定していない。
+  # HACK: 複数のアカウントが同じdiscord idを使ってログインすることを想定していない。
   データベースに制約をつけて、associateの処理に変更を加える必要がある。
   """
   def get_user_by_discord_id(discord_id) do
@@ -165,22 +165,14 @@ defmodule Milk.Accounts do
   @doc """
   Creates a user.
   """
-  @spec create_user(map, boolean) :: tuple()
-  def create_user(attrs, is_oauth \\ false) do
+  @spec create_user(map, binary) :: tuple()
+  def create_user(attrs, service_name \\ "e-players") do
     attrs = put_id_for_show(attrs)
 
     Multi.new()
     |> Multi.insert(:user, User.changeset(%User{}, attrs))
     |> Multi.insert(:auth, fn %{user: user} ->
-      if is_oauth do
-        user
-        |> Ecto.build_assoc(:auth)
-        |> Auth.changeset_discord(attrs)
-      else
-        user
-        |> Ecto.build_assoc(:auth)
-        |> Auth.changeset(attrs)
-      end
+      apply_changeset_of_oauth(user, attrs, service_name)
     end)
     |> Repo.transaction()
     |> case do
@@ -206,9 +198,7 @@ defmodule Milk.Accounts do
     |> generate_id_for_show()
   end
 
-  defp generate_id_for_show(1_000_000) do
-    generate_id_for_show(0)
-  end
+  defp generate_id_for_show(1_000_000), do: generate_id_for_show(0)
 
   defp generate_id_for_show(tmp_id) do
     User
@@ -219,6 +209,19 @@ defmodule Milk.Accounts do
     else
       generate_id_for_show(tmp_id + 1)
     end
+  end
+
+  defp apply_changeset_of_oauth(user, attrs, "e-players") do
+    user
+    |> Ecto.build_assoc(:auth)
+    |> Auth.changeset(attrs)
+  end
+
+  defp apply_changeset_of_oauth(user, attrs, service_name) do
+    user
+    |> Map.put("service_name", service_name)
+    |> Ecto.build_assoc(:auth)
+    |> Auth.changeset_oauth(attrs)
   end
 
   @doc """
@@ -466,7 +469,6 @@ defmodule Milk.Accounts do
   @doc """
   Login function.
   """
-  # FIXME: specの型を細かく指定したい
   # @spec login(map | nil) :: {:ok, _, binary} | {:error, nil, nil}
   @spec login(map) :: tuple()
   def login(user) do

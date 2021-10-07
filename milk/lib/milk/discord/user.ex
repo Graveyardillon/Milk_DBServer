@@ -6,7 +6,7 @@ defmodule Milk.Discord.User do
   alias Milk.Accounts.User
 
   schema "discord_users" do
-    # 入る数字は整数だけどサイズの問題があってstringにした
+    # NOTE: 入る数字は整数だけど、あまりに数字が大きいのでstringを選んだ
     field :discord_id, :string
 
     belongs_to :user, User

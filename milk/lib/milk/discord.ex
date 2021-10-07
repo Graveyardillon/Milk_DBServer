@@ -3,10 +3,9 @@ defmodule Milk.Discord do
   The Discord context.
   """
 
-  alias Milk.Discord.User, as: DiscordUser
-
   import Common.Sperm
 
+  alias Milk.Discord.User, as: DiscordUser
   alias Milk.{
     Repo,
     Tournaments
@@ -79,7 +78,7 @@ defmodule Milk.Discord do
         |> get_discord_user_by_user_id()
         |> update_discord_user(%{discord_id: discord_id})
 
-      true ->
+      :else ->
         Map.new()
         |> Map.put(:user_id, user_id)
         |> Map.put(:discord_id, discord_id)
@@ -124,7 +123,7 @@ defmodule Milk.Discord do
     end
   end
 
-  # Discord server 通知周り
+  ### Discord server 通知周りの関数群
 
   @doc """
   Send notification on tournament start.

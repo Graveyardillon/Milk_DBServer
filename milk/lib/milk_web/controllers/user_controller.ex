@@ -7,12 +7,14 @@ defmodule MilkWeb.UserController do
 
   alias Milk.{
     Accounts,
+    Apple,
     Discord,
     Tournaments,
     Notif
   }
 
   alias Milk.Accounts.User
+  alias Milk.Apple.User, as: AppleUser
   alias Milk.UserManager.Guardian
 
   @doc """
@@ -75,44 +77,33 @@ defmodule MilkWeb.UserController do
     end
   end
 
+  # NOTE: アカウント作成のためのラッパー関数
+  defp create_user(email, username, service_name \\ "e-players") do
+    Map.new()
+    |> Map.put("email", email)
+    |> Map.put("name", username)
+    |> Accounts.create_user(service_name)
+  end
+
   @doc """
-  Signin with discord.
+  Sign in with discord.
   """
-  def signin_with_discord(conn, %{
-        "email" => email,
-        "username" => username,
-        "discriminator" => _discriminator,
-        "discord_id" => discord_id
-      }) do
+  def signin_with_discord(conn, %{"email" => email, "username" => username, "discriminator" => _, "discord_id" => discord_id}) do
     email
     |> Accounts.email_exists?()
     |> if do
-      user = Accounts.get_user_by_email(email)
-      {:ok, :already, user}
+      get_user_by_email(email)
     else
-      Map.new()
-      |> Map.put("email", email)
-      |> Map.put("name", username)
-      |> Accounts.create_user(true)
+      create_user(email, username, "discord")
     end
     |> case do
-      {:ok, :already, %User{} = user} ->
-        {:ok, user}
-
-      {:ok, %User{} = user} ->
-        %{user_id: user.id, discord_id: discord_id}
-        |> Discord.create_discord_user()
-        |> case do
-          {:ok, _} -> {:ok, user}
-          x -> x
-        end
-
-      x ->
-        x
+      {:ok, :already, %User{} = user} -> pass_obtained_user(user)
+      {:ok, %User{} = user} -> create_user_with_discord(user, discord_id)
+      errors -> errors
     end
     |> case do
       {:ok, %User{} = user} -> generate_token(user)
-      x -> x
+      errors -> errors
     end
     |> case do
       {:ok, token, %User{} = user} ->
@@ -121,6 +112,91 @@ defmodule MilkWeb.UserController do
       {:error, error} ->
         render(conn, "error.json", error: error)
     end
+  end
+
+  defp get_user_by_email(email) do
+    user = Accounts.get_user_by_email(email)
+    {:ok, :already, user}
+  end
+
+  defp pass_obtained_user(user), do: {:ok, user}
+
+  defp create_user_with_discord(%User{} = user, discord_id) do
+    %{user_id: user.id, discord_id: discord_id}
+    |> Discord.create_discord_user()
+    |> case do
+      {:ok, _} -> {:ok, user}
+      {:error, error} -> {:error, error}
+    end
+  end
+
+  @doc """
+  Sign in with apple.
+  NOTE: 必要に応じてユーザー作成もできる関数
+  """
+  def signin_with_apple(conn, %{"email" => email, "username" => username, "apple_id" => apple_id}) do
+    cond do
+      Accounts.email_exists?(email) -> get_user_by_email(email)
+      Apple.apple_user_exists?(apple_id) -> get_user_by_apple_id(apple_id)
+      :else -> create_user(email, username, "apple")
+    end
+    |> case do
+      {:ok, :already, %User{} = user} -> pass_obtained_user(user)
+      {:ok, %User{} = user} -> create_user_with_apple(user, apple_id)
+      errors -> errors
+    end
+    |> case do
+      {:ok, %User{} = user} -> generate_token(user)
+      errors -> errors
+    end
+    |> case do
+      {:ok, token, %User{} = user} ->
+        render(conn, "login.json", %{user: user, token: token})
+
+      {:error, error} ->
+        render(conn, "error.json", error: error)
+    end
+  end
+
+  # NOTE: ユーザー作成はできない
+  def signin_with_apple(conn, %{"apple_id" => apple_id}) do
+    apple_id
+    |> Apple.get_apple_user_by_apple_id()
+    |> signin_with_apple_user()
+    |> case do
+      {:ok, token, %User{} = user} ->
+        render(conn, "login.json", %{user: user, token: token})
+
+      {:error, error} ->
+        render(conn, "error.json", error: error)
+    end
+  end
+
+  defp get_user_by_apple_id(apple_id) do
+    apple_id
+    |> Apple.get_apple_user_by_apple_id()
+    |> Map.get(:user_id)
+    |> Accounts.get_user()
+    ~> user
+    {:ok, :already, user}
+  end
+
+  defp create_user_with_apple(%User{} = user, apple_id) do
+    %{user_id: user.id, apple_id: apple_id}
+    |> Apple.create_apple_user()
+    |> case do
+      {:ok, _} -> {:ok, user}
+      {:error, error} -> {:error, error}
+    end
+  end
+
+  defp signin_with_apple_user(%AppleUser{} = apple_user) do
+    apple_user.user_id
+    |> Accounts.get_user()
+    |> generate_token()
+  end
+  defp signin_with_apple_user(_) do
+    {:error, "apple user does not exist"}
   end
 
   @doc """

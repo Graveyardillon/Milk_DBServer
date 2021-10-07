@@ -741,11 +741,8 @@ defmodule Milk.Tournaments do
       |> Map.get(:custom_detail)
       |> Map.get(:map_selection_type)
       |> case do
-        "VLT" ->
-          TournamentProgress.init_ban_order(tournament_id, id)
-
-        _ ->
-          TournamentProgress.init_ban_order(tournament_id, id)
+        # NOTE: map_selection_typeで分岐もできる
+        _ -> TournamentProgress.init_ban_order(tournament_id, id)
       end
     end
   end
