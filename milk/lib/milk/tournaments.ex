@@ -58,6 +58,41 @@ defmodule Milk.Tournaments do
   require Logger
 
   @doc """
+  Gets a single tournament.
+
+  Raises `Ecto.NoResultsError` if the Tournament does not exist.
+  """
+  @spec get_tournament(integer()) :: Tournament.t | nil
+  def get_tournament(id) do
+    Tournament
+    |> Repo.get(id)
+    |> Repo.preload(:team)
+    |> Repo.preload(:entrant)
+    |> Repo.preload(:assistant)
+    |> Repo.preload(:master)
+    |> Repo.preload(:map)
+    |> Repo.preload(:custom_detail)
+    ~> tournament
+
+    if tournament do
+      tournament
+      |> Map.get(:entrant)
+      |> Enum.map(fn entrant ->
+        entrant
+        |> Repo.preload(:user)
+        |> Map.get(:user)
+        |> Repo.preload(:auth)
+        ~> user
+
+        Map.put(entrant, :user, user)
+      end)
+      ~> entrants
+
+      Map.put(tournament, :entrant, entrants)
+    end
+  end
+
+  @doc """
   Returns the list of tournament for home screen.
   """
   def home_tournament(_date_offset, offset, user_id \\ nil) do
@@ -240,40 +275,6 @@ defmodule Milk.Tournaments do
     |> Repo.preload(:team)
     |> Repo.preload(:master)
     |> Repo.preload(:assistant)
-  end
-
-  @doc """
-  Gets a single tournament.
-
-  Raises `Ecto.NoResultsError` if the Tournament does not exist.
-  """
-  def get_tournament(id) do
-    Tournament
-    |> Repo.get(id)
-    |> Repo.preload(:team)
-    |> Repo.preload(:entrant)
-    |> Repo.preload(:assistant)
-    |> Repo.preload(:master)
-    |> Repo.preload(:map)
-    |> Repo.preload(:custom_detail)
-    |> (fn tournament ->
-          if tournament do
-            tournament
-            |> Map.get(:entrant)
-            |> Enum.map(fn entrant ->
-              entrant
-              |> Repo.preload(:user)
-              |> Map.get(:user)
-              |> Repo.preload(:auth)
-              ~> user
-
-              Map.put(entrant, :user, user)
-            end)
-            ~> entrants
-
-            Map.put(tournament, :entrant, entrants)
-          end
-        end).()
   end
 
   @doc """
