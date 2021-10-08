@@ -832,7 +832,7 @@ defmodule MilkWeb.TournamentController do
     {:ok, winner} =
       match_list
       |> Tournaments.find_match(loser_id)
-      |> Tournaments.get_opponent(loser_id)
+      |> Tournaments.get_opponent_user(loser_id)
 
     match_list_str = inspect(match_list, charlists: false)
 
@@ -980,7 +980,7 @@ defmodule MilkWeb.TournamentController do
         tournament_id
         |> TournamentProgress.get_match_list()
         |> Tournaments.find_match(user_id)
-        |> Tournaments.get_opponent(user_id)
+        |> Tournaments.get_opponent_user(user_id)
         |> case do
           {:ok, opponent} -> {:ok, opponent["name"], user.name}
           {:wait, nil} -> raise "The given user should not wait for the opponent."
@@ -1060,7 +1060,7 @@ defmodule MilkWeb.TournamentController do
         tournament_id
         |> TournamentProgress.get_match_list()
         |> Tournaments.find_match(user_id)
-        |> Tournaments.get_opponent(user_id)
+        |> Tournaments.get_opponent_user(user_id)
         |> case do
           {:ok, opponent} -> {:ok, opponent["name"], user.name}
           {:wait, nil} -> raise "The given user should not wait for the opponent."
@@ -1131,7 +1131,7 @@ defmodule MilkWeb.TournamentController do
         tournament_id
         |> TournamentProgress.get_match_list()
         |> Tournaments.find_match(user_id)
-        |> Tournaments.get_opponent(user_id)
+        |> Tournaments.get_opponent_user(user_id)
         |> case do
           {:ok, opponent} -> {:ok, opponent["name"], user.name}
           {:wait, nil} -> raise "The given user should not wait for the opponent."
@@ -1230,7 +1230,7 @@ defmodule MilkWeb.TournamentController do
         tournament_id
         |> TournamentProgress.get_match_list()
         |> Tournaments.find_match(user_id)
-        |> Tournaments.get_opponent(user_id)
+        |> Tournaments.get_opponent_user(user_id)
         ~> {:ok, opponent}
 
         {user.id, opponent.id, user.name, opponent["name"]}
@@ -1258,7 +1258,7 @@ defmodule MilkWeb.TournamentController do
     unless is_integer(match_list) do
       match = Tournaments.find_match(match_list, user_id)
 
-      with {:ok, opponent} <- Tournaments.get_opponent(match, user_id) do
+      with {:ok, opponent} <- Tournaments.get_opponent_user(match, user_id) do
         render(conn, "opponent.json", opponent: opponent)
       else
         {:wait, _} ->
@@ -1772,7 +1772,7 @@ defmodule MilkWeb.TournamentController do
     tournament_id
     |> TournamentProgress.get_match_list()
     |> Tournaments.find_match(target_user_id)
-    |> Tournaments.get_opponent(target_user_id)
+    |> Tournaments.get_opponent_user(target_user_id)
     |> case do
       {:ok, winner} ->
         Tournaments.promote_rank(%{"tournament_id" => tournament_id, "user_id" => winner.id})
@@ -2101,7 +2101,7 @@ defmodule MilkWeb.TournamentController do
       tournament_id
       |> TournamentProgress.get_match_list()
       |> Tournaments.find_match(user_id)
-      |> Tournaments.get_opponent(user_id)
+      |> Tournaments.get_opponent_user(user_id)
       |> case do
         {:ok, opponent} ->
           {:ok, rank} = Tournaments.get_rank(tournament_id, user_id)

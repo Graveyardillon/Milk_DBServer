@@ -773,7 +773,7 @@ defmodule Milk.Tournaments do
       tournament_id
       |> TournamentProgress.get_match_list()
       |> find_match(my_id)
-      |> get_opponent(my_id)
+      |> get_opponent_user(my_id)
     end
     |> elem(1)
     |> Map.get("id")
@@ -845,7 +845,7 @@ defmodule Milk.Tournaments do
       tournament_id
       |> TournamentProgress.get_match_list()
       |> find_match(my_id)
-      |> get_opponent(my_id)
+      |> get_opponent_user(my_id)
     end
     |> elem(1)
     |> Map.get("id")
@@ -915,7 +915,7 @@ defmodule Milk.Tournaments do
       tournament_id
       |> TournamentProgress.get_match_list()
       |> find_match(my_id)
-      |> get_opponent(my_id)
+      |> get_opponent_user(my_id)
     end
     |> elem(1)
     |> Map.get("id")
@@ -971,7 +971,7 @@ defmodule Milk.Tournaments do
       tournament_id
       |> TournamentProgress.get_match_list()
       |> find_match(id)
-      |> get_opponent(id)
+      |> get_opponent_user(id)
     end
     ~> {:ok, opponent}
 
@@ -1441,7 +1441,7 @@ defmodule Milk.Tournaments do
             |> Tuple.append(tournament)
           else
             match
-            |> get_opponent(loser)
+            |> get_opponent_user(loser)
             |> Tuple.append(tournament)
           end
       end
@@ -1475,7 +1475,7 @@ defmodule Milk.Tournaments do
     |> Kernel.==([])
     |> unless do
       match
-      |> get_opponent(loser)
+      |> get_opponent_user(loser)
       |> case do
         {:ok, opponent} ->
           promote_rank(%{"tournament_id" => tournament_id, "user_id" => opponent.id})
@@ -1516,7 +1516,7 @@ defmodule Milk.Tournaments do
   @doc """
   Get an opponent of tournament match.
   """
-  def get_opponent(match, user_id) do
+  def get_opponent_user(match, user_id) do
     if Enum.member?(match, user_id) and length(match) == 2 do
       match
       |> Enum.filter(&(&1 != user_id))
@@ -2156,7 +2156,7 @@ defmodule Milk.Tournaments do
     # 対戦相手
     match_list
     |> find_match(user_id)
-    |> get_opponent(user_id)
+    |> get_opponent_user(user_id)
     |> case do
       {:ok, opponent} ->
         opponent.id
@@ -2506,7 +2506,7 @@ defmodule Milk.Tournaments do
     if tournament.is_team do
       get_opponent_team(match, id)
     else
-      get_opponent(match, id)
+      get_opponent_user(match, id)
     end
     |> elem(1)
     |> Map.get(:id)
@@ -2548,7 +2548,7 @@ defmodule Milk.Tournaments do
       |> Map.get(:id)
       |> TournamentProgress.get_match_list()
       |> find_match(id)
-      |> get_opponent(id)
+      |> get_opponent_user(id)
     end
     ~> {:ok, opponent}
 
@@ -3494,7 +3494,7 @@ defmodule Milk.Tournaments do
       tournament_id
       |> TournamentProgress.get_match_list()
       |> find_match(my_id)
-      |> get_opponent(my_id)
+      |> get_opponent_user(my_id)
     end
     |> elem(1)
     |> Map.get(:id)

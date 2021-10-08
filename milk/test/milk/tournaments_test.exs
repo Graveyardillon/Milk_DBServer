@@ -1006,9 +1006,9 @@ defmodule Milk.TournamentsTest do
       integer_input = Enum.slice(id_list, 0..1)
       list_input = [hd(id_list)] ++ [Enum.slice(id_list, 1..2)]
 
-      assert {:ok, opponent} = Tournaments.get_opponent(integer_input, hd(id_list))
+      assert {:ok, opponent} = Tournaments.get_opponent_user(integer_input, hd(id_list))
       assert opponent.id == integer_input |> tl() |> hd()
-      assert {:wait, nil} = Tournaments.get_opponent(list_input, hd(id_list))
+      assert {:wait, nil} = Tournaments.get_opponent_user(list_input, hd(id_list))
     end
 
     test "get_opponent/2 with invalid data does not work", %{tournament: tournament} do
@@ -1017,14 +1017,14 @@ defmodule Milk.TournamentsTest do
 
       integer_input = Enum.slice(id_list, 0..1)
 
-      assert {:error, _} = Tournaments.get_opponent(integer_input, hd(id_list) - 1)
+      assert {:error, _} = Tournaments.get_opponent_user(integer_input, hd(id_list) - 1)
     end
 
     test "get_opponent/2 does not work with insufficient entrants", %{tournament: tournament} do
       entrants = create_entrants(1, tournament.id)
       id_list = Enum.map(entrants, fn entrant -> entrant.user_id end)
 
-      assert {:error, _} = Tournaments.get_opponent(id_list, hd(id_list))
+      assert {:error, _} = Tournaments.get_opponent_user(id_list, hd(id_list))
     end
 
     test "is_alone?/1 works fine with valid data" do
@@ -1121,7 +1121,7 @@ defmodule Milk.TournamentsTest do
       match_list = TournamentProgress.get_match_list(tournament.id)
 
       match = Tournaments.find_match(match_list, tournament.master_id)
-      {:ok, opponent} = Tournaments.get_opponent(match, tournament.master_id)
+      {:ok, opponent} = Tournaments.get_opponent_user(match, tournament.master_id)
 
       delete_loser(tournament.id, [opponent.id])
       assert "IsAlone" == Tournaments.state!(tournament.id, tournament.master_id)
@@ -1141,7 +1141,7 @@ defmodule Milk.TournamentsTest do
       match_list = TournamentProgress.get_match_list(tournament.id)
 
       match = Tournaments.find_match(match_list, tournament.master_id)
-      {:ok, opponent} = Tournaments.get_opponent(match, tournament.master_id)
+      {:ok, opponent} = Tournaments.get_opponent_user(match, tournament.master_id)
 
       pending_list =
         TournamentProgress.get_match_pending_list(tournament.master_id, tournament.id)
@@ -1851,7 +1851,7 @@ defmodule Milk.TournamentsTest do
       {:ok, opponent} =
         match_list
         |> Tournaments.find_match(entrant.user_id)
-        |> Tournaments.get_opponent(entrant.user_id)
+        |> Tournaments.get_opponent_user(entrant.user_id)
 
       TournamentProgress.delete_match_list(entrant.tournament_id)
       updated = Tournaments.delete_loser(match_list, opponent.id)
@@ -1884,7 +1884,7 @@ defmodule Milk.TournamentsTest do
       {:ok, opponent} =
         match_list
         |> Tournaments.find_match(entrant.user_id)
-        |> Tournaments.get_opponent(entrant.user_id)
+        |> Tournaments.get_opponent_user(entrant.user_id)
 
       TournamentProgress.delete_match_list(entrant.tournament_id)
       updated = Tournaments.delete_loser(match_list, opponent.id)
@@ -1917,7 +1917,7 @@ defmodule Milk.TournamentsTest do
       {:ok, opponent} =
         match_list
         |> Tournaments.find_match(entrant.user_id)
-        |> Tournaments.get_opponent(entrant.user_id)
+        |> Tournaments.get_opponent_user(entrant.user_id)
 
       TournamentProgress.delete_match_list(entrant.tournament_id)
       updated = Tournaments.delete_loser(match_list, opponent.id)
@@ -2606,7 +2606,7 @@ defmodule Milk.TournamentsTest do
         |> TournamentProgress.get_match_list()
 
       match = Tournaments.find_match(match_list, tournament.master_id)
-      {:ok, opponent} = Tournaments.get_opponent(match, tournament.master_id)
+      {:ok, opponent} = Tournaments.get_opponent_user(match, tournament.master_id)
 
       TournamentProgress.insert_match_pending_list_table(opponent.id, tournament.id)
       users = Tournaments.get_fighting_users(tournament.id)
@@ -2654,7 +2654,7 @@ defmodule Milk.TournamentsTest do
         |> TournamentProgress.get_match_list()
 
       match = Tournaments.find_match(match_list, tournament.master_id)
-      {:ok, opponent} = Tournaments.get_opponent(match, tournament.master_id)
+      {:ok, opponent} = Tournaments.get_opponent_user(match, tournament.master_id)
 
       TournamentProgress.insert_match_pending_list_table(opponent.id, tournament.id)
       users = Tournaments.get_waiting_users(tournament.id)
