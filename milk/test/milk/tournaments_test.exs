@@ -1007,7 +1007,7 @@ defmodule Milk.TournamentsTest do
       list_input = [hd(id_list)] ++ [Enum.slice(id_list, 1..2)]
 
       assert {:ok, opponent} = Tournaments.get_opponent(integer_input, hd(id_list))
-      assert opponent["id"] == integer_input |> tl() |> hd()
+      assert opponent.id == integer_input |> tl() |> hd()
       assert {:wait, nil} = Tournaments.get_opponent(list_input, hd(id_list))
     end
 
@@ -1123,7 +1123,7 @@ defmodule Milk.TournamentsTest do
       match = Tournaments.find_match(match_list, tournament.master_id)
       {:ok, opponent} = Tournaments.get_opponent(match, tournament.master_id)
 
-      delete_loser(tournament.id, [opponent["id"]])
+      delete_loser(tournament.id, [opponent.id])
       assert "IsAlone" == Tournaments.state!(tournament.id, tournament.master_id)
     end
 
@@ -1149,12 +1149,12 @@ defmodule Milk.TournamentsTest do
       assert pending_list == []
 
       opponent_pending_list =
-        TournamentProgress.get_match_pending_list(opponent["id"], tournament.id)
+        TournamentProgress.get_match_pending_list(opponent.id, tournament.id)
 
       assert opponent_pending_list == []
 
       TournamentProgress.insert_match_pending_list_table(tournament.master_id, tournament.id)
-      TournamentProgress.insert_match_pending_list_table(opponent["id"], tournament.id)
+      TournamentProgress.insert_match_pending_list_table(opponent.id, tournament.id)
 
       assert "IsPending" == Tournaments.state!(tournament.id, tournament.master_id)
     end
@@ -1195,9 +1195,7 @@ defmodule Milk.TournamentsTest do
     test "state!/2 returns IsFinished" do
       tournament = fixture_tournament(capacity: 2)
 
-      2
-      |> create_entrants(tournament.id)
-      ~> [entrant | opponent]
+      [entrant | opponent] = create_entrants(2, tournament.id)
 
       start(tournament.master_id, tournament.id)
       delete_loser(tournament.id, [hd(opponent).user_id])
@@ -1340,14 +1338,14 @@ defmodule Milk.TournamentsTest do
       |> Tournaments.get_opponent_team(team.id)
       ~> {:ok, opponent_team}
       |> elem(1)
-      |> Map.get("id")
+      |> Map.get(:id)
       |> Tournaments.get_leader()
       |> Map.get(:user)
       ~> opponent_leader
 
       tournament
       |> Map.get(:id)
-      |> TournamentProgress.get_ban_order(opponent_team["id"])
+      |> TournamentProgress.get_ban_order(opponent_team.id)
       |> is_nil()
       |> assert()
 
@@ -1367,7 +1365,7 @@ defmodule Milk.TournamentsTest do
 
       tournament
       |> Map.get(:id)
-      |> Tournaments.is_head_of_coin?(team.id, opponent_team["id"])
+      |> Tournaments.is_head_of_coin?(team.id, opponent_team.id)
       |> if do
         assert "ShouldBan" == Tournaments.state!(tournament.id, leader.id)
         assert "ShouldObserveBan" == Tournaments.state!(tournament.id, opponent_leader.id)
@@ -1400,10 +1398,10 @@ defmodule Milk.TournamentsTest do
         Tournaments.choose_maps(opponent_leader.id, tournament.id, [choose_map1])
       end
 
-      if team.id > opponent_team["id"] do
-        {team.id, opponent_team["id"]}
+      if team.id > opponent_team.id do
+        {team.id, opponent_team.id}
       else
-        {opponent_team["id"], team.id}
+        {opponent_team.id, team.id}
       end
       ~> {_large_id, _small_id}
 
@@ -1430,7 +1428,7 @@ defmodule Milk.TournamentsTest do
 
       tournament
       |> Map.get(:id)
-      |> Tournaments.is_head_of_coin?(team.id, opponent_team["id"])
+      |> Tournaments.is_head_of_coin?(team.id, opponent_team.id)
       |> if do
         assert "ShouldObserveA/D" == Tournaments.state!(tournament.id, leader.id)
         assert "ShouldChooseA/D" == Tournaments.state!(tournament.id, opponent_leader.id)
@@ -1446,7 +1444,7 @@ defmodule Milk.TournamentsTest do
       assert "IsPending" == Tournaments.state!(tournament.id, leader.id)
       assert "IsPending" == Tournaments.state!(tournament.id, opponent_leader.id)
 
-      delete_loser(tournament.id, [opponent_team["id"]])
+      delete_loser(tournament.id, [opponent_team.id])
       assert "IsAlone" == Tournaments.state!(tournament.id, leader.id)
       assert "IsLoser" == Tournaments.state!(tournament.id, opponent_leader.id)
     end
@@ -1759,12 +1757,13 @@ defmodule Milk.TournamentsTest do
       # numは生成する参加者の数で後に一人追加するので8 - 1 = 7
       num = 7
       # 参加者作成，マッチリストを生成してTournamentProgressに登録
-      {_, match_list} =
-        create_entrants(num, entrant.tournament_id)
-        |> Enum.map(fn x -> %{x | rank: num + 1} end)
-        |> Kernel.++([%{entrant | rank: num + 1}])
-        |> Enum.map(fn entrant -> entrant.user_id end)
-        |> Tournaments.generate_matchlist()
+      num
+      |> create_entrants(entrant.tournament_id)
+      |> Enum.map(fn x -> %{x | rank: num + 1} end)
+      |> Kernel.++([%{entrant | rank: num + 1}])
+      |> Enum.map(fn entrant -> entrant.user_id end)
+      |> Tournaments.generate_matchlist()
+      ~> {_, match_list}
 
       TournamentProgress.insert_match_list(match_list, entrant.tournament_id)
 
@@ -1855,7 +1854,7 @@ defmodule Milk.TournamentsTest do
         |> Tournaments.get_opponent(entrant.user_id)
 
       TournamentProgress.delete_match_list(entrant.tournament_id)
-      updated = Tournaments.delete_loser(match_list, opponent["id"])
+      updated = Tournaments.delete_loser(match_list, opponent.id)
 
       TournamentProgress.insert_match_list(updated, entrant.tournament_id)
 
@@ -1888,7 +1887,7 @@ defmodule Milk.TournamentsTest do
         |> Tournaments.get_opponent(entrant.user_id)
 
       TournamentProgress.delete_match_list(entrant.tournament_id)
-      updated = Tournaments.delete_loser(match_list, opponent["id"])
+      updated = Tournaments.delete_loser(match_list, opponent.id)
 
       TournamentProgress.insert_match_list(updated, entrant.tournament_id)
 
@@ -1921,7 +1920,7 @@ defmodule Milk.TournamentsTest do
         |> Tournaments.get_opponent(entrant.user_id)
 
       TournamentProgress.delete_match_list(entrant.tournament_id)
-      updated = Tournaments.delete_loser(match_list, opponent["id"])
+      updated = Tournaments.delete_loser(match_list, opponent.id)
 
       TournamentProgress.insert_match_list(updated, entrant.tournament_id)
     end
@@ -2073,11 +2072,11 @@ defmodule Milk.TournamentsTest do
       |> Tournaments.get_opponent_team(your_team.id)
       ~> {:ok, opponent_team}
 
-      result = claim_score(your_team.id, opponent_team["id"], your_score, 0)
+      result = claim_score(your_team.id, opponent_team.id, your_score, 0)
       assert result.validated
       refute result.completed
 
-      result = claim_score(opponent_team["id"], your_team.id, opponent_score, 0)
+      result = claim_score(opponent_team.id, your_team.id, opponent_score, 0)
       assert result.validated
       assert result.validated
 
@@ -2086,7 +2085,7 @@ defmodule Milk.TournamentsTest do
       |> TournamentProgress.get_match_list()
       |> List.flatten()
       |> Enum.map(fn cell ->
-        refute cell == opponent_team["id"]
+        refute cell == opponent_team.id
         assert cell in team_id_list
       end)
       |> length()
@@ -2103,7 +2102,7 @@ defmodule Milk.TournamentsTest do
         # FIXME: ここroundはゼロでいいのかちょっとわからない
         assert cell["round"] == 0
 
-        if cell["team_id"] == opponent_team["id"] do
+        if cell["team_id"] == opponent_team.id do
           assert cell["is_loser"]
         else
           refute cell["is_loser"]
@@ -2154,12 +2153,12 @@ defmodule Milk.TournamentsTest do
       ~> {:ok, another_opponent_team}
 
       # 勝敗報告
-      result = claim_score(another_team.id, another_opponent_team["id"], another_score, 0)
+      result = claim_score(another_team.id, another_opponent_team.id, another_score, 0)
       assert result.validated
       refute result.completed
 
       result =
-        claim_score(another_opponent_team["id"], another_team.id, another_opponent_score, 0)
+        claim_score(another_opponent_team.id, another_team.id, another_opponent_score, 0)
 
       assert result.validated
       assert result.validated
@@ -2609,7 +2608,7 @@ defmodule Milk.TournamentsTest do
       match = Tournaments.find_match(match_list, tournament.master_id)
       {:ok, opponent} = Tournaments.get_opponent(match, tournament.master_id)
 
-      TournamentProgress.insert_match_pending_list_table(opponent["id"], tournament.id)
+      TournamentProgress.insert_match_pending_list_table(opponent.id, tournament.id)
       users = Tournaments.get_fighting_users(tournament.id)
       assert length(users) == 2
 
@@ -2617,7 +2616,7 @@ defmodule Milk.TournamentsTest do
       users = Tournaments.get_fighting_users(tournament.id)
       assert length(users) == 1
 
-      TournamentProgress.delete_match_pending_list(opponent["id"], tournament.id)
+      TournamentProgress.delete_match_pending_list(opponent.id, tournament.id)
       users = Tournaments.get_fighting_users(tournament.id)
       assert length(users) == 0
     end
@@ -2657,7 +2656,7 @@ defmodule Milk.TournamentsTest do
       match = Tournaments.find_match(match_list, tournament.master_id)
       {:ok, opponent} = Tournaments.get_opponent(match, tournament.master_id)
 
-      TournamentProgress.insert_match_pending_list_table(opponent["id"], tournament.id)
+      TournamentProgress.insert_match_pending_list_table(opponent.id, tournament.id)
       users = Tournaments.get_waiting_users(tournament.id)
       assert length(users) == length(entrants) - 2
 
@@ -2665,7 +2664,7 @@ defmodule Milk.TournamentsTest do
       users = Tournaments.get_waiting_users(tournament.id)
       assert length(users) == length(entrants) - 1
 
-      TournamentProgress.delete_match_pending_list(opponent["id"], tournament.id)
+      TournamentProgress.delete_match_pending_list(opponent.id, tournament.id)
       users = Tournaments.get_waiting_users(tournament.id)
       assert length(users) == length(entrants)
     end
