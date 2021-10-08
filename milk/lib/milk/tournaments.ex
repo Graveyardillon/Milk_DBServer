@@ -550,6 +550,7 @@ defmodule Milk.Tournaments do
   defp create(attrs, thumbnail_path) do
     master_id = Tools.to_integer_as_needed(attrs["master_id"])
     platform_id = Tools.to_integer_as_needed(attrs["platform"])
+    game_id = if attrs["game_id"] == "" || is_nil(attrs["game_id"]), do: nil, else: attrs["game_id"]
 
     attrs
     |> Map.has_key?("url")
@@ -576,7 +577,7 @@ defmodule Milk.Tournaments do
       :tournament,
       %Tournament{
         master_id: master_id,
-        game_id: attrs["game_id"],
+        game_id: game_id,
         thumbnail_path: thumbnail_path,
         platform_id: platform_id
       }

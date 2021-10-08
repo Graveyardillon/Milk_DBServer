@@ -67,7 +67,5 @@ defmodule Milk.Accounts.User do
     |> validate_required([:name])
     |> unique_constraint(:name)
     |> unique_constraint(:id_for_show)
-
-    # |> unique_constraint([:name, :id_for_show])
   end
 end
