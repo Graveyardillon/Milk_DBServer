@@ -75,7 +75,6 @@ defmodule Milk.Tournaments do
     Timex.now()
     |> Timex.add(Timex.Duration.from_days(1))
     |> Timex.to_datetime()
-    ~> _filter_date
 
     Tournament
     # |> where([t], t.deadline > ^filter_date and t.create_time < ^date_offset)
@@ -99,10 +98,10 @@ defmodule Milk.Tournaments do
     |> Enum.map(fn relation ->
       relation.followee_id
     end)
-    ~> users
+    ~> user_id_list
 
     Tournament
-    |> where([t], t.master_id in ^users)
+    |> where([t], t.master_id in ^user_id_list)
     |> date_filter()
     |> Repo.all()
     |> Repo.preload(:entrant)
