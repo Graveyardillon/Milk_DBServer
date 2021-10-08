@@ -839,7 +839,7 @@ defmodule MilkWeb.TournamentController do
     Map.new()
     |> Map.put("tournament_id", tournament_id)
     |> Map.put("loser_id", loser_id)
-    |> Map.put("winner_id", winner["id"])
+    |> Map.put("winner_id", winner.id)
     |> Map.put("match_list_str", match_list_str)
     |> TournamentProgress.create_single_tournament_match_log()
   end
@@ -1223,7 +1223,7 @@ defmodule MilkWeb.TournamentController do
         |> Tournaments.get_opponent_team(team.id)
         ~> {:ok, opponent_team}
 
-        {team.id, opponent_team["id"], team.name, opponent_team["name"]}
+        {team.id, opponent_team.id, team.name, opponent_team["name"]}
       else
         user = Accounts.get_user(user_id)
 
@@ -1233,7 +1233,7 @@ defmodule MilkWeb.TournamentController do
         |> Tournaments.get_opponent(user_id)
         ~> {:ok, opponent}
 
-        {user.id, opponent["id"], user.name, opponent["name"]}
+        {user.id, opponent.id, user.name, opponent["name"]}
       end
       ~> {a_id, b_id, a_name, b_name}
 
@@ -1286,15 +1286,12 @@ defmodule MilkWeb.TournamentController do
       |> Tournaments.get_opponent_team(team_id)
       |> case do
         {:ok, opponent} ->
-          opponent
-          |> Map.get("id")
+          opponent.id
           |> Tournaments.get_leader()
           |> Map.get(:user)
-          |> Map.from_struct()
-          |> Tools.atom_map_to_string_map()
           ~> leader
 
-          render(conn, "opponent.json", opponent: opponent, leader: leader)
+          render(conn, "opponent_team.json", opponent: opponent, leader: leader)
 
         {:wait, nil} ->
           json(conn, %{result: false, opponent: nil, wait: true})
@@ -1527,7 +1524,7 @@ defmodule MilkWeb.TournamentController do
       |> Tournaments.find_match(team_id)
       |> Tournaments.get_opponent_team(team_id)
       |> case do
-        {:ok, opponent} -> {:ok, opponent["id"], team_id}
+        {:ok, opponent} -> {:ok, opponent.id, team_id}
         {:wait, nil} -> raise "The given user should not wait for the opponent."
         _ -> raise "Unknown error on claim score."
       end
@@ -1622,7 +1619,7 @@ defmodule MilkWeb.TournamentController do
       |> Tournaments.find_match(team.id)
       |> Tournaments.get_opponent_team(team.id)
       |> case do
-        {:ok, opponent} -> {:ok, opponent["name"], team.name}
+        {:ok, opponent} -> {:ok, opponent.name, team.name}
         {:wait, nil} -> raise "The given user should wait for the opponent."
         _ -> raise "Unknown error on claim score."
       end
@@ -1659,7 +1656,7 @@ defmodule MilkWeb.TournamentController do
       |> Tournaments.find_match(team.id)
       |> Tournaments.get_opponent_team(team.id)
       |> case do
-        {:ok, opponent} -> {:ok, opponent["name"], team.name}
+        {:ok, opponent} -> {:ok, opponent.name, team.name}
         {:wait, nil} -> raise "The given user should wait for the opponent."
         _ -> raise "Unknown error on claim score."
       end
@@ -1778,10 +1775,10 @@ defmodule MilkWeb.TournamentController do
     |> Tournaments.get_opponent(target_user_id)
     |> case do
       {:ok, winner} ->
-        Tournaments.promote_rank(%{"tournament_id" => tournament_id, "user_id" => winner["id"]})
-        Tournaments.score(tournament_id, winner["id"], target_user_id, 0, -1, 0)
+        Tournaments.promote_rank(%{"tournament_id" => tournament_id, "user_id" => winner.id})
+        Tournaments.score(tournament_id, winner.id, target_user_id, 0, -1, 0)
         Tournaments.delete_loser_process(tournament_id, [target_user_id])
-        finish_as_needed?(tournament_id, winner["id"])
+        finish_as_needed?(tournament_id, winner.id)
 
       {:wait, nil} ->
         tournament_id
@@ -2081,14 +2078,14 @@ defmodule MilkWeb.TournamentController do
         |> case do
           {:ok, opponent} ->
             opponent
-            |> Map.get("id")
+            |> Map.get(:id)
             |> Tournaments.get_leader()
             |> Map.get(:user)
             ~> opponent_leader
 
             opponent
-            |> Map.put("name", opponent_leader.name)
-            |> Map.put("icon_path", opponent_leader.icon_path)
+            |> Map.put(:name, opponent_leader.name)
+            |> Map.put(:icon_path, opponent_leader.icon_path)
             ~> opponent
 
             {opponent, team.rank, is_leader}
@@ -2156,12 +2153,12 @@ defmodule MilkWeb.TournamentController do
         |> Map.get(:id)
         ~> team_id
 
-        opponent_id = opponent["id"]
+        opponent_id = opponent.id
         my_id = team_id
 
         {my_id, opponent_id}
       else
-        {user_id, opponent["id"]}
+        {user_id, opponent.id}
       end
       ~> {my_id, opponent_id}
 

@@ -17,14 +17,14 @@ defmodule MilkWeb.TournamentView do
   def render("opponent.json", %{opponent: opponent}) do
     %{
       opponent: %{
-        id: opponent["id"],
-        name: opponent["name"],
-        icon_path: opponent["icon_path"],
-        point: opponent["point"],
-        notification_number: opponent["notification_number"],
-        language: opponent["language"],
-        email: opponent["auth"]["email"],
-        bio: opponent["bio"]
+        id: opponent.id,
+        name: opponent.name,
+        icon_path: opponent.icon_path,
+        point: opponent.point,
+        notification_number: opponent.notification_number,
+        language: opponent.language,
+        email: opponent.auth.email,
+        bio: opponent.bio
       },
       result: !is_nil(opponent)
     }
@@ -33,10 +33,10 @@ defmodule MilkWeb.TournamentView do
   def render("opponent_team.json", %{opponent: opponent, leader: leader}) do
     %{
       opponent: %{
-        id: opponent["id"],
-        name: leader["name"],
-        icon_path: leader["icon_path"],
-        rank: opponent["rank"]
+        id: opponent.id,
+        name: leader.name,
+        icon_path: leader.icon_path,
+        rank: opponent.rank
       },
       result: !is_nil(opponent) && !is_nil(leader)
     }
@@ -450,16 +450,16 @@ defmodule MilkWeb.TournamentView do
 
           is_team ->
             %{
-              name: opponent["name"],
-              icon_path: opponent["icon_path"],
-              id: opponent["id"]
+              name: opponent.name,
+              icon_path: opponent.icon_path,
+              id: opponent.id
             }
 
           true ->
             %{
-              name: opponent["name"],
-              icon_path: opponent["icon_path"],
-              id: opponent["id"]
+              name: opponent.name,
+              icon_path: opponent.icon_path,
+              id: opponent.id
             }
         end,
       rank: rank,

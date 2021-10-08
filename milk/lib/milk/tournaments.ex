@@ -57,13 +57,6 @@ defmodule Milk.Tournaments do
   require Integer
   require Logger
 
-  @typedoc """
-  Tournament changeset structure.
-
-  The types %Tournament{} and Tournaments are equivalent.
-  """
-  @type t :: %Tournament{}
-
   @doc """
   Returns the list of tournament for home screen.
   """
@@ -983,11 +976,11 @@ defmodule Milk.Tournaments do
     ~> {:ok, opponent}
 
     order = TournamentProgress.get_ban_order(tournament_id, id)
-    opponent_order = TournamentProgress.get_ban_order(tournament_id, opponent["id"])
+    opponent_order = TournamentProgress.get_ban_order(tournament_id, opponent.id)
     TournamentProgress.delete_ban_order(tournament_id, id)
-    TournamentProgress.delete_ban_order(tournament_id, opponent["id"])
+    TournamentProgress.delete_ban_order(tournament_id, opponent.id)
     TournamentProgress.insert_ban_order(tournament_id, id, order + 1)
-    TournamentProgress.insert_ban_order(tournament_id, opponent["id"], opponent_order + 1)
+    TournamentProgress.insert_ban_order(tournament_id, opponent.id, opponent_order + 1)
 
     {:ok, nil}
   end
@@ -1457,12 +1450,12 @@ defmodule Milk.Tournaments do
           if tournament.is_team do
             Map.new()
             |> Map.put("tournament_id", tournament_id)
-            |> Map.put("team_id", opponent["id"])
+            |> Map.put("team_id", opponent.id)
             |> promote_rank()
           else
             Map.new()
             |> Map.put("tournament_id", tournament_id)
-            |> Map.put("user_id", opponent["id"])
+            |> Map.put("user_id", opponent.id)
             |> promote_rank()
           end
 
@@ -1485,7 +1478,7 @@ defmodule Milk.Tournaments do
       |> get_opponent(loser)
       |> case do
         {:ok, opponent} ->
-          promote_rank(%{"tournament_id" => tournament_id, "user_id" => opponent["id"]})
+          promote_rank(%{"tournament_id" => tournament_id, "user_id" => opponent.id})
 
         {:wait, nil} ->
           raise RuntimeError, "Expected {:ok, opponent} (got: {:wait, nil})"
@@ -1528,29 +1521,16 @@ defmodule Milk.Tournaments do
       match
       |> Enum.filter(&(&1 != user_id))
       |> hd()
-      ~> the_other
-      |> is_integer()
-      |> if do
-        the_other
-        |> Accounts.get_user()
-        |> Map.from_struct()
-        |> Tools.atom_map_to_string_map()
-        ~> user
-        |> Map.get("auth")
-        |> Map.from_struct()
-        |> Tools.atom_map_to_string_map()
-        ~> auth
-
-        opponent = Map.put(user, "auth", auth)
-
-        {:ok, opponent}
-      else
-        {:wait, nil}
-      end
+      |> retrieve_opponent_user()
     else
       {:error, "opponent does not exist"}
     end
   end
+
+  defp retrieve_opponent_user(opponent_id) when is_integer(opponent_id) do
+    {:ok, Accounts.get_user(opponent_id)}
+  end
+  defp retrieve_opponent_user(_), do: {:wait, nil}
 
   @doc """
   Get opponent team.
@@ -1560,23 +1540,16 @@ defmodule Milk.Tournaments do
       match
       |> Enum.filter(&(&1 != team_id))
       |> hd()
-      ~> the_other
-      |> is_integer()
-      |> if do
-        the_other
-        |> get_team()
-        |> Map.from_struct()
-        |> Tools.atom_map_to_string_map()
-        ~> opponent
-
-        {:ok, opponent}
-      else
-        {:wait, nil}
-      end
+      |> retrieve_opponent_team()
     else
       {:error, "opponent team does not exist"}
     end
   end
+
+  defp retrieve_opponent_team(opponent_team_id) when is_integer(opponent_team_id) do
+    {:ok, __MODULE__.get_team(opponent_team_id)}
+  end
+  defp retrieve_opponent_team(_), do: {:wait, nil}
 
   @doc """
   Checks whether the user have to wait.
@@ -2186,8 +2159,7 @@ defmodule Milk.Tournaments do
     |> get_opponent(user_id)
     |> case do
       {:ok, opponent} ->
-        opponent
-        |> Map.get("id")
+        opponent.id
         |> get_entrant_by_user_id_and_tournament_id(tournament_id)
         ~> opponent
         |> Map.get(:rank)
@@ -2239,7 +2211,7 @@ defmodule Milk.Tournaments do
     |> case do
       {:ok, opponent} ->
         opponent
-        |> Map.get("id")
+        |> Map.get(:id)
         |> get_team()
         ~> opponent_team
         |> Map.get(:rank)
@@ -2537,7 +2509,7 @@ defmodule Milk.Tournaments do
       get_opponent(match, id)
     end
     |> elem(1)
-    |> Map.get("id")
+    |> Map.get(:id)
     |> TournamentProgress.get_match_pending_list(tournament_id)
     ~> opponent_pending_list
 
@@ -2580,7 +2552,7 @@ defmodule Milk.Tournaments do
     end
     ~> {:ok, opponent}
 
-    is_head? = is_head_of_coin?(tournament.id, id, opponent["id"])
+    is_head? = is_head_of_coin?(tournament.id, id, opponent.id)
 
     tournament
     |> Map.get(:id)
@@ -2859,7 +2831,8 @@ defmodule Milk.Tournaments do
   """
   def get_team(team_id) do
     Team
-    |> Repo.get(team_id)
+    |> where([t], t.id == ^team_id)
+    |> Repo.one()
     |> Repo.preload(:team_member)
     ~> team
     |> is_nil()
@@ -3524,7 +3497,7 @@ defmodule Milk.Tournaments do
       |> get_opponent(my_id)
     end
     |> elem(1)
-    |> Map.get("id")
+    |> Map.get(:id)
     ~> opponent_id
 
     if opponent_id > my_id do
