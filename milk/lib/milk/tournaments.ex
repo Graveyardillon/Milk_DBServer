@@ -58,6 +58,41 @@ defmodule Milk.Tournaments do
   require Logger
 
   @doc """
+  Gets a single tournament.
+
+  Raises `Ecto.NoResultsError` if the Tournament does not exist.
+  """
+  @spec get_tournament(integer()) :: Tournament.t | nil
+  def get_tournament(id) do
+    Tournament
+    |> Repo.get(id)
+    |> Repo.preload(:team)
+    |> Repo.preload(:entrant)
+    |> Repo.preload(:assistant)
+    |> Repo.preload(:master)
+    |> Repo.preload(:map)
+    |> Repo.preload(:custom_detail)
+    ~> tournament
+
+    if tournament do
+      tournament
+      |> Map.get(:entrant)
+      |> Enum.map(fn entrant ->
+        entrant
+        |> Repo.preload(:user)
+        |> Map.get(:user)
+        |> Repo.preload(:auth)
+        ~> user
+
+        Map.put(entrant, :user, user)
+      end)
+      ~> entrants
+
+      Map.put(tournament, :entrant, entrants)
+    end
+  end
+
+  @doc """
   Returns the list of tournament for home screen.
   """
   def home_tournament(_date_offset, offset, user_id \\ nil) do
@@ -75,7 +110,6 @@ defmodule Milk.Tournaments do
     Timex.now()
     |> Timex.add(Timex.Duration.from_days(1))
     |> Timex.to_datetime()
-    ~> _filter_date
 
     Tournament
     # |> where([t], t.deadline > ^filter_date and t.create_time < ^date_offset)
@@ -99,10 +133,10 @@ defmodule Milk.Tournaments do
     |> Enum.map(fn relation ->
       relation.followee_id
     end)
-    ~> users
+    ~> user_id_list
 
     Tournament
-    |> where([t], t.master_id in ^users)
+    |> where([t], t.master_id in ^user_id_list)
     |> date_filter()
     |> Repo.all()
     |> Repo.preload(:entrant)
@@ -241,40 +275,6 @@ defmodule Milk.Tournaments do
     |> Repo.preload(:team)
     |> Repo.preload(:master)
     |> Repo.preload(:assistant)
-  end
-
-  @doc """
-  Gets a single tournament.
-
-  Raises `Ecto.NoResultsError` if the Tournament does not exist.
-  """
-  def get_tournament(id) do
-    Tournament
-    |> Repo.get(id)
-    |> Repo.preload(:team)
-    |> Repo.preload(:entrant)
-    |> Repo.preload(:assistant)
-    |> Repo.preload(:master)
-    |> Repo.preload(:map)
-    |> Repo.preload(:custom_detail)
-    |> (fn tournament ->
-          if tournament do
-            tournament
-            |> Map.get(:entrant)
-            |> Enum.map(fn entrant ->
-              entrant
-              |> Repo.preload(:user)
-              |> Map.get(:user)
-              |> Repo.preload(:auth)
-              ~> user
-
-              Map.put(entrant, :user, user)
-            end)
-            ~> entrants
-
-            Map.put(tournament, :entrant, entrants)
-          end
-        end).()
   end
 
   @doc """
@@ -743,40 +743,16 @@ defmodule Milk.Tournaments do
 
   @doc """
   Ban a map.
-
-  チーム戦の場合は自身のチームidと相手のチームid
-  個人戦の場合は自身のuser_idと相手のuser_idを使う
   """
   def ban_maps(user_id, tournament_id, map_id_list) when is_list(map_id_list) do
-    # small_idとlarge_idを取得
-    tournament = get_tournament(tournament_id)
+    tournament = __MODULE__.get_tournament(tournament_id)
 
-    tournament
-    |> Map.get(:is_team)
-    |> if do
-      tournament_id
-      |> get_team_by_tournament_id_and_user_id(user_id)
-      |> Map.get(:id)
-    else
-      user_id
-    end
-    ~> my_id
+    my_id = TournamentProgress.get_necessary_id(tournament_id, user_id)
 
-    tournament
-    |> Map.get(:is_team)
-    |> if do
-      tournament_id
-      |> TournamentProgress.get_match_list()
-      |> find_match(my_id)
-      |> get_opponent_team(my_id)
-    else
-      tournament_id
-      |> TournamentProgress.get_match_list()
-      |> find_match(my_id)
-      |> get_opponent(my_id)
-    end
+    tournament_id
+    |> __MODULE__.get_opponent(user_id)
     |> elem(1)
-    |> Map.get("id")
+    |> Map.get(:id)
     ~> opponent_id
 
     if my_id > opponent_id do
@@ -787,23 +763,20 @@ defmodule Milk.Tournaments do
     ~> {large_id, small_id}
 
     if state!(tournament_id, user_id) == "ShouldBan" do
-      map_id_list
-      |> Enum.each(fn map_id ->
-        %MapSelection{}
-        |> MapSelection.changeset(%{
+      Enum.each(map_id_list, fn map_id ->
+        attrs = %{
           "map_id" => map_id,
           "state" => "banned",
           "large_id" => large_id,
           "small_id" => small_id
-        })
+        }
+
+        %MapSelection{}
+        |> MapSelection.changeset(attrs)
         |> Repo.insert()
       end)
-      |> Kernel.==(:ok)
-      |> if do
-        {:ok, nil}
-      else
-        {:error, "error on banning maps"}
-      end
+
+      {:ok, nil}
     else
       {:error, "invalid state"}
     end
@@ -823,32 +796,12 @@ defmodule Milk.Tournaments do
     # small_idとlarge_idを取得
     tournament = get_tournament(tournament_id)
 
-    tournament
-    |> Map.get(:is_team)
-    |> if do
-      tournament_id
-      |> get_team_by_tournament_id_and_user_id(user_id)
-      |> Map.get(:id)
-    else
-      user_id
-    end
-    ~> my_id
+    my_id = TournamentProgress.get_necessary_id(tournament_id, user_id)
 
-    tournament
-    |> Map.get(:is_team)
-    |> if do
-      tournament_id
-      |> TournamentProgress.get_match_list()
-      |> find_match(my_id)
-      |> get_opponent_team(my_id)
-    else
-      tournament_id
-      |> TournamentProgress.get_match_list()
-      |> find_match(my_id)
-      |> get_opponent(my_id)
-    end
+    tournament_id
+    |> __MODULE__.get_opponent(user_id)
     |> elem(1)
-    |> Map.get("id")
+    |> Map.get(:id)
     ~> opponent_id
 
     if my_id > opponent_id do
@@ -861,20 +814,15 @@ defmodule Milk.Tournaments do
     if state!(tournament_id, user_id) == "ShouldChooseMap" do
       map_id_list
       |> Enum.each(fn map_id ->
-        %{
+        create_map_selection(%{
           "map_id" => map_id,
           "state" => "selected",
           "large_id" => large_id,
           "small_id" => small_id
-        }
-        |> create_map_selection()
+        })
       end)
-      |> Kernel.==(:ok)
-      |> if do
-        {:ok, nil}
-      else
-        {:error, "error on choosing maps"}
-      end
+
+      {:ok, nil}
     else
       {:error, "invalid state"}
     end
@@ -891,34 +839,14 @@ defmodule Milk.Tournaments do
   Choose A/D
   """
   def choose_ad(user_id, tournament_id, is_attack_side) do
-    tournament_id
-    |> get_tournament()
-    ~> tournament
-    |> Map.get(:is_team)
-    |> if do
-      tournament_id
-      |> get_team_by_tournament_id_and_user_id(user_id)
-      |> Map.get(:id)
-    else
-      user_id
-    end
-    ~> my_id
+    tournament = __MODULE__.get_tournament(tournament_id)
 
-    tournament
-    |> Map.get(:is_team)
-    |> if do
-      tournament_id
-      |> TournamentProgress.get_match_list()
-      |> find_match(my_id)
-      |> get_opponent_team(my_id)
-    else
-      tournament_id
-      |> TournamentProgress.get_match_list()
-      |> find_match(my_id)
-      |> get_opponent(my_id)
-    end
+    my_id = TournamentProgress.get_necessary_id(tournament_id, user_id)
+
+    tournament_id
+    |> __MODULE__.get_opponent(user_id)
     |> elem(1)
-    |> Map.get("id")
+    |> Map.get(:id)
     ~> opponent_id
 
     if state!(tournament_id, user_id) == "ShouldChooseA/D" do
@@ -946,34 +874,11 @@ defmodule Milk.Tournaments do
   end
 
   defp renew_state_after_choosing_maps(user_id, tournament_id) do
-    tournament_id
-    |> get_tournament()
-    ~> tournament
-    |> Map.get(:is_team)
-    |> if do
-      tournament
-      |> Map.get(:id)
-      |> get_team_by_tournament_id_and_user_id(user_id)
-      |> Map.get(:id)
-    else
-      user_id
-    end
-    ~> id
+    tournament = __MODULE__.get_tournament(tournament_id)
 
-    tournament
-    |> Map.get(:is_team)
-    |> if do
-      tournament_id
-      |> TournamentProgress.get_match_list()
-      |> find_match(id)
-      |> get_opponent_team(id)
-    else
-      tournament_id
-      |> TournamentProgress.get_match_list()
-      |> find_match(id)
-      |> get_opponent(id)
-    end
-    ~> {:ok, opponent}
+    id = TournamentProgress.get_necessary_id(tournament_id, user_id)
+
+    {:ok, opponent} = __MODULE__.get_opponent(tournament_id, user_id)
 
     order = TournamentProgress.get_ban_order(tournament_id, id)
     opponent_order = TournamentProgress.get_ban_order(tournament_id, opponent.id)
@@ -1225,7 +1130,7 @@ defmodule Milk.Tournaments do
     end
   end
 
-  # TODO: リファクタリングできそう
+  # HACK: リファクタリングできそう
   defp join_tournament_chat_room(entrant, attrs) do
     user_id = Tools.to_integer_as_needed(attrs["user_id"])
 
@@ -1431,18 +1336,23 @@ defmodule Milk.Tournaments do
           {:error, nil}
 
         match ->
-          tournament_id
-          |> get_tournament()
-          ~> tournament
-          |> Map.get(:is_team)
-          |> if do
-            match
-            |> get_opponent_team(loser)
-            |> Tuple.append(tournament)
+          tournament = __MODULE__.get_tournament(tournament_id)
+
+          if tournament.is_team do
+            loser
+            |> __MODULE__.get_leader()
+            |> Map.get(:user_id)
           else
-            match
-            |> get_opponent(loser)
-            |> Tuple.append(tournament)
+            loser
+          end
+          ~> loser_id
+
+          tournament_id
+          |> __MODULE__.get_opponent(loser_id)
+          |> case do
+            {:ok, opponent} -> {:ok, opponent, tournament}
+            {:wait, nil} -> {:wait, nil, tournament}
+            _ -> {:error, nil}
           end
       end
       |> case do
@@ -1459,10 +1369,10 @@ defmodule Milk.Tournaments do
             |> promote_rank()
           end
 
-        {:wait, nil, _tournament} ->
-          {:wait, nil}
+        {:wait, nil, _} ->
+          {:wait, nil, nil}
 
-        {:error, nil, _tournament} ->
+        {:error, nil} ->
           {:error, nil}
       end
     end)
@@ -1474,14 +1384,14 @@ defmodule Milk.Tournaments do
     ~> match
     |> Kernel.==([])
     |> unless do
-      match
-      |> get_opponent(loser)
+      tournament_id
+      |> __MODULE__.get_opponent(loser)
       |> case do
         {:ok, opponent} ->
           promote_rank(%{"tournament_id" => tournament_id, "user_id" => opponent.id})
 
         {:wait, nil} ->
-          raise RuntimeError, "Expected {:ok, opponent} (got: {:wait, nil})"
+          raise RuntimeError, "Expected {:ok, opponent}, got: {:wait, nil}"
 
         _ ->
           raise RuntimeError, "Unexpected Output"
@@ -1514,9 +1424,39 @@ defmodule Milk.Tournaments do
   defp pick_user_id_as_needed(id), do: id
 
   @doc """
-  Get an opponent of tournament match.
+  Get an opponent.
   """
-  def get_opponent(match, user_id) do
+  def get_opponent(tournament_id, user_id) do
+    tournament = __MODULE__.get_tournament(tournament_id)
+
+    unless is_nil(tournament) do
+      if tournament.is_started do
+        match_list = TournamentProgress.get_match_list(tournament_id)
+
+        if tournament.is_team do
+          team = __MODULE__.get_team_by_tournament_id_and_user_id(tournament_id, user_id)
+
+          unless is_nil(team) do
+            match_list
+            |> __MODULE__.find_match(team.id)
+            |> get_opponent_team(team.id)
+          else
+            {:error, "team is nil"}
+          end
+        else
+          match_list
+          |> __MODULE__.find_match(user_id)
+          |> get_opponent_user(user_id)
+        end
+      else
+        {:error, "tournament is not started"}
+      end
+    else
+      {:error, "tournament is nil"}
+    end
+  end
+
+  defp get_opponent_user(match, user_id) do
     if Enum.member?(match, user_id) and length(match) == 2 do
       match
       |> Enum.filter(&(&1 != user_id))
@@ -1532,10 +1472,7 @@ defmodule Milk.Tournaments do
   end
   defp retrieve_opponent_user(_), do: {:wait, nil}
 
-  @doc """
-  Get opponent team.
-  """
-  def get_opponent_team(match, team_id) do
+  defp get_opponent_team(match, team_id) do
     if Enum.member?(match, team_id) and length(match) == 2 do
       match
       |> Enum.filter(&(&1 != team_id))
@@ -2154,9 +2091,8 @@ defmodule Milk.Tournaments do
 
   defp update_rank(match_list, user_id, tournament_id) do
     # 対戦相手
-    match_list
-    |> find_match(user_id)
-    |> get_opponent(user_id)
+    tournament_id
+    |> __MODULE__.get_opponent(user_id)
     |> case do
       {:ok, opponent} ->
         opponent.id
@@ -2506,7 +2442,7 @@ defmodule Milk.Tournaments do
     if tournament.is_team do
       get_opponent_team(match, id)
     else
-      get_opponent(match, id)
+      get_opponent_user(match, id)
     end
     |> elem(1)
     |> Map.get(:id)
@@ -2548,7 +2484,7 @@ defmodule Milk.Tournaments do
       |> Map.get(:id)
       |> TournamentProgress.get_match_list()
       |> find_match(id)
-      |> get_opponent(id)
+      |> get_opponent_user(id)
     end
     ~> {:ok, opponent}
 
@@ -3494,7 +3430,7 @@ defmodule Milk.Tournaments do
       tournament_id
       |> TournamentProgress.get_match_list()
       |> find_match(my_id)
-      |> get_opponent(my_id)
+      |> get_opponent_user(my_id)
     end
     |> elem(1)
     |> Map.get(:id)

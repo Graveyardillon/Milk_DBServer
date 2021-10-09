@@ -16,6 +16,28 @@ defmodule Milk.Tournaments.Tournament do
     TournamentCustomDetail
   }
 
+  @type t :: %__MODULE__{
+    capacity: integer(),
+    count: integer() | nil,
+    deadline: any(),
+    description: String.t() | nil,
+    discord_server_id: String.t() | nil,
+    enabled_coin_toss: boolean(),
+    enabled_map: boolean(),
+    event_date: any(),
+    game_name: String.t() | nil,
+    is_started: boolean(),
+    is_team: boolean(),
+    name: String.t(),
+    password: String.t() | nil,
+    start_recruiting: any(),
+    team_size: integer() | nil,
+    thumbnail_path: String.t() | nil,
+    type: integer(),
+    url: String.t() | nil,
+    url_token: String.t() | nil
+  }
+
   schema "tournaments" do
     field :capacity, :integer
     field :count, :integer, default: 0
@@ -40,6 +62,7 @@ defmodule Milk.Tournaments.Tournament do
     belongs_to :platform, Platform
     belongs_to :game, Game
     belongs_to :master, User
+
     has_many :lives, Live
     has_many :entrant, Entrant
     has_many :assistant, Assistant

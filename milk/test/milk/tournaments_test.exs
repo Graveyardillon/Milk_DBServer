@@ -999,34 +999,6 @@ defmodule Milk.TournamentsTest do
       assert Tournaments.find_match(invalid_data, 3) == []
     end
 
-    test "get_opponent/2 with valid data works fine", %{tournament: tournament} do
-      entrants = create_entrants(6, tournament.id)
-      id_list = Enum.map(entrants, fn entrant -> entrant.user_id end)
-
-      integer_input = Enum.slice(id_list, 0..1)
-      list_input = [hd(id_list)] ++ [Enum.slice(id_list, 1..2)]
-
-      assert {:ok, opponent} = Tournaments.get_opponent(integer_input, hd(id_list))
-      assert opponent.id == integer_input |> tl() |> hd()
-      assert {:wait, nil} = Tournaments.get_opponent(list_input, hd(id_list))
-    end
-
-    test "get_opponent/2 with invalid data does not work", %{tournament: tournament} do
-      entrants = create_entrants(6, tournament.id)
-      id_list = Enum.map(entrants, fn entrant -> entrant.user_id end)
-
-      integer_input = Enum.slice(id_list, 0..1)
-
-      assert {:error, _} = Tournaments.get_opponent(integer_input, hd(id_list) - 1)
-    end
-
-    test "get_opponent/2 does not work with insufficient entrants", %{tournament: tournament} do
-      entrants = create_entrants(1, tournament.id)
-      id_list = Enum.map(entrants, fn entrant -> entrant.user_id end)
-
-      assert {:error, _} = Tournaments.get_opponent(id_list, hd(id_list))
-    end
-
     test "is_alone?/1 works fine with valid data" do
       list = [1, 2]
       refute Tournaments.is_alone?(list)
@@ -1121,7 +1093,8 @@ defmodule Milk.TournamentsTest do
       match_list = TournamentProgress.get_match_list(tournament.id)
 
       match = Tournaments.find_match(match_list, tournament.master_id)
-      {:ok, opponent} = Tournaments.get_opponent(match, tournament.master_id)
+
+      {:ok, opponent} = Tournaments.get_opponent(tournament.id, tournament.master_id)
 
       delete_loser(tournament.id, [opponent.id])
       assert "IsAlone" == Tournaments.state!(tournament.id, tournament.master_id)
@@ -1141,7 +1114,7 @@ defmodule Milk.TournamentsTest do
       match_list = TournamentProgress.get_match_list(tournament.id)
 
       match = Tournaments.find_match(match_list, tournament.master_id)
-      {:ok, opponent} = Tournaments.get_opponent(match, tournament.master_id)
+      {:ok, opponent} = Tournaments.get_opponent(tournament.id, tournament.master_id)
 
       pending_list =
         TournamentProgress.get_match_pending_list(tournament.master_id, tournament.id)
@@ -1293,7 +1266,7 @@ defmodule Milk.TournamentsTest do
   end
 
   describe "state! with map select" do
-    test "returns IsInMatch -> ShouldFlipCoin -> ShouldChooseMap" do
+    test "returns IsInMatch -> ShouldFlipCoin -> ShouldBan -> ShouldChooseMap" do
       maps = [
         %{"name" => "map1"},
         %{"name" => "map2"},
@@ -1331,11 +1304,8 @@ defmodule Milk.TournamentsTest do
 
       assert TournamentProgress.get_ban_order(tournament.id, team.id) == 0
 
-      tournament
-      |> Map.get(:id)
-      |> TournamentProgress.get_match_list()
-      |> Tournaments.find_match(team.id)
-      |> Tournaments.get_opponent_team(team.id)
+      tournament.id
+      |> Tournaments.get_opponent(leader.id)
       ~> {:ok, opponent_team}
       |> elem(1)
       |> Map.get(:id)
@@ -1355,7 +1325,6 @@ defmodule Milk.TournamentsTest do
 
       tournament
       |> Map.get(:id)
-      # |> Tournaments.get_maps_by_tournament_id()
       |> Tournaments.get_selectable_maps_by_tournament_id_and_user_id(leader.id)
       |> Enum.map(fn map ->
         map.id
@@ -1447,6 +1416,8 @@ defmodule Milk.TournamentsTest do
       delete_loser(tournament.id, [opponent_team.id])
       assert "IsAlone" == Tournaments.state!(tournament.id, leader.id)
       assert "IsLoser" == Tournaments.state!(tournament.id, opponent_leader.id)
+
+      # TODO: 優勝が決まるまでやる
     end
   end
 
@@ -1848,10 +1819,7 @@ defmodule Milk.TournamentsTest do
       assert {:ok, _promoted} = Tournaments.promote_rank(attrs)
       assert Tournaments.get_rank(entrant.tournament_id, entrant.user_id) == {:ok, 4}
 
-      {:ok, opponent} =
-        match_list
-        |> Tournaments.find_match(entrant.user_id)
-        |> Tournaments.get_opponent(entrant.user_id)
+      {:ok, opponent} = Tournaments.get_opponent(entrant.tournament_id, entrant.user_id)
 
       TournamentProgress.delete_match_list(entrant.tournament_id)
       updated = Tournaments.delete_loser(match_list, opponent.id)
@@ -1881,10 +1849,7 @@ defmodule Milk.TournamentsTest do
       assert {:ok, _promoted} = Tournaments.promote_rank(attrs)
       assert Tournaments.get_rank(entrant.tournament_id, entrant.user_id) == {:ok, 2}
 
-      {:ok, opponent} =
-        match_list
-        |> Tournaments.find_match(entrant.user_id)
-        |> Tournaments.get_opponent(entrant.user_id)
+      {:ok, opponent} = Tournaments.get_opponent(entrant.tournament_id, entrant.user_id)
 
       TournamentProgress.delete_match_list(entrant.tournament_id)
       updated = Tournaments.delete_loser(match_list, opponent.id)
@@ -1914,10 +1879,7 @@ defmodule Milk.TournamentsTest do
       assert {:ok, _promoted} = Tournaments.promote_rank(attrs)
       assert Tournaments.get_rank(entrant.tournament_id, entrant.user_id) == {:ok, 1}
 
-      {:ok, opponent} =
-        match_list
-        |> Tournaments.find_match(entrant.user_id)
-        |> Tournaments.get_opponent(entrant.user_id)
+      {:ok, opponent} = Tournaments.get_opponent(entrant.tournament_id, entrant.user_id)
 
       TournamentProgress.delete_match_list(entrant.tournament_id)
       updated = Tournaments.delete_loser(match_list, opponent.id)
@@ -2066,10 +2028,10 @@ defmodule Milk.TournamentsTest do
       your_score = 300
       opponent_score = 15
 
+      your_leader = Tournaments.get_leader(your_team.id)
+
       tournament.id
-      |> TournamentProgress.get_match_list()
-      |> Tournaments.find_match(your_team.id)
-      |> Tournaments.get_opponent_team(your_team.id)
+      |> Tournaments.get_opponent(your_leader.user_id)
       ~> {:ok, opponent_team}
 
       result = claim_score(your_team.id, opponent_team.id, your_score, 0)
@@ -2080,7 +2042,7 @@ defmodule Milk.TournamentsTest do
       assert result.validated
       assert result.validated
 
-      # match_listの状態確認
+      # NOTE: match_listの状態確認
       tournament.id
       |> TournamentProgress.get_match_list()
       |> List.flatten()
@@ -2092,14 +2054,14 @@ defmodule Milk.TournamentsTest do
       |> Kernel.==(3)
       |> assert()
 
-      # match_list_with_fight_resultの状態確認
+      # NOTE: match_list_with_fight_resultの状態確認
       tournament.id
       |> TournamentProgress.get_match_list_with_fight_result()
       |> List.flatten()
       |> Enum.map(fn cell ->
         assert cell["name"] in leader_name_list
         assert cell["icon_path"] in leader_icon_path_list
-        # FIXME: ここroundはゼロでいいのかちょっとわからない
+        # HACK: ここのroundはゼロでいいのかちょっとわからない
         assert cell["round"] == 0
 
         if cell["team_id"] == opponent_team.id do
@@ -2118,7 +2080,7 @@ defmodule Milk.TournamentsTest do
       |> Kernel.==(4)
       |> assert()
 
-      # ランク確認
+      # NOTE: ランク確認
       tournament.id
       |> Tournaments.get_confirmed_teams()
       |> Enum.each(fn team ->
@@ -2129,7 +2091,7 @@ defmodule Milk.TournamentsTest do
         end
       end)
 
-      # 反対側のブロックのマッチを取得
+      # NOTE: 反対側のブロックのマッチを取得
       tournament.id
       |> TournamentProgress.get_match_list()
       |> Enum.filter(fn match_or_id ->
@@ -2145,14 +2107,13 @@ defmodule Milk.TournamentsTest do
       another_score = 200
       another_opponent_score = 10
 
-      opposite_side_teams
-      |> Enum.map(fn team ->
-        team.id
-      end)
-      |> Tournaments.get_opponent_team(another_team.id)
+      another_team_leader = Tournaments.get_leader(another_team.id)
+
+      tournament.id
+      |> Tournaments.get_opponent(another_team_leader.user_id)
       ~> {:ok, another_opponent_team}
 
-      # 勝敗報告
+      # NOTE: 勝敗報告
       result = claim_score(another_team.id, another_opponent_team.id, another_score, 0)
       assert result.validated
       refute result.completed
@@ -2163,7 +2124,7 @@ defmodule Milk.TournamentsTest do
       assert result.validated
       assert result.validated
 
-      # match_listの状態確認
+      # NOTE: match_listの状態確認
       tournament.id
       |> TournamentProgress.get_match_list()
       |> Enum.map(fn cell ->
@@ -2173,7 +2134,7 @@ defmodule Milk.TournamentsTest do
       |> Kernel.==(2)
       |> assert()
 
-      # match_list_with_fight_resultの状態確認
+      # NOTE: match_list_with_fight_resultの状態確認
       tournament.id
       |> TournamentProgress.get_match_list_with_fight_result()
       |> List.flatten()
@@ -2200,7 +2161,7 @@ defmodule Milk.TournamentsTest do
       |> Kernel.==(4)
       |> assert()
 
-      # ランク確認
+      # NOTE: ランク確認
       tournament.id
       |> Tournaments.get_confirmed_teams()
       |> Enum.each(fn team ->
@@ -2606,7 +2567,7 @@ defmodule Milk.TournamentsTest do
         |> TournamentProgress.get_match_list()
 
       match = Tournaments.find_match(match_list, tournament.master_id)
-      {:ok, opponent} = Tournaments.get_opponent(match, tournament.master_id)
+      {:ok, opponent} = Tournaments.get_opponent(tournament.id, tournament.master_id)
 
       TournamentProgress.insert_match_pending_list_table(opponent.id, tournament.id)
       users = Tournaments.get_fighting_users(tournament.id)
@@ -2654,7 +2615,7 @@ defmodule Milk.TournamentsTest do
         |> TournamentProgress.get_match_list()
 
       match = Tournaments.find_match(match_list, tournament.master_id)
-      {:ok, opponent} = Tournaments.get_opponent(match, tournament.master_id)
+      {:ok, opponent} = Tournaments.get_opponent(tournament.id, tournament.master_id)
 
       TournamentProgress.insert_match_pending_list_table(opponent.id, tournament.id)
       users = Tournaments.get_waiting_users(tournament.id)

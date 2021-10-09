@@ -827,14 +827,12 @@ defmodule MilkWeb.TournamentController do
   end
 
   defp store_single_tournament_match_log(tournament_id, loser_id) when is_integer(loser_id) do
-    match_list = TournamentProgress.get_match_list(tournament_id)
+    tournament_id
+    |> TournamentProgress.get_match_list()
+    |> inspect(charlists: false)
+    ~> match_list_str
 
-    {:ok, winner} =
-      match_list
-      |> Tournaments.find_match(loser_id)
-      |> Tournaments.get_opponent(loser_id)
-
-    match_list_str = inspect(match_list, charlists: false)
+    {:ok, winner} = Tournaments.get_opponent(tournament_id, loser_id)
 
     Map.new()
     |> Map.put("tournament_id", tournament_id)
@@ -958,36 +956,16 @@ defmodule MilkWeb.TournamentController do
     ~> server_id
     |> is_nil()
     |> unless do
-      tournament
-      |> Map.get(:is_team)
-      |> if do
-        tournament_id
-        |> Tournaments.get_team_by_tournament_id_and_user_id(user_id)
-        ~> team
+      {:ok, opponent} = Tournaments.get_opponent(tournament_id, user_id)
 
-        tournament_id
-        |> TournamentProgress.get_match_list()
-        |> Tournaments.find_match(team.id)
-        |> Tournaments.get_opponent_team(team.id)
-        |> case do
-          {:ok, opponent} -> {:ok, opponent["name"], team.name}
-          {:wait, nil} -> raise "The given user should not wait for the opponent."
-          _ -> raise "Unknown error"
-        end
+      if tournament.is_team do
+        team = Tournaments.get_team_by_tournament_id_and_user_id(tournament_id, user_id)
+        team.name
       else
         user = Accounts.get_user(user_id)
-
-        tournament_id
-        |> TournamentProgress.get_match_list()
-        |> Tournaments.find_match(user_id)
-        |> Tournaments.get_opponent(user_id)
-        |> case do
-          {:ok, opponent} -> {:ok, opponent["name"], user.name}
-          {:wait, nil} -> raise "The given user should not wait for the opponent."
-          _ -> raise "Unknown error"
-        end
+        user.name
       end
-      ~> {:ok, opponent_name, name}
+      ~> name
 
       map_id_list
       |> Enum.map(fn map_id ->
@@ -1000,7 +978,7 @@ defmodule MilkWeb.TournamentController do
       Discord.send_tournament_ban_map_notification(
         server_id,
         name,
-        opponent_name,
+        opponent.name,
         banned_map_names
       )
     end
@@ -1038,40 +1016,20 @@ defmodule MilkWeb.TournamentController do
     ~> server_id
     |> is_nil()
     |> unless do
-      tournament
-      |> Map.get(:is_team)
-      |> if do
-        tournament_id
-        |> Tournaments.get_team_by_tournament_id_and_user_id(user_id)
-        ~> team
+      {:ok, opponent} = Tournaments.get_opponent(tournament_id, user_id)
 
-        tournament_id
-        |> TournamentProgress.get_match_list()
-        |> Tournaments.find_match(team.id)
-        |> Tournaments.get_opponent_team(team.id)
-        |> case do
-          {:ok, opponent} -> {:ok, opponent["name"], team.name}
-          {:wait, nil} -> raise "The given user should not wait for the opponent."
-          _ -> raise "Unknown error"
-        end
+      if tournament.is_team do
+        team = Tournaments.get_team_by_tournament_id_and_user_id(tournament_id, user_id)
+        team.name
       else
         user = Accounts.get_user(user_id)
-
-        tournament_id
-        |> TournamentProgress.get_match_list()
-        |> Tournaments.find_match(user_id)
-        |> Tournaments.get_opponent(user_id)
-        |> case do
-          {:ok, opponent} -> {:ok, opponent["name"], user.name}
-          {:wait, nil} -> raise "The given user should not wait for the opponent."
-          _ -> raise "Unknown error"
-        end
+        user.name
       end
-      ~> {:ok, opponent_name, name}
+      ~> name
 
       map_name = Tournaments.get_map(map_id).name
 
-      Discord.send_tournament_choose_map_notification(server_id, name, opponent_name, map_name)
+      Discord.send_tournament_choose_map_notification(server_id, name, opponent.name, map_name)
     end
   end
 
@@ -1109,41 +1067,21 @@ defmodule MilkWeb.TournamentController do
     ~> server_id
     |> is_nil()
     |> unless do
-      tournament
-      |> Map.get(:is_team)
-      |> if do
-        tournament_id
-        |> Tournaments.get_team_by_tournament_id_and_user_id(user_id)
-        ~> team
+      {:ok, opponent} = Tournaments.get_opponent(tournament_id, user_id)
 
-        tournament_id
-        |> TournamentProgress.get_match_list()
-        |> Tournaments.find_match(team.id)
-        |> Tournaments.get_opponent_team(team.id)
-        |> case do
-          {:ok, opponent} -> {:ok, opponent["name"], team.name}
-          {:wait, nil} -> raise "The given user should not wait for the opponent."
-          _ -> raise "Unknown error"
-        end
+      if tournament.is_team do
+        team = Tournaments.get_team_by_tournament_id_and_user_id(tournament_id, user_id)
+        team.name
       else
         user = Accounts.get_user(user_id)
-
-        tournament_id
-        |> TournamentProgress.get_match_list()
-        |> Tournaments.find_match(user_id)
-        |> Tournaments.get_opponent(user_id)
-        |> case do
-          {:ok, opponent} -> {:ok, opponent["name"], user.name}
-          {:wait, nil} -> raise "The given user should not wait for the opponent."
-          _ -> raise "Unknown error"
-        end
+        user.name
       end
-      ~> {:ok, opponent_name, name}
+      ~> name
 
       Discord.send_tournament_choose_ad_notification(
         server_id,
         name,
-        opponent_name,
+        opponent.name,
         is_attacker_side
       )
     end
@@ -1212,28 +1150,18 @@ defmodule MilkWeb.TournamentController do
     ~> server_id
     |> is_nil()
     |> unless do
+      {:ok, opponent} = Tournaments.get_opponent(tournament_id, user_id)
+
       tournament
       |> Map.get(:is_team)
       |> if do
         team = Tournaments.get_team_by_tournament_id_and_user_id(tournament_id, user_id)
 
-        tournament_id
-        |> TournamentProgress.get_match_list()
-        |> Tournaments.find_match(team.id)
-        |> Tournaments.get_opponent_team(team.id)
-        ~> {:ok, opponent_team}
-
-        {team.id, opponent_team.id, team.name, opponent_team["name"]}
+        {team.id, opponent.id, team.name, opponent.name}
       else
         user = Accounts.get_user(user_id)
 
-        tournament_id
-        |> TournamentProgress.get_match_list()
-        |> Tournaments.find_match(user_id)
-        |> Tournaments.get_opponent(user_id)
-        ~> {:ok, opponent}
-
-        {user.id, opponent.id, user.name, opponent["name"]}
+        {user.id, opponent.id, user.name, opponent.name}
       end
       ~> {a_id, b_id, a_name, b_name}
 
@@ -1256,9 +1184,7 @@ defmodule MilkWeb.TournamentController do
     match_list = TournamentProgress.get_match_list(tournament_id)
 
     unless is_integer(match_list) do
-      match = Tournaments.find_match(match_list, user_id)
-
-      with {:ok, opponent} <- Tournaments.get_opponent(match, user_id) do
+      with {:ok, opponent} <- Tournaments.get_opponent(tournament_id, user_id) do
         render(conn, "opponent.json", opponent: opponent)
       else
         {:wait, _} ->
@@ -1278,12 +1204,12 @@ defmodule MilkWeb.TournamentController do
 
     tournament_id
     |> TournamentProgress.get_match_list()
-    ~> match_list
     |> is_integer()
     |> unless do
-      match_list
-      |> Tournaments.find_match(team_id)
-      |> Tournaments.get_opponent_team(team_id)
+      leader = Tournaments.get_leader(team_id)
+
+      tournament_id
+      |> Tournaments.get_opponent(leader.user_id)
       |> case do
         {:ok, opponent} ->
           opponent.id
@@ -1520,9 +1446,7 @@ defmodule MilkWeb.TournamentController do
       ~> team_id
 
       tournament_id
-      |> TournamentProgress.get_match_list()
-      |> Tournaments.find_match(team_id)
-      |> Tournaments.get_opponent_team(team_id)
+      |> Tournaments.get_opponent(user_id)
       |> case do
         {:ok, opponent} -> {:ok, opponent.id, team_id}
         {:wait, nil} -> raise "The given user should not wait for the opponent."
@@ -1614,10 +1538,10 @@ defmodule MilkWeb.TournamentController do
     |> if do
       team = Tournaments.get_team(id)
 
+      leader = Tournaments.get_leader(team.id)
+
       tournament_id
-      |> TournamentProgress.get_match_list()
-      |> Tournaments.find_match(team.id)
-      |> Tournaments.get_opponent_team(team.id)
+      |> Tournaments.get_opponent(leader.user_id)
       |> case do
         {:ok, opponent} -> {:ok, opponent.name, team.name}
         {:wait, nil} -> raise "The given user should wait for the opponent."
@@ -1650,11 +1574,10 @@ defmodule MilkWeb.TournamentController do
     |> Map.get(:is_team)
     |> if do
       team = Tournaments.get_team(id)
+      leader = Tournaments.get_leader(team.id)
 
       tournament_id
-      |> TournamentProgress.get_match_list()
-      |> Tournaments.find_match(team.id)
-      |> Tournaments.get_opponent_team(team.id)
+      |> Tournaments.get_opponent(leader.user_id)
       |> case do
         {:ok, opponent} -> {:ok, opponent.name, team.name}
         {:wait, nil} -> raise "The given user should wait for the opponent."
@@ -1770,8 +1693,6 @@ defmodule MilkWeb.TournamentController do
     target_user_id = Tools.to_integer_as_needed(target_user_id)
 
     tournament_id
-    |> TournamentProgress.get_match_list()
-    |> Tournaments.find_match(target_user_id)
     |> Tournaments.get_opponent(target_user_id)
     |> case do
       {:ok, winner} ->
@@ -2066,15 +1987,14 @@ defmodule MilkWeb.TournamentController do
         team.id
         |> Tournaments.get_leader()
         |> Map.get(:user)
+        ~> leader
         |> Map.get(:id)
         |> Kernel.==(user_id)
         ~> is_leader
 
         team
         |> Map.get(:tournament_id)
-        |> TournamentProgress.get_match_list()
-        |> Tournaments.find_match(team.id)
-        |> Tournaments.get_opponent_team(team.id)
+        |> Tournaments.get_opponent(leader.id)
         |> case do
           {:ok, opponent} ->
             opponent
@@ -2099,8 +2019,6 @@ defmodule MilkWeb.TournamentController do
       end
     else
       tournament_id
-      |> TournamentProgress.get_match_list()
-      |> Tournaments.find_match(user_id)
       |> Tournaments.get_opponent(user_id)
       |> case do
         {:ok, opponent} ->

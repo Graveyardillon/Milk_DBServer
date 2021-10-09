@@ -1011,4 +1011,20 @@ defmodule Milk.TournamentProgress do
 
     {:ok, match_list}
   end
+
+  @doc """
+  Get necessary id for tournament progress.
+  """
+  def get_necessary_id(tournament_id, user_id) do
+    tournament_id
+    |> Tournaments.get_tournament()
+    |> Map.get(:is_team)
+    |> if do
+      tournament_id
+      |> Tournaments.get_team_by_tournament_id_and_user_id(user_id)
+      |> Map.get(:id)
+    else
+      user_id
+    end
+  end
 end
