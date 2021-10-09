@@ -277,6 +277,7 @@ defmodule Milk.Tournaments do
   @doc """
   Returns ongoing tournaments of certain user.
   """
+  @spec get_ongoing_tournaments_by_master_id(integer()) :: [Tournament.t()]
   def get_ongoing_tournaments_by_master_id(user_id) do
     Tournament
     |> where([t], t.event_date > ^Timex.now() and t.master_id == ^user_id)
@@ -293,6 +294,7 @@ defmodule Milk.Tournaments do
   @doc """
   Gets single tournament by url.
   """
+  @spec get_tournament_by_url(String.t()) :: Tournament.t()
   def get_tournament_by_url(url) do
     Tournament
     |> where([t], t.url == ^url)
@@ -302,30 +304,33 @@ defmodule Milk.Tournaments do
     |> Repo.preload(:entrant)
     |> Repo.preload(:assistant)
     |> Repo.preload(:master)
-    |> (fn tournament ->
-          entrants =
-            tournament
-            |> Map.get(:entrant)
-            |> Enum.map(fn entrant ->
-              user =
-                entrant
-                |> Repo.preload(:user)
-                |> Map.get(:user)
-                |> Repo.preload(:auth)
+    ~> tournament
 
-              Map.put(entrant, :user, user)
-            end)
+    unless is_nil(tournament) do
+      tournament
+      |> Map.get(:entrant)
+      |> Enum.map(fn entrant ->
+        user =
+          entrant
+          |> Repo.preload(:user)
+          |> Map.get(:user)
+          |> Repo.preload(:auth)
 
-          Map.put(tournament, :entrant, entrants)
-        end).()
+        Map.put(entrant, :user, user)
+      end)
+      ~> entrants
+
+      Map.put(tournament, :entrant, entrants)
+    end
   end
 
   @doc """
   Gets single tournament or tournament log.
   If tournament does not exist in the table, it checks log table.
   """
+  @spec get_tournament_including_logs(integer()) :: {:ok, Tournament.t()} | {:ok, TournamentLog.t()} | {:error, nil}
   def get_tournament_including_logs(id) do
-    case get_tournament(id) do
+    case __MODULE__.get_tournament(id) do
       nil ->
         case Log.get_tournament_log_by_tournament_id(id) do
           nil -> {:error, nil}
@@ -341,6 +346,7 @@ defmodule Milk.Tournaments do
   Get tournaments which the user participating in.
   It includes team.
   """
+  @spec get_participating_tournaments(integer(), integer()) :: [Tournament.t()]
   def get_participating_tournaments(user_id, offset \\ 0) do
     Tournament
     |> join(:inner, [t], e in Entrant, on: t.id == e.tournament_id)
@@ -372,29 +378,11 @@ defmodule Milk.Tournaments do
     |> Enum.uniq()
   end
 
-  # def get_participating_tournaments(user_id, offset) do
-  #   offset = Tools.to_integer_as_needed(offset)
-
-  #   Entrant
-  #   |> where([e], e.user_id == ^user_id)
-  #   |> order_by([e], asc: :tournament_id)
-  #   |> offset(^offset)
-  #   |> limit(5)
-  #   |> Repo.all()
-  #   |> Repo.preload(:team)
-  #   |> Repo.preload(:entrant)
-  #   |> Repo.preload(:assistant)
-  #   |> Repo.preload(:master)
-  #   |> Repo.preload(:custom_detail)
-  #   |> Enum.map(fn entrant ->
-  #     get_tournament(entrant.tournament_id)
-  #   end)
-  # end
-
   @doc """
   Get pending tournaments.
   Pending tournament means like "our team invitation for the tournament is still in progress "
   """
+  @spec get_pending_tournaments(integer()) :: [Tournament.t()]
   def get_pending_tournaments(user_id) do
     Tournament
     |> join(:inner, [t], te in Team, on: t.id == te.tournament_id)
@@ -414,7 +402,7 @@ defmodule Milk.Tournaments do
   Get a list of master users' information of a tournament
   """
   def get_masters(tournament_id) do
-    tournament = get_tournament(tournament_id)
+    tournament = __MODULE__.get_tournament(tournament_id)
 
     User
     |> where([u], u.id == ^tournament.master_id)
