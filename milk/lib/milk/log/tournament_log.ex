@@ -3,6 +3,30 @@ defmodule Milk.Log.TournamentLog do
 
   import Ecto.Changeset
 
+  @type t :: %__MODULE__{
+    capacity: integer(),
+    count: integer(),
+    deadline: any(),
+    description: String.t() | nil,
+    event_date: any(),
+    game_id: integer(),
+    game_name: String.t(),
+    is_deleted: boolean(),
+    is_started: boolean(),
+    is_team: boolean(),
+    master_id: integer(),
+    name: String.t(),
+    team_size: integer() | nil,
+    thumbnail_path: String.t() | nil,
+    tournament_id: integer(),
+    type: integer(),
+    url: String.t() | nil,
+    winner_id: integer(),
+    # NOTE: timestamps
+    create_time: any(),
+    update_time: any()
+  }
+
   schema "tournaments_log" do
     field :capacity, :integer
     field :count, :integer

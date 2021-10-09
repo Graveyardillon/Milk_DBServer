@@ -208,13 +208,13 @@ defmodule Milk.Tournaments do
   @doc """
   Get a tournament by room id.
   """
+  @spec get_tournament_by_room_id(integer()) :: Tournament.t()
   def get_tournament_by_room_id(chat_room_id) do
     TournamentChatTopic
     |> where([tct], tct.chat_room_id == ^chat_room_id)
     |> Repo.one()
     |> case do
-      nil ->
-        {:error, "the tournament was not found."}
+      nil -> nil
 
       topic ->
         Tournament
@@ -226,6 +226,7 @@ defmodule Milk.Tournaments do
   @doc """
   Returns tournaments which are filtered by master id.
   """
+  @spec get_tournaments_by_master_id(integer()) :: [Tournament.t()]
   def get_tournaments_by_master_id(user_id) do
     Tournament
     |> where([t], t.master_id == ^user_id)
@@ -238,6 +239,10 @@ defmodule Milk.Tournaments do
     |> Repo.preload(:assistant)
   end
 
+  @doc """
+  Get tournament logs by master id
+  """
+  @spec get_tournament_logs_by_master_id(integer) :: [TournamentLog.t()]
   def get_tournament_logs_by_master_id(user_id) do
     Repo.all(from tl in TournamentLog, where: tl.master_id == ^user_id)
 
@@ -247,10 +252,10 @@ defmodule Milk.Tournaments do
     |> Repo.all()
     |> Enum.filter(fn tournament_log -> tournament_log.tournament_id != nil end)
     |> Enum.map(fn tournament_log ->
-      entrants =
-        EntrantLog
-        |> where([el], el.tournament_id == ^tournament_log.tournament_id)
-        |> Repo.all()
+      EntrantLog
+      |> where([el], el.tournament_id == ^tournament_log.tournament_id)
+      |> Repo.all()
+      ~> entrants
 
       Map.put(tournament_log, :entrants, entrants)
     end)
@@ -259,12 +264,13 @@ defmodule Milk.Tournaments do
   @doc """
   Returns tournaments which are filtered by user id of assistant.
   """
+  @spec get_tournaments_by_assistant_id(integer()) :: [Tournament.t()]
   def get_tournaments_by_assistant_id(user_id) do
     Assistant
     |> where([a], a.user_id == ^user_id)
     |> Repo.all()
     |> Enum.map(fn assistant ->
-      get_tournament(assistant.tournament_id)
+      __MODULE__.get_tournament(assistant.tournament_id)
     end)
   end
 
