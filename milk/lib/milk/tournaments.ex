@@ -1514,6 +1514,32 @@ defmodule Milk.Tournaments do
   defp pick_user_id_as_needed(id), do: id
 
   @doc """
+  Get an opponent.
+  """
+  def get_opponent(tournament_id, user_id) do
+    tournament = __MODULE__.get_tournament(tournament_id)
+
+    if tournament.is_started do
+      match_list = TournamentProgress.get_match_list(tournament_id)
+
+      if tournament.is_team do
+        team = __MODULE__.get_team_by_tournament_id_and_user_id(tournament_id, user_id)
+
+        # NOTE: get_opponent_teamはあとからprivateにしようと思っているので__MODULE__をつけていない。
+        match_list
+        |> __MODULE__.find_match(team.id)
+        |> get_opponent_team(team.id)
+      else
+        match_list
+        |> __MODULE__.find_match(user_id)
+        |> get_opponent_user(user_id)
+      end
+    else
+      {:error, "tournament is not started"}
+    end
+  end
+
+  @doc """
   Get an opponent of tournament match.
   """
   def get_opponent_user(match, user_id) do

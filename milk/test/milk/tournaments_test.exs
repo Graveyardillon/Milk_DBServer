@@ -999,6 +999,50 @@ defmodule Milk.TournamentsTest do
       assert Tournaments.find_match(invalid_data, 3) == []
     end
 
+    test "get_opponent works just as old get_opponent_user" do
+      master = fixture_user(num: 10)
+      tournament = fixture_tournament(capacity: 4, master_id: master.id)
+      entrants = fill_with_entrant(tournament.id)
+
+      start(tournament.master_id, tournament.id)
+
+      player_id = hd(entrants).user_id
+
+      opponent_tuple = Tournaments.get_opponent(tournament.id, player_id)
+
+      tournament.id
+      |> TournamentProgress.get_match_list()
+      |> Tournaments.find_match(player_id)
+      |> Tournaments.get_opponent_user(player_id)
+      |> Kernel.==(opponent_tuple)
+      |> assert()
+    end
+
+    test "get_opponent works just as old get_opponent_team" do
+      master = fixture_user(num: 10)
+      tournament = fixture_tournament(is_team: true, master_id: master.id)
+      teams = fill_with_team(tournament.id)
+
+      teams
+      |> hd()
+      |> Map.get(:id)
+      ~> team_id
+      |> Tournaments.get_leader()
+      |> Map.get(:user_id)
+      ~> leader_id
+
+      start_team(tournament.master_id, tournament.id)
+
+      opponent_tuple = Tournaments.get_opponent(tournament.id, leader_id)
+
+      tournament.id
+      |> TournamentProgress.get_match_list()
+      |> Tournaments.find_match(team_id)
+      |> Tournaments.get_opponent_team(team_id)
+      |> Kernel.==(opponent_tuple)
+      |> assert()
+    end
+
     test "get_opponent/2 with valid data works fine", %{tournament: tournament} do
       entrants = create_entrants(6, tournament.id)
       id_list = Enum.map(entrants, fn entrant -> entrant.user_id end)
