@@ -401,6 +401,7 @@ defmodule Milk.Tournaments do
   @doc """
   Get a list of master users' information of a tournament
   """
+  @spec get_masters(integer()) :: [User.t()]
   def get_masters(tournament_id) do
     tournament = __MODULE__.get_tournament(tournament_id)
 
@@ -410,8 +411,9 @@ defmodule Milk.Tournaments do
   end
 
   @doc """
-
+  Get tournament by url token
   """
+  @spec get_tournament_by_url_token(String.t()) :: Tournament.t()
   def get_tournament_by_url_token(token) do
     Tournament
     |> where([t], t.url_token == ^token)
