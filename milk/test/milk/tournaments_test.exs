@@ -698,8 +698,8 @@ defmodule Milk.TournamentsTest do
   describe "get entrant" do
     setup [:create_entrant]
 
-    test "get_entrant!/1 work with valid data", %{entrant: entrant} do
-      assert %Entrant{} = obtained_entrant = Tournaments.get_entrant!(entrant.id)
+    test "get_entrant/1 work with valid data", %{entrant: entrant} do
+      assert %Entrant{} = obtained_entrant = Tournaments.get_entrant(entrant.id)
       assert obtained_entrant.id == entrant.id
     end
 
@@ -857,22 +857,6 @@ defmodule Milk.TournamentsTest do
     test "update_entrant/2 works fine with a valid data", %{entrant: entrant} do
       update_attrs = %{"rank" => 1}
       assert {:ok, _entrant} = Tournaments.update_entrant(entrant, update_attrs)
-    end
-  end
-
-  describe "delete entrant" do
-    setup [:create_entrant]
-
-    test "delete_entrant/2 works fine with a valid data", %{entrant: entrant} do
-      assert {:ok, %Entrant{} = entrant} =
-               Tournaments.delete_entrant(entrant.tournament_id, entrant.user_id)
-
-      assert %Ecto.NoResultsError{} = catch_error(Tournaments.get_entrant!(entrant.id))
-    end
-
-    test "delete_entrant/1 works fine with a valid data", %{entrant: entrant} do
-      assert {:ok, %Entrant{} = entrant} = Tournaments.delete_entrant(entrant)
-      assert %Ecto.NoResultsError{} = catch_error(Tournaments.get_entrant!(entrant.id))
     end
   end
 

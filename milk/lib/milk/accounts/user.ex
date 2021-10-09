@@ -34,6 +34,9 @@ defmodule Milk.Accounts.User do
     win_count: integer(),
     language: String.t(),
     logout_fl: boolean(),
+    # NOTE: timestamps
+    create_time: any(),
+    update_time: any()
   }
 
   schema "users" do

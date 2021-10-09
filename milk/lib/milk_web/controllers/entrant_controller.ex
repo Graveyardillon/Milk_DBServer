@@ -53,7 +53,7 @@ defmodule MilkWeb.EntrantController do
   Shows an entrant.
   """
   def show(conn, %{"id" => id}) do
-    entrant = Tournaments.get_entrant!(id)
+    entrant = Tournaments.get_entrant(id)
 
     if entrant do
       render(conn, "show.json", entrant: entrant)
@@ -66,7 +66,7 @@ defmodule MilkWeb.EntrantController do
   Update an entrant.
   """
   def update(conn, %{"id" => id, "entrant" => entrant_params}) do
-    entrant = Tournaments.get_entrant!(id)
+    entrant = Tournaments.get_entrant(id)
 
     if entrant do
       case Tournaments.update_entrant(entrant, entrant_params) do

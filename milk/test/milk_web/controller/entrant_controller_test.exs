@@ -148,9 +148,11 @@ defmodule MilkWeb.EntrantControllerTest do
 
       assert response(conn, 200)
 
-      assert_error_sent 404, fn ->
-        get(conn, Routes.entrant_path(conn, :show, entrant))
-      end
+      conn
+      |> get(Routes.entrant_path(conn, :show, entrant))
+      |> json_response(200)
+      |> Map.get("result")
+      |> refute()
     end
   end
 

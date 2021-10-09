@@ -169,9 +169,6 @@ defmodule MilkWeb.TournamentController do
 
         {:error, error} ->
           render(conn, "error.json", error: error)
-
-        _ ->
-          render(conn, "error.json", error: nil)
       end
     end
   end
@@ -472,9 +469,6 @@ defmodule MilkWeb.TournamentController do
 
         {:error, error} ->
           render(conn, "error.json", error: error)
-
-        _ ->
-          render(conn, "error.json", error: nil)
       end
     else
       render(conn, "error.json", error: nil)
