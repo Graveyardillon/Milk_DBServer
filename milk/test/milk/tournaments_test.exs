@@ -691,12 +691,7 @@ defmodule Milk.TournamentsTest do
       |> Map.put("master_id", user.id)
       |> Tournaments.create_tournament()
 
-      assert tournaments = Tournaments.get_tournament_by_game_id(game.id)
-      assert is_list(tournaments)
-
-      Enum.each(tournaments, fn tournament ->
-        assert %Tournament{} = tournament
-      end)
+      assert %Tournament{} = Tournaments.get_tournament_by_game_id(game.id)
     end
   end
 

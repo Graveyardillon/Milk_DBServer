@@ -7,12 +7,12 @@ defmodule Milk.Tournaments do
   import Ecto.Query, warn: false
   import Common.Sperm
 
-  alias Ecto.Multi
-
   alias Common.{
     FileUtils,
     Tools
   }
+
+  alias Ecto.Multi
 
   alias Milk.{
     Accounts,
@@ -95,6 +95,7 @@ defmodule Milk.Tournaments do
   @doc """
   Returns the list of tournament for home screen.
   """
+  @spec home_tournament(any(), integer(), integer() | nil) :: [Tournament.t()]
   def home_tournament(_date_offset, offset, user_id \\ nil) do
     offset = Tools.to_integer_as_needed(offset)
 
@@ -126,6 +127,7 @@ defmodule Milk.Tournaments do
   @doc """
   Returns the list of tournament which is filtered by "fav" for home screen.
   """
+  @spec home_tournament_fav(integer()) :: [Tournament.t()]
   def home_tournament_fav(user_id) do
     Relation
     |> where([r], r.follower_id == ^user_id)
@@ -147,6 +149,7 @@ defmodule Milk.Tournaments do
   @doc """
   Returns the list of tournament which is filtered by "plan" for home screen.
   """
+  @spec home_tournament_plan(integer()) :: [Tournament.t()]
   def home_tournament_plan(user_id) do
     Tournament
     |> where([t], t.master_id == ^user_id)
@@ -160,6 +163,7 @@ defmodule Milk.Tournaments do
   @doc """
   Get searched tournaments as home.
   """
+  @spec search(integer(), String.t()) :: [Tournament.t()]
   def search(_user_id, text) do
     like = "%#{text}%"
 
@@ -174,6 +178,7 @@ defmodule Milk.Tournaments do
     |> Repo.preload(:custom_detail)
   end
 
+  @spec date_filter(Ecto.Query.t()) :: Ecto.Query.t()
   defp date_filter(query) do
     query
     |> where([e], e.deadline > ^Timex.now())
@@ -183,15 +188,17 @@ defmodule Milk.Tournaments do
   @doc """
   Returns the list of tournament specified with a game id.
   """
+  @spec get_tournament_by_game_id(integer()) :: Tournament.t()
   def get_tournament_by_game_id(game_id) do
     Tournament
     |> where([t], t.game_id == ^game_id)
-    |> Repo.all()
+    |> Repo.one()
   end
 
   @doc """
   Get tournament by discord server id
   """
+  @spec get_tournament_by_discord_server_id(String.t()) :: Tournament.t()
   def get_tournament_by_discord_server_id(discord_server_id) do
     Tournament
     |> where([t], t.discord_server_id == ^discord_server_id)
