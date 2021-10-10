@@ -754,7 +754,7 @@ defmodule Milk.Tournaments do
   """
   @spec ban_maps(integer(), integer(), [integer()]) :: {:ok, nil} | {:error, String.t()}
   def ban_maps(user_id, tournament_id, map_id_list) when is_list(map_id_list) do
-    tournament = __MODULE__.get_tournament(tournament_id)
+    #tournament = __MODULE__.get_tournament(tournament_id)
 
     my_id = TournamentProgress.get_necessary_id(tournament_id, user_id)
 
@@ -806,7 +806,7 @@ defmodule Milk.Tournaments do
   @spec choose_maps(integer(), integer(), [integer()]) :: {:ok, nil} | {:error, String.t()}
   def choose_maps(user_id, tournament_id, map_id_list) when is_list(map_id_list) do
     # small_idとlarge_idを取得
-    tournament = get_tournament(tournament_id)
+    #tournament = get_tournament(tournament_id)
 
     my_id = TournamentProgress.get_necessary_id(tournament_id, user_id)
 
@@ -852,7 +852,7 @@ defmodule Milk.Tournaments do
   """
   @spec choose_ad(integer(), integer(), boolean()) :: {:ok, nil} | {:error, String.t()}
   def choose_ad(user_id, tournament_id, is_attack_side) do
-    tournament = __MODULE__.get_tournament(tournament_id)
+    #tournament = __MODULE__.get_tournament(tournament_id)
 
     my_id = TournamentProgress.get_necessary_id(tournament_id, user_id)
 
@@ -888,7 +888,7 @@ defmodule Milk.Tournaments do
 
   @spec renew_state_after_choosing_maps(integer(), integer()) :: {:ok, nil}
   defp renew_state_after_choosing_maps(user_id, tournament_id) do
-    tournament = __MODULE__.get_tournament(tournament_id)
+    #tournament = __MODULE__.get_tournament(tournament_id)
 
     id = TournamentProgress.get_necessary_id(tournament_id, user_id)
 
@@ -1341,7 +1341,7 @@ defmodule Milk.Tournaments do
         [] ->
           {:error, nil}
 
-        match ->
+        _match ->
           tournament = __MODULE__.get_tournament(tournament_id)
 
           if tournament.is_team do
@@ -1387,7 +1387,6 @@ defmodule Milk.Tournaments do
   def promote_winners_by_loser!(tournament_id, match_list, loser) do
     match_list
     |> find_match(loser)
-    ~> match
     |> Kernel.==([])
     |> unless do
       tournament_id

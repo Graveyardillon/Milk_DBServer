@@ -76,7 +76,7 @@ defmodule MilkWeb.ProfileController do
   def update_icon(conn, %{"user_id" => user_id, "image" => image}) do
     user = Accounts.get_user(user_id)
 
-    if user do
+    if !is_nil(user) do
       uuid = SecureRandom.uuid()
       new_path = "./static/image/profile_icon/#{uuid}.jpg"
       FileUtils.copy(image.path, new_path)

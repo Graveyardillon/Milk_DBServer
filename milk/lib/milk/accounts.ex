@@ -52,9 +52,7 @@ defmodule Milk.Accounts do
   @doc """
   Lists all users.
   """
-  def list_user() do
-    Repo.all(User)
-  end
+  def list_user(), do: Repo.all(User)
 
   @doc """
   Gets total user number.
@@ -77,6 +75,7 @@ defmodule Milk.Accounts do
       ** (Ecto.NoResultsError)
 
   """
+  @spec get_user(integer()) :: User.t() | nil
   def get_user(user_id) do
     User
     |> join(:inner, [u], a in Auth, on: u.id == a.user_id)
