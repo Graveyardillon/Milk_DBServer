@@ -1471,16 +1471,17 @@ defmodule Milk.Tournaments do
       match
       |> Enum.filter(&(&1 != user_id))
       |> hd()
-      |> retrieve_opponent_user()
+      |> do_get_opponent_user()
     else
       {:error, "opponent does not exist"}
     end
   end
 
-  defp retrieve_opponent_user(opponent_id) when is_integer(opponent_id) do
+  @spec do_get_opponent_user(integer()) :: {:ok, User.t()} | {:wait, nil} | {:error, String.t()}
+  defp do_get_opponent_user(opponent_id) when is_integer(opponent_id) do
     {:ok, Accounts.get_user(opponent_id)}
   end
-  defp retrieve_opponent_user(_), do: {:wait, nil}
+  defp do_get_opponent_user(_), do: {:wait, nil}
 
   @spec get_opponent_team([any()], integer()) :: {:ok, Team.t()} | {:wait, nil} | {:error, String.t()}
   defp get_opponent_team(match, team_id) do
@@ -1488,16 +1489,17 @@ defmodule Milk.Tournaments do
       match
       |> Enum.filter(&(&1 != team_id))
       |> hd()
-      |> retrieve_opponent_team()
+      |> do_get_opponent_team()
     else
       {:error, "opponent team does not exist"}
     end
   end
 
-  defp retrieve_opponent_team(opponent_team_id) when is_integer(opponent_team_id) do
+  @spec do_get_opponent_team(integer()) :: {:ok, Team.t()} | {:wait, nil} | {:error, String.t()}
+  defp do_get_opponent_team(opponent_team_id) when is_integer(opponent_team_id) do
     {:ok, __MODULE__.get_team(opponent_team_id)}
   end
-  defp retrieve_opponent_team(_), do: {:wait, nil}
+  defp do_get_opponent_team(_), do: {:wait, nil}
 
   @doc """
   Checks whether the user have to wait.
