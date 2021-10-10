@@ -2099,7 +2099,7 @@ defmodule Milk.Tournaments do
     end
   end
 
-  defp update_rank(match_list, user_id, tournament_id) do
+  defp update_rank(_match_list, user_id, tournament_id) do
     tournament_id
     |> __MODULE__.get_opponent(user_id)
     |> case do
@@ -2260,14 +2260,21 @@ defmodule Milk.Tournaments do
 
   @doc """
   Initialize rank of users.
+  TODO: リファクタリング優先度高め 型が不安定
   """
-  def initialize_rank(user_id, number_of_entrant, tournament_id) do
-    __MODULE__.initialize_rank(user_id, number_of_entrant, tournament_id, 1)
+  @spec initialize_rank(any(), integer(), integer()) :: any()
+  def initialize_rank(data, number_of_entrant, tournament_id) do
+    __MODULE__.initialize_rank(data, number_of_entrant, tournament_id, 1)
   end
 
+  @spec initialize_rank(any(), integer(), integer(), integer()) :: any()
   def initialize_rank(user_id, number_of_entrant, tournament_id, count)
       when is_integer(user_id) do
-    final = if number_of_entrant < count, do: number_of_entrant, else: count
+    final = if number_of_entrant < count do
+      number_of_entrant
+    else
+      count
+    end
 
     user_id
     |> get_entrant_by_user_id_and_tournament_id(tournament_id)
@@ -2307,6 +2314,7 @@ defmodule Milk.Tournaments do
   @doc """
   Checks tournament state.
   """
+  @spec state!(integer(), integer()) :: String.t()
   def state!(tournament_id, user_id) do
     tournament_id
     |> get_tournament()
@@ -2343,6 +2351,7 @@ defmodule Milk.Tournaments do
     end
   end
 
+  @spec check_user_role(Tournament.t(), integer(), integer()) :: String.t()
   defp check_user_role(tournament, id, user_id) do
     is_manager = tournament.master_id == user_id
 
@@ -2413,6 +2422,7 @@ defmodule Milk.Tournaments do
     end
   end
 
+  @spec check_has_lost?(integer(), integer()) :: String.t()
   defp check_has_lost?(tournament_id, id) do
     case TournamentProgress.get_match_list(tournament_id) do
       [] ->
@@ -2427,6 +2437,7 @@ defmodule Milk.Tournaments do
     end
   end
 
+  @spec check_is_alone?(integer(), integer()) :: String.t()
   defp check_is_alone?(tournament_id, id) do
     match_list = TournamentProgress.get_match_list(tournament_id)
     match = find_match(match_list, id)
@@ -2438,6 +2449,7 @@ defmodule Milk.Tournaments do
     end
   end
 
+  @spec check_wait_state?(integer(), integer()) :: String.t()
   defp check_wait_state?(tournament_id, id) do
     tournament_id
     |> get_tournament()
@@ -2478,6 +2490,7 @@ defmodule Milk.Tournaments do
     end
   end
 
+  @spec check_map_ban_state(Tournament.t(), integer()) :: String.t()
   defp check_map_ban_state(tournament, id) do
     tournament
     |> Map.get(:is_team)
@@ -2534,6 +2547,7 @@ defmodule Milk.Tournaments do
   @doc """
   Returns data for tournament brackets.
   """
+  @spec data_for_brackets(match_list()) :: [any()]
   def data_for_brackets(match_list) do
     {:ok, brackets} = Tournamex.brackets(match_list)
     brackets
@@ -2542,6 +2556,7 @@ defmodule Milk.Tournaments do
   @doc """
   Returns data with fight result for tournament brackets.
   """
+  @spec data_with_fight_result_for_brackets(match_list()) :: [any()]
   def data_with_fight_result_for_brackets(match_list) do
     {:ok, brackets} = Tournamex.brackets_with_fight_result(match_list)
     brackets
@@ -2550,6 +2565,7 @@ defmodule Milk.Tournaments do
   @doc """
   Construct data with game scores for brackets.
   """
+  @spec data_with_scores_for_brackets(integer()) :: [any()]
   def data_with_scores_for_brackets(tournament_id) do
     match_list = TournamentProgress.get_match_list_with_fight_result_including_log(tournament_id)
 
@@ -2559,19 +2575,19 @@ defmodule Milk.Tournaments do
     |> Enum.map(fn bracket ->
       user_id = bracket["user_id"]
 
-      win_game_scores =
-        tournament_id
-        |> TournamentProgress.get_best_of_x_tournament_match_logs_by_winner(user_id)
-        |> Enum.map(fn log ->
-          log.winner_score
-        end)
+      tournament_id
+      |> TournamentProgress.get_best_of_x_tournament_match_logs_by_winner(user_id)
+      |> Enum.map(fn log ->
+        log.winner_score
+      end)
+      ~> win_game_scores
 
-      lose_game_scores =
-        tournament_id
-        |> TournamentProgress.get_best_of_x_tournament_match_logs_by_loser(user_id)
-        |> Enum.map(fn log ->
-          log.loser_score
-        end)
+      tournament_id
+      |> TournamentProgress.get_best_of_x_tournament_match_logs_by_loser(user_id)
+      |> Enum.map(fn log ->
+        log.loser_score
+      end)
+      ~> lose_game_scores
 
       game_scores = win_game_scores ++ lose_game_scores
 
@@ -2582,6 +2598,7 @@ defmodule Milk.Tournaments do
   @doc """
   Construct data with game scores for brackets.
   """
+  @spec data_with_scores_for_flexible_brackets(integer()) :: [any()]
   def data_with_scores_for_flexible_brackets(tournament_id) do
     tournament_id
     |> TournamentProgress.get_match_list_with_fight_result_including_log()
@@ -2589,7 +2606,6 @@ defmodule Milk.Tournaments do
     |> elem(1)
     ~> brackets
 
-    # add game_scores
     brackets
     |> Enum.map(fn list ->
       inspect(list, charlists: false)
@@ -2610,7 +2626,6 @@ defmodule Milk.Tournaments do
           |> Enum.map(fn log ->
             log.loser_score
           end)
-          ~> _lose_game_scores
           |> Enum.concat(win_game_scores)
           ~> game_scores
 
@@ -2624,6 +2639,7 @@ defmodule Milk.Tournaments do
   @doc """
   Returns tournament records.
   """
+  @spec get_all_tournament_records(integer()) :: [TournamentLog.t()]
   def get_all_tournament_records(user_id) do
     user_id = Tools.to_integer_as_needed(user_id)
 
@@ -2631,10 +2647,10 @@ defmodule Milk.Tournaments do
     |> where([el], el.user_id == ^user_id and el.rank != 0)
     |> Repo.all()
     |> Enum.map(fn entrant_log ->
-      tlog =
-        TournamentLog
-        |> where([tl], tl.tournament_id == ^entrant_log.tournament_id)
-        |> Repo.one()
+      TournamentLog
+      |> where([tl], tl.tournament_id == ^entrant_log.tournament_id)
+      |> Repo.one()
+      ~> tlog
 
       Map.put(entrant_log, :tournament_log, tlog)
     end)
@@ -2644,16 +2660,16 @@ defmodule Milk.Tournaments do
   @doc """
   Scores data.
   """
+  @spec score(integer(), integer(), integer(), integer(), integer(), integer()) :: boolean()
   def score(tournament_id, winner_id, loser_id, winner_score, loser_score, match_index) do
-    %{
+    TournamentProgress.create_best_of_x_tournament_match_log(%{
       tournament_id: tournament_id,
       winner_id: winner_id,
       loser_id: loser_id,
       winner_score: winner_score,
       loser_score: loser_score,
       match_index: match_index
-    }
-    |> TournamentProgress.create_best_of_x_tournament_match_log()
+    })
 
     match_list = TournamentProgress.get_match_list_with_fight_result(tournament_id)
     match_list = Tournamex.win_count_increment(match_list, winner_id)
@@ -2665,6 +2681,7 @@ defmodule Milk.Tournaments do
   Create a team.
   TODO: 入力に対するバリデーションを行う
   """
+  @spec create_team(integer(), integer(), integer(), [integer()]) :: {:ok, Team.t()} | {:error, Ecto.Changeset.t()}
   def create_team(tournament_id, size, leader, user_id_list) when is_list(user_id_list) do
     # 招待をすでに受けている人は弾く
     user_id_list
@@ -2773,6 +2790,7 @@ defmodule Milk.Tournaments do
   @doc """
   Get a team.
   """
+  @spec get_team(integer()) :: Team.t() | nil
   def get_team(team_id) do
     Team
     |> where([t], t.id == ^team_id)
