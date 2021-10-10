@@ -1745,28 +1745,18 @@ defmodule Milk.Tournaments do
 
   @doc """
   Gets a single assistant.
-
-  Raises `Ecto.NoResultsError` if the Assistant does not exist.
-
-  ## Examples
-
-      iex> get_assistant!(123)
-      %Assistant{}
-
-      iex> get_assistant!(456)
-      ** (Ecto.NoResultsError)
-
   """
-  def get_assistant!(id), do: Repo.get!(Assistant, id)
-
+  @spec get_assistant(integer()) :: Assistant.t() | nil
   def get_assistant(id), do: Repo.get(Assistant, id)
 
+  @spec get_assistants(integer()) :: [Assistant.t()]
   def get_assistants(tournament_id) do
     Assistant
     |> where([a], a.tournament_id == ^tournament_id)
     |> Repo.all()
   end
 
+  @spec get_assistants_by_user_id(integer()) :: [Assistant.t()]
   def get_assistants_by_user_id(user_id) do
     Assistant
     |> where([a], a.user_id == ^user_id)
@@ -1776,6 +1766,7 @@ defmodule Milk.Tournaments do
   @doc """
   Get user information of an assistant.
   """
+  @spec get_user_info_of_assistant(Assistant.t()) :: User.t() | nil
   def get_user_info_of_assistant(%Assistant{} = assistant) do
     User
     |> where([u], u.id == ^assistant.user_id)
@@ -1784,7 +1775,9 @@ defmodule Milk.Tournaments do
 
   @doc """
   Get fighting users.
+  HACK: usersと書いてあるがチームを扱う場合もある
   """
+  @spec get_fighting_users(integer()) :: [User.t()] | [Team.t()]
   def get_fighting_users(tournament_id) do
     tournament_id
     |> get_tournament()
@@ -1811,8 +1804,9 @@ defmodule Milk.Tournaments do
 
   @doc """
   Get users waiting for fighting ones.
-  FIXME: usersと書いてあるがチームを扱う場合もある
+  HACK: usersと書いてあるがチームを扱う場合もある
   """
+  @spec get_waiting_users(integer()) :: [User.t()] | [Team.t()]
   def get_waiting_users(tournament_id) do
     tournament_id
     |> get_tournament()
@@ -1862,6 +1856,7 @@ defmodule Milk.Tournaments do
 
       FIXME: 戻り値とか
   """
+  @spec create_assistants(map()) :: {:ok, [integer()]} | {:error, :tournament_not_found}
   def create_assistants(attrs \\ %{}) do
     tournament_id = Tools.to_integer_as_needed(attrs["tournament_id"])
 
@@ -1895,19 +1890,6 @@ defmodule Milk.Tournaments do
   end
 
   @doc """
-  Returns the list of tournament_chat_topics.
-
-  ## Examples
-
-      iex> list_tournament_chat_topics()
-      [%TournamentChatTopic{}, ...]
-
-  """
-  def list_tournament_chat_topics() do
-    Repo.all(TournamentChatTopic)
-  end
-
-  @doc """
   Gets a single tournament_chat_topic.
 
   Raises `Ecto.NoResultsError` if the Tournament chat topic does not exist.
@@ -1921,21 +1903,23 @@ defmodule Milk.Tournaments do
       ** (Ecto.NoResultsError)
 
   """
+  @spec get_tournament_chat_topic!(integer()) :: TournamentChatTopic.t()
   def get_tournament_chat_topic!(id), do: Repo.get!(TournamentChatTopic, id)
 
   @doc """
   Get group chat tabs in a tournament including log.
   """
+  @spec get_tabs_by_tournament_id(integer()) :: [TournamentChatTopic.t() | TournamentChatTopicLog.t()]
   def get_tabs_by_tournament_id(tournament_id) do
-    topics =
-      TournamentChatTopic
-      |> where([t], t.tournament_id == ^tournament_id)
-      |> Repo.all()
+    TournamentChatTopic
+    |> where([t], t.tournament_id == ^tournament_id)
+    |> Repo.all()
+    ~> topics
 
-    logs =
-      TournamentChatTopicLog
-      |> where([tl], tl.tournament_id == ^tournament_id)
-      |> Repo.all()
+    TournamentChatTopicLog
+    |> where([tl], tl.tournament_id == ^tournament_id)
+    |> Repo.all()
+    ~> logs
 
     topics ++ logs
   end
@@ -1952,6 +1936,7 @@ defmodule Milk.Tournaments do
       {:error, %Ecto.Changeset{}}
 
   """
+  @spec create_tournament_chat_topic(map()) :: {:ok, TournamentChatTopic.t()} | {:error, nil}
   def create_tournament_chat_topic(attrs \\ %{}) do
     with {:ok, topic} <-
            %TournamentChatTopic{}
@@ -1975,6 +1960,7 @@ defmodule Milk.Tournaments do
       {:error, %Ecto.Changeset{}}
 
   """
+  @spec update_tournament_chat_topic(TournamentChatTopic.t(), map()) :: {:ok, TournamentChatTopic.t()} | {:error, Ecto.Changeset.t()}
   def update_tournament_chat_topic(%TournamentChatTopic{} = tournament_chat_topic, attrs) do
     tournament_chat_topic
     |> TournamentChatTopic.changeset(attrs)
@@ -1993,14 +1979,17 @@ defmodule Milk.Tournaments do
       {:error, %Ecto.Changeset{}}
 
   """
+  @spec delete_tournament_chat_topic(TournamentChatTopic.t()) :: {:ok, TournamentChatTopic.t()} | {:error, Ecto.Changeset.t()}
   def delete_tournament_chat_topic(%TournamentChatTopic{} = tournament_chat_topic) do
     Repo.delete(tournament_chat_topic)
   end
 
   @doc """
   Promotes rank of a entrant.
-  勝った人のランクが上がるやつ
+  残った人のランクが上がるやつ
+  TODO: リファクタリングの優先度高め 関数の内部処理が分かりづらい
   """
+  @spec force_to_promote_rank(%{required(:user_id) => integer(), required(:tournament_id) => integer()} | %{required(:team_id) => integer()}) :: {:ok, Entrant.t()} | {:error, Ecto.Changeset.t()}
   def force_to_promote_rank(attrs = %{"user_id" => user_id, "tournament_id" => tournament_id}) do
     attrs
     |> user_exists?()
@@ -2022,7 +2011,7 @@ defmodule Milk.Tournaments do
         end
         ~> updated_rank
 
-        update_entrant(entrant, %{rank: updated_rank})
+        __MODULE__.update_entrant(entrant, %{rank: updated_rank})
 
       {:error, error} ->
         {:error, error}
@@ -2111,7 +2100,6 @@ defmodule Milk.Tournaments do
   end
 
   defp update_rank(match_list, user_id, tournament_id) do
-    # 対戦相手
     tournament_id
     |> __MODULE__.get_opponent(user_id)
     |> case do
@@ -2151,7 +2139,7 @@ defmodule Milk.Tournaments do
 
         user_id
         |> get_entrant_by_user_id_and_tournament_id(tournament_id)
-        |> update_entrant(%{rank: updated_rank})
+        |> __MODULE__.update_entrant(%{rank: updated_rank})
 
       {:wait, nil} ->
         {:wait, nil}
@@ -2213,6 +2201,7 @@ defmodule Milk.Tournaments do
     end
   end
 
+  @spec find_num_closest_exponentiation_of_two(integer()) :: integer()
   defp find_num_closest_exponentiation_of_two(0), do: 1
   defp find_num_closest_exponentiation_of_two(1), do: 1
   defp find_num_closest_exponentiation_of_two(2), do: 1
@@ -2225,6 +2214,7 @@ defmodule Milk.Tournaments do
     end
   end
 
+  @spec find_num_closest_exponentiation_of_two(integer(), integer()) :: integer()
   defp find_num_closest_exponentiation_of_two(num, acc) do
     if num > acc do
       find_num_closest_exponentiation_of_two(num, acc * 2)
@@ -2233,14 +2223,8 @@ defmodule Milk.Tournaments do
     end
   end
 
-  defp check_exponentiation_of_two(num, base) when num == 0 do
-    {true, base}
-  end
-
-  defp check_exponentiation_of_two(num, base) when num == 1 do
-    {true, base}
-  end
-
+  defp check_exponentiation_of_two(0, base), do: {true, base}
+  defp check_exponentiation_of_two(1, base), do: {true, base}
   defp check_exponentiation_of_two(num, base) do
     case rem(num, 2) do
       0 ->
@@ -2253,13 +2237,12 @@ defmodule Milk.Tournaments do
   end
 
   defp check_exponentiation_of_two(num) do
-    case rem(num, 2) do
-      0 ->
-        div(num, 2)
-        |> check_exponentiation_of_two(num)
-
-      _ ->
-        {false, num}
+    if rem(num, 2) == 0 do
+      num
+      |> div(2)
+      |> check_exponentiation_of_two(num)
+    else
+      {false, num}
     end
   end
 
@@ -2278,7 +2261,9 @@ defmodule Milk.Tournaments do
   @doc """
   Initialize rank of users.
   """
-  def initialize_rank(match_list, number_of_entrant, tournament_id, count \\ 1)
+  def initialize_rank(user_id, number_of_entrant, tournament_id) do
+    __MODULE__.initialize_rank(user_id, number_of_entrant, tournament_id, 1)
+  end
 
   def initialize_rank(user_id, number_of_entrant, tournament_id, count)
       when is_integer(user_id) do
@@ -2295,6 +2280,8 @@ defmodule Milk.Tournaments do
       initialize_rank(x, number_of_entrant, tournament_id, count * 2)
     end)
   end
+
+#  def initialize_rank(match_list, number_of_entrant, tournament_id, count \\ 1), do: nil
 
   @doc """
   Initialize rank of teams.

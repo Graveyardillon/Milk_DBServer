@@ -11,7 +11,11 @@ defmodule Milk.Tournaments.Team do
     is_confirmed: boolean(),
     name: String.t(),
     rank: integer(),
-    size: integer()
+    size: integer(),
+    tournament_id: integer(),
+    # NOTE: timestamps
+    create_time: any(),
+    update_time: any()
   }
 
   schema "teams" do

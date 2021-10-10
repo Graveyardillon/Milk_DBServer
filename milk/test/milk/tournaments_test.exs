@@ -1562,9 +1562,6 @@ defmodule Milk.TournamentsTest do
         assistant = Tournaments.get_assistant(assistant.id)
         assert assistant.user_id == hd(assistant_attr["user_id"])
         assert assistant.tournament_id == assistant_attr["tournament_id"]
-        assistant = Tournaments.get_assistant!(assistant.id)
-        assert assistant.user_id == hd(assistant_attr["user_id"])
-        assert assistant.tournament_id == assistant_attr["tournament_id"]
       end)
       |> length()
       |> (fn len ->
@@ -1596,12 +1593,6 @@ defmodule Milk.TournamentsTest do
   end
 
   describe "get tournament chat topic" do
-    test "list_tournament_chat_topics/0 works fine" do
-      fixture(:tournament_chat_topic)
-      assert is_list(Tournaments.list_tournament_chat_topics())
-      refute Tournaments.list_tournament_chat_topics() == 0
-    end
-
     test "get_tournament_chat_topic!/1 with valid data works fine" do
       topic = fixture(:tournament_chat_topic)
 
