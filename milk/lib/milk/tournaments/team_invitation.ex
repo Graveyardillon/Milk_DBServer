@@ -6,6 +6,14 @@ defmodule Milk.Tournaments.TeamInvitation do
   alias Milk.Accounts.User
   alias Milk.Tournaments.TeamMember
 
+  @type t :: %__MODULE__{
+    team_member_id: integer(),
+    sender_id: integer(),
+    # NOTE: timestamps
+    create_time: any(),
+    update_time: any()
+  }
+
   schema "team_invitations" do
     # belongs_to :team, Team
     belongs_to :team_member, TeamMember
@@ -19,5 +27,6 @@ defmodule Milk.Tournaments.TeamInvitation do
   def changeset(team_invitation, attrs) do
     team_invitation
     |> cast(attrs, [:team_member_id, :sender_id])
+    |> validate_required([:team_member_id, :sender_id])
   end
 end
