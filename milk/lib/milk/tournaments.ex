@@ -57,6 +57,9 @@ defmodule Milk.Tournaments do
   require Integer
   require Logger
 
+  @type match_list :: [any()]
+  @type match_list_with_fight_result :: [any()]
+
   @doc """
   Gets a single tournament.
 
@@ -1321,10 +1324,15 @@ defmodule Milk.Tournaments do
   @doc """
   Delete a loser in a matchlist
   """
+  @spec delete_loser(match_list(), integer() | [integer()]) :: [any()]
   def delete_loser(match_list, loser) do
     Tournamex.delete_loser(match_list, loser)
   end
 
+  @doc """
+  Promote winners
+  """
+  @spec promote_winners_by_loser!(integer(), match_list(), [integer()] | integer()) :: {:ok, [any()]} | {:error, String.t() | nil}
   def promote_winners_by_loser!(tournament_id, match_list, losers) when is_list(losers) do
     Enum.map(losers, fn loser ->
       match_list
@@ -1400,15 +1408,17 @@ defmodule Milk.Tournaments do
   @doc """
   Finds a 1v1 match of given id and match list.
   """
+  @spec find_match(integer() | match_list(), any()) :: [any()]
   def find_match(v, _) when is_integer(v), do: []
 
-  def find_match(list, id, result \\ []) when is_list(list) do
-    Enum.reduce(list, result, fn x, acc ->
+  @spec find_match(match_list(), integer(), [any()]) :: [any()]
+  def find_match(match_list, id, result \\ []) when is_list(match_list) do
+    Enum.reduce(match_list, result, fn x, acc ->
       y = pick_user_id_as_needed(x)
 
       case y do
         y when is_list(y) -> find_match(y, id, acc)
-        y when is_integer(y) and y == id -> acc ++ list
+        y when is_integer(y) and y == id -> acc ++ match_list
         y when is_integer(y) -> acc
       end
     end)
@@ -1424,6 +1434,7 @@ defmodule Milk.Tournaments do
   @doc """
   Get an opponent.
   """
+  @spec get_opponent(integer(), integer()) :: {:ok, User.t()} | {:ok, Team.t()} | {:wait, nil} | {:error, String.t()}
   def get_opponent(tournament_id, user_id) do
     tournament = __MODULE__.get_tournament(tournament_id)
 
@@ -1454,6 +1465,7 @@ defmodule Milk.Tournaments do
     end
   end
 
+  @spec get_opponent_user([any()], integer()) :: {:ok, User.t()} | {:wait, nil} | {:error, String.t()}
   defp get_opponent_user(match, user_id) do
     if Enum.member?(match, user_id) and length(match) == 2 do
       match
@@ -1470,6 +1482,7 @@ defmodule Milk.Tournaments do
   end
   defp retrieve_opponent_user(_), do: {:wait, nil}
 
+  @spec get_opponent_team([any()], integer()) :: {:ok, Team.t()} | {:wait, nil} | {:error, String.t()}
   defp get_opponent_team(match, team_id) do
     if Enum.member?(match, team_id) and length(match) == 2 do
       match
@@ -1489,6 +1502,7 @@ defmodule Milk.Tournaments do
   @doc """
   Checks whether the user have to wait.
   """
+  @spec is_alone?([any()]) :: boolean()
   def is_alone?(match) do
     Enum.filter(match, &is_list(&1)) != []
   end
@@ -1496,8 +1510,10 @@ defmodule Milk.Tournaments do
   @doc """
   Checks whether the user has already lost.
   """
+  @spec has_lost?(integer() | match_list(), integer()) :: boolean()
   def has_lost?(v, _) when is_integer(v), do: false
 
+  @spec has_lost?(match_list(), integer(), boolean()) :: boolean()
   def has_lost?(match_list, user_id, result \\ true) when is_list(match_list) do
     Enum.reduce(match_list, result, fn x, acc ->
       case x do
@@ -1510,9 +1526,10 @@ defmodule Milk.Tournaments do
 
   @doc """
   Starts a tournament.
-  FIXME: 引数の順序がfinishと逆
-  FIXME: リファクタリング
+  HACK: 引数の順序がfinishと逆
+  HACK: リファクタリング
   """
+  @spec start(integer(), integer()) :: {:ok, Tournament.t()} | {:error, Ecto.Changeset.t()} | {:error, String.t()}
   def start(master_id, tournament_id) do
     master_id
     |> nil_check?(tournament_id)
@@ -1586,6 +1603,7 @@ defmodule Milk.Tournaments do
   @doc """
   Start a team tournament.
   """
+  @spec start_team_tournament(integer(), integer()) :: {:ok, Tournament.t()} | {:error, Ecto.Changeset.t()} | {:error, String.t()}
   def start_team_tournament(tournament_id, master_id) do
     master_id
     |> nil_check?(tournament_id)
@@ -1688,6 +1706,7 @@ defmodule Milk.Tournaments do
   @doc """
   Get lost a player.
   """
+  @spec get_lost(match_list(), integer() | [integer()]) :: match_list()
   def get_lost(match_list, loser) do
     Tournamex.renew_match_list_with_loser(match_list, loser)
   end
@@ -1695,6 +1714,7 @@ defmodule Milk.Tournaments do
   @doc """
   Generate a matchlist.
   """
+  @spec generate_matchlist([integer()]) :: {:ok, match_list()} | {:error, String.t()}
   def generate_matchlist(list) do
     Tournamex.generate_matchlist(list)
   end
@@ -1702,6 +1722,7 @@ defmodule Milk.Tournaments do
   @doc """
   Initialize fight result of match list.
   """
+  @spec initialize_match_list_with_fight_result(match_list()) :: match_list_with_fight_result()
   def initialize_match_list_with_fight_result(match_list) do
     Tournamex.initialize_match_list_with_fight_result(match_list)
   end
@@ -1709,6 +1730,7 @@ defmodule Milk.Tournaments do
   @doc """
   Initialize fight result of match list of teams.
   """
+  @spec initialize_match_list_of_team_with_fight_result(match_list()) :: match_list_with_fight_result()
   def initialize_match_list_of_team_with_fight_result(match_list) do
     Tournamex.initialize_match_list_of_team_with_fight_result(match_list)
   end
@@ -1716,6 +1738,7 @@ defmodule Milk.Tournaments do
   @doc """
   Put value on brackets.
   """
+  @spec put_value_on_brackets(match_list(), integer() | String.t() | atom(), any()) :: match_list() | match_list_with_fight_result()
   def put_value_on_brackets(match_list, key, value) do
     Tournamex.put_value_on_brackets(match_list, key, value)
   end

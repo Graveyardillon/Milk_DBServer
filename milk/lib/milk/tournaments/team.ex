@@ -6,12 +6,20 @@ defmodule Milk.Tournaments.Team do
   alias Milk.Tournaments.Tournament
   alias Milk.Tournaments.TeamMember
 
+  @type t :: %__MODULE__{
+    icon_path: String.t() | nil,
+    is_confirmed: boolean(),
+    name: String.t(),
+    rank: integer(),
+    size: integer()
+  }
+
   schema "teams" do
-    field :name, :string
-    field :size, :integer
     field :icon_path, :string
     field :is_confirmed, :boolean, default: false
+    field :name, :string
     field :rank, :integer, default: 0
+    field :size, :integer
 
     belongs_to :tournament, Tournament
     has_many :team_member, TeamMember
@@ -23,5 +31,6 @@ defmodule Milk.Tournaments.Team do
   def changeset(team, attrs) do
     team
     |> cast(attrs, [:name, :size, :tournament_id, :icon_path, :is_confirmed, :rank])
+    |> validate_required([:name, :size])
   end
 end

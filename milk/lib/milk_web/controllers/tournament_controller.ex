@@ -756,9 +756,6 @@ defmodule MilkWeb.TournamentController do
             match_list_with_fight_result: match_list_with_fight_result
           })
 
-        {:error, nil, nil} ->
-          render(conn, "error.json", error: nil)
-
         {:error, error, nil} ->
           render(conn, "error.json", error: Tools.create_error_message(error))
       end

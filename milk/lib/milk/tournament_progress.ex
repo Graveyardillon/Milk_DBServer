@@ -20,6 +20,7 @@ defmodule Milk.TournamentProgress do
     Tournaments
   }
 
+  alias Milk.Tournaments.Tournament
   alias Milk.TournamentProgress.{
     BestOfXTournamentMatchLog,
     MatchListWithFightResultLog,
@@ -27,6 +28,9 @@ defmodule Milk.TournamentProgress do
   }
 
   require Logger
+
+  @type match_list :: [any()]
+  @type match_list_with_fight_result :: [any()]
 
   defp conn() do
     host = Application.get_env(:milk, :redix_host)
@@ -73,7 +77,7 @@ defmodule Milk.TournamentProgress do
     end
   end
 
-  @spec get_match_list(integer()) :: [any()]
+  @spec get_match_list(integer()) :: match_list()
   def get_match_list(tournament_id) do
     conn = conn()
 
@@ -882,11 +886,13 @@ defmodule Milk.TournamentProgress do
   個人大会スタート時に使用する関数群
   """)
 
+  @spec start_single_elimination(integer(), Tournament.t()) :: {:ok, match_list(), match_list_with_fight_result()}
   def start_single_elimination(master_id, tournament) do
     Tournaments.start(master_id, tournament.id)
     make_single_elimination_matches(tournament.id)
   end
 
+  @spec start_best_of_format(integer(), Tournament.t()) :: {:ok, match_list(), nil}
   def start_best_of_format(master_id, tournament) do
     Tournaments.start(master_id, tournament.id)
     {:ok, match_list} = make_best_of_format_matches(tournament)
@@ -961,13 +967,14 @@ defmodule Milk.TournamentProgress do
   チーム大会スタートに関する関数群
   """)
 
+  @spec start_team_best_of_format(integer(), Tournament.t()) :: {:ok, match_list(), match_list_with_fight_result()} | {:error, String.t(), nil}
   def start_team_best_of_format(master_id, tournament) do
     tournament.id
     |> Tournaments.start_team_tournament(master_id)
     |> case do
       {:ok, _tournament} ->
-        {:ok, match_list} = generate_team_best_of_format_matches(tournament)
-        {:ok, match_list, nil}
+        {:ok, match_list, match_list_with_fight_result} = generate_team_best_of_format_matches(tournament)
+        {:ok, match_list, match_list_with_fight_result}
 
       {:error, error} ->
         {:error, error, nil}
@@ -1010,7 +1017,7 @@ defmodule Milk.TournamentProgress do
     end)
     |> insert_match_list_with_fight_result(tournament.id)
 
-    {:ok, match_list}
+    {:ok, match_list, match_list_with_fight_result}
   end
 
   @doc """

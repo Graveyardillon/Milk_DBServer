@@ -1973,7 +1973,7 @@ defmodule Milk.TournamentsTest do
 
       tournament.master_id
       |> TournamentProgress.start_team_best_of_format(tournament)
-      ~> {:ok, match_list, nil}
+      ~> {:ok, match_list, _}
 
       # match_listの初期状態確認
       tournament.id
