@@ -33,12 +33,25 @@ defmodule Milk.TournamentsTest do
 
   @moduletag timeout: 300_000
 
-  # 外部キーが二つ以上の場合は %{"capacity" => 42} のようにしなければいけない
+  # @valid_attrs %{
+  #   "capacity" => 42,
+  #   "deadline" => "2010-04-17T14:00:00Z",
+  #   "description" => "some description",
+  #   "event_date" => "2010-04-17T14:00:00Z",
+  #   "game_name" => "some game",
+  #   "name" => "some name",
+  #   "type" => 0,
+  #   "url" => "somesomeurl",
+  #   "password" => "passwd",
+  #   "master_id" => 1,
+  #   "platform_id" => 1,
+  #   "is_started" => true
+  # }
   @valid_attrs %{
     "capacity" => 42,
-    "deadline" => "2010-04-17T14:00:00Z",
+    "deadline" => nil,
     "description" => "some description",
-    "event_date" => "2010-04-17T14:00:00Z",
+    "event_date" => nil,
     "game_name" => "some game",
     "name" => "some name",
     "type" => 0,
@@ -363,9 +376,9 @@ defmodule Milk.TournamentsTest do
     test "create_tournament/1 with valid data creates a tournament" do
       tournament = fixture_tournament()
       assert tournament.capacity == 8
-      assert tournament.deadline == "2010-04-17T14:00:00Z"
+      assert is_nil(tournament.deadline)
       assert tournament.description == "some description"
-      assert tournament.event_date == "2010-04-17T14:00:00Z"
+      assert is_nil(tournament.event_date)
       assert tournament.name == "some name"
       assert tournament.type == 1
       assert tournament.url == "some url"
@@ -590,7 +603,7 @@ defmodule Milk.TournamentsTest do
     end
 
     test "home_tournament_plan/1 fails to return user's tournaments" do
-      tournament = fixture_tournament()
+      tournament = fixture_tournament(deadline: "2010-04-17T14:00:00Z", event_date: "2010-04-17T14:00:00Z")
       assert length(Tournaments.home_tournament_plan(tournament.master_id)) == 0
     end
 

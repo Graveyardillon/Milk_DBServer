@@ -26,11 +26,25 @@ defmodule MilkWeb.TournamentControllerTest do
     "tournament_id" => -1
   }
 
+  # @create_attrs %{
+  #   "capacity" => 42,
+  #   "deadline" => "2010-04-17T14:00:00Z",
+  #   "description" => "some description",
+  #   "event_date" => "2010-04-17T14:00:00Z",
+  #   "master_id" => 42,
+  #   "name" => "some name",
+  #   "game_name" => "gm nm",
+  #   "type" => 1,
+  #   "join" => "true",
+  #   "url" => "some url",
+  #   "password" => "Password123",
+  #   "platform" => 1
+  # }
   @create_attrs %{
     "capacity" => 42,
-    "deadline" => "2010-04-17T14:00:00Z",
+    "deadline" => nil,
     "description" => "some description",
-    "event_date" => "2010-04-17T14:00:00Z",
+    "event_date" => nil,
     "master_id" => 42,
     "name" => "some name",
     "game_name" => "gm nm",
@@ -272,6 +286,48 @@ defmodule MilkWeb.TournamentControllerTest do
       |> (fn len ->
             assert len == 1
           end).()
+    end
+
+    test "renders error when date information is nil", %{conn: conn} do
+      user = fixture_user()
+      attrs = %{
+        "capacity" => 4,
+        "deadline" => nil,
+        "description" => "some description",
+        "event_date" => nil,
+        "master_id" => user.id,
+        "name" => "some name",
+        "type" => 1,
+        "join" => false,
+        "url" => "some url",
+        "platform" => 1
+      }
+
+      conn =
+        post(conn, Routes.tournament_path(conn, :create), tournament: attrs, file: "")
+
+      assert json_response(conn, 200)["result"]
+    end
+
+    test "renders error when date information is empty string", %{conn: conn} do
+      user = fixture_user()
+      attrs = %{
+        "capacity" => 4,
+        "deadline" => "",
+        "description" => "some description",
+        "event_date" => "",
+        "master_id" => user.id,
+        "name" => "some name",
+        "type" => 1,
+        "join" => false,
+        "url" => "some url",
+        "platform" => 1
+      }
+
+      conn =
+        post(conn, Routes.tournament_path(conn, :create), tournament: attrs, file: "")
+
+      assert json_response(conn, 200)["result"]
     end
 
     test "renders errors when data is mostly nil", %{conn: conn} do
@@ -1077,13 +1133,13 @@ defmodule MilkWeb.TournamentControllerTest do
         |> Tournaments.create_entrant()
       end)
 
-      tournament_id_list =
-        tournaments
-        |> Enum.map(fn tournament ->
-          tournament.id
-        end)
-        |> Enum.concat([tournament.id])
-        |> Enum.concat([assistant_tournament.id])
+      tournaments
+      |> Enum.map(fn tournament ->
+        tournament.id
+      end)
+      |> Enum.concat([tournament.id])
+      |> Enum.concat([assistant_tournament.id])
+      ~> tournament_id_list
 
       conn =
         get(conn, Routes.tournament_path(conn, :relevant, %{"user_id" => tournament.master_id}))

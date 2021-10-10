@@ -26,6 +26,19 @@ defmodule Common.Fixtures do
           "password" => "Password123",
           "platform" => 1
         }
+        # create_attrs = %{
+        #   "capacity" => 8,
+        #   "deadline" => nil,
+        #   "description" => "some description",
+        #   "event_date" => nil,
+        #   "name" => "some name",
+        #   "game_name" => "gm nm",
+        #   "type" => 1,
+        #   "join" => "true",
+        #   "url" => "some url",
+        #   "password" => "Password123",
+        #   "platform" => 1
+        # }
 
         opts[:num]
         |> is_nil()
@@ -155,6 +168,24 @@ defmodule Common.Fixtures do
         end
         ~> maps
 
+        opts[:deadline]
+        |> is_nil()
+        |> unless do
+          opts[:deadline]
+        else
+          nil
+        end
+        ~> deadline
+
+        opts[:event_date]
+        |> is_nil()
+        |> unless do
+          opts[:event_date]
+        else
+          nil
+        end
+        ~> event_date
+
         create_attrs
         |> Map.put("is_started", is_started)
         |> Map.put("master_id", master_id)
@@ -168,6 +199,8 @@ defmodule Common.Fixtures do
         |> Map.put("coin_head_field", coin_head_field)
         |> Map.put("coin_tail_field", coin_tail_field)
         |> Map.put("maps", maps)
+        |> Map.put("deadline", deadline)
+        |> Map.put("event_date", event_date)
         |> Tournaments.create_tournament()
         |> elem(1)
         ~> tournament
