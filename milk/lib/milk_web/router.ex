@@ -28,6 +28,7 @@ defmodule MilkWeb.Router do
     pipe_through :api
 
     get "/check/connection", CheckController, :connection_check
+    post "/check/data_for_web", CheckController, :data_for_web
 
     resources "/user", UserController,
       except: [:new, :edit, :index, :show, :create, :update, :delete]

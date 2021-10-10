@@ -52,9 +52,7 @@ defmodule Milk.Accounts do
   @doc """
   Lists all users.
   """
-  def list_user() do
-    Repo.all(User)
-  end
+  def list_user(), do: Repo.all(User)
 
   @doc """
   Gets total user number.
