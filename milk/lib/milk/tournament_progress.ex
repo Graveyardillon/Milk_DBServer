@@ -908,7 +908,7 @@ defmodule Milk.TournamentProgress do
     list_with_fight_result = match_list_with_fight_result(match_list)
 
     list_with_fight_result
-    |> Tournamex.match_list_to_list()
+    |> List.flatten()
     |> Enum.reduce(list_with_fight_result, fn x, acc ->
       user = Accounts.get_user(x["user_id"])
 
