@@ -966,15 +966,10 @@ defmodule Milk.Tournaments do
   @spec get_entrant(integer()) :: Entrant.t() | nil
   def get_entrant(id), do: Repo.get(Entrant, id)
 
-  defp get_entrant_by_user_id_and_tournament_id(user_id, tournament_id) do
-    Repo.one(
-      from e in Entrant, where: ^tournament_id == e.tournament_id and ^user_id == e.user_id
-    )
-  end
-
   @doc """
   Get entrants of a tournament.
   """
+  @spec get_entrants(integer()) :: [Entrant.t()]
   def get_entrants(tournament_id) do
     Entrant
     |> where([e], e.tournament_id == ^tournament_id)
@@ -984,18 +979,27 @@ defmodule Milk.Tournaments do
   @doc """
   Get a single entrant or log.
   """
+  @spec get_entrant_including_logs(integer()) :: Entrant.t() | EntrantLog.t() | nil
   def get_entrant_including_logs(id) do
-    case get_entrant(id) do
+    case __MODULE__.get_entrant(id) do
       nil -> Log.get_entrant_log_by_entrant_id(id)
       entrant -> entrant
     end
   end
 
+  @spec get_entrant_including_logs(integer(), integer()) :: Entrant.t() | EntrantLog.t() | nil
   def get_entrant_including_logs(tournament_id, user_id) do
     case get_entrant_by_user_id_and_tournament_id(user_id, tournament_id) do
       nil -> Log.get_entrant_log_by_user_id_and_tournament_id(user_id, tournament_id)
       entrant -> entrant
     end
+  end
+
+  @spec get_entrant_by_user_id_and_tournament_id(integer(), integer()) :: Entrant.t() | nil
+  defp get_entrant_by_user_id_and_tournament_id(user_id, tournament_id) do
+    Repo.one(
+      from e in Entrant, where: ^tournament_id == e.tournament_id and ^user_id == e.user_id
+    )
   end
 
   @doc """

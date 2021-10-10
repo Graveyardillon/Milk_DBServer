@@ -3,6 +3,15 @@ defmodule Milk.Log.EntrantLog do
 
   import Ecto.Changeset
 
+  @type t :: %__MODULE__{
+    entrant_id: integer(),
+    rank: integer() | nil,
+    tournament_id: integer(),
+    user_id: integer(),
+    create_time: any(),
+    update_time: any()
+  }
+
   schema "entrants_log" do
     field :entrant_id, :integer
     field :rank, :integer
