@@ -446,6 +446,7 @@ defmodule Milk.Log do
   @doc """
   Get a single entrant log by entrant id.
   """
+  @spec get_entrant_log_by_entrant_id(integer()) :: EntrantLog.t() | nil
   def get_entrant_log_by_entrant_id(id) do
     EntrantLog
     |> where([e], e.entrant_id == ^id)

@@ -169,9 +169,6 @@ defmodule MilkWeb.TournamentController do
 
         {:error, error} ->
           render(conn, "error.json", error: error)
-
-        _ ->
-          render(conn, "error.json", error: nil)
       end
     end
   end
@@ -472,9 +469,6 @@ defmodule MilkWeb.TournamentController do
 
         {:error, error} ->
           render(conn, "error.json", error: error)
-
-        _ ->
-          render(conn, "error.json", error: nil)
       end
     else
       render(conn, "error.json", error: nil)
@@ -762,9 +756,6 @@ defmodule MilkWeb.TournamentController do
             match_list_with_fight_result: match_list_with_fight_result
           })
 
-        {:error, nil, nil} ->
-          render(conn, "error.json", error: nil)
-
         {:error, error, nil} ->
           render(conn, "error.json", error: Tools.create_error_message(error))
       end
@@ -858,9 +849,6 @@ defmodule MilkWeb.TournamentController do
         result = Tournaments.is_alone?(match)
 
         json(conn, %{result: result, match: match})
-
-      _value ->
-        json(conn, %{result: false, match: nil})
     end
   end
 

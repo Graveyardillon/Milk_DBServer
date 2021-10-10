@@ -22,18 +22,35 @@ defmodule Milk.Accounts.User do
 
   alias Milk.Notif.Notification
 
+  @type t :: %__MODULE__{
+    bio: String.t() | nil,
+    birthday: any(),
+    icon_path: String.t() | nil,
+    id_for_show: String.t() | nil,
+    is_birthday_private: boolean(),
+    name: String.t(),
+    notification_number: integer(),
+    point: integer(),
+    win_count: integer(),
+    language: String.t(),
+    logout_fl: boolean(),
+    # NOTE: timestamps
+    create_time: any(),
+    update_time: any()
+  }
+
   schema "users" do
     field :bio, :string, default: nil
     field :birthday, EctoDate
-    field :birthday_private, :boolean, default: true
     field :icon_path, :string
     field :id_for_show, :integer
+    field :is_birthday_private, :boolean, default: true
     field :name, :string
     field :notification_number, :integer, default: 0
     field :point, :integer, default: 0
     field :win_count, :integer, default: 0
-    field :logout_fl, :boolean, default: false
     field :language, :string, default: "japan"
+    field :logout_fl, :boolean, default: false
 
     has_one :auth, Auth
     has_one :discord, DiscordUser
@@ -56,8 +73,8 @@ defmodule Milk.Accounts.User do
       :name,
       :bio,
       :birthday,
-      :birthday_private,
       :icon_path,
+      :is_birthday_private,
       :point,
       :id_for_show,
       :notification_number,

@@ -18,7 +18,7 @@ defmodule Milk.Tournaments.Tournament do
 
   @type t :: %__MODULE__{
     capacity: integer(),
-    count: integer() | nil,
+    count: integer(),
     deadline: any(),
     description: String.t() | nil,
     discord_server_id: String.t() | nil,
@@ -35,7 +35,13 @@ defmodule Milk.Tournaments.Tournament do
     thumbnail_path: String.t() | nil,
     type: integer(),
     url: String.t() | nil,
-    url_token: String.t() | nil
+    url_token: String.t() | nil,
+    platform_id: integer(),
+    game_id: integer() | nil,
+    master_id: integer(),
+    # NOTE: timestamps
+    create_time: any(),
+    update_time: any()
   }
 
   schema "tournaments" do

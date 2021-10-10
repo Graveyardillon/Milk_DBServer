@@ -194,7 +194,7 @@ defmodule Milk.TournamentsTest do
     test "get_tournament_by_room_id returns nil" do
       -1
       |> Tournaments.get_tournament_by_room_id()
-      |> Kernel.==({:error, "the tournament was not found."})
+      |> is_nil()
       |> assert()
     end
 
@@ -691,20 +691,15 @@ defmodule Milk.TournamentsTest do
       |> Map.put("master_id", user.id)
       |> Tournaments.create_tournament()
 
-      assert tournaments = Tournaments.get_tournament_by_game_id(game.id)
-      assert is_list(tournaments)
-
-      Enum.each(tournaments, fn tournament ->
-        assert %Tournament{} = tournament
-      end)
+      assert %Tournament{} = Tournaments.get_tournament_by_game_id(game.id)
     end
   end
 
   describe "get entrant" do
     setup [:create_entrant]
 
-    test "get_entrant!/1 work with valid data", %{entrant: entrant} do
-      assert %Entrant{} = obtained_entrant = Tournaments.get_entrant!(entrant.id)
+    test "get_entrant/1 work with valid data", %{entrant: entrant} do
+      assert %Entrant{} = obtained_entrant = Tournaments.get_entrant(entrant.id)
       assert obtained_entrant.id == entrant.id
     end
 
@@ -862,22 +857,6 @@ defmodule Milk.TournamentsTest do
     test "update_entrant/2 works fine with a valid data", %{entrant: entrant} do
       update_attrs = %{"rank" => 1}
       assert {:ok, _entrant} = Tournaments.update_entrant(entrant, update_attrs)
-    end
-  end
-
-  describe "delete entrant" do
-    setup [:create_entrant]
-
-    test "delete_entrant/2 works fine with a valid data", %{entrant: entrant} do
-      assert {:ok, %Entrant{} = entrant} =
-               Tournaments.delete_entrant(entrant.tournament_id, entrant.user_id)
-
-      assert %Ecto.NoResultsError{} = catch_error(Tournaments.get_entrant!(entrant.id))
-    end
-
-    test "delete_entrant/1 works fine with a valid data", %{entrant: entrant} do
-      assert {:ok, %Entrant{} = entrant} = Tournaments.delete_entrant(entrant)
-      assert %Ecto.NoResultsError{} = catch_error(Tournaments.get_entrant!(entrant.id))
     end
   end
 
@@ -1445,7 +1424,7 @@ defmodule Milk.TournamentsTest do
 
     lis =
       list_with_fight_result
-      |> Tournamex.match_list_to_list()
+      |> List.flatten()
 
     Enum.reduce(lis, list_with_fight_result, fn x, acc ->
       user = Accounts.get_user(x["user_id"])
@@ -1583,9 +1562,6 @@ defmodule Milk.TournamentsTest do
         assistant = Tournaments.get_assistant(assistant.id)
         assert assistant.user_id == hd(assistant_attr["user_id"])
         assert assistant.tournament_id == assistant_attr["tournament_id"]
-        assistant = Tournaments.get_assistant!(assistant.id)
-        assert assistant.user_id == hd(assistant_attr["user_id"])
-        assert assistant.tournament_id == assistant_attr["tournament_id"]
       end)
       |> length()
       |> (fn len ->
@@ -1617,12 +1593,6 @@ defmodule Milk.TournamentsTest do
   end
 
   describe "get tournament chat topic" do
-    test "list_tournament_chat_topics/0 works fine" do
-      fixture(:tournament_chat_topic)
-      assert is_list(Tournaments.list_tournament_chat_topics())
-      refute Tournaments.list_tournament_chat_topics() == 0
-    end
-
     test "get_tournament_chat_topic!/1 with valid data works fine" do
       topic = fixture(:tournament_chat_topic)
 
@@ -1994,7 +1964,7 @@ defmodule Milk.TournamentsTest do
 
       tournament.master_id
       |> TournamentProgress.start_team_best_of_format(tournament)
-      ~> {:ok, match_list, nil}
+      ~> {:ok, match_list, _}
 
       # match_listの初期状態確認
       tournament.id

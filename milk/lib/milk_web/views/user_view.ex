@@ -62,7 +62,7 @@ defmodule MilkWeb.UserView do
       email: user.auth.email,
       bio: user.bio,
       birthday: user.birthday,
-      birthday_private: user.birthday_private
+      birthday_private: user.is_birthday_private
     }
   end
 end

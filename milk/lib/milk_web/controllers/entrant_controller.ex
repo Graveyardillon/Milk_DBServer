@@ -1,8 +1,6 @@
 defmodule MilkWeb.EntrantController do
   use MilkWeb, :controller
 
-  import Common.Sperm
-
   alias Common.Tools
 
   alias Milk.{
@@ -36,9 +34,6 @@ defmodule MilkWeb.EntrantController do
 
       {:multierror, error} ->
         render(conn, "multierror.json", error: error)
-
-      _ ->
-        render(conn, "error.json", error: nil)
     end
   end
 
@@ -53,7 +48,7 @@ defmodule MilkWeb.EntrantController do
   Shows an entrant.
   """
   def show(conn, %{"id" => id}) do
-    entrant = Tournaments.get_entrant!(id)
+    entrant = Tournaments.get_entrant(id)
 
     if entrant do
       render(conn, "show.json", entrant: entrant)
@@ -66,7 +61,7 @@ defmodule MilkWeb.EntrantController do
   Update an entrant.
   """
   def update(conn, %{"id" => id, "entrant" => entrant_params}) do
-    entrant = Tournaments.get_entrant!(id)
+    entrant = Tournaments.get_entrant(id)
 
     if entrant do
       case Tournaments.update_entrant(entrant, entrant_params) do
@@ -75,9 +70,6 @@ defmodule MilkWeb.EntrantController do
 
         {:error, error} ->
           render(conn, "error.json", error: error)
-
-        _ ->
-          render(conn, "error.json", error: nil)
       end
     else
       render(conn, "error.json", error: nil)

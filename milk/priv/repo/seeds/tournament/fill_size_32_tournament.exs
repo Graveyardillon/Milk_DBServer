@@ -59,7 +59,7 @@ list_with_fight_result =
 
 lis =
   list_with_fight_result
-  |> Tournamex.match_list_to_list()
+  |> List.flatten()
 
 Enum.reduce(lis, list_with_fight_result, fn x, acc ->
   user = Accounts.get_user(x["user_id"])

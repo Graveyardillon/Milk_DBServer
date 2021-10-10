@@ -6,9 +6,20 @@ defmodule Milk.Tournaments.TournamentChatTopic do
   alias Milk.Tournaments.Tournament
   alias Milk.Chat.ChatRoom
 
+  @type t :: %__MODULE__{
+    tab_index: integer(),
+    topic_name: String.t(),
+    tournament_id: integer(),
+    chat_room_id: integer(),
+    # NOTE: timestamps
+    create_time: any(),
+    update_time: any()
+  }
+
   schema "tournament_chat_topics" do
-    field :topic_name, :string
     field :tab_index, :integer
+    field :topic_name, :string
+
     belongs_to :tournament, Tournament
     belongs_to :chat_room, ChatRoom
 

@@ -81,7 +81,7 @@ defmodule Milk.MixProject do
       {:bamboo_smtp, "~> 3.0.0"},
       {:argon2_elixir, "~> 2.3.0"},
       {:ex_crypto, "~> 0.10.0"},
-      {:tournamex, "~> 0.1.17"},
+      {:tournamex, "~> 0.2.0"},
       {:dialyxir, "~> 1.0", only: [:dev, :test], runtime: false},
       {:excoveralls, "~> 0.10", only: :test},
       {:redix, ">= 0.0.0"},
