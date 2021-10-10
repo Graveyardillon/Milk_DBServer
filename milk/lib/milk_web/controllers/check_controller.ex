@@ -1,4 +1,4 @@
-defmodule MilkWeb.ConnectionCheckController do
+defmodule MilkWeb.CheckController do
   use MilkWeb, :controller
 
   @doc """

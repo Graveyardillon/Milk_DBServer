@@ -77,6 +77,7 @@ defmodule Milk.Accounts do
       ** (Ecto.NoResultsError)
 
   """
+  @spec get_user(integer()) :: User.t() | nil
   def get_user(user_id) do
     User
     |> join(:inner, [u], a in Auth, on: u.id == a.user_id)
