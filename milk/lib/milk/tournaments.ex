@@ -1013,7 +1013,9 @@ defmodule Milk.Tournaments do
       iex> create_entrant(%{field: bad_value})
       {:error, %Ecto.Changeset{}}
 
+  TODO: パイプラインのつなぎかたを変えるので、今はdefp関数にspecをつけていない
   """
+  @spec create_entrant(map()) :: {:ok, Entrant.t()} | {:error, Ecto.Changeset.t() | nil} | {:multierror, any()}
   def create_entrant(attrs \\ %{}) do
     attrs
     |> user_exists?()
@@ -1179,13 +1181,14 @@ defmodule Milk.Tournaments do
       {:error, %Ecto.Changeset{}}
 
   """
+  @spec update_entrant(Entrant.t(), map()) :: {:ok, Entrant.t()} | {:error, Ecto.Changeset.t() | nil}
   def update_entrant(%Entrant{} = entrant, attrs) do
     entrant
     |> Entrant.changeset(attrs)
     |> Repo.update()
     |> case do
-      {:ok, chat_member} ->
-        {:ok, chat_member}
+      {:ok, entrant} ->
+        {:ok, entrant}
 
       {:error, error} ->
         {:error, error.errors}
@@ -1206,6 +1209,7 @@ defmodule Milk.Tournaments do
       iex> delete_entrant(entrant)
       {:error, %Ecto.Changeset{}}
   """
+  @spec delete_entrant(integer(), integer()) :: {:ok, Entrant.t()} | {:error, String.t() | Ecto.Changeset.t() | nil}
   def delete_entrant(tournament_id, user_id) do
     tournament_id = Tools.to_integer_as_needed(tournament_id)
     user_id = Tools.to_integer_as_needed(user_id)
@@ -1232,6 +1236,7 @@ defmodule Milk.Tournaments do
     end
   end
 
+  @spec delete_entrant(Entrant.t()) :: {:ok, Entrant.t()} | {:error, Ecto.Changeset.t()}
   def delete_entrant(%Entrant{} = entrant) do
     map =
       entrant
@@ -1251,21 +1256,9 @@ defmodule Milk.Tournaments do
   end
 
   @doc """
-  Returns an `%Ecto.Changeset{}` for tracking entrant changes.
-
-  ## Examples
-
-      iex> change_entrant(entrant)
-      %Ecto.Changeset{data: %Entrant{}}
-
-  """
-  def change_entrant(%Entrant{} = entrant, attrs \\ %{}) do
-    Entrant.changeset(entrant, attrs)
-  end
-
-  @doc """
   Get a rank of a user.
   """
+  @spec get_rank(integer(), integer()) :: {:ok, integer() | nil} | {:error, String.t()}
   def get_rank(tournament_id, user_id) do
     tournament_id
     |> get_entrant_including_logs(user_id)
@@ -1282,6 +1275,7 @@ defmodule Milk.Tournaments do
   TODO: エラーハンドリング
   loser_listは一人用
   """
+  @spec delete_loser_process(integer(), [integer()]) :: [any()]
   def delete_loser_process(tournament_id, loser_list) when is_list(loser_list) do
     match_list = TournamentProgress.get_match_list(tournament_id)
 
@@ -1297,7 +1291,6 @@ defmodule Milk.Tournaments do
     renew_match_list(tournament_id, match_list, loser_list)
     updated_match_list = TournamentProgress.get_match_list(tournament_id)
     renew_match_list_with_fight_result(tournament_id, loser_list)
-    # unless is_integer(updated_match_list), do: trim_match_list_as_needed(tournament_id)
 
     updated_match_list
   end

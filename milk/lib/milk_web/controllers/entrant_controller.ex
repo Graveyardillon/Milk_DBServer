@@ -1,8 +1,6 @@
 defmodule MilkWeb.EntrantController do
   use MilkWeb, :controller
 
-  import Common.Sperm
-
   alias Common.Tools
 
   alias Milk.{
@@ -36,9 +34,6 @@ defmodule MilkWeb.EntrantController do
 
       {:multierror, error} ->
         render(conn, "multierror.json", error: error)
-
-      _ ->
-        render(conn, "error.json", error: nil)
     end
   end
 
@@ -75,9 +70,6 @@ defmodule MilkWeb.EntrantController do
 
         {:error, error} ->
           render(conn, "error.json", error: error)
-
-        _ ->
-          render(conn, "error.json", error: nil)
       end
     else
       render(conn, "error.json", error: nil)

@@ -73,6 +73,7 @@ defmodule Milk.TournamentProgress do
     end
   end
 
+  @spec get_match_list(integer()) :: [any()]
   def get_match_list(tournament_id) do
     conn = conn()
 

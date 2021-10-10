@@ -852,9 +852,6 @@ defmodule MilkWeb.TournamentController do
         result = Tournaments.is_alone?(match)
 
         json(conn, %{result: result, match: match})
-
-      _value ->
-        json(conn, %{result: false, match: nil})
     end
   end
 
