@@ -106,7 +106,7 @@ defmodule Milk.Tournaments.Tournament do
       :start_recruiting,
       :team_size
     ])
-    |> validate_required([:name, :event_date, :capacity, :deadline, :type])
+    |> validate_required([:name, :capacity, :type])
     |> foreign_key_constraint(:platform_id)
     |> foreign_key_constraint(:game_id)
     |> foreign_key_constraint(:master_id)
@@ -150,7 +150,7 @@ defmodule Milk.Tournaments.Tournament do
       :is_team,
       :start_recruiting
     ])
-    |> validate_required([:name, :event_date, :capacity, :deadline])
+    |> validate_required([:name, :capacity])
     |> foreign_key_constraint(:platform_id)
     |> foreign_key_constraint(:game_id)
     |> foreign_key_constraint(:master_id)

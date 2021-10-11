@@ -184,7 +184,7 @@ defmodule Milk.Tournaments do
   @spec date_filter(Ecto.Query.t()) :: Ecto.Query.t()
   defp date_filter(query) do
     query
-    |> where([e], e.deadline > ^Timex.now())
+    |> where([e], e.deadline > ^Timex.now() or is_nil(e.deadline))
     |> order_by([e], asc: :event_date)
   end
 
@@ -283,7 +283,9 @@ defmodule Milk.Tournaments do
   @spec get_ongoing_tournaments_by_master_id(integer()) :: [Tournament.t()]
   def get_ongoing_tournaments_by_master_id(user_id) do
     Tournament
-    |> where([t], t.event_date > ^Timex.now() and t.master_id == ^user_id)
+    #|> where([t], t.is_started)
+    |> where([t], t.master_id == ^user_id)
+    |> where([t], t.event_date > ^Timex.now() or (is_nil(t.event_date) and t.is_started))
     |> order_by([t], asc: :event_date)
     |> Repo.all()
     |> Repo.preload(:entrant)
@@ -458,7 +460,7 @@ defmodule Milk.Tournaments do
     end
     |> case do
       {:ok, _} ->
-        create(params, thumbnail_path)
+        do_create_tournament(params, thumbnail_path)
 
       {:error, error} ->
         {:error, error}
@@ -509,8 +511,8 @@ defmodule Milk.Tournaments do
     end)
   end
 
-  @spec create(map(), String.t() | nil) :: {:ok, Tournament.t()} | {:error, Ecto.Changeset.t() | nil}
-  defp create(attrs, thumbnail_path) do
+  @spec do_create_tournament(map(), String.t() | nil) :: {:ok, Tournament.t()} | {:error, Ecto.Changeset.t() | nil}
+  defp do_create_tournament(attrs, thumbnail_path) do
     master_id = Tools.to_integer_as_needed(attrs["master_id"])
     platform_id = Tools.to_integer_as_needed(attrs["platform"])
     game_id = if attrs["game_id"] == "" || is_nil(attrs["game_id"]), do: nil, else: attrs["game_id"]
@@ -560,6 +562,9 @@ defmodule Milk.Tournaments do
       {:ok, tournament} ->
         join_topics(tournament.tournament.id, master_id)
         {:ok, tournament.tournament}
+
+      {:error, :tournament, changeset, _} ->
+        {:error, Tools.create_error_message(changeset.errors)}
 
       {:error, error} ->
         {:error, error.errors}

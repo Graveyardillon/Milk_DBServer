@@ -163,7 +163,9 @@ defmodule MilkWeb.TournamentController do
 
           Accounts.gain_score( %{"user_id" => tournament.master_id, "game_name" => tournament.game_name, "score" => 7})
 
-          add_queue_tournament_start_push_notice(tournament)
+          unless is_nil(tournament.event_date) do
+            add_queue_tournament_start_push_notice(tournament)
+          end
 
           render(conn, "create.json", tournament: tournament)
 
@@ -583,7 +585,14 @@ defmodule MilkWeb.TournamentController do
     end)
     ~> assistants
 
-    Enum.uniq(participatings ++ hostings ++ assistants)
+    tournaments = participatings ++ hostings ++ assistants
+
+    # IO.inspect(length(participatings), label: :participatings)
+    # IO.inspect(length(hostings), label: :hostings)
+    # IO.inspect(length(assistants), label: :assistants)
+    # IO.inspect(length(tournaments), label: :tournaments)
+
+    Enum.uniq(tournaments)
   end
 
   @doc """
@@ -642,7 +651,7 @@ defmodule MilkWeb.TournamentController do
     user_id
     |> relevant()
     |> Enum.all?(fn t ->
-      tournament.master_id == user_id || t.event_date != tournament.event_date
+      tournament.master_id == user_id || t.event_date != tournament.event_date || is_nil(t.event_date)
     end)
     |> Kernel.and(result)
     ~> result

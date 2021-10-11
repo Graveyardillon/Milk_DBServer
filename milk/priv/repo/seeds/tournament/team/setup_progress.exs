@@ -16,6 +16,9 @@ Timex.now()
 |> Timex.to_datetime()
 ~> day_after_tomorrow
 
+# now = nil
+# day_after_tomorrow = nil
+
 1..team_n*team_size+1
 |> Enum.to_list()
 |> Enum.map(fn n ->
