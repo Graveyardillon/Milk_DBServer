@@ -9,10 +9,14 @@ defmodule Milk.Notif do
 
   alias Maps
 
-  alias Milk.Accounts
+  alias Milk.{
+    Accounts,
+    Repo,
+    Tournaments
+  }
+
   alias Milk.Accounts.User
   alias Milk.Log.NotificationLog
-  alias Milk.Repo
   alias Milk.Notif.Notification
 
   def topic, do: "PapillonKK.e-players"
@@ -26,14 +30,13 @@ defmodule Milk.Notif do
       [%Notification{}, ...]
 
   """
+  @spec list_notification(integer()) :: [Notification.t()]
   def list_notification(user_id) do
-    Repo.all(
-      from n in Notification,
-        join: u in assoc(n, :user),
-        where: u.id == ^user_id,
-        order_by: n.create_time,
-        preload: [user: u]
-    )
+    Notification
+    |> join(:inner, [n], u in User, on: n.user_id == u.id)
+    |> where([n, u], u.id == ^user_id)
+    |> order_by([n, u], asc: n.create_time)
+    |> Repo.all()
   end
 
   @doc """
@@ -72,6 +75,24 @@ defmodule Milk.Notif do
 
   """
   def get_notification!(id), do: Repo.get!(Notification, id)
+
+  @doc """
+  Get notifications relevant for tournament.
+  """
+  @spec get_notifications_relevant_for_tournament(integer()) :: [Notification.t()]
+  def get_notifications_relevant_for_tournament(tournament_id) do
+    tournament_id
+    |> Tournaments.get_invitations_by_tournament_id()
+    |> Enum.map(fn invitation ->
+      Jason.encode!(%{invitation_id: invitation.id})
+    end)
+    |> Enum.map(fn jason ->
+      Notification
+      |> where([n], n.data == ^jason)
+      |> Repo.all()
+    end)
+    |> List.flatten()
+  end
 
   @doc """
   Creates a notification.
@@ -152,6 +173,22 @@ defmodule Milk.Notif do
 
     Repo.delete(notification)
   end
+
+  @doc """
+  Delete notifications relevant for the tournament.
+  """
+  @spec delete_notifications_relevant_for_tournament(integer()) :: {:ok, nil} | {:error, Ecto.Changeset.t() | nil}
+  def delete_notifications_relevant_for_tournament(tournament_id) when is_integer(tournament_id) do
+    tournament_id
+    |> __MODULE__.get_notifications_relevant_for_tournament()
+    |> Enum.each(fn notification ->
+      __MODULE__.delete_notification(notification)
+    end)
+
+    {:ok, nil}
+  end
+
+  def delete_notifications_relevant_for_tournament(_), do: {:error, "should provide tournament_id in integer"}
 
   @doc """
   Returns an `%Ecto.Changeset{}` for tracking notification changes.

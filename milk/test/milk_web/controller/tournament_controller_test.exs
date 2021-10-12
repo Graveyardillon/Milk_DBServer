@@ -9,6 +9,7 @@ defmodule MilkWeb.TournamentControllerTest do
 
   alias Milk.{
     Accounts,
+    Notif,
     Platforms,
     Relations,
     Repo,
@@ -3631,6 +3632,13 @@ defmodule MilkWeb.TournamentControllerTest do
       refute is_nil(match_info["opponent"]["name"])
       assert match_info["state"] == "IsPending"
 
+      # NOTE: 通知が存在するか確認
+      tournament.id
+      |> Notif.get_notifications_relevant_for_tournament()
+      |> length()
+      |> Kernel.==(0)
+      |> refute()
+
       conn =
         post(conn, Routes.tournament_path(conn, :claim_score),
           tournament_id: tournament.id,
@@ -3650,6 +3658,13 @@ defmodule MilkWeb.TournamentControllerTest do
       assert match_info["state"] == "IsFinished"
       assert match_info["rank"] == capacity / 2
       assert match_info["is_leader"]
+
+      # NOTE: 通知が消えてるか確認
+      tournament.id
+      |> Notif.get_notifications_relevant_for_tournament()
+      |> length()
+      |> Kernel.==(0)
+      |> assert()
     end
 
     test "with custom_detail (team)", %{conn: conn} do

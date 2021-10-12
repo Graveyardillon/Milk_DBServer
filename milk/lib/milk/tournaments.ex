@@ -3021,6 +3021,9 @@ defmodule Milk.Tournaments do
     |> Repo.all()
   end
 
+  @doc """
+  Get invitations by tournament id.
+  """
   @spec get_invitations_by_tournament_id(integer()) :: [TeamInvitation.t()]
   def get_invitations_by_tournament_id(tournament_id) do
     TeamInvitation
