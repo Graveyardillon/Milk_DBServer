@@ -17,6 +17,7 @@ defmodule Milk.TournamentsTest do
   }
 
   alias Milk.Tournaments.{
+    TeamInvitation,
     Tournament,
     Entrant,
     TournamentChatTopic
@@ -2987,6 +2988,19 @@ defmodule Milk.TournamentsTest do
       |> Map.get(:user_id)
       |> Tournaments.has_confirmed_as_team?(tournament.id)
       |> assert()
+    end
+  end
+
+  describe "get_invitations_by_tournament_id" do
+    test "works" do
+      tournament = fixture_tournament(is_team: true, type: 2, capacity: 4)
+      fill_with_team(tournament.id)
+
+      tournament.id
+      |> Tournaments.get_invitations_by_tournament_id()
+      |> Enum.map(fn invitation ->
+        assert %TeamInvitation{} = invitation
+      end)
     end
   end
 

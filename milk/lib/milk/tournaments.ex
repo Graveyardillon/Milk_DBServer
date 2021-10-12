@@ -921,10 +921,12 @@ defmodule Milk.Tournaments do
       {:error, %Ecto.Changeset{}}
 
   """
-  @spec delete_tournament(Tournament.t() | map() | integer()) :: {:ok, Tournament.t()} | {:error, Ecto.Changeset.t()}
+  @spec delete_tournament(Tournament.t() | map() | integer()) :: {:ok, Tournament.t()} | {:error, Ecto.Changeset.t() | String.t()}
   def delete_tournament(%Tournament{} = tournament) do
     delete_tournament(tournament.id)
   end
+
+  def delete_tournament(nil), do: {:error, "tournament is nil"}
 
   def delete_tournament(tournament) when is_map(tournament) do
     delete_tournament(tournament["id"])
@@ -3016,6 +3018,19 @@ defmodule Milk.Tournaments do
     TeamInvitation
     |> join(:inner, [ti], tm in TeamMember, on: ti.team_member_id == tm.id)
     |> where([ti, tm], tm.user_id == ^user_id)
+    |> Repo.all()
+  end
+
+  @doc """
+  Get invitations by tournament id.
+  """
+  @spec get_invitations_by_tournament_id(integer()) :: [TeamInvitation.t()]
+  def get_invitations_by_tournament_id(tournament_id) do
+    TeamInvitation
+    |> join(:inner, [ti], tm in TeamMember, on: ti.team_member_id == tm.id)
+    |> join(:inner, [ti, tm], t in Team, on: t.id == tm.team_id)
+    |> join(:inner, [ti, tm, t], tournament in Tournament, on: t.tournament_id == tournament.id)
+    |> where([ti, tm, t, tournament], tournament.id == ^tournament_id)
     |> Repo.all()
   end
 

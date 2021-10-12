@@ -26,19 +26,6 @@ defmodule Common.Fixtures do
           "password" => "Password123",
           "platform" => 1
         }
-        # create_attrs = %{
-        #   "capacity" => 8,
-        #   "deadline" => nil,
-        #   "description" => "some description",
-        #   "event_date" => nil,
-        #   "name" => "some name",
-        #   "game_name" => "gm nm",
-        #   "type" => 1,
-        #   "join" => "true",
-        #   "url" => "some url",
-        #   "password" => "Password123",
-        #   "platform" => 1
-        # }
 
         opts[:num]
         |> is_nil()
@@ -208,6 +195,7 @@ defmodule Common.Fixtures do
         tournament
       end
 
+      # FIXME: 招待が二重で作成されている
       def fill_with_team(tournament_id) do
         tournament = Tournaments.get_tournament(tournament_id)
 
