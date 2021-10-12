@@ -3021,6 +3021,16 @@ defmodule Milk.Tournaments do
     |> Repo.all()
   end
 
+  @spec get_invitations_by_tournament_id(integer()) :: [TeamInvitation.t()]
+  def get_invitations_by_tournament_id(tournament_id) do
+    TeamInvitation
+    |> join(:inner, [ti], tm in TeamMember, on: ti.team_member_id == tm.id)
+    |> join(:inner, [ti, tm], t in Team, on: t.id == tm.team_id)
+    |> join(:inner, [ti, tm, t], tournament in Tournament, on: t.tournament_id == tournament.id)
+    |> where([ti, tm, t, tournament], tournament.id == ^tournament_id)
+    |> Repo.all()
+  end
+
   @spec get_team_invitation(integer()) :: TeamInvitation.t() | nil
   def get_team_invitation(invitation_id) do
     TeamInvitation
