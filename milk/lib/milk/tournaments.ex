@@ -921,10 +921,12 @@ defmodule Milk.Tournaments do
       {:error, %Ecto.Changeset{}}
 
   """
-  @spec delete_tournament(Tournament.t() | map() | integer()) :: {:ok, Tournament.t()} | {:error, Ecto.Changeset.t()}
+  @spec delete_tournament(Tournament.t() | map() | integer()) :: {:ok, Tournament.t()} | {:error, Ecto.Changeset.t() | String.t()}
   def delete_tournament(%Tournament{} = tournament) do
     delete_tournament(tournament.id)
   end
+
+  def delete_tournament(nil), do: {:error, "tournament is nil"}
 
   def delete_tournament(tournament) when is_map(tournament) do
     delete_tournament(tournament["id"])
