@@ -535,31 +535,38 @@ defmodule Milk.TournamentsTest do
       "event_date" => "2031-05-18T15:01:01Z"
     }
 
-    test "home_tournament/3 with user_id" do
+    test "home_tournament/3 with user_id and offset" do
       user1 = fixture_user()
       tournament = fixture_tournament()
+      offset = 0
       {:ok, _} = Tournaments.update_tournament(tournament, @home_attrs)
 
       Relations.block(user1.id, tournament.master_id)
 
       "2020-05-12 16:55:53 +0000"
-      |> Tournaments.home_tournament(0, user1.id)
+      |> Tournaments.home_tournament(offset, user1.id)
       |> length()
-      |> (fn len ->
-            assert len == 0
-          end).()
+      |> Kernel.==(0)
+      |> assert()
     end
 
     test "home_tournament/3 without user_id" do
+      offset = 0
       tournament = fixture_tournament()
       {:ok, _} = Tournaments.update_tournament(tournament, @home_attrs)
 
       "2020-05-12 16:55:53 +0000"
-      |> Tournaments.home_tournament(0)
+      |> Tournaments.home_tournament(offset)
       |> length()
-      |> (fn len ->
-            assert len == 1
-          end).()
+      |> Kernel.==(1)
+      |> assert()
+
+      offset = 1
+      "2020-05-12 16:55:53 +0000"
+      |> Tournaments.home_tournament(offset)
+      |> length()
+      |> Kernel.==(0)
+      |> assert()
     end
 
     test "home_tournament_fav/1 returns tournaments which is filtered by favorite users for home screen" do
