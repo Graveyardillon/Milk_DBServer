@@ -4,7 +4,7 @@ defmodule MilkWeb.DeviceController do
   alias Common.Tools
   alias Milk.Accounts
 
-  def register_token(conn, %{"user_id" => user_id, "device_id" => token}) do
+  def register_token(conn, %{"user_id" => user_id, "device_id" => token}) when is_binary(token) do
     user_id = Tools.to_integer_as_needed(user_id)
     token = to_string(token)
 
