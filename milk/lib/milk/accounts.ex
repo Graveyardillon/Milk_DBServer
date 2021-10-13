@@ -38,6 +38,11 @@ defmodule Milk.Accounts do
     EntrantLog
   }
 
+  alias Milk.Tournaments.{
+    Assistant,
+    Entrant
+  }
+
   alias Milk.UserManager.Guardian
   alias Milk.CloudStorage.Objects
 
@@ -421,45 +426,34 @@ defmodule Milk.Accounts do
     |> Guardian.decode_and_verify()
     |> case do
       {:ok, _claims} ->
-        Repo.one(
-          from u in User,
-            join: a in assoc(u, :auth),
-            left_join: cm in assoc(u, :chat_member),
-            left_join: as in assoc(u, :assistant),
-            left_join: e in assoc(u, :entrant),
-            where:
-              u.id == ^id and
-                a.email == ^email,
-            preload: [auth: a, chat_member: cm, entrant: e, assistant: as]
-        )
+        User
+        |> join(:inner, [u], a in assoc(u, :auth))
+        |> join(:left, [u, a], cm in ChatMember, on: cm.user_id == u.id)
+        |> join(:left, [u, a, cm], as in Assistant, on: as.user_id == u.id)
+        |> join(:left, [u, a, cm, as], e in Entrant, on: e.user_id == u.id)
+        |> where([u, a, cm, as, e], u.id == ^id)
+        |> where([u, a, cm, as, e], a.email == ^email)
+        |> preload([u, a, cm, e, as], auth: a)
+        |> preload([u, a, cm, e, as], chat_member: cm)
+        |> preload([u, a, cm, e, as], entrant: e)
+        |> preload([u, a, cm, e, as], assistant: as)
+        |> Repo.one()
 
       {:error, :token_expired} ->
-        token
-        |> Guardian.signout()
-        |> if do
+        if Guardian.signout(token) do
           "That token is expired"
         else
           "That token does not exist"
         end
 
-      {:error, :not_exist} ->
-        "That token can't use"
-
-      _ ->
-        "That token does not exist"
+      {:error, :not_exist} -> "That token can't use"
+      _ -> "That token does not exist"
     end
     |> case do
       %User{} = user ->
-        password
-        |> Argon2.verify_pass(user.auth.password)
-        |> if do
-          user
-        else
-          nil
-        end
+        if Argon2.verify_pass(password, user.auth.password), do: user
 
-      x ->
-        x
+      errors -> errors
     end
   end
 
@@ -467,8 +461,7 @@ defmodule Milk.Accounts do
   @doc """
   Login function.
   """
-  # @spec login(map | nil) :: {:ok, _, binary} | {:error, nil, nil}
-  @spec login(map()) :: tuple()
+  @spec login(map()) :: {:ok, User.t()} | {:error, Ecto.Changeset.t() | nil}
   def login(user) do
     password = user["password"]
 
@@ -563,8 +556,7 @@ defmodule Milk.Accounts do
   レコメンドシステム用にスコアを取得する関数
   """
   def gain_score(%{"user_id" => user_id, "game_name" => game_name, "score" => gain}) do
-    %{"user_id" => user_id, "game_name" => game_name, "gain" => gain}
-    |> create_action_history()
+    __MODULE__.create_action_history(%{"user_id" => user_id, "game_name" => game_name, "gain" => gain})
   end
 
   @doc """
@@ -613,8 +605,6 @@ defmodule Milk.Accounts do
       {:error, _error} -> false
     end
   end
-
-  # TODO: profile更新
 
   @doc """
   Create external service.
