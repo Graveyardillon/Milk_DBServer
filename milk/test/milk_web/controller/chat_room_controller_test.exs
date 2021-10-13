@@ -17,7 +17,7 @@ defmodule MilkWeb.ChatRoomControllerTest do
     chat_room
   end
 
-  defp fixture_user(n \\ 0) do
+  defp fixture_user(n) do
     attrs = %{
       "icon_path" => "some icon_path",
       "language" => "some language",

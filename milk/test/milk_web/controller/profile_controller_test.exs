@@ -18,6 +18,7 @@ defmodule MilkWeb.ProfileControllerTest do
     "gameList" => [],
     "records" => []
   }
+
   @update_attrs %{
     "name" => "some name",
     "content_id" => "42",
@@ -25,18 +26,6 @@ defmodule MilkWeb.ProfileControllerTest do
     "bio" => "some bio",
     "gameList" => [],
     "records" => []
-  }
-  @tournament_attrs %{
-    "capacity" => 42,
-    "deadline" => "2010-04-17T14:00:00Z",
-    "description" => "some description",
-    "event_date" => "2010-04-17T14:00:00Z",
-    "name" => "some name",
-    "type" => 0,
-    "url" => "somesomeurl",
-    "master_id" => 1,
-    "platform" => 1,
-    "is_started" => true
   }
 
   def fixture(:profile) do

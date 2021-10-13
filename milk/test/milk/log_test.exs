@@ -356,8 +356,6 @@ defmodule Milk.LogTest do
   end
 
   describe "team_log" do
-    alias Milk.Log.TeamLog
-
     test "create team log (team_id)" do
       [is_team: true, capacity: 4, type: 2]
       |> fixture_tournament()

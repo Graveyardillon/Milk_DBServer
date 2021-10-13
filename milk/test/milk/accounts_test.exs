@@ -570,8 +570,7 @@ defmodule Milk.AccountsTest do
 
       {:ok, device} = Accounts.register_device(user.id, token)
 
-      result = Accounts.unregister_device(device)
-      assert result == true
+      assert {:ok, _} = Accounts.unregister_device(device)
     end
   end
 

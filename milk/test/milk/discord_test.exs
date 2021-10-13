@@ -5,7 +5,6 @@ defmodule Milk.DiscordTest do
   import Common.Sperm
 
   alias Milk.{
-    Accounts,
     Discord,
     Tournaments
   }

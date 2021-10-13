@@ -575,29 +575,26 @@ defmodule Milk.Accounts do
   TODO: update処理
   """
   def register_device(user_id, token) do
-    attrs = %{"user_id" => user_id, "token" => token}
+    attrs = %{
+      "user_id" => user_id,
+      "token" => token
+    }
 
-    with {:ok, device} <-
-           %Device{}
-           |> Device.changeset(attrs)
-           |> Repo.insert() do
-      {:ok, device}
-    else
-      {:error, error} -> {:error, Tools.create_error_message(error.errors)}
+    %Device{}
+    |> Device.changeset(attrs)
+    |> Repo.insert()
+    |> case do
+      {:ok, device} -> {:ok, device}
+      {:error, %Ecto.Changeset{} = error} ->  {:error, Tools.create_error_message(error.errors)}
+      {:error, error} -> {:error, Tools.create_error_message(error)}
     end
   end
 
   @doc """
   Unregister a device token.
   """
-  def unregister_device(%Device{} = device) do
-    device
-    |> Repo.delete()
-    |> case do
-      {:ok, _device} -> true
-      {:error, _error} -> false
-    end
-  end
+  def unregister_device(%Device{} = device), do: Repo.delete(device)
+  def unregister_device(_), do: {:error, "invalid device"}
 
   @doc """
   Create external service.
@@ -611,13 +608,13 @@ defmodule Milk.Accounts do
   @doc """
   Get external service.
   """
-  def get_external_service(id) do
-    Repo.get(ExternalService, id)
-  end
+  @spec get_external_service(integer()) :: ExternalService.t()
+  def get_external_service(id), do: Repo.get(ExternalService, id)
 
   @doc """
   Get external services by user id.
   """
+  @spec get_external_services(integer()) :: [ExternalService.t()]
   def get_external_services(user_id) do
     ExternalService
     |> where([es], es.user_id == ^user_id)
@@ -627,15 +624,17 @@ defmodule Milk.Accounts do
   @doc """
   Update external service.
   """
+  @spec update_external_service(ExternalService.t(), map()) :: {:ok, ExternalService.t()} | {:error, Ecto.Changeset.t()}
   def update_external_service(%ExternalService{} = external_service, attrs) do
     external_service
     |> ExternalService.changeset(attrs)
     |> Repo.update()
   end
 
+  @spec delete_external_service(integer()) :: {:ok, ExternalService.t()} | {:error, Ecto.Changeset.t()}
   def delete_external_service(external_service_id) do
     external_service_id
-    |> get_external_service()
+    |> __MODULE__.get_external_service()
     |> Repo.delete()
   end
 end

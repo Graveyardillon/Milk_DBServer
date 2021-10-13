@@ -21,13 +21,12 @@ defmodule MilkWeb.DeviceController do
   end
 
   def unregister_token(conn, %{"device_id" => token}) do
-    case Accounts.get_device(token) do
-      nil ->
-        json(conn, %{result: false})
-
-      device ->
-        result = Accounts.unregister_device(device)
-        json(conn, %{result: result})
+    token
+    |> Accounts.get_device()
+    |> Accounts.unregister_device()
+    |> case do
+      {:ok, _} -> json(conn, %{result: true})
+      {:error, _} -> json(conn, result: false)
     end
   end
 end

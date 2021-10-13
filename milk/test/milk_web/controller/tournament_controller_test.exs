@@ -1552,7 +1552,6 @@ defmodule MilkWeb.TournamentControllerTest do
       teams
       |> hd()
       |> Map.get(:id)
-      ~> my_team
       |> Tournaments.get_leader()
       |> Map.get(:user)
       ~> me
@@ -1650,9 +1649,9 @@ defmodule MilkWeb.TournamentControllerTest do
   describe "start tournament" do
     setup [:create_tournament]
 
-    test "start a tournament with valid data (type: 1)", %{conn: conn, tournament: tournament} do
+    test "start a tournament with valid data (type: 1)", %{conn: conn, tournament: _tournament} do
       tournament = fixture_tournament(capacity: 12, num: 1000)
-      _entrants = create_entrants(12, tournament.id)
+      create_entrants(12, tournament.id)
 
       conn =
         post(conn, Routes.tournament_path(conn, :start),
@@ -2121,7 +2120,7 @@ defmodule MilkWeb.TournamentControllerTest do
         )
 
       assert json_response(conn, 200)["result"]
-      opponent = json_response(conn, 200)["opponent"]
+      #opponent = json_response(conn, 200)["opponent"]
     end
   end
 
@@ -3551,7 +3550,6 @@ defmodule MilkWeb.TournamentControllerTest do
       capacity = 2
       tournament = fixture_tournament(is_team: true, capacity: capacity, type: 2)
       teams = fill_with_team(tournament.id)
-      my_team = hd(teams)
 
       teams
       |> hd()
