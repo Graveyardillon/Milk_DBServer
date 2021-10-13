@@ -16,6 +16,7 @@ defmodule Milk.Discord do
   @doc """
   Get discord user by user id
   """
+  @spec get_discord_user_by_user_id(integer()) :: DiscordUser.t() | nil
   def get_discord_user_by_user_id(user_id) do
     DiscordUser
     |> where([du], du.user_id == ^user_id)
@@ -25,6 +26,7 @@ defmodule Milk.Discord do
   @doc """
   Get discord user by user id and discord id
   """
+  @spec get_discord_user_by_user_id_and_discord_id(integer(), String.t()) :: DiscordUser.t() | nil
   def get_discord_user_by_user_id_and_discord_id(user_id, discord_id) do
     DiscordUser
     |> where([du], du.user_id == ^user_id)
@@ -35,6 +37,7 @@ defmodule Milk.Discord do
   @doc """
   Validate the all team members are associated with discord.
   """
+  @spec all_team_members_associated?(integer()) :: boolean()
   def all_team_members_associated?(team_id) do
     team_id
     |> Tournaments.get_team_members_by_team_id()
@@ -48,6 +51,7 @@ defmodule Milk.Discord do
   @doc """
   Create a disord user (user who is associated with discord)
   """
+  @spec create_discord_user(map()) :: {:ok, DiscordUser.t()} | {:error, Ecto.Changeset.t()}
   def create_discord_user(attrs) do
     %DiscordUser{}
     |> DiscordUser.changeset(attrs)
@@ -57,6 +61,7 @@ defmodule Milk.Discord do
   @doc """
   Checks the given user has associated with discord.
   """
+  @spec associated?(integer()) :: boolean()
   def associated?(user_id) do
     DiscordUser
     |> where([du], du.user_id == ^user_id)
@@ -66,6 +71,7 @@ defmodule Milk.Discord do
   @doc """
   associate with discord.
   """
+  @spec associate(integer(), String.t()) :: {:ok, DiscordUser.t()} | {:error, Ecto.Changeset.t()}
   def associate(user_id, discord_id) do
     discord_user = get_discord_user_by_user_id_and_discord_id(user_id, discord_id)
 
@@ -73,22 +79,23 @@ defmodule Milk.Discord do
       !is_nil(discord_user) ->
         {:error, "already associated"}
 
-      associated?(user_id) ->
+      __MODULE__.associated?(user_id) ->
         user_id
-        |> get_discord_user_by_user_id()
-        |> update_discord_user(%{discord_id: discord_id})
+        |> __MODULE__.get_discord_user_by_user_id()
+        |> __MODULE__.update_discord_user(%{discord_id: discord_id})
 
       :else ->
         Map.new()
         |> Map.put(:user_id, user_id)
         |> Map.put(:discord_id, discord_id)
-        |> create_discord_user()
+        |> __MODULE__.create_discord_user()
     end
   end
 
   @doc """
   update discord user.
   """
+  @spec update_discord_user(DiscordUser.t(), map()) :: {:ok, DiscordUser.t()} | {:error, Ecto.Changeset.t()}
   def update_discord_user(%DiscordUser{} = discord_user, attrs) do
     discord_user
     |> DiscordUser.changeset(attrs)
@@ -98,10 +105,12 @@ defmodule Milk.Discord do
   @doc """
   Delete discord user.
   """
+  @spec delete_discord_user(DiscordUser.t()) :: {:ok, DiscordUser.t()} | {:error, Ecto.Changeset.t()}
   def delete_discord_user(%DiscordUser{} = discord_user) do
     Repo.delete(discord_user)
   end
 
+  @spec create_invitation_link!(String.t()) :: String.t()
   def create_invitation_link!(server_id) do
     access_token = Application.get_env(:milk, :discord_server_access_token)
     url = "#{Application.get_env(:milk, :discord_server)}/invitation_link"
