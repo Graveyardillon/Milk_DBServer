@@ -5,9 +5,18 @@ defmodule Milk.Accounts.Auth do
 
   alias Milk.Accounts.User
 
+  @type t :: %__MODULE__{
+    email: String.t(),
+    password: String.t() | nil,
+    service_name: String.t() | nil,
+    # NOTE: timestamps
+    create_time: any(),
+    update_time: any()
+  }
+
   schema "auth" do
     field :email, :string, null: false
-    field :password, :string, null: false
+    field :password, :string
     field :service_name, :string
 
     belongs_to :user, User

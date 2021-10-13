@@ -13,7 +13,6 @@ defmodule Milk.Accounts do
   alias Ecto.Multi
 
   alias Milk.{
-    Accounts,
     Repo,
     Tournaments
   }
@@ -42,24 +41,17 @@ defmodule Milk.Accounts do
   alias Milk.UserManager.Guardian
   alias Milk.CloudStorage.Objects
 
-  @typedoc """
-  User changeset structure.
-
-  The types %User{} and Accounts are equivalent.
-  """
-  @type t :: %User{}
-
   @doc """
   Lists all users.
   """
+  @spec list_user() :: [User.t()]
   def list_user(), do: Repo.all(User)
 
   @doc """
   Gets total user number.
   """
-  def get_user_number() do
-    Repo.aggregate(User, :count)
-  end
+  @spec get_user_number() :: [User.t()]
+  def get_user_number(), do: Repo.aggregate(User, :count)
 
   @doc """
   Gets a single user.
@@ -90,6 +82,7 @@ defmodule Milk.Accounts do
   # HACK: 複数のアカウントが同じdiscord idを使ってログインすることを想定していない。
   データベースに制約をつけて、associateの処理に変更を加える必要がある。
   """
+  @spec get_user_by_discord_id(integer()) :: User.t() | nil
   def get_user_by_discord_id(discord_id) do
     User
     |> join(:inner, [u], du in DiscordUser, on: u.id == du.user_id)
@@ -100,7 +93,7 @@ defmodule Milk.Accounts do
   @doc """
   Checks name duplication.
   """
-  @spec check_duplication?(binary) :: boolean
+  @spec check_duplication?(String.t()) :: boolean()
   def check_duplication?(name) do
     User
     |> where([u], u.name == ^name)
@@ -110,7 +103,7 @@ defmodule Milk.Accounts do
   @doc """
   Get all users in touch.
   """
-  @spec get_users_in_touch(integer) :: list(Accounts.t())
+  @spec get_users_in_touch(integer()) :: [User.t()]
   def get_users_in_touch(id) do
     ChatMember
     |> where([cm], cm.user_id == ^id)
@@ -154,6 +147,7 @@ defmodule Milk.Accounts do
   @doc """
   Checks if given email address exists.
   """
+  @spec email_exists?(String.t()) :: boolean()
   def email_exists?(email) do
     Auth
     |> where([a], a.email == ^email)
@@ -163,7 +157,7 @@ defmodule Milk.Accounts do
   @doc """
   Creates a user.
   """
-  @spec create_user(map, binary) :: tuple()
+  @spec create_user(map(), String.t()) :: any()
   def create_user(attrs, service_name \\ "e-players") do
     attrs = put_id_for_show(attrs)
 
@@ -233,7 +227,7 @@ defmodule Milk.Accounts do
       iex> update_user(user, %{field: bad_value})
       {:error, error}
   """
-  @spec update_user(Accounts.t(), map) :: tuple()
+  @spec update_user(User.t(), map()) :: any()
   def update_user(%User{} = user, attrs) do
     Multi.new()
     |> Multi.update(:user, fn _ ->
@@ -253,14 +247,20 @@ defmodule Milk.Accounts do
   @doc """
   Change a password.
   """
+  @spec change_password_by_email(String.t(), String.t()) :: {:ok, Auth.t()} | {:error, Ecto.Changeset.t()}
   def change_password_by_email(email, new_password) do
     email
-    |> get_user_by_email()
-    |> Map.get(:auth)
-    |> Auth.changeset(%{password: new_password})
-    |> Repo.update()
+    |> __MODULE__.get_user_by_email()
+    ~> user
+    |> is_nil()
+    |> unless do
+      user.auth
+      |> Auth.changeset(%{password: new_password})
+      |> Repo.update()
+    end
   end
 
+  @spec get_user_by_email(String.t()) :: User.t() | nil
   def get_user_by_email(email) do
     User
     |> join(:inner, [u], a in assoc(u, :auth))
@@ -272,6 +272,7 @@ defmodule Milk.Accounts do
   @doc """
   Search users.
   """
+  @spec search(String.t()) :: [User.t()]
   def search(text) do
     like = "%#{text}%"
 
@@ -286,7 +287,7 @@ defmodule Milk.Accounts do
   @doc """
   Updates an icon.
   """
-  @spec update_icon_path(Accounts.t(), binary) :: tuple()
+  @spec update_icon_path(User.t(), binary) :: {:ok, User.t()} | {:error, Ecto.Changeset.t()}
   def update_icon_path(user, icon_path) do
     old_icon_path = Repo.one(from u in User, where: u.id == ^user.id, select: u.icon_path)
 
@@ -332,7 +333,7 @@ defmodule Milk.Accounts do
       {:error, %Ecto.Changeset{}}
 
   """
-  @spec delete_user(integer, binary, binary, binary) :: tuple()
+  @spec delete_user(integer(), binary(), binary(), binary()) :: tuple()
   def delete_user(id, password, email, token) do
     user = get_authorized_user(id, password, email, token)
 
@@ -468,7 +469,7 @@ defmodule Milk.Accounts do
   Login function.
   """
   # @spec login(map | nil) :: {:ok, _, binary} | {:error, nil, nil}
-  @spec login(map) :: tuple()
+  @spec login(map()) :: tuple()
   def login(user) do
     password = user["password"]
 
