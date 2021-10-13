@@ -84,4 +84,4 @@ config :milk, :environment, :dev
 
 config :milk, :domain, "http://localhost:3000"
 
-config :milk, :discord_server, "http://localhost:5000"
+config :milk, :discord_server, "http://localhost:8080"
