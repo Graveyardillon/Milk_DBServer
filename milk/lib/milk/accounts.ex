@@ -538,6 +538,7 @@ defmodule Milk.Accounts do
   @doc """
   Create an action history.
   """
+  @spec create_action_history(map()) :: {:ok, ActionHistory.t()} | {:error, Ecto.Changeset.t()}
   def create_action_history(attrs) do
     %ActionHistory{}
     |> ActionHistory.changeset(attrs)
