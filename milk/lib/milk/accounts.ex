@@ -118,6 +118,7 @@ defmodule Milk.Accounts do
     |> get_users_by_member_id()
   end
 
+  @spec get_private_rooms([ChatMember.t()]) :: [ChatRoom.t()]
   defp get_private_rooms(members) do
     Enum.map(members, fn member ->
       ChatRoom
@@ -140,12 +141,11 @@ defmodule Milk.Accounts do
 
   defp get_users_by_member_id(members) do
     Enum.map(members, fn member ->
-      Repo.one(
-        from u in User,
-          join: a in assoc(u, :auth),
-          where: u.id == ^member.user_id,
-          preload: [auth: a]
-      )
+      User
+      |> join(:inner, [u], a in assoc(u, :auth))
+      |> where([u, a], u.id == ^member.user_id)
+      |> preload([u, a], auth: a)
+      |> Repo.one()
     end)
   end
 
@@ -555,15 +555,17 @@ defmodule Milk.Accounts do
   @doc """
   Get a device.
   """
-  def get_device(device_id) do
+  @spec get_device(String.t()) :: Device.t() | nil
+  def get_device(token) do
     Device
-    |> where([d], d.token == ^device_id)
+    |> where([d], d.token == ^token)
     |> Repo.one()
   end
 
   @doc """
   Get devices by user id.
   """
+  @spec get_devices_by_user_id(integer()) :: [Device.t()]
   def get_devices_by_user_id(user_id) do
     Device
     |> where([d], d.user_id == ^user_id)
@@ -574,6 +576,7 @@ defmodule Milk.Accounts do
   Register a device token.
   TODO: update処理
   """
+  @spec register_device(integer(), String.t()) :: {:ok, Device.t()} | {:error, String.t()}
   def register_device(user_id, token) do
     attrs = %{
       "user_id" => user_id,

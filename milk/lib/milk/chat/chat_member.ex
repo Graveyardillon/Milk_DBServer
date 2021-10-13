@@ -6,6 +6,15 @@ defmodule Milk.Chat.ChatMember do
   alias Milk.Accounts.User
   alias Milk.Chat.ChatRoom
 
+  @type t :: %__MODULE__{
+    authority: integer(),
+    user_id: integer(),
+    chat_room_id: integer(),
+    # NOTE: timestamps
+    create_time: any(),
+    update_time: any()
+  }
+
   schema "chat_members" do
     field :authority, :integer, default: 0
     belongs_to :user, User

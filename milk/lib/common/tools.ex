@@ -6,6 +6,7 @@ defmodule Common.Tools do
   @doc """
   string to integer if possible.
   """
+  @spec to_integer_as_needed(String.t() | integer()) :: integer()
   def to_integer_as_needed(data) do
     if is_binary(data) do
       String.to_integer(data)

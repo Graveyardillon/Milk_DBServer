@@ -6,6 +6,7 @@ defmodule MilkWeb.DeviceController do
 
   def register_token(conn, %{"user_id" => user_id, "device_id" => token}) do
     user_id = Tools.to_integer_as_needed(user_id)
+    token = to_string(token)
 
     case Accounts.get_device(token) do
       nil ->
