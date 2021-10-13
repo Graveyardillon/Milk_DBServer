@@ -1090,10 +1090,6 @@ defmodule Milk.TournamentsTest do
 
       start(tournament.master_id, tournament.id)
 
-      match_list = TournamentProgress.get_match_list(tournament.id)
-
-      match = Tournaments.find_match(match_list, tournament.master_id)
-
       {:ok, opponent} = Tournaments.get_opponent(tournament.id, tournament.master_id)
 
       delete_loser(tournament.id, [opponent.id])
@@ -1111,9 +1107,6 @@ defmodule Milk.TournamentsTest do
 
       start(tournament.master_id, tournament.id)
 
-      match_list = TournamentProgress.get_match_list(tournament.id)
-
-      match = Tournaments.find_match(match_list, tournament.master_id)
       {:ok, opponent} = Tournaments.get_opponent(tournament.id, tournament.master_id)
 
       pending_list =
@@ -2553,11 +2546,6 @@ defmodule Milk.TournamentsTest do
         user.id == tournament.master_id
       end)
 
-      match_list =
-        tournament.id
-        |> TournamentProgress.get_match_list()
-
-      match = Tournaments.find_match(match_list, tournament.master_id)
       {:ok, opponent} = Tournaments.get_opponent(tournament.id, tournament.master_id)
 
       TournamentProgress.insert_match_pending_list_table(opponent.id, tournament.id)
@@ -2601,11 +2589,6 @@ defmodule Milk.TournamentsTest do
       users = Tournaments.get_waiting_users(tournament.id)
       assert length(users) == length(entrants) - 1
 
-      match_list =
-        tournament.id
-        |> TournamentProgress.get_match_list()
-
-      match = Tournaments.find_match(match_list, tournament.master_id)
       {:ok, opponent} = Tournaments.get_opponent(tournament.id, tournament.master_id)
 
       TournamentProgress.insert_match_pending_list_table(opponent.id, tournament.id)

@@ -13,7 +13,6 @@ defmodule Milk.Accounts do
   alias Ecto.Multi
 
   alias Milk.{
-    Accounts,
     Repo,
     Tournaments
   }
@@ -39,27 +38,25 @@ defmodule Milk.Accounts do
     EntrantLog
   }
 
+  alias Milk.Tournaments.{
+    Assistant,
+    Entrant
+  }
+
   alias Milk.UserManager.Guardian
   alias Milk.CloudStorage.Objects
-
-  @typedoc """
-  User changeset structure.
-
-  The types %User{} and Accounts are equivalent.
-  """
-  @type t :: %User{}
 
   @doc """
   Lists all users.
   """
+  @spec list_user() :: [User.t()]
   def list_user(), do: Repo.all(User)
 
   @doc """
   Gets total user number.
   """
-  def get_user_number() do
-    Repo.aggregate(User, :count)
-  end
+  @spec get_user_number() :: [User.t()]
+  def get_user_number(), do: Repo.aggregate(User, :count)
 
   @doc """
   Gets a single user.
@@ -90,6 +87,7 @@ defmodule Milk.Accounts do
   # HACK: 複数のアカウントが同じdiscord idを使ってログインすることを想定していない。
   データベースに制約をつけて、associateの処理に変更を加える必要がある。
   """
+  @spec get_user_by_discord_id(integer()) :: User.t() | nil
   def get_user_by_discord_id(discord_id) do
     User
     |> join(:inner, [u], du in DiscordUser, on: u.id == du.user_id)
@@ -100,7 +98,7 @@ defmodule Milk.Accounts do
   @doc """
   Checks name duplication.
   """
-  @spec check_duplication?(binary) :: boolean
+  @spec check_duplication?(String.t()) :: boolean()
   def check_duplication?(name) do
     User
     |> where([u], u.name == ^name)
@@ -110,7 +108,7 @@ defmodule Milk.Accounts do
   @doc """
   Get all users in touch.
   """
-  @spec get_users_in_touch(integer) :: list(Accounts.t())
+  @spec get_users_in_touch(integer()) :: [User.t()]
   def get_users_in_touch(id) do
     ChatMember
     |> where([cm], cm.user_id == ^id)
@@ -120,6 +118,7 @@ defmodule Milk.Accounts do
     |> get_users_by_member_id()
   end
 
+  @spec get_private_rooms([ChatMember.t()]) :: [ChatRoom.t()]
   defp get_private_rooms(members) do
     Enum.map(members, fn member ->
       ChatRoom
@@ -142,18 +141,18 @@ defmodule Milk.Accounts do
 
   defp get_users_by_member_id(members) do
     Enum.map(members, fn member ->
-      Repo.one(
-        from u in User,
-          join: a in assoc(u, :auth),
-          where: u.id == ^member.user_id,
-          preload: [auth: a]
-      )
+      User
+      |> join(:inner, [u], a in assoc(u, :auth))
+      |> where([u, a], u.id == ^member.user_id)
+      |> preload([u, a], auth: a)
+      |> Repo.one()
     end)
   end
 
   @doc """
   Checks if given email address exists.
   """
+  @spec email_exists?(String.t()) :: boolean()
   def email_exists?(email) do
     Auth
     |> where([a], a.email == ^email)
@@ -163,7 +162,7 @@ defmodule Milk.Accounts do
   @doc """
   Creates a user.
   """
-  @spec create_user(map, binary) :: tuple()
+  @spec create_user(map(), String.t()) :: any()
   def create_user(attrs, service_name \\ "e-players") do
     attrs = put_id_for_show(attrs)
 
@@ -180,15 +179,8 @@ defmodule Milk.Accounts do
     end
   end
 
-  defp put_id_for_show(attrs) do
-    case attrs do
-      %{"id_for_show" => id} ->
-        Map.put(attrs, "id_for_show", generate_id_for_show(id))
-
-      _ ->
-        Map.put(attrs, "id_for_show", generate_id_for_show())
-    end
-  end
+  defp put_id_for_show(attrs = %{"id_for_show" => id}), do: Map.put(attrs, "id_for_show", generate_id_for_show(id))
+  defp put_id_for_show(attrs), do: Map.put(attrs, "id_for_show", generate_id_for_show())
 
   defp generate_id_for_show() do
     0..999_999
@@ -233,7 +225,7 @@ defmodule Milk.Accounts do
       iex> update_user(user, %{field: bad_value})
       {:error, error}
   """
-  @spec update_user(Accounts.t(), map) :: tuple()
+  @spec update_user(User.t(), map()) :: any()
   def update_user(%User{} = user, attrs) do
     Multi.new()
     |> Multi.update(:user, fn _ ->
@@ -253,14 +245,20 @@ defmodule Milk.Accounts do
   @doc """
   Change a password.
   """
+  @spec change_password_by_email(String.t(), String.t()) :: {:ok, Auth.t()} | {:error, Ecto.Changeset.t()}
   def change_password_by_email(email, new_password) do
     email
-    |> get_user_by_email()
-    |> Map.get(:auth)
-    |> Auth.changeset(%{password: new_password})
-    |> Repo.update()
+    |> __MODULE__.get_user_by_email()
+    ~> user
+    |> is_nil()
+    |> unless do
+      user.auth
+      |> Auth.changeset(%{password: new_password})
+      |> Repo.update()
+    end
   end
 
+  @spec get_user_by_email(String.t()) :: User.t() | nil
   def get_user_by_email(email) do
     User
     |> join(:inner, [u], a in assoc(u, :auth))
@@ -272,40 +270,40 @@ defmodule Milk.Accounts do
   @doc """
   Search users.
   """
+  @spec search(String.t()) :: [User.t()]
   def search(text) do
     like = "%#{text}%"
 
-    from(
-      u in User,
-      where: like(u.name, ^like),
-      preload: [:auth]
-    )
+    User
+    |> join(:inner, [u], a in assoc(u, :auth))
+    |> where([u, a], like(u.name, ^like))
+    |> preload([u, a], auth: a)
     |> Repo.all()
   end
 
   @doc """
   Updates an icon.
   """
-  @spec update_icon_path(Accounts.t(), binary) :: tuple()
-  def update_icon_path(user, icon_path) do
-    old_icon_path = Repo.one(from u in User, where: u.id == ^user.id, select: u.icon_path)
+  @spec update_icon_path(integer(), binary) :: {:ok, User.t()} | {:error, Ecto.Changeset.t()}
+  def update_icon_path(user_id, icon_path) do
+    User
+    |> where([u], u.id == ^user_id)
+    |> select([u], u.icon_path)
+    |> Repo.one()
+    ~> old_icon_path
 
     unless is_nil(old_icon_path) do
       case Application.get_env(:milk, :environment) do
         # coveralls-ignore-start
-        :dev ->
-          rm(old_icon_path)
-
-        :test ->
-          rm(old_icon_path)
-
-        _ ->
-          rm_prod(old_icon_path)
+        :dev -> rm(old_icon_path)
+        :test -> rm(old_icon_path)
+        _ -> rm_prod(old_icon_path)
           # coveralls-ignore-stop
       end
     end
 
-    user
+    user_id
+    |> __MODULE__.get_user()
     |> User.changeset(%{icon_path: icon_path})
     |> Repo.update()
   end
@@ -332,7 +330,7 @@ defmodule Milk.Accounts do
       {:error, %Ecto.Changeset{}}
 
   """
-  @spec delete_user(integer, binary, binary, binary) :: tuple()
+  @spec delete_user(integer(), binary(), binary(), binary()) :: tuple()
   def delete_user(id, password, email, token) do
     user = get_authorized_user(id, password, email, token)
 
@@ -421,45 +419,34 @@ defmodule Milk.Accounts do
     |> Guardian.decode_and_verify()
     |> case do
       {:ok, _claims} ->
-        Repo.one(
-          from u in User,
-            join: a in assoc(u, :auth),
-            left_join: cm in assoc(u, :chat_member),
-            left_join: as in assoc(u, :assistant),
-            left_join: e in assoc(u, :entrant),
-            where:
-              u.id == ^id and
-                a.email == ^email,
-            preload: [auth: a, chat_member: cm, entrant: e, assistant: as]
-        )
+        User
+        |> join(:inner, [u], a in assoc(u, :auth))
+        |> join(:left, [u, a], cm in ChatMember, on: cm.user_id == u.id)
+        |> join(:left, [u, a, cm], as in Assistant, on: as.user_id == u.id)
+        |> join(:left, [u, a, cm, as], e in Entrant, on: e.user_id == u.id)
+        |> where([u, a, cm, as, e], u.id == ^id)
+        |> where([u, a, cm, as, e], a.email == ^email)
+        |> preload([u, a, cm, e, as], auth: a)
+        |> preload([u, a, cm, e, as], chat_member: cm)
+        |> preload([u, a, cm, e, as], entrant: e)
+        |> preload([u, a, cm, e, as], assistant: as)
+        |> Repo.one()
 
       {:error, :token_expired} ->
-        token
-        |> Guardian.signout()
-        |> if do
+        if Guardian.signout(token) do
           "That token is expired"
         else
           "That token does not exist"
         end
 
-      {:error, :not_exist} ->
-        "That token can't use"
-
-      _ ->
-        "That token does not exist"
+      {:error, :not_exist} -> "That token can't use"
+      _ -> "That token does not exist"
     end
     |> case do
       %User{} = user ->
-        password
-        |> Argon2.verify_pass(user.auth.password)
-        |> if do
-          user
-        else
-          nil
-        end
+        if Argon2.verify_pass(password, user.auth.password), do: user
 
-      x ->
-        x
+      errors -> errors
     end
   end
 
@@ -467,8 +454,7 @@ defmodule Milk.Accounts do
   @doc """
   Login function.
   """
-  # @spec login(map | nil) :: {:ok, _, binary} | {:error, nil, nil}
-  @spec login(map) :: tuple()
+  @spec login(map()) :: {:ok, User.t()} | {:error, Ecto.Changeset.t() | nil}
   def login(user) do
     password = user["password"]
 
@@ -552,6 +538,7 @@ defmodule Milk.Accounts do
   @doc """
   Create an action history.
   """
+  @spec create_action_history(map()) :: {:ok, ActionHistory.t()} | {:error, Ecto.Changeset.t()}
   def create_action_history(attrs) do
     %ActionHistory{}
     |> ActionHistory.changeset(attrs)
@@ -563,22 +550,23 @@ defmodule Milk.Accounts do
   レコメンドシステム用にスコアを取得する関数
   """
   def gain_score(%{"user_id" => user_id, "game_name" => game_name, "score" => gain}) do
-    %{"user_id" => user_id, "game_name" => game_name, "gain" => gain}
-    |> create_action_history()
+    __MODULE__.create_action_history(%{"user_id" => user_id, "game_name" => game_name, "gain" => gain})
   end
 
   @doc """
   Get a device.
   """
-  def get_device(device_id) do
+  @spec get_device(String.t()) :: Device.t() | nil
+  def get_device(token) do
     Device
-    |> where([d], d.token == ^device_id)
+    |> where([d], d.token == ^token)
     |> Repo.one()
   end
 
   @doc """
   Get devices by user id.
   """
+  @spec get_devices_by_user_id(integer()) :: [Device.t()]
   def get_devices_by_user_id(user_id) do
     Device
     |> where([d], d.user_id == ^user_id)
@@ -589,32 +577,28 @@ defmodule Milk.Accounts do
   Register a device token.
   TODO: update処理
   """
+  @spec register_device(integer(), String.t()) :: {:ok, Device.t()} | {:error, String.t()}
   def register_device(user_id, token) do
-    attrs = %{"user_id" => user_id, "token" => token}
+    attrs = %{
+      "user_id" => user_id,
+      "token" => token
+    }
 
-    with {:ok, device} <-
-           %Device{}
-           |> Device.changeset(attrs)
-           |> Repo.insert() do
-      {:ok, device}
-    else
-      {:error, error} -> {:error, Tools.create_error_message(error.errors)}
+    %Device{}
+    |> Device.changeset(attrs)
+    |> Repo.insert()
+    |> case do
+      {:ok, device} -> {:ok, device}
+      {:error, %Ecto.Changeset{} = error} ->  {:error, Tools.create_error_message(error.errors)}
+      {:error, error} -> {:error, Tools.create_error_message(error)}
     end
   end
 
   @doc """
   Unregister a device token.
   """
-  def unregister_device(%Device{} = device) do
-    device
-    |> Repo.delete()
-    |> case do
-      {:ok, _device} -> true
-      {:error, _error} -> false
-    end
-  end
-
-  # TODO: profile更新
+  def unregister_device(%Device{} = device), do: Repo.delete(device)
+  def unregister_device(_), do: {:error, "invalid device"}
 
   @doc """
   Create external service.
@@ -628,13 +612,13 @@ defmodule Milk.Accounts do
   @doc """
   Get external service.
   """
-  def get_external_service(id) do
-    Repo.get(ExternalService, id)
-  end
+  @spec get_external_service(integer()) :: ExternalService.t()
+  def get_external_service(id), do: Repo.get(ExternalService, id)
 
   @doc """
   Get external services by user id.
   """
+  @spec get_external_services(integer()) :: [ExternalService.t()]
   def get_external_services(user_id) do
     ExternalService
     |> where([es], es.user_id == ^user_id)
@@ -644,15 +628,17 @@ defmodule Milk.Accounts do
   @doc """
   Update external service.
   """
+  @spec update_external_service(ExternalService.t(), map()) :: {:ok, ExternalService.t()} | {:error, Ecto.Changeset.t()}
   def update_external_service(%ExternalService{} = external_service, attrs) do
     external_service
     |> ExternalService.changeset(attrs)
     |> Repo.update()
   end
 
+  @spec delete_external_service(integer()) :: {:ok, ExternalService.t()} | {:error, Ecto.Changeset.t()}
   def delete_external_service(external_service_id) do
     external_service_id
-    |> get_external_service()
+    |> __MODULE__.get_external_service()
     |> Repo.delete()
   end
 end

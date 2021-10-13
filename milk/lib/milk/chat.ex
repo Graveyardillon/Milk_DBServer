@@ -37,7 +37,7 @@ defmodule Milk.Chat do
 
   require Logger
 
-  def get_all_chat(id) do
+  def get_chat_room(id) do
     Repo.one(
       from cr in ChatRoom,
         left_join: cm in assoc(cr, :chat_member),
@@ -46,22 +46,6 @@ defmodule Milk.Chat do
         preload: [chat_member: cm, chat: c]
     )
   end
-
-  @doc """
-  Gets a single chat_room.
-
-  Raises `Ecto.NoResultsError` if the Chat room does not exist.
-
-  ## Examples
-
-      iex> get_chat_room!(123)
-      %ChatRoom{}
-
-      iex> get_chat_room!(456)
-      ** (Ecto.NoResultsError)
-
-  """
-  def get_chat_room(id), do: Repo.one(from cr in ChatRoom, where: cr.id == ^id, preload: [:chat])
 
   @doc """
   Creates a chat_room.

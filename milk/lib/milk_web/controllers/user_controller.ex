@@ -20,6 +20,7 @@ defmodule MilkWeb.UserController do
   @doc """
   Get user number.
   """
+  @spec number(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def number(conn, _params) do
     num = Accounts.get_user_number()
     json(conn, %{result: true, num: num})
