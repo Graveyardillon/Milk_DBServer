@@ -487,7 +487,7 @@ defmodule Milk.AccountsTest do
     setup [:create_user]
 
     test "update_icon_path/2 updates icon path", %{user: user} do
-      assert Accounts.update_icon_path(user, "icon_path")
+      assert Accounts.update_icon_path(user.id, "icon_path")
     end
   end
 

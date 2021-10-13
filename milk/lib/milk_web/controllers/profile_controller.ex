@@ -1,11 +1,12 @@
 defmodule MilkWeb.ProfileController do
   use MilkWeb, :controller
 
-  alias Common.FileUtils
-
   import Common.Sperm
 
-  alias Common.Tools
+  alias Common.{
+    FileUtils,
+    Tools
+  }
 
   alias Milk.{
     Accounts,
@@ -97,14 +98,14 @@ defmodule MilkWeb.ProfileController do
   end
 
   defp update_account(user, path) do
-    Accounts.update_icon_path(user, path)
+    Accounts.update_icon_path(user.id, path)
     path
   end
 
   defp update_account_prod(user, path) do
     object = Objects.upload(path)
     File.rm(path)
-    Accounts.update_icon_path(user, object.name)
+    Accounts.update_icon_path(user.id, object.name)
     path
   end
 

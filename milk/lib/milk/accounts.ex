@@ -179,15 +179,8 @@ defmodule Milk.Accounts do
     end
   end
 
-  defp put_id_for_show(attrs) do
-    case attrs do
-      %{"id_for_show" => id} ->
-        Map.put(attrs, "id_for_show", generate_id_for_show(id))
-
-      _ ->
-        Map.put(attrs, "id_for_show", generate_id_for_show())
-    end
-  end
+  defp put_id_for_show(attrs = %{"id_for_show" => id}), do: Map.put(attrs, "id_for_show", generate_id_for_show(id))
+  defp put_id_for_show(attrs), do: Map.put(attrs, "id_for_show", generate_id_for_show())
 
   defp generate_id_for_show() do
     0..999_999
@@ -291,26 +284,26 @@ defmodule Milk.Accounts do
   @doc """
   Updates an icon.
   """
-  @spec update_icon_path(User.t(), binary) :: {:ok, User.t()} | {:error, Ecto.Changeset.t()}
-  def update_icon_path(user, icon_path) do
-    old_icon_path = Repo.one(from u in User, where: u.id == ^user.id, select: u.icon_path)
+  @spec update_icon_path(integer(), binary) :: {:ok, User.t()} | {:error, Ecto.Changeset.t()}
+  def update_icon_path(user_id, icon_path) do
+    User
+    |> where([u], u.id == ^user_id)
+    |> select([u], u.icon_path)
+    |> Repo.one()
+    ~> old_icon_path
 
     unless is_nil(old_icon_path) do
       case Application.get_env(:milk, :environment) do
         # coveralls-ignore-start
-        :dev ->
-          rm(old_icon_path)
-
-        :test ->
-          rm(old_icon_path)
-
-        _ ->
-          rm_prod(old_icon_path)
+        :dev -> rm(old_icon_path)
+        :test -> rm(old_icon_path)
+        _ -> rm_prod(old_icon_path)
           # coveralls-ignore-stop
       end
     end
 
-    user
+    user_id
+    |> __MODULE__.get_user()
     |> User.changeset(%{icon_path: icon_path})
     |> Repo.update()
   end
