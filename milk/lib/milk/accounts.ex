@@ -276,11 +276,10 @@ defmodule Milk.Accounts do
   def search(text) do
     like = "%#{text}%"
 
-    from(
-      u in User,
-      where: like(u.name, ^like),
-      preload: [:auth]
-    )
+    User
+    |> join(:inner, [u], a in assoc(u, :auth))
+    |> where([u, a], like(u.name, ^like))
+    |> preload([u, a], auth: a)
     |> Repo.all()
   end
 

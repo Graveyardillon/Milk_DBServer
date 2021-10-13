@@ -170,10 +170,8 @@ defmodule Milk.Tournaments do
   def search(_user_id, text) do
     like = "%#{text}%"
 
-    from(
-      t in Tournament,
-      where: like(t.name, ^like) or like(t.game_name, ^like)
-    )
+    Tournament
+    |> where([t], like(t.name, ^like) or like(t.game_name, ^like))
     |> date_filter()
     |> Repo.all()
     |> Repo.preload(:entrant)
