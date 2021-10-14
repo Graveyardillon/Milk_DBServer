@@ -591,11 +591,6 @@ defmodule MilkWeb.TournamentController do
 
     tournaments = participatings ++ hostings ++ assistants
 
-    # IO.inspect(length(participatings), label: :participatings)
-    # IO.inspect(length(hostings), label: :hostings)
-    # IO.inspect(length(assistants), label: :assistants)
-    # IO.inspect(length(tournaments), label: :tournaments)
-
     Enum.uniq(tournaments)
   end
 
