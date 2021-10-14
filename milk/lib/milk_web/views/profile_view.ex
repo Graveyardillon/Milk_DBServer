@@ -34,7 +34,7 @@ defmodule MilkWeb.ProfileView do
         icon_path: user.icon_path,
         bio: user.bio,
         birthday: user.birthday,
-        birthday_private: user.is_birthday_private,
+        is_birthday_private: user.is_birthday_private,
         win_count: user.win_count,
         gameList: render_many(games, GameView, "game.json"),
         records: render_many(records, ProfileView, "rank.json", as: :record),
