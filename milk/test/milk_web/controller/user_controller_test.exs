@@ -181,6 +181,18 @@ defmodule MilkWeb.UserControllerTest do
       assert data["name"] == username
       refute is_nil(data["id"])
     end
+
+    test "does not work", %{conn: conn} do
+      apple_id = "apple@icloud.com"
+
+      conn = post(conn, Routes.user_path(conn, :signin_with_apple), %{
+        apple_id: apple_id
+      })
+
+      response = json_response(conn, 200)
+
+      IO.inspect(response)
+    end
   end
 
   describe "users in touch" do

@@ -572,13 +572,13 @@ defmodule MilkWeb.TournamentController do
   def relevant(conn, %{"user_id" => user_id}) do
     user_id
     |> Tools.to_integer_as_needed()
-    |> relevant()
+    |> do_relevant()
     ~> tournaments
 
     render(conn, "index.json", tournament: tournaments)
   end
 
-  defp relevant(user_id) do
+  defp do_relevant(user_id) do
     participatings = Tournaments.get_participating_tournaments(user_id)
     hostings = Tournaments.get_tournaments_by_master_id(user_id)
 
@@ -648,7 +648,7 @@ defmodule MilkWeb.TournamentController do
 
     # 時刻の確認（自分の主催している大会には参加できる）
     user_id
-    |> relevant()
+    |> do_relevant()
     |> Enum.all?(fn t ->
       tournament.master_id == user_id || t.event_date != tournament.event_date || is_nil(t.event_date)
     end)
@@ -678,7 +678,7 @@ defmodule MilkWeb.TournamentController do
   def is_started_at_least_one(conn, %{"user_id" => user_id}) do
     user_id
     |> Tools.to_integer_as_needed()
-    |> relevant()
+    |> do_relevant()
     |> Enum.filter(fn tournament ->
       tournament.is_started
     end)

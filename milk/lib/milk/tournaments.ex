@@ -313,11 +313,11 @@ defmodule Milk.Tournaments do
       tournament
       |> Map.get(:entrant)
       |> Enum.map(fn entrant ->
-        user =
-          entrant
-          |> Repo.preload(:user)
-          |> Map.get(:user)
-          |> Repo.preload(:auth)
+        entrant
+        |> Repo.preload(:user)
+        |> Map.get(:user)
+        |> Repo.preload(:auth)
+        ~> user
 
         Map.put(entrant, :user, user)
       end)
@@ -332,18 +332,21 @@ defmodule Milk.Tournaments do
   If tournament does not exist in the table, it checks log table.
   """
   @spec get_tournament_including_logs(integer()) :: {:ok, Tournament.t()} | {:ok, TournamentLog.t()} | {:error, nil}
-  def get_tournament_including_logs(id) do
-    case __MODULE__.get_tournament(id) do
-      nil ->
-        case Log.get_tournament_log_by_tournament_id(id) do
-          nil -> {:error, nil}
-          log -> {:ok, log}
-        end
-
-      tournament ->
-        {:ok, tournament}
-    end
+  def get_tournament_including_logs(tournament_id) do
+    tournament_id
+    |> __MODULE__.get_tournament()
+    |> do_get_tournament_including_logs(tournament_id)
   end
+
+  defp do_get_tournament_including_logs(nil, tournament_id) do
+    tournament_id
+    |> Log.get_tournament_log_by_tournament_id()
+    |> get_tournament_log()
+  end
+  defp do_get_tournament_including_logs(tournament, _), do: {:ok, tournament}
+
+  defp get_tournament_log(nil), do: {:error, nil}
+  defp get_tournament_log(log), do: {:ok, log}
 
   @doc """
   Get tournaments which the user participating in.
@@ -500,12 +503,11 @@ defmodule Milk.Tournaments do
     tournament_id
     |> Chat.get_chat_rooms_by_tournament_id()
     |> Enum.each(fn chat_room ->
-      %{
+      Chat.create_chat_member(%{
         "user_id" => master_id,
         "authority" => 1,
         "chat_room_id" => chat_room.id
-      }
-      |> Chat.create_chat_member()
+      })
     end)
   end
 
@@ -2987,11 +2989,10 @@ defmodule Milk.Tournaments do
   @spec has_confirmed_as_team?(integer(), integer()) :: boolean()
   def has_confirmed_as_team?(user_id, tournament_id) do
     tournament_id
-    |> get_confirmed_teams()
+    |> __MODULE__.get_confirmed_teams()
     |> Enum.any?(fn team ->
-      team
-      |> Map.get(:id)
-      |> get_team_members_by_team_id()
+      team.id
+      |> __MODULE__.get_team_members_by_team_id()
       |> Enum.any?(fn member ->
         member.user_id == user_id
       end)
@@ -3044,7 +3045,7 @@ defmodule Milk.Tournaments do
   @spec team_invitation_decline(integer()) :: {:ok, TeamInvitation.t()} | {:error, Ecto.Changeset.t()}
   def team_invitation_decline(id) do
     id
-    |> get_team_invitation()
+    |> __MODULE__.get_team_invitation()
     ~> invitation
     |> Map.get(:team_member)
     |> Repo.delete()
