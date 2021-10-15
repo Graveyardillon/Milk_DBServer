@@ -150,7 +150,6 @@ defmodule MilkWeb.UserController do
       {:ok, %User{} = user} -> generate_token(user)
       errors -> errors
     end
-    |> IO.inspect()
     |> case do
       {:ok, token, %User{} = user} ->
         render(conn, "login.json", %{user: user, token: token})
