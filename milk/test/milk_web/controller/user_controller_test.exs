@@ -183,15 +183,13 @@ defmodule MilkWeb.UserControllerTest do
     end
 
     test "does not work", %{conn: conn} do
-      apple_id = "apple@icloud.com"
+      apple_id = "apple2@icloud.com"
 
       conn = post(conn, Routes.user_path(conn, :signin_with_apple), %{
         apple_id: apple_id
       })
 
-      response = json_response(conn, 200)
-
-      IO.inspect(response)
+      refute json_response(conn, 200)["result"]
     end
   end
 

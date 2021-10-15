@@ -135,8 +135,7 @@ defmodule MilkWeb.UserController do
   Sign in with apple.
   NOTE: 必要に応じてユーザー作成もできる関数
   """
-  def signin_with_apple(conn, attrs = %{"email" => email, "username" => username, "apple_id" => apple_id}) do
-    IO.inspect(attrs, label: :attrs_in_signin_with_apple)
+  def signin_with_apple(conn, %{"email" => email, "username" => username, "apple_id" => apple_id}) do
     cond do
       Accounts.email_exists?(email) -> get_user_by_email(email)
       Apple.apple_user_exists?(apple_id) -> get_user_by_apple_id(apple_id)
@@ -162,9 +161,7 @@ defmodule MilkWeb.UserController do
   end
 
   # NOTE: ユーザー作成はできない
-  def signin_with_apple(conn, attrs = %{"apple_id" => apple_id}) do
-    IO.inspect(attrs, label: :attrs_in_signin_with_apple)
-
+  def signin_with_apple(conn, %{"apple_id" => apple_id}) do
     apple_id
     |> Apple.get_apple_user_by_apple_id()
     |> signin_with_apple_user()
