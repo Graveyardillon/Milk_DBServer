@@ -2351,7 +2351,7 @@ defmodule Milk.Tournaments do
       is_manager && is_not_entrant -> "IsManager"
       !is_manager && is_assistant && is_not_entrant -> "IsAssistant"
       is_member -> "IsMember"
-      :else -> check_has_lost!(tournament.id, id)
+      :else -> check_has_lost!(tournament, id)
     end
   end
 
@@ -2416,40 +2416,36 @@ defmodule Milk.Tournaments do
   end
 
   # HACK: is_aloneの分の処理も挟んでいる
-  @spec check_has_lost!(integer(), integer()) :: String.t()
-  defp check_has_lost!(tournament_id, id) do
-    match_list = TournamentProgress.get_match_list(tournament_id)
+  @spec check_has_lost!(Tournament.t(), integer()) :: String.t()
+  defp check_has_lost!(tournament, id) do
+    match_list = TournamentProgress.get_match_list(tournament.id)
     match = find_match(match_list, id)
 
     cond do
       length(match_list) == 0 -> "IsFinished"
       has_lost?(match_list, id) -> "IsLoser"
       is_alone?(match) -> "IsAlone"
-      :else -> check_wait_state?(tournament_id, id)
+      :else -> check_wait_state!(tournament, id, match)
     end
   end
 
-  @spec check_wait_state?(integer(), integer()) :: String.t()
-  defp check_wait_state?(tournament_id, id) do
-    tournament_id
-    |> get_tournament()
-    ~> tournament
-    |> Map.get(:id)
-    |> TournamentProgress.get_match_list()
-    |> find_match(id)
-    ~> match
-
-    if tournament.is_team do
+  @spec check_wait_state!(Tournament.t(), integer(), any()) :: String.t()
+  defp check_wait_state!(tournament, id, match) do
+    tournament.is_team
+    |> if do
       get_opponent_team(match, id)
     else
       get_opponent_user(match, id)
     end
-    |> elem(1)
-    |> Map.get(:id)
-    |> TournamentProgress.get_match_pending_list(tournament_id)
+    |> case do
+      {:ok, %User{} = user} -> TournamentProgress.get_match_pending_list(user.id, tournament.id)
+      {:ok, %Team{} = team} -> TournamentProgress.get_match_pending_list(team.id, tournament.id)
+      {:wait, nil} -> raise "invalid opponent: {:wait, nil}"
+      {:error, error} -> raise "invalid #{error}"
+    end
     ~> opponent_pending_list
 
-    pending_list = TournamentProgress.get_match_pending_list(id, tournament_id)
+    pending_list = TournamentProgress.get_match_pending_list(id, tournament.id)
 
     cond do
       pending_list == [] && tournament.enabled_coin_toss ->
