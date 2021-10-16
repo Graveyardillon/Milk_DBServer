@@ -2337,20 +2337,37 @@ defmodule Milk.Tournaments do
   defp do_state!(%Tournament{is_started: is_started}, _) when not is_started, do: "IsNotStarted"
   defp do_state!(tournament, user_id) do
     id = TournamentProgress.get_necessary_id(tournament.id, user_id)
-    check_user_role(tournament, id, user_id)
+    check_user_role!(tournament, id, user_id)
   end
 
-  @spec check_user_role(Tournament.t(), integer(), integer()) :: String.t()
-  defp check_user_role(tournament, id, user_id) do
+  @spec check_user_role!(Tournament.t(), integer(), integer()) :: String.t()
+  defp check_user_role!(tournament, id, user_id) do
     is_manager = tournament.master_id == user_id
+    is_assistant = is_assistant?(tournament, user_id)
+    is_not_entrant = is_not_entrant?(tournament, user_id)
+    is_member = is_member?(tournament, user_id)
 
-    tournament
-    |> Map.get(:id)
+    cond do
+      is_manager && is_not_entrant -> "IsManager"
+      !is_manager && is_assistant && is_not_entrant -> "IsAssistant"
+      is_member -> "IsMember"
+      :else -> check_has_lost!(tournament.id, id)
+    end
+  end
+
+  @spec is_assistant?(Tournament.t(), integer()) :: boolean()
+  defp is_assistant?(tournament, user_id) do
+    tournament.id
     |> __MODULE__.get_assistants()
-    |> Enum.filter(fn assistant -> assistant.user_id == user_id end)
-    |> (fn list -> list != [] end).()
-    ~> is_assistant
+    |> Enum.filter(fn assistant ->
+      assistant.user_id == user_id
+    end)
+    |> length()
+    |> Kernel.!=(0)
+  end
 
+  @spec is_not_entrant?(Tournament.t(), integer()) :: boolean()
+  defp is_not_entrant?(tournament, user_id) do
     if tournament.is_team do
       tournament
       |> Map.get(:id)
@@ -2372,8 +2389,10 @@ defmodule Milk.Tournaments do
         entrant_user_id != user_id
       end)
     end
-    ~> is_not_entrant
+  end
 
+  @spec is_member?(Tournament.t(), integer()) :: boolean()
+  defp is_member?(tournament, user_id) do
     tournament
     |> Map.get(:is_team)
     |> if do
@@ -2394,47 +2413,19 @@ defmodule Milk.Tournaments do
     else
       false
     end
-    ~> is_member
-
-    cond do
-      is_manager && is_not_entrant ->
-        "IsManager"
-
-      !is_manager && is_assistant && is_not_entrant ->
-        "IsAssistant"
-
-      is_member ->
-        "IsMember"
-
-      :else ->
-        check_has_lost?(tournament.id, id)
-    end
   end
 
-  @spec check_has_lost?(integer(), integer()) :: String.t()
-  defp check_has_lost?(tournament_id, id) do
-    case TournamentProgress.get_match_list(tournament_id) do
-      [] ->
-        "IsFinished"
-
-      match_list ->
-        if has_lost?(match_list, id) do
-          "IsLoser"
-        else
-          check_is_alone?(tournament_id, id)
-        end
-    end
-  end
-
-  @spec check_is_alone?(integer(), integer()) :: String.t()
-  defp check_is_alone?(tournament_id, id) do
+  # HACK: is_aloneの分の処理も挟んでいる
+  @spec check_has_lost!(integer(), integer()) :: String.t()
+  defp check_has_lost!(tournament_id, id) do
     match_list = TournamentProgress.get_match_list(tournament_id)
     match = find_match(match_list, id)
 
     cond do
+      length(match_list) == 0 -> "IsFinished"
+      has_lost?(match_list, id) -> "IsLoser"
       is_alone?(match) -> "IsAlone"
-      match == [] -> "IsLoser"
-      true -> check_wait_state?(tournament_id, id)
+      :else -> check_wait_state?(tournament_id, id)
     end
   end
 
