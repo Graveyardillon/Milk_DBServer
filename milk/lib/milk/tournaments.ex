@@ -2329,38 +2329,15 @@ defmodule Milk.Tournaments do
   @spec state!(integer(), integer()) :: String.t()
   def state!(tournament_id, user_id) do
     tournament_id
-    |> get_tournament()
-    ~> tournament
-    |> is_nil()
-    |> unless do
-      Map.get(tournament, :is_team)
-    else
-      false
-    end
-    |> if do
-      tournament_id
-      |> get_team_by_tournament_id_and_user_id(user_id)
-      ~> team
-      |> is_nil()
-      |> unless do
-        team.id
-      else
-        user_id
-      end
-    else
-      user_id
-    end
-    ~> id
+    |> __MODULE__.get_tournament()
+    |> do_state!(user_id)
+  end
 
-    unless tournament do
-      "IsFinished"
-    else
-      unless tournament.is_started do
-        "IsNotStarted"
-      else
-        check_user_role(tournament, id, user_id)
-      end
-    end
+  defp do_state!(nil, _), do: "IsFinished"
+  defp do_state!(%Tournament{is_started: is_started}, _) when not is_started, do: "IsNotStarted"
+  defp do_state!(tournament, user_id) do
+    id = TournamentProgress.get_necessary_id(tournament.id, user_id)
+    check_user_role(tournament, id, user_id)
   end
 
   @spec check_user_role(Tournament.t(), integer(), integer()) :: String.t()
@@ -2369,7 +2346,7 @@ defmodule Milk.Tournaments do
 
     tournament
     |> Map.get(:id)
-    |> get_assistants()
+    |> __MODULE__.get_assistants()
     |> Enum.filter(fn assistant -> assistant.user_id == user_id end)
     |> (fn list -> list != [] end).()
     ~> is_assistant

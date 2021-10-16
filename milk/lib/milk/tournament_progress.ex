@@ -1029,7 +1029,13 @@ defmodule Milk.TournamentProgress do
     |> if do
       tournament_id
       |> Tournaments.get_team_by_tournament_id_and_user_id(user_id)
-      |> Map.get(:id)
+      ~> team
+      |> is_nil()
+      |> unless do
+        team.id
+      else
+        user_id
+      end
     else
       user_id
     end
