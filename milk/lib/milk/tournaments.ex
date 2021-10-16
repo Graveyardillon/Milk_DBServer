@@ -2431,20 +2431,7 @@ defmodule Milk.Tournaments do
 
   @spec check_wait_state!(Tournament.t(), integer(), any()) :: String.t()
   defp check_wait_state!(tournament, id, match) do
-    tournament.is_team
-    |> if do
-      get_opponent_team(match, id)
-    else
-      get_opponent_user(match, id)
-    end
-    |> case do
-      {:ok, %User{} = user} -> TournamentProgress.get_match_pending_list(user.id, tournament.id)
-      {:ok, %Team{} = team} -> TournamentProgress.get_match_pending_list(team.id, tournament.id)
-      {:wait, nil} -> raise "invalid opponent: {:wait, nil}"
-      {:error, error} -> raise "invalid #{error}"
-    end
-    ~> opponent_pending_list
-
+    opponent_pending_list = load_opponent_pending_list(tournament, match, id)
     pending_list = TournamentProgress.get_match_pending_list(id, tournament.id)
 
     cond do
@@ -2463,6 +2450,21 @@ defmodule Milk.Tournaments do
 
       :else ->
         "IsPending"
+    end
+  end
+
+  defp load_opponent_pending_list(tournament, match, id) do
+    tournament.is_team
+    |> if do
+      get_opponent_team(match, id)
+    else
+      get_opponent_user(match, id)
+    end
+    |> case do
+      {:ok, %User{} = user} -> TournamentProgress.get_match_pending_list(user.id, tournament.id)
+      {:ok, %Team{} = team} -> TournamentProgress.get_match_pending_list(team.id, tournament.id)
+      {:wait, nil} -> raise "invalid opponent: {:wait, nil}"
+      {:error, error} -> raise "invalid #{error}"
     end
   end
 
@@ -2485,7 +2487,7 @@ defmodule Milk.Tournaments do
     end
     ~> {:ok, opponent}
 
-    is_head? = is_head_of_coin?(tournament.id, id, opponent.id)
+    is_head? = __MODULE__.is_head_of_coin?(tournament.id, id, opponent.id)
 
     tournament
     |> Map.get(:id)
