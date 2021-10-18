@@ -1,7 +1,6 @@
 defmodule MilkWeb.ProfileView do
   use MilkWeb, :view
   alias MilkWeb.ProfileView
-  alias MilkWeb.GameView
 
   def render("index.json", %{profiles: profiles}) do
     %{data: render_many(profiles, ProfileView, "profile.json")}
@@ -22,7 +21,6 @@ defmodule MilkWeb.ProfileView do
 
   def render("profile.json", %{
         user: user,
-        games: games,
         records: records,
         external_services: external_services,
         associated_with_discord: associated_with_discord
@@ -36,7 +34,6 @@ defmodule MilkWeb.ProfileView do
         birthday: user.birthday,
         is_birthday_private: user.is_birthday_private,
         win_count: user.win_count,
-        gameList: render_many(games, GameView, "game.json"),
         records: render_many(records, ProfileView, "rank.json", as: :record),
         external_services:
           render_many(external_services, ProfileView, "external_service.json",
