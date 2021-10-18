@@ -412,13 +412,8 @@ defmodule MilkWeb.TournamentController do
       Map.put(tournament, :entrants, entrants)
     end)
     ~> tournaments
-    |> length()
-    |> Kernel.==(0)
-    |> unless do
-      render(conn, "home.json", tournaments_info: tournaments)
-    else
-      render(conn, "error.json", error: nil)
-    end
+
+    render(conn, "home.json", tournaments_info: tournaments)
   end
 
   @doc """
