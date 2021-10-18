@@ -26,7 +26,7 @@ defmodule MilkWeb.ProfileController do
     |> Accounts.get_user()
     ~> user
     |> if do
-      games = Profiles.get_game_list(user)
+      # games = Profiles.get_game_list(user)
       records = Profiles.get_records(user)
 
       external_services = Accounts.get_external_services(user_id)
@@ -34,7 +34,6 @@ defmodule MilkWeb.ProfileController do
 
       render(conn, "profile.json",
         user: user,
-        games: games,
         records: records,
         external_services: external_services,
         associated_with_discord: associated_with_discord?
@@ -51,14 +50,12 @@ defmodule MilkWeb.ProfileController do
     ~> user
     |> is_nil()
     |> unless do
-      gamelist = Map.get(profile_params, "gameList")
-      records = Map.get(profile_params, "records")
+      records = Map.get(profile_params, "records") || []
 
       user
       |> Accounts.update_user(profile_params)
       |> case do
         {:ok, user} ->
-          Profiles.update_gamelist(user, gamelist)
           Profiles.update_recordlist(user, records)
           json(conn, %{result: true, profile_result: true})
 
