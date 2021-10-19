@@ -1,6 +1,8 @@
 defmodule MilkWeb.NotifController do
   use MilkWeb, :controller
 
+  import Common.Sperm
+
   alias Common.Tools
   alias Maps
 
@@ -12,9 +14,10 @@ defmodule MilkWeb.NotifController do
   alias Milk.Notif.Notification
 
   def get_list(conn, %{"user_id" => user_id}) do
-    user_id = Tools.to_integer_as_needed(user_id)
-
-    notifs = Notif.list_notifications(user_id)
+    user_id
+    |> Tools.to_integer_as_needed()
+    |> Notif.list_notifications()
+    ~> notifs
 
     render(conn, "list.json", notif: notifs)
   end
@@ -32,11 +35,12 @@ defmodule MilkWeb.NotifController do
     |> Notif.get_notification!()
     |> Notif.delete_notification()
     |> case do
-      {:ok, %Notification{}} ->
-        json(conn, %{result: true})
-      _ ->
-        json(conn, %{result: false})
+      {:ok, %Notification{}} -> true
+      _ -> false
     end
+    ~> result
+
+    json(conn, %{result: result})
   end
 
   def notify_all(conn, %{"text" => title}) do
@@ -58,11 +62,17 @@ defmodule MilkWeb.NotifController do
     user_id
     |> Tools.to_integer_as_needed()
     |> Notif.unchecked_notifications()
-    |> Enum.each(fn notification ->
-      Notif.update_notification(notification, %{is_checked: true})
+    |> Enum.all?(fn notification ->
+      notification
+      |> Notif.update_notification(%{is_checked: true})
+      |> case do
+        {:ok, _} -> true
+        _ -> false
+      end
     end)
+    ~> result
 
-    json(conn, %{result: true})
+    json(conn, %{result: result})
   end
 
   def test_push_notice(conn, %{"token" => token}) do

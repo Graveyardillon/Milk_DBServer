@@ -109,6 +109,7 @@ defmodule Milk.Notif do
       {:error, %Ecto.Changeset{}}
 
   """
+  @spec create_notification(map()) :: {:ok, Notification.t()} | {:error, Ecto.Changeset.t()}
   def create_notification(attrs \\ %{}) do
     attrs["data"]
     |> if do
@@ -151,6 +152,7 @@ defmodule Milk.Notif do
       {:error, %Ecto.Changeset{}}
 
   """
+  @spec update_notification(Notification.t(), map()) :: {:ok, Notification.t()} | {:error, Ecto.Changeset.t()}
   def update_notification(%Notification{} = notification, attrs) do
     notification
     |> Notification.changeset(attrs)
@@ -169,6 +171,7 @@ defmodule Milk.Notif do
       {:error, %Ecto.Changeset{}}
 
   """
+  @spec delete_notification(Notification.t()) :: {:ok, Notification.t()} | {:error, Ecto.Changeset.t()}
   def delete_notification(%Notification{} = notification) do
     %NotificationLog{}
     |> NotificationLog.changeset(Map.from_struct(notification))

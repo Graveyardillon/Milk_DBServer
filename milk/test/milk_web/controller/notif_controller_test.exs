@@ -226,16 +226,16 @@ defmodule MilkWeb.NotifControllerTest do
 
       conn = get(conn, Routes.notif_path(conn, :get_list), user_id: user.id)
 
-      json_response(conn, 200)
+      conn
+      |> json_response(200)
       |> Map.get("data")
       |> Enum.map(fn notification ->
         assert notification["user_id"] == user.id
         refute notification["is_checked"]
       end)
       |> length()
-      |> (fn len ->
-            assert len == 17
-          end).()
+      |> Kernel.==(17)
+      |> assert()
 
       conn = post(conn, Routes.notif_path(conn, :check_all), user_id: user.id)
       assert json_response(conn, 200)["result"]
@@ -249,9 +249,8 @@ defmodule MilkWeb.NotifControllerTest do
         assert notification["is_checked"]
       end)
       |> length()
-      |> (fn len ->
-            assert len == 17
-          end).()
+      |> Kernel.==(17)
+      |> assert()
     end
   end
 end
