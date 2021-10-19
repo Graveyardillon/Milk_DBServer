@@ -167,9 +167,19 @@ defmodule MilkWeb.TournamentController do
             add_queue_tournament_start_push_notice(tournament)
           end
 
-          if !is_nil(tournament.discord_server_id) and !is_nil(tournament.description) do
-            Discord.send_tournament_description(tournament.discord_server_id, tournament.description)
-          end
+          Task.async(fn ->
+            if !is_nil(tournament.discord_server_id) do
+              tournament.discord_server_id
+              |> Discord.send_tournament_create_notification()
+              |> case do
+                {:ok, _} ->
+                  if !is_nil(tournament.description) do
+                    Discord.send_tournament_description(tournament.discord_server_id, tournament.description)
+                  end
+                _ -> nil
+              end
+            end
+          end)
 
           render(conn, "create.json", tournament: tournament)
 
