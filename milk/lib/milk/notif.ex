@@ -155,7 +155,7 @@ defmodule Milk.Notif do
   @spec update_notification(Notification.t(), map()) :: {:ok, Notification.t()} | {:error, Ecto.Changeset.t()}
   def update_notification(%Notification{} = notification, attrs) do
     notification
-    |> Notification.changeset(attrs)
+    |> Notification.update_changeset(attrs)
     |> Repo.update()
   end
 

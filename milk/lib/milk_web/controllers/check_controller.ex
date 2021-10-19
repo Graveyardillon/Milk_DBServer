@@ -21,6 +21,7 @@ defmodule MilkWeb.CheckController do
     user_id
     |> Tools.to_integer_as_needed()
     |> Notif.count_unchecked_notifications()
+    |> IO.inspect(label: :unchecked_notifications_count)
     |> unchecked_notifications_exist?()
     ~> unchecked_notifcations_exist?
 
