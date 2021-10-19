@@ -161,7 +161,6 @@ defmodule MilkWeb.NotifControllerTest do
   end
 
   describe "delete" do
-    # FIXME: assertを追加したい
     test "works", %{conn: conn} do
       user = fixture_user()
 

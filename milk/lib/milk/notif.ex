@@ -30,8 +30,8 @@ defmodule Milk.Notif do
       [%Notification{}, ...]
 
   """
-  @spec list_notification(integer()) :: [Notification.t()]
-  def list_notification(user_id) do
+  @spec list_notifications(integer()) :: [Notification.t()]
+  def list_notifications(user_id) do
     Notification
     |> join(:inner, [n], u in User, on: n.user_id == u.id)
     |> where([n, u], u.id == ^user_id)
@@ -42,9 +42,10 @@ defmodule Milk.Notif do
   @doc """
   Get unchecked notifications.
   """
+  @spec unchecked_notifications(integer()) :: [Notification.t()]
   def unchecked_notifications(user_id) do
     user_id
-    |> list_notification()
+    |> __MODULE__.list_notifications()
     |> Enum.filter(fn notification ->
       !notification.is_checked
     end)
@@ -53,6 +54,7 @@ defmodule Milk.Notif do
   @doc """
   Count unchecked notifications.
   """
+  @spec count_unchecked_notifications(integer()) :: integer()
   def count_unchecked_notifications(user_id) do
     Notification
     |> where([n], not n.is_checked)
@@ -74,6 +76,7 @@ defmodule Milk.Notif do
       ** (Ecto.NoResultsError)
 
   """
+  @spec get_notification!(integer()) :: Notification.t()
   def get_notification!(id), do: Repo.get!(Notification, id)
 
   @doc """

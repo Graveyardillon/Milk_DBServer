@@ -44,7 +44,7 @@ defmodule Milk.NotifTest do
         |> Notif.create_notification()
       end)
 
-      Notif.list_notification(user.id)
+      Notif.list_notifications(user.id)
       |> Enum.map(fn notif ->
         assert notif.user_id == user.id
       end)
