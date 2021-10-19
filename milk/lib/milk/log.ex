@@ -739,19 +739,6 @@ defmodule Milk.Log do
   end
 
   @doc """
-  Returns an `%Ecto.Changeset{}` for tracking notification_log changes.
-
-  ## Examples
-
-      iex> change_notification_log(notification_log)
-      %Ecto.Changeset{data: %NotificationLog{}}
-
-  """
-  def change_notification_log(%NotificationLog{} = notification_log, attrs \\ %{}) do
-    NotificationLog.changeset(notification_log, attrs)
-  end
-
-  @doc """
   Returns the list of tournament_chat_topic_log.
 
   ## Examples

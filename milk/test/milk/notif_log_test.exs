@@ -46,10 +46,5 @@ defmodule Milk.NotifLogTest do
       assert {:ok, %NotificationLog{}} = Log.delete_notification_log(notification_log)
       assert_raise Ecto.NoResultsError, fn -> Log.get_notification_log!(notification_log.id) end
     end
-
-    test "change_notification_log/1 returns a notification_log changeset" do
-      notification_log = notification_log_fixture()
-      assert %Ecto.Changeset{} = Log.change_notification_log(notification_log)
-    end
   end
 end
