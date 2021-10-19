@@ -197,19 +197,6 @@ defmodule Milk.Notif do
   def delete_notifications_relevant_for_tournament(_), do: {:error, "should provide tournament_id in integer"}
 
   @doc """
-  Returns an `%Ecto.Changeset{}` for tracking notification changes.
-
-  ## Examples
-
-      iex> change_notification(notification)
-      %Ecto.Changeset{data: %Notification{}}
-
-  """
-  def change_notification(%Notification{} = notification, attrs \\ %{}) do
-    Notification.changeset(notification, attrs)
-  end
-
-  @doc """
   Creates a notification log.
   """
   def create_notification_log(attrs \\ %{}) do

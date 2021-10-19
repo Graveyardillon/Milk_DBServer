@@ -3,16 +3,11 @@ defmodule Milk.Profiles do
   import Common.Sperm
 
   alias Milk.Accounts.{
-    Profile,
     User
   }
 
-  alias Milk.Games.Game
-
   alias Milk.Log.{
     EntrantLog,
-    TeamLog,
-    TeamMemberLog,
     TournamentLog
   }
 
@@ -34,7 +29,6 @@ defmodule Milk.Profiles do
       Map.put(entrant_log, :tournament_log, tlog)
     end)
     |> Enum.filter(fn entrant_log -> entrant_log.tournament_log != nil end)
-    ~> records
 
     # TeamMemberLog
     # |> where([tm], tm.user_id == ^user.id)
@@ -60,7 +54,6 @@ defmodule Milk.Profiles do
   end
 
   def update_recordlist(%User{} = user, record_list) do
-  IO.inspect(record_list)
     EntrantLog
     |> where([el], el.user_id == ^user.id)
     |> Repo.all()
@@ -70,7 +63,6 @@ defmodule Milk.Profiles do
       el_log
       |> EntrantLog.changeset(%{show_on_profile: show_on_profile})
       |> Repo.update()
-      |> IO.inspect()
     end)
   end
 end

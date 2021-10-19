@@ -191,11 +191,6 @@ defmodule Milk.NotifTest do
       assert {:ok, %Notification{}} = Notif.delete_notification(notification)
       assert_raise Ecto.NoResultsError, fn -> Notif.get_notification!(notification.id) end
     end
-
-    test "change_notification/1 returns a notification changeset" do
-      notification = notification_fixture()
-      assert %Ecto.Changeset{} = Notif.change_notification(notification)
-    end
   end
 
   describe "push notification" do

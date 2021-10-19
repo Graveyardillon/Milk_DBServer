@@ -132,6 +132,28 @@ defmodule Milk.Discord do
     end
   end
 
+  @spec send_tournament_create_notification(String.t()) :: {:ok, HTTPoison.Response.t()} | {:error, HTTPoison.Error.t()}
+  def send_tournament_create_notification(server_id) when is_binary(server_id) do
+    discord_server_url = Application.get_env(:milk, :discord_server)
+    access_token = Application.get_env(:milk, :discord_server_access_token)
+
+    url = "#{discord_server_url}/create_tournament"
+    params = Jason.encode!(%{server_id: server_id, access_token: access_token})
+
+    HTTPoison.post(url, params, "Content-Type": "application/json")
+  end
+
+  @spec send_tournament_description(String.t(), String.t()) :: {:ok, HTTPoison.Response.t()} | {:error, HTTPoison.Error.t()}
+  def send_tournament_description(server_id, description) when is_binary(server_id) and is_binary(description) do
+    discord_server_url = Application.get_env(:milk, :discord_server)
+    access_token = Application.get_env(:milk, :discord_server_access_token)
+
+    url = "#{discord_server_url}/description"
+    params = Jason.encode!(%{server_id: server_id, access_token: access_token, description: description})
+
+    HTTPoison.post(url, params, "Content-Type": "application/json")
+  end
+
   ### Discord server 通知周りの関数群
 
   @doc """
