@@ -23,11 +23,8 @@ defmodule MilkWeb.ProfileControllerTest do
       |> get(Routes.profile_path(conn, :get_profile), user_id: user.id)
       |> json_response(200)
       |> Map.get("data")
-      # |> IO.inspect()
-
 
       assert profile["name"] == "name0"
-
     end
 
     test "update profile", %{conn: conn} do
@@ -47,16 +44,14 @@ defmodule MilkWeb.ProfileControllerTest do
       |> post(Routes.profile_path(conn, :update), profile: update_attrs)
       |> json_response(200)
       |> Map.get("result")
-
       assert result == true
-
 
       updated_profile =
       conn
       |> get(Routes.profile_path(conn, :get_profile), user_id: user.id)
       |> json_response(200)
       |> Map.get("data")
-      # |> IO.inspect()
+
       assert updated_profile["name"] == update_attrs["name"]
       assert updated_profile["bio"] == update_attrs["bio"]
       assert updated_profile["records"] == update_attrs["records"]

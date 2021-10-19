@@ -59,12 +59,6 @@ defmodule Milk.Profiles do
     # |> Enum.uniq()
   end
 
-  # def update_profile(%User{} = user, name, bio) do
-  #   user
-  #   |> User.changeset(%{name: name, bio: bio})
-  #   |> Repo.update()
-  # end
-
   def update_recordlist(%User{} = user, record_list) do
   IO.inspect(record_list)
     EntrantLog

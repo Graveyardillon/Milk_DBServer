@@ -5,14 +5,12 @@ defmodule Milk.AccountsTest do
 
   alias Milk.{
     Accounts,
-    Profiles,
     Relations,
     Chat
   }
 
   alias Milk.Accounts.{
     User,
-    Profile,
     Relation
   }
 
@@ -332,63 +330,6 @@ defmodule Milk.AccountsTest do
 
       {:ok, %User{}} = Accounts.login(login_params)
       assert {:ok, _} = Accounts.logout(user.id)
-    end
-  end
-
-  defp profile_fixture(attrs \\ %{}) do
-    valid_attrs = %{content_id: 42, content_type: "42", user_id: 42}
-
-    {:ok, profile} =
-      attrs
-      |> Enum.into(valid_attrs)
-      |> Profiles.create_profile()
-
-    profile
-  end
-
-  describe "get profiles" do
-  end
-
-  describe "create profiles" do
-    @valid_attrs %{content_id: 42, content_type: "42", user_id: 42}
-    @update_attrs %{content_id: 43, content_type: "43", user_id: 42}
-    @invalid_attrs %{content_id: nil, content_type: nil, user_id: nil}
-
-    test "create_profile/1 with valid data creates a profile" do
-      assert {:ok, %Profile{} = profile} = Profiles.create_profile(@valid_attrs)
-      assert profile.content_id == 42
-      assert profile.content_type == "42"
-      assert profile.user_id == 42
-    end
-
-    test "create_profile/1 with invalid data returns error changeset" do
-      assert {:error, %Ecto.Changeset{}} = Profiles.create_profile(@invalid_attrs)
-    end
-  end
-
-  describe "update profiles" do
-    @update_attrs %{content_id: 43, content_type: "43", user_id: 42}
-    @invalid_attrs %{content_id: nil, content_type: nil, user_id: nil}
-
-    test "update_profile/2 with valid data updates the profile" do
-      profile = profile_fixture()
-      assert {:ok, %Profile{} = profile} = Profiles.update_profile(profile, @update_attrs)
-      assert profile.content_id == 43
-      assert profile.content_type == "43"
-      assert profile.user_id == 42
-    end
-
-    test "update_profile/2 with invalid data returns error changeset" do
-      profile = profile_fixture()
-      assert {:error, %Ecto.Changeset{}} = Profiles.update_profile(profile, @invalid_attrs)
-    end
-  end
-
-  describe "delete profiles" do
-    test "delete_profile/1 deletes the profile" do
-      profile = profile_fixture()
-      assert {:ok, %Profile{}} = Profiles.delete_profile(profile)
-      assert_raise Ecto.NoResultsError, fn -> Profiles.get_profile!(profile.id) end
     end
   end
 
