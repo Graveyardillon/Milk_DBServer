@@ -71,9 +71,6 @@ defmodule MilkWeb.Router do
     post "/profile/external_service", ExternalServiceController, :create
     delete "/profile/external_service", ExternalServiceController, :delete
 
-    get "/game/list", GameController, :list
-    post "/game/add", GameController, :create
-
     resources "/relation", RelationController, except: [:new, :edit, :index, :show, :delete]
     get "/relation/following_list", RelationController, :following_list
     get "/relation/following_id_list", RelationController, :following_id_list
