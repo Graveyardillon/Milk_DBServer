@@ -167,6 +167,10 @@ defmodule MilkWeb.TournamentController do
             add_queue_tournament_start_push_notice(tournament)
           end
 
+          if !is_nil(tournament.discord_server_id) and !is_nil(tournament.description) do
+            Discord.send_tournament_description(tournament.discord_server_id, tournament.description)
+          end
+
           render(conn, "create.json", tournament: tournament)
 
         {:error, error} ->
@@ -613,7 +617,7 @@ defmodule MilkWeb.TournamentController do
     tournament = Tournaments.get_tournament(tournament_id)
     entrants = Tournaments.get_entrants(tournament.id)
 
-    # Deadlineの確認
+    # NOTE: Deadlineの確認
     tournament.deadline
     |> Milk.EctoDate.dump()
     |> elem(1)
@@ -621,19 +625,19 @@ defmodule MilkWeb.TournamentController do
     |> Kernel.!=(:lt)
     ~> result
 
-    # キャパシティの確認(個人)
+    # NOTE: キャパシティの確認(個人)
     tournament.capacity
     |> Kernel.>(length(entrants))
     |> Kernel.and(result)
     ~> result
 
-    # キャパシティの確認(チーム)
+    # NOTE: キャパシティの確認(チーム)
     tournament.capacity
     |> Kernel.>(length(tournament.team))
     |> Kernel.and(result)
     ~> result
 
-    # 自分が参加しているかどうか
+    # NOTE: 自分が参加しているかどうか
     entrants
     |> Enum.all?(fn entrant ->
       entrant.user_id != user_id
@@ -641,7 +645,7 @@ defmodule MilkWeb.TournamentController do
     |> Kernel.and(result)
     ~> result
 
-    # 時刻の確認（自分の主催している大会には参加できる）
+    # NOTE: 時刻の確認（自分の主催している大会には参加できる）
     user_id
     |> do_relevant()
     |> Enum.all?(fn t ->
@@ -650,7 +654,7 @@ defmodule MilkWeb.TournamentController do
     |> Kernel.and(result)
     ~> result
 
-    # 自分がチームとして参加しているかどうか
+    # NOTE: 自分がチームとして参加しているかどうか
     user_id
     |> Tournaments.has_requested_as_team?(tournament_id)
     |> Kernel.not()
