@@ -8,3 +8,7 @@
 - typespecの付与
 - dialyzerの導入
 - その他リファクタリング
+
+## 2.1.1
+- profile機能、テーブルの改善
+- check_allのチェンジセット不具合修正

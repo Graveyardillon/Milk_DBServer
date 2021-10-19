@@ -67,7 +67,9 @@ defmodule MilkWeb.NotifController do
       |> Notif.update_notification(%{is_checked: true})
       |> case do
         {:ok, _} -> true
-        _ -> false
+        v ->
+          IO.inspect(v, label: :find_me_v)
+          false
       end
     end)
     ~> result
