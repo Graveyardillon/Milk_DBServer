@@ -1,6 +1,8 @@
 defmodule MilkWeb.NotifController do
   use MilkWeb, :controller
 
+  import Common.Sperm
+
   alias Common.Tools
   alias Maps
 
@@ -12,9 +14,10 @@ defmodule MilkWeb.NotifController do
   alias Milk.Notif.Notification
 
   def get_list(conn, %{"user_id" => user_id}) do
-    user_id = Tools.to_integer_as_needed(user_id)
-
-    notifs = Notif.list_notification(user_id)
+    user_id
+    |> Tools.to_integer_as_needed()
+    |> Notif.list_notifications()
+    ~> notifs
 
     render(conn, "list.json", notif: notifs)
   end
@@ -27,18 +30,19 @@ defmodule MilkWeb.NotifController do
   end
 
   def delete(conn, %{"id" => id}) do
-    id = Tools.to_integer_as_needed(id)
-
-    notif = Notif.get_notification!(id)
-
-    with {:ok, %Notification{}} <- Notif.delete_notification(notif) do
-      json(conn, %{result: true})
-    else
-      _ -> json(conn, %{result: false})
+    id
+    |> Tools.to_integer_as_needed()
+    |> Notif.get_notification!()
+    |> Notif.delete_notification()
+    |> case do
+      {:ok, %Notification{}} -> true
+      _ -> false
     end
+    ~> result
+
+    json(conn, %{result: result})
   end
 
-  # FIXME: 権限の認証をつけるべき 引数にbody_textの追加
   def notify_all(conn, %{"text" => title}) do
     Accounts.list_user()
     |> Enum.each(fn user ->
@@ -58,11 +62,17 @@ defmodule MilkWeb.NotifController do
     user_id
     |> Tools.to_integer_as_needed()
     |> Notif.unchecked_notifications()
-    |> Enum.each(fn notification ->
-      Notif.update_notification(notification, %{is_checked: true})
+    |> Enum.all?(fn notification ->
+      notification
+      |> Notif.update_notification(%{is_checked: true})
+      |> case do
+        {:ok, _} -> true
+        _ -> false
+      end
     end)
+    ~> result
 
-    json(conn, %{result: true})
+    json(conn, %{result: result})
   end
 
   def test_push_notice(conn, %{"token" => token}) do
