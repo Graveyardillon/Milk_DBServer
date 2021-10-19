@@ -4,11 +4,8 @@ defmodule MilkWeb.ProfileControllerTest do
 
   alias Milk.{
     Accounts,
-    Profiles,
     Tournaments
   }
-
-  alias Milk.Accounts.Profile
 
   setup %{conn: conn} do
     {:ok, conn: put_req_header(conn, "accept", "application/json")}
