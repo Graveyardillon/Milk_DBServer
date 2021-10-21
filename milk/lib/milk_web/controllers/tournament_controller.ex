@@ -587,6 +587,7 @@ defmodule MilkWeb.TournamentController do
     render(conn, "index.json", tournament: tournaments)
   end
 
+  @spec do_relevant(integer()) :: [Tournament.t()]
   defp do_relevant(user_id) do
     participatings = Tournaments.get_participating_tournaments(user_id)
     hostings = Tournaments.get_tournaments_by_master_id(user_id)
@@ -1963,6 +1964,9 @@ defmodule MilkWeb.TournamentController do
     tournament_id = Tools.to_integer_as_needed(tournament_id)
     user_id = Tools.to_integer_as_needed(user_id)
 
+    IO.inspect(tournament_id, label: :tournament_id)
+    IO.inspect(user_id, label: :user_id)
+
     tournament_id
     |> Tournaments.get_tournament_including_logs()
     |> elem(1)
@@ -1972,6 +1976,7 @@ defmodule MilkWeb.TournamentController do
     |> if do
       tournament_id
       |> Tournaments.get_team_by_tournament_id_and_user_id(user_id)
+      |> IO.inspect(label: :get_team_by_ournament_id_and_user_id)
       ~> team
       |> is_nil()
       |> if do

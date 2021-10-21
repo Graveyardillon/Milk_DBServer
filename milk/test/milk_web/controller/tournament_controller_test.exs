@@ -1567,6 +1567,7 @@ defmodule MilkWeb.TournamentControllerTest do
 
       conn = get(conn, Routes.tournament_path(conn, :is_started_at_least_one), user_id: me.id)
       assert json_response(conn, 200)["result"]
+      IO.inspect(json_response(conn,200))
       assert json_response(conn, 200)["data"]["id"] == tournament.id
 
       conn = get(conn, Routes.tournament_path(conn, :is_started_at_least_one), user_id: mate.id)
