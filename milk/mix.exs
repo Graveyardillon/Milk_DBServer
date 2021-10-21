@@ -94,7 +94,7 @@ defmodule Milk.MixProject do
       {:oban, "~> 2.7"},
       {:typed_struct, "~> 0.2.1"},
       {:ex_image_info, "~> 0.2.4"},
-      {:dfm, "~> 0.1.0"}
+      {:dfa, "~> 0.1.1"}
     ]
   end
 
