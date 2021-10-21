@@ -587,6 +587,7 @@ defmodule MilkWeb.TournamentController do
     render(conn, "index.json", tournament: tournaments)
   end
 
+  @spec do_relevant(integer()) :: [Tournament.t()]
   defp do_relevant(user_id) do
     participatings = Tournaments.get_participating_tournaments(user_id)
     hostings = Tournaments.get_tournaments_by_master_id(user_id)
