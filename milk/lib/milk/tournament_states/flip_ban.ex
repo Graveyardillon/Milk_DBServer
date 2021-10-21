@@ -38,6 +38,16 @@ defmodule Milk.TournamentStates.FlipBan do
     end)
   end
 
+  @spec state!(String.t()) :: String.t()
+  def state!(key_name) do
+    Dfa.state!(key_name, @db_index)
+  end
+
+  @spec trigger!(String.t(), String.t()) :: {:ok, String.t()} | {:error, String.t()}
+  def trigger!(key_name, trigger) do
+    Dfa.trigger!(key_name, @db_index, trigger)
+  end
+
   @spec list_states() :: [String.t()]
   def list_states() do
     [
