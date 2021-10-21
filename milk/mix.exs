@@ -11,6 +11,11 @@ defmodule Milk.MixProject do
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
       deps: deps(),
+      dialyzer: [
+        plt_add_apps: [:mix, :distillery, :ex_unit],
+        check_plt: true,
+        ignore_warnings: "dialyzer_ignore.exs"
+      ],
       test_coverage: [tool: ExCoveralls],
       preferred_cli_env: [
         coveralls: :test,
