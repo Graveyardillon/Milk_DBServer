@@ -490,8 +490,6 @@ defmodule MilkWeb.TournamentController do
   Deletes a tournament.
   """
   def delete(conn, %{"tournament_id" => tournament_id}) do
-    tournament = Tournaments.get_tournament(tournament_id)
-
     tournament_id
     |> Tools.to_integer_as_needed()
     |> Tournaments.get_tournament()
@@ -501,7 +499,7 @@ defmodule MilkWeb.TournamentController do
         notify_discord_on_deleting_tournament_as_needed(tournament)
         json(conn, %{result: true})
       {:error, error} ->
-        render(conn, "error.json", error: nil)
+        render(conn, "error.json", error: error)
     end
   end
 

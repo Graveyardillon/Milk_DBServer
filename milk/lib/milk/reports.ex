@@ -1,5 +1,6 @@
 defmodule Milk.Reports do
   import Ecto.Query, warn: false
+  import Common.Sperm
 
   alias Common.Tools
 
@@ -23,17 +24,17 @@ defmodule Milk.Reports do
     reportee = Tools.to_integer_as_needed(reportee)
 
     if Accounts.get_user(reporter) && Accounts.get_user(reportee) && reporter != reportee do
-      user_reports =
-        Enum.map(report_types, fn type ->
-          with {:ok, report} <-
-                 %UserReport{reporter_id: reporter, reportee_id: reportee}
-                 |> UserReport.changeset(%{report_type: type})
-                 |> Repo.insert() do
-            report
-          else
-            _ -> nil
-          end
-        end)
+      Enum.map(report_types, fn type ->
+        with {:ok, report} <-
+                %UserReport{reporter_id: reporter, reportee_id: reportee}
+                |> UserReport.changeset(%{report_type: type})
+                |> Repo.insert() do
+          report
+        else
+          _ -> nil
+        end
+      end)
+      ~> user_reports
 
       {:ok, user_reports}
     else
