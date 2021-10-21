@@ -12,9 +12,7 @@ defmodule Milk.MixProject do
       aliases: aliases(),
       deps: deps(),
       dialyzer: [
-        plt_add_apps: [:mix, :distillery, :ex_unit],
-        check_plt: true,
-        ignore_warnings: "dialyzer_ignore.exs"
+        plt_file: {:no_warn, "priv/plts/dialyzer.plt"}
       ],
       test_coverage: [tool: ExCoveralls],
       preferred_cli_env: [
