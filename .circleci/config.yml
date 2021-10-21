@@ -31,4 +31,7 @@ jobs:
       - run: mix local.rebar --force
       - run: mix do deps.get, compile
       - run: mix ecto.create
-      - run: mix test
+      - run: 
+          name: Run Tests
+          command: mix test
+          no_output_timeout: 30m
