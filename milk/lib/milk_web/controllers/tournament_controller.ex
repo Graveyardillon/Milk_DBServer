@@ -1741,6 +1741,9 @@ defmodule MilkWeb.TournamentController do
 
     team = Enum.filter(tournament.team, fn team -> team.is_confirmed end)
     selections = Tournaments.get_maps_by_tournament_id(tournament.id)
+      |> Enum.map(fn map ->
+        Map.put(map, :state, "not_selected")
+      end)
 
     tournament
     |> Map.put(:team, team)
