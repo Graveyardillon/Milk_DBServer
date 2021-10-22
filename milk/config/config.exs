@@ -23,10 +23,6 @@ config :logger, :console,
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
 
-# Import environment specific config. This must remain at the bottom
-# of this file so it overrides the configuration defined above.
-import_config "#{Mix.env()}.exs"
-
 config :milk, Milk.UserManager.Guardian,
   issuer: "milk",
   secret_key: "LqoR7+lZoQ0d7SFXzx2GJhzn8QrhoOn2tM43fL6i+2S0d//IjQ4+y+gOcSxsK+2f",
@@ -69,12 +65,15 @@ config :milk, Oban,
   plugins: [
     Oban.Plugins.Pruner,
     {Oban.Plugins.Cron,
-     crontab: [
-       # {"work", MilkWeb._Worker}
-     ]}
+      crontab: [
+        # {"work", MilkWeb._Worker}
+    ]}
   ],
   queues: [default: 10, event: 50]
 
 config :milk, :discord_server_access_token, "I0ouXxHMW8OpMjhUNyVpf3Ga"
-
 config :milk, :dfa_db_index, 10
+
+# Import environment specific config. This must remain at the bottom
+# of this file so it overrides the configuration defined above.
+import_config "#{Mix.env()}.exs"

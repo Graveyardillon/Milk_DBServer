@@ -27,6 +27,7 @@ defmodule Common.Fixtures do
           "platform" => 1
         }
 
+        # TODO: Keyword.getを使おう
         opts[:num]
         |> is_nil()
         |> unless do

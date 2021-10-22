@@ -585,6 +585,7 @@ defmodule MilkWeb.TournamentController do
     render(conn, "index.json", tournament: tournaments)
   end
 
+  @spec do_relevant(integer()) :: [Tournament.t()]
   defp do_relevant(user_id) do
     participatings = Tournaments.get_participating_tournaments(user_id)
     hostings = Tournaments.get_tournaments_by_master_id(user_id)
@@ -1738,6 +1739,9 @@ defmodule MilkWeb.TournamentController do
 
     team = Enum.filter(tournament.team, fn team -> team.is_confirmed end)
     selections = Tournaments.get_maps_by_tournament_id(tournament.id)
+      |> Enum.map(fn map ->
+        Map.put(map, :state, "not_selected")
+      end)
 
     tournament
     |> Map.put(:team, team)
