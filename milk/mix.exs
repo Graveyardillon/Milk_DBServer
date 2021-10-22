@@ -89,7 +89,7 @@ defmodule Milk.MixProject do
       {:tournamex, "~> 0.2.0"},
       {:dialyxir, "~> 1.0", only: [:dev, :test], runtime: false},
       {:excoveralls, "~> 0.10", only: :test},
-      {:redix, ">= 0.0.0"},
+      {:redix, "~> 1.1"},
       {:google_api_storage, "~> 0.29"},
       {:goth, "~> 1.3-rc"},
       {:hackney, "~> 1.17"},
@@ -98,7 +98,8 @@ defmodule Milk.MixProject do
       {:kadabra, "~> 0.4.4"},
       {:oban, "~> 2.7"},
       {:typed_struct, "~> 0.2.1"},
-      {:ex_image_info, "~> 0.2.4"}
+      {:ex_image_info, "~> 0.2.4"},
+      {:dfa, "~> 0.1.3"}
     ]
   end
 
