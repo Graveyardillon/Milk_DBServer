@@ -6,14 +6,16 @@ defmodule Milk.TournamentStates.FlipBanTest do
 
   describe "building dfa" do
     test "just works" do
-      Dfa.flushall()
+      Dfa.Instant.flushall()
 
       user1 = fixture_user(num: 1)
       user2 = fixture_user(num: 2)
       keyname1 = "user:#{user1.id}"
       keyname2 = "user:#{user2.id}"
-      FlipBan.build_dfa(keyname1)
-      FlipBan.build_dfa(keyname2)
+      machine_name = "flipban"
+      FlipBan.define_dfa(machine_name)
+      FlipBan.build_dfa_instance(keyname1, machine_name)
+      FlipBan.build_dfa_instance(keyname2, machine_name)
 
       # NOTE: startまで
       assert FlipBan.state!(keyname1) == FlipBan.is_not_started()

@@ -6,46 +6,49 @@ defmodule Milk.TournamentStates.FlipBan do
 
   @db_index Application.get_env(:milk, :dfa_db_index)
 
-  @spec build_dfa(String.t()) :: any()
-  def build_dfa(key_name) do
-    Dfa.initialize!(key_name, @db_index, is_not_started())
-
-    Dfa.on!(key_name, @db_index, start_trigger(), is_not_started(), should_flip_coin())
-    Dfa.on!(key_name, @db_index, member_trigger(), is_not_started(), is_member())
-    Dfa.on!(key_name, @db_index, manager_trigger(), is_not_started(), is_manager())
-    Dfa.on!(key_name, @db_index, flip_trigger(), should_flip_coin(), is_waiting_for_coin_flip())
-    Dfa.on!(key_name, @db_index, ban_map_trigger(), is_waiting_for_coin_flip(), should_ban_map())
-    Dfa.on!(key_name, @db_index, observe_ban_map_trigger(), is_waiting_for_coin_flip(), should_observe_ban())
-    Dfa.on!(key_name, @db_index, observe_ban_map_trigger(), should_ban_map(), should_observe_ban())
-    Dfa.on!(key_name, @db_index, ban_map_trigger(), should_observe_ban(), should_ban_map())
-    Dfa.on!(key_name, @db_index, choose_map_trigger(), should_observe_ban(), should_choose_map())
-    Dfa.on!(key_name, @db_index, observe_choose_map_trigger(), should_ban_map(), should_observe_choose())
-    Dfa.on!(key_name, @db_index, choose_ad_trigger(), should_observe_choose(), should_choose_ad())
-    Dfa.on!(key_name, @db_index, observe_choose_ad_trigger(), should_choose_map(), should_observe_ad())
-    Dfa.on!(key_name, @db_index, pend_trigger(), should_choose_ad(), is_pending())
-    Dfa.on!(key_name, @db_index, pend_trigger(), should_observe_ad(), is_pending())
-    Dfa.on!(key_name, @db_index, lose_trigger(), is_pending(), is_loser())
-    Dfa.on!(key_name, @db_index, alone_trigger(), is_pending(), is_alone())
-    Dfa.on!(key_name, @db_index, next_trigger(), is_alone(), should_flip_coin())
-    Dfa.on!(key_name, @db_index, next_trigger(), is_pending(), should_flip_coin())
+  @spec define_dfa(String.t()) :: :ok
+  def define_dfa(machine_name) do
+    Dfa.Predefined.on!(machine_name, @db_index, start_trigger(), is_not_started(), should_flip_coin())
+    Dfa.Predefined.on!(machine_name, @db_index, member_trigger(), is_not_started(), is_member())
+    Dfa.Predefined.on!(machine_name, @db_index, manager_trigger(), is_not_started(), is_manager())
+    Dfa.Predefined.on!(machine_name, @db_index, flip_trigger(), should_flip_coin(), is_waiting_for_coin_flip())
+    Dfa.Predefined.on!(machine_name, @db_index, ban_map_trigger(), is_waiting_for_coin_flip(), should_ban_map())
+    Dfa.Predefined.on!(machine_name, @db_index, observe_ban_map_trigger(), is_waiting_for_coin_flip(), should_observe_ban())
+    Dfa.Predefined.on!(machine_name, @db_index, observe_ban_map_trigger(), should_ban_map(), should_observe_ban())
+    Dfa.Predefined.on!(machine_name, @db_index, ban_map_trigger(), should_observe_ban(), should_ban_map())
+    Dfa.Predefined.on!(machine_name, @db_index, choose_map_trigger(), should_observe_ban(), should_choose_map())
+    Dfa.Predefined.on!(machine_name, @db_index, observe_choose_map_trigger(), should_ban_map(), should_observe_choose())
+    Dfa.Predefined.on!(machine_name, @db_index, choose_ad_trigger(), should_observe_choose(), should_choose_ad())
+    Dfa.Predefined.on!(machine_name, @db_index, observe_choose_ad_trigger(), should_choose_map(), should_observe_ad())
+    Dfa.Predefined.on!(machine_name, @db_index, pend_trigger(), should_choose_ad(), is_pending())
+    Dfa.Predefined.on!(machine_name, @db_index, pend_trigger(), should_observe_ad(), is_pending())
+    Dfa.Predefined.on!(machine_name, @db_index, lose_trigger(), is_pending(), is_loser())
+    Dfa.Predefined.on!(machine_name, @db_index, alone_trigger(), is_pending(), is_alone())
+    Dfa.Predefined.on!(machine_name, @db_index, next_trigger(), is_alone(), should_flip_coin())
+    Dfa.Predefined.on!(machine_name, @db_index, next_trigger(), is_pending(), should_flip_coin())
 
     list_states()
     |> Enum.filter(fn state ->
       state != is_finished()
     end)
     |> Enum.each(fn state ->
-      Dfa.on!(key_name, @db_index, finish_trigger(), state, is_finished())
+      Dfa.Predefined.on!(machine_name, @db_index, finish_trigger(), state, is_finished())
     end)
   end
 
+  @spec build_dfa_instance(String.t(), String.t()) :: any()
+  def build_dfa_instance(instance_name, machine_name) do
+    Dfa.Predefined.initialize!(instance_name, machine_name, @db_index, is_not_started())
+  end
+
   @spec state!(String.t()) :: String.t()
-  def state!(key_name) do
-    Dfa.state!(key_name, @db_index)
+  def state!(instance_name) do
+    Dfa.Predefined.state!(instance_name, @db_index)
   end
 
   @spec trigger!(String.t(), String.t()) :: {:ok, String.t()} | {:error, String.t()}
-  def trigger!(key_name, trigger) do
-    Dfa.trigger!(key_name, @db_index, trigger)
+  def trigger!(instance_name, trigger) do
+    Dfa.Predefined.trigger!(instance_name, @db_index, trigger)
   end
 
   @spec list_states() :: [String.t()]
