@@ -445,27 +445,11 @@ defmodule Milk.Tournaments do
   """
   @spec create_tournament(map(), String.t() | nil) :: {:ok, Tournament.t()} | {:error, Ecto.Changeset.t()}
   def create_tournament(%{"master_id" => master_id} = params, thumbnail_path \\ "") do
-    id = Tools.to_integer_as_needed(master_id)
+    master_id = Tools.to_integer_as_needed(master_id)
 
-    User
-    |> where([u], u.id == ^id)
-    |> Repo.exists?()
-    |> if do
-      if params["enabled_map"] && !params["enabled_coin_toss"] do
-        {:error, "Needs to enable coin toss"}
-      else
-        {:ok, nil}
-      end
-    else
-      {:error, "Undefined User"}
-    end
-    |> case do
-      {:ok, _} ->
-        do_create_tournament(params, thumbnail_path)
-
-      {:error, error} ->
-        {:error, error}
-    end
+    master_id
+    |> Accounts.get_user()
+    |> do_create_tournament(params, thumbnail_path)
     |> case do
       {:ok, tournament} ->
         set_details(tournament, params)
@@ -474,6 +458,73 @@ defmodule Milk.Tournaments do
 
       {:error, error} ->
         {:error, error}
+    end
+  end
+
+  @spec do_create_tournament(User.t(), map(), String.t() | nil) :: {:ok, Tournament.t()} | {:error, Ecto.Changeset.t() | String.t() | nil}
+  defp do_create_tournament(nil, _, _), do: {:error, "Undefined User"}
+  defp do_create_tournament(%User{}, params, thumbnail_path) do
+    if params["enabled_map"] && !params["enabled_coin_toss"] do
+      {:error, "Needs to enable coin toss"}
+    else
+      do_create_tournament(params, thumbnail_path)
+    end
+  end
+
+  @spec do_create_tournament(map(), String.t() | nil) :: {:ok, Tournament.t()} | {:error, Ecto.Changeset.t() | nil}
+  defp do_create_tournament(attrs, thumbnail_path) do
+    master_id = Tools.to_integer_as_needed(attrs["master_id"])
+    platform_id = Tools.to_integer_as_needed(attrs["platform"])
+    game_id = if attrs["game_id"] == "" || is_nil(attrs["game_id"]), do: nil, else: attrs["game_id"]
+
+    attrs = put_token(attrs)
+
+    Multi.new()
+    |> Multi.insert(
+      :tournament,
+      Tournament.create_changeset(
+        %Tournament{
+          master_id: master_id,
+          game_id: game_id,
+          thumbnail_path: thumbnail_path,
+          platform_id: platform_id
+        },
+        attrs
+      )
+    )
+    |> Multi.insert(:group_topic, fn %{tournament: tournament} ->
+      create_topic(tournament, "Group", 0)
+    end)
+    |> Multi.insert(:notification_topic, fn %{tournament: tournament} ->
+      create_topic(tournament, "Notification", 1, 1)
+    end)
+    |> Multi.insert(:q_and_a_topic, fn %{tournament: tournament} ->
+      create_topic(tournament, "Q&A", 2)
+    end)
+    |> Repo.transaction()
+    |> case do
+      {:ok, tournament} ->
+        join_topics(tournament.tournament.id, master_id)
+        {:ok, tournament.tournament}
+
+      {:error, :tournament, changeset, _} -> {:error, Tools.create_error_message(changeset.errors)}
+      {:error, error} -> {:error, error.errors}
+      _ -> {:error, nil}
+    end
+  end
+
+  @spec put_token(map()) :: map()
+  defp put_token(attrs) do
+    unless attrs["url"] == "" || is_nil(attrs["url"]) do
+      attrs["url"]
+      |> String.split("/")
+      |> Enum.reverse()
+      |> hd()
+      ~> token
+
+      Map.put(attrs, "url_token", token)
+    else
+      attrs
     end
   end
 
@@ -511,84 +562,21 @@ defmodule Milk.Tournaments do
     end)
   end
 
-  @spec do_create_tournament(map(), String.t() | nil) :: {:ok, Tournament.t()} | {:error, Ecto.Changeset.t() | nil}
-  defp do_create_tournament(attrs, thumbnail_path) do
-    master_id = Tools.to_integer_as_needed(attrs["master_id"])
-    platform_id = Tools.to_integer_as_needed(attrs["platform"])
-    game_id = if attrs["game_id"] == "" || is_nil(attrs["game_id"]), do: nil, else: attrs["game_id"]
-
-    attrs
-    |> Map.has_key?("url")
-    |> if do
-      unless attrs["url"] == "" || is_nil(attrs["url"]) do
-        attrs
-        |> Map.get("url")
-        |> String.split("/")
-        |> Enum.reverse()
-        |> hd()
-        ~> token
-
-        Map.put(attrs, "url_token", token)
-      else
-        attrs
-      end
-    else
-      attrs
-    end
-    ~> attrs
-
-    Multi.new()
-    |> Multi.insert(
-      :tournament,
-      %Tournament{
-        master_id: master_id,
-        game_id: game_id,
-        thumbnail_path: thumbnail_path,
-        platform_id: platform_id
-      }
-      |> Tournament.create_changeset(attrs)
-    )
-    |> Multi.insert(:group_topic, fn %{tournament: tournament} ->
-      create_topic(tournament, "Group", 0)
-    end)
-    |> Multi.insert(:notification_topic, fn %{tournament: tournament} ->
-      create_topic(tournament, "Notification", 1, 1)
-    end)
-    |> Multi.insert(:q_and_a_topic, fn %{tournament: tournament} ->
-      create_topic(tournament, "Q&A", 2)
-    end)
-    |> Repo.transaction()
-    |> case do
-      {:ok, tournament} ->
-        join_topics(tournament.tournament.id, master_id)
-        {:ok, tournament.tournament}
-
-      {:error, :tournament, changeset, _} ->
-        {:error, Tools.create_error_message(changeset.errors)}
-
-      {:error, error} ->
-        {:error, error.errors}
-
-      _ ->
-        {:error, nil}
-    end
-  end
-
   @doc """
   update tournament topics.
   TODO: エラーハンドリング
   """
   @spec update_topic(Tournament.t(), [TournamentChatTopic.t()], [map()]) :: :ok
   def update_topic(tournament, current_tabs, new_tabs) do
-    currentIds =
-      Enum.map(current_tabs, fn tab ->
-        tab.chat_room_id
-      end)
+    Enum.map(current_tabs, fn tab ->
+      tab.chat_room_id
+    end)
+    ~> currentIds
 
-    newIds =
-      Enum.map(new_tabs, fn tab ->
-        tab["chat_room_id"]
-      end)
+    Enum.map(new_tabs, fn tab ->
+      tab["chat_room_id"]
+    end)
+    ~> newIds
 
     removedTabIds = currentIds -- newIds
 
@@ -600,8 +588,10 @@ defmodule Milk.Tournaments do
 
     Enum.each(new_tabs, fn tab ->
       if tab["chat_room_id"] do
-        topic =
-          Repo.one(from c in TournamentChatTopic, where: c.chat_room_id == ^tab["chat_room_id"])
+        TournamentChatTopic
+        |> where([c], c.chat_room_id == ^tab["chat_room_id"])
+        |> Repo.one()
+        ~> topic
 
         __MODULE__.update_tournament_chat_topic(topic, %{
           topic_name: tab["topic_name"],
