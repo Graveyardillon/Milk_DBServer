@@ -716,28 +716,13 @@ defmodule Milk.Tournaments do
   """
   @spec flip_coin(integer(), integer()) :: boolean() | nil
   def flip_coin(user_id, tournament_id) do
-    tournament_id
-    |> get_tournament()
-    ~> tournament
-    |> Map.get(:is_team)
-    |> if do
-      tournament_id
-      |> get_team_by_tournament_id_and_user_id(user_id)
-      |> Map.get(:id)
-    else
-      user_id
-    end
-    ~> id
+    tournament = __MODULE__.get_tournament(tournament_id)
+    id = TournamentProgress.get_necessary_id(tournament_id, user_id)
 
     TournamentProgress.insert_match_pending_list_table(id, tournament_id)
 
-    tournament
-    |> Map.get(:enabled_map)
-    |> if do
-      tournament
-      |> Map.get(:custom_detail)
-      |> Map.get(:map_selection_type)
-      |> case do
+    if tournament.enabled_map do
+      case tournament.custom_detail.map_rule do
         # NOTE: map_selection_typeで分岐もできる
         _ -> TournamentProgress.init_ban_order(tournament_id, id)
       end
@@ -749,8 +734,6 @@ defmodule Milk.Tournaments do
   """
   @spec ban_maps(integer(), integer(), [integer()]) :: {:ok, nil} | {:error, String.t()}
   def ban_maps(user_id, tournament_id, map_id_list) when is_list(map_id_list) do
-    #tournament = __MODULE__.get_tournament(tournament_id)
-
     my_id = TournamentProgress.get_necessary_id(tournament_id, user_id)
 
     tournament_id
@@ -801,8 +784,6 @@ defmodule Milk.Tournaments do
   @spec choose_maps(integer(), integer(), [integer()]) :: {:ok, nil} | {:error, String.t()}
   def choose_maps(user_id, tournament_id, map_id_list) when is_list(map_id_list) do
     # small_idとlarge_idを取得
-    #tournament = get_tournament(tournament_id)
-
     my_id = TournamentProgress.get_necessary_id(tournament_id, user_id)
 
     tournament_id
@@ -847,8 +828,6 @@ defmodule Milk.Tournaments do
   """
   @spec choose_ad(integer(), integer(), boolean()) :: {:ok, nil} | {:error, String.t()}
   def choose_ad(user_id, tournament_id, is_attack_side) do
-    #tournament = __MODULE__.get_tournament(tournament_id)
-
     my_id = TournamentProgress.get_necessary_id(tournament_id, user_id)
 
     tournament_id
@@ -883,8 +862,6 @@ defmodule Milk.Tournaments do
 
   @spec renew_state_after_choosing_maps(integer(), integer()) :: {:ok, nil}
   defp renew_state_after_choosing_maps(user_id, tournament_id) do
-    #tournament = __MODULE__.get_tournament(tournament_id)
-
     id = TournamentProgress.get_necessary_id(tournament_id, user_id)
 
     {:ok, opponent} = __MODULE__.get_opponent(tournament_id, user_id)

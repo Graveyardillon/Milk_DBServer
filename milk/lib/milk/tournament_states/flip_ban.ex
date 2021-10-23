@@ -6,10 +6,16 @@ defmodule Milk.TournamentStates.FlipBan do
 
   @db_index Application.get_env(:milk, :dfa_db_index)
 
-  @spec define_dfa(String.t()) :: :ok
-  def define_dfa(machine_name) do
+  @type opts :: [is_team: boolean()]
+
+  @spec define_dfa(String.t(), opts()) :: :ok
+  def define_dfa(machine_name, opts \\ []) do
+    is_team = Keyword.get(opts, :is_team, true)
+
+    # NOTE: チーム戦のときはis_memberのstateが追加されるだけに過ぎない
+    if is_team, do: Dfa.Predefined.on!(machine_name, @db_index, member_trigger(), is_not_started(), is_member())
+
     Dfa.Predefined.on!(machine_name, @db_index, start_trigger(), is_not_started(), should_flip_coin())
-    Dfa.Predefined.on!(machine_name, @db_index, member_trigger(), is_not_started(), is_member())
     Dfa.Predefined.on!(machine_name, @db_index, manager_trigger(), is_not_started(), is_manager())
     Dfa.Predefined.on!(machine_name, @db_index, flip_trigger(), should_flip_coin(), is_waiting_for_coin_flip())
     Dfa.Predefined.on!(machine_name, @db_index, ban_map_trigger(), is_waiting_for_coin_flip(), should_ban_map())
@@ -27,10 +33,9 @@ defmodule Milk.TournamentStates.FlipBan do
     Dfa.Predefined.on!(machine_name, @db_index, next_trigger(), is_alone(), should_flip_coin())
     Dfa.Predefined.on!(machine_name, @db_index, next_trigger(), is_pending(), should_flip_coin())
 
-    list_states()
-    |> Enum.filter(fn state ->
-      state != is_finished()
-    end)
+    opts
+    |> list_states()
+    |> Enum.reject(&(&1 == is_finished()))
     |> Enum.each(fn state ->
       Dfa.Predefined.on!(machine_name, @db_index, finish_trigger(), state, is_finished())
     end)
@@ -51,11 +56,16 @@ defmodule Milk.TournamentStates.FlipBan do
     Dfa.Predefined.trigger!(instance_name, @db_index, trigger)
   end
 
-  @spec list_states() :: [String.t()]
-  def list_states() do
+  @spec list_states(opts()) :: [String.t()]
+  def list_states(opts \\ []) do
+    Enum.reject(unfiltered_list_states(opts), &is_nil(&1))
+  end
+
+  @spec unfiltered_list_states(opts()) :: [String.t()]
+  defp unfiltered_list_states(opts) do
     [
       is_not_started(),
-      is_member(),
+      if Keyword.get(opts, :is_team, true) do is_member() end,
       is_manager(),
       should_flip_coin(),
       is_waiting_for_coin_flip(),
