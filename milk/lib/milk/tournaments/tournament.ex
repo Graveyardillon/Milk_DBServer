@@ -5,7 +5,6 @@ defmodule Milk.Tournaments.Tournament do
 
   alias Milk.Accounts.User
   alias Milk.Games.Game
-  alias Milk.Lives.Live
   alias Milk.Platforms.Platform
 
   alias Milk.Tournaments.{
@@ -69,7 +68,6 @@ defmodule Milk.Tournaments.Tournament do
     belongs_to :game, Game
     belongs_to :master, User
 
-    has_many :lives, Live
     has_many :entrant, Entrant
     has_many :assistant, Assistant
     has_many :tournament_chat_topics, TournamentChatTopic

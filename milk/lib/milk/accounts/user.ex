@@ -12,8 +12,6 @@ defmodule Milk.Accounts.User do
     ChatRoom
   }
 
-  alias Milk.Lives.Live
-
   alias Milk.Tournaments.{
     Assistant,
     Entrant,
@@ -60,7 +58,6 @@ defmodule Milk.Accounts.User do
     has_many :tournament, Tournament, foreign_key: :master_id
     has_many :entrant, Entrant
     has_many :assistant, Assistant
-    has_many :lives, Live, foreign_key: :streamer_id
     has_many :notif, Notification
 
     timestamps()

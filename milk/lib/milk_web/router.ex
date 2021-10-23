@@ -201,9 +201,6 @@ defmodule MilkWeb.Router do
 
     post "/assistant/delete", AssistantController, :delete
 
-    get "/live/home", LiveController, :home
-    post "/live", LiveController, :create
-
     post "/sync", SyncController, :sync
 
     post "/conf/send_email", ConfNumController, :send_email
