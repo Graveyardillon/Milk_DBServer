@@ -11,7 +11,10 @@ defmodule MilkWeb.TeamController do
     Tournaments
   }
 
-  alias Milk.Tournaments.TeamInvitation
+  alias Milk.Tournaments.{
+    Team,
+    TeamInvitation
+  }
 
   def show(conn, %{"team_id" => team_id}) do
     team_id
@@ -111,58 +114,77 @@ defmodule MilkWeb.TeamController do
   Confirm invitation of team
   """
   def confirm_invitation(conn, %{"invitation_id" => invitation_id}) do
-    invitation_id = Tools.to_integer_as_needed(invitation_id)
+    invitation_id
+    |> Tools.to_integer_as_needed()
+    |> Tournaments.get_team_by_invitation_id()
+    ~> team
 
-    with %Tournaments.Team{} = team <- Tournaments.get_team_by_invitation_id(invitation_id) do
-      with %Tournaments.Tournament{} = tournament <-
-             Tournaments.get_tournament(team.tournament_id) do
-        tournament.id
-        |> Tournaments.get_confirmed_teams()
-        |> length()
-        ~> confirmed_team_count
+    confirm_if_team_exists(conn, team, invitation_id)
+  end
 
-        if tournament.capacity > confirmed_team_count do
-          # チーム承認の前にdiscordのvalidationを入れる
-          invitation_id
-          |> Tournaments.get_team_invitation()
-          |> Map.get(:team_member)
-          |> Map.get(:user_id)
-          |> Accounts.get_user()
-          |> Map.get(:id)
-          |> Discord.associated?()
-          ~> associated?
+  defp confirm_if_team_exists(conn, nil, _), do: render(conn, "error.json", error: "team not found")
+  defp confirm_if_team_exists(conn, team, invitation_id) do
+    tournament = Tournaments.get_tournament(team.tournament_id)
+    confirm_if_tournament_exists(conn, tournament, invitation_id)
+  end
 
-          if !is_nil(tournament.discord_server_id) && !associated? do
-            render(conn, "error.json", error: "user is not associated with discord")
-          else
-            invitation_id
-            |> Tournaments.confirm_team_invitation()
-            |> case do
-              {:ok, invitation} ->
-                invitation.team_id
-                |> Tournaments.get_team()
-                ~> team
-                |> send_add_team_discord_notification()
+  defp confirm_if_tournament_exists(conn, nil, _), do: render(conn, "error.json", error: "tournament not found")
+  defp confirm_if_tournament_exists(conn, tournament, invitation_id) do
+    tournament.id
+    |> Tournaments.get_confirmed_teams()
+    |> length()
+    ~> confirmed_team_count
 
-                json(conn, %{
-                  result: true,
-                  is_confirmed: team.is_confirmed,
-                  tournament_id: team.tournament_id
-                })
+    confirm_if_valid_size(conn, confirmed_team_count, tournament, invitation_id)
+  end
 
-              {:error, error} ->
-                render(conn, "error.json", error: error)
-            end
-          end
-        end
-      else
-        nil -> render(conn, "error.json", error: "tournament not found")
-      end
+  defp confirm_if_valid_size(conn, team_count, tournament, invitation_id) do
+    if tournament.capacity > team_count do
+      confirm_if_associated_with_discord(conn, tournament, invitation_id)
     else
-      nil -> render(conn, "error.json", error: "team not found")
+      render(conn, "error.json", error: "invalid size")
     end
   end
 
+  defp confirm_if_associated_with_discord(conn, tournament, invitation_id) do
+    # NOTE: チーム承認の前にdiscordのvalidationを入れる
+    invitation_id
+    |> Tournaments.get_team_invitation()
+    |> Map.get(:team_member)
+    |> Map.get(:user_id)
+    |> Accounts.get_user()
+    |> Map.get(:id)
+    |> Discord.associated?()
+    ~> associated?
+
+    if !is_nil(tournament.discord_server_id) && !associated? do
+      render(conn, "error.json", error: "user is not associated with discord")
+    else
+      do_confirm(conn, invitation_id)
+    end
+  end
+
+  defp do_confirm(conn, invitation_id) do
+    invitation_id
+    |> Tournaments.confirm_team_invitation()
+    |> case do
+      {:ok, invitation} ->
+        invitation.team_id
+        |> Tournaments.get_team()
+        ~> team
+        |> send_add_team_discord_notification()
+
+        json(conn, %{
+          result: true,
+          is_confirmed: team.is_confirmed,
+          tournament_id: team.tournament_id
+        })
+
+      {:error, error} -> render(conn, "error.json", error: error)
+    end
+  end
+
+  @spec send_add_team_discord_notification(Team.t()) :: any()
   defp send_add_team_discord_notification(team) do
     team
     |> Map.get(:id)
