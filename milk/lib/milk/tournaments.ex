@@ -102,13 +102,9 @@ defmodule Milk.Tournaments do
   def home_tournament(date_offset, offset, user_id \\ nil) do
     offset = Tools.to_integer_as_needed(offset)
 
-    if user_id do
-      user_id
-      |> Relations.blocked_users()
-      |> Enum.map(fn relation -> relation.blocked_user_id end)
-    else
-      []
-    end
+    user_id
+    |> Relations.blocked_users()
+    |> Enum.map(&(&1.blocked_user_id))
     ~> blocked_user_id_list
 
     Timex.now()
@@ -135,9 +131,7 @@ defmodule Milk.Tournaments do
     Relation
     |> where([r], r.follower_id == ^user_id)
     |> Repo.all()
-    |> Enum.map(fn relation ->
-      relation.followee_id
-    end)
+    |> Enum.map(&(&1.followee_id))
     ~> user_id_list
 
     Tournament
@@ -199,7 +193,7 @@ defmodule Milk.Tournaments do
   @doc """
   Get tournament by discord server id
   """
-  @spec get_tournament_by_discord_server_id(String.t()) :: Tournament.t()
+  @spec get_tournament_by_discord_server_id(String.t()) :: Tournament.t() | nil
   def get_tournament_by_discord_server_id(discord_server_id) do
     Tournament
     |> where([t], t.discord_server_id == ^discord_server_id)
@@ -209,19 +203,20 @@ defmodule Milk.Tournaments do
   @doc """
   Get a tournament by room id.
   """
-  @spec get_tournament_by_room_id(integer()) :: Tournament.t()
+  @spec get_tournament_by_room_id(integer()) :: Tournament.t() | nil
   def get_tournament_by_room_id(chat_room_id) do
     TournamentChatTopic
     |> where([tct], tct.chat_room_id == ^chat_room_id)
     |> Repo.one()
-    |> case do
-      nil -> nil
+    |> get_tournament_by_topic()
+  end
 
-      topic ->
-        Tournament
-        |> where([t], t.id == ^topic.tournament_id)
-        |> Repo.one()
-    end
+  @spec get_tournament_by_topic(TournamentChatTopic.t() | nil) :: Tournament.t() | nil
+  defp get_tournament_by_topic(nil), do: nil
+  defp get_tournament_by_topic(topic) do
+    Tournament
+    |> where([t], t.id == ^topic.tournament_id)
+    |> Repo.one()
   end
 
   @doc """
@@ -245,13 +240,11 @@ defmodule Milk.Tournaments do
   """
   @spec get_tournament_logs_by_master_id(integer) :: [TournamentLog.t()]
   def get_tournament_logs_by_master_id(user_id) do
-    Repo.all(from tl in TournamentLog, where: tl.master_id == ^user_id)
-
     TournamentLog
     |> where([tl], tl.master_id == ^user_id)
     |> order_by([tl], asc: :event_date)
     |> Repo.all()
-    |> Enum.filter(fn tournament_log -> tournament_log.tournament_id != nil end)
+    |> Enum.reject(&is_nil(&1.tournament_id))
     |> Enum.map(fn tournament_log ->
       EntrantLog
       |> where([el], el.tournament_id == ^tournament_log.tournament_id)
@@ -281,7 +274,6 @@ defmodule Milk.Tournaments do
   @spec get_ongoing_tournaments_by_master_id(integer()) :: [Tournament.t()]
   def get_ongoing_tournaments_by_master_id(user_id) do
     Tournament
-    #|> where([t], t.is_started)
     |> where([t], t.master_id == ^user_id)
     |> where([t], t.event_date > ^Timex.now() or (is_nil(t.event_date) and t.is_started))
     |> order_by([t], asc: :event_date)
@@ -2869,11 +2861,7 @@ defmodule Milk.Tournaments do
     |> preload([t, tm], :team_member)
     |> Repo.all()
     |> Enum.map(fn team ->
-      team
-      # FIXME: 不要？
-      |> Repo.preload(:team_member)
-      ~> team
-      |> Map.get(:team_member)
+      team.team_member
       |> Repo.preload(:user)
       |> Enum.map(fn member ->
         user = Repo.preload(member.user, :auth)
@@ -2884,14 +2872,9 @@ defmodule Milk.Tournaments do
       Map.put(team, :team_member, team_members)
     end)
     |> Enum.filter(fn members_in_team ->
-      members_in_team.team_member
-      |> Enum.all?(fn member ->
-        member.is_invitation_confirmed
-      end)
+      Enum.all?(members_in_team.team_member, &(&1.is_invitation_confirmed))
     end)
-    |> Enum.uniq_by(fn team_with_member_info ->
-      team_with_member_info.id
-    end)
+    |> Enum.uniq_by(&(&1.id))
   end
 
   @doc """

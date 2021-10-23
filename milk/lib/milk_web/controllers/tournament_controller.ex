@@ -373,17 +373,7 @@ defmodule MilkWeb.TournamentController do
   def search(conn, %{"user_id" => user_id, "text" => text}) do
     user_id
     |> Tournaments.search(text)
-    |> Enum.map(fn tournament ->
-      tournament
-      |> Map.get(:id)
-      |> Tournaments.get_entrants()
-      |> Enum.map(fn entrant ->
-        Accounts.get_user(entrant.user_id)
-      end)
-      ~> entrants
-
-      Map.put(tournament, :entrants, entrants)
-    end)
+    |> do_home()
     ~> tournaments
 
     render(conn, "home.json", tournaments_info: tournaments)
@@ -471,19 +461,10 @@ defmodule MilkWeb.TournamentController do
     user_id
     |> Tools.to_integer_as_needed()
     |> Tournaments.get_participating_tournaments(offset)
-    |> Enum.map(fn tournament ->
-      Tournaments.get_entrants(tournament.id)
-      |> Enum.map(fn entrant ->
-        Accounts.get_user(entrant.user_id)
-      end)
-      ~> entrants
-
-      Map.put(tournament, :entrants, entrants)
-    end)
+    |> do_home()
     ~> tournaments
-    |> length()
-    |> Kernel.==(0)
-    |> unless do
+
+    unless length(tournaments) == 0 do
       render(conn, "home.json", tournaments_info: tournaments)
     else
       render(conn, "error.json", error: nil)
@@ -491,16 +472,10 @@ defmodule MilkWeb.TournamentController do
   end
 
   def participating_tournaments(conn, %{"user_id" => user_id}) do
-    Tournaments.get_participating_tournaments(user_id)
-    |> Enum.map(fn tournament ->
-      Tournaments.get_entrants(tournament.id)
-      |> Enum.map(fn entrant ->
-        Accounts.get_user(entrant.user_id)
-      end)
-      ~> entrants
-
-      Map.put(tournament, :entrants, entrants)
-    end)
+    user_id
+    |> Tools.to_integer_as_needed()
+    |> Tournaments.get_participating_tournaments()
+    |> do_home()
     ~> tournaments
 
     unless length(tournaments) == 0 do
@@ -636,18 +611,18 @@ defmodule MilkWeb.TournamentController do
   Get tournament topics.
   """
   def tournament_topics(conn, %{"tournament_id" => tournament_id, "user_id" => user_id}) do
-    tabs =
-      tournament_id
-      |> Tools.to_integer_as_needed()
-      |> Tournaments.get_tabs_by_tournament_id()
-      |> Enum.map(fn tab ->
-        chat_room = Chat.get_chat_room(tab.chat_room_id)
-        member = Chat.get_member(chat_room.id, user_id)
+    tournament_id
+    |> Tools.to_integer_as_needed()
+    |> Tournaments.get_tabs_by_tournament_id()
+    |> Enum.map(fn tab ->
+      chat_room = Chat.get_chat_room(tab.chat_room_id)
+      member = Chat.get_member(chat_room.id, user_id)
 
-        tab
-        |> Map.put(:authority, chat_room.authority)
-        |> Map.put(:can_speak, chat_room.authority <= member.authority)
-      end)
+      tab
+      |> Map.put(:authority, chat_room.authority)
+      |> Map.put(:can_speak, chat_room.authority <= member.authority)
+    end)
+    ~> tabs
 
     render(conn, "tournament_topics.json", topics: tabs)
   end

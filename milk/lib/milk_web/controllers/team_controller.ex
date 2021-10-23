@@ -11,6 +11,8 @@ defmodule MilkWeb.TeamController do
     Tournaments
   }
 
+  alias Milk.Tournaments.TeamInvitation
+
   def show(conn, %{"team_id" => team_id}) do
     team_id
     |> Tools.to_integer_as_needed()
@@ -48,44 +50,47 @@ defmodule MilkWeb.TeamController do
     tournament_id = Tools.to_integer_as_needed(tournament_id)
     size = Tools.to_integer_as_needed(size)
     leader_id = Tools.to_integer_as_needed(leader_id)
-    user_id_list = Enum.map(user_id_list, fn user_id -> Tools.to_integer_as_needed(user_id) end)
+    user_id_list = Enum.map(user_id_list, &Tools.to_integer_as_needed(&1))
 
-    # 人数確認
+    # NOTE:Elixir.Argon2.Base 人数確認
     tournament_id
     |> Tournaments.get_confirmed_teams()
     |> length()
-    |> (fn len ->
-          tournament = Tournaments.get_tournament(tournament_id)
-          tournament.capacity <= len
-        end).()
-    |> if do
+    ~> team_count
+
+    render_if_invalid_size(conn, team_count, tournament_id, size, leader_id, user_id_list)
+  end
+
+  defp render_if_invalid_size(conn, team_count, tournament_id, size, leader_id, user_id_list) do
+    tournament = Tournaments.get_tournament(tournament_id)
+
+    if tournament.capacity <= team_count do
       render(conn, "error.json", error: "over tournament size")
     else
-      # リーダーが重複して作成されないようにする
-      tournament_id
-      |> Tournaments.get_teammates(leader_id)
-      |> Enum.any?(fn member ->
-        member.user_id == leader_id
-      end)
-      |> if do
-        render(conn, "error.json", error: "duplicated request from leader")
-      else
-        associated? = Discord.associated?(leader_id)
-        tournament = Tournaments.get_tournament(tournament_id)
+      render_if_duplicated_request(conn, tournament, size, leader_id, user_id_list)
+    end
+  end
 
-        if !is_nil(tournament.discord_server_id) && !associated? do
-          render(conn, "error.json", error: "user is not associated with discord")
-        else
-          tournament_id
-          |> Tournaments.create_team(size, leader_id, user_id_list)
-          |> case do
-            {:ok, team} ->
-              render(conn, "show.json", team: team)
+  defp render_if_duplicated_request(conn, tournament, size, leader_id, user_id_list) do
+    tournament.id
+    |> Tournaments.get_teammates(leader_id)
+    |> Enum.any?(&(&1.user_id == leader_id))
+    |> if do
+      render(conn, "error.json", error: "duplicated request from leader")
+    else
+      render_if_not_associated_with_discord(conn, tournament, size, leader_id, user_id_list)
+    end
+  end
 
-            {:error, error} ->
-              render(conn, "error.json", error: Tools.create_error_message(error))
-          end
-        end
+  defp render_if_not_associated_with_discord(conn, tournament, size, leader_id, user_id_list) do
+    if !is_nil(tournament.discord_server_id) && !Discord.associated?(leader_id) do
+      render(conn, "error.json", error: "user is not associated with discord")
+    else
+      tournament.id
+      |> Tournaments.create_team(size, leader_id, user_id_list)
+      |> case do
+        {:ok, team} -> render(conn, "show.json", team: team)
+        {:error, error} -> render(conn, "error.json", error: Tools.create_error_message(error))
       end
     end
   end
@@ -185,21 +190,21 @@ defmodule MilkWeb.TeamController do
     |> Tools.to_integer_as_needed()
     |> Tournaments.delete_team()
     |> case do
-      {:ok, team} ->
-        render(conn, "show.json", team: team)
-
-      {:error, error} ->
-        render(conn, "error.json", error: error)
+      {:ok, team} -> render(conn, "show.json", team: team)
+      {:error, error} -> render(conn, "error.json", error: error)
     end
   end
 
-  def decline_invitation(conn, %{"invitation_id" => id}) do
-    case Tournaments.team_invitation_decline(id) do
-      {:ok, %Tournaments.TeamInvitation{} = _invitation} ->
-        json(conn, %{result: true})
-
-      {:error, _error} ->
-        json(conn, %{result: false})
+  @doc """
+  Decline an invitation.
+  """
+  def decline_invitation(conn, %{"invitation_id" => invitation_id}) do
+    invitation_id
+    |> Tools.to_integer_as_needed()
+    |> Tournaments.team_invitation_decline()
+    |> case do
+      {:ok, %TeamInvitation{} = _} -> json(conn, %{result: true})
+      {:error, _} -> json(conn, %{result: false})
     end
   end
 
