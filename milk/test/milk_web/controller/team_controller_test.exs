@@ -40,7 +40,8 @@ defmodule MilkWeb.TeamControllerTest do
     test "works", %{conn: conn} do
       tournament = fixture_tournament(is_team: true, type: 2, capacity: 2)
 
-      fill_with_team(tournament.id)
+      tournament.id
+      |> fill_with_team()
       |> Enum.each(fn team ->
         conn = get(conn, Routes.team_path(conn, :show), team_id: team.id)
         assert json_response(conn, 200)["result"]
@@ -117,13 +118,13 @@ defmodule MilkWeb.TeamControllerTest do
       size = 5
       leader_id = fixture_user(num: 1).id
 
-      user_id_list =
-        2..5
-        |> Enum.to_list()
-        |> Enum.map(fn n ->
-          user = fixture_user(num: n)
-          user.id
-        end)
+      2..5
+      |> Enum.to_list()
+      |> Enum.map(fn n ->
+        user = fixture_user(num: n)
+        user.id
+      end)
+      ~> user_id_list
 
       conn =
         post(
@@ -272,10 +273,10 @@ defmodule MilkWeb.TeamControllerTest do
     test "works", %{conn: conn} do
       {tournament, _users} = setup_team(5)
 
-      team =
-        tournament.id
-        |> Tournaments.get_teams_by_tournament_id()
-        |> hd()
+      tournament.id
+      |> Tournaments.get_teams_by_tournament_id()
+      |> hd()
+      ~> team
 
       conn = get(conn, Routes.team_path(conn, :show), team_id: team.id)
       json_response(conn, 200)
@@ -285,6 +286,50 @@ defmodule MilkWeb.TeamControllerTest do
 
       conn = get(conn, Routes.team_path(conn, :show), team_id: team.id)
       refute json_response(conn, 200)["result"]
+    end
+  end
+
+  describe "add members" do
+    test "works", %{conn: conn} do
+      tournament = fixture_tournament(is_team: true, capacity: 4, team_size: 5)
+      leader = fixture_user(num: 1)
+      member = fixture_user(num: 2)
+      size = 5
+
+      conn =
+        post(
+          conn,
+          Routes.team_path(conn, :create),
+          tournament_id: tournament.id,
+          size: size,
+          leader_id: leader.id,
+          user_id_list: [member.id]
+        )
+
+      assert json_response(conn, 200)["result"]
+      team_id = json_response(conn, 200)["data"]["id"]
+
+      added_member = fixture_user(num: 3)
+
+      conn =
+        post(
+          conn,
+          Routes.team_path(conn, :add_members),
+          team_id: team_id,
+          user_id_list: [added_member.id]
+        )
+
+      assert json_response(conn, 200)["result"]
+
+      conn = get(conn, Routes.team_path(conn, :show), team_id: team_id)
+
+      conn
+      |> json_response(200)
+      |> Map.get("data")
+      |> Map.get("team_member")
+      |> length()
+      |> Kernel.==(3)
+      |> assert()
     end
   end
 end
