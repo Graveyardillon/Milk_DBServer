@@ -253,13 +253,9 @@ defmodule MilkWeb.TournamentController do
   """
   def get_thumbnail_image(conn, %{"thumbnail_path" => path}) do
     case Application.get_env(:milk, :environment) do
+      :test -> read_thumbnail(path)
       # coveralls-ignore-start
       :dev -> read_thumbnail(path)
-
-      # coveralls-ignore-stop
-      :test -> read_thumbnail(path)
-
-      # coveralls-ignore-start
       _ -> read_thumbnail_prod(path)
       # coveralls-ignore-stop
     end
@@ -281,18 +277,11 @@ defmodule MilkWeb.TournamentController do
 
         map =
           case Application.get_env(:milk, :environment) do
+            :test -> read_thumbnail(path)
             # coveralls-ignore-start
-            :dev ->
-              read_thumbnail(path)
-
+            :dev -> read_thumbnail(path)
+            _ -> read_thumbnail_prod(path)
             # coveralls-ignore-stop
-            :test ->
-              read_thumbnail(path)
-
-            # coveralls-ignore-start
-            _ ->
-              read_thumbnail_prod(path)
-              # coveralls-ignore-stop
           end
 
         json(conn, %{result: true, b64: map.b64})
@@ -300,14 +289,14 @@ defmodule MilkWeb.TournamentController do
   end
 
   defp read_thumbnail(path) do
-    File.read(path)
+    path
+    |> File.read()
     |> case do
       {:ok, file} ->
         b64 = Base.encode64(file)
         %{b64: b64}
 
-      {:error, _} ->
-        %{error: "image not found"}
+      {:error, _} -> %{error: "image not found"}
     end
   end
 
@@ -330,102 +319,53 @@ defmodule MilkWeb.TournamentController do
 
     date_offset
     |> Tournaments.home_tournament(offset, user_id)
-    |> Enum.map(fn tournament ->
-      tournament
-      |> Map.get(:id)
-      |> Tournaments.get_entrants()
-      |> Enum.map(fn entrant ->
-        Accounts.get_user(entrant.user_id)
-      end)
-      ~> entrants
-
-      Map.put(tournament, :entrants, entrants)
-    end)
-    |> Enum.map(fn tournament ->
-      tournament
-      |> Map.get(:id)
-      |> Tournaments.get_confirmed_teams()
-      ~> teams
-
-      Map.put(tournament, :teams, teams)
-    end)
+    |> do_home()
     ~> tournaments
 
     render(conn, "home.json", tournaments_info: tournaments)
   end
 
   def home(conn, %{"date_offset" => date_offset, "offset" => offset}) do
+    offset = Tools.to_integer_as_needed(offset)
+
     date_offset
     |> Tournaments.home_tournament(offset)
-    |> Enum.map(fn tournament ->
-      tournament
-      |> Map.get(:id)
-      |> Tournaments.get_entrants()
-      |> Enum.map(fn entrant ->
-        Accounts.get_user(entrant.user_id)
-      end)
-      ~> entrants
-
-      Map.put(tournament, :entrants, entrants)
-    end)
+    |> do_home()
     ~> tournaments
 
     render(conn, "home.json", tournaments_info: tournaments)
   end
 
-  def home(conn, %{"filter" => "fav", "user_id" => user_id}) do
+  def home(conn, %{"filter" => filter, "user_id" => user_id}) do
     user_id
     |> Tools.to_integer_as_needed()
-    |> Tournaments.home_tournament_fav()
+    |> load_filtered_home(filter)
+    |> do_home()
+    ~> tournaments
+
+    render(conn, "home.json", tournaments_info: tournaments)
+  end
+
+  @spec do_home([Tournament.t()]) :: [Tournament.t()]
+  defp do_home(tournaments) do
+    tournaments
     |> Enum.map(fn tournament ->
-      tournament
-      |> Map.get(:id)
+      tournament.id
       |> Tournaments.get_entrants()
-      |> Enum.map(fn entrant ->
-        Accounts.get_user(entrant.user_id)
-      end)
+      |> Enum.map(&Accounts.get_user(&1.user_id))
       ~> entrants
 
       Map.put(tournament, :entrants, entrants)
     end)
-    ~> tournaments
-
-    render(conn, "home.json", tournaments_info: tournaments)
-  end
-
-  def home(conn, %{"filter" => "plan", "user_id" => user_id}) do
-    user_id
-    |> Tournaments.home_tournament_plan()
     |> Enum.map(fn tournament ->
-      entrants =
-        Tournaments.get_entrants(tournament.id)
-        |> Enum.map(fn entrant ->
-          Accounts.get_user(entrant.user_id)
-        end)
-
-      Map.put(tournament, :entrants, entrants)
+      teams = Tournaments.get_confirmed_teams(tournament.id)
+      Map.put(tournament, :teams, teams)
     end)
-    ~> tournaments
-
-    render(conn, "home.json", tournaments_info: tournaments)
   end
 
-  def home(conn, %{"filter" => "entry", "user_id" => user_id}) do
-    user_id
-    |> Tournaments.get_participating_tournaments()
-    |> Enum.map(fn tournament ->
-      entrants =
-        Tournaments.get_entrants(tournament.id)
-        |> Enum.map(fn entrant ->
-          Accounts.get_user(entrant.user_id)
-        end)
-
-      Map.put(tournament, :entrants, entrants)
-    end)
-    ~> tournaments
-
-    render(conn, "home.json", tournaments_info: tournaments)
-  end
+  defp load_filtered_home(user_id, "fav"), do: Tournaments.home_tournament_fav(user_id)
+  defp load_filtered_home(user_id, "plan"), do: Tournaments.home_tournament_plan(user_id)
+  defp load_filtered_home(user_id, "entry"), do: Tournaments.get_participating_tournaments(user_id)
 
   @doc """
   Get searched tournaments as home.

@@ -144,6 +144,7 @@ defmodule MilkWeb.TournamentView do
         is_started: tournament.is_started,
         is_team: tournament.is_team,
         team_size: tournament.team_size,
+        rule: tournament.rule,
         entrants:
           Enum.map(tournament.entrant, fn entrant ->
             %{
