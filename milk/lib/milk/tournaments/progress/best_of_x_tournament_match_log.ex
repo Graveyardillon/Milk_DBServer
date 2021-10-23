@@ -1,4 +1,4 @@
-defmodule Milk.TournamentProgress.BestOfXTournamentMatchLog do
+defmodule Milk.Tournaments.Progress.BestOfXTournamentMatchLog do
   use Milk.Schema
 
   import Ecto.Changeset

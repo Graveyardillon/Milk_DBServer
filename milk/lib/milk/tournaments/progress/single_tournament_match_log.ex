@@ -1,4 +1,4 @@
-defmodule Milk.TournamentProgress.SingleTournamentMatchLog do
+defmodule Milk.Tournaments.Progress.SingleTournamentMatchLog do
   use Milk.Schema
 
   import Ecto.Changeset

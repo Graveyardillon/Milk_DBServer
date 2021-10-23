@@ -1,4 +1,4 @@
-defmodule Milk.TournamentProgress do
+defmodule Milk.Tournaments.Progress do
   @moduledoc """
   1. match_list
   2. match_list_with_fight_result
@@ -21,7 +21,7 @@ defmodule Milk.TournamentProgress do
   }
 
   alias Milk.Tournaments.Tournament
-  alias Milk.TournamentProgress.{
+  alias Milk.Tournaments.Progress.{
     BestOfXTournamentMatchLog,
     MatchListWithFightResultLog,
     SingleTournamentMatchLog

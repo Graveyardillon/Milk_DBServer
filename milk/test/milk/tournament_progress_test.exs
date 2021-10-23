@@ -1,4 +1,4 @@
-defmodule Milk.TournamentProgressTest do
+defmodule Milk.Tournaments.ProgressTest do
   @moduledoc """
   Redisが使えるときのみコメントアウトを解除する
   """
@@ -7,9 +7,10 @@ defmodule Milk.TournamentProgressTest do
 
   alias Milk.{
     Accounts,
-    TournamentProgress,
     Tournaments
   }
+
+  alias Milk.Tournaments.Progress
 
   @valid_attrs %{
     "capacity" => 42,
@@ -158,7 +159,7 @@ defmodule Milk.TournamentProgressTest do
     |> Tournaments.initialize_rank(count, tournament_id)
 
     match_list
-    |> TournamentProgress.insert_match_list(tournament_id)
+    |> Progress.insert_match_list(tournament_id)
 
     list_with_fight_result =
       match_list
@@ -176,7 +177,7 @@ defmodule Milk.TournamentProgressTest do
       |> Tournaments.put_value_on_brackets(user.id, %{"win_count" => 0})
       |> Tournaments.put_value_on_brackets(user.id, %{"icon_path" => user.icon_path})
     end)
-    |> TournamentProgress.insert_match_list_with_fight_result(tournament_id)
+    |> Progress.insert_match_list_with_fight_result(tournament_id)
   end
 
   defp match_list_with_fight_result(match_list) do
@@ -186,14 +187,14 @@ defmodule Milk.TournamentProgressTest do
   describe "match list table" do
     test "insert_match_list/2 works fine" do
       match_list = [[1, 2], 3]
-      assert r = TournamentProgress.insert_match_list(match_list, 1)
+      assert r = Progress.insert_match_list(match_list, 1)
       assert is_boolean(r)
     end
 
     test "get_match_list/1 works fine" do
       match_list = [[1, 2], 3]
-      TournamentProgress.insert_match_list(match_list, 2)
-      match_list = TournamentProgress.get_match_list(2)
+      Progress.insert_match_list(match_list, 2)
+      match_list = Progress.get_match_list(2)
       assert match_list
       assert match_list == [[1, 2], 3]
     end
@@ -205,7 +206,7 @@ defmodule Milk.TournamentProgressTest do
       start(tournament.master_id, tournament.id)
 
       tournament.id
-      |> TournamentProgress.get_match_list()
+      |> Progress.get_match_list()
       |> List.flatten()
       |> Enum.map(fn user_id ->
         assert user_id in entrant_id_list
@@ -222,7 +223,7 @@ defmodule Milk.TournamentProgressTest do
       |> Accounts.delete()
 
       tournament.id
-      |> TournamentProgress.get_match_list()
+      |> Progress.get_match_list()
       |> List.flatten()
       |> Enum.map(fn user_id ->
         if user_id == hd(entrants).user_id do
@@ -239,8 +240,8 @@ defmodule Milk.TournamentProgressTest do
 
     test "delete_match_list/1 works fine" do
       match_list = [[1, 2], 3]
-      TournamentProgress.insert_match_list(match_list, 3)
-      assert r = TournamentProgress.delete_match_list(3)
+      Progress.insert_match_list(match_list, 3)
+      assert r = Progress.delete_match_list(3)
       assert is_boolean(r)
     end
   end
@@ -248,50 +249,50 @@ defmodule Milk.TournamentProgressTest do
   describe "match pending list" do
     test "insert_match_pending_list_table/1 works fine" do
       tournament = fixture_tournament()
-      r = TournamentProgress.insert_match_pending_list_table(1, tournament.id)
+      r = Progress.insert_match_pending_list_table(1, tournament.id)
       assert r
       assert is_boolean(r)
     end
 
     test "get_match_pending_list/2" do
       tournament = fixture_tournament()
-      TournamentProgress.insert_match_pending_list_table(1, tournament.id)
+      Progress.insert_match_pending_list_table(1, tournament.id)
 
       assert {r, "IsWaitingForStart"} =
-               TournamentProgress.get_match_pending_list(1, tournament.id) |> hd()
+               Progress.get_match_pending_list(1, tournament.id) |> hd()
 
       assert r == {1, tournament.id}
     end
 
     test "delete_match_pending_list" do
       tournament = fixture_tournament()
-      TournamentProgress.insert_match_pending_list_table(1, tournament.id)
-      assert r = TournamentProgress.delete_match_pending_list(1, tournament.id)
+      Progress.insert_match_pending_list_table(1, tournament.id)
+      assert r = Progress.delete_match_pending_list(1, tournament.id)
       assert is_boolean(r)
     end
   end
 
   describe "fight result table" do
     test "insert_fight_result/2 works fine" do
-      assert r = TournamentProgress.insert_fight_result_table(1, 1, true)
+      assert r = Progress.insert_fight_result_table(1, 1, true)
       assert is_boolean(r)
     end
 
     test "get_fight_result/1 works fine true" do
-      TournamentProgress.insert_fight_result_table(1, 2, true)
-      assert {_, r} = TournamentProgress.get_fight_result(1, 2) |> hd()
+      Progress.insert_fight_result_table(1, 2, true)
+      assert {_, r} = Progress.get_fight_result(1, 2) |> hd()
       assert is_boolean(r)
     end
 
     test "get_fight_result/1 works fine false" do
-      TournamentProgress.insert_fight_result_table(2, 2, false)
-      assert {_, r} = TournamentProgress.get_fight_result(2, 2) |> hd()
+      Progress.insert_fight_result_table(2, 2, false)
+      assert {_, r} = Progress.get_fight_result(2, 2) |> hd()
       refute r
     end
 
     test "delete_fight_result/1 works fine" do
-      TournamentProgress.insert_fight_result_table(1, 3, true)
-      assert r = TournamentProgress.delete_fight_result(1, 3)
+      Progress.insert_fight_result_table(1, 3, true)
+      assert r = Progress.delete_fight_result(1, 3)
       assert is_boolean(r)
     end
   end
@@ -306,7 +307,7 @@ defmodule Milk.TournamentProgressTest do
         %{"user_id" => 3}
       ]
 
-      r = TournamentProgress.insert_match_list_with_fight_result(match_list, 1)
+      r = Progress.insert_match_list_with_fight_result(match_list, 1)
       assert r
       assert is_boolean(r)
     end
@@ -320,10 +321,10 @@ defmodule Milk.TournamentProgressTest do
         %{"user_id" => 3}
       ]
 
-      TournamentProgress.insert_match_list_with_fight_result(match_list, 2)
+      Progress.insert_match_list_with_fight_result(match_list, 2)
 
       2
-      |> TournamentProgress.get_match_list_with_fight_result()
+      |> Progress.get_match_list_with_fight_result()
       |> (fn result ->
             result == match_list
           end).()
@@ -336,7 +337,7 @@ defmodule Milk.TournamentProgressTest do
       start(tournament.master_id, tournament.id)
 
       tournament.id
-      |> TournamentProgress.get_match_list_with_fight_result()
+      |> Progress.get_match_list_with_fight_result()
       |> List.flatten()
       |> Enum.map(fn bracket ->
         assert is_map(bracket)
@@ -354,7 +355,7 @@ defmodule Milk.TournamentProgressTest do
       |> Accounts.delete()
 
       tournament.id
-      |> TournamentProgress.get_match_list_with_fight_result()
+      |> Progress.get_match_list_with_fight_result()
       |> List.flatten()
       |> Enum.map(fn bracket ->
         if is_map(bracket) do
@@ -371,22 +372,22 @@ defmodule Milk.TournamentProgressTest do
 
     test "delete_match_list_with_fight_result/1" do
       match_list = [[1, 2], 3]
-      TournamentProgress.insert_match_list_with_fight_result(match_list, 3)
-      assert r = TournamentProgress.delete_match_list_with_fight_result(3)
+      Progress.insert_match_list_with_fight_result(match_list, 3)
+      assert r = Progress.delete_match_list_with_fight_result(3)
       assert is_boolean(r)
     end
   end
 
   describe "duplicate users" do
     test "test duplicate user pair" do
-      assert TournamentProgress.add_duplicate_user_id(1, 1)
-      TournamentProgress.add_duplicate_user_id(1, 2)
-      TournamentProgress.add_duplicate_user_id(1, 3)
-      assert TournamentProgress.get_duplicate_users(1) == [1, 2, 3]
-      assert TournamentProgress.delete_duplicate_user(1, 1)
-      assert TournamentProgress.get_duplicate_users(1) == [2, 3]
-      assert TournamentProgress.delete_duplicate_users_all(1)
-      assert TournamentProgress.get_duplicate_users(1) == []
+      assert Progress.add_duplicate_user_id(1, 1)
+      Progress.add_duplicate_user_id(1, 2)
+      Progress.add_duplicate_user_id(1, 3)
+      assert Progress.get_duplicate_users(1) == [1, 2, 3]
+      assert Progress.delete_duplicate_user(1, 1)
+      assert Progress.get_duplicate_users(1) == [2, 3]
+      assert Progress.delete_duplicate_users_all(1)
+      assert Progress.get_duplicate_users(1) == []
     end
   end
 
@@ -399,9 +400,9 @@ defmodule Milk.TournamentProgressTest do
   #     entrants = entrants ++ [entrant]
   #     start(tournament.master_id, tournament.id)
 
-  #     [{_, match_list}] = TournamentProgress.get_match_list(tournament.id)
-  #     TournamentProgress.set_time_limit_on_all_entrants(match_list, tournament.id)
-  #     [{_, match_list}] = TournamentProgress.get_match_list(tournament.id)
+  #     [{_, match_list}] = Progress.get_match_list(tournament.id)
+  #     Progress.set_time_limit_on_all_entrants(match_list, tournament.id)
+  #     [{_, match_list}] = Progress.get_match_list(tournament.id)
   #     refute Tournaments.has_lost?(match_list, tournament.master_id)
 
   #     5
@@ -409,13 +410,13 @@ defmodule Milk.TournamentProgressTest do
   #     |> Kernel.*(1000)
   #     |> Process.sleep()
 
-  #     [{_, match_list}] = TournamentProgress.get_match_list(tournament.id)
+  #     [{_, match_list}] = Progress.get_match_list(tournament.id)
   #     assert Tournaments.has_lost?(match_list, tournament.master_id)
 
   #     Enum.each(entrants, fn entrant ->
   #       entrant
   #       |> Map.get(:user_id)
-  #       |> TournamentProgress.get_lost_pid(tournament.id)
+  #       |> Progress.get_lost_pid(tournament.id)
   #       |> (fn bool ->
   #         assert bool
   #       end).()
@@ -429,16 +430,16 @@ defmodule Milk.TournamentProgressTest do
   #     entrants = entrants ++ [entrant]
   #     start(tournament.master_id, tournament.id)
 
-  #     [{_, match_list}] = TournamentProgress.get_match_list(tournament.id)
-  #     TournamentProgress.set_time_limit_on_all_entrants(match_list, tournament.id)
-  #     TournamentProgress.cancel_lose(tournament.id, tournament.master_id)
+  #     [{_, match_list}] = Progress.get_match_list(tournament.id)
+  #     Progress.set_time_limit_on_all_entrants(match_list, tournament.id)
+  #     Progress.cancel_lose(tournament.id, tournament.master_id)
 
   #     5
   #     |> Kernel.*(61)
   #     |> Kernel.*(1000)
   #     |> Process.sleep()
 
-  #     [{_, match_list}] = TournamentProgress.get_match_list(tournament.id)
+  #     [{_, match_list}] = Progress.get_match_list(tournament.id)
   #     refute Tournaments.has_lost?(match_list, tournament.master_id)
   #   end
   # end
@@ -448,9 +449,9 @@ defmodule Milk.TournamentProgressTest do
       tid = 1
       uid = 1
       score = 13
-      TournamentProgress.insert_score(tid, uid, score)
+      Progress.insert_score(tid, uid, score)
 
-      assert TournamentProgress.get_score(tid, uid) == score
+      assert Progress.get_score(tid, uid) == score
     end
   end
 
@@ -466,9 +467,9 @@ defmodule Milk.TournamentProgressTest do
       |> Map.put("winner_id", user1.id)
       |> Map.put("loser_id", user2.id)
       |> Map.put("match_list_str", str)
-      |> TournamentProgress.create_single_tournament_match_log()
+      |> Progress.create_single_tournament_match_log()
 
-      TournamentProgress.get_single_tournament_match_logs(tournament.id, user1.id)
+      Progress.get_single_tournament_match_logs(tournament.id, user1.id)
       |> Enum.map(fn log ->
         assert log.tournament_id == tournament.id
         assert log.winner_id == user1.id
@@ -480,7 +481,7 @@ defmodule Milk.TournamentProgressTest do
             assert len == 1
           end).()
 
-      TournamentProgress.get_single_tournament_match_logs(tournament.id, user2.id)
+      Progress.get_single_tournament_match_logs(tournament.id, user2.id)
       |> Enum.map(fn log ->
         assert log.tournament_id == tournament.id
         assert log.winner_id == user1.id
@@ -507,7 +508,7 @@ defmodule Milk.TournamentProgressTest do
         |> Map.put("winner_id", user1.id)
         |> Map.put("loser_id", user2.id)
         |> Map.put("match_list_str", str)
-        |> TournamentProgress.create_single_tournament_match_log()
+        |> Progress.create_single_tournament_match_log()
         |> (fn result ->
               assert {:ok, log} = result
               assert log.tournament_id == tournament.id
@@ -517,7 +518,7 @@ defmodule Milk.TournamentProgressTest do
               log.id
             end).()
 
-      TournamentProgress.get_single_tournament_match_log(id)
+      Progress.get_single_tournament_match_log(id)
       |> (fn log ->
             assert log.tournament_id == tournament.id
             assert log.winner_id == user1.id
@@ -536,7 +537,7 @@ defmodule Milk.TournamentProgressTest do
       str = inspect(match_list, charlists: false)
 
       %{"tournament_id" => tournament_id, "match_list_with_fight_result_str" => str}
-      |> TournamentProgress.create_match_list_with_fight_result_log()
+      |> Progress.create_match_list_with_fight_result_log()
       |> (fn log ->
             assert {:ok, log} = log
             assert log.tournament_id == tournament_id

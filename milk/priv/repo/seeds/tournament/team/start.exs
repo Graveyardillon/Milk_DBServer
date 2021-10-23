@@ -3,7 +3,7 @@ import Ecto.Query, warn: false
 
 alias Milk.{
   Repo,
-  TournamentProgress
+  Tournaments.Progress
 }
 alias Milk.Tournaments.Tournament
 
@@ -12,4 +12,4 @@ Tournament
 |> Repo.one()
 ~> tournament
 
-TournamentProgress.start_team_best_of_format(tournament.master_id, tournament)
+Tournaments.Progress.start_team_best_of_format(tournament.master_id, tournament)

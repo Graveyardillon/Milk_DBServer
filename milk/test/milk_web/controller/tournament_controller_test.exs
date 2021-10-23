@@ -13,11 +13,11 @@ defmodule MilkWeb.TournamentControllerTest do
     Platforms,
     Relations,
     Repo,
-    TournamentProgress,
     Tournaments
   }
 
   alias Milk.Accounts.ActionHistory
+  alias Milk.Tournaments.Progress
 
   require Logger
 
@@ -563,7 +563,7 @@ defmodule MilkWeb.TournamentControllerTest do
             assert data["url"] == tournament.url
           end).()
 
-      assert TournamentProgress.get_duplicate_users(tournament.id) == []
+      assert Progress.get_duplicate_users(tournament.id) == []
     end
 
     test "cannot get a tournament which does not exist", %{conn: conn, tournament: _tournament} do
@@ -1712,7 +1712,7 @@ defmodule MilkWeb.TournamentControllerTest do
           end).()
 
       tournament.id
-      |> TournamentProgress.get_match_list()
+      |> Progress.get_match_list()
       |> List.flatten()
       |> Enum.map(fn user_id ->
         assert user_id in entrant_id_list
@@ -1723,7 +1723,7 @@ defmodule MilkWeb.TournamentControllerTest do
           end).()
 
       tournament.id
-      |> TournamentProgress.get_match_list_with_fight_result()
+      |> Progress.get_match_list_with_fight_result()
       |> List.flatten()
       |> length()
       |> (fn len ->
@@ -1801,7 +1801,7 @@ defmodule MilkWeb.TournamentControllerTest do
             assert new_len == old_len - 1
           end).()
 
-      TournamentProgress.get_single_tournament_match_logs(tournament.id, hd(losers))
+      Progress.get_single_tournament_match_logs(tournament.id, hd(losers))
       |> Enum.map(fn log ->
         assert log.loser_id == hd(losers)
         assert log.tournament_id == tournament.id
@@ -1811,11 +1811,11 @@ defmodule MilkWeb.TournamentControllerTest do
             assert len == 1
           end).()
 
-      assert TournamentProgress.get_fight_result(hd(losers), tournament.id) == []
-      assert TournamentProgress.get_match_pending_list(hd(losers), tournament.id) == []
+      assert Progress.get_fight_result(hd(losers), tournament.id) == []
+      assert Progress.get_match_pending_list(hd(losers), tournament.id) == []
 
       tournament.id
-      |> TournamentProgress.get_match_list()
+      |> Progress.get_match_list()
       |> List.flatten()
       |> Enum.any?(fn user_id ->
         user_id == hd(losers)
@@ -1825,7 +1825,7 @@ defmodule MilkWeb.TournamentControllerTest do
           end).()
 
       tournament.id
-      |> TournamentProgress.get_match_list_with_fight_result()
+      |> Progress.get_match_list_with_fight_result()
       |> List.flatten()
       |> Enum.any?(fn map ->
         if map["is_loser"] do
@@ -2056,7 +2056,7 @@ defmodule MilkWeb.TournamentControllerTest do
 
       gotten_id_list =
         tournament.id
-        |> TournamentProgress.get_match_pending_list_of_tournament()
+        |> Progress.get_match_pending_list_of_tournament()
         |> Enum.map(fn id_str ->
           String.to_integer(id_str)
         end)
@@ -2107,7 +2107,7 @@ defmodule MilkWeb.TournamentControllerTest do
       assert json_response(conn, 200)["result"]
 
       tournament.id
-      |> TournamentProgress.get_match_list()
+      |> Progress.get_match_list()
       |> List.flatten()
       |> length()
       |> Kernel.==(4)
@@ -2782,7 +2782,7 @@ defmodule MilkWeb.TournamentControllerTest do
         end
       end)
 
-      match_list = TournamentProgress.get_match_list(tournament.id)
+      match_list = Progress.get_match_list(tournament.id)
       loser = hd(match_list)
 
       conn =
@@ -2814,7 +2814,7 @@ defmodule MilkWeb.TournamentControllerTest do
       conn = get(conn, Routes.tournament_path(conn, :show), tournament_id: tournament.id)
       assert json_response(conn, 200)["is_log"]
 
-      assert TournamentProgress.get_match_list_with_fight_result(tournament.id) == []
+      assert Progress.get_match_list_with_fight_result(tournament.id) == []
     end
   end
 
@@ -3039,11 +3039,11 @@ defmodule MilkWeb.TournamentControllerTest do
           )
 
         tournament.id
-        |> TournamentProgress.get_duplicate_users()
+        |> Progress.get_duplicate_users()
         |> Kernel.==([opponent["id"], player.user_id])
         |> Kernel.||(
           tournament.id
-          |> TournamentProgress.get_duplicate_users()
+          |> Progress.get_duplicate_users()
           |> Kernel.==([player.user_id, opponent["id"]])
         )
         |> (fn bool ->
@@ -3119,7 +3119,7 @@ defmodule MilkWeb.TournamentControllerTest do
         )
 
       tournament.id
-      |> TournamentProgress.get_match_list()
+      |> Progress.get_match_list()
       |> List.flatten()
       |> length()
       |> Kernel.==(4)
@@ -3248,7 +3248,7 @@ defmodule MilkWeb.TournamentControllerTest do
       assert json_response(conn, 200)["result"]
 
       tournament.id
-      |> TournamentProgress.get_match_list()
+      |> Progress.get_match_list()
       |> List.flatten()
       |> length()
       |> Kernel.==(4)
@@ -3460,7 +3460,7 @@ defmodule MilkWeb.TournamentControllerTest do
         )
 
       tournament.id
-      |> TournamentProgress.get_match_list()
+      |> Progress.get_match_list()
       |> List.flatten()
       |> length()
       |> Kernel.==(capacity)
@@ -3894,17 +3894,17 @@ defmodule MilkWeb.TournamentControllerTest do
             assert len == 3
           end).()
 
-      TournamentProgress.get_match_list(tournament["id"])
+      Progress.get_match_list(tournament["id"])
       |> (fn list ->
             assert list == []
           end).()
 
-      TournamentProgress.get_match_list_with_fight_result(tournament["id"])
+      Progress.get_match_list_with_fight_result(tournament["id"])
       |> (fn list ->
             assert list == []
           end).()
 
-      TournamentProgress.get_match_list_with_fight_result_including_log(tournament["id"])
+      Progress.get_match_list_with_fight_result_including_log(tournament["id"])
       |> (fn list ->
             list
             |> length()
@@ -3912,7 +3912,7 @@ defmodule MilkWeb.TournamentControllerTest do
             |> assert()
           end).()
 
-      TournamentProgress.get_match_pending_list_of_tournament(tournament["id"])
+      Progress.get_match_pending_list_of_tournament(tournament["id"])
       |> (fn list ->
             assert list == []
           end).()
@@ -4190,7 +4190,7 @@ defmodule MilkWeb.TournamentControllerTest do
       json_response(conn, 200)
 
       tournament.id
-      |> TournamentProgress.get_match_list_with_fight_result()
+      |> Progress.get_match_list_with_fight_result()
       |> List.flatten()
       |> length()
       |> Kernel.==(4)
@@ -4255,7 +4255,7 @@ defmodule MilkWeb.TournamentControllerTest do
         })
 
       entrant1.user_id
-      |> TournamentProgress.get_match_pending_list(tournament.id)
+      |> Progress.get_match_pending_list(tournament.id)
       |> (fn list ->
             assert list == []
           end).()
@@ -4275,7 +4275,7 @@ defmodule MilkWeb.TournamentControllerTest do
         )
 
       entrant1.user_id
-      |> TournamentProgress.get_match_pending_list(tournament.id)
+      |> Progress.get_match_pending_list(tournament.id)
       |> (fn list ->
             assert list == [{{entrant1.user_id, tournament.id}, "IsWaitingForStart"}]
           end).()
@@ -4349,11 +4349,11 @@ defmodule MilkWeb.TournamentControllerTest do
 
       match_list =
         tournament.id
-        |> TournamentProgress.get_match_list()
+        |> Progress.get_match_list()
 
       match_list_with_fight_result =
         tournament.id
-        |> TournamentProgress.get_match_list_with_fight_result()
+        |> Progress.get_match_list_with_fight_result()
 
       conn =
         get(conn, Routes.tournament_path(conn, :score),
@@ -4426,7 +4426,7 @@ defmodule MilkWeb.TournamentControllerTest do
         )
 
       entrant1.user_id
-      |> TournamentProgress.get_match_pending_list(tournament.id)
+      |> Progress.get_match_pending_list(tournament.id)
       |> (fn list ->
             assert list == []
           end).()
@@ -4444,7 +4444,7 @@ defmodule MilkWeb.TournamentControllerTest do
         )
 
       entrant1.user_id
-      |> TournamentProgress.get_match_pending_list(tournament.id)
+      |> Progress.get_match_pending_list(tournament.id)
       |> (fn list ->
             assert list == [{{entrant1.user_id, tournament.id}, "IsWaitingForStart"}]
           end).()
