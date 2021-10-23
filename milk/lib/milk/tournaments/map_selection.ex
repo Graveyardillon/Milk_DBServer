@@ -4,14 +4,14 @@ defmodule Milk.Tournaments.MapSelection do
   import Ecto.Changeset
 
   @type t :: %__MODULE__{
-    state: String.t(),
-    small_id: integer(),
-    large_id: integer(),
-    map_id: integer(),
-    # NOTE: timestamps
-    create_time: any(),
-    update_time: any()
-  }
+          state: String.t(),
+          small_id: integer(),
+          large_id: integer(),
+          map_id: integer(),
+          # NOTE: timestamps
+          create_time: any(),
+          update_time: any()
+        }
 
   schema "map_selections" do
     field :state, :string, default: "not_selected"

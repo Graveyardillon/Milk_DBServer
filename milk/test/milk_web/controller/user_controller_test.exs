@@ -147,11 +147,12 @@ defmodule MilkWeb.UserControllerTest do
       username = "applechan"
       apple_id = email
 
-      conn = post(conn, Routes.user_path(conn, :signin_with_apple), %{
-        email: email,
-        username: username,
-        apple_id: apple_id
-      })
+      conn =
+        post(conn, Routes.user_path(conn, :signin_with_apple), %{
+          email: email,
+          username: username,
+          apple_id: apple_id
+        })
 
       response = json_response(conn, 200)
 
@@ -165,9 +166,10 @@ defmodule MilkWeb.UserControllerTest do
       assert data["name"] == username
       refute is_nil(data["id"])
 
-      conn = post(conn, Routes.user_path(conn, :signin_with_apple), %{
-        apple_id: apple_id
-      })
+      conn =
+        post(conn, Routes.user_path(conn, :signin_with_apple), %{
+          apple_id: apple_id
+        })
 
       response = json_response(conn, 200)
 
@@ -185,9 +187,10 @@ defmodule MilkWeb.UserControllerTest do
     test "does not work", %{conn: conn} do
       apple_id = "apple2@icloud.com"
 
-      conn = post(conn, Routes.user_path(conn, :signin_with_apple), %{
-        apple_id: apple_id
-      })
+      conn =
+        post(conn, Routes.user_path(conn, :signin_with_apple), %{
+          apple_id: apple_id
+        })
 
       refute json_response(conn, 200)["result"]
     end

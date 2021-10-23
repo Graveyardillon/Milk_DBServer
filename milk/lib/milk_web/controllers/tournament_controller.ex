@@ -161,7 +161,11 @@ defmodule MilkWeb.TournamentController do
           followers = Relations.get_followers(tournament.master_id)
           tournament = Map.put(tournament, :followers, followers)
 
-          Accounts.gain_score( %{"user_id" => tournament.master_id, "game_name" => tournament.game_name, "score" => 7})
+          Accounts.gain_score(%{
+            "user_id" => tournament.master_id,
+            "game_name" => tournament.game_name,
+            "score" => 7
+          })
 
           unless is_nil(tournament.event_date) do
             add_queue_tournament_start_push_notice(tournament)
@@ -174,9 +178,14 @@ defmodule MilkWeb.TournamentController do
               |> case do
                 {:ok, _} ->
                   if !is_nil(tournament.description) do
-                    Discord.send_tournament_description(tournament.discord_server_id, tournament.description)
+                    Discord.send_tournament_description(
+                      tournament.discord_server_id,
+                      tournament.description
+                    )
                   end
-                _ -> nil
+
+                _ ->
+                  nil
               end
             end
           end)
@@ -253,11 +262,16 @@ defmodule MilkWeb.TournamentController do
   """
   def get_thumbnail_image(conn, %{"thumbnail_path" => path}) do
     case Application.get_env(:milk, :environment) do
-      :test -> read_thumbnail(path)
+      :test ->
+        read_thumbnail(path)
+
       # coveralls-ignore-start
-      :dev -> read_thumbnail(path)
-      _ -> read_thumbnail_prod(path)
-      # coveralls-ignore-stop
+      :dev ->
+        read_thumbnail(path)
+
+      _ ->
+        read_thumbnail_prod(path)
+        # coveralls-ignore-stop
     end
     ~> map
 
@@ -277,11 +291,16 @@ defmodule MilkWeb.TournamentController do
 
         map =
           case Application.get_env(:milk, :environment) do
-            :test -> read_thumbnail(path)
+            :test ->
+              read_thumbnail(path)
+
             # coveralls-ignore-start
-            :dev -> read_thumbnail(path)
-            _ -> read_thumbnail_prod(path)
-            # coveralls-ignore-stop
+            :dev ->
+              read_thumbnail(path)
+
+            _ ->
+              read_thumbnail_prod(path)
+              # coveralls-ignore-stop
           end
 
         json(conn, %{result: true, b64: map.b64})
@@ -296,7 +315,8 @@ defmodule MilkWeb.TournamentController do
         b64 = Base.encode64(file)
         %{b64: b64}
 
-      {:error, _} -> %{error: "image not found"}
+      {:error, _} ->
+        %{error: "image not found"}
     end
   end
 
@@ -365,7 +385,9 @@ defmodule MilkWeb.TournamentController do
 
   defp load_filtered_home(user_id, "fav"), do: Tournaments.home_tournament_fav(user_id)
   defp load_filtered_home(user_id, "plan"), do: Tournaments.home_tournament_plan(user_id)
-  defp load_filtered_home(user_id, "entry"), do: Tournaments.get_participating_tournaments(user_id)
+
+  defp load_filtered_home(user_id, "entry"),
+    do: Tournaments.get_participating_tournaments(user_id)
 
   @doc """
   Get searched tournaments as home.
@@ -425,6 +447,7 @@ defmodule MilkWeb.TournamentController do
       {:ok, %Tournament{} = tournament} ->
         notify_discord_on_deleting_tournament_as_needed(tournament)
         json(conn, %{result: true})
+
       {:error, error} ->
         render(conn, "error.json", error: error)
     end
@@ -570,7 +593,8 @@ defmodule MilkWeb.TournamentController do
     user_id
     |> do_relevant()
     |> Enum.all?(fn t ->
-      tournament.master_id == user_id || t.event_date != tournament.event_date || is_nil(t.event_date)
+      tournament.master_id == user_id || t.event_date != tournament.event_date ||
+        is_nil(t.event_date)
     end)
     |> Kernel.and(result)
     ~> result
@@ -1624,9 +1648,10 @@ defmodule MilkWeb.TournamentController do
         |> Kernel.--([target_user_id])
         |> hd()
         |> Enum.each(fn user_id ->
-          Tournaments.force_to_promote_rank(
-            %{"tournament_id" => tournament_id, "user_id" => user_id}
-          )
+          Tournaments.force_to_promote_rank(%{
+            "tournament_id" => tournament_id,
+            "user_id" => user_id
+          })
         end)
 
         Tournaments.delete_loser_process(tournament_id, [target_user_id])
@@ -1650,7 +1675,9 @@ defmodule MilkWeb.TournamentController do
     ~> tournament
 
     team = Enum.filter(tournament.team, fn team -> team.is_confirmed end)
-    selections = Tournaments.get_maps_by_tournament_id(tournament.id)
+
+    selections =
+      Tournaments.get_maps_by_tournament_id(tournament.id)
       |> Enum.map(fn map ->
         Map.put(map, :state, "not_selected")
       end)

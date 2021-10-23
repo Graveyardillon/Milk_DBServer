@@ -122,13 +122,17 @@ defmodule MilkWeb.TeamController do
     confirm_if_team_exists(conn, team, invitation_id)
   end
 
-  defp confirm_if_team_exists(conn, nil, _), do: render(conn, "error.json", error: "team not found")
+  defp confirm_if_team_exists(conn, nil, _),
+    do: render(conn, "error.json", error: "team not found")
+
   defp confirm_if_team_exists(conn, team, invitation_id) do
     tournament = Tournaments.get_tournament(team.tournament_id)
     confirm_if_tournament_exists(conn, tournament, invitation_id)
   end
 
-  defp confirm_if_tournament_exists(conn, nil, _), do: render(conn, "error.json", error: "tournament not found")
+  defp confirm_if_tournament_exists(conn, nil, _),
+    do: render(conn, "error.json", error: "tournament not found")
+
   defp confirm_if_tournament_exists(conn, tournament, invitation_id) do
     tournament.id
     |> Tournaments.get_confirmed_teams()
@@ -169,10 +173,8 @@ defmodule MilkWeb.TeamController do
     |> Tournaments.confirm_team_invitation()
     |> case do
       {:ok, invitation} ->
-        invitation.team_id
-        |> Tournaments.get_team()
-        ~> team
-        |> send_add_team_discord_notification()
+        team = Tournaments.get_team(invitation.team_id)
+        Task.async(fn -> send_add_team_discord_notification(team) end)
 
         json(conn, %{
           result: true,
@@ -180,7 +182,8 @@ defmodule MilkWeb.TeamController do
           tournament_id: team.tournament_id
         })
 
-      {:error, error} -> render(conn, "error.json", error: error)
+      {:error, error} ->
+        render(conn, "error.json", error: error)
     end
   end
 
@@ -230,29 +233,30 @@ defmodule MilkWeb.TeamController do
     end
   end
 
+  @doc """
+  Add members to a team.
+  TODO: テスト記述
+  """
   def add_members(conn, %{"team_id" => team_id, "user_id_list" => user_id_list}) do
-    team_id
-    |> Tournaments.get_team()
-    ~> team
-    |> is_nil()
-    |> unless do
-      leader = Enum.find(team.team_member, fn x -> x.is_leader == true end)
-      total = length(team.team_member) + length(user_id_list)
+    team = Tournaments.get_team(team_id)
+    add_members_if_team_exists(conn, team, user_id_list)
+  end
 
-      cond do
-        total <= team.size ->
-          Tournaments.create_team_members(team_id, user_id_list)
-          |> Enum.each(fn member ->
-            Tournaments.create_team_invitation(member.id, leader.user_id)
-          end)
+  defp add_members_if_team_exists(conn, nil, _),
+    do: render(conn, "error.json", error: "team is nil")
 
-          json(conn, %{result: true})
+  defp add_members_if_team_exists(conn, team, user_id_list) do
+    leader = Enum.find(team.team_member, &(&1.is_leader == true))
+    total_count = length(team.team_member) + length(user_id_list)
 
-        total > team.size ->
-          render(conn, "error.json", error: "invalid size")
-      end
+    if total_count <= team.size do
+      team.id
+      |> Tournaments.create_team_members(user_id_list)
+      |> Enum.each(&Tournaments.create_team_invitation(&1.id, leader.user_id))
+
+      json(conn, %{result: true})
     else
-      render(conn, "error.json", error: nil)
+      render(conn, "error.json", error: "invalid size")
     end
   end
 end

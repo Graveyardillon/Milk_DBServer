@@ -21,6 +21,7 @@ defmodule Milk.Tournaments.Progress do
   }
 
   alias Milk.Tournaments.Tournament
+
   alias Milk.Tournaments.Progress.{
     BestOfXTournamentMatchLog,
     MatchListWithFightResultLog,
@@ -679,7 +680,6 @@ defmodule Milk.Tournaments.Progress do
   # NOTE: 大会ルールに基づいてオートマトンを生成する関数
   @spec define_state_machine(Tournament.t()) :: any()
   def define_state_machine(_tournament) do
-
   end
 
   # 8. ban order
@@ -897,7 +897,8 @@ defmodule Milk.Tournaments.Progress do
   個人大会スタート時に使用する関数群
   """)
 
-  @spec start_single_elimination(integer(), Tournament.t()) :: {:ok, match_list(), match_list_with_fight_result()}
+  @spec start_single_elimination(integer(), Tournament.t()) ::
+          {:ok, match_list(), match_list_with_fight_result()}
   def start_single_elimination(master_id, tournament) do
     Tournaments.start(master_id, tournament.id)
     make_single_elimination_matches(tournament.id)
@@ -976,13 +977,16 @@ defmodule Milk.Tournaments.Progress do
   チーム大会スタートに関する関数群
   """)
 
-  @spec start_team_best_of_format(integer(), Tournament.t()) :: {:ok, match_list(), match_list_with_fight_result()} | {:error, String.t(), nil}
+  @spec start_team_best_of_format(integer(), Tournament.t()) ::
+          {:ok, match_list(), match_list_with_fight_result()} | {:error, String.t(), nil}
   def start_team_best_of_format(master_id, tournament) do
     tournament.id
     |> Tournaments.start_team_tournament(master_id)
     |> case do
       {:ok, _tournament} ->
-        {:ok, match_list, match_list_with_fight_result} = generate_team_best_of_format_matches(tournament)
+        {:ok, match_list, match_list_with_fight_result} =
+          generate_team_best_of_format_matches(tournament)
+
         {:ok, match_list, match_list_with_fight_result}
 
       {:error, error} ->

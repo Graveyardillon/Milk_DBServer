@@ -6,13 +6,13 @@ defmodule Milk.Tournaments.Entrant do
   alias Milk.Accounts.User
 
   @type t :: %__MODULE__{
-    rank: integer(),
-    tournament_id: integer(),
-    user_id: integer(),
-    # NOTE: timestamps
-    create_time: any(),
-    update_time: any()
-  }
+          rank: integer(),
+          tournament_id: integer(),
+          user_id: integer(),
+          # NOTE: timestamps
+          create_time: any(),
+          update_time: any()
+        }
 
   schema "entrants" do
     field :rank, :integer, default: 0

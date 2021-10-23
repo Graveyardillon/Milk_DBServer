@@ -7,13 +7,13 @@ defmodule Milk.Tournaments.Map do
   alias Milk.Tournaments.Tournament
 
   @type t :: %__MODULE__{
-    name: String.t(),
-    icon_path: String.t() | nil,
-    tournament_id: integer(),
-    # NOTE: timestamps
-    create_time: any(),
-    update_time: any()
-  }
+          name: String.t(),
+          icon_path: String.t() | nil,
+          tournament_id: integer(),
+          # NOTE: timestamps
+          create_time: any(),
+          update_time: any()
+        }
 
   schema "maps" do
     field :name, :string

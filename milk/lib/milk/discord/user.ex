@@ -6,12 +6,12 @@ defmodule Milk.Discord.User do
   alias Milk.Accounts.User
 
   @type t :: %__MODULE__{
-    discord_id: String.t(),
-    user_id: integer(),
-    # NOTE: timestamps
-    create_time: any(),
-    update_time: any()
-  }
+          discord_id: String.t(),
+          user_id: integer(),
+          # NOTE: timestamps
+          create_time: any(),
+          update_time: any()
+        }
 
   schema "discord_users" do
     # NOTE: 入る数字は整数だけど、あまりに数字が大きいのでstringを選んだ

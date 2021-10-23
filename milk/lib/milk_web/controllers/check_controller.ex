@@ -24,7 +24,9 @@ defmodule MilkWeb.CheckController do
     |> unchecked_notifications_exist?()
     ~> unchecked_notifcations_exist?
 
-    render(conn, "check_for_web.json", unchecked_notification_exists: unchecked_notifcations_exist?)
+    render(conn, "check_for_web.json",
+      unchecked_notification_exists: unchecked_notifcations_exist?
+    )
   end
 
   defp unchecked_notifications_exist?(0), do: false

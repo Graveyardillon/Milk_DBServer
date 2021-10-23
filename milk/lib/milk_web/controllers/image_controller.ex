@@ -62,6 +62,4 @@ defmodule MilkWeb.ImageController do
         end
     end
   end
-
-
 end

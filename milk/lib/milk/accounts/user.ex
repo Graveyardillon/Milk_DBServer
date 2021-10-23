@@ -21,21 +21,21 @@ defmodule Milk.Accounts.User do
   alias Milk.Notif.Notification
 
   @type t :: %__MODULE__{
-    bio: String.t() | nil,
-    birthday: any(),
-    icon_path: String.t() | nil,
-    id_for_show: String.t() | nil,
-    is_birthday_private: boolean(),
-    name: String.t(),
-    notification_number: integer(),
-    point: integer(),
-    win_count: integer(),
-    language: String.t(),
-    logout_fl: boolean(),
-    # NOTE: timestamps
-    create_time: any(),
-    update_time: any()
-  }
+          bio: String.t() | nil,
+          birthday: any(),
+          icon_path: String.t() | nil,
+          id_for_show: String.t() | nil,
+          is_birthday_private: boolean(),
+          name: String.t(),
+          notification_number: integer(),
+          point: integer(),
+          win_count: integer(),
+          language: String.t(),
+          logout_fl: boolean(),
+          # NOTE: timestamps
+          create_time: any(),
+          update_time: any()
+        }
 
   schema "users" do
     field :bio, :string, default: nil

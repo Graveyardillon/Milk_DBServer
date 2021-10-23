@@ -114,6 +114,7 @@ defmodule MilkWeb.EntrantController do
       Tournaments.get_rank(tournament.id, user_id)
     end
   end
+
   defp get_rank_by_tournament(nil, _), do: {:error, "tournament is nil"}
 
   defp get_rank_by_team(%Team{} = team), do: {:ok, team.rank}

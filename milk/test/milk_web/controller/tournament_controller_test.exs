@@ -291,6 +291,7 @@ defmodule MilkWeb.TournamentControllerTest do
 
     test "renders error when date information is nil", %{conn: conn} do
       user = fixture_user()
+
       attrs = %{
         "capacity" => 4,
         "deadline" => nil,
@@ -304,14 +305,14 @@ defmodule MilkWeb.TournamentControllerTest do
         "platform" => 1
       }
 
-      conn =
-        post(conn, Routes.tournament_path(conn, :create), tournament: attrs, file: "")
+      conn = post(conn, Routes.tournament_path(conn, :create), tournament: attrs, file: "")
 
       assert json_response(conn, 200)["result"]
     end
 
     test "renders error when date information is empty string", %{conn: conn} do
       user = fixture_user()
+
       attrs = %{
         "capacity" => 4,
         "deadline" => "",
@@ -325,8 +326,7 @@ defmodule MilkWeb.TournamentControllerTest do
         "platform" => 1
       }
 
-      conn =
-        post(conn, Routes.tournament_path(conn, :create), tournament: attrs, file: "")
+      conn = post(conn, Routes.tournament_path(conn, :create), tournament: attrs, file: "")
 
       assert json_response(conn, 200)["result"]
     end
@@ -2120,7 +2120,7 @@ defmodule MilkWeb.TournamentControllerTest do
         )
 
       assert json_response(conn, 200)["result"]
-      #opponent = json_response(conn, 200)["opponent"]
+      # opponent = json_response(conn, 200)["opponent"]
     end
   end
 

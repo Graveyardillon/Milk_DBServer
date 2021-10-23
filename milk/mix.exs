@@ -120,11 +120,11 @@ defmodule Milk.MixProject do
         "test"
       ],
       check: [
-        "compile --warnings-as-errors",
+        "compile",
         "format --check-formatted",
         "credo --strict",
         "coveralls.html",
-        "dialyzer --format short"
+        "dialyzer"
       ]
     ]
   end

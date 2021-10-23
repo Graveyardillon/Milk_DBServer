@@ -258,8 +258,7 @@ defmodule Milk.Tournaments.ProgressTest do
       tournament = fixture_tournament()
       Progress.insert_match_pending_list_table(1, tournament.id)
 
-      assert {r, "IsWaitingForStart"} =
-               Progress.get_match_pending_list(1, tournament.id) |> hd()
+      assert {r, "IsWaitingForStart"} = Progress.get_match_pending_list(1, tournament.id) |> hd()
 
       assert r == {1, tournament.id}
     end

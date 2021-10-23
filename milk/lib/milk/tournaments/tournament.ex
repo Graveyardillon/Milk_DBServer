@@ -16,32 +16,32 @@ defmodule Milk.Tournaments.Tournament do
   }
 
   @type t :: %__MODULE__{
-    capacity: integer(),
-    count: integer(),
-    deadline: any(),
-    description: String.t() | nil,
-    discord_server_id: String.t() | nil,
-    enabled_coin_toss: boolean(),
-    enabled_map: boolean(),
-    event_date: any(),
-    game_name: String.t() | nil,
-    is_started: boolean(),
-    is_team: boolean(),
-    name: String.t(),
-    password: String.t() | nil,
-    start_recruiting: any(),
-    team_size: integer() | nil,
-    thumbnail_path: String.t() | nil,
-    type: integer(),
-    url: String.t() | nil,
-    url_token: String.t() | nil,
-    platform_id: integer(),
-    game_id: integer() | nil,
-    master_id: integer(),
-    # NOTE: timestamps
-    create_time: any(),
-    update_time: any()
-  }
+          capacity: integer(),
+          count: integer(),
+          deadline: any(),
+          description: String.t() | nil,
+          discord_server_id: String.t() | nil,
+          enabled_coin_toss: boolean(),
+          enabled_map: boolean(),
+          event_date: any(),
+          game_name: String.t() | nil,
+          is_started: boolean(),
+          is_team: boolean(),
+          name: String.t(),
+          password: String.t() | nil,
+          start_recruiting: any(),
+          team_size: integer() | nil,
+          thumbnail_path: String.t() | nil,
+          type: integer(),
+          url: String.t() | nil,
+          url_token: String.t() | nil,
+          platform_id: integer(),
+          game_id: integer() | nil,
+          master_id: integer(),
+          # NOTE: timestamps
+          create_time: any(),
+          update_time: any()
+        }
 
   schema "tournaments" do
     field :capacity, :integer
@@ -104,7 +104,7 @@ defmodule Milk.Tournaments.Tournament do
       :thumbnail_path,
       :type,
       :url,
-      :url_token,
+      :url_token
     ])
     |> validate_required([:name, :capacity, :type])
     |> foreign_key_constraint(:platform_id)

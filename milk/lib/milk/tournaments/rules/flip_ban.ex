@@ -13,19 +13,98 @@ defmodule Milk.Tournaments.Rules.FlipBan do
     is_team = Keyword.get(opts, :is_team, true)
 
     # NOTE: チーム戦のときはis_memberのstateが追加されるだけに過ぎない
-    if is_team, do: Dfa.Predefined.on!(machine_name, @db_index, member_trigger(), is_not_started(), is_member())
+    if is_team,
+      do:
+        Dfa.Predefined.on!(
+          machine_name,
+          @db_index,
+          member_trigger(),
+          is_not_started(),
+          is_member()
+        )
 
-    Dfa.Predefined.on!(machine_name, @db_index, start_trigger(), is_not_started(), should_flip_coin())
+    Dfa.Predefined.on!(
+      machine_name,
+      @db_index,
+      start_trigger(),
+      is_not_started(),
+      should_flip_coin()
+    )
+
     Dfa.Predefined.on!(machine_name, @db_index, manager_trigger(), is_not_started(), is_manager())
-    Dfa.Predefined.on!(machine_name, @db_index, flip_trigger(), should_flip_coin(), is_waiting_for_coin_flip())
-    Dfa.Predefined.on!(machine_name, @db_index, ban_map_trigger(), is_waiting_for_coin_flip(), should_ban_map())
-    Dfa.Predefined.on!(machine_name, @db_index, observe_ban_map_trigger(), is_waiting_for_coin_flip(), should_observe_ban())
-    Dfa.Predefined.on!(machine_name, @db_index, observe_ban_map_trigger(), should_ban_map(), should_observe_ban())
-    Dfa.Predefined.on!(machine_name, @db_index, ban_map_trigger(), should_observe_ban(), should_ban_map())
-    Dfa.Predefined.on!(machine_name, @db_index, choose_map_trigger(), should_observe_ban(), should_choose_map())
-    Dfa.Predefined.on!(machine_name, @db_index, observe_choose_map_trigger(), should_ban_map(), should_observe_choose())
-    Dfa.Predefined.on!(machine_name, @db_index, choose_ad_trigger(), should_observe_choose(), should_choose_ad())
-    Dfa.Predefined.on!(machine_name, @db_index, observe_choose_ad_trigger(), should_choose_map(), should_observe_ad())
+
+    Dfa.Predefined.on!(
+      machine_name,
+      @db_index,
+      flip_trigger(),
+      should_flip_coin(),
+      is_waiting_for_coin_flip()
+    )
+
+    Dfa.Predefined.on!(
+      machine_name,
+      @db_index,
+      ban_map_trigger(),
+      is_waiting_for_coin_flip(),
+      should_ban_map()
+    )
+
+    Dfa.Predefined.on!(
+      machine_name,
+      @db_index,
+      observe_ban_map_trigger(),
+      is_waiting_for_coin_flip(),
+      should_observe_ban()
+    )
+
+    Dfa.Predefined.on!(
+      machine_name,
+      @db_index,
+      observe_ban_map_trigger(),
+      should_ban_map(),
+      should_observe_ban()
+    )
+
+    Dfa.Predefined.on!(
+      machine_name,
+      @db_index,
+      ban_map_trigger(),
+      should_observe_ban(),
+      should_ban_map()
+    )
+
+    Dfa.Predefined.on!(
+      machine_name,
+      @db_index,
+      choose_map_trigger(),
+      should_observe_ban(),
+      should_choose_map()
+    )
+
+    Dfa.Predefined.on!(
+      machine_name,
+      @db_index,
+      observe_choose_map_trigger(),
+      should_ban_map(),
+      should_observe_choose()
+    )
+
+    Dfa.Predefined.on!(
+      machine_name,
+      @db_index,
+      choose_ad_trigger(),
+      should_observe_choose(),
+      should_choose_ad()
+    )
+
+    Dfa.Predefined.on!(
+      machine_name,
+      @db_index,
+      observe_choose_ad_trigger(),
+      should_choose_map(),
+      should_observe_ad()
+    )
+
     Dfa.Predefined.on!(machine_name, @db_index, pend_trigger(), should_choose_ad(), is_pending())
     Dfa.Predefined.on!(machine_name, @db_index, pend_trigger(), should_observe_ad(), is_pending())
     Dfa.Predefined.on!(machine_name, @db_index, lose_trigger(), is_pending(), is_loser())
@@ -65,7 +144,9 @@ defmodule Milk.Tournaments.Rules.FlipBan do
   defp unfiltered_list_states(opts) do
     [
       is_not_started(),
-      if Keyword.get(opts, :is_team, true) do is_member() end,
+      if Keyword.get(opts, :is_team, true) do
+        is_member()
+      end,
       is_manager(),
       should_flip_coin(),
       is_waiting_for_coin_flip(),

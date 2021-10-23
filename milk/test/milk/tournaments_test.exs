@@ -562,6 +562,7 @@ defmodule Milk.TournamentsTest do
       |> assert()
 
       offset = 1
+
       "2020-05-12 16:55:53 +0000"
       |> Tournaments.home_tournament(offset)
       |> length()
@@ -611,7 +612,9 @@ defmodule Milk.TournamentsTest do
     end
 
     test "home_tournament_plan/1 fails to return user's tournaments" do
-      tournament = fixture_tournament(deadline: "2010-04-17T14:00:00Z", event_date: "2010-04-17T14:00:00Z")
+      tournament =
+        fixture_tournament(deadline: "2010-04-17T14:00:00Z", event_date: "2010-04-17T14:00:00Z")
+
       assert length(Tournaments.home_tournament_plan(tournament.master_id)) == 0
     end
 
@@ -1109,13 +1112,11 @@ defmodule Milk.TournamentsTest do
 
       {:ok, opponent} = Tournaments.get_opponent(tournament.id, tournament.master_id)
 
-      pending_list =
-        Progress.get_match_pending_list(tournament.master_id, tournament.id)
+      pending_list = Progress.get_match_pending_list(tournament.master_id, tournament.id)
 
       assert pending_list == []
 
-      opponent_pending_list =
-        Progress.get_match_pending_list(opponent.id, tournament.id)
+      opponent_pending_list = Progress.get_match_pending_list(opponent.id, tournament.id)
 
       assert opponent_pending_list == []
 
@@ -1136,8 +1137,7 @@ defmodule Milk.TournamentsTest do
 
       start(tournament.master_id, tournament.id)
 
-      pending_list =
-        Progress.get_match_pending_list(tournament.master_id, tournament.id)
+      pending_list = Progress.get_match_pending_list(tournament.master_id, tournament.id)
 
       assert pending_list == []
       Progress.insert_match_pending_list_table(tournament.master_id, tournament.id)
@@ -2102,8 +2102,7 @@ defmodule Milk.TournamentsTest do
       assert result.validated
       refute result.completed
 
-      result =
-        claim_score(another_opponent_team.id, another_team.id, another_opponent_score, 0)
+      result = claim_score(another_opponent_team.id, another_team.id, another_opponent_score, 0)
 
       assert result.validated
       assert result.validated

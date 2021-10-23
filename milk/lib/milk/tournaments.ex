@@ -65,7 +65,7 @@ defmodule Milk.Tournaments do
 
   Raises `Ecto.NoResultsError` if the Tournament does not exist.
   """
-  @spec get_tournament(integer()) :: Tournament.t | nil
+  @spec get_tournament(integer()) :: Tournament.t() | nil
   def get_tournament(id) do
     Tournament
     |> Repo.get(id)
@@ -104,7 +104,7 @@ defmodule Milk.Tournaments do
 
     user_id
     |> Relations.blocked_users()
-    |> Enum.map(&(&1.blocked_user_id))
+    |> Enum.map(& &1.blocked_user_id)
     ~> blocked_user_id_list
 
     Timex.now()
@@ -131,7 +131,7 @@ defmodule Milk.Tournaments do
     Relation
     |> where([r], r.follower_id == ^user_id)
     |> Repo.all()
-    |> Enum.map(&(&1.followee_id))
+    |> Enum.map(& &1.followee_id)
     ~> user_id_list
 
     Tournament
@@ -213,6 +213,7 @@ defmodule Milk.Tournaments do
 
   @spec get_tournament_by_topic(TournamentChatTopic.t() | nil) :: Tournament.t() | nil
   defp get_tournament_by_topic(nil), do: nil
+
   defp get_tournament_by_topic(topic) do
     Tournament
     |> where([t], t.id == ^topic.tournament_id)
@@ -323,7 +324,8 @@ defmodule Milk.Tournaments do
   Gets single tournament or tournament log.
   If tournament does not exist in the table, it checks log table.
   """
-  @spec get_tournament_including_logs(integer()) :: {:ok, Tournament.t()} | {:ok, TournamentLog.t()} | {:error, nil}
+  @spec get_tournament_including_logs(integer()) ::
+          {:ok, Tournament.t()} | {:ok, TournamentLog.t()} | {:error, nil}
   def get_tournament_including_logs(tournament_id) do
     tournament_id
     |> __MODULE__.get_tournament()
@@ -335,6 +337,7 @@ defmodule Milk.Tournaments do
     |> Log.get_tournament_log_by_tournament_id()
     |> get_tournament_log()
   end
+
   defp do_get_tournament_including_logs(tournament, _), do: {:ok, tournament}
 
   defp get_tournament_log(nil), do: {:error, nil}
@@ -435,7 +438,8 @@ defmodule Milk.Tournaments do
       {:error, %Ecto.Changeset{}}
 
   """
-  @spec create_tournament(map(), String.t() | nil) :: {:ok, Tournament.t()} | {:error, Ecto.Changeset.t()}
+  @spec create_tournament(map(), String.t() | nil) ::
+          {:ok, Tournament.t()} | {:error, Ecto.Changeset.t()}
   def create_tournament(%{"master_id" => master_id} = params, thumbnail_path \\ "") do
     master_id = Tools.to_integer_as_needed(master_id)
 
@@ -453,8 +457,10 @@ defmodule Milk.Tournaments do
     end
   end
 
-  @spec do_create_tournament(User.t(), map(), String.t() | nil) :: {:ok, Tournament.t()} | {:error, Ecto.Changeset.t() | String.t() | nil}
+  @spec do_create_tournament(User.t(), map(), String.t() | nil) ::
+          {:ok, Tournament.t()} | {:error, Ecto.Changeset.t() | String.t() | nil}
   defp do_create_tournament(nil, _, _), do: {:error, "Undefined User"}
+
   defp do_create_tournament(%User{}, params, thumbnail_path) do
     if params["enabled_map"] && !params["enabled_coin_toss"] do
       {:error, "Needs to enable coin toss"}
@@ -463,11 +469,14 @@ defmodule Milk.Tournaments do
     end
   end
 
-  @spec do_create_tournament(map(), String.t() | nil) :: {:ok, Tournament.t()} | {:error, Ecto.Changeset.t() | nil}
+  @spec do_create_tournament(map(), String.t() | nil) ::
+          {:ok, Tournament.t()} | {:error, Ecto.Changeset.t() | nil}
   defp do_create_tournament(attrs, thumbnail_path) do
     master_id = Tools.to_integer_as_needed(attrs["master_id"])
     platform_id = Tools.to_integer_as_needed(attrs["platform"])
-    game_id = if attrs["game_id"] == "" || is_nil(attrs["game_id"]), do: nil, else: attrs["game_id"]
+
+    game_id =
+      if attrs["game_id"] == "" || is_nil(attrs["game_id"]), do: nil, else: attrs["game_id"]
 
     attrs = put_token(attrs)
 
@@ -499,9 +508,14 @@ defmodule Milk.Tournaments do
         join_topics(tournament.tournament.id, master_id)
         {:ok, tournament.tournament}
 
-      {:error, :tournament, changeset, _} -> {:error, Tools.create_error_message(changeset.errors)}
-      {:error, error} -> {:error, error.errors}
-      _ -> {:error, nil}
+      {:error, :tournament, changeset, _} ->
+        {:error, Tools.create_error_message(changeset.errors)}
+
+      {:error, error} ->
+        {:error, error.errors}
+
+      _ ->
+        {:error, nil}
     end
   end
 
@@ -597,14 +611,16 @@ defmodule Milk.Tournaments do
     end)
   end
 
-  @spec set_details(Tournament.t(), map()) :: {:ok, TournamentCustomDetail.t()} | {:error, Ecto.Changeset.t()}
+  @spec set_details(Tournament.t(), map()) ::
+          {:ok, TournamentCustomDetail.t()} | {:error, Ecto.Changeset.t()}
   defp set_details(tournament, params) do
     params
     |> Map.put("tournament_id", tournament.id)
     |> __MODULE__.create_custom_detail()
   end
 
-  @spec set_maps(Tournament.t(), map()) :: [{:ok, Milk.Tournaments.Map.t()} | {:error, Ecto.Changeset.t()}] | nil
+  @spec set_maps(Tournament.t(), map()) ::
+          [{:ok, Milk.Tournaments.Map.t()} | {:error, Ecto.Changeset.t()}] | nil
   defp set_maps(tournament, params) do
     params
     |> Map.has_key?("maps")
@@ -658,7 +674,8 @@ defmodule Milk.Tournaments do
       {:error, %Ecto.Changeset{}}
 
   """
-  @spec update_tournament(Tournament.t(), map()) :: {:ok, Tournament.t()} | {:error, Ecto.Changeset.t() | nil}
+  @spec update_tournament(Tournament.t(), map()) ::
+          {:ok, Tournament.t()} | {:error, Ecto.Changeset.t() | nil}
   def update_tournament(tournament, attrs) do
     attrs
     |> Map.get("platform")
@@ -690,7 +707,8 @@ defmodule Milk.Tournaments do
     end
   end
 
-  @spec update_details(Tournament.t(), map()) :: {:ok, TournamentCustomDetail.t()} | {:error, Ecto.Changeset.t()}
+  @spec update_details(Tournament.t(), map()) ::
+          {:ok, TournamentCustomDetail.t()} | {:error, Ecto.Changeset.t()}
   defp update_details(tournament, params) do
     params
     |> Map.put(:tournament_id, tournament.id)
@@ -829,8 +847,7 @@ defmodule Milk.Tournaments do
     ~> opponent_id
 
     if state!(tournament_id, user_id) == "ShouldChooseA/D" do
-      has_me_inserted =
-        Progress.insert_is_attacker_side(my_id, tournament_id, is_attack_side)
+      has_me_inserted = Progress.insert_is_attacker_side(my_id, tournament_id, is_attack_side)
 
       has_opponent_inserted =
         Progress.insert_is_attacker_side(opponent_id, tournament_id, !is_attack_side)
@@ -880,7 +897,8 @@ defmodule Milk.Tournaments do
       {:error, %Ecto.Changeset{}}
 
   """
-  @spec delete_tournament(Tournament.t() | map() | integer()) :: {:ok, Tournament.t()} | {:error, Ecto.Changeset.t() | String.t()}
+  @spec delete_tournament(Tournament.t() | map() | integer()) ::
+          {:ok, Tournament.t()} | {:error, Ecto.Changeset.t() | String.t()}
   def delete_tournament(%Tournament{} = tournament) do
     delete_tournament(tournament.id)
   end
@@ -984,7 +1002,8 @@ defmodule Milk.Tournaments do
 
   TODO: パイプラインのつなぎかたを変えるので、今はdefp関数にspecをつけていない
   """
-  @spec create_entrant(map()) :: {:ok, Entrant.t()} | {:error, Ecto.Changeset.t() | nil} | {:multierror, any()}
+  @spec create_entrant(map()) ::
+          {:ok, Entrant.t()} | {:error, Ecto.Changeset.t() | nil} | {:multierror, any()}
   def create_entrant(attrs \\ %{}) do
     attrs
     |> user_exists?()
@@ -1150,7 +1169,8 @@ defmodule Milk.Tournaments do
       {:error, %Ecto.Changeset{}}
 
   """
-  @spec update_entrant(Entrant.t(), map()) :: {:ok, Entrant.t()} | {:error, Ecto.Changeset.t() | nil}
+  @spec update_entrant(Entrant.t(), map()) ::
+          {:ok, Entrant.t()} | {:error, Ecto.Changeset.t() | nil}
   def update_entrant(%Entrant{} = entrant, attrs) do
     entrant
     |> Entrant.changeset(attrs)
@@ -1178,7 +1198,8 @@ defmodule Milk.Tournaments do
       iex> delete_entrant(entrant)
       {:error, %Ecto.Changeset{}}
   """
-  @spec delete_entrant(integer(), integer()) :: {:ok, Entrant.t()} | {:error, String.t() | Ecto.Changeset.t() | nil}
+  @spec delete_entrant(integer(), integer()) ::
+          {:ok, Entrant.t()} | {:error, String.t() | Ecto.Changeset.t() | nil}
   def delete_entrant(tournament_id, user_id) do
     tournament_id = Tools.to_integer_as_needed(tournament_id)
     user_id = Tools.to_integer_as_needed(user_id)
@@ -1298,7 +1319,8 @@ defmodule Milk.Tournaments do
   @doc """
   Promote winners
   """
-  @spec promote_winners_by_loser!(integer(), match_list(), [integer()] | integer()) :: {:ok, [any()]} | {:error, String.t() | nil}
+  @spec promote_winners_by_loser!(integer(), match_list(), [integer()] | integer()) ::
+          {:ok, [any()]} | {:error, String.t() | nil}
   def promote_winners_by_loser!(tournament_id, match_list, losers) when is_list(losers) do
     Enum.map(losers, fn loser ->
       match_list
@@ -1399,7 +1421,8 @@ defmodule Milk.Tournaments do
   @doc """
   Get an opponent.
   """
-  @spec get_opponent(integer(), integer()) :: {:ok, User.t()} | {:ok, Team.t()} | {:wait, nil} | {:error, String.t()}
+  @spec get_opponent(integer(), integer()) ::
+          {:ok, User.t()} | {:ok, Team.t()} | {:wait, nil} | {:error, String.t()}
   def get_opponent(tournament_id, user_id) do
     tournament = __MODULE__.get_tournament(tournament_id)
 
@@ -1430,7 +1453,8 @@ defmodule Milk.Tournaments do
     end
   end
 
-  @spec get_opponent_user([any()], integer()) :: {:ok, User.t()} | {:wait, nil} | {:error, String.t()}
+  @spec get_opponent_user([any()], integer()) ::
+          {:ok, User.t()} | {:wait, nil} | {:error, String.t()}
   defp get_opponent_user(match, user_id) do
     if Enum.member?(match, user_id) and length(match) == 2 do
       match
@@ -1446,9 +1470,11 @@ defmodule Milk.Tournaments do
   defp do_get_opponent_user(opponent_id) when is_integer(opponent_id) do
     {:ok, Accounts.get_user(opponent_id)}
   end
+
   defp do_get_opponent_user(_), do: {:wait, nil}
 
-  @spec get_opponent_team([any()], integer()) :: {:ok, Team.t()} | {:wait, nil} | {:error, String.t()}
+  @spec get_opponent_team([any()], integer()) ::
+          {:ok, Team.t()} | {:wait, nil} | {:error, String.t()}
   defp get_opponent_team(match, team_id) do
     if Enum.member?(match, team_id) and length(match) == 2 do
       match
@@ -1464,6 +1490,7 @@ defmodule Milk.Tournaments do
   defp do_get_opponent_team(opponent_team_id) when is_integer(opponent_team_id) do
     {:ok, __MODULE__.get_team(opponent_team_id)}
   end
+
   defp do_get_opponent_team(_), do: {:wait, nil}
 
   @doc """
@@ -1496,7 +1523,8 @@ defmodule Milk.Tournaments do
   HACK: 引数の順序がfinishと逆
   HACK: リファクタリング
   """
-  @spec start(integer(), integer()) :: {:ok, Tournament.t()} | {:error, Ecto.Changeset.t()} | {:error, String.t()}
+  @spec start(integer(), integer()) ::
+          {:ok, Tournament.t()} | {:error, Ecto.Changeset.t()} | {:error, String.t()}
   def start(master_id, tournament_id) do
     master_id
     |> nil_check?(tournament_id)
@@ -1570,7 +1598,8 @@ defmodule Milk.Tournaments do
   @doc """
   Start a team tournament.
   """
-  @spec start_team_tournament(integer(), integer()) :: {:ok, Tournament.t()} | {:error, Ecto.Changeset.t()} | {:error, String.t()}
+  @spec start_team_tournament(integer(), integer()) ::
+          {:ok, Tournament.t()} | {:error, Ecto.Changeset.t()} | {:error, String.t()}
   def start_team_tournament(tournament_id, master_id) do
     master_id
     |> nil_check?(tournament_id)
@@ -1697,7 +1726,8 @@ defmodule Milk.Tournaments do
   @doc """
   Initialize fight result of match list of teams.
   """
-  @spec initialize_match_list_of_team_with_fight_result(match_list()) :: match_list_with_fight_result()
+  @spec initialize_match_list_of_team_with_fight_result(match_list()) ::
+          match_list_with_fight_result()
   def initialize_match_list_of_team_with_fight_result(match_list) do
     Tournamex.initialize_match_list_of_team_with_fight_result(match_list)
   end
@@ -1705,7 +1735,8 @@ defmodule Milk.Tournaments do
   @doc """
   Put value on brackets.
   """
-  @spec put_value_on_brackets(match_list(), integer() | String.t() | atom(), any()) :: match_list() | match_list_with_fight_result()
+  @spec put_value_on_brackets(match_list(), integer() | String.t() | atom(), any()) ::
+          match_list() | match_list_with_fight_result()
   def put_value_on_brackets(match_list, key, value) do
     Tournamex.put_value_on_brackets(match_list, key, value)
   end
@@ -1876,7 +1907,9 @@ defmodule Milk.Tournaments do
   @doc """
   Get group chat tabs in a tournament including log.
   """
-  @spec get_tabs_by_tournament_id(integer()) :: [TournamentChatTopic.t() | TournamentChatTopicLog.t()]
+  @spec get_tabs_by_tournament_id(integer()) :: [
+          TournamentChatTopic.t() | TournamentChatTopicLog.t()
+        ]
   def get_tabs_by_tournament_id(tournament_id) do
     TournamentChatTopic
     |> where([t], t.tournament_id == ^tournament_id)
@@ -1927,7 +1960,8 @@ defmodule Milk.Tournaments do
       {:error, %Ecto.Changeset{}}
 
   """
-  @spec update_tournament_chat_topic(TournamentChatTopic.t(), map()) :: {:ok, TournamentChatTopic.t()} | {:error, Ecto.Changeset.t()}
+  @spec update_tournament_chat_topic(TournamentChatTopic.t(), map()) ::
+          {:ok, TournamentChatTopic.t()} | {:error, Ecto.Changeset.t()}
   def update_tournament_chat_topic(%TournamentChatTopic{} = tournament_chat_topic, attrs) do
     tournament_chat_topic
     |> TournamentChatTopic.changeset(attrs)
@@ -1946,7 +1980,8 @@ defmodule Milk.Tournaments do
       {:error, %Ecto.Changeset{}}
 
   """
-  @spec delete_tournament_chat_topic(TournamentChatTopic.t()) :: {:ok, TournamentChatTopic.t()} | {:error, Ecto.Changeset.t()}
+  @spec delete_tournament_chat_topic(TournamentChatTopic.t()) ::
+          {:ok, TournamentChatTopic.t()} | {:error, Ecto.Changeset.t()}
   def delete_tournament_chat_topic(%TournamentChatTopic{} = tournament_chat_topic) do
     Repo.delete(tournament_chat_topic)
   end
@@ -1956,7 +1991,10 @@ defmodule Milk.Tournaments do
   残った人のランクが上がるやつ
   TODO: リファクタリングの優先度高め 関数の内部処理が分かりづらい
   """
-  @spec force_to_promote_rank(%{required(:user_id) => integer(), required(:tournament_id) => integer()} | %{required(:team_id) => integer()}) :: {:ok, Entrant.t()} | {:error, Ecto.Changeset.t()}
+  @spec force_to_promote_rank(
+          %{required(:user_id) => integer(), required(:tournament_id) => integer()}
+          | %{required(:team_id) => integer()}
+        ) :: {:ok, Entrant.t()} | {:error, Ecto.Changeset.t()}
   def force_to_promote_rank(attrs = %{"user_id" => user_id, "tournament_id" => tournament_id}) do
     attrs
     |> user_exists?()
@@ -2192,6 +2230,7 @@ defmodule Milk.Tournaments do
 
   defp check_exponentiation_of_two(0, base), do: {true, base}
   defp check_exponentiation_of_two(1, base), do: {true, base}
+
   defp check_exponentiation_of_two(num, base) do
     case rem(num, 2) do
       0 ->
@@ -2237,11 +2276,12 @@ defmodule Milk.Tournaments do
   @spec initialize_rank(any(), integer(), integer(), integer()) :: any()
   def initialize_rank(user_id, number_of_entrant, tournament_id, count)
       when is_integer(user_id) do
-    final = if number_of_entrant < count do
-      number_of_entrant
-    else
-      count
-    end
+    final =
+      if number_of_entrant < count do
+        number_of_entrant
+      else
+        count
+      end
 
     user_id
     |> get_entrant_by_user_id_and_tournament_id(tournament_id)
@@ -2255,7 +2295,7 @@ defmodule Milk.Tournaments do
     end)
   end
 
-#  def initialize_rank(match_list, number_of_entrant, tournament_id, count \\ 1), do: nil
+  #  def initialize_rank(match_list, number_of_entrant, tournament_id, count \\ 1), do: nil
 
   @doc """
   Initialize rank of teams.
@@ -2294,6 +2334,7 @@ defmodule Milk.Tournaments do
 
   defp do_state!(nil, _), do: "IsFinished"
   defp do_state!(%Tournament{is_started: is_started}, _) when not is_started, do: "IsNotStarted"
+
   defp do_state!(tournament, user_id) do
     id = Progress.get_necessary_id(tournament.id, user_id)
     check_user_role!(tournament, id, user_id)
@@ -2618,7 +2659,8 @@ defmodule Milk.Tournaments do
   Create a team.
   TODO: 入力に対するバリデーションを行う
   """
-  @spec create_team(integer(), integer(), integer(), [integer()]) :: {:ok, Team.t()} | {:error, Ecto.Changeset.t()}
+  @spec create_team(integer(), integer(), integer(), [integer()]) ::
+          {:ok, Team.t()} | {:error, Ecto.Changeset.t()}
   def create_team(tournament_id, size, leader, user_id_list) when is_list(user_id_list) do
     # 招待をすでに受けている人は弾く
     user_id_list
@@ -2762,7 +2804,7 @@ defmodule Milk.Tournaments do
   @doc """
   Get team by tournament_id and user_id.
   """
-  @spec get_team_by_tournament_id_and_user_id(integer(), integer()) :: Team.t | nil
+  @spec get_team_by_tournament_id_and_user_id(integer(), integer()) :: Team.t() | nil
   def get_team_by_tournament_id_and_user_id(tournament_id, user_id) do
     Team
     |> join(:inner, [t], tm in TeamMember, on: t.id == tm.team_id)
@@ -2823,7 +2865,8 @@ defmodule Milk.Tournaments do
       end)
     end)
     |> case do
-      [] -> []
+      [] ->
+        []
 
       teams ->
         teams
@@ -2872,9 +2915,9 @@ defmodule Milk.Tournaments do
       Map.put(team, :team_member, team_members)
     end)
     |> Enum.filter(fn members_in_team ->
-      Enum.all?(members_in_team.team_member, &(&1.is_invitation_confirmed))
+      Enum.all?(members_in_team.team_member, & &1.is_invitation_confirmed)
     end)
-    |> Enum.uniq_by(&(&1.id))
+    |> Enum.uniq_by(& &1.id)
   end
 
   @doc """
@@ -2958,7 +3001,8 @@ defmodule Milk.Tournaments do
     |> Repo.preload(team_member: :user)
   end
 
-  @spec team_invitation_decline(integer()) :: {:ok, TeamInvitation.t()} | {:error, Ecto.Changeset.t()}
+  @spec team_invitation_decline(integer()) ::
+          {:ok, TeamInvitation.t()} | {:error, Ecto.Changeset.t()}
   def team_invitation_decline(id) do
     id
     |> __MODULE__.get_team_invitation()
@@ -2978,7 +3022,8 @@ defmodule Milk.Tournaments do
   @doc """
   Create team invitation
   """
-  @spec create_team_invitation(integer(), integer()) :: {:ok, TeamInvitation.t()} | {:error, Ecto.Changeset.t()}
+  @spec create_team_invitation(integer(), integer()) ::
+          {:ok, TeamInvitation.t()} | {:error, Ecto.Changeset.t()}
   def create_team_invitation(team_member_id, sender_id) do
     %TeamInvitation{}
     |> TeamInvitation.changeset(%{
@@ -3261,7 +3306,8 @@ defmodule Milk.Tournaments do
   @doc """
   Create custom detail of a tournament.
   """
-  @spec create_custom_detail(map()) :: {:ok, TournamentCustomDetail.t()} | {:error, Ecto.Changeset.t()}
+  @spec create_custom_detail(map()) ::
+          {:ok, TournamentCustomDetail.t()} | {:error, Ecto.Changeset.t()}
   def create_custom_detail(attrs \\ %{}) do
     %TournamentCustomDetail{}
     |> TournamentCustomDetail.changeset(attrs)
@@ -3282,7 +3328,8 @@ defmodule Milk.Tournaments do
   @doc """
   Update custom detail
   """
-  @spec update_custom_detail(TournamentCustomDetail.t()) :: {:ok, TournamentCustomDetail.t()} | {:error, Ecto.Changeset.t()}
+  @spec update_custom_detail(TournamentCustomDetail.t()) ::
+          {:ok, TournamentCustomDetail.t()} | {:error, Ecto.Changeset.t()}
   def update_custom_detail(detail, attrs \\ %{}) do
     detail
     |> TournamentCustomDetail.changeset(attrs)
@@ -3396,7 +3443,9 @@ defmodule Milk.Tournaments do
   @doc """
   Get selectable maps by user id and tournament id.
   """
-  @spec get_selectable_maps_by_tournament_id_and_user_id(integer(), integer()) :: [Milk.Tournaments.Map.t() | MapSelection.t()]
+  @spec get_selectable_maps_by_tournament_id_and_user_id(integer(), integer()) :: [
+          Milk.Tournaments.Map.t() | MapSelection.t()
+        ]
   def get_selectable_maps_by_tournament_id_and_user_id(tournament_id, user_id) do
     tournament_id
     |> get_tournament()
@@ -3463,7 +3512,8 @@ defmodule Milk.Tournaments do
   @doc """
   Get selected map by tournament id.
   """
-  @spec get_selected_map(integer(), integer()) :: {:ok, Milk.Tournaments.Map.t()} | {:error, String.t()}
+  @spec get_selected_map(integer(), integer()) ::
+          {:ok, Milk.Tournaments.Map.t()} | {:error, String.t()}
   def get_selected_map(tournament_id, id) do
     MapSelection
     |> join(:inner, [ms], m in Milk.Tournaments.Map, on: ms.map_id == m.id)
@@ -3491,7 +3541,8 @@ defmodule Milk.Tournaments do
   @doc """
   Delete map selection.
   """
-  @spec delete_map_selection(MapSelection.t()) :: {:ok, MapSelection.t()} | {:error, Ecto.Changeset.t()}
+  @spec delete_map_selection(MapSelection.t()) ::
+          {:ok, MapSelection.t()} | {:error, Ecto.Changeset.t()}
   def delete_map_selection(%MapSelection{} = map_selection) do
     Repo.delete(map_selection)
   end
@@ -3514,7 +3565,8 @@ defmodule Milk.Tournaments do
   @doc """
   Update map.
   """
-  @spec update_map(Milk.Tournaments.Map.t(), map()) :: {:ok, Milk.Tournaments.Map.t()} | {:error, Ecto.Changeset.t()}
+  @spec update_map(Milk.Tournaments.Map.t(), map()) ::
+          {:ok, Milk.Tournaments.Map.t()} | {:error, Ecto.Changeset.t()}
   def update_map(%Milk.Tournaments.Map{} = map, attrs) do
     map
     |> Milk.Tournaments.Map.changeset(attrs)
@@ -3526,10 +3578,9 @@ defmodule Milk.Tournaments do
   """
   @spec is_head_of_coin?(integer(), integer(), integer()) :: boolean()
   def is_head_of_coin?(tournament_id, id, opponent_id)
-      when is_integer(tournament_id)
-      and is_integer(id)
-      and is_integer(opponent_id) do
-
+      when is_integer(tournament_id) and
+             is_integer(id) and
+             is_integer(opponent_id) do
     mine_str = to_string(tournament_id + id)
     opponent_str = to_string(tournament_id + opponent_id)
 

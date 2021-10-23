@@ -26,9 +26,9 @@ defmodule Milk.Reports do
     if Accounts.get_user(reporter) && Accounts.get_user(reportee) && reporter != reportee do
       Enum.map(report_types, fn type ->
         with {:ok, report} <-
-                %UserReport{reporter_id: reporter, reportee_id: reportee}
-                |> UserReport.changeset(%{report_type: type})
-                |> Repo.insert() do
+               %UserReport{reporter_id: reporter, reportee_id: reportee}
+               |> UserReport.changeset(%{report_type: type})
+               |> Repo.insert() do
           report
         else
           _ -> nil

@@ -179,7 +179,9 @@ defmodule Milk.Accounts do
     end
   end
 
-  defp put_id_for_show(attrs = %{"id_for_show" => id}), do: Map.put(attrs, "id_for_show", generate_id_for_show(id))
+  defp put_id_for_show(attrs = %{"id_for_show" => id}),
+    do: Map.put(attrs, "id_for_show", generate_id_for_show(id))
+
   defp put_id_for_show(attrs), do: Map.put(attrs, "id_for_show", generate_id_for_show())
 
   defp generate_id_for_show() do
@@ -245,7 +247,8 @@ defmodule Milk.Accounts do
   @doc """
   Change a password.
   """
-  @spec change_password_by_email(String.t(), String.t()) :: {:ok, Auth.t()} | {:error, Ecto.Changeset.t()}
+  @spec change_password_by_email(String.t(), String.t()) ::
+          {:ok, Auth.t()} | {:error, Ecto.Changeset.t()}
   def change_password_by_email(email, new_password) do
     email
     |> __MODULE__.get_user_by_email()
@@ -295,9 +298,14 @@ defmodule Milk.Accounts do
     unless is_nil(old_icon_path) do
       case Application.get_env(:milk, :environment) do
         # coveralls-ignore-start
-        :dev -> rm(old_icon_path)
-        :test -> rm(old_icon_path)
-        _ -> rm_prod(old_icon_path)
+        :dev ->
+          rm(old_icon_path)
+
+        :test ->
+          rm(old_icon_path)
+
+        _ ->
+          rm_prod(old_icon_path)
           # coveralls-ignore-stop
       end
     end
@@ -439,14 +447,18 @@ defmodule Milk.Accounts do
           "That token does not exist"
         end
 
-      {:error, :not_exist} -> "That token can't use"
-      _ -> "That token does not exist"
+      {:error, :not_exist} ->
+        "That token can't use"
+
+      _ ->
+        "That token does not exist"
     end
     |> case do
       %User{} = user ->
         if Argon2.verify_pass(password, user.auth.password), do: user
 
-      errors -> errors
+      errors ->
+        errors
     end
   end
 
@@ -550,7 +562,11 @@ defmodule Milk.Accounts do
   レコメンドシステム用にスコアを取得する関数
   """
   def gain_score(%{"user_id" => user_id, "game_name" => game_name, "score" => gain}) do
-    __MODULE__.create_action_history(%{"user_id" => user_id, "game_name" => game_name, "gain" => gain})
+    __MODULE__.create_action_history(%{
+      "user_id" => user_id,
+      "game_name" => game_name,
+      "gain" => gain
+    })
   end
 
   @doc """
@@ -589,7 +605,7 @@ defmodule Milk.Accounts do
     |> Repo.insert()
     |> case do
       {:ok, device} -> {:ok, device}
-      {:error, %Ecto.Changeset{} = error} ->  {:error, Tools.create_error_message(error.errors)}
+      {:error, %Ecto.Changeset{} = error} -> {:error, Tools.create_error_message(error.errors)}
       {:error, error} -> {:error, Tools.create_error_message(error)}
     end
   end
@@ -628,14 +644,16 @@ defmodule Milk.Accounts do
   @doc """
   Update external service.
   """
-  @spec update_external_service(ExternalService.t(), map()) :: {:ok, ExternalService.t()} | {:error, Ecto.Changeset.t()}
+  @spec update_external_service(ExternalService.t(), map()) ::
+          {:ok, ExternalService.t()} | {:error, Ecto.Changeset.t()}
   def update_external_service(%ExternalService{} = external_service, attrs) do
     external_service
     |> ExternalService.changeset(attrs)
     |> Repo.update()
   end
 
-  @spec delete_external_service(integer()) :: {:ok, ExternalService.t()} | {:error, Ecto.Changeset.t()}
+  @spec delete_external_service(integer()) ::
+          {:ok, ExternalService.t()} | {:error, Ecto.Changeset.t()}
   def delete_external_service(external_service_id) do
     external_service_id
     |> __MODULE__.get_external_service()
