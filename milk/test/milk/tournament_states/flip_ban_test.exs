@@ -2,7 +2,7 @@ defmodule Milk.TournamentStates.FlipBanTest do
   use Milk.DataCase
   use Common.Fixtures
 
-  alias Milk.TournamentStates.FlipBan
+  alias Milk.Tournaments.Rules.FlipBan
 
   describe "building dfa" do
     test "just works" do

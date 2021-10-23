@@ -1,4 +1,4 @@
-defmodule Milk.TournamentStates.FlipBan do
+defmodule Milk.Tournaments.Rules.FlipBan do
   @moduledoc """
   コイントス＆マップBANルールにおける処理が記述してあるモジュール
   モジュール自身の関数を参照することが多く、記述量が増加する割に情報量は増えないので__MODULE__の記述は省略している。
