@@ -254,17 +254,14 @@ defmodule MilkWeb.TournamentController do
   def get_thumbnail_image(conn, %{"thumbnail_path" => path}) do
     case Application.get_env(:milk, :environment) do
       # coveralls-ignore-start
-      :dev ->
-        read_thumbnail(path)
+      :dev -> read_thumbnail(path)
 
       # coveralls-ignore-stop
-      :test ->
-        read_thumbnail(path)
+      :test -> read_thumbnail(path)
 
       # coveralls-ignore-start
-      _ ->
-        read_thumbnail_prod(path)
-        # coveralls-ignore-stop
+      _ -> read_thumbnail_prod(path)
+      # coveralls-ignore-stop
     end
     ~> map
 

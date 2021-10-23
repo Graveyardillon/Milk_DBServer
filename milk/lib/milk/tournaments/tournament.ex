@@ -57,6 +57,7 @@ defmodule Milk.Tournaments.Tournament do
     field :is_team, :boolean, default: false
     field :name, :string
     field :password, :string
+    field :rule, :string, default: "basic"
     field :start_recruiting, EctoDate
     field :team_size, :integer, default: nil
     field :thumbnail_path, :string
@@ -83,6 +84,7 @@ defmodule Milk.Tournaments.Tournament do
     tournament
     |> cast(attrs, [
       :name,
+      :count,
       :capacity,
       :description,
       :deadline,
@@ -91,18 +93,18 @@ defmodule Milk.Tournaments.Tournament do
       :enabled_map,
       :event_date,
       :game_name,
-      :thumbnail_path,
+      :is_started,
+      :is_team,
+      :master_id,
       :password,
+      :platform_id,
+      :rule,
+      :start_recruiting,
+      :team_size,
+      :thumbnail_path,
       :type,
       :url,
       :url_token,
-      :platform_id,
-      :master_id,
-      :count,
-      :is_started,
-      :is_team,
-      :start_recruiting,
-      :team_size
     ])
     |> validate_required([:name, :capacity, :type])
     |> foreign_key_constraint(:platform_id)
@@ -139,6 +141,7 @@ defmodule Milk.Tournaments.Tournament do
       :thumbnail_path,
       :password,
       :type,
+      :rule,
       :url,
       :url_token,
       :platform_id,
@@ -148,7 +151,7 @@ defmodule Milk.Tournaments.Tournament do
       :is_team,
       :start_recruiting
     ])
-    |> validate_required([:name, :capacity])
+    |> validate_required([:name, :capacity, :rule])
     |> foreign_key_constraint(:platform_id)
     |> foreign_key_constraint(:game_id)
     |> foreign_key_constraint(:master_id)
