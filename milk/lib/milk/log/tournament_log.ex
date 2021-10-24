@@ -1,4 +1,7 @@
 defmodule Milk.Log.TournamentLog do
+  @moduledoc """
+  Tournameng log schema.
+  """
   use Milk.Schema
 
   import Ecto.Changeset

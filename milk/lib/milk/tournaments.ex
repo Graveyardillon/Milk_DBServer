@@ -35,6 +35,7 @@ defmodule Milk.Tournaments do
   alias Milk.Log.{
     AssistantLog,
     EntrantLog,
+    TeamLog,
     TournamentChatTopicLog,
     TournamentLog
   }
@@ -2631,6 +2632,7 @@ defmodule Milk.Tournaments do
 
   @doc """
   Scores data.
+  TODO: store_scoreに命名変更
   """
   @spec score(integer(), integer(), integer(), integer(), integer(), integer()) :: boolean()
   def score(tournament_id, winner_id, loser_id, winner_score, loser_score, match_index) do
@@ -2840,6 +2842,54 @@ defmodule Milk.Tournaments do
     |> where([tm], tm.is_leader)
     |> Repo.one()
     |> Repo.preload(:user)
+  end
+
+  @doc """
+  Checks if the user is a leader
+  """
+  @spec is_leader?(integer(), integer()) :: boolean()
+  def is_leader?(tournament_id, user_id) do
+    tournament_id
+    |> __MODULE__.get_tournament_including_logs()
+    |> case do
+      {:ok, %Tournament{} = tournament} -> tournament
+      {:ok, %TournamentLog{} = tournament_log} -> tournament_log
+      _ -> nil
+    end
+    |> do_is_leader?(user_id)
+  end
+
+  @spec do_is_leader?(Tournament.t() | TournamentLog.t() | Team.t() | TeamLog.t() | nil, integer()) :: boolean()
+  defp do_is_leader?(nil, _), do: false
+  defp do_is_leader?(%Tournament{} = tournament, user_id) do
+    if tournament.is_team do
+      tournament.id
+      |> __MODULE__.get_team_by_tournament_id_and_user_id(user_id)
+      |> do_is_leader?(user_id)
+    else
+      false
+    end
+  end
+
+  defp do_is_leader?(%TournamentLog{} = tournament_log, user_id) do
+    if tournament_log.is_team do
+      tournament_log.tournament_id
+      |> Log.get_team_log_by_tournament_id_and_user_id(user_id)
+      |> do_is_leader?(user_id)
+    else
+      false
+    end
+  end
+
+  defp do_is_leader?(%Team{} = team, user_id) do
+    leader = __MODULE__.get_leader(team.id)
+    leader.user_id == user_id
+  end
+
+  defp do_is_leader?(%TeamLog{} = team_log, user_id) do
+    team_log.team_member
+    |> Enum.filter(&(&1.is_leader))
+    |> Enum.all?(&(&1.user_id == user_id))
   end
 
   @doc """

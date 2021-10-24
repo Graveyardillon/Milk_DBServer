@@ -900,6 +900,7 @@ defmodule Milk.Log do
   @doc """
   Get team log by tournament id and user id.
   """
+  @spec get_team_log_by_tournament_id_and_user_id(integer(), integer()) :: TeamLog.t() | nil
   def get_team_log_by_tournament_id_and_user_id(tournament_id, user_id) do
     TeamLog
     |> where([t], t.tournament_id == ^tournament_id)

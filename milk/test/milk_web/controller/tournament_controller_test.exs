@@ -3290,7 +3290,7 @@ defmodule MilkWeb.TournamentControllerTest do
       assert is_nil(match_info["score"])
       assert match_info["state"] == "IsInMatch"
       refute is_nil(match_info["opponent"]["id"])
-      assert match_info["opponent"]["name"] == opponent.name
+      assert match_info["opponent"]["name"] == "#{opponent.name}のチーム"
       assert Map.has_key?(match_info["opponent"], "icon_path")
 
       conn =
@@ -3628,7 +3628,7 @@ defmodule MilkWeb.TournamentControllerTest do
       assert match_info["is_team"]
       assert match_info["opponent"]["id"] == opponent_team_id
       refute is_nil(match_info["opponent"]["name"])
-      assert match_info["state"] == "IsPending"
+      assert match_info["state"] === "IsPending"
 
       # NOTE: 通知が存在するか確認
       tournament.id
@@ -3653,7 +3653,7 @@ defmodule MilkWeb.TournamentControllerTest do
         )
 
       match_info = json_response(conn, 200)
-      assert match_info["state"] == "IsFinished"
+      assert match_info["state"] === "IsFinished"
       assert match_info["rank"] == capacity / 2
       assert match_info["is_leader"]
 

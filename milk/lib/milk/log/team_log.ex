@@ -1,11 +1,27 @@
 defmodule Milk.Log.TeamLog do
+  @moduledoc """
+  Team log schema.
+  """
   use Milk.Schema
 
   import Ecto.Changeset
 
+  @type t :: %__MODULE__{
+    icon_path: String.t() | nil,
+    is_confirmed: boolean(),
+    name: String.t() | nil,
+    rank: integer() | nil,
+    size: integer() | nil,
+    team_id: integer(),
+    tournament_id: integer(),
+    # NOTE: timestamps
+    create_time: any(),
+    update_time: any()
+  }
+
   schema "team_log" do
     field :icon_path, :string
-    field :is_confirmed, :boolean
+    field :is_confirmed, :boolean, default: false
     field :name, :string
     field :rank, :integer
     field :size, :integer

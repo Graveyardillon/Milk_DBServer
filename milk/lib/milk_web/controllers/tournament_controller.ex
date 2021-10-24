@@ -19,6 +19,7 @@ defmodule MilkWeb.TournamentController do
   alias Milk.CloudStorage.Objects
 
   alias Milk.Tournaments.Tournament
+  alias Milk.Log.TournamentLog
   alias Milk.Tournaments.Progress
 
   alias Milk.Media.Image
@@ -1689,6 +1690,7 @@ defmodule MilkWeb.TournamentController do
     render(conn, "tournament_info.json", tournament: tournament)
   end
 
+  @spec is_user_win(Plug.Conn.t(), map) :: Plug.Conn.t()
   @doc """
   Get a result of fight.
   """
@@ -1904,113 +1906,35 @@ defmodule MilkWeb.TournamentController do
     user_id = Tools.to_integer_as_needed(user_id)
 
     tournament_id
-    |> Tournaments.get_tournament_including_logs()
-    |> elem(1)
-    ~> tournament
-    |> Map.get(:is_team)
-    ~> is_team
-    |> if do
-      tournament_id
-      |> Tournaments.get_team_by_tournament_id_and_user_id(user_id)
-      ~> team
-      |> is_nil()
-      |> if do
-        tournament_id
-        |> Log.get_team_log_by_tournament_id_and_user_id(user_id)
-        ~> team_log
-        |> Map.get(:team_member)
-        |> Enum.filter(fn member_log ->
-          member_log.is_leader
-        end)
-        |> Enum.all?(fn member_log ->
-          member_log.user_id == user_id
-        end)
-        ~> is_leader
-
-        {nil, team_log.rank, is_leader}
-      else
-        team.id
-        |> Tournaments.get_leader()
-        |> Map.get(:user)
-        ~> leader
-        |> Map.get(:id)
-        |> Kernel.==(user_id)
-        ~> is_leader
-
-        team
-        |> Map.get(:tournament_id)
-        |> Tournaments.get_opponent(leader.id)
-        |> case do
-          {:ok, opponent} ->
-            opponent
-            |> Map.get(:id)
-            |> Tournaments.get_leader()
-            |> Map.get(:user)
-            ~> opponent_leader
-
-            opponent
-            |> Map.put(:name, opponent_leader.name)
-            |> Map.put(:icon_path, opponent_leader.icon_path)
-            ~> opponent
-
-            {opponent, team.rank, is_leader}
-
-          {:wait, nil} ->
-            {nil, team.rank, is_leader}
-
-          _ ->
-            {nil, team.rank, is_leader}
-        end
-      end
-    else
-      tournament_id
-      |> Tournaments.get_opponent(user_id)
-      |> case do
-        {:ok, opponent} ->
-          {:ok, rank} = Tournaments.get_rank(tournament_id, user_id)
-          {opponent, rank, nil}
-
-        {:wait, nil} ->
-          {:ok, rank} = Tournaments.get_rank(tournament_id, user_id)
-          {nil, rank, nil}
-
-        _ ->
-          {:ok, rank} = Tournaments.get_rank(tournament_id, user_id)
-          {nil, rank, nil}
-      end
+    |> Tournaments.get_opponent(user_id)
+    |> case do
+      {:ok, opponent} -> opponent
+      _ -> nil
     end
-    ~> {opponent, rank, is_leader}
+    ~> opponent
+
+    is_leader = Tournaments.is_leader?(tournament_id, user_id)
 
     tournament_id
-    |> Tournaments.state!(user_id)
-    ~> state
-    |> Kernel.==("IsPending")
-    |> if do
-      if tournament.is_team do
-        tournament_id
-        |> Tournaments.get_team_by_tournament_id_and_user_id(user_id)
-        ~> team
-
-        tournament_id
-        |> Progress.get_score(team.id)
-      else
-        tournament_id
-        |> Progress.get_score(user_id)
-      end
-      |> case do
-        [] -> nil
-        score -> score
-      end
+    |> Tournaments.get_tournament_including_logs()
+    |> case do
+      {:ok, %Tournament{} = tournament} ->
+        {tournament, tournament.is_team}
+      {:ok, %TournamentLog{} = tournament_log} ->
+        t = Map.put(tournament_log, :id, tournament_log.tournament_id)
+        {t, t.is_team}
+      _ -> {nil, false}
     end
-    ~> score
+    ~> {tournament, is_team}
 
-    #  hashの比較を行うために、opponent_idとmy_idを取り出す。
-    #  それぞれ個人戦ならuser_idでチーム戦ならteam_idとなる。
-    opponent
-    |> is_nil()
-    |> Kernel.||(!tournament.enabled_coin_toss)
-    |> unless do
-      if is_team do
+    rank = get_rank(tournament, user_id)
+    state = Tournaments.state!(tournament.id, user_id)
+    score = load_score(state, tournament, user_id)
+
+    # NOTE: hashの比較を行うために、opponent_idとmy_idを取り出す。
+    # NOTE: それぞれ個人戦ならuser_idでチーム戦ならteam_idとなる。
+    unless is_nil(opponent) || !tournament.enabled_coin_toss do
+      if tournament.is_team do
         tournament_id
         |> Tournaments.get_team_by_tournament_id_and_user_id(user_id)
         |> Map.get(:id)
@@ -2080,6 +2004,44 @@ defmodule MilkWeb.TournamentController do
       custom_detail: custom_detail
     })
   end
+
+  defp get_rank(nil, _), do: nil
+  defp get_rank(tournament, user_id) do
+    if tournament.is_team do
+      tournament.id
+      |> Tournaments.get_team_by_tournament_id_and_user_id(user_id)
+      |> get_team_rank(tournament.id, user_id)
+    else
+      tournament.id
+      |> Tournaments.get_rank(user_id)
+      |> case do
+        {:ok, rank} -> rank
+        {:error, _} -> nil
+      end
+    end
+  end
+
+  defp get_team_rank(nil, tournament_id, user_id) do
+    tournament_id
+    |> Log.get_team_log_by_tournament_id_and_user_id(user_id)
+    |> get_team_log_rank()
+  end
+  defp get_team_rank(team, _, _), do: team.rank
+
+  @spec get_team_log_rank(TournamentLog.t() | nil) :: integer() | nil
+  defp get_team_log_rank(nil), do: nil
+  defp get_team_log_rank(team_log), do: team_log.rank
+
+  @spec load_score(String.t(), Tournament.t(), integer()) :: integer()
+  defp load_score("IsPending", tournament, user_id) do
+    if tournament.is_team do
+      team = Tournaments.get_team_by_tournament_id_and_user_id(tournament.id, user_id)
+      Progress.get_score(tournament.id, team.id)
+    else
+      Progress.get_score(tournament.id, user_id)
+    end
+  end
+  defp load_score(_, _, _), do: nil
 
   @doc """
   Finish tournament.
