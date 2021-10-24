@@ -9,6 +9,7 @@ defmodule Common.Fixtures do
   import Common.Sperm
 
   defmacro __using__(_opts) do
+    # credo:disable-for-next-line
     quote do
       def fixture_tournament(opts \\ []) do
         Platforms.create_basic_platforms()
@@ -133,18 +134,11 @@ defmodule Common.Fixtures do
       end
 
       def fixture_user(opts \\ []) do
-        opts[:num]
-        |> is_nil()
-        |> unless do
-          to_string(opts[:num])
-        else
-          "0"
-        end
-        ~> num_str
+        num = Keyword.get(opts, :num, 0)
 
         Accounts.create_user(%{
-          "name" => "name" <> num_str,
-          "email" => "e1" <> num_str <> "mail.com",
+          "name" => "name#{num}",
+          "email" => "e1@#{num}mail.com",
           "password" => "Password123"
         })
         ~> {:ok, user}
@@ -153,15 +147,7 @@ defmodule Common.Fixtures do
       end
 
       def fixture_discord_user(opts \\ []) do
-        opts[:num]
-        |> is_nil()
-        |> unless do
-          to_string(opts[:num])
-        else
-          "0"
-        end
-        ~> num
-
+        num = Keyword.get(opts, :num, 0)
         user = fixture_user(num: num)
 
         discord_id = to_string(num)
