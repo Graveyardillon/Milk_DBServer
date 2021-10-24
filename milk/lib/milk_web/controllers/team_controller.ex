@@ -21,13 +21,12 @@ defmodule MilkWeb.TeamController do
     |> Tools.to_integer_as_needed()
     |> Tournaments.get_team()
     ~> team
-    |> is_nil()
-    |> unless do
-      render(conn, "show.json", team: team)
-    else
-      render(conn, "error.json", error: nil)
-    end
+
+    do_show(conn, team)
   end
+
+  defp do_show(conn, nil), do: render(conn, "error.json", error: nil)
+  defp do_show(conn, %Team{} = team), do: render(conn, "show.json", team: team)
 
   @doc """
   Get tournament members.

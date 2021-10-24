@@ -80,7 +80,6 @@ defmodule Common.Fixtures do
         tournament
       end
 
-      # FIXME: 招待が二重で作成されている
       def fill_with_team(tournament_id) do
         tournament = Tournaments.get_tournament(tournament_id)
 
@@ -103,14 +102,11 @@ defmodule Common.Fixtures do
           team.id
           |> Tournaments.get_team_members_by_team_id()
           |> Enum.each(fn member ->
-            leader = Tournaments.get_leader(member.team_id)
-
-            member.id
-            |> Tournaments.create_team_invitation(leader.user_id)
-            |> elem(1)
-            |> Map.get(:id)
-            |> Tournaments.confirm_team_invitation()
-            |> elem(1)
+            member.user_id
+            |> Tournaments.get_invitations()
+            |> Enum.each(fn invitation ->
+              Tournaments.confirm_team_invitation(invitation.id)
+            end)
           end)
 
           Tournaments.get_team(team.id)
