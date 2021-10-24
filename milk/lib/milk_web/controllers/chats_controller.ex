@@ -86,7 +86,6 @@ defmodule MilkWeb.ChatsController do
 
   @doc """
   Upload a image.
-  FIXME: chatディレクトリがない場合は作成の処理入れたいな
   """
   def upload_image(conn, %{"file" => image}) do
     if image != "" do

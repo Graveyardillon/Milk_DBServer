@@ -966,12 +966,6 @@ defmodule Milk.TournamentsTest do
       assert {:error, "master_id or tournament_id is nil"} == Tournaments.start(nil, 1)
     end
 
-    test "start/2 with undefined tournament returns cannot find tournament error", %{
-      tournament: _tournament
-    } do
-      # FIXME: ここには来ない
-    end
-
     test "generate_matchlist/1 with valid data works fine", %{tournament: _tournament} do
       data = [1, 2, 3, 4, 5, 6]
       assert {:ok, matchlist} = Tournaments.generate_matchlist(data)
@@ -1602,7 +1596,7 @@ defmodule Milk.TournamentsTest do
 
   describe "create assistants" do
     test "create_assistants/1 with valid data works fine" do
-      assert assistant = fixture(:assistant)
+      assert fixture(:assistant)
     end
   end
 

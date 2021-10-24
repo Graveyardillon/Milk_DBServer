@@ -1851,8 +1851,6 @@ defmodule Milk.Tournaments do
 
       iex> create_assistant(%{field: bad_value})
       {:error, %Ecto.Changeset{}}
-
-      FIXME: 戻り値とか
   """
   @spec create_assistants(map()) :: {:ok, [integer()]} | {:error, :tournament_not_found}
   def create_assistants(attrs \\ %{}) do
@@ -1862,24 +1860,27 @@ defmodule Milk.Tournaments do
     |> where([a], a.tournament_id == ^tournament_id)
     |> Repo.delete_all()
 
-    if Repo.exists?(from t in Tournament, where: t.id == ^tournament_id) and
-         !is_nil(attrs["user_id"]) do
-      not_found_users =
-        attrs["user_id"]
-        |> Enum.map(fn id ->
-          Tools.to_integer_as_needed(id)
-        end)
-        |> Enum.uniq()
-        |> Enum.filter(fn id ->
-          if Repo.exists?(from u in User, where: u.id == ^id) do
-            %Assistant{user_id: id, tournament_id: tournament_id}
-            |> Repo.insert()
+    Tournament
+    |> where([t], t.id == ^tournament_id)
+    |> Repo.exists?()
+    ~> tournament_exists?
 
-            false
-          else
-            true
-          end
-        end)
+    if tournament_exists? and !is_nil(attrs["user_id"]) do
+      attrs["user_id"]
+      |> Enum.map(&Tools.to_integer_as_needed(&1))
+      |> Enum.uniq()
+      |> Enum.reject(fn id ->
+        User
+        |> where([u], u.id == ^id)
+        |> Repo.exists?()
+        |> if do
+          Repo.insert(%Assistant{user_id: id, tournament_id: tournament_id})
+          true
+        else
+          false
+        end
+      end)
+      ~> not_found_users
 
       {:ok, not_found_users}
     else
@@ -1936,15 +1937,16 @@ defmodule Milk.Tournaments do
       {:error, %Ecto.Changeset{}}
 
   """
-  @spec create_tournament_chat_topic(map()) :: {:ok, TournamentChatTopic.t()} | {:error, nil}
+  @spec create_tournament_chat_topic(map()) :: {:ok, TournamentChatTopic.t()} | {:error, Ecto.Changeset.t()}
   def create_tournament_chat_topic(attrs \\ %{}) do
-    with {:ok, topic} <-
-           %TournamentChatTopic{}
-           |> TournamentChatTopic.changeset(attrs)
-           |> Repo.insert() do
-      {:ok, Map.put(topic, :tournament_id, attrs["tournament_id"])}
-    else
-      _ -> {:error, nil}
+    %TournamentChatTopic{}
+    |> TournamentChatTopic.changeset(attrs)
+    |> Repo.insert()
+    |> case do
+      {:ok, topic} ->
+        {:ok, Map.put(topic, :tournament_id, attrs["tournament_id"])}
+      {:error, error} ->
+        {:error, error}
     end
   end
 
@@ -2369,8 +2371,7 @@ defmodule Milk.Tournaments do
   @spec is_not_entrant?(Tournament.t(), integer()) :: boolean()
   defp is_not_entrant?(tournament, user_id) do
     if tournament.is_team do
-      tournament
-      |> Map.get(:id)
+      tournament.id
       |> get_teams_by_tournament_id()
       |> Enum.map(fn team ->
         get_team_members_by_team_id(team.id)
@@ -2381,8 +2382,7 @@ defmodule Milk.Tournaments do
         team_member_user_id != user_id
       end)
     else
-      tournament
-      |> Map.get(:id)
+      tournament.id
       |> get_entrants()
       |> Enum.map(& &1.user_id)
       |> Enum.all?(fn entrant_user_id ->
@@ -2393,22 +2393,16 @@ defmodule Milk.Tournaments do
 
   @spec is_member?(Tournament.t(), integer()) :: boolean()
   defp is_member?(tournament, user_id) do
-    tournament
-    |> Map.get(:is_team)
-    |> if do
-      tournament
-      |> Map.get(:id)
-      |> get_team_by_tournament_id_and_user_id(user_id)
+    if tournament.is_team do
+      tournament.id
+      |> __MODULE__.get_team_by_tournament_id_and_user_id(user_id)
       ~> team
       |> is_nil()
-      |> unless do
-        team
-        |> Map.get(:id)
-        |> get_leader()
-        |> Map.get(:user_id)
-        |> Kernel.!=(user_id)
-      else
+      |> if do
         false
+      else
+        leader = __MODULE__.get_leader(team.id)
+        leader.user_id != user_id
       end
     else
       false
@@ -2422,7 +2416,7 @@ defmodule Milk.Tournaments do
     match = find_match(match_list, id)
 
     cond do
-      length(match_list) == 0 -> "IsFinished"
+      match_list == [] -> "IsFinished"
       has_lost?(match_list, id) -> "IsLoser"
       is_alone?(match) -> "IsAlone"
       :else -> check_wait_state!(tournament, id, match)

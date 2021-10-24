@@ -374,7 +374,6 @@ defmodule Milk.Tournaments.Progress do
 
   # 4. match_pending_list
   # Manages fight result.
-  # FIXME: 引数のタプルをやめたい
 
   def insert_fight_result_table(user_id, tournament_id, is_win) do
     conn = conn()

@@ -1041,7 +1041,6 @@ defmodule MilkWeb.TournamentController do
     json(conn, %{result: result})
   end
 
-  # FIXME: 臨時の命名
   defp start_each_match(user_id, tournament_id) do
     tournament_id
     |> Tools.to_integer_as_needed()

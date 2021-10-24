@@ -44,6 +44,13 @@ defmodule Milk.Reports do
   @doc """
   Create tournament report
   """
+  def create_tournament_report(attrs = %{"report_types" => report_types}) when is_list(report_types) do
+    attrs
+    |> Map.put("report_type", report_types)
+    |> Map.delete("report_types")
+    |> __MODULE__.create_tournament_report()
+  end
+
   def create_tournament_report(%{
         "reporter_id" => reporter_id,
         "report_type" => report_type,
@@ -71,13 +78,6 @@ defmodule Milk.Reports do
     else
       {:error, nil}
     end
-  end
-
-  def create_tournament_report(attrs = %{"report_types" => report_types}) when is_list(report_types) do
-    attrs
-    |> Map.put("report_type", report_types)
-    |> Map.delete("report_types")
-    |> __MODULE__.create_tournament_report()
   end
 
   def create_tournament_report(%{
