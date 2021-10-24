@@ -3,6 +3,7 @@ defmodule Milk.Tournaments.ProgressTest do
   Redisが使えるときのみコメントアウトを解除する
   """
   use Milk.DataCase
+  use Common.Fixtures
   use Timex
 
   alias Milk.{
@@ -12,18 +13,6 @@ defmodule Milk.Tournaments.ProgressTest do
 
   alias Milk.Tournaments.Progress
 
-  @valid_attrs %{
-    "capacity" => 42,
-    "deadline" => "2010-04-17T14:00:00Z",
-    "description" => "some description",
-    "event_date" => "2010-04-17T14:00:00Z",
-    "name" => "some name",
-    "type" => 0,
-    "url" => "somesomeurl",
-    "master_id" => 1,
-    "platform" => 1,
-    "is_started" => true
-  }
   @entrant_create_attrs %{
     "rank" => 42,
     "user_id" => -1,
@@ -31,84 +20,6 @@ defmodule Milk.Tournaments.ProgressTest do
   }
 
   @moduletag timeout: :infinity
-
-  defp fixture_user(n) do
-    attrs = %{
-      "icon_path" => "some icon_path",
-      "language" => "some language",
-      "name" => to_string(n) <> "some name",
-      "notification_number" => 42,
-      "point" => 42,
-      "email" => to_string(n) <> "some@email.com",
-      "logout_fl" => true,
-      "password" => "S1ome password"
-    }
-
-    {:ok, user} = Accounts.create_user(attrs)
-    user
-  end
-
-  defp fixture_tournament(opts \\ []) do
-    # FIXME: ここのデフォルト値は本当はfalseのほうがよさそう
-    is_started =
-      opts[:is_started]
-      |> is_nil()
-      |> unless do
-        opts[:is_started]
-      else
-        true
-      end
-
-    master_id =
-      opts[:master_id]
-      |> is_nil()
-      |> unless do
-        opts[:master_id]
-      else
-        {:ok, user} =
-          Accounts.create_user(%{
-            "name" => "name",
-            "email" => "e@mail.com",
-            "password" => "Password123"
-          })
-
-        user.id
-      end
-
-    {:ok, tournament} =
-      @valid_attrs
-      |> Map.put("is_started", is_started)
-      |> Map.put("master_id", master_id)
-      |> Tournaments.create_tournament()
-
-    tournament
-  end
-
-  # defp fixture_entrant(opts \\ %{}) do
-  #   tournament =
-  #     opts["tournament_id"]
-  #     |> is_nil()
-  #     |> unless do
-  #       Tournaments.get_tournament!(opts["tournament_id"])
-  #     else
-  #       fixture_tournament()
-  #     end
-
-  #   user_id =
-  #     opts["user_id"]
-  #     |> is_nil()
-  #     |> unless do
-  #       opts["user_id"]
-  #     else
-  #       tournament.master_id
-  #     end
-
-  #   {:ok, entrant} =
-  #     %{@entrant_create_attrs | "tournament_id" => tournament.id, "user_id" => user_id}
-  #     |> Tournaments.create_entrant()
-
-  #   entrant
-  # end
 
   defp create_entrants(num, tournament_id, result \\ []),
     do: create_entrants(num, tournament_id, result, num)
@@ -137,11 +48,6 @@ defmodule Milk.Tournaments.ProgressTest do
 
     create_entrants(num, tournament_id, result ++ [entrant], current - 1)
   end
-
-  # defp create_entrant(_) do
-  #   entrant = fixture_entrant()
-  #   %{entrant: entrant}
-  # end
 
   defp start(master_id, tournament_id) do
     Tournaments.start(master_id, tournament_id)
@@ -200,7 +106,7 @@ defmodule Milk.Tournaments.ProgressTest do
     end
 
     test "get_match_list/1 returns data 1 size smaller than past one after deleting a user" do
-      tournament = fixture_tournament()
+      tournament = fixture_tournament(is_started: true)
       entrants = create_entrants(8, tournament.id)
       entrant_id_list = Enum.map(entrants, fn entrant -> entrant.user_id end)
       start(tournament.master_id, tournament.id)
@@ -248,14 +154,14 @@ defmodule Milk.Tournaments.ProgressTest do
 
   describe "match pending list" do
     test "insert_match_pending_list_table/1 works fine" do
-      tournament = fixture_tournament()
+      tournament = fixture_tournament(is_started: true)
       r = Progress.insert_match_pending_list_table(1, tournament.id)
       assert r
       assert is_boolean(r)
     end
 
     test "get_match_pending_list/2" do
-      tournament = fixture_tournament()
+      tournament = fixture_tournament(is_started: true)
       Progress.insert_match_pending_list_table(1, tournament.id)
 
       assert {r, "IsWaitingForStart"} = Progress.get_match_pending_list(1, tournament.id) |> hd()
@@ -264,7 +170,7 @@ defmodule Milk.Tournaments.ProgressTest do
     end
 
     test "delete_match_pending_list" do
-      tournament = fixture_tournament()
+      tournament = fixture_tournament(is_started: true)
       Progress.insert_match_pending_list_table(1, tournament.id)
       assert r = Progress.delete_match_pending_list(1, tournament.id)
       assert is_boolean(r)
@@ -330,7 +236,7 @@ defmodule Milk.Tournaments.ProgressTest do
     end
 
     test "get_match_list/1 returns data which is renewed after deleting a user" do
-      tournament = fixture_tournament()
+      tournament = fixture_tournament(is_started: true)
       entrants = create_entrants(8, tournament.id)
       entrant_id_list = Enum.map(entrants, fn entrant -> entrant.user_id end)
       start(tournament.master_id, tournament.id)
@@ -390,59 +296,6 @@ defmodule Milk.Tournaments.ProgressTest do
     end
   end
 
-  # TODO: 検証が不十分なためコメントアウトしておいた
-  # describe "absence" do
-  #   test "set_timelimit_on_all_entrants/1 works fine" do
-  #     tournament = fixture_tournament(is_started: false)
-  #     entrants = create_entrants(7, tournament.id)
-  #     {:ok, entrant} = Tournaments.create_entrant(%{"user_id" => tournament.master_id, "tournament_id" => tournament.id})
-  #     entrants = entrants ++ [entrant]
-  #     start(tournament.master_id, tournament.id)
-
-  #     [{_, match_list}] = Progress.get_match_list(tournament.id)
-  #     Progress.set_time_limit_on_all_entrants(match_list, tournament.id)
-  #     [{_, match_list}] = Progress.get_match_list(tournament.id)
-  #     refute Tournaments.has_lost?(match_list, tournament.master_id)
-
-  #     5
-  #     |> Kernel.*(61)
-  #     |> Kernel.*(1000)
-  #     |> Process.sleep()
-
-  #     [{_, match_list}] = Progress.get_match_list(tournament.id)
-  #     assert Tournaments.has_lost?(match_list, tournament.master_id)
-
-  #     Enum.each(entrants, fn entrant ->
-  #       entrant
-  #       |> Map.get(:user_id)
-  #       |> Progress.get_lost_pid(tournament.id)
-  #       |> (fn bool ->
-  #         assert bool
-  #       end).()
-  #     end)
-  #   end
-
-  #   test "cancel_lose/2 works fine" do
-  #     tournament = fixture_tournament(is_started: false)
-  #     entrants = create_entrants(7, tournament.id)
-  #     {:ok, entrant} = Tournaments.create_entrant(%{"user_id" => tournament.master_id, "tournament_id" => tournament.id})
-  #     entrants = entrants ++ [entrant]
-  #     start(tournament.master_id, tournament.id)
-
-  #     [{_, match_list}] = Progress.get_match_list(tournament.id)
-  #     Progress.set_time_limit_on_all_entrants(match_list, tournament.id)
-  #     Progress.cancel_lose(tournament.id, tournament.master_id)
-
-  #     5
-  #     |> Kernel.*(61)
-  #     |> Kernel.*(1000)
-  #     |> Process.sleep()
-
-  #     [{_, match_list}] = Progress.get_match_list(tournament.id)
-  #     refute Tournaments.has_lost?(match_list, tournament.master_id)
-  #   end
-  # end
-
   describe "score table" do
     test "insert_score/3 and get_score/2" do
       tid = 1
@@ -456,9 +309,9 @@ defmodule Milk.Tournaments.ProgressTest do
 
   describe "get single tournament match logs" do
     test "works" do
-      user1 = fixture_user(1)
-      user2 = fixture_user(2)
-      tournament = fixture_tournament()
+      user1 = fixture_user(num: 1)
+      user2 = fixture_user(num: 2)
+      tournament = fixture_tournament(is_started: true)
       str = "just str"
 
       Map.new()
@@ -496,9 +349,9 @@ defmodule Milk.Tournaments.ProgressTest do
 
   describe "create single tournament match log" do
     test "JUST works" do
-      user1 = fixture_user(1)
-      user2 = fixture_user(2)
-      tournament = fixture_tournament()
+      user1 = fixture_user(num: 1)
+      user2 = fixture_user(num: 2)
+      tournament = fixture_tournament(is_started: true)
       str = "just str"
 
       id =

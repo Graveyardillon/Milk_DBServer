@@ -384,7 +384,6 @@ defmodule MilkWeb.TournamentView do
     %{result: true, data: map}
   end
 
-  # FIXME: Authは読み込んでないのでemailを返すようにしていない
   def render("masters.json", %{masters: masters}) do
     %{
       data:

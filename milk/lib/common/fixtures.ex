@@ -27,73 +27,20 @@ defmodule Common.Fixtures do
           "platform" => 1
         }
 
-        # TODO: Keyword.getを使おう
-        opts[:num]
-        |> is_nil()
-        |> unless do
-          opts[:num]
-        else
-          0
-        end
-        ~> num
-
-        opts[:deadline]
-        |> is_nil()
-        |> unless do
-          opts[:deadline]
-        else
-          create_attrs["deadline"]
-        end
-        ~> deadline
-
-        opts[:capacity]
-        |> is_nil()
-        |> unless do
-          opts[:capacity]
-        else
-          create_attrs["capacity"]
-        end
-        ~> capacity
-
-        opts[:is_started]
-        |> is_nil()
-        |> unless do
-          opts[:is_started]
-        else
-          false
-        end
-        ~> is_started
-
-        opts[:is_team]
-        |> is_nil()
-        |> unless do
-          opts[:is_team]
-        else
-          false
-        end
-        ~> is_team
-
-        if is_team do
-          opts[:team_size]
-          |> is_nil()
-          |> unless do
-            opts[:team_size]
-          else
-            5
-          end
-        else
-          nil
-        end
-        ~> team_size
-
-        opts[:type]
-        |> is_nil()
-        |> unless do
-          opts[:type]
-        else
-          1
-        end
-        ~> type
+        num = Keyword.get(opts, :num, 0)
+        deadline = Keyword.get(opts, :deadline, create_attrs["deadline"])
+        capacity = Keyword.get(opts, :capacity, create_attrs["capacity"])
+        is_started = Keyword.get(opts, :is_started, false)
+        is_team = Keyword.get(opts, :is_team, false)
+        team_size = if is_team, do: Keyword.get(opts, :team_size, 5)
+        type = Keyword.get(opts, :type, 1)
+        enabled_coin_toss = Keyword.get(opts, :enabled_coin_toss, false)
+        enabled_map = Keyword.get(opts, :enabled_map, false)
+        coin_head_field = Keyword.get(opts, :coin_head_field)
+        coin_tail_field = Keyword.get(opts, :coin_tail_field)
+        maps = Keyword.get(opts, :maps)
+        deadline = Keyword.get(opts, :deadline)
+        event_date = Keyword.get(opts, :event_date)
 
         opts[:master_id]
         |> is_nil()
@@ -110,69 +57,6 @@ defmodule Common.Fixtures do
           user.id
         end
         ~> master_id
-
-        opts[:enabled_coin_toss]
-        |> is_nil()
-        |> unless do
-          opts[:enabled_coin_toss]
-        else
-          false
-        end
-        ~> enabled_coin_toss
-
-        opts[:enabled_map]
-        |> is_nil()
-        |> unless do
-          opts[:enabled_coin_toss]
-        else
-          false
-        end
-        ~> enabled_map
-
-        opts[:coin_head_field]
-        |> is_nil()
-        |> unless do
-          opts[:coin_head_field]
-        else
-          nil
-        end
-        ~> coin_head_field
-
-        opts[:coin_tail_field]
-        |> is_nil()
-        |> unless do
-          opts[:coin_tail_field]
-        else
-          nil
-        end
-        ~> coin_tail_field
-
-        opts[:maps]
-        |> is_nil()
-        |> unless do
-          opts[:maps]
-        else
-          nil
-        end
-        ~> maps
-
-        opts[:deadline]
-        |> is_nil()
-        |> unless do
-          opts[:deadline]
-        else
-          nil
-        end
-        ~> deadline
-
-        opts[:event_date]
-        |> is_nil()
-        |> unless do
-          opts[:event_date]
-        else
-          nil
-        end
-        ~> event_date
 
         create_attrs
         |> Map.put("is_started", is_started)
