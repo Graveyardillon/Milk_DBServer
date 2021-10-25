@@ -2050,7 +2050,13 @@ defmodule MilkWeb.TournamentController do
   Finish tournament.
   """
   def finish(conn, %{"tournament_id" => tournament_id, "user_id" => user_id}) do
-    result = Tournaments.finish(tournament_id, user_id)
+    tournament_id
+    |>  Tournaments.finish(user_id)
+    |> case do
+      {:ok, _} -> true
+      _ -> false
+    end
+    ~> result
 
     tournament_id
     |> Progress.get_match_list_with_fight_result()

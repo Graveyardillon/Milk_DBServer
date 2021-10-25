@@ -905,7 +905,7 @@ defmodule Milk.Tournaments do
     delete_tournament(tournament["id"])
   end
 
-  def delete_tournament(id) do
+  def delete_tournament(id) when is_integer(id) do
     tournament =
       Repo.one(
         from t in Tournament,
@@ -1586,6 +1586,7 @@ defmodule Milk.Tournaments do
   Finish a tournament.
   トーナメントを終了させ、終了したトーナメントをログの方に移行して削除する
   """
+  @spec finish(integer(), integer()) :: {:ok, Tournament.t()} | {:error, Ecto.Changeset.t()} | {:error, String.t()}
   def finish(tournament_id, winner_user_id) do
     tournament_id
     |> get_tournament()
@@ -1618,21 +1619,21 @@ defmodule Milk.Tournaments do
   end
 
   defp finish_tournament(tournament_id, winner_user_id) do
-    tournament_id
-    |> get_tournament()
-    |> delete_tournament()
-    ~> {:ok, tournament}
+    with {:ok, tournament} <- __MODULE__.delete_tournament(tournament_id),
+         {:ok, _} <- create_tournament_log_on_finish(tournament, winner_user_id) do
+      {:ok, tournament}
+    else
+      error -> error
+    end
+  end
 
+  defp create_tournament_log_on_finish(tournament, winner_user_id) do
     tournament
     |> Map.from_struct()
     |> Map.put(:tournament_id, tournament.id)
     |> Map.put(:winner_id, winner_user_id)
     |> Tools.atom_map_to_string_map()
     |> Log.create_tournament_log()
-    |> case do
-      {:ok, _tournament_log} -> true
-      {:error, _} -> false
-    end
   end
 
   defp finish_topics(tournament_id) do
