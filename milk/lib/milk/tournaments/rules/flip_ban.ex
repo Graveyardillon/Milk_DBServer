@@ -12,8 +12,19 @@ defmodule Milk.Tournaments.Rules.FlipBan do
   def machine_name(true), do: "flipban_team"
   def machine_name(false), do: "flipban"
 
-  @spec define_dfa(Rules.opts()) :: :ok
+  @spec define_dfa(Rules.opts()) :: :ok | nil
   def define_dfa(opts \\ []) do
+    is_team = Keyword.get(opts, :is_team, true)
+    machine_name = Keyword.get(opts, :machine_name, machine_name(is_team))
+
+    machine_name
+    |> Predefined.exists?(@db_index, opts)
+    |> do_define_dfa(opts)
+  end
+
+  @spec do_define_dfa(boolean(), Rules.opts()) :: :ok | nil
+  defp do_define_dfa(true, _), do: nil
+  defp do_define_dfa(false, opts) do
     is_team = Keyword.get(opts, :is_team, true)
     machine_name = Keyword.get(opts, :machine_name, machine_name(is_team))
 
@@ -51,6 +62,7 @@ defmodule Milk.Tournaments.Rules.FlipBan do
   def build_dfa_instance(instance_name, opts \\ []) do
     is_team = Keyword.get(opts, :is_team, true)
     machine_name = machine_name(is_team)
+
     Predefined.initialize!(instance_name, machine_name, @db_index, is_not_started())
   end
 
