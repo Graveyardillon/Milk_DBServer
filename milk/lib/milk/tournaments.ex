@@ -1513,70 +1513,44 @@ defmodule Milk.Tournaments do
   HACK: 引数の順序がfinishと逆
   HACK: リファクタリング
   """
-  @spec start(integer(), integer()) ::
-          {:ok, Tournament.t()} | {:error, Ecto.Changeset.t()} | {:error, String.t()}
+  @spec start(integer(), integer()) :: {:ok, Tournament.t()} | {:error, Ecto.Changeset.t()} | {:error, String.t()}
+  def start(master_id, tournament_id) when is_nil(master_id) or is_nil(tournament_id), do: {:error, "master_id or tournament_id is nil"}
   def start(master_id, tournament_id) do
-    master_id
-    |> nil_check?(tournament_id)
-    |> check_entrant_number(tournament_id)
-    |> fetch_tournament(master_id, tournament_id)
-    |> start()
-  end
-
-  defp nil_check?(master_id, tournament_id) do
-    if !is_nil(master_id) and !is_nil(tournament_id) do
-      {:ok, nil}
+    with {:ok, %Tournament{} = tournament} <- load_tournament(tournament_id, master_id),
+         {:ok, nil} <- validate_entrant_number(tournament) do
+      start(tournament)
     else
-      {:error, "master_id or tournament_id is nil"}
+      error -> error
     end
   end
 
-  defp check_entrant_number(check, tournament_id) do
-    case check do
-      {:ok, _} ->
-        Entrant
-        |> where([e], e.tournament_id == ^tournament_id)
-        |> Repo.aggregate(:count)
-        |> Kernel.>(1)
-        |> if do
-          {:ok, nil}
-        else
-          delete_tournament(tournament_id)
-          {:error, "short of participants"}
-        end
-
-      {:error, reason} ->
-        {:error, reason}
-    end
+  @spec load_tournament(integer(), integer()) :: {:ok, Tournament.t()} | {:error, String.t()}
+  defp load_tournament(tournament_id, master_id) when is_nil(master_id) or is_nil(tournament_id), do: {:error, "master_id or tournament_id is nil"}
+  defp load_tournament(tournament_id, master_id) do
+    Tournament
+    |> where([t], t.master_id == ^master_id)
+    |> where([t], t.id == ^tournament_id)
+    |> Repo.one()
+    |> load_tournament()
   end
 
-  defp fetch_tournament(check, master_id, tournament_id) do
-    case check do
-      {:ok, nil} ->
-        Tournament
-        |> where([t], t.master_id == ^master_id and t.id == ^tournament_id)
-        |> Repo.one()
-        ~> tournament
-        |> is_nil()
-        |> unless do
-          {:ok, tournament}
-        else
-          {:error, "cannot find tournament"}
-        end
+  @spec load_tournament(Tournament.t() | nil) :: {:ok, Tournament.t()} | {:error, String.t()}
+  defp load_tournament(nil), do: {:error, "cannot find tournament"}
+  defp load_tournament(tournament), do: {:ok, tournament}
 
-      {:error, reason} ->
-        {:error, reason}
-    end
+  @spec validate_entrant_number(Tournament.t() | nil | integer()) :: {:ok, nil} | {:error, String.t()}
+  defp validate_entrant_number(%Tournament{} = tournament) do
+    Entrant
+    |> where([e], e.tournament_id == ^tournament.id)
+    |> Repo.aggregate(:count)
+    |> validate_entrant_number()
   end
 
-  defp start(check) do
-    case check do
-      {:ok, tournament} -> do_start(tournament)
-      {:error, reason} -> {:error, reason}
-    end
-  end
+  defp validate_entrant_number(nil), do: {:error, "count is nil"}
+  defp validate_entrant_number(num) when num <= 1, do: {:error, "short of participants"}
+  defp validate_entrant_number(_), do: {:ok, nil}
 
-  defp do_start(tournament) do
+  defp start(tournament) do
     if tournament.is_started do
       {:error, "tournament is already started"}
     else
@@ -1589,33 +1563,26 @@ defmodule Milk.Tournaments do
   @doc """
   Start a team tournament.
   """
-  @spec start_team_tournament(integer(), integer()) ::
-          {:ok, Tournament.t()} | {:error, Ecto.Changeset.t()} | {:error, String.t()}
+  @spec start_team_tournament(integer(), integer()) :: {:ok, Tournament.t()} | {:error, Ecto.Changeset.t()} | {:error, String.t()}
+  def start_team_tournament(tournament_id, master_id) when is_nil(tournament_id) or is_nil(master_id), do: {:error, "master_id or tournament_id is nil"}
   def start_team_tournament(tournament_id, master_id) do
-    master_id
-    |> nil_check?(tournament_id)
-    |> is_team_num_enough?(tournament_id)
-    |> fetch_tournament(master_id, tournament_id)
-    |> start()
-  end
-
-  defp is_team_num_enough?(check, tournament_id) do
-    case check do
-      {:ok, _} ->
-        tournament_id
-        |> get_confirmed_teams()
-        |> length()
-        |> Kernel.>(1)
-        |> if do
-          {:ok, nil}
-        else
-          {:error, "short of teams"}
-        end
-
-      {:error, reason} ->
-        {:error, reason}
+    with {:ok, %Tournament{} = tournament} <- load_tournament(tournament_id, master_id),
+         {:ok, nil} <- validate_team_number(tournament) do
+      start(tournament)
+    else
+      error -> error
     end
   end
+
+  defp validate_team_number(%Tournament{} = tournament) do
+    tournament.id
+    |> __MODULE__.get_confirmed_teams()
+    |> length()
+    |> validate_team_number()
+  end
+
+  defp validate_team_number(num) when num <= 1, do: {:error, "short of teams"}
+  defp validate_team_number(_), do: {:ok, nil}
 
   @doc """
   Finish a tournament.
