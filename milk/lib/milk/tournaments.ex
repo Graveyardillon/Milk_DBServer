@@ -1021,20 +1021,17 @@ defmodule Milk.Tournaments do
     end
   end
 
-  defp user_exists?(attrs) do
-    unless is_nil(attrs["user_id"]) do
-      User
-      |> where([u], u.id == ^attrs["user_id"])
-      |> Repo.exists?()
-      |> if do
-        {:ok, attrs}
-      else
-        {:error, "undefined user"}
-      end
+  defp user_exists?(%{"user_id" => user_id} = attrs) when not is_nil(user_id) do
+    User
+    |> where([u], u.id == ^attrs["user_id"])
+    |> Repo.exists?()
+    |> if do
+      {:ok, attrs}
     else
-      {:error, "invalid attrs"}
+      {:error, "undefined user"}
     end
   end
+  defp user_exists?(_), do: {:error, "invalid attrs"}
 
   defp tournament_exists?({:ok, attrs}) do
     tournament = get_tournament(attrs["tournament_id"])
@@ -1052,26 +1049,24 @@ defmodule Milk.Tournaments do
   end
 
   defp is_not_team?({:ok, attrs}) do
-    unless attrs["tournament"].is_team do
-      {:ok, attrs}
-    else
+    if attrs["tournament"].is_team do
       {:error, "requires team"}
+    else
+      {:ok, attrs}
     end
   end
 
-  defp is_not_team?({:error, error}) do
-    {:error, error}
-  end
+  defp is_not_team?({:error, error}), do: {:error, error}
 
   defp already_participant?({:ok, attrs}) do
-    unless Repo.exists?(
-             from e in Entrant,
-               where:
-                 e.tournament_id == ^attrs["tournament_id"] and e.user_id == ^attrs["user_id"]
-           ) do
-      {:ok, attrs}
-    else
+    Entrant
+    |> where([e], e.tournament_id == ^attrs["tournament_id"])
+    |> where([e], e.user_id == ^attrs["user_id"])
+    |> Repo.exists?()
+    |> if do
       {:error, "already joined"}
+    else
+      {:ok, attrs}
     end
   end
 
@@ -1425,32 +1420,33 @@ defmodule Milk.Tournaments do
   @spec get_opponent(integer(), integer()) ::
           {:ok, User.t()} | {:ok, Team.t()} | {:wait, nil} | {:error, String.t()}
   def get_opponent(tournament_id, user_id) do
-    tournament = __MODULE__.get_tournament(tournament_id)
+    tournament_id
+    |> __MODULE__.get_tournament()
+    |> get_opponent_if_started(user_id)
+  end
 
-    unless is_nil(tournament) do
-      if tournament.is_started do
-        match_list = Progress.get_match_list(tournament_id)
+  defp get_opponent_if_started(nil, _), do: {:error, "tournament is nil"}
+  defp get_opponent_if_started(tournament, user_id) do
+    if tournament.is_started do
+      match_list = Progress.get_match_list(tournament.id)
 
-        if tournament.is_team do
-          team = __MODULE__.get_team_by_tournament_id_and_user_id(tournament_id, user_id)
+      if tournament.is_team do
+        team = __MODULE__.get_team_by_tournament_id_and_user_id(tournament.id, user_id)
 
-          unless is_nil(team) do
-            match_list
-            |> __MODULE__.find_match(team.id)
-            |> get_opponent_team(team.id)
-          else
-            {:error, "team is nil"}
-          end
-        else
+        if !is_nil(team) do
           match_list
-          |> __MODULE__.find_match(user_id)
-          |> get_opponent_user(user_id)
+          |> __MODULE__.find_match(team.id)
+          |> get_opponent_team(team.id)
+        else
+          {:error, "team is nil"}
         end
       else
-        {:error, "tournament is not started"}
+        match_list
+        |> __MODULE__.find_match(user_id)
+        |> get_opponent_user(user_id)
       end
     else
-      {:error, "tournament is nil"}
+      {:error, "tournament is not started"}
     end
   end
 
@@ -1582,17 +1578,18 @@ defmodule Milk.Tournaments do
 
   defp start(check) do
     case check do
-      {:ok, tournament} ->
-        unless tournament.is_started do
-          tournament
-          |> Tournament.changeset(%{is_started: true})
-          |> Repo.update()
-        else
-          {:error, "tournament is already started"}
-        end
+      {:ok, tournament} -> do_start(tournament)
+      {:error, reason} -> {:error, reason}
+    end
+  end
 
-      {:error, reason} ->
-        {:error, reason}
+  defp do_start(tournament) do
+    if tournament.is_started do
+      {:error, "tournament is already started"}
+    else
+      tournament
+      |> Tournament.changeset(%{is_started: true})
+      |> Repo.update()
     end
   end
 
@@ -1998,7 +1995,7 @@ defmodule Milk.Tournaments do
           %{required(:user_id) => integer(), required(:tournament_id) => integer()}
           | %{required(:team_id) => integer()}
         ) :: {:ok, Entrant.t()} | {:error, Ecto.Changeset.t()}
-  def force_to_promote_rank(attrs = %{"user_id" => user_id, "tournament_id" => tournament_id}) do
+  def force_to_promote_rank(%{"user_id" => user_id, "tournament_id" => tournament_id} = attrs) do
     attrs
     |> user_exists?()
     |> tournament_exists?()
@@ -2026,7 +2023,7 @@ defmodule Milk.Tournaments do
     end
   end
 
-  def force_to_promote_rank(attrs = %{"team_id" => team_id}) do
+  def force_to_promote_rank(%{"team_id" => team_id} = attrs) do
     attrs
     |> team_exists?()
     |> tournament_exists?()
@@ -2054,7 +2051,7 @@ defmodule Milk.Tournaments do
     end
   end
 
-  def promote_rank(attrs = %{"user_id" => user_id, "tournament_id" => tournament_id}) do
+  def promote_rank(%{"user_id" => user_id, "tournament_id" => tournament_id} = attrs) do
     attrs
     |> user_exists?()
     |> tournament_exists?()
@@ -2072,7 +2069,7 @@ defmodule Milk.Tournaments do
     end
   end
 
-  def promote_rank(attrs = %{"team_id" => team_id, "tournament_id" => tournament_id}) do
+  def promote_rank(%{"team_id" => team_id, "tournament_id" => tournament_id} = attrs) do
     attrs
     |> team_exists?()
     |> tournament_exists?()
@@ -2087,7 +2084,7 @@ defmodule Milk.Tournaments do
     end
   end
 
-  defp team_exists?(attrs = %{"team_id" => team_id}) do
+  defp team_exists?(%{"team_id" => team_id} = attrs) do
     if Repo.exists?(from t in Team, where: t.id == ^team_id) do
       {:ok, attrs}
     else
