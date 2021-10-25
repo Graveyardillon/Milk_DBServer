@@ -1510,12 +1510,10 @@ defmodule Milk.Tournaments do
 
   @doc """
   Starts a tournament.
-  HACK: 引数の順序がfinishと逆
-  HACK: リファクタリング
   """
   @spec start(integer(), integer()) :: {:ok, Tournament.t()} | {:error, Ecto.Changeset.t()} | {:error, String.t()}
-  def start(master_id, tournament_id) when is_nil(master_id) or is_nil(tournament_id), do: {:error, "master_id or tournament_id is nil"}
-  def start(master_id, tournament_id) do
+  def start(tournament_id, master_id) when is_nil(master_id) or is_nil(tournament_id), do: {:error, "master_id or tournament_id is nil"}
+  def start(tournament_id, master_id) do
     with {:ok, %Tournament{} = tournament} <- load_tournament(tournament_id, master_id),
          {:ok, nil} <- validate_entrant_number(tournament) do
       start(tournament)

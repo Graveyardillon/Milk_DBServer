@@ -899,13 +899,13 @@ defmodule Milk.Tournaments.Progress do
   @spec start_single_elimination(integer(), Tournament.t()) ::
           {:ok, match_list(), match_list_with_fight_result()}
   def start_single_elimination(master_id, tournament) do
-    Tournaments.start(master_id, tournament.id)
+    Tournaments.start(tournament.id, master_id)
     make_single_elimination_matches(tournament.id)
   end
 
   @spec start_best_of_format(integer(), Tournament.t()) :: {:ok, match_list(), nil}
   def start_best_of_format(master_id, tournament) do
-    Tournaments.start(master_id, tournament.id)
+    Tournaments.start(tournament.id, master_id)
     {:ok, match_list} = make_best_of_format_matches(tournament)
     {:ok, match_list, nil}
   end
