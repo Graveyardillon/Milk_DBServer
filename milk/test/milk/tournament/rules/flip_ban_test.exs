@@ -1,7 +1,11 @@
-defmodule Milk.TournamentStates.FlipBanTest do
+defmodule Milk.Tournaments.Rules.FlipBanTest do
+  @moduledoc """
+  Test for flip and ban rule.
+  """
   use Milk.DataCase
   use Common.Fixtures
 
+  alias Milk.Tournaments.Rules
   alias Milk.Tournaments.Rules.FlipBan
 
   describe "building dfa" do
@@ -10,12 +14,11 @@ defmodule Milk.TournamentStates.FlipBanTest do
 
       user1 = fixture_user(num: 1)
       user2 = fixture_user(num: 2)
-      keyname1 = "user:#{user1.id}"
-      keyname2 = "user:#{user2.id}"
-      machine_name = "flipban"
-      FlipBan.define_dfa(machine_name)
-      FlipBan.build_dfa_instance(keyname1, machine_name)
-      FlipBan.build_dfa_instance(keyname2, machine_name)
+      keyname1 = Rules.adapt_keyname(user1.id)
+      keyname2 = Rules.adapt_keyname(user2.id)
+      FlipBan.define_dfa()
+      FlipBan.build_dfa_instance(keyname1)
+      FlipBan.build_dfa_instance(keyname2)
 
       # NOTE: startまで
       assert FlipBan.state!(keyname1) == FlipBan.is_not_started()
@@ -64,6 +67,7 @@ defmodule Milk.TournamentStates.FlipBanTest do
       assert FlipBan.state!(keyname1) == FlipBan.is_loser()
       assert FlipBan.state!(keyname2) == FlipBan.is_alone()
 
+      # NOTE: 大会終了
       assert {:ok, _} = FlipBan.trigger!(keyname1, FlipBan.finish_trigger())
       assert {:ok, _} = FlipBan.trigger!(keyname2, FlipBan.finish_trigger())
       assert FlipBan.state!(keyname1) == FlipBan.is_finished()

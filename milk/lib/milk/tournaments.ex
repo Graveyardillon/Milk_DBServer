@@ -728,12 +728,12 @@ defmodule Milk.Tournaments do
 
     Progress.insert_match_pending_list_table(id, tournament_id)
 
-    if tournament.enabled_map do
-      case tournament.rule do
-        # NOTE: map_selection_typeで分岐もできる
-        _ -> Progress.init_ban_order(tournament_id, id)
-      end
-    end
+    # if tournament.enabled_map do
+    #   case tournament.rule do
+    #     # NOTE: map_selection_typeで分岐もできる
+    #     _ -> Progress.init_ban_order(tournament_id, id)
+    #   end
+    # end
   end
 
   @doc """
