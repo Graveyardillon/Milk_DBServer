@@ -7,17 +7,17 @@ defmodule Milk.Log.TeamLog do
   import Ecto.Changeset
 
   @type t :: %__MODULE__{
-    icon_path: String.t() | nil,
-    is_confirmed: boolean(),
-    name: String.t() | nil,
-    rank: integer() | nil,
-    size: integer() | nil,
-    team_id: integer(),
-    tournament_id: integer(),
-    # NOTE: timestamps
-    create_time: any(),
-    update_time: any()
-  }
+          icon_path: String.t() | nil,
+          is_confirmed: boolean(),
+          name: String.t() | nil,
+          rank: integer() | nil,
+          size: integer() | nil,
+          team_id: integer(),
+          tournament_id: integer(),
+          # NOTE: timestamps
+          create_time: any(),
+          update_time: any()
+        }
 
   schema "team_log" do
     field :icon_path, :string

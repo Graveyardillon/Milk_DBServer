@@ -485,8 +485,7 @@ defmodule Milk.TournamentsTest do
     test "update_tournament/2 with valid data updates the tournament" do
       tournament = fixture_tournament()
 
-      assert {:ok, %Tournament{} = tournament} =
-               Tournaments.update_tournament(tournament, @update_attrs)
+      assert {:ok, %Tournament{} = tournament} = Tournaments.update_tournament(tournament, @update_attrs)
 
       assert tournament.capacity == 43
       assert tournament.deadline == "2011-05-18T15:01:01Z"
@@ -612,8 +611,7 @@ defmodule Milk.TournamentsTest do
     end
 
     test "home_tournament_plan/1 fails to return user's tournaments" do
-      tournament =
-        fixture_tournament(deadline: "2010-04-17T14:00:00Z", event_date: "2010-04-17T14:00:00Z")
+      tournament = fixture_tournament(deadline: "2010-04-17T14:00:00Z", event_date: "2010-04-17T14:00:00Z")
 
       assert length(Tournaments.home_tournament_plan(tournament.master_id)) == 0
     end
@@ -1604,8 +1602,7 @@ defmodule Milk.TournamentsTest do
     test "get_tournament_chat_topic!/1 with valid data works fine" do
       topic = fixture(:tournament_chat_topic)
 
-      assert %TournamentChatTopic{} =
-               obtained_topic = Tournaments.get_tournament_chat_topic!(topic.id)
+      assert %TournamentChatTopic{} = obtained_topic = Tournaments.get_tournament_chat_topic!(topic.id)
 
       assert obtained_topic.id == topic.id
       assert obtained_topic.topic_name == topic.topic_name
@@ -1645,8 +1642,7 @@ defmodule Milk.TournamentsTest do
       assert {:ok, deleted_topic} = Tournaments.delete_tournament_chat_topic(topic)
       assert deleted_topic.id == topic.id
 
-      assert %Ecto.NoResultsError{} =
-               catch_error(Tournaments.get_tournament_chat_topic!(deleted_topic.id))
+      assert %Ecto.NoResultsError{} = catch_error(Tournaments.get_tournament_chat_topic!(deleted_topic.id))
     end
   end
 

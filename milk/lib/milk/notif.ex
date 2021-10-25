@@ -220,9 +220,7 @@ defmodule Milk.Notif do
     |> put_sound("default")
     |> put_badge(badge_num)
     |> put_category(push_ios.process_id)
-    |> put_alert(
-      Map.merge(%{"body" => push_ios.message, "title" => push_ios.title}, push_ios.params)
-    )
+    |> put_alert(Map.merge(%{"body" => push_ios.message, "title" => push_ios.title}, push_ios.params))
     |> put_content_available
     |> put_mutable_content
     |> Pigeon.APNS.push()

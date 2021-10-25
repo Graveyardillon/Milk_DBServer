@@ -38,7 +38,7 @@ defmodule Milk.ReportsTest do
       assert report.name == tournament.name
       assert report.type == tournament.type
       assert report.url == tournament.url
-      #assert report.thumbnail_path == tournament.thumbnail_path
+      # assert report.thumbnail_path == tournament.thumbnail_path
       assert report.count == tournament.count
       assert report.game_name == tournament.game_name
     end

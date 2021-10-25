@@ -56,11 +56,9 @@ defmodule Milk.ChatTest do
   end
 
   def create_private_chat_room(_) do
-    {:ok, user1} =
-      Accounts.create_user(%{@user_attrs | "name" => "mgrke", "email" => "mgrke@mfedsawif.com"})
+    {:ok, user1} = Accounts.create_user(%{@user_attrs | "name" => "mgrke", "email" => "mgrke@mfedsawif.com"})
 
-    {:ok, user2} =
-      Accounts.create_user(%{@user_attrs | "name" => "mgrfewke", "email" => "mgrke@mfewif.com"})
+    {:ok, user2} = Accounts.create_user(%{@user_attrs | "name" => "mgrfewke", "email" => "mgrke@mfewif.com"})
 
     Chat.dialogue(%{"user_id" => user1.id, "partner_id" => user2.id, "word" => "fneijk"})
     {:ok, priv_chat_room} = Chat.get_private_chat_room(user1.id, user2.id)
@@ -214,15 +212,13 @@ defmodule Milk.ChatTest do
     test "update_chat_member/2 with valid data updates the chat_member", %{
       chat_member: chat_member
     } do
-      assert {:ok, %ChatMember{} = chat_member} =
-               Chat.update_chat_member(chat_member, @update_attrs)
+      assert {:ok, %ChatMember{} = chat_member} = Chat.update_chat_member(chat_member, @update_attrs)
 
       assert chat_member.authority == 43
     end
 
     test "delete_chat_member/1 deletes the chat_member", %{chat_member: chat_member} do
-      assert {:ok, %ChatMember{}} =
-               Chat.delete_chat_member(chat_member.chat_room_id, chat_member.user_id)
+      assert {:ok, %ChatMember{}} = Chat.delete_chat_member(chat_member.chat_room_id, chat_member.user_id)
 
       # assert_raise Ecto.NoResultsError, fn -> Chat.get_chat_member!(chat_member.id) end
     end

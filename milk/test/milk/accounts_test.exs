@@ -68,8 +68,7 @@ defmodule Milk.AccountsTest do
     test "get_users_in_touch/1 gets users in touch", %{user: user} do
       %User{} = user2 = fixture_user(2)
 
-      {:ok, %Chats{} = _chat} =
-        Chat.dialogue(%{"user_id" => user.id, "partner_id" => user2.id, "word" => "Hello"})
+      {:ok, %Chats{} = _chat} = Chat.dialogue(%{"user_id" => user.id, "partner_id" => user2.id, "word" => "Hello"})
 
       user =
         Accounts.get_users_in_touch(user.id)
@@ -233,8 +232,7 @@ defmodule Milk.AccountsTest do
 
       assert {:ok, %User{}} = Accounts.login(login_params)
 
-      assert {:error, "That token does not exist"} =
-               Accounts.delete_user(user.id, @user_valid_attrs["password"], user.auth.email, "a")
+      assert {:error, "That token does not exist"} = Accounts.delete_user(user.id, @user_valid_attrs["password"], user.auth.email, "a")
 
       assert Accounts.get_user(user.id)
     end

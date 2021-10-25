@@ -234,9 +234,7 @@ defmodule Milk.Chat do
   end
 
   def get_member(chat_room_id, user_id) do
-    Repo.one(
-      from cm in ChatMember, where: cm.chat_room_id == ^chat_room_id and cm.user_id == ^user_id
-    )
+    Repo.one(from cm in ChatMember, where: cm.chat_room_id == ^chat_room_id and cm.user_id == ^user_id)
   end
 
   defp get_chat_member_by_user_id(user_id) do
@@ -410,10 +408,7 @@ defmodule Milk.Chat do
     do: Repo.one(from c in Chats, where: c.chat_room_id == ^chat_room_id and c.index == ^index)
 
   def get_latest_chat(id),
-    do:
-      Repo.all(
-        from c in Chats, where: c.chat_room_id == ^id, order_by: [desc: c.index], limit: 20
-      )
+    do: Repo.all(from c in Chats, where: c.chat_room_id == ^id, order_by: [desc: c.index], limit: 20)
 
   @doc """
   Get all chat by room id.

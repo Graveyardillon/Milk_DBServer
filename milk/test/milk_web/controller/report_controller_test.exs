@@ -13,10 +13,7 @@ defmodule MilkWeb.ReportControllerTest do
       reporter = fixture_user(num: 1)
       reportee = fixture_user(num: 2)
 
-      conn =
-        post(conn, Routes.report_path(conn, :create_user_report),
-          report: %{reporter: reporter.id, reportee: reportee.id, report_types: [0]}
-        )
+      conn = post(conn, Routes.report_path(conn, :create_user_report), report: %{reporter: reporter.id, reportee: reportee.id, report_types: [0]})
 
       assert json_response(conn, 200)["result"]
     end
@@ -27,10 +24,7 @@ defmodule MilkWeb.ReportControllerTest do
       user = fixture_user()
       tournament = fixture_tournament()
 
-      conn =
-        post(conn, Routes.report_path(conn, :create_tournament_report),
-          report: %{reporter_id: user.id, tournament_id: tournament.id, report_type: 0}
-        )
+      conn = post(conn, Routes.report_path(conn, :create_tournament_report), report: %{reporter_id: user.id, tournament_id: tournament.id, report_type: 0})
 
       assert json_response(conn, 200)["result"]
     end
@@ -39,17 +33,11 @@ defmodule MilkWeb.ReportControllerTest do
       user = fixture_user()
       tournament = fixture_tournament()
 
-      conn =
-        post(conn, Routes.report_path(conn, :create_tournament_report),
-          report: %{reporter_id: user.id, tournament_id: tournament.id, report_type: [0]}
-        )
+      conn = post(conn, Routes.report_path(conn, :create_tournament_report), report: %{reporter_id: user.id, tournament_id: tournament.id, report_type: [0]})
 
       assert json_response(conn, 200)["result"]
 
-      conn =
-        post(conn, Routes.report_path(conn, :create_tournament_report),
-          report: %{reporter_id: user.id, tournament_id: tournament.id, report_types: [0]}
-        )
+      conn = post(conn, Routes.report_path(conn, :create_tournament_report), report: %{reporter_id: user.id, tournament_id: tournament.id, report_types: [0]})
 
       assert json_response(conn, 200)["result"]
     end
@@ -58,10 +46,7 @@ defmodule MilkWeb.ReportControllerTest do
       user = fixture_user()
       tournament = fixture_tournament()
 
-      conn =
-        post(conn, Routes.report_path(conn, :create_tournament_report),
-          report: %{reporter_id: user.id, tournament_id: tournament.id, report_type: [6]}
-        )
+      conn = post(conn, Routes.report_path(conn, :create_tournament_report), report: %{reporter_id: user.id, tournament_id: tournament.id, report_type: [6]})
 
       assert json_response(conn, 200)["result"]
 

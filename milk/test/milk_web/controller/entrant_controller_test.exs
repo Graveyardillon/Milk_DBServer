@@ -160,8 +160,7 @@ defmodule MilkWeb.EntrantControllerTest do
     setup [:create_entrant]
 
     test "renders entrant's rank when data is valid", %{conn: conn, entrant: entrant} do
-      conn =
-        get(conn, Routes.entrant_path(conn, :show_rank, entrant.tournament_id, entrant.user_id))
+      conn = get(conn, Routes.entrant_path(conn, :show_rank, entrant.tournament_id, entrant.user_id))
 
       assert is_integer(json_response(conn, 200)["data"]["rank"])
     end
@@ -256,8 +255,7 @@ defmodule MilkWeb.EntrantControllerTest do
       |> Tournaments.generate_matchlist()
       |> Progress.insert_match_list(entrant.tournament_id)
 
-      assert conn =
-               post(conn, Routes.entrant_path(conn, :promote), tournament_id: -1, user_id: -1)
+      assert conn = post(conn, Routes.entrant_path(conn, :promote), tournament_id: -1, user_id: -1)
 
       assert json_response(conn, 200)["error"] == "undefined user"
     end

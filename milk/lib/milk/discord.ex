@@ -156,8 +156,7 @@ defmodule Milk.Discord do
 
     url = "#{discord_server_url}/description"
 
-    params =
-      Jason.encode!(%{server_id: server_id, access_token: access_token, description: description})
+    params = Jason.encode!(%{server_id: server_id, access_token: access_token, description: description})
 
     HTTPoison.post(url, params, "Content-Type": "application/json")
   end

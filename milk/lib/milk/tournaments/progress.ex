@@ -983,8 +983,7 @@ defmodule Milk.Tournaments.Progress do
     |> Tournaments.start_team_tournament(master_id)
     |> case do
       {:ok, _tournament} ->
-        {:ok, match_list, match_list_with_fight_result} =
-          generate_team_best_of_format_matches(tournament)
+        {:ok, match_list, match_list_with_fight_result} = generate_team_best_of_format_matches(tournament)
 
         {:ok, match_list, match_list_with_fight_result}
 

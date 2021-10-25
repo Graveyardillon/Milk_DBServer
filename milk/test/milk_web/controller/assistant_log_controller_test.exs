@@ -58,8 +58,7 @@ defmodule MilkWeb.AssistantLogControllerTest do
       conn = post(conn, Routes.assistant_log_path(conn, :create), data: @create_attrs)
       assert id = json_response(conn, 200)["data"]["id"]
 
-      conn =
-        patch(conn, Routes.assistant_log_path(conn, :update, id), assistant_log: @update_attrs)
+      conn = patch(conn, Routes.assistant_log_path(conn, :update, id), assistant_log: @update_attrs)
 
       assert json_response(conn, 200)["data"] == %{
                "id" => id,
@@ -72,8 +71,7 @@ defmodule MilkWeb.AssistantLogControllerTest do
       conn = post(conn, Routes.assistant_log_path(conn, :create), data: @create_attrs)
       assert id = json_response(conn, 200)["data"]["id"]
 
-      conn =
-        patch(conn, Routes.assistant_log_path(conn, :update, id), assistant_log: @invalid_attrs)
+      conn = patch(conn, Routes.assistant_log_path(conn, :update, id), assistant_log: @invalid_attrs)
 
       assert json_response(conn, 200) == %{"result" => false}
     end

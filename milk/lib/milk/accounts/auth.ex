@@ -54,9 +54,7 @@ defmodule Milk.Accounts.Auth do
     |> validate_required(:email)
   end
 
-  defp put_password_hash(
-         %Ecto.Changeset{valid?: true, changes: %{password: password}} = changeset
-       ) do
+  defp put_password_hash(%Ecto.Changeset{valid?: true, changes: %{password: password}} = changeset) do
     change(changeset, password: create_pass(password))
   end
 

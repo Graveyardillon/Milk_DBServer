@@ -476,8 +476,7 @@ defmodule Milk.Tournaments do
     master_id = Tools.to_integer_as_needed(attrs["master_id"])
     platform_id = Tools.to_integer_as_needed(attrs["platform"])
 
-    game_id =
-      if attrs["game_id"] == "" || is_nil(attrs["game_id"]), do: nil, else: attrs["game_id"]
+    game_id = if attrs["game_id"] == "" || is_nil(attrs["game_id"]), do: nil, else: attrs["game_id"]
 
     attrs = put_token(attrs)
 
@@ -612,16 +611,14 @@ defmodule Milk.Tournaments do
     end)
   end
 
-  @spec set_details(Tournament.t(), map()) ::
-          {:ok, TournamentCustomDetail.t()} | {:error, Ecto.Changeset.t()}
+  @spec set_details(Tournament.t(), map()) :: {:ok, TournamentCustomDetail.t()} | {:error, Ecto.Changeset.t()}
   defp set_details(tournament, params) do
     params
     |> Map.put("tournament_id", tournament.id)
     |> __MODULE__.create_custom_detail()
   end
 
-  @spec set_maps(Tournament.t(), map()) ::
-          [{:ok, Milk.Tournaments.Map.t()} | {:error, Ecto.Changeset.t()}] | nil
+  @spec set_maps(Tournament.t(), map()) :: [{:ok, Milk.Tournaments.Map.t()} | {:error, Ecto.Changeset.t()}] | nil
   defp set_maps(tournament, params) do
     params
     |> Map.has_key?("maps")
@@ -675,8 +672,7 @@ defmodule Milk.Tournaments do
       {:error, %Ecto.Changeset{}}
 
   """
-  @spec update_tournament(Tournament.t(), map()) ::
-          {:ok, Tournament.t()} | {:error, Ecto.Changeset.t() | nil}
+  @spec update_tournament(Tournament.t(), map()) :: {:ok, Tournament.t()} | {:error, Ecto.Changeset.t() | nil}
   def update_tournament(tournament, attrs) do
     attrs
     |> Map.get("platform")
@@ -850,8 +846,7 @@ defmodule Milk.Tournaments do
     if state!(tournament_id, user_id) == "ShouldChooseA/D" do
       has_me_inserted = Progress.insert_is_attacker_side(my_id, tournament_id, is_attack_side)
 
-      has_opponent_inserted =
-        Progress.insert_is_attacker_side(opponent_id, tournament_id, !is_attack_side)
+      has_opponent_inserted = Progress.insert_is_attacker_side(opponent_id, tournament_id, !is_attack_side)
 
       if has_me_inserted && has_opponent_inserted do
         {:ok, nil}
@@ -985,9 +980,7 @@ defmodule Milk.Tournaments do
 
   @spec get_entrant_by_user_id_and_tournament_id(integer(), integer()) :: Entrant.t() | nil
   defp get_entrant_by_user_id_and_tournament_id(user_id, tournament_id) do
-    Repo.one(
-      from e in Entrant, where: ^tournament_id == e.tournament_id and ^user_id == e.user_id
-    )
+    Repo.one(from e in Entrant, where: ^tournament_id == e.tournament_id and ^user_id == e.user_id)
   end
 
   @doc """
@@ -1031,6 +1024,7 @@ defmodule Milk.Tournaments do
       {:error, "undefined user"}
     end
   end
+
   defp user_exists?(_), do: {:error, "invalid attrs"}
 
   defp tournament_exists?({:ok, attrs}) do
@@ -1200,9 +1194,7 @@ defmodule Milk.Tournaments do
     tournament_id = Tools.to_integer_as_needed(tournament_id)
     user_id = Tools.to_integer_as_needed(user_id)
 
-    unless Repo.exists?(
-             from e in Entrant, where: e.tournament_id == ^tournament_id and e.user_id == ^user_id
-           ) do
+    unless Repo.exists?(from e in Entrant, where: e.tournament_id == ^tournament_id and e.user_id == ^user_id) do
       {:error, "entrant not found"}
     else
       entrant =
@@ -1426,6 +1418,7 @@ defmodule Milk.Tournaments do
   end
 
   defp get_opponent_if_started(nil, _), do: {:error, "tournament is nil"}
+
   defp get_opponent_if_started(tournament, user_id) do
     if tournament.is_started do
       match_list = Progress.get_match_list(tournament.id)
@@ -1943,6 +1936,7 @@ defmodule Milk.Tournaments do
     |> case do
       {:ok, topic} ->
         {:ok, Map.put(topic, :tournament_id, attrs["tournament_id"])}
+
       {:error, error} ->
         {:error, error}
     end
@@ -2858,6 +2852,7 @@ defmodule Milk.Tournaments do
 
   @spec do_is_leader?(Tournament.t() | TournamentLog.t() | Team.t() | TeamLog.t() | nil, integer()) :: boolean()
   defp do_is_leader?(nil, _), do: false
+
   defp do_is_leader?(%Tournament{} = tournament, user_id) do
     if tournament.is_team do
       tournament.id
@@ -2885,7 +2880,7 @@ defmodule Milk.Tournaments do
 
   defp do_is_leader?(%TeamLog{} = team_log, user_id) do
     team_log.team_member
-    |> Enum.filter(&(&1.is_leader))
+    |> Enum.filter(& &1.is_leader)
     |> Enum.all?(&(&1.user_id == user_id))
   end
 

@@ -173,8 +173,7 @@ defmodule Milk.NotifTest do
     test "update_notification/2 with valid data updates the notification" do
       notification = notification_fixture()
 
-      assert {:ok, %Notification{} = notification} =
-               Notif.update_notification(notification, @update_attrs)
+      assert {:ok, %Notification{} = notification} = Notif.update_notification(notification, @update_attrs)
 
       assert notification.title == "some updated title"
     end

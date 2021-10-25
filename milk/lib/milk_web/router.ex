@@ -30,8 +30,7 @@ defmodule MilkWeb.Router do
     get "/check/connection", CheckController, :connection_check
     post "/check/data_for_web", CheckController, :data_for_web
 
-    resources "/user", UserController,
-      except: [:new, :edit, :index, :show, :create, :update, :delete]
+    resources "/user", UserController, except: [:new, :edit, :index, :show, :create, :update, :delete]
 
     get "/user/num", UserController, :number
     get "/user/check_username_duplication", UserController, :check_username_duplication
@@ -196,8 +195,7 @@ defmodule MilkWeb.Router do
     post "/team/add_members", TeamController, :add_members
     delete "/team", TeamController, :delete
 
-    resources "/assistant", AssistantController,
-      except: [:new, :edit, :index, :show, :delete, :update]
+    resources "/assistant", AssistantController, except: [:new, :edit, :index, :show, :delete, :update]
 
     post "/assistant/delete", AssistantController, :delete
 

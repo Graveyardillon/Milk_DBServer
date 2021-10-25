@@ -65,9 +65,7 @@ defmodule Milk.UserManager.Guardian do
   # end
 
   def on_verify(claims, _token, _options) do
-    Repo.exists?(
-      from g in GuardianTokens, where: g.jti == ^claims["jti"] and g.aud == ^claims["aud"]
-    )
+    Repo.exists?(from g in GuardianTokens, where: g.jti == ^claims["jti"] and g.aud == ^claims["aud"])
     |> if do
       {:ok, claims}
     else

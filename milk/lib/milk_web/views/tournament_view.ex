@@ -51,8 +51,7 @@ defmodule MilkWeb.TournamentView do
 
   def render("show.json", %{tournament: tournament}) do
     %{
-      data:
-        render_one(tournament, TournamentView, "tournament.json", msg: "Tournament was created!"),
+      data: render_one(tournament, TournamentView, "tournament.json", msg: "Tournament was created!"),
       result: true
     }
   end
@@ -188,12 +187,8 @@ defmodule MilkWeb.TournamentView do
         tournament_log: tournament_log
       }) do
     %{
-      tournaments:
-        render_many(tournaments, TournamentView, "tournament_info_include_entrants.json",
-          as: :tournament_info
-        ),
-      tournament_logs:
-        render_many(tournament_log, TournamentView, "tournament_log.json", as: :tournament_log)
+      tournaments: render_many(tournaments, TournamentView, "tournament_info_include_entrants.json", as: :tournament_info),
+      tournament_logs: render_many(tournament_log, TournamentView, "tournament_log.json", as: :tournament_log)
     }
   end
 
@@ -246,10 +241,7 @@ defmodule MilkWeb.TournamentView do
     inspect(tournaments_info)
 
     %{
-      data:
-        render_many(tournaments_info, TournamentView, "tournament_info_include_entrants.json",
-          as: :tournament_info
-        ),
+      data: render_many(tournaments_info, TournamentView, "tournament_info_include_entrants.json", as: :tournament_info),
       result: true
     }
   end

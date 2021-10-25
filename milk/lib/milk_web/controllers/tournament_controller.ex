@@ -120,8 +120,7 @@ defmodule MilkWeb.TournamentController do
 
         # coveralls-ignore-start
         _ ->
-          object =
-            Milk.CloudStorage.Objects.upload("./static/image/tournament_thumbnail/#{uuid}.jpg")
+          object = Milk.CloudStorage.Objects.upload("./static/image/tournament_thumbnail/#{uuid}.jpg")
 
           File.rm("./static/image/tournament_thumbnail/#{uuid}.jpg")
           object.name
@@ -1917,10 +1916,13 @@ defmodule MilkWeb.TournamentController do
     |> case do
       {:ok, %Tournament{} = tournament} ->
         {tournament, tournament.is_team, tournament.rule}
+
       {:ok, %TournamentLog{} = tournament_log} ->
         t = Map.put(tournament_log, :id, tournament_log.tournament_id)
         {t, t.is_team, t.rule}
-      _ -> {nil, false, nil}
+
+      _ ->
+        {nil, false, nil}
     end
     ~> {tournament, is_team, rule}
 
@@ -2004,6 +2006,7 @@ defmodule MilkWeb.TournamentController do
   end
 
   defp get_rank(nil, _), do: nil
+
   defp get_rank(tournament, user_id) do
     if tournament.is_team do
       tournament.id
@@ -2024,6 +2027,7 @@ defmodule MilkWeb.TournamentController do
     |> Log.get_team_log_by_tournament_id_and_user_id(user_id)
     |> get_team_log_rank()
   end
+
   defp get_team_rank(team, _, _), do: team.rank
 
   @spec get_team_log_rank(TournamentLog.t() | nil) :: integer() | nil
@@ -2039,6 +2043,7 @@ defmodule MilkWeb.TournamentController do
       Progress.get_score(tournament.id, user_id)
     end
   end
+
   defp load_score(_, _, _), do: nil
 
   @doc """
