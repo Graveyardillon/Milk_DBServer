@@ -454,6 +454,7 @@ defmodule Milk.Tournaments do
     |> do_create_tournament(params, thumbnail_path)
     |> case do
       {:ok, tournament} ->
+        initialize_state_machine!(tournament)
         set_details(tournament, params)
         set_maps(tournament, params)
         {:ok, tournament}
@@ -616,8 +617,14 @@ defmodule Milk.Tournaments do
     end)
   end
 
+  @spec initialize_state_machine!(Tournament.t()) :: any()
   defp initialize_state_machine!(tournament) do
-
+    case tournament.rule do
+      "basic" -> Basic.define_dfa!(is_team: tournament.is_team)
+      "flipban" -> FlipBan.define_dfa(is_team: tournament.is_team)
+      # HACK: nilでいいのか定かではない
+      _ -> nil
+    end
   end
 
   @spec set_details(Tournament.t(), map()) :: {:ok, TournamentCustomDetail.t()} | {:error, Ecto.Changeset.t()}
