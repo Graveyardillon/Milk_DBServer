@@ -29,6 +29,7 @@ defmodule Milk.Tournaments.Tournament do
           is_team: boolean(),
           name: String.t(),
           password: String.t() | nil,
+          rule: String.t(),
           start_recruiting: any(),
           team_size: integer() | nil,
           thumbnail_path: String.t() | nil,

@@ -155,8 +155,7 @@ defmodule MilkWeb.TournamentController do
       |> case do
         {:ok, %Tournament{} = tournament} ->
           if tournament_params["join"] == "true" do
-            %{"user_id" => tournament.master_id, "tournament_id" => tournament.id}
-            |> Tournaments.create_entrant()
+            Tournaments.create_entrant(%{"user_id" => tournament.master_id, "tournament_id" => tournament.id})
           end
 
           followers = Relations.get_followers(tournament.master_id)
@@ -168,9 +167,7 @@ defmodule MilkWeb.TournamentController do
             "score" => 7
           })
 
-          unless is_nil(tournament.event_date) do
-            add_queue_tournament_start_push_notice(tournament)
-          end
+          unless is_nil(tournament.event_date), do: add_queue_tournament_start_push_notice(tournament)
 
           Task.async(fn ->
             if !is_nil(tournament.discord_server_id) do
@@ -1919,13 +1916,13 @@ defmodule MilkWeb.TournamentController do
     |> Tournaments.get_tournament_including_logs()
     |> case do
       {:ok, %Tournament{} = tournament} ->
-        {tournament, tournament.is_team}
+        {tournament, tournament.is_team, tournament.rule}
       {:ok, %TournamentLog{} = tournament_log} ->
         t = Map.put(tournament_log, :id, tournament_log.tournament_id)
-        {t, t.is_team}
-      _ -> {nil, false}
+        {t, t.is_team, t.rule}
+      _ -> {nil, false, nil}
     end
-    ~> {tournament, is_team}
+    ~> {tournament, is_team, rule}
 
     rank = get_rank(tournament, user_id)
     state = Tournaments.state!(tournament.id, user_id)
@@ -2000,6 +1997,7 @@ defmodule MilkWeb.TournamentController do
       score: score,
       state: state,
       map: map,
+      rule: rule,
       is_coin_head: is_coin_head,
       custom_detail: custom_detail
     })
@@ -2032,7 +2030,7 @@ defmodule MilkWeb.TournamentController do
   defp get_team_log_rank(nil), do: nil
   defp get_team_log_rank(team_log), do: team_log.rank
 
-  @spec load_score(String.t(), Tournament.t(), integer()) :: integer()
+  @spec load_score(String.t(), Tournament.t() | TournamentLog.t(), integer()) :: integer()
   defp load_score("IsPending", tournament, user_id) do
     if tournament.is_team do
       team = Tournaments.get_team_by_tournament_id_and_user_id(tournament.id, user_id)

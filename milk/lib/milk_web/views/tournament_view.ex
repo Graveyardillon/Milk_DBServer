@@ -121,8 +121,7 @@ defmodule MilkWeb.TournamentView do
           unless is_nil(tournament.custom_detail) do
             %{
               coin_head_field: tournament.custom_detail.coin_head_field,
-              coin_tail_field: tournament.custom_detail.coin_tail_field,
-              map_rule: tournament.custom_detail.map_rule
+              coin_tail_field: tournament.custom_detail.coin_tail_field
             }
           end,
         event_date: tournament.event_date,
@@ -265,8 +264,7 @@ defmodule MilkWeb.TournamentView do
         unless is_nil(tournament.custom_detail) do
           %{
             coin_head_field: tournament.custom_detail.coin_head_field,
-            coin_tail_field: tournament.custom_detail.coin_tail_field,
-            map_rule: tournament.custom_detail.map_rule
+            coin_tail_field: tournament.custom_detail.coin_tail_field
           }
         end,
       thumbnail_path: tournament.thumbnail_path,
@@ -287,6 +285,7 @@ defmodule MilkWeb.TournamentView do
       update_time: tournament.update_time,
       is_started: tournament.is_started,
       is_team: tournament.is_team,
+      rule: tournament.rule,
       entrants:
         Enum.map(tournament.entrants, fn user ->
           %{
@@ -433,6 +432,7 @@ defmodule MilkWeb.TournamentView do
         score: score,
         state: state,
         map: map,
+        rule: rule,
         is_coin_head: is_coin_head,
         custom_detail: custom_detail
       }) do
@@ -473,6 +473,7 @@ defmodule MilkWeb.TournamentView do
       state: state,
       is_team: is_team,
       is_coin_head: is_coin_head,
+      rule: rule,
       map:
         if map do
           %{
@@ -486,8 +487,7 @@ defmodule MilkWeb.TournamentView do
         if custom_detail do
           %{
             coin_head_field: custom_detail.coin_head_field,
-            coin_tail_field: custom_detail.coin_tail_field,
-            map_rule: custom_detail.map_rule
+            coin_tail_field: custom_detail.coin_tail_field
           }
         end
     }

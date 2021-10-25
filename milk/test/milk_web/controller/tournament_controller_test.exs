@@ -3727,10 +3727,10 @@ defmodule MilkWeb.TournamentControllerTest do
       refute is_nil(match_info["opponent"]["name"])
       assert match_info["state"] == "ShouldFlipCoin"
 
+      assert Map.has_key?(match_info, "rule")
       assert match_info["custom_detail"]["coin_head_field"] == attrs[:coin_head_field]
       assert match_info["custom_detail"]["coin_tail_field"] == attrs[:coin_tail_field]
       assert is_nil(match_info["custom_detail"]["map_rule"])
-      assert Map.has_key?(match_info["custom_detail"], "map_rule")
       refute is_nil(match_info["is_coin_head"])
       is_my_coin_head = match_info["is_coin_head"]
 
@@ -3753,7 +3753,7 @@ defmodule MilkWeb.TournamentControllerTest do
       assert match_info["custom_detail"]["coin_head_field"] == attrs[:coin_head_field]
       assert match_info["custom_detail"]["coin_tail_field"] == attrs[:coin_tail_field]
       assert is_nil(match_info["custom_detail"]["map_rule"])
-      assert Map.has_key?(match_info["custom_detail"], "map_rule")
+      assert Map.has_key?(match_info, "rule")
       refute is_nil(match_info["is_coin_head"])
       is_opponent_coin_head = match_info["is_coin_head"]
 
