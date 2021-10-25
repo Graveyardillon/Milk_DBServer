@@ -47,12 +47,17 @@ defmodule Milk.Tournaments do
     Entrant,
     MapSelection,
     Progress,
+    Rules,
     Team,
     TeamInvitation,
     TeamMember,
     Tournament,
     TournamentChatTopic,
     TournamentCustomDetail
+  }
+  alias Milk.Tournaments.Rules.{
+    Basic,
+    FlipBan
   }
 
   require Integer
@@ -609,6 +614,10 @@ defmodule Milk.Tournaments do
         |> Repo.insert()
       end
     end)
+  end
+
+  defp initialize_state_machine!(tournament) do
+
   end
 
   @spec set_details(Tournament.t(), map()) :: {:ok, TournamentCustomDetail.t()} | {:error, Ecto.Changeset.t()}
@@ -1515,8 +1524,9 @@ defmodule Milk.Tournaments do
   def start(tournament_id, master_id) when is_nil(master_id) or is_nil(tournament_id), do: {:error, "master_id or tournament_id is nil"}
   def start(tournament_id, master_id) do
     with {:ok, %Tournament{} = tournament} <- load_tournament(tournament_id, master_id),
-         {:ok, nil} <- validate_entrant_number(tournament) do
-      start(tournament)
+         {:ok, nil} <- validate_entrant_number(tournament),
+         {:ok, tournament} <- start(tournament) do
+      initialize_participant_states!(tournament)
     else
       error -> error
     end
@@ -1556,6 +1566,23 @@ defmodule Milk.Tournaments do
       |> Tournament.changeset(%{is_started: true})
       |> Repo.update()
     end
+  end
+
+  @spec initialize_participant_states!(Tournament.t()) :: {:ok, Tournament.t()}
+  defp initialize_participant_states!(%Tournament{} = tournament) do
+    tournament.id
+    |> __MODULE__.get_entrants()
+    |> Enum.each(fn entrant ->
+      keyname = Rules.adapt_keyname(entrant.user_id)
+
+      case tournament.rule do
+        "basic" -> Basic.build_dfa_instance(keyname)
+        "flipban" -> FlipBan.build_dfa_instance(keyname)
+        _ -> raise "Invalid tournament rule"
+      end
+    end)
+
+    {:ok, tournament}
   end
 
   @doc """
@@ -2285,6 +2312,19 @@ defmodule Milk.Tournaments do
   @doc """
   Checks tournament state.
   """
+  # @spec state!(integer(), integer()) :: String.t()
+  # def state!(tournament_id, user_id) do
+  #   keyname = Rules.adapt_keyname(user_id)
+
+  #   tournament_id
+  #   |> __MODULE__.get_tournament()
+  #   |> Map.get(:rule)
+  #   |> case do
+  #     "basic" -> Basic.state!(keyname)
+  #     "flipban" -> FlipBan.state!(keyname)
+  #     _ -> raise "Invalid tournament rule"
+  #   end
+  # end
   @spec state!(integer(), integer()) :: String.t()
   def state!(tournament_id, user_id) do
     tournament_id

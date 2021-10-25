@@ -7,13 +7,14 @@ defmodule Milk.Tournaments.Rules.Basic do
 
   @db_index Rules.db_index()
 
-  @spec machine_name() :: String.t()
-  def machine_name(), do: "basic"
+  @spec machine_name(boolean()) :: String.t()
+  def machine_name(true), do: "basic_team"
+  def machine_name(false), do: "basic"
 
   @spec define_dfa!(Rules.opts()) :: :ok
   def define_dfa!(opts \\ []) do
     is_team = Keyword.get(opts, :is_team, true)
-    machine_name = Keyword.get(opts, :machine_name, machine_name())
+    machine_name = Keyword.get(opts, :machine_name, machine_name(is_team))
 
     if is_team, do: Predefined.on!(machine_name, @db_index, member_trigger(), is_not_started(), is_member())
 
@@ -35,8 +36,10 @@ defmodule Milk.Tournaments.Rules.Basic do
     end)
   end
 
-  @spec build_dfa_instance(String.t(), String.t()) :: any()
-  def build_dfa_instance(instance_name, machine_name \\ machine_name()) do
+  @spec build_dfa_instance(String.t(), Rules.opts) :: any()
+  def build_dfa_instance(instance_name, opts \\ []) do
+    is_team = Keyword.get(opts, :is_team, true)
+    machine_name = machine_name(is_team)
     Predefined.initialize!(instance_name, machine_name, @db_index, is_not_started())
   end
 
