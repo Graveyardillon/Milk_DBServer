@@ -2,7 +2,14 @@ defmodule Milk.Tournaments.Rules do
   @moduledoc """
   Rules for tournament.
   """
-  @type opts :: [is_team: boolean()]
+  @type opts :: [
+    machine_name: String.t(),
+    is_team: boolean()
+  ]
+
+  @type list_state_opts :: [
+    is_team: boolean()
+  ]
 
   @spec db_index() :: integer()
   def db_index(), do: Application.get_env(:milk, :dfa_db_index)

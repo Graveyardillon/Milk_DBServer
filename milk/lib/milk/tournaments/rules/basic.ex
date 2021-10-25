@@ -10,9 +10,10 @@ defmodule Milk.Tournaments.Rules.Basic do
   @spec machine_name() :: String.t()
   def machine_name(), do: "basic"
 
-  @spec define_dfa!(String.t(), Rules.opts()) :: :ok
-  def define_dfa!(machine_name \\ machine_name(), opts \\ []) do
+  @spec define_dfa!(Rules.opts()) :: :ok
+  def define_dfa!(opts \\ []) do
     is_team = Keyword.get(opts, :is_team, true)
+    machine_name = Keyword.get(opts, :machine_name, machine_name())
 
     if is_team, do: Predefined.on!(machine_name, @db_index, member_trigger(), is_not_started(), is_member())
     Predefined.on!(machine_name, @db_index, start_trigger(), is_not_started(), should_start_match())
@@ -33,11 +34,17 @@ defmodule Milk.Tournaments.Rules.Basic do
   end
 
   @spec build_dfa_instance(String.t(), String.t()) :: any()
-  def build_dfa_instance(instance_name, machine_name) do
+  def build_dfa_instance(instance_name, machine_name \\ machine_name()) do
     Predefined.initialize!(instance_name, machine_name, @db_index, is_not_started())
   end
 
-  @spec list_states(Rules.opts()) :: [String.t()]
+  @spec state!(String.t()) :: String.t()
+  def state!(instance_name), do: Predefined.state!(instance_name, @db_index)
+
+  @spec trigger!(String.t(), String.t()) :: {:ok, String.t()} | {:error, String.t()}
+  def trigger!(instance_name, trigger), do: Predefined.trigger!(instance_name, @db_index, trigger)
+
+  @spec list_states(Rules.list_state_opts()) :: [String.t()]
   def list_states(opts \\ []) do
     Enum.reject(unfiltered_list_states(opts), &is_nil(&1))
   end
