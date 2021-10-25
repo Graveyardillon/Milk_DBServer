@@ -16,8 +16,10 @@ defmodule Milk.Tournaments.Rules.Basic do
     machine_name = Keyword.get(opts, :machine_name, machine_name())
 
     if is_team, do: Predefined.on!(machine_name, @db_index, member_trigger(), is_not_started(), is_member())
+
     Predefined.on!(machine_name, @db_index, start_trigger(), is_not_started(), should_start_match())
     Predefined.on!(machine_name, @db_index, manager_trigger(), is_not_started(), is_manager())
+    Predefined.on!(machine_name, @db_index, assistant_trigger(), is_not_started(), is_assistant())
     Predefined.on!(machine_name, @db_index, start_match_trigger(), should_start_match(), is_waiting_for_start_match())
     Predefined.on!(machine_name, @db_index, pend_trigger(), is_waiting_for_start_match(), is_pending())
     Predefined.on!(machine_name, @db_index, lose_trigger(), is_pending(), is_loser())
@@ -81,6 +83,9 @@ defmodule Milk.Tournaments.Rules.Basic do
   @spec is_manager() :: String.t()
   def is_manager(), do: "IsManager"
 
+  @spec is_assistant() :: String.t()
+  def is_assistant(), do: "IsAssistant"
+
   @spec should_start_match() :: String.t()
   def should_start_match(), do: "ShouldStartMatch"
 
@@ -113,6 +118,9 @@ defmodule Milk.Tournaments.Rules.Basic do
 
   @spec manager_trigger() :: String.t()
   def manager_trigger(), do: "manager"
+
+  @spec assistant_trigger() :: String.t()
+  def assistant_trigger(), do: "assistant"
 
   @spec start_match_trigger() :: String.t()
   def start_match_trigger(), do: "start_match"

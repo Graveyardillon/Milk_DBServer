@@ -21,6 +21,7 @@ defmodule Milk.Tournaments.Rules.FlipBan do
 
     Predefined.on!(machine_name, @db_index, start_trigger(), is_not_started(), should_flip_coin())
     Predefined.on!(machine_name, @db_index, manager_trigger(), is_not_started(), is_manager())
+    Predefined.on!(machine_name, @db_index, assistant_trigger(), is_not_started(), is_assistant())
     Predefined.on!(machine_name, @db_index, flip_trigger(), should_flip_coin(), is_waiting_for_coin_flip())
     Predefined.on!(machine_name, @db_index, ban_map_trigger(), is_waiting_for_coin_flip(), should_ban_map())
     Predefined.on!(machine_name, @db_index, observe_ban_map_trigger(), is_waiting_for_coin_flip(), should_observe_ban())
@@ -97,6 +98,9 @@ defmodule Milk.Tournaments.Rules.FlipBan do
   @spec is_manager() :: String.t()
   def is_manager(), do: "IsManager"
 
+  @spec is_assistant() :: String.t()
+  def is_assistant(), do: "IsAssistant"
+
   @spec should_flip_coin() :: String.t()
   def should_flip_coin(), do: "ShouldFlipCoin"
 
@@ -147,6 +151,9 @@ defmodule Milk.Tournaments.Rules.FlipBan do
 
   @spec manager_trigger() :: String.t()
   def manager_trigger(), do: "manager"
+
+  @spec assistant_trigger() :: String.t()
+  def assistant_trigger(), do: "assistant"
 
   @spec flip_trigger() :: String.t()
   def flip_trigger(), do: "flip"

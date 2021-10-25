@@ -14,11 +14,20 @@ defmodule Milk.Tournaments.Rules.BasicTest do
 
       user1 = fixture_user(num: 1)
       user2 = fixture_user(num: 2)
+      user3 = fixture_user(num: 3)
+      user4 = fixture_user(num: 4)
+      user5 = fixture_user(num: 5)
       keyname1 = Rules.adapt_keyname(user1.id)
       keyname2 = Rules.adapt_keyname(user2.id)
+      keyname3 = Rules.adapt_keyname(user3.id)
+      keyname4 = Rules.adapt_keyname(user4.id)
+      keyname5 = Rules.adapt_keyname(user5.id)
       Basic.define_dfa!()
       Basic.build_dfa_instance(keyname1)
       Basic.build_dfa_instance(keyname2)
+      Basic.build_dfa_instance(keyname3)
+      Basic.build_dfa_instance(keyname4)
+      Basic.build_dfa_instance(keyname5)
 
       # NOTE: startまで
       assert Basic.state!(keyname1) == Basic.is_not_started()
@@ -27,6 +36,12 @@ defmodule Milk.Tournaments.Rules.BasicTest do
       assert Basic.state!(keyname1) == Basic.should_start_match()
       assert {:ok, _} = Basic.trigger!(keyname2, Basic.start_trigger())
       assert Basic.state!(keyname2) == Basic.should_start_match()
+      assert {:ok, _} = Basic.trigger!(keyname3, Basic.manager_trigger())
+      assert Basic.state!(keyname3) == Basic.is_manager()
+      assert {:ok, _} = Basic.trigger!(keyname4, Basic.member_trigger())
+      assert Basic.state!(keyname4) == Basic.is_member()
+      assert {:ok, _} = Basic.trigger!(keyname5, Basic.assistant_trigger())
+      assert Basic.state!(keyname5) == Basic.is_assistant()
 
       # NOTE: 対戦終了まで
       assert {:ok, _} = Basic.trigger!(keyname1, Basic.start_match_trigger())
