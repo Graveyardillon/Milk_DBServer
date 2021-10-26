@@ -480,7 +480,7 @@ defmodule Milk.Tournaments do
           master_id: attrs["master_id"],
           game_id: attrs["game_id"],
           thumbnail_path: thumbnail_path,
-          platform_id: attrs["platform_id"]
+          platform_id: attrs["platform"]
         },
         attrs
       )
