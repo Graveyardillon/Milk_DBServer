@@ -992,13 +992,16 @@ defmodule Milk.Tournaments do
 
   @spec get_entrant_by_user_id_and_tournament_id(integer(), integer()) :: Entrant.t() | nil
   defp get_entrant_by_user_id_and_tournament_id(user_id, tournament_id) do
-    Repo.one(from e in Entrant, where: ^tournament_id == e.tournament_id and ^user_id == e.user_id)
+    Entrant
+    |> where([e], e.tournament_id == ^tournament_id)
+    |> where([e], e.user_id == ^user_id)
+    |> Repo.one()
   end
 
   @doc """
   Creates an entrant.
   """
-  @spec create_entrant(map()) :: {:ok, Entrant.t()} | {:error, Ecto.Changeset.t() | nil}
+  @spec create_entrant(map()) :: {:ok, Entrant.t()} | {:error, Ecto.Changeset.t() | String.t() | nil}
   def create_entrant(attrs) do
     with {:ok, nil} <- validate_user_id(attrs),
          {:ok, attrs} <- validate_tournament_id(attrs),
@@ -1085,6 +1088,7 @@ defmodule Milk.Tournaments do
     end
   end
 
+  @spec join_chat_topics_on_create_entrant(Entrant.t()) :: {:ok, nil}
   defp join_chat_topics_on_create_entrant(%Entrant{user_id: user_id, tournament_id: tournament_id}) do
     tournament_id
     |> Chat.get_chat_rooms_by_tournament_id()
@@ -1385,32 +1389,28 @@ defmodule Milk.Tournaments do
 
   defp get_opponent_if_started(nil, _), do: {:error, "tournament is nil"}
 
-  defp get_opponent_if_started(tournament, user_id) do
-    if tournament.is_started do
-      match_list = Progress.get_match_list(tournament.id)
-
-      if tournament.is_team do
-        team = __MODULE__.get_team_by_tournament_id_and_user_id(tournament.id, user_id)
-
-        if !is_nil(team) do
-          match_list
-          |> __MODULE__.find_match(team.id)
-          |> get_opponent_team(team.id)
-        else
-          {:error, "team is nil"}
-        end
-      else
-        match_list
-        |> __MODULE__.find_match(user_id)
-        |> get_opponent_user(user_id)
-      end
-    else
-      {:error, "tournament is not started"}
-    end
+  defp get_opponent_if_started(%Tournament{is_started: false}, _), do: {:error, "tournament is not started"}
+  defp get_opponent_if_started(%Tournament{is_team: true, id: id}, user_id) do
+    id
+    |> __MODULE__.get_team_by_tournament_id_and_user_id(user_id)
+    |> get_opponent_team_if_started()
+  end
+  defp get_opponent_if_started(%Tournament{id: id}, user_id) do
+    id
+    |> Progress.get_match_list()
+    |> __MODULE__.find_match(user_id)
+    |> get_opponent_user(user_id)
   end
 
-  @spec get_opponent_user([any()], integer()) ::
-          {:ok, User.t()} | {:wait, nil} | {:error, String.t()}
+  defp get_opponent_team_if_started(nil), do: {:error, "team is nil"}
+  defp get_opponent_team_if_started(%Team{id: id, tournament_id: tournament_id}) do
+    tournament_id
+    |> Progress.get_match_list()
+    |> __MODULE__.find_match(id)
+    |> get_opponent_team(id)
+  end
+
+  @spec get_opponent_user([any()], integer()) :: {:ok, User.t()} | {:wait, nil} | {:error, String.t()}
   defp get_opponent_user(match, user_id) do
     if Enum.member?(match, user_id) and length(match) == 2 do
       match
@@ -1429,8 +1429,7 @@ defmodule Milk.Tournaments do
 
   defp do_get_opponent_user(_), do: {:wait, nil}
 
-  @spec get_opponent_team([any()], integer()) ::
-          {:ok, Team.t()} | {:wait, nil} | {:error, String.t()}
+  @spec get_opponent_team([any()], integer()) :: {:ok, Team.t()} | {:wait, nil} | {:error, String.t()}
   defp get_opponent_team(match, team_id) do
     if Enum.member?(match, team_id) and length(match) == 2 do
       match

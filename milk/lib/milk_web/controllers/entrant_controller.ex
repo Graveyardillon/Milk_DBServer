@@ -25,8 +25,8 @@ defmodule MilkWeb.EntrantController do
         action_history(entrant)
         render(conn, "show.json", entrant: entrant)
 
-      # {:error, error} ->
-      #   render(conn, "error.json", error: error)
+      {:error, error} ->
+        render(conn, "error.json", error: error)
     end
   end
 
