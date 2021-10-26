@@ -488,15 +488,9 @@ defmodule Milk.Tournaments do
     # TODO: 省略記法を試してみたい
     Multi.new()
     |> Multi.insert(:tournament, tournament_schema)
-    |> Multi.insert(:group_topic, fn %{tournament: tournament} ->
-      create_topic(tournament, "Group", 0)
-    end)
-    |> Multi.insert(:notification_topic, fn %{tournament: tournament} ->
-      create_topic(tournament, "Notification", 1, 1)
-    end)
-    |> Multi.insert(:q_and_a_topic, fn %{tournament: tournament} ->
-      create_topic(tournament, "Q&A", 2)
-    end)
+    |> Multi.insert(:group_topic, &create_topic(&1.tournament, "Group", 0))
+    |> Multi.insert(:notification_topic, &create_topic(&1.tournament, "Notification", 1, 1))
+    |> Multi.insert(:q_and_a_topic, &create_topic(&1.tournament, "Q&A", 2))
     |> Repo.transaction()
     |> case do
       {:ok, result} -> {:ok, result.tournament}
