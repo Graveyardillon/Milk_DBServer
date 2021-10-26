@@ -998,7 +998,7 @@ defmodule Milk.Tournaments do
   @doc """
   Creates an entrant.
   """
-  @spec create_entrant(map()) :: {:ok, Entrant.t()} | {:error, Ecto.Changeset.t() | nil} | {:multierror, any()}
+  @spec create_entrant(map()) :: {:ok, Entrant.t()} | {:error, Ecto.Changeset.t() | nil}
   def create_entrant(attrs) do
     with {:ok, nil} <- validate_user_id(attrs),
          {:ok, attrs} <- validate_tournament_id(attrs),
@@ -1044,6 +1044,7 @@ defmodule Milk.Tournaments do
   defp validate_not_team_tournament(%{"tournament" => %Tournament{is_team: true}}), do: {:error, "requires team"}
   defp validate_not_team_tournament(_), do: {:ok, nil}
 
+  @spec validate_not_participated_yet(map()) :: {:ok, nil} | {:error, String.t()}
   defp validate_not_participated_yet(%{"tournament_id" => tournament_id, "user_id" => user_id}) do
     Entrant
     |> where([e], e.tournament_id == ^tournament_id)
@@ -1056,9 +1057,11 @@ defmodule Milk.Tournaments do
     end
   end
 
+  @spec validate_tournament_size(map()) :: {:ok, nil} | {:error, String.t()}
   defp validate_tournament_size(%{"tournament" => %Tournament{capacity: capacity, count: count}}) when capacity > count, do: {:ok, nil}
   defp validate_tournament_size(_), do: {:error, "capacity over"}
 
+  @spec do_create_entrant(map()) :: {:ok, Entrant.t()} | {:error, String.t()}
   defp do_create_entrant(%{"user_id" => user_id, "tournament_id" => tournament_id, "tournament" => tournament} = attrs) do
     user_id = Tools.to_integer_as_needed(user_id)
     tournament_id = Tools.to_integer_as_needed(tournament_id)
@@ -1095,36 +1098,6 @@ defmodule Milk.Tournaments do
     {:ok, nil}
   end
 
-  @doc """
-  Creates a entrant.
-
-  ## Examples
-
-      iex> create_entrant(%{field: value})
-      {:ok, %Entrant{}}
-
-      iex> create_entrant(%{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
-  TODO: パイプラインのつなぎかたを変えるので、今はdefp関数にspecをつけていない
-  """
-  # @spec create_entrant(map()) :: {:ok, Entrant.t()} | {:error, Ecto.Changeset.t() | nil} | {:multierror, any()}
-  # def create_entrant(attrs \\ %{}) do
-  #   attrs
-  #   |> user_exists?()
-  #   |> tournament_exists?()
-  #   |> is_not_team?()
-  #   |> already_participant?()
-  #   |> insert()
-  #   |> case do
-  #     {:ok, entrant} -> join_tournament_chat_room_as_needed(entrant, attrs)
-  #     {:error, _, error, _data} when is_bitstring(error) -> {:error, error}
-  #     {:error, _, error, _data} -> {:multierror, error.errors}
-  #     {:error, error} -> {:error, error}
-  #     _ -> {:error, nil}
-  #   end
-  # end
-
   defp user_exists?(%{"user_id" => user_id} = attrs) when not is_nil(user_id) do
     User
     |> where([u], u.id == ^attrs["user_id"])
@@ -1153,111 +1126,6 @@ defmodule Milk.Tournaments do
     {:error, error}
   end
 
-  # defp is_not_team?({:ok, attrs}) do
-  #   if attrs["tournament"].is_team do
-  #     {:error, "requires team"}
-  #   else
-  #     {:ok, attrs}
-  #   end
-  # end
-
-  # defp is_not_team?({:error, error}), do: {:error, error}
-
-  # defp already_participant?({:ok, attrs}) do
-  #   Entrant
-  #   |> where([e], e.tournament_id == ^attrs["tournament_id"])
-  #   |> where([e], e.user_id == ^attrs["user_id"])
-  #   |> Repo.exists?()
-  #   |> if do
-  #     {:error, "already joined"}
-  #   else
-  #     {:ok, attrs}
-  #   end
-  # end
-
-  # defp already_participant?({:error, error}) do
-  #   {:error, error}
-  # end
-
-  # defp insert({:ok, attrs}) do
-  #   user_id =
-  #     if is_binary(attrs["user_id"]) do
-  #       String.to_integer(attrs["user_id"])
-  #     else
-  #       attrs["user_id"]
-  #     end
-
-  #   tournament_id =
-  #     if is_binary(attrs["tournament_id"]) do
-  #       String.to_integer(attrs["tournament_id"])
-  #     else
-  #       attrs["tournament_id"]
-  #     end
-
-  #   Multi.new()
-  #   |> Multi.run(:tournament, fn repo, _ ->
-  #     case repo.one(from t in Tournament, where: t.id == ^tournament_id and t.capacity > t.count) do
-  #       %Tournament{} = t -> {:ok, t}
-  #       nil -> {:error, "capacity over"}
-  #       _ -> {:error, ""}
-  #     end
-  #   end)
-  #   |> Multi.insert(:entrant, fn _ ->
-  #     %Entrant{user_id: user_id, tournament_id: tournament_id}
-  #     |> Entrant.changeset(attrs)
-  #   end)
-  #   |> Multi.update(:update, fn %{tournament: tournament} ->
-  #     Tournament.changeset(tournament, %{count: tournament.count + 1})
-  #   end)
-  #   |> Repo.transaction()
-  # end
-
-  # defp insert({:error, error}) do
-  #   {:error, error}
-  # end
-
-  # defp join_tournament_chat_room_as_needed(entrant, attrs) do
-  #   tournament = get_tournament(attrs["tournament_id"])
-
-  #   if tournament.master_id == entrant.entrant.user_id do
-  #     {:ok, entrant.entrant}
-  #   else
-  #     join_tournament_chat_room(entrant, attrs)
-  #   end
-  # end
-
-  # # HACK: リファクタリングできそう
-  # defp join_tournament_chat_room(entrant, attrs) do
-  #   user_id = Tools.to_integer_as_needed(attrs["user_id"])
-
-  #   result =
-  #     Chat.get_chat_rooms_by_tournament_id(entrant.tournament.id)
-  #     |> Enum.reduce({:ok, nil}, fn chat_room, _acc ->
-  #       join_params = %{
-  #         "user_id" => user_id,
-  #         "chat_room_id" => chat_room.id,
-  #         "authority" => 0
-  #       }
-
-  #       with {:ok, chat_member} <- Chat.create_chat_member(join_params) do
-  #         {:ok, chat_member}
-  #       else
-  #         {:error, reason} ->
-  #           {:error, reason}
-
-  #         _ ->
-  #           {:error, nil}
-  #       end
-  #     end)
-
-  #   with {:ok, _chat_member} <- result do
-  #     {:ok, entrant.entrant}
-  #   else
-  #     {:error, reason} -> {:error, reason}
-  #     _ -> {:error, nil}
-  #   end
-  # end
-
   @doc """
   Updates a entrant.
 
@@ -1270,22 +1138,11 @@ defmodule Milk.Tournaments do
       {:error, %Ecto.Changeset{}}
 
   """
-  @spec update_entrant(Entrant.t(), map()) ::
-          {:ok, Entrant.t()} | {:error, Ecto.Changeset.t() | nil}
+  @spec update_entrant(Entrant.t(), map()) :: {:ok, Entrant.t()} | {:error, Ecto.Changeset.t() | nil}
   def update_entrant(%Entrant{} = entrant, attrs) do
     entrant
     |> Entrant.changeset(attrs)
     |> Repo.update()
-    |> case do
-      {:ok, entrant} ->
-        {:ok, entrant}
-
-      {:error, error} ->
-        {:error, error.errors}
-
-      _ ->
-        {:error, nil}
-    end
   end
 
   @doc """
@@ -1299,8 +1156,7 @@ defmodule Milk.Tournaments do
       iex> delete_entrant(entrant)
       {:error, %Ecto.Changeset{}}
   """
-  @spec delete_entrant(integer(), integer()) ::
-          {:ok, Entrant.t()} | {:error, String.t() | Ecto.Changeset.t() | nil}
+  @spec delete_entrant(integer(), integer()) :: {:ok, Entrant.t()} | {:error, String.t() | Ecto.Changeset.t() | nil}
   def delete_entrant(tournament_id, user_id) do
     tournament_id = Tools.to_integer_as_needed(tournament_id)
     user_id = Tools.to_integer_as_needed(user_id)
@@ -1418,8 +1274,7 @@ defmodule Milk.Tournaments do
   @doc """
   Promote winners
   """
-  @spec promote_winners_by_loser!(integer(), match_list(), [integer()] | integer()) ::
-          {:ok, [any()]} | {:error, String.t() | nil}
+  @spec promote_winners_by_loser!(integer(), match_list(), [integer()] | integer()) :: {:ok, [any()]} | {:error, String.t() | nil}
   def promote_winners_by_loser!(tournament_id, match_list, losers) when is_list(losers) do
     Enum.map(losers, fn loser ->
       match_list

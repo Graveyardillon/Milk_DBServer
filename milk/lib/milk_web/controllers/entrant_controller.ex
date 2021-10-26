@@ -23,14 +23,10 @@ defmodule MilkWeb.EntrantController do
     |> case do
       {:ok, %Entrant{} = entrant} ->
         action_history(entrant)
+        render(conn, "show.json", entrant: entrant)
 
-        conn
-        # |> put_status(:created)
-        # |> put_resp_header("location", Routes.entrant_path(conn, :show, entrant))
-        |> render("show.json", entrant: entrant)
-
-      {:error, error} ->
-        render(conn, "error.json", error: error)
+      # {:error, error} ->
+      #   render(conn, "error.json", error: error)
     end
   end
 
