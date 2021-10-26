@@ -703,7 +703,7 @@ defmodule Milk.Tournaments do
       }
       |> Chat.create_chat_room()
 
-    # メンバー追加
+    # NOTE: メンバー追加
     tournament.id
     |> Chat.get_uniq_chat_members_by_tournament_id()
     |> Enum.each(fn member ->
