@@ -44,6 +44,16 @@ defmodule Common.Tools do
   end
 
   @doc """
+  Turn into tuple {:ok, data}
+  """
+  def into_ok_tuple(data), do: {:ok, data}
+
+  @doc """
+  Turn into tuple {:error, data}
+  """
+  def into_error_tuple(data), do: {:error, data}
+
+  @doc """
   Create error message
   """
   def create_error_message(error) when is_binary(error), do: error

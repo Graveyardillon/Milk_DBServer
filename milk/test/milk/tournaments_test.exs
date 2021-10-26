@@ -872,7 +872,7 @@ defmodule Milk.TournamentsTest do
       # tournament_idのみ書き換えたパラメータ
       assert {:ok, _} = Task.await(create_entrant_task1)
       # どちらも書き換えていないパラメータ
-      assert {:multierror, _} = Task.await(create_entrant_task2)
+      assert {:error, _} = Task.await(create_entrant_task2)
     end
   end
 

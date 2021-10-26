@@ -474,16 +474,14 @@ defmodule Milk.Tournaments do
     {:ok, attrs}
   end
 
-  defp do_create_tournament(attrs, thumbnail_path) do
-    tournament_schema = Tournament.create_changeset(
-        %Tournament{
-          master_id: attrs["master_id"],
-          game_id: attrs["game_id"],
-          thumbnail_path: thumbnail_path,
-          platform_id: attrs["platform"]
-        },
-        attrs
-      )
+  defp do_create_tournament(%{"master_id" => master_id, "platform" => platform, "game_id" => game_id} = attrs, thumbnail_path) do
+    tournament = %Tournament{
+      master_id: master_id,
+      game_id: game_id,
+      thumbnail_path: thumbnail_path,
+      platform_id: platform
+    }
+    tournament_schema = Tournament.create_changeset(tournament, attrs)
 
     Multi.new()
     |> Multi.insert(:tournament, tournament_schema)
@@ -998,6 +996,106 @@ defmodule Milk.Tournaments do
   end
 
   @doc """
+  Creates an entrant.
+  """
+  @spec create_entrant(map()) :: {:ok, Entrant.t()} | {:error, Ecto.Changeset.t() | nil} | {:multierror, any()}
+  def create_entrant(attrs) do
+    with {:ok, nil} <- validate_user_id(attrs),
+         {:ok, attrs} <- validate_tournament_id(attrs),
+         {:ok, nil} <- validate_not_team_tournament(attrs),
+         {:ok, nil} <- validate_not_participated_yet(attrs),
+         {:ok, nil} <- validate_tournament_size(attrs),
+         {:ok, entrant} <- do_create_entrant(attrs),
+         {:ok, nil} <- join_chat_topics_on_create_entrant(entrant) do
+      {:ok, entrant}
+    else
+      error -> error
+    end
+  end
+
+  @spec validate_user_id(map()) :: {:ok, nil} | {:error, String.t()}
+  defp validate_user_id(%{"user_id" => nil}), do: {:error, "user id is nil"}
+  defp validate_user_id(%{"user_id" => user_id}) do
+    User
+    |> where([u], u.id == ^user_id)
+    |> Repo.exists?()
+    |> if do
+      {:ok, nil}
+    else
+      {:error, "undefined user"}
+    end
+  end
+  defp validate_user_id(_), do: {:error, "invalid attrs"}
+
+  @spec validate_tournament_id(map()) :: {:ok, map()} | {:error, String.t()}
+  defp validate_tournament_id(%{"tournament_id" => nil}), do: {:error, "tournament id is nil"}
+  defp validate_tournament_id(%{"tournament_id" => tournament_id} = attrs) do
+    tournament_id
+    |> __MODULE__.get_tournament()
+    |> put_tournament_into_attrs(attrs)
+  end
+  defp validate_tournament_id(_), do: {:error, "invalid attrs"}
+
+  @spec put_tournament_into_attrs(Tournament.t() | nil, map()) :: {:ok, map()} | {:error, String.t()}
+  defp put_tournament_into_attrs(nil, _), do: {:error, "undefined tournament"}
+  defp put_tournament_into_attrs(tournament, attrs), do: {:ok, Map.put(attrs, "tournament", tournament)}
+
+  @spec validate_not_team_tournament(map()) :: {:ok, nil} | {:error, String.t()}
+  defp validate_not_team_tournament(%{"tournament" => %Tournament{is_team: true}}), do: {:error, "requires team"}
+  defp validate_not_team_tournament(_), do: {:ok, nil}
+
+  defp validate_not_participated_yet(%{"tournament_id" => tournament_id, "user_id" => user_id}) do
+    Entrant
+    |> where([e], e.tournament_id == ^tournament_id)
+    |> where([e], e.user_id == ^user_id)
+    |> Repo.exists?()
+    |> if do
+      {:error, "already joined"}
+    else
+      {:ok, nil}
+    end
+  end
+
+  defp validate_tournament_size(%{"tournament" => %Tournament{capacity: capacity, count: count}}) when capacity > count, do: {:ok, nil}
+  defp validate_tournament_size(_), do: {:error, "capacity over"}
+
+  defp do_create_entrant(%{"user_id" => user_id, "tournament_id" => tournament_id, "tournament" => tournament} = attrs) do
+    user_id = Tools.to_integer_as_needed(user_id)
+    tournament_id = Tools.to_integer_as_needed(tournament_id)
+
+    entrant = %Entrant{
+      user_id: user_id,
+      tournament_id: tournament_id
+    }
+
+    Multi.new()
+    |> Multi.put(:attrs, attrs)
+    |> Multi.put(:tournament, tournament)
+    |> Multi.insert(:entrant, &Entrant.changeset(entrant, &1.attrs))
+    |> Multi.update(:update, &Tournament.changeset(&1.tournament, %{count: &1.tournament.count + 1}))
+    |> Repo.transaction()
+    |> case do
+      {:ok, result} -> {:ok, result.entrant}
+      {:error, :tournament, changeset, _} -> {:error, Tools.create_error_message(changeset.errors)}
+      {:error, changeset} -> {:error, changeset.errors}
+      _ -> {:error, nil}
+    end
+  end
+
+  defp join_chat_topics_on_create_entrant(%Entrant{user_id: user_id, tournament_id: tournament_id}) do
+    tournament_id
+    |> Chat.get_chat_rooms_by_tournament_id()
+    |> Enum.each(fn chat_room ->
+      Chat.create_chat_member(%{
+        "user_id" => user_id,
+        "chat_room_id" => chat_room.id,
+        "authority" => 0
+      })
+    end)
+    {:ok, nil}
+  end
+
+  @doc """
   Creates a entrant.
 
   ## Examples
@@ -1010,23 +1108,22 @@ defmodule Milk.Tournaments do
 
   TODO: パイプラインのつなぎかたを変えるので、今はdefp関数にspecをつけていない
   """
-  @spec create_entrant(map()) ::
-          {:ok, Entrant.t()} | {:error, Ecto.Changeset.t() | nil} | {:multierror, any()}
-  def create_entrant(attrs \\ %{}) do
-    attrs
-    |> user_exists?()
-    |> tournament_exists?()
-    |> is_not_team?()
-    |> already_participant?()
-    |> insert()
-    |> case do
-      {:ok, entrant} -> join_tournament_chat_room_as_needed(entrant, attrs)
-      {:error, _, error, _data} when is_bitstring(error) -> {:error, error}
-      {:error, _, error, _data} -> {:multierror, error.errors}
-      {:error, error} -> {:error, error}
-      _ -> {:error, nil}
-    end
-  end
+  # @spec create_entrant(map()) :: {:ok, Entrant.t()} | {:error, Ecto.Changeset.t() | nil} | {:multierror, any()}
+  # def create_entrant(attrs \\ %{}) do
+  #   attrs
+  #   |> user_exists?()
+  #   |> tournament_exists?()
+  #   |> is_not_team?()
+  #   |> already_participant?()
+  #   |> insert()
+  #   |> case do
+  #     {:ok, entrant} -> join_tournament_chat_room_as_needed(entrant, attrs)
+  #     {:error, _, error, _data} when is_bitstring(error) -> {:error, error}
+  #     {:error, _, error, _data} -> {:multierror, error.errors}
+  #     {:error, error} -> {:error, error}
+  #     _ -> {:error, nil}
+  #   end
+  # end
 
   defp user_exists?(%{"user_id" => user_id} = attrs) when not is_nil(user_id) do
     User
@@ -1056,110 +1153,110 @@ defmodule Milk.Tournaments do
     {:error, error}
   end
 
-  defp is_not_team?({:ok, attrs}) do
-    if attrs["tournament"].is_team do
-      {:error, "requires team"}
-    else
-      {:ok, attrs}
-    end
-  end
+  # defp is_not_team?({:ok, attrs}) do
+  #   if attrs["tournament"].is_team do
+  #     {:error, "requires team"}
+  #   else
+  #     {:ok, attrs}
+  #   end
+  # end
 
-  defp is_not_team?({:error, error}), do: {:error, error}
+  # defp is_not_team?({:error, error}), do: {:error, error}
 
-  defp already_participant?({:ok, attrs}) do
-    Entrant
-    |> where([e], e.tournament_id == ^attrs["tournament_id"])
-    |> where([e], e.user_id == ^attrs["user_id"])
-    |> Repo.exists?()
-    |> if do
-      {:error, "already joined"}
-    else
-      {:ok, attrs}
-    end
-  end
+  # defp already_participant?({:ok, attrs}) do
+  #   Entrant
+  #   |> where([e], e.tournament_id == ^attrs["tournament_id"])
+  #   |> where([e], e.user_id == ^attrs["user_id"])
+  #   |> Repo.exists?()
+  #   |> if do
+  #     {:error, "already joined"}
+  #   else
+  #     {:ok, attrs}
+  #   end
+  # end
 
-  defp already_participant?({:error, error}) do
-    {:error, error}
-  end
+  # defp already_participant?({:error, error}) do
+  #   {:error, error}
+  # end
 
-  defp insert({:ok, attrs}) do
-    user_id =
-      if is_binary(attrs["user_id"]) do
-        String.to_integer(attrs["user_id"])
-      else
-        attrs["user_id"]
-      end
+  # defp insert({:ok, attrs}) do
+  #   user_id =
+  #     if is_binary(attrs["user_id"]) do
+  #       String.to_integer(attrs["user_id"])
+  #     else
+  #       attrs["user_id"]
+  #     end
 
-    tournament_id =
-      if is_binary(attrs["tournament_id"]) do
-        String.to_integer(attrs["tournament_id"])
-      else
-        attrs["tournament_id"]
-      end
+  #   tournament_id =
+  #     if is_binary(attrs["tournament_id"]) do
+  #       String.to_integer(attrs["tournament_id"])
+  #     else
+  #       attrs["tournament_id"]
+  #     end
 
-    Multi.new()
-    |> Multi.run(:tournament, fn repo, _ ->
-      case repo.one(from t in Tournament, where: t.id == ^tournament_id and t.capacity > t.count) do
-        %Tournament{} = t -> {:ok, t}
-        nil -> {:error, "capacity over"}
-        _ -> {:error, ""}
-      end
-    end)
-    |> Multi.insert(:entrant, fn _ ->
-      %Entrant{user_id: user_id, tournament_id: tournament_id}
-      |> Entrant.changeset(attrs)
-    end)
-    |> Multi.update(:update, fn %{tournament: tournament} ->
-      Tournament.changeset(tournament, %{count: tournament.count + 1})
-    end)
-    |> Repo.transaction()
-  end
+  #   Multi.new()
+  #   |> Multi.run(:tournament, fn repo, _ ->
+  #     case repo.one(from t in Tournament, where: t.id == ^tournament_id and t.capacity > t.count) do
+  #       %Tournament{} = t -> {:ok, t}
+  #       nil -> {:error, "capacity over"}
+  #       _ -> {:error, ""}
+  #     end
+  #   end)
+  #   |> Multi.insert(:entrant, fn _ ->
+  #     %Entrant{user_id: user_id, tournament_id: tournament_id}
+  #     |> Entrant.changeset(attrs)
+  #   end)
+  #   |> Multi.update(:update, fn %{tournament: tournament} ->
+  #     Tournament.changeset(tournament, %{count: tournament.count + 1})
+  #   end)
+  #   |> Repo.transaction()
+  # end
 
-  defp insert({:error, error}) do
-    {:error, error}
-  end
+  # defp insert({:error, error}) do
+  #   {:error, error}
+  # end
 
-  defp join_tournament_chat_room_as_needed(entrant, attrs) do
-    tournament = get_tournament(attrs["tournament_id"])
+  # defp join_tournament_chat_room_as_needed(entrant, attrs) do
+  #   tournament = get_tournament(attrs["tournament_id"])
 
-    if tournament.master_id == entrant.entrant.user_id do
-      {:ok, entrant.entrant}
-    else
-      join_tournament_chat_room(entrant, attrs)
-    end
-  end
+  #   if tournament.master_id == entrant.entrant.user_id do
+  #     {:ok, entrant.entrant}
+  #   else
+  #     join_tournament_chat_room(entrant, attrs)
+  #   end
+  # end
 
-  # HACK: リファクタリングできそう
-  defp join_tournament_chat_room(entrant, attrs) do
-    user_id = Tools.to_integer_as_needed(attrs["user_id"])
+  # # HACK: リファクタリングできそう
+  # defp join_tournament_chat_room(entrant, attrs) do
+  #   user_id = Tools.to_integer_as_needed(attrs["user_id"])
 
-    result =
-      Chat.get_chat_rooms_by_tournament_id(entrant.tournament.id)
-      |> Enum.reduce({:ok, nil}, fn chat_room, _acc ->
-        join_params = %{
-          "user_id" => user_id,
-          "chat_room_id" => chat_room.id,
-          "authority" => 0
-        }
+  #   result =
+  #     Chat.get_chat_rooms_by_tournament_id(entrant.tournament.id)
+  #     |> Enum.reduce({:ok, nil}, fn chat_room, _acc ->
+  #       join_params = %{
+  #         "user_id" => user_id,
+  #         "chat_room_id" => chat_room.id,
+  #         "authority" => 0
+  #       }
 
-        with {:ok, chat_member} <- Chat.create_chat_member(join_params) do
-          {:ok, chat_member}
-        else
-          {:error, reason} ->
-            {:error, reason}
+  #       with {:ok, chat_member} <- Chat.create_chat_member(join_params) do
+  #         {:ok, chat_member}
+  #       else
+  #         {:error, reason} ->
+  #           {:error, reason}
 
-          _ ->
-            {:error, nil}
-        end
-      end)
+  #         _ ->
+  #           {:error, nil}
+  #       end
+  #     end)
 
-    with {:ok, _chat_member} <- result do
-      {:ok, entrant.entrant}
-    else
-      {:error, reason} -> {:error, reason}
-      _ -> {:error, nil}
-    end
-  end
+  #   with {:ok, _chat_member} <- result do
+  #     {:ok, entrant.entrant}
+  #   else
+  #     {:error, reason} -> {:error, reason}
+  #     _ -> {:error, nil}
+  #   end
+  # end
 
   @doc """
   Updates a entrant.

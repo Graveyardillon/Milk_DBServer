@@ -31,9 +31,6 @@ defmodule MilkWeb.EntrantController do
 
       {:error, error} ->
         render(conn, "error.json", error: error)
-
-      {:multierror, error} ->
-        render(conn, "multierror.json", error: error)
     end
   end
 
