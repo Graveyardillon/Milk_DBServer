@@ -485,7 +485,6 @@ defmodule Milk.Tournaments do
         attrs
       )
 
-    # TODO: 省略記法を試してみたい
     Multi.new()
     |> Multi.insert(:tournament, tournament_schema)
     |> Multi.insert(:group_topic, &create_topic(&1.tournament, "Group", 0))
@@ -580,98 +579,6 @@ defmodule Milk.Tournaments do
   end
   defp create_maps_on_create_tournament(_, _), do: {:error, "maps are nil"}
 
-  @doc """
-  Creates a tournament.
-
-  ## Examples
-
-      iex> create_tournament(%{field: value})
-      {:ok, %Tournament{}}
-
-      iex> create_tournament(%{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
-  """
-  # @spec create_tournament(map(), String.t() | nil) :: {:ok, Tournament.t()} | {:error, Ecto.Changeset.t()}
-  # def create_tournament(%{"master_id" => master_id} = params, thumbnail_path \\ "") do
-  #   master_id = Tools.to_integer_as_needed(master_id)
-
-  #   master_id
-  #   |> Accounts.get_user()
-  #   |> do_create_tournament(params, thumbnail_path)
-  #   |> case do
-  #     {:ok, tournament} ->
-  #       initialize_state_machine!(tournament)
-  #       set_details(tournament, params)
-  #       set_maps(tournament, params)
-  #       {:ok, tournament}
-
-  #     {:error, error} ->
-  #       {:error, error}
-  #   end
-  # end
-
-  # @spec do_create_tournament(User.t(), map(), String.t() | nil) ::
-  #         {:ok, Tournament.t()} | {:error, Ecto.Changeset.t() | String.t() | nil}
-  # defp do_create_tournament(nil, _, _), do: {:error, "Undefined User"}
-
-  # defp do_create_tournament(%User{}, params, thumbnail_path) do
-  #   if params["enabled_map"] && !params["enabled_coin_toss"] do
-  #     {:error, "Needs to enable coin toss"}
-  #   else
-  #     do_create_tournament(params, thumbnail_path)
-  #   end
-  # end
-
-  # @spec do_create_tournament(map(), String.t() | nil) ::
-  #         {:ok, Tournament.t()} | {:error, Ecto.Changeset.t() | nil}
-  # defp do_create_tournament(attrs, thumbnail_path) do
-  #   master_id = Tools.to_integer_as_needed(attrs["master_id"])
-  #   platform_id = Tools.to_integer_as_needed(attrs["platform"])
-
-  #   game_id = if attrs["game_id"] == "" || is_nil(attrs["game_id"]), do: nil, else: attrs["game_id"]
-
-  #   attrs = put_token(attrs)
-
-  #   Multi.new()
-  #   |> Multi.insert(
-  #     :tournament,
-  #     Tournament.create_changeset(
-  #       %Tournament{
-  #         master_id: master_id,
-  #         game_id: game_id,
-  #         thumbnail_path: thumbnail_path,
-  #         platform_id: platform_id
-  #       },
-  #       attrs
-  #     )
-  #   )
-  #   |> Multi.insert(:group_topic, fn %{tournament: tournament} ->
-  #     create_topic(tournament, "Group", 0)
-  #   end)
-  #   |> Multi.insert(:notification_topic, fn %{tournament: tournament} ->
-  #     create_topic(tournament, "Notification", 1, 1)
-  #   end)
-  #   |> Multi.insert(:q_and_a_topic, fn %{tournament: tournament} ->
-  #     create_topic(tournament, "Q&A", 2)
-  #   end)
-  #   |> Repo.transaction()
-  #   |> case do
-  #     {:ok, tournament} ->
-  #       join_topics(tournament.tournament.id, master_id)
-  #       {:ok, tournament.tournament}
-
-  #     {:error, :tournament, changeset, _} ->
-  #       {:error, Tools.create_error_message(changeset.errors)}
-
-  #     {:error, error} ->
-  #       {:error, error.errors}
-
-  #     _ ->
-  #       {:error, nil}
-  #   end
-  # end
-
   @spec put_token(map()) :: map()
   defp put_token(attrs) do
     if attrs["url"] != "" && !is_nil(attrs["url"]) do
@@ -706,19 +613,6 @@ defmodule Milk.Tournaments do
 
     %TournamentChatTopic{tournament_id: tournament.id, chat_room_id: chat_room.id}
     |> TournamentChatTopic.changeset(%{"topic_name" => topic, "tab_index" => tab_index})
-  end
-
-  @spec join_topics(integer(), integer()) :: :ok
-  defp join_topics(tournament_id, master_id) do
-    tournament_id
-    |> Chat.get_chat_rooms_by_tournament_id()
-    |> Enum.each(fn chat_room ->
-      Chat.create_chat_member(%{
-        "user_id" => master_id,
-        "authority" => 1,
-        "chat_room_id" => chat_room.id
-      })
-    end)
   end
 
   @doc """
@@ -770,46 +664,6 @@ defmodule Milk.Tournaments do
       "basic" -> Basic.define_dfa!(is_team: is_team)
       "flipban" -> FlipBan.define_dfa(is_team: is_team)
       _ -> :error
-    end
-  end
-
-  @spec set_details(Tournament.t(), map()) :: {:ok, TournamentCustomDetail.t()} | {:error, Ecto.Changeset.t()}
-  defp set_details(tournament, params) do
-    params
-    |> Map.put("tournament_id", tournament.id)
-    |> __MODULE__.create_custom_detail()
-  end
-
-  @spec set_maps(Tournament.t(), map()) :: [{:ok, Milk.Tournaments.Map.t()} | {:error, Ecto.Changeset.t()}] | nil
-  defp set_maps(tournament, params) do
-    params
-    |> Map.has_key?("maps")
-    |> if do
-      params
-      |> Map.get("maps")
-      ~> selections
-
-      selections
-      |> is_binary()
-      |> if do
-        selections
-        |> Poison.decode()
-        |> elem(1)
-      else
-        selections
-      end
-      ~> selections
-
-      selections
-      |> is_list()
-      |> if do
-        selections
-        |> Enum.map(fn selection ->
-          selection
-          |> Map.put("tournament_id", tournament.id)
-          |> __MODULE__.create_map()
-        end)
-      end
     end
   end
 
@@ -950,7 +804,6 @@ defmodule Milk.Tournaments do
   """
   @spec choose_maps(integer(), integer(), [integer()]) :: {:ok, nil} | {:error, String.t()}
   def choose_maps(user_id, tournament_id, map_id_list) when is_list(map_id_list) do
-    # small_idとlarge_idを取得
     my_id = Progress.get_necessary_id(tournament_id, user_id)
 
     tournament_id
@@ -959,6 +812,7 @@ defmodule Milk.Tournaments do
     |> Map.get(:id)
     ~> opponent_id
 
+    # NOTE: small_idとlarge_idを取得
     if my_id > opponent_id do
       {my_id, opponent_id}
     else
