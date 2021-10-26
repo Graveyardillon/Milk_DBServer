@@ -11,19 +11,19 @@ defmodule Milk.Tournaments.Rules.Basic do
   def machine_name(true), do: "basic_team"
   def machine_name(false), do: "basic"
 
-  @spec define_dfa!(Rules.opts()) :: :ok | nil
+  @spec define_dfa!(Rules.opts()) :: :ok
   def define_dfa!(opts \\ []) do
     is_team = Keyword.get(opts, :is_team, true)
     machine_name = Keyword.get(opts, :machine_name, machine_name(is_team))
 
     machine_name
-    |> Predefined.exists?(@db_index, opts)
-    |> do_define_dfa(opts)
+    |> Predefined.exists?(@db_index)
+    |> do_define_dfa!(opts)
   end
 
-  @spec do_define_dfa(boolean(), Rules.opts()) :: :ok | nil
-  defp do_define_dfa(true, _), do: nil
-  defp do_define_dfa(false, opts) do
+  @spec do_define_dfa!(boolean(), Rules.opts()) :: :ok
+  defp do_define_dfa!(true, _), do: :ok
+  defp do_define_dfa!(false, opts) do
     is_team = Keyword.get(opts, :is_team, true)
     machine_name = Keyword.get(opts, :machine_name, machine_name(is_team))
 
@@ -65,7 +65,7 @@ defmodule Milk.Tournaments.Rules.Basic do
     Enum.reject(unfiltered_list_states(opts), &is_nil(&1))
   end
 
-  @spec unfiltered_list_states(Rules.opts()) :: [String.t()]
+  @spec unfiltered_list_states(Rules.list_state_opts()) :: [String.t()]
   defp unfiltered_list_states(opts) do
     [
       is_not_started(),

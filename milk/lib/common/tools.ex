@@ -4,16 +4,18 @@ defmodule Common.Tools do
   """
 
   @doc """
-  string to integer if possible.
+  String to integer if possible.
   """
   @spec to_integer_as_needed(String.t() | integer()) :: integer()
-  def to_integer_as_needed(data) do
-    if is_binary(data) do
-      String.to_integer(data)
-    else
-      data
-    end
-  end
+  def to_integer_as_needed(data) when is_binary(data), do: String.to_integer(data)
+  def to_integer_as_needed(data), do: data
+
+  @doc """
+  String to json map if possible.
+  """
+  @spec parse_json_string_as_needed!(any()) :: any()
+  def parse_json_string_as_needed!(data) when is_binary(data), do: Poison.decode!(data)
+  def parse_json_string_as_needed!(data), do: data
 
   @doc """
   Atom map to String map
@@ -38,19 +40,15 @@ defmodule Common.Tools do
 
     map
     |> Enum.filter(fn {_k, v} -> !is_nil(v) end)
-    |> (fn x -> length(x) == 0 end).()
+    |> (fn x -> x == [] end).()
   end
 
   @doc """
   Create error message
   """
-  def create_error_message(error) when is_binary(error) do
-    error
-  end
-
+  def create_error_message(error) when is_binary(error), do: error
   def create_error_message(error) do
-    error
-    |> Enum.reduce("", fn {key, value}, acc ->
+    Enum.reduce(error, "", fn {key, value}, acc ->
       to_string(key) <> " " <> elem(value, 0) <> ", " <> acc
     end)
   end

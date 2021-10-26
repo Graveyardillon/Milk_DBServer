@@ -108,20 +108,11 @@ defmodule Milk.Tournaments.Tournament do
       :url_token
     ])
     |> validate_required([:name, :capacity, :type])
+    |> generate_rule_if_empty()
     |> foreign_key_constraint(:platform_id)
     |> foreign_key_constraint(:game_id)
     |> foreign_key_constraint(:master_id)
     |> put_password_hash()
-  end
-
-  defp put_password_hash(%Ecto.Changeset{valid?: true, changes: %{password: password}} = changeset) do
-    change(changeset, password: create_pass(password))
-  end
-
-  defp put_password_hash(changeset), do: changeset
-
-  defp create_pass(password) do
-    Argon2.hash_pwd_salt(password)
   end
 
   @doc false
@@ -150,10 +141,26 @@ defmodule Milk.Tournaments.Tournament do
       :is_team,
       :start_recruiting
     ])
-    |> validate_required([:name, :capacity, :rule])
+    |> validate_required([:name, :capacity])
     |> foreign_key_constraint(:platform_id)
     |> foreign_key_constraint(:game_id)
     |> foreign_key_constraint(:master_id)
     |> put_password_hash()
   end
+
+  defp generate_rule_if_empty(changeset) do
+    case get_change(changeset, :rule) do
+      nil -> put_change(changeset, :rule, "basic")
+      "" -> put_change(changeset, :rule, "basic")
+      _ -> changeset
+    end
+  end
+
+  defp put_password_hash(%Ecto.Changeset{valid?: true, changes: %{password: password}} = changeset) do
+    change(changeset, password: create_pass(password))
+  end
+
+  defp put_password_hash(changeset), do: changeset
+
+  defp create_pass(password), do: Argon2.hash_pwd_salt(password)
 end

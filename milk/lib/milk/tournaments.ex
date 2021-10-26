@@ -432,6 +432,160 @@ defmodule Milk.Tournaments do
     |> Repo.preload(:custom_detail)
   end
 
+  @spec create_tournament(map(), String.t() | nil) :: {:ok, Tournament.t()} | {:error, Ecto.Changeset.t()}
+  def create_tournament(attrs, thumbnail_path \\ "") do
+    attrs = modify_necessary_fields(attrs)
+
+    with {:ok, _} <- validate_fields(attrs),
+         {:ok, tournament} <- do_create_tournament(attrs, thumbnail_path),
+         {:ok, nil} <- join_chat_topics_on_create_tournament(tournament),
+         {:ok, _} <- add_necessary_fields(tournament, attrs) do
+      {:ok, tournament}
+    else
+      error -> error
+    end
+  end
+
+  @spec modify_necessary_fields(map()) :: map()
+  defp modify_necessary_fields(attrs) do
+    master_id = Tools.to_integer_as_needed(attrs["master_id"])
+    platform_id = Tools.to_integer_as_needed(attrs["platform"])
+    game_id = if attrs["game_id"] != "" && !is_nil(attrs["game_id"]), do: attrs["game_id"]
+
+    attrs
+    |> Map.put("master_id", master_id)
+    |> Map.put("platform", platform_id)
+    |> Map.put("game_id", game_id)
+    |> put_token()
+  end
+
+  defp validate_fields(attrs) do
+    case attrs["rule"] do
+      "flipban" -> validate_flipban_fields(attrs)
+      _ -> validate_basic_fields(attrs)
+    end
+  end
+
+  defp validate_basic_fields(attrs) do
+    {:ok, attrs}
+  end
+
+  defp validate_flipban_fields(attrs) do
+    {:ok, attrs}
+  end
+
+  defp do_create_tournament(attrs, thumbnail_path) do
+    tournament_schema = Tournament.create_changeset(
+        %Tournament{
+          master_id: attrs["master_id"],
+          game_id: attrs["game_id"],
+          thumbnail_path: thumbnail_path,
+          platform_id: attrs["platform_id"]
+        },
+        attrs
+      )
+
+    # TODO: 省略記法を試してみたい
+    Multi.new()
+    |> Multi.insert(:tournament, tournament_schema)
+    |> Multi.insert(:group_topic, fn %{tournament: tournament} ->
+      create_topic(tournament, "Group", 0)
+    end)
+    |> Multi.insert(:notification_topic, fn %{tournament: tournament} ->
+      create_topic(tournament, "Notification", 1, 1)
+    end)
+    |> Multi.insert(:q_and_a_topic, fn %{tournament: tournament} ->
+      create_topic(tournament, "Q&A", 2)
+    end)
+    |> Repo.transaction()
+    |> case do
+      {:ok, result} -> {:ok, result.tournament}
+      {:error, :tournament, changeset, _} -> {:error, Tools.create_error_message(changeset.errors)}
+      {:error, changeset} -> {:error, changeset.errors}
+      _ -> {:error, nil}
+    end
+  end
+
+  @spec join_chat_topics_on_create_tournament(Tournament.t()) :: {:ok, nil} | {:error, String.t()}
+  defp join_chat_topics_on_create_tournament(tournament) do
+    tournament.id
+    |> Chat.get_chat_rooms_by_tournament_id()
+    |> Enum.all?(fn chat_room ->
+      %{
+        "user_id" => tournament.master_id,
+        "authority" => 1,
+        "chat_room_id" => chat_room.id
+      }
+      |> Chat.create_chat_member()
+      |> elem(0)
+      |> Kernel.==(:ok)
+    end)
+    |> if do
+      {:ok, nil}
+    else
+      {:error, "failed to join chat topics"}
+    end
+  end
+
+  @spec add_necessary_fields(Tournament.t(), map()) :: {:ok, nil} | {:error, String.t()}
+  defp add_necessary_fields(%Tournament{rule: rule} = tournament, attrs) do
+    case rule do
+      "flipban" -> add_flipban_fields(tournament, attrs)
+      "basic" -> add_basic_fields(tournament, attrs)
+      _ -> {:error, "invalid tournament rule"}
+    end
+  end
+
+  @spec add_basic_fields(Tournament.t(), any()) :: {:ok, nil} | {:error, String.t()}
+  defp add_basic_fields(tournament, _attrs) do
+    tournament
+    |> initialize_state_machine()
+    |> case do
+      :ok -> {:ok, nil}
+      :error -> {:error, "failed to initialize state machine"}
+    end
+  end
+
+  @spec add_flipban_fields(Tournament.t(), map()) :: {:ok, nil} | {:error, String.t()}
+  defp add_flipban_fields(tournament, attrs) do
+    with :ok <- initialize_state_machine(tournament),
+         {:ok, _}  <- create_tournament_custom_detail_on_create_tournament(tournament, attrs) do
+      create_maps_on_create_tournament(tournament, attrs)
+    else
+      :error -> {:error, "failed to initialize state machine"}
+      errors -> errors
+    end
+  end
+
+  @spec create_tournament_custom_detail_on_create_tournament(Tournament.t(), map()) :: {:ok, TournamentCustomDetail.t()} | {:error, Ecto.Changeset.t()}
+  defp create_tournament_custom_detail_on_create_tournament(tournament, attrs) do
+    attrs
+    |> Map.put("tournament_id", tournament.id)
+    |> __MODULE__.create_custom_detail()
+  end
+
+  @spec create_maps_on_create_tournament(Tournament.t(), [any()] | map() | nil) :: {:ok, nil} | {:error, String.t()}
+  defp create_maps_on_create_tournament(tournament, maps) when is_list(maps) do
+    maps
+    |> Enum.all?(fn map ->
+      map
+      |> Map.put("tournament_id", tournament.id)
+      |> __MODULE__.create_map()
+      |> elem(0)
+      |> Kernel.==(:ok)
+    end)
+    |> if do
+      {:ok, nil}
+    else
+      {:error, "error on creating maps"}
+    end
+  end
+  defp create_maps_on_create_tournament(tournament, %{"maps" => maps}) when not is_nil(maps) do
+    maps = Tools.parse_json_string_as_needed!(maps)
+    create_maps_on_create_tournament(tournament, maps)
+  end
+  defp create_maps_on_create_tournament(_, _), do: {:error, "maps are nil"}
+
   @doc """
   Creates a tournament.
 
@@ -444,90 +598,89 @@ defmodule Milk.Tournaments do
       {:error, %Ecto.Changeset{}}
 
   """
-  @spec create_tournament(map(), String.t() | nil) ::
-          {:ok, Tournament.t()} | {:error, Ecto.Changeset.t()}
-  def create_tournament(%{"master_id" => master_id} = params, thumbnail_path \\ "") do
-    master_id = Tools.to_integer_as_needed(master_id)
+  # @spec create_tournament(map(), String.t() | nil) :: {:ok, Tournament.t()} | {:error, Ecto.Changeset.t()}
+  # def create_tournament(%{"master_id" => master_id} = params, thumbnail_path \\ "") do
+  #   master_id = Tools.to_integer_as_needed(master_id)
 
-    master_id
-    |> Accounts.get_user()
-    |> do_create_tournament(params, thumbnail_path)
-    |> case do
-      {:ok, tournament} ->
-        initialize_state_machine!(tournament)
-        set_details(tournament, params)
-        set_maps(tournament, params)
-        {:ok, tournament}
+  #   master_id
+  #   |> Accounts.get_user()
+  #   |> do_create_tournament(params, thumbnail_path)
+  #   |> case do
+  #     {:ok, tournament} ->
+  #       initialize_state_machine!(tournament)
+  #       set_details(tournament, params)
+  #       set_maps(tournament, params)
+  #       {:ok, tournament}
 
-      {:error, error} ->
-        {:error, error}
-    end
-  end
+  #     {:error, error} ->
+  #       {:error, error}
+  #   end
+  # end
 
-  @spec do_create_tournament(User.t(), map(), String.t() | nil) ::
-          {:ok, Tournament.t()} | {:error, Ecto.Changeset.t() | String.t() | nil}
-  defp do_create_tournament(nil, _, _), do: {:error, "Undefined User"}
+  # @spec do_create_tournament(User.t(), map(), String.t() | nil) ::
+  #         {:ok, Tournament.t()} | {:error, Ecto.Changeset.t() | String.t() | nil}
+  # defp do_create_tournament(nil, _, _), do: {:error, "Undefined User"}
 
-  defp do_create_tournament(%User{}, params, thumbnail_path) do
-    if params["enabled_map"] && !params["enabled_coin_toss"] do
-      {:error, "Needs to enable coin toss"}
-    else
-      do_create_tournament(params, thumbnail_path)
-    end
-  end
+  # defp do_create_tournament(%User{}, params, thumbnail_path) do
+  #   if params["enabled_map"] && !params["enabled_coin_toss"] do
+  #     {:error, "Needs to enable coin toss"}
+  #   else
+  #     do_create_tournament(params, thumbnail_path)
+  #   end
+  # end
 
-  @spec do_create_tournament(map(), String.t() | nil) ::
-          {:ok, Tournament.t()} | {:error, Ecto.Changeset.t() | nil}
-  defp do_create_tournament(attrs, thumbnail_path) do
-    master_id = Tools.to_integer_as_needed(attrs["master_id"])
-    platform_id = Tools.to_integer_as_needed(attrs["platform"])
+  # @spec do_create_tournament(map(), String.t() | nil) ::
+  #         {:ok, Tournament.t()} | {:error, Ecto.Changeset.t() | nil}
+  # defp do_create_tournament(attrs, thumbnail_path) do
+  #   master_id = Tools.to_integer_as_needed(attrs["master_id"])
+  #   platform_id = Tools.to_integer_as_needed(attrs["platform"])
 
-    game_id = if attrs["game_id"] == "" || is_nil(attrs["game_id"]), do: nil, else: attrs["game_id"]
+  #   game_id = if attrs["game_id"] == "" || is_nil(attrs["game_id"]), do: nil, else: attrs["game_id"]
 
-    attrs = put_token(attrs)
+  #   attrs = put_token(attrs)
 
-    Multi.new()
-    |> Multi.insert(
-      :tournament,
-      Tournament.create_changeset(
-        %Tournament{
-          master_id: master_id,
-          game_id: game_id,
-          thumbnail_path: thumbnail_path,
-          platform_id: platform_id
-        },
-        attrs
-      )
-    )
-    |> Multi.insert(:group_topic, fn %{tournament: tournament} ->
-      create_topic(tournament, "Group", 0)
-    end)
-    |> Multi.insert(:notification_topic, fn %{tournament: tournament} ->
-      create_topic(tournament, "Notification", 1, 1)
-    end)
-    |> Multi.insert(:q_and_a_topic, fn %{tournament: tournament} ->
-      create_topic(tournament, "Q&A", 2)
-    end)
-    |> Repo.transaction()
-    |> case do
-      {:ok, tournament} ->
-        join_topics(tournament.tournament.id, master_id)
-        {:ok, tournament.tournament}
+  #   Multi.new()
+  #   |> Multi.insert(
+  #     :tournament,
+  #     Tournament.create_changeset(
+  #       %Tournament{
+  #         master_id: master_id,
+  #         game_id: game_id,
+  #         thumbnail_path: thumbnail_path,
+  #         platform_id: platform_id
+  #       },
+  #       attrs
+  #     )
+  #   )
+  #   |> Multi.insert(:group_topic, fn %{tournament: tournament} ->
+  #     create_topic(tournament, "Group", 0)
+  #   end)
+  #   |> Multi.insert(:notification_topic, fn %{tournament: tournament} ->
+  #     create_topic(tournament, "Notification", 1, 1)
+  #   end)
+  #   |> Multi.insert(:q_and_a_topic, fn %{tournament: tournament} ->
+  #     create_topic(tournament, "Q&A", 2)
+  #   end)
+  #   |> Repo.transaction()
+  #   |> case do
+  #     {:ok, tournament} ->
+  #       join_topics(tournament.tournament.id, master_id)
+  #       {:ok, tournament.tournament}
 
-      {:error, :tournament, changeset, _} ->
-        {:error, Tools.create_error_message(changeset.errors)}
+  #     {:error, :tournament, changeset, _} ->
+  #       {:error, Tools.create_error_message(changeset.errors)}
 
-      {:error, error} ->
-        {:error, error.errors}
+  #     {:error, error} ->
+  #       {:error, error.errors}
 
-      _ ->
-        {:error, nil}
-    end
-  end
+  #     _ ->
+  #       {:error, nil}
+  #   end
+  # end
 
   @spec put_token(map()) :: map()
   defp put_token(attrs) do
-    unless attrs["url"] == "" || is_nil(attrs["url"]) do
+    if attrs["url"] != "" && !is_nil(attrs["url"]) do
       attrs["url"]
       |> String.split("/")
       |> Enum.reverse()
@@ -617,13 +770,12 @@ defmodule Milk.Tournaments do
     end)
   end
 
-  @spec initialize_state_machine!(Tournament.t()) :: any()
-  defp initialize_state_machine!(tournament) do
-    case tournament.rule do
-      "basic" -> Basic.define_dfa!(is_team: tournament.is_team)
-      "flipban" -> FlipBan.define_dfa(is_team: tournament.is_team)
-      # HACK: nilでいいのか定かではない
-      _ -> nil
+  @spec initialize_state_machine(Tournament.t()) :: :ok | :error
+  defp initialize_state_machine(%Tournament{rule: rule, is_team: is_team}) do
+    case rule do
+      "basic" -> Basic.define_dfa!(is_team: is_team)
+      "flipban" -> FlipBan.define_dfa(is_team: is_team)
+      _ -> :error
     end
   end
 
@@ -720,18 +872,16 @@ defmodule Milk.Tournaments do
     end
   end
 
-  @spec update_details(Tournament.t(), map()) ::
-          {:ok, TournamentCustomDetail.t()} | {:error, Ecto.Changeset.t()}
+  @spec update_details(Tournament.t(), map()) :: {:ok, TournamentCustomDetail.t()} | {:error, Ecto.Changeset.t()}
   defp update_details(tournament, params) do
     params
     |> Map.put(:tournament_id, tournament.id)
     |> Tools.atom_map_to_string_map()
     ~> params
 
-    tournament
-    |> Map.get(:id)
+    tournament.id
     |> get_custom_detail_by_tournament_id()
-    |> update_custom_detail(params)
+    |> __MODULE__.update_custom_detail(params)
   end
 
   @doc """
@@ -3377,9 +3527,9 @@ defmodule Milk.Tournaments do
   @doc """
   Update custom detail
   """
-  @spec update_custom_detail(TournamentCustomDetail.t()) ::
-          {:ok, TournamentCustomDetail.t()} | {:error, Ecto.Changeset.t()}
-  def update_custom_detail(detail, attrs \\ %{}) do
+  @spec update_custom_detail(TournamentCustomDetail.t() | nil, map()) :: {:ok, TournamentCustomDetail.t()} | {:error, Ecto.Changeset.t()}
+  def update_custom_detail(nil, _), do: {:error, "given detail is nil"}
+  def update_custom_detail(detail, attrs) do
     detail
     |> TournamentCustomDetail.changeset(attrs)
     |> Repo.update()

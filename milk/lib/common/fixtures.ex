@@ -1,4 +1,8 @@
 defmodule Common.Fixtures do
+  @moduledoc """
+  テストで使用するfixtureをまとめたモジュール
+  """
+
   alias Milk.{
     Accounts,
     Discord,
@@ -40,6 +44,7 @@ defmodule Common.Fixtures do
         coin_head_field = Keyword.get(opts, :coin_head_field)
         coin_tail_field = Keyword.get(opts, :coin_tail_field)
         maps = Keyword.get(opts, :maps)
+        rule = Keyword.get(opts, :rule)
         deadline = Keyword.get(opts, :deadline)
         event_date = Keyword.get(opts, :event_date)
 
@@ -72,6 +77,7 @@ defmodule Common.Fixtures do
         |> Map.put("coin_head_field", coin_head_field)
         |> Map.put("coin_tail_field", coin_tail_field)
         |> Map.put("maps", maps)
+        |> Map.put("rule", rule)
         |> Map.put("deadline", deadline)
         |> Map.put("event_date", event_date)
         |> Tournaments.create_tournament()

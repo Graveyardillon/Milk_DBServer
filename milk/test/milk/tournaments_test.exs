@@ -228,12 +228,11 @@ defmodule Milk.TournamentsTest do
 
     test "get_tournaments_by_master_id/1 fails to return tournaments of a user" do
       user = fixture_user()
-      _tournament = fixture_tournament()
+      fixture_tournament()
 
       user.id
       |> Tournaments.get_tournaments_by_master_id()
-      |> length()
-      |> Kernel.==(0)
+      |> Enum.empty?()
       |> assert()
     end
 
@@ -262,8 +261,11 @@ defmodule Milk.TournamentsTest do
     end
 
     test "get_ongoing_tournaments_by_master_id/1 fails to return user's ongoing tournaments" do
-      tournament = fixture_tournament()
-      assert length(Tournaments.get_ongoing_tournaments_by_master_id(tournament.master_id)) == 0
+      fixture_tournament()
+      |> Map.get(:master_id)
+      |> Tournaments.get_ongoing_tournaments_by_master_id()
+      |> Enum.empty?()
+      |> assert()
     end
 
     test "get_tournament/1 with valid data works fine" do

@@ -89,14 +89,18 @@ defmodule MilkWeb.TournamentControllerTest do
   defp fixture_tournaments(num) do
     1..num
     |> Enum.map(fn n ->
-      {:ok, user} =
-        Map.new()
-        |> Map.put("name", to_string(n) <> "name")
-        |> Map.put("email", to_string(n) <> "@email.com")
-        |> Map.put("password", "Password123")
-        |> Accounts.create_user()
+      Map.new()
+      |> Map.put("name", to_string(n) <> "name")
+      |> Map.put("email", to_string(n) <> "@email.com")
+      |> Map.put("password", "Password123")
+      |> Accounts.create_user()
+      ~> {:ok, user}
 
-      {:ok, tournament} = Tournaments.create_tournament(%{@create_attrs | "master_id" => user.id})
+      @create_attrs
+      |> Map.put("master_id", user.id)
+      |> Tournaments.create_tournament()
+      ~> {:ok, tournament}
+
       tournament
     end)
   end
@@ -440,7 +444,8 @@ defmodule MilkWeb.TournamentControllerTest do
         "coin_head_field" => "omote",
         "coin_tail_field" => "ura",
         "url" => "some url",
-        "platform" => 1
+        "platform" => 1,
+        "rule" => "flipban"
       }
 
       options = [

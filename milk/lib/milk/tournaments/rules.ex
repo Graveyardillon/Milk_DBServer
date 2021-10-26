@@ -3,12 +3,12 @@ defmodule Milk.Tournaments.Rules do
   Rules for tournament.
   """
   @type opts :: [
-    machine_name: String.t(),
-    is_team: boolean()
+    machine_name: String.t() | nil,
+    is_team: boolean() | nil
   ]
 
   @type list_state_opts :: [
-    is_team: boolean()
+    is_team: boolean() | nil
   ]
 
   @spec db_index() :: integer()
