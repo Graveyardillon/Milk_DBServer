@@ -5,7 +5,10 @@ defmodule Milk.Tournaments do
   use Timex
 
   import Ecto.Query, warn: false
-  import Common.Sperm
+  import Common.{
+    Sperm,
+    Tools
+  }
 
   alias Common.{
     FileUtils,
