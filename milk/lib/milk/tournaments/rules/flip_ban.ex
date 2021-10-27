@@ -3,16 +3,19 @@ defmodule Milk.Tournaments.Rules.FlipBan do
   コイントス＆マップBANルールにおける処理が記述してあるモジュール
   モジュール自身の関数を参照することが多く、記述量が増加する割に情報量は増えないので__MODULE__の記述は省略している。
   """
-  alias Milk.Tournaments.Rules
+  @behaviour Milk.Tournaments.Rules.Rule
+
   alias Dfa.Predefined
+  alias Milk.Tournaments.Rules
+  alias Milk.Tournaments.Rules.Rule
 
   @db_index Rules.db_index()
 
-  @spec machine_name(boolean()) :: String.t()
+  @impl Rule
   def machine_name(true), do: "flipban_team"
   def machine_name(false), do: "flipban"
 
-  @spec define_dfa!(Rules.opts()) :: :ok
+  @impl Rule
   def define_dfa!(opts \\ []) do
     is_team = Keyword.get(opts, :is_team, true)
     machine_name = Keyword.get(opts, :machine_name, machine_name(is_team))
@@ -58,7 +61,7 @@ defmodule Milk.Tournaments.Rules.FlipBan do
     end)
   end
 
-  @spec build_dfa_instance(String.t(), Rules.opts()) :: any()
+  @impl Rule
   def build_dfa_instance(instance_name, opts \\ []) do
     is_team = Keyword.get(opts, :is_team, true)
     machine_name = machine_name(is_team)
@@ -66,13 +69,13 @@ defmodule Milk.Tournaments.Rules.FlipBan do
     Predefined.initialize!(instance_name, machine_name, @db_index, is_not_started())
   end
 
-  @spec state!(String.t()) :: String.t()
+  @impl Rule
   def state!(instance_name), do: Predefined.state!(instance_name, @db_index)
 
-  @spec trigger!(String.t(), String.t()) :: {:ok, String.t()} | {:error, String.t()}
+  @impl Rule
   def trigger!(instance_name, trigger), do: Predefined.trigger!(instance_name, @db_index, trigger)
 
-  @spec list_states(Rules.list_state_opts()) :: [String.t()]
+  @impl Rule
   def list_states(opts \\ []), do: Enum.reject(unfiltered_list_states(opts), &is_nil(&1))
 
   @spec unfiltered_list_states(Rules.opts()) :: [String.t()]
