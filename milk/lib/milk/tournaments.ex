@@ -1150,10 +1150,18 @@ defmodule Milk.Tournaments do
 
   """
   @spec update_entrant(Entrant.t(), map()) :: {:ok, Entrant.t()} | {:error, Ecto.Changeset.t() | nil}
+  def update_entrant(nil, _), do: {:error, "entrant is nil"}
   def update_entrant(%Entrant{} = entrant, attrs) do
     entrant
     |> Entrant.changeset(attrs)
     |> Repo.update()
+  end
+
+  @spec update_entrant(integer(), integer(), map()) :: {:ok, Entrant.t()} | {:error, Ecto.Changeset.t() | nil}
+  def update_entrant(tournament_id, user_id, attrs) do
+    user_id
+    |> get_entrant_by_user_id_and_tournament_id(tournament_id)
+    |> __MODULE__.update_entrant(attrs)
   end
 
   @doc """
@@ -1935,56 +1943,43 @@ defmodule Milk.Tournaments do
     Repo.delete(tournament_chat_topic)
   end
 
-  # # TODO: リファクタリング中
-  # def gggggggggg(%{"user_id" => _, "tournament_id" => _} = attrs) do
-  #   with {:ok, nil} <- validate_user_id(attrs),
-  #        {:ok, attrs} <- validate_tournament_id(attrs),
-  #        {:ok, nil} <- validate_tournament_started(attrs)
-  # end
-
-  # defp validate_tournament_started(%{"tournament" => %Tournament{is_started: true}}), do: {:ok, nil}
-  # defp validate_tournament_started(_), do: {:error, "tournament is not started"}
-
-  # defp find_next_rank(%{"user_id" => user_id, "tournament_id" => tournament_id}) do
-  #   user_id
-  #   |> get_entrant_by_user_id_and_tournament_id(tournament_id)
-  #   |> Map.get(:rank)
-  # end
-
-
   @doc """
-  Promotes rank of a entrant.
-  残った人のランクが上がるやつ
-  TODO: リファクタリングの優先度高め 関数の内部処理が分かりづらい
+  Force to promote rank
   """
-  @spec force_to_promote_rank(%{required(:user_id) => integer(), required(:tournament_id) => integer()} | %{required(:team_id) => integer()}) :: {:ok, Entrant.t()} | {:error, Ecto.Changeset.t()}
   def force_to_promote_rank(%{"user_id" => user_id, "tournament_id" => tournament_id} = attrs) do
-    attrs
-    |> user_exists?()
-    |> tournament_exists?()
-    |> tournament_start_check()
-    |> case do
-      {:ok, _} ->
-        user_id
-        |> get_entrant_by_user_id_and_tournament_id(tournament_id)
-        ~> entrant
-        |> Map.get(:rank)
-        |> check_exponentiation_of_two()
-        ~> {_bool, rank}
-        |> elem(0)
-        |> if do
-          div(rank, 2)
-        else
-          find_num_closest_exponentiation_of_two(rank)
-        end
-        ~> updated_rank
-
-        __MODULE__.update_entrant(entrant, %{rank: updated_rank})
-
-      {:error, error} ->
-        {:error, error}
+    with {:ok, nil} <- validate_user_id(attrs),
+         {:ok, attrs} <- validate_tournament_id(attrs),
+         {:ok, nil} <- validate_tournament_started(attrs),
+         {:ok, rank} <- find_next_rank(attrs),
+         {:ok, entrant} <- __MODULE__.update_entrant(tournament_id, user_id, %{rank: rank}) do
+      {:ok, entrant}
+    else
+      error -> error
     end
   end
+
+  defp validate_tournament_started(%{"tournament" => %Tournament{is_started: true}}), do: {:ok, nil}
+  defp validate_tournament_started(_), do: {:error, "tournament is not started"}
+
+  @spec find_next_rank(map()) :: {:ok, integer()}
+  defp find_next_rank(%{"user_id" => user_id, "tournament_id" => tournament_id}) do
+    user_id
+    |> get_entrant_by_user_id_and_tournament_id(tournament_id)
+    |> Map.get(:rank)
+    |> calculate_next_rank()
+    |> Tools.into_ok_tuple()
+  end
+
+  @spec calculate_next_rank(integer()) :: integer()
+  defp calculate_next_rank(0), do: 1
+  defp calculate_next_rank(1), do: 1
+  defp calculate_next_rank(rank) when is_power_of_two?(rank), do: div(rank, 2)
+  defp calculate_next_rank(rank) when rank <= 4, do: 2
+
+  @spec calculate_next_rank(integer(), integer()) :: integer()
+  defp calculate_next_rank(rank, next_min \\ 8)
+  defp calculate_next_rank(rank, next_min) when rank <= next_min, do: div(next_min, 2)
+  defp calculate_next_rank(rank, next_min), do: calculate_next_rank(rank, next_min * 2)
 
   def force_to_promote_rank(%{"team_id" => team_id} = attrs) do
     attrs

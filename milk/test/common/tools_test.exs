@@ -1,4 +1,7 @@
 defmodule Common.ToolsTest do
+  @moduledoc """
+  Test for tools.
+  """
   use Milk.DataCase
 
   import Common.Tools

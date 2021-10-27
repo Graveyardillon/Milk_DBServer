@@ -79,8 +79,12 @@ defmodule Common.Tools do
   @doc """
   Checks if the given number is power of 2.
   """
-  @spec is_power_of_two?(integer()) :: boolean()
-  defmacro is_power_of_two?(num), do: num != 0 and (num &&& (num - 1)) == 0
+  @spec is_power_of_two?(integer()) :: Macro.t()
+  defmacro is_power_of_two?(num) do
+    quote do
+      unquote(num) != 0 and (unquote(num) &&& (unquote(num) - 1)) == 0
+    end
+  end
 
   @doc """
   String to json map if possible.
