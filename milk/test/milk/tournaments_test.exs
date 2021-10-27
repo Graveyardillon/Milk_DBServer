@@ -1270,6 +1270,7 @@ defmodule Milk.TournamentsTest do
           enabled_coin_toss: true,
           enabled_map: true,
           type: 2,
+          rule: "flipban",
           capacity: 4,
           maps: maps
         )
@@ -1311,8 +1312,7 @@ defmodule Milk.TournamentsTest do
 
       Tournaments.flip_coin(opponent_leader.id, tournament.id)
 
-      tournament
-      |> Map.get(:id)
+      tournament.id
       |> Tournaments.get_selectable_maps_by_tournament_id_and_user_id(leader.id)
       |> Enum.map(fn map ->
         map.id
@@ -1320,8 +1320,7 @@ defmodule Milk.TournamentsTest do
       |> Enum.chunk_every(2)
       ~> [ban_map_id_list1, ban_map_id_list2, [choose_map1, _]]
 
-      tournament
-      |> Map.get(:id)
+      tournament.id
       |> Tournaments.is_head_of_coin?(team.id, opponent_team.id)
       |> if do
         assert "ShouldBan" == Tournaments.state!(tournament.id, leader.id)

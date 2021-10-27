@@ -432,6 +432,9 @@ defmodule Milk.Tournaments do
     |> Repo.preload(:custom_detail)
   end
 
+  @doc """
+  Create tournament.
+  """
   @spec create_tournament(map(), String.t() | nil) :: {:ok, Tournament.t()} | {:error, Ecto.Changeset.t()}
   def create_tournament(attrs, thumbnail_path \\ "") do
     attrs = modify_necessary_fields(attrs)
@@ -571,6 +574,7 @@ defmodule Milk.Tournaments do
       {:error, "error on creating maps"}
     end
   end
+  defp create_maps_on_create_tournament(tournament, %{maps: maps}), do: create_maps_on_create_tournament(tournament, %{"maps" => maps})
   defp create_maps_on_create_tournament(tournament, %{"maps" => maps}) when not is_nil(maps) do
     maps = Tools.parse_json_string_as_needed!(maps)
     create_maps_on_create_tournament(tournament, maps)
@@ -740,12 +744,12 @@ defmodule Milk.Tournaments do
 
     Progress.insert_match_pending_list_table(id, tournament_id)
 
-    # if tournament.enabled_map do
-    #   case tournament.rule do
-    #     # NOTE: map_selection_typeで分岐もできる
-    #     _ -> Progress.init_ban_order(tournament_id, id)
-    #   end
-    # end
+    if tournament.enabled_map do
+      case tournament.rule do
+        # NOTE: map_selection_typeで分岐もできる
+        _ -> Progress.init_ban_order(tournament_id, id)
+      end
+    end
   end
 
   @doc """
@@ -1923,21 +1927,35 @@ defmodule Milk.Tournaments do
       {:error, %Ecto.Changeset{}}
 
   """
-  @spec delete_tournament_chat_topic(TournamentChatTopic.t()) ::
-          {:ok, TournamentChatTopic.t()} | {:error, Ecto.Changeset.t()}
+  @spec delete_tournament_chat_topic(TournamentChatTopic.t()) :: {:ok, TournamentChatTopic.t()} | {:error, Ecto.Changeset.t()}
   def delete_tournament_chat_topic(%TournamentChatTopic{} = tournament_chat_topic) do
     Repo.delete(tournament_chat_topic)
   end
+
+  # TODO: リファクタリング中
+  # def gggggggggg(%{"user_id" => _, "tournament_id" => _} = attrs) do
+  #   with {:ok, nil} <- validate_user_id(attrs),
+  #        {:ok, attrs} <- validate_tournament_id(attrs),
+  #        {:ok, nil} <- validate_tournament_started(attrs)
+  # end
+
+  # defp validate_tournament_started(%{"tournament" => %Tournament{is_started: true}}), do: {:ok, nil}
+  # defp validate_tournament_started(_), do: {:error, "tournament is not started"}
+
+  # defp find_next_rank(%{"user_id" => user_id, "tournament_id" => tournament_id}) do
+  #   user_id
+  #   |> get_entrant_by_user_id_and_tournament_id(tournament_id)
+  #   |> Map.get(:rank)
+  #   |>
+  # end
+
 
   @doc """
   Promotes rank of a entrant.
   残った人のランクが上がるやつ
   TODO: リファクタリングの優先度高め 関数の内部処理が分かりづらい
   """
-  @spec force_to_promote_rank(
-          %{required(:user_id) => integer(), required(:tournament_id) => integer()}
-          | %{required(:team_id) => integer()}
-        ) :: {:ok, Entrant.t()} | {:error, Ecto.Changeset.t()}
+  @spec force_to_promote_rank(%{required(:user_id) => integer(), required(:tournament_id) => integer()} | %{required(:team_id) => integer()}) :: {:ok, Entrant.t()} | {:error, Ecto.Changeset.t()}
   def force_to_promote_rank(%{"user_id" => user_id, "tournament_id" => tournament_id} = attrs) do
     attrs
     |> user_exists?()
@@ -2177,6 +2195,7 @@ defmodule Milk.Tournaments do
   defp check_exponentiation_of_two(num, base) do
     case rem(num, 2) do
       0 ->
+        # 偶数の場合は2で割り続け、1か0になるんだったらokとする処理が書いてあるこれ
         div(num, 2)
         |> check_exponentiation_of_two(base)
 
@@ -2608,10 +2627,9 @@ defmodule Milk.Tournaments do
   Create a team.
   TODO: 入力に対するバリデーションを行う
   """
-  @spec create_team(integer(), integer(), integer(), [integer()]) ::
-          {:ok, Team.t()} | {:error, Ecto.Changeset.t()}
+  @spec create_team(integer(), integer(), integer(), [integer()]) :: {:ok, Team.t()} | {:error, Ecto.Changeset.t()}
   def create_team(tournament_id, size, leader, user_id_list) when is_list(user_id_list) do
-    # 招待をすでに受けている人は弾く
+    # NOTE: 招待をすでに受けている人は弾く
     user_id_list
     |> Enum.all?(fn user_id ->
       Team
@@ -2621,7 +2639,6 @@ defmodule Milk.Tournaments do
       |> where([t, tm], tm.is_invitation_confirmed)
       |> Repo.all()
       |> Kernel.==([])
-      ~> _result
     end)
     |> (fn result ->
           if result do
