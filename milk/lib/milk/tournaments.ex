@@ -1932,7 +1932,7 @@ defmodule Milk.Tournaments do
     Repo.delete(tournament_chat_topic)
   end
 
-  # TODO: リファクタリング中
+  # # TODO: リファクタリング中
   # def gggggggggg(%{"user_id" => _, "tournament_id" => _} = attrs) do
   #   with {:ok, nil} <- validate_user_id(attrs),
   #        {:ok, attrs} <- validate_tournament_id(attrs),
@@ -1946,7 +1946,6 @@ defmodule Milk.Tournaments do
   #   user_id
   #   |> get_entrant_by_user_id_and_tournament_id(tournament_id)
   #   |> Map.get(:rank)
-  #   |>
   # end
 
 
