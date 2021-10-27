@@ -1946,45 +1946,43 @@ defmodule Milk.Tournaments do
   @doc """
   Force to promote rank
   """
+  @spec force_to_promote_rank(map()) :: {:ok, Entrant.t() | Team.t()} | {:error, Ecto.Changeset.t() | String.t() | nil}
   def force_to_promote_rank(%{"user_id" => user_id, "tournament_id" => tournament_id} = attrs) do
     with {:ok, nil} <- validate_user_id(attrs),
          {:ok, attrs} <- validate_tournament_id(attrs),
          {:ok, nil} <- validate_tournament_started(attrs),
-         {:ok, rank} <- find_next_rank(attrs),
-         {:ok, entrant} <- __MODULE__.update_entrant(tournament_id, user_id, %{rank: rank}) do
+         {:ok, next_rank} <- find_next_rank(attrs),
+         {:ok, entrant} <- __MODULE__.update_entrant(tournament_id, user_id, %{rank: next_rank}) do
       {:ok, entrant}
     else
       error -> error
     end
   end
 
-  def force_to_promote_rank(%{"team_id" => team_id, "tournament_id" => tournament_id} = attrs) do
-    attrs
-    |> team_exists?()
-    |> tournament_exists?()
-    |> tournament_start_check()
-    |> case do
-      {:ok, _} ->
-        team_id
-        |> get_team()
-        ~> team
-        |> Map.get(:rank)
-        |> check_exponentiation_of_two()
-        ~> {_bool, rank}
-        |> elem(0)
-        |> if do
-          div(rank, 2)
-        else
-          find_num_closest_exponentiation_of_two(rank)
-        end
-        ~> updated_rank
-
-        update_team(team, %{rank: updated_rank})
-
-      {:error, error} ->
-        {:error, error}
+  def force_to_promote_rank(%{"team_id" => team_id} = attrs) do
+    with {:ok, nil} <- validate_team_id(attrs),
+         {:ok, attrs} <- validate_tournament_id(attrs),
+         {:ok, nil} <- validate_tournament_started(attrs),
+         {:ok, next_rank} <- find_next_rank(attrs),
+         {:ok, team} <- __MODULE__.update_team(team_id, %{rank: next_rank}) do
+      {:ok, team}
+    else
+      error -> error
     end
   end
+
+  defp validate_team_id(%{"team_id" => nil}), do: {:error, "team id is nil"}
+  defp validate_team_id(%{"team_id" => team_id}) do
+    Team
+    |> where([t], t.id == ^team_id)
+    |> Repo.exists?()
+    |> if do
+      {:ok, nil}
+    else
+      {:error, "undefined team"}
+    end
+  end
+  defp validate_team_id(_), do: {:error, "invalid attrs"}
 
   defp validate_tournament_started(%{"tournament" => %Tournament{is_started: true}}), do: {:ok, nil}
   defp validate_tournament_started(_), do: {:error, "tournament is not started"}
@@ -1993,6 +1991,14 @@ defmodule Milk.Tournaments do
   defp find_next_rank(%{"user_id" => user_id, "tournament_id" => tournament_id}) do
     user_id
     |> get_entrant_by_user_id_and_tournament_id(tournament_id)
+    |> Map.get(:rank)
+    |> calculate_next_rank()
+    |> Tools.into_ok_tuple()
+  end
+
+  defp find_next_rank(%{"team_id" => team_id}) do
+    team_id
+    |> __MODULE__.get_team()
     |> Map.get(:rank)
     |> calculate_next_rank()
     |> Tools.into_ok_tuple()
@@ -2976,11 +2982,18 @@ defmodule Milk.Tournaments do
   @doc """
   Updates a team.
   """
-  @spec update_team(Team.t(), map()) :: {:ok, Team.t()} | {:error, Ecto.Changeset.t()}
+  @spec update_team(Team.t() | integer(), map()) :: {:ok, Team.t()} | {:error, Ecto.Changeset.t()}
+  def update_team(nil, _), do: {:error, "team is nil"}
   def update_team(%Team{} = team, attrs) do
     team
     |> Team.changeset(attrs)
     |> Repo.update()
+  end
+
+  def update_team(team_id, attrs) when is_integer(team_id) do
+    team_id
+    |> __MODULE__.get_team()
+    |> __MODULE__.update_team(attrs)
   end
 
   @doc """
