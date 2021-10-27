@@ -2,6 +2,8 @@ defmodule Milk.Tournaments.Rules.Basic do
   @moduledoc """
   コイントスなどがなく、単なる勝敗報告しかしない場合のオートマトン
   """
+  @behaviour Milk.Tournaments.Rules.Rule
+
   alias Dfa.Predefined
   alias Milk.Tournaments.Rules
 
@@ -47,7 +49,7 @@ defmodule Milk.Tournaments.Rules.Basic do
     end)
   end
 
-  @spec build_dfa_instance(String.t(), Rules.opts) :: any()
+  @spec build_dfa_instance(String.t(), Rules.opts()) :: any()
   def build_dfa_instance(instance_name, opts \\ []) do
     is_team = Keyword.get(opts, :is_team, true)
     machine_name = machine_name(is_team)

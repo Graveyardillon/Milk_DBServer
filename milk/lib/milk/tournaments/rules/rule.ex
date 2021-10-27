@@ -1,24 +1,36 @@
-defprotocol Milk.Tournaments.Rules.Rule do
+defmodule Milk.Tournaments.Rules.Rule do
   @moduledoc """
-  大会ルールに関する挙動は共通となる関数が多いので
-  必要な処理を一致させるためのプロトコル
+  ルールに関するビヘイビアを実装するためのモジュール
   """
+  alias Milk.Tournaments.Rules
 
-  @spec machine_name(boolean()) :: String.t()
-  def machine_name(is_team)
+  @doc """
+  オートマトンの名前を返す関数
+  """
+  @callback machine_name(boolean()) :: String.t()
 
-  @spec define_dfa!(Rules.opts()) :: :ok
-  def define_dfa!(opts \\ [])
+  @doc """
+  オートマトンを定義するための関数
+  """
+  @callback define_dfa!(Rules.opts()) :: :ok
 
-  @spec build_dfa_instance(String.t(), Rules.opts()) :: any()
-  def build_dfa_instance(instance_name, opts \\ [])
+  @doc """
+  オートマトンの型から新しいインスタンスを生成するための関数
+  """
+  @callback build_dfa_instance(String.t(), Rules.opts()) :: any()
 
-  @spec state!(String.t()) :: String.t()
-  def state!(instance_name)
+  @doc """
+  現在のオートマトン・インスタンスの状態を返す関数
+  """
+  @callback state!(String.t()) :: String.t()
 
-  @spec trigger!(String.t(), String.t()) :: {:ok, String.t()} | {:error, String.t()}
-  def trigger!(instance_name, trigger)
+  @doc """
+  状態遷移のイベントを発火させるための関数
+  """
+  @callback trigger!(String.t(), String.t()) :: {:ok, String.t()} | {:error, String.t()}
 
-  @spec list_states(Rules.list_state_opts()) :: [String.t()]
-  def list_states(opts)
+  @doc """
+  オートマトンの保持している状態一覧を返す関数
+  """
+  @callback list_states(Rules.list_state_opts()) :: [String.t()]
 end
