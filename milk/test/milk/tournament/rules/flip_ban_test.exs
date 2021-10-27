@@ -22,7 +22,7 @@ defmodule Milk.Tournaments.Rules.FlipBanTest do
       keyname3 = Rules.adapt_keyname(user3.id)
       keyname4 = Rules.adapt_keyname(user4.id)
       keyname5 = Rules.adapt_keyname(user5.id)
-      FlipBan.define_dfa()
+      FlipBan.define_dfa!()
       FlipBan.build_dfa_instance(keyname1)
       FlipBan.build_dfa_instance(keyname2)
       FlipBan.build_dfa_instance(keyname3)

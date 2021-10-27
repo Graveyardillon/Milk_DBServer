@@ -12,19 +12,19 @@ defmodule Milk.Tournaments.Rules.FlipBan do
   def machine_name(true), do: "flipban_team"
   def machine_name(false), do: "flipban"
 
-  @spec define_dfa(Rules.opts()) :: :ok
-  def define_dfa(opts \\ []) do
+  @spec define_dfa!(Rules.opts()) :: :ok
+  def define_dfa!(opts \\ []) do
     is_team = Keyword.get(opts, :is_team, true)
     machine_name = Keyword.get(opts, :machine_name, machine_name(is_team))
 
     machine_name
     |> Predefined.exists?(@db_index)
-    |> do_define_dfa(opts)
+    |> do_define_dfa!(opts)
   end
 
-  @spec do_define_dfa(boolean(), Rules.opts()) :: :ok
-  defp do_define_dfa(true, _), do: :ok
-  defp do_define_dfa(false, opts) do
+  @spec do_define_dfa!(boolean(), Rules.opts()) :: :ok
+  defp do_define_dfa!(true, _), do: :ok
+  defp do_define_dfa!(false, opts) do
     is_team = Keyword.get(opts, :is_team, true)
     machine_name = Keyword.get(opts, :machine_name, machine_name(is_team))
 

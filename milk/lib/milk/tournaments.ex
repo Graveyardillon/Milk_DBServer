@@ -667,7 +667,7 @@ defmodule Milk.Tournaments do
   defp initialize_state_machine(%Tournament{rule: rule, is_team: is_team}) do
     case rule do
       "basic" -> Basic.define_dfa!(is_team: is_team)
-      "flipban" -> FlipBan.define_dfa(is_team: is_team)
+      "flipban" -> FlipBan.define_dfa!(is_team: is_team)
       _ -> :error
     end
   end
