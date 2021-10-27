@@ -912,8 +912,7 @@ defmodule Milk.Tournaments do
       {:error, %Ecto.Changeset{}}
 
   """
-  @spec delete_tournament(Tournament.t() | map() | integer()) ::
-          {:ok, Tournament.t()} | {:error, Ecto.Changeset.t() | String.t()}
+  @spec delete_tournament(Tournament.t() | map() | integer()) :: {:ok, Tournament.t()} | {:error, Ecto.Changeset.t() | String.t()}
   def delete_tournament(%Tournament{} = tournament) do
     delete_tournament(tournament.id)
   end
@@ -1190,7 +1189,7 @@ defmodule Milk.Tournaments do
 
       delete_entrant(entrant)
 
-      get_tabs_by_tournament_id(tournament_id)
+      get_tabs_including_logs_by_tourament_id(tournament_id)
       |> Enum.each(fn x ->
         x.chat_room_id
         |> Chat.delete_chat_member(user_id)
@@ -1201,15 +1200,16 @@ defmodule Milk.Tournaments do
   end
 
   @spec delete_entrant(Entrant.t()) :: {:ok, Entrant.t()} | {:error, Ecto.Changeset.t()}
+  def delete_entrant(nil), do: {:error, "entrant is nil"}
   def delete_entrant(%Entrant{} = entrant) do
-    map =
-      entrant
-      |> Map.from_struct()
-      |> Map.put(:entrant_id, entrant.id)
+    # map =
+    #   entrant
+    #   |> Map.from_struct()
+    #   |> Map.put(:entrant_id, entrant.id)
 
-    %EntrantLog{}
-    |> EntrantLog.changeset(map)
-    |> Repo.insert()
+    # %EntrantLog{}
+    # |> EntrantLog.changeset(map)
+    # |> Repo.insert()
 
     tournament = Repo.get(Tournament, entrant.tournament_id)
 
@@ -1490,14 +1490,20 @@ defmodule Milk.Tournaments do
 
   @doc """
   Starts a tournament.
+
+  1. load tournament information
+  2. check whether entrant number goes over the caoacity
+  3. start tournament
+  4. initialize a state machine of participants
   """
   @spec start(integer(), integer()) :: {:ok, Tournament.t()} | {:error, Ecto.Changeset.t()} | {:error, String.t()}
   def start(tournament_id, master_id) when is_nil(master_id) or is_nil(tournament_id), do: {:error, "master_id or tournament_id is nil"}
   def start(tournament_id, master_id) do
     with {:ok, %Tournament{} = tournament} <- load_tournament(tournament_id, master_id),
          {:ok, nil} <- validate_entrant_number(tournament),
-         {:ok, tournament} <- start(tournament) do
-      initialize_participant_states!(tournament)
+         {:ok, tournament} <- start(tournament),
+         {:ok, tournament} <- initialize_participant_states!(tournament) do
+      {:ok, tournament}
     else
       error -> error
     end
@@ -1584,41 +1590,72 @@ defmodule Milk.Tournaments do
   Finish a tournament.
   トーナメントを終了させ、終了したトーナメントをログの方に移行して削除する
   """
-  @spec finish(integer(), integer()) :: {:ok, Tournament.t()} | {:error, Ecto.Changeset.t()} | {:error, String.t()}
+  @spec finish(integer(), integer()) :: {:ok, Tournament.t()} | {:error, Ecto.Changeset.t() | String.t() | nil}
   def finish(tournament_id, winner_user_id) do
-    tournament_id
-    |> get_tournament()
-    |> Map.get(:is_team)
-    |> if do
-      finish_teams(tournament_id)
+    tournament = __MODULE__.get_tournament(tournament_id)
+
+    with {:ok, _} <- finish_participants(tournament),
+         {:ok, _} <- finish_topics(tournament_id),
+         {:ok, tournament} <- do_finish(tournament, winner_user_id) do
+      {:ok, tournament}
     else
-      finish_entrants(tournament_id)
+      error -> error
     end
-
-    finish_topics(tournament_id)
-    finish_tournament(tournament_id, winner_user_id)
   end
 
-  defp finish_teams(tournament_id) do
+  @spec finish_participants(Tournament.t()) :: {:ok, nil} | {:error, String.t() | nil}
+  defp finish_participants(%Tournament{is_team: false, id: tournament_id}) do
     tournament_id
-    |> get_teams_by_tournament_id()
-    |> Enum.each(fn team ->
-      Log.create_team_log(team.id)
-      delete_team(team.id)
-    end)
+    |> __MODULE__.get_entrants()
+    |> Enum.all?(&({:ok, nil} == finish_entrant(&1)))
+    |> Tools.boolean_to_tuple()
   end
 
-  defp finish_entrants(tournament_id) do
+  defp finish_participants(%Tournament{is_team: true, id: tournament_id}) do
     tournament_id
-    |> get_entrants()
-    |> Enum.each(fn entrant ->
-      delete_entrant(entrant)
-    end)
+    |> __MODULE__.get_teams_by_tournament_id()
+    |> Enum.all?(&({:ok, nil} == finish_team(&1)))
+    |> Tools.boolean_to_tuple()
   end
 
-  defp finish_tournament(tournament_id, winner_user_id) do
-    with {:ok, tournament} <- __MODULE__.delete_tournament(tournament_id),
-         {:ok, _} <- create_tournament_log_on_finish(tournament, winner_user_id) do
+  defp finish_entrant(%Entrant{} = entrant) do
+    with {:ok, _} <- Log.create_entrant_log(entrant),
+         {:ok, _} <- __MODULE__.delete_entrant(entrant) do
+      {:ok, nil}
+    else
+      error -> error
+    end
+  end
+
+  defp finish_team(%Team{} = team) do
+    with {:ok, _} <- Log.create_team_log(team.id),
+         {:ok, _} <- __MODULE__.delete_team(team) do
+      {:ok, nil}
+    else
+      error -> error
+    end
+  end
+
+  defp finish_topics(tournament_id) do
+    tournament_id
+    |> __MODULE__.get_tabs_by_tournament_id()
+    |> Enum.all?(&({:ok, nil} == finish_topic(&1)))
+    |> Tools.boolean_to_tuple()
+  end
+
+  defp finish_topic(%TournamentChatTopic{} = topic) do
+    topic
+    |> Map.from_struct()
+    |> Log.create_tournament_chat_topic_log()
+    |> case do
+      {:ok, _} -> {:ok, nil}
+      error -> error
+    end
+  end
+
+  defp do_finish(%Tournament{} = tournament, winner_user_id) do
+    with {:ok, _} <- create_tournament_log_on_finish(tournament, winner_user_id),
+         {:ok, tournament} <- __MODULE__.delete_tournament(tournament) do
       {:ok, tournament}
     else
       error -> error
@@ -1632,26 +1669,6 @@ defmodule Milk.Tournaments do
     |> Map.put(:winner_id, winner_user_id)
     |> Tools.atom_map_to_string_map()
     |> Log.create_tournament_log()
-  end
-
-  defp finish_topics(tournament_id) do
-    TournamentChatTopic
-    |> where([t], t.tournament_id == ^tournament_id)
-    |> Repo.all()
-    |> Enum.map(fn topic ->
-      topic
-      |> atom_topic_map_to_string_map()
-      |> Log.create_tournament_chat_topic_log()
-    end)
-  end
-
-  defp atom_topic_map_to_string_map(%TournamentChatTopic{} = topic) do
-    %{
-      "tournament_id" => topic.tournament_id,
-      "topic_name" => topic.topic_name,
-      "chat_room_id" => topic.chat_room_id,
-      "tab_index" => topic.tab_index
-    }
   end
 
   @doc """
@@ -1860,17 +1877,19 @@ defmodule Milk.Tournaments do
   @spec get_tournament_chat_topic!(integer()) :: TournamentChatTopic.t()
   def get_tournament_chat_topic!(id), do: Repo.get!(TournamentChatTopic, id)
 
-  @doc """
-  Get group chat tabs in a tournament including log.
-  """
-  @spec get_tabs_by_tournament_id(integer()) :: [
-          TournamentChatTopic.t() | TournamentChatTopicLog.t()
-        ]
+  @spec get_tabs_by_tournament_id(integer()) :: [TournamentChatTopic.t()]
   def get_tabs_by_tournament_id(tournament_id) do
     TournamentChatTopic
     |> where([t], t.tournament_id == ^tournament_id)
     |> Repo.all()
-    ~> topics
+  end
+
+  @doc """
+  Get group chat tabs in a tournament including log.
+  """
+  @spec get_tabs_including_logs_by_tourament_id(integer()) :: [TournamentChatTopic.t() | TournamentChatTopicLog.t()]
+  def get_tabs_including_logs_by_tourament_id(tournament_id) do
+    topics = __MODULE__.get_tabs_by_tournament_id(tournament_id)
 
     TournamentChatTopicLog
     |> where([tl], tl.tournament_id == ^tournament_id)
@@ -3283,11 +3302,14 @@ defmodule Milk.Tournaments do
   @doc """
   Delete a team
   """
-  @spec delete_team(integer()) :: {:ok, Team.t()} | {:error, Ecto.Changeset.t()}
+  @spec delete_team(Team.t() | integer()) :: {:ok, Team.t()} | {:error, Ecto.Changeset.t()}
+  def delete_team(nil), do: {:error, "team is nil"}
+  def delete_team(%Team{} = team), do: Repo.delete(team)
+
   def delete_team(team_id) do
-    Team
-    |> Repo.get(team_id)
-    |> Repo.delete()
+    team_id
+    |> __MODULE__.get_team()
+    |> __MODULE__.delete_team()
     |> case do
       {:ok, team} ->
         team = Repo.preload(team, :team_member)

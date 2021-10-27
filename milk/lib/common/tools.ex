@@ -19,6 +19,13 @@ defmodule Common.Tools do
     |> Map.new()
   end
 
+  @spec boolean_to_tuple(boolean()) :: {:ok, nil} | {:error, nil}
+  def boolean_to_tuple(boolean), do: __MODULE__.boolean_to_tuple(boolean, nil)
+
+  @spec boolean_to_tuple(boolean(), String.t() | nil) :: {:ok, nil} | {:error, String.t() | nil}
+  def boolean_to_tuple(true, _), do: {:ok, nil}
+  def boolean_to_tuple(false, message), do: {:ok, message}
+
   @doc """
   Create error message
   """

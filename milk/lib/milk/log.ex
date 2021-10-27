@@ -21,6 +21,10 @@ defmodule Milk.Log do
     TeamMemberLog
   }
 
+  alias Milk.Tournaments.{
+    Entrant
+  }
+
   @doc """
   Returns the list of chat_room_log.
 
@@ -484,7 +488,21 @@ defmodule Milk.Log do
       {:error, %Ecto.Changeset{}}
 
   """
-  def create_entrant_log(attrs \\ %{}) do
+  @spec create_entrant_log(Entrant.t() | integer() | map()) :: {:ok, EntrantLog.t()} | {:error, String.t() | nil}
+  def create_entrant_log(entrant_id) when is_integer(entrant_id) do
+    entrant_id
+    |> Tournaments.get_entrant()
+    |> __MODULE__.create_entrant_log()
+  end
+
+  def create_entrant_log(%Entrant{} = entrant) do
+    entrant
+    |> Map.from_struct()
+    |> Map.put(:entrant_id, entrant.id)
+    |> __MODULE__.create_entrant_log()
+  end
+
+  def create_entrant_log(attrs) do
     %EntrantLog{}
     |> EntrantLog.changeset(attrs)
     |> Repo.insert()

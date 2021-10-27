@@ -420,7 +420,7 @@ defmodule Milk.TournamentsTest do
       fixture_tournament()
       ~> tournament
       |> Map.get(:id)
-      |> Tournaments.get_tabs_by_tournament_id()
+      |> Tournaments.get_tabs_including_logs_by_tourament_id()
       |> Enum.map(fn tab ->
         Map.new()
         |> Map.put(:tab_index, tab.tab_index)
@@ -449,7 +449,7 @@ defmodule Milk.TournamentsTest do
 
       tournament
       |> Map.get(:id)
-      |> Tournaments.get_tabs_by_tournament_id()
+      |> Tournaments.get_tabs_including_logs_by_tourament_id()
       |> Enum.map(fn tab ->
         assert tab.topic_name in ["Group", "Notification", "Q&A", "test"]
         assert tab.tournament_id == tournament.id
@@ -1610,9 +1610,9 @@ defmodule Milk.TournamentsTest do
       assert obtained_topic.topic_name == topic.topic_name
     end
 
-    test "get_tabs_by_tournament_id/1 with valid data works fine" do
+    test "get_tabs_including_logs_by_tourament_id/1 with valid data works fine" do
       topic = fixture(:tournament_chat_topic)
-      tabs = Tournaments.get_tabs_by_tournament_id(topic.tournament_id)
+      tabs = Tournaments.get_tabs_including_logs_by_tourament_id(topic.tournament_id)
       assert is_list(tabs)
       refute length(tabs) == 0
 

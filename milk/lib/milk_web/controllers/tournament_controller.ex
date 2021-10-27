@@ -634,7 +634,7 @@ defmodule MilkWeb.TournamentController do
   def tournament_topics(conn, %{"tournament_id" => tournament_id, "user_id" => user_id}) do
     tournament_id
     |> Tools.to_integer_as_needed()
-    |> Tournaments.get_tabs_by_tournament_id()
+    |> Tournaments.get_tabs_including_logs_by_tourament_id()
     |> Enum.map(fn tab ->
       chat_room = Chat.get_chat_room(tab.chat_room_id)
       member = Chat.get_member(chat_room.id, user_id)
@@ -655,12 +655,12 @@ defmodule MilkWeb.TournamentController do
     tournament = Tournaments.get_tournament(tournament_id)
 
     if tournament do
-      current_tabs = Tournaments.get_tabs_by_tournament_id(tournament_id)
+      current_tabs = Tournaments.get_tabs_including_logs_by_tourament_id(tournament_id)
       Tournaments.update_topic(tournament, current_tabs, tabs)
 
       tabs =
         tournament_id
-        |> Tournaments.get_tabs_by_tournament_id()
+        |> Tournaments.get_tabs_including_logs_by_tourament_id()
         |> Enum.map(fn tab ->
           chat_room = Chat.get_chat_room(tab.chat_room_id)
 
