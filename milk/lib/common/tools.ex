@@ -2,6 +2,7 @@ defmodule Common.Tools do
   @moduledoc """
   Common tool functions.
   """
+  use Bitwise
 
   @doc """
   Atom map to String map
@@ -76,7 +77,7 @@ defmodule Common.Tools do
   end
 
   @spec is_power_of_two?(integer()) :: boolean()
-  def is_power_of_two?(num), do: num != 0 and num && num - 1 === 0
+  def is_power_of_two?(num), do: num != 0 and (num &&& (num - 1)) == 0
 
   @doc """
   String to json map if possible.

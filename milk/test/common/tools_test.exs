@@ -18,6 +18,11 @@ defmodule Common.ToolsTest do
 
   describe "is_power_of_two?" do
     test "with 0", do: refute Tools.is_power_of_two?(0)
+    test "with 1", do: assert Tools.is_power_of_two?(1)
+    test "with 2", do: assert Tools.is_power_of_two?(2)
+    test "with 3", do: refute Tools.is_power_of_two?(3)
+    test "with 4", do: assert Tools.is_power_of_two?(4)
+    test "with 1024", do: assert Tools.is_power_of_two?(1024)
   end
 
   describe "is_all_map_elements_nil?/1" do
