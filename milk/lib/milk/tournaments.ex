@@ -1958,30 +1958,7 @@ defmodule Milk.Tournaments do
     end
   end
 
-  defp validate_tournament_started(%{"tournament" => %Tournament{is_started: true}}), do: {:ok, nil}
-  defp validate_tournament_started(_), do: {:error, "tournament is not started"}
-
-  @spec find_next_rank(map()) :: {:ok, integer()}
-  defp find_next_rank(%{"user_id" => user_id, "tournament_id" => tournament_id}) do
-    user_id
-    |> get_entrant_by_user_id_and_tournament_id(tournament_id)
-    |> Map.get(:rank)
-    |> calculate_next_rank()
-    |> Tools.into_ok_tuple()
-  end
-
-  @spec calculate_next_rank(integer()) :: integer()
-  defp calculate_next_rank(0), do: 1
-  defp calculate_next_rank(1), do: 1
-  defp calculate_next_rank(rank) when is_power_of_two?(rank), do: div(rank, 2)
-  defp calculate_next_rank(rank) when rank <= 4, do: 2
-
-  @spec calculate_next_rank(integer(), integer()) :: integer()
-  defp calculate_next_rank(rank, next_min \\ 8)
-  defp calculate_next_rank(rank, next_min) when rank <= next_min, do: div(next_min, 2)
-  defp calculate_next_rank(rank, next_min), do: calculate_next_rank(rank, next_min * 2)
-
-  def force_to_promote_rank(%{"team_id" => team_id} = attrs) do
+  def force_to_promote_rank(%{"team_id" => team_id, "tournament_id" => tournament_id} = attrs) do
     attrs
     |> team_exists?()
     |> tournament_exists?()
@@ -2009,6 +1986,32 @@ defmodule Milk.Tournaments do
     end
   end
 
+  defp validate_tournament_started(%{"tournament" => %Tournament{is_started: true}}), do: {:ok, nil}
+  defp validate_tournament_started(_), do: {:error, "tournament is not started"}
+
+  @spec find_next_rank(map()) :: {:ok, integer()}
+  defp find_next_rank(%{"user_id" => user_id, "tournament_id" => tournament_id}) do
+    user_id
+    |> get_entrant_by_user_id_and_tournament_id(tournament_id)
+    |> Map.get(:rank)
+    |> calculate_next_rank()
+    |> Tools.into_ok_tuple()
+  end
+
+  @spec calculate_next_rank(integer()) :: integer()
+  defp calculate_next_rank(0), do: 1
+  defp calculate_next_rank(1), do: 1
+  defp calculate_next_rank(rank) when is_power_of_two?(rank), do: div(rank, 2)
+  defp calculate_next_rank(rank) when rank <= 4, do: 2
+
+  @spec calculate_next_rank(integer(), integer()) :: integer()
+  defp calculate_next_rank(rank, next_min \\ 8)
+  defp calculate_next_rank(rank, next_min) when rank <= next_min, do: div(next_min, 2)
+  defp calculate_next_rank(rank, next_min), do: calculate_next_rank(rank, next_min * 2)
+
+  @doc """
+  Promote rank
+  """
   def promote_rank(%{"user_id" => user_id, "tournament_id" => tournament_id} = attrs) do
     attrs
     |> user_exists?()

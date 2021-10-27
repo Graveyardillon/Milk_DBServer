@@ -350,7 +350,7 @@ defmodule MilkWeb.TournamentControllerTest do
 
       conn = post(conn, Routes.tournament_path(conn, :create), tournament: attrs, file: "")
       #assert json_response(conn, 200)["error"] == "Undefined User"
-      json_response(conn, 200)["error"] == "master_id does not exist, "
+      assert json_response(conn, 200)["error"] == "master_id does not exist, "
       refute json_response(conn, 200)["result"]
     end
 
