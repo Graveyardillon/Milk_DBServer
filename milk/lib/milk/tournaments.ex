@@ -759,50 +759,95 @@ defmodule Milk.Tournaments do
   Ban a map.
   """
   @spec ban_maps(integer(), integer(), [integer()]) :: {:ok, nil} | {:error, String.t()}
-  def ban_maps(user_id, tournament_id, map_id_list) when is_list(map_id_list) do
-    my_id = Progress.get_necessary_id(tournament_id, user_id)
-
+  def ban_maps(user_id, _, _) when not is_integer(user_id), do: {:error, "user id should be integer"}
+  def ban_maps(_, tournament_id, _) when not is_integer(tournament_id), do: {:error, "tournament id should be integer"}
+  def ban_maps(_, _, map_id_list) when not is_list(map_id_list), do: {:error, "invalid map id list"}
+  def ban_maps(user_id, tournament_id, map_id_list) do
     tournament_id
     |> __MODULE__.get_opponent(user_id)
     |> elem(1)
     |> Map.get(:id)
     ~> opponent_id
 
-    if my_id > opponent_id do
-      {my_id, opponent_id}
-    else
-      {opponent_id, my_id}
-    end
-    ~> {large_id, small_id}
-
-    if state!(tournament_id, user_id) == "ShouldBan" do
-      Enum.each(map_id_list, fn map_id ->
-        attrs = %{
-          "map_id" => map_id,
-          "state" => "banned",
-          "large_id" => large_id,
-          "small_id" => small_id
-        }
-
-        %MapSelection{}
-        |> MapSelection.changeset(attrs)
-        |> Repo.insert()
-      end)
-
-      {:ok, nil}
-    else
-      {:error, "invalid state"}
-    end
+    tournament_id
+    |> __MODULE__.state!(user_id)
+    |> do_ban_maps(user_id, tournament_id, map_id_list, opponent_id)
     |> case do
-      {:ok, nil} ->
-        renew_state_after_choosing_maps(user_id, tournament_id)
-
-      {:error, error} ->
-        {:error, error}
+      {:ok, _} -> renew_state_after_choosing_maps(user_id, tournament_id)
+      {:error, error} -> {:error, error}
     end
   end
 
-  def ban_maps(_, _, _), do: {:error, "map id list is nil"}
+  defp do_ban_maps(state, _, _, _, _) when state != "ShouldBan", do: {:error, "invalid state"}
+  defp do_ban_maps(_, _, _, _, opponent_id) when not is_integer(opponent_id), do: {:error, "opponent id is not integer"}
+  defp do_ban_maps(_, user_id, tournament_id, map_id_list, opponent_id) do
+    my_id = Progress.get_necessary_id(tournament_id, user_id)
+
+    [small_id, large_id] = Enum.sort([my_id, opponent_id])
+
+    map_id_list
+    |> Enum.all?(fn map_id ->
+      attrs = %{
+        "map_id" => map_id,
+        "state" => "banned",
+        "large_id" => large_id,
+        "small_id" => small_id
+      }
+
+      # TODO: multiを使うべきかも
+      %MapSelection{}
+      |> MapSelection.changeset(attrs)
+      |> Repo.insert()
+      ~> insert_result
+
+      match?({:ok, _}, insert_result)
+    end)
+    |>  Tools.boolean_to_tuple("failed to ban maps")
+  end
+
+
+  # def ban_maps(user_id, tournament_id, map_id_list) when is_list(map_id_list) do
+  #   my_id = Progress.get_necessary_id(tournament_id, user_id)
+
+  #   tournament_id
+  #   |> __MODULE__.get_opponent(user_id)
+  #   |> elem(1)
+  #   |> Map.get(:id)
+  #   ~> opponent_id
+
+  #   if my_id > opponent_id do
+  #     {my_id, opponent_id}
+  #   else
+  #     {opponent_id, my_id}
+  #   end
+  #   ~> {large_id, small_id}
+
+  #   if state!(tournament_id, user_id) == "ShouldBan" do
+  #     Enum.each(map_id_list, fn map_id ->
+  #       attrs = %{
+  #         "map_id" => map_id,
+  #         "state" => "banned",
+  #         "large_id" => large_id,
+  #         "small_id" => small_id
+  #       }
+
+  #       %MapSelection{}
+  #       |> MapSelection.changeset(attrs)
+  #       |> Repo.insert()
+  #     end)
+
+  #     {:ok, nil}
+  #   else
+  #     {:error, "invalid state"}
+  #   end
+  #   |> case do
+  #     {:ok, nil} ->
+  #       renew_state_after_choosing_maps(user_id, tournament_id)
+
+  #     {:error, error} ->
+  #       {:error, error}
+  #   end
+  # end
 
   @doc """
   Choose a map.
@@ -1639,18 +1684,14 @@ defmodule Milk.Tournaments do
   defp finish_topics(tournament_id) do
     tournament_id
     |> __MODULE__.get_tabs_by_tournament_id()
-    |> Enum.all?(&({:ok, nil} == finish_topic(&1)))
-    |> Tools.boolean_to_tuple()
+    |> Enum.all?(&match?({:ok, _}, finish_topic(&1)))
+    |> Tools.boolean_to_tuple("failed to finish topics")
   end
 
   defp finish_topic(%TournamentChatTopic{} = topic) do
     topic
     |> Map.from_struct()
     |> Log.create_tournament_chat_topic_log()
-    |> case do
-      {:ok, _} -> {:ok, nil}
-      error -> error
-    end
   end
 
   defp do_finish(%Tournament{} = tournament, winner_user_id) do

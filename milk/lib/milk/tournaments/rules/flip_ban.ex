@@ -56,9 +56,7 @@ defmodule Milk.Tournaments.Rules.FlipBan do
     opts
     |> list_states()
     |> Enum.reject(&(&1 == is_finished()))
-    |> Enum.each(fn state ->
-      Predefined.on!(machine_name, @db_index, finish_trigger(), state, is_finished())
-    end)
+    |> Enum.each(&Predefined.on!(machine_name, @db_index, finish_trigger(), &1, is_finished()))
   end
 
   @impl Rule
