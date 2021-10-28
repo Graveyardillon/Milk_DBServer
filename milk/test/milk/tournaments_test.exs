@@ -1326,7 +1326,6 @@ defmodule Milk.TournamentsTest do
         assert "ShouldObserveBan" == Tournaments.state!(tournament.id, opponent_leader.id)
 
         Tournaments.ban_maps(leader.id, tournament.id, ban_map_id_list1)
-        |> IO.inspect()
 
         assert "ShouldObserveBan" == Tournaments.state!(tournament.id, leader.id)
         assert "ShouldBan" == Tournaments.state!(tournament.id, opponent_leader.id)
@@ -1342,7 +1341,6 @@ defmodule Milk.TournamentsTest do
         assert "ShouldBan" == Tournaments.state!(tournament.id, opponent_leader.id)
 
         Tournaments.ban_maps(opponent_leader.id, tournament.id, ban_map_id_list1)
-        |> IO.inspect()
 
         assert "ShouldBan" == Tournaments.state!(tournament.id, leader.id)
         assert "ShouldObserveBan" == Tournaments.state!(tournament.id, opponent_leader.id)
