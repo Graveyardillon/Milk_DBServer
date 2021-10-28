@@ -771,16 +771,17 @@ defmodule Milk.Tournaments do
 
     tournament_id
     |> __MODULE__.state!(user_id)
-    |> do_ban_maps(user_id, tournament_id, map_id_list, opponent_id)
+    |> change_map_state(user_id, tournament_id, map_id_list, opponent_id, "banned")
     |> case do
       {:ok, _} -> renew_state_after_choosing_maps(user_id, tournament_id)
       {:error, error} -> {:error, error}
     end
   end
 
-  defp do_ban_maps(state, _, _, _, _) when state != "ShouldBan", do: {:error, "invalid state"}
-  defp do_ban_maps(_, _, _, _, opponent_id) when not is_integer(opponent_id), do: {:error, "opponent id is not integer"}
-  defp do_ban_maps(_, user_id, tournament_id, map_id_list, opponent_id) do
+  defp change_map_state(state, _, _, _, _, _) when state != "ShouldBan", do: {:error, "invalid state"}
+  defp change_map_state(_, _, _, _, opponent_id, _) when not is_integer(opponent_id), do: {:error, "opponent id is not integer"}
+  #defp change_map_state(_, _, _, _, _, map_state) when not is_binary(map_state), do: {:error, "invalid state"}
+  defp change_map_state(_, user_id, tournament_id, map_id_list, opponent_id, map_state) do
     my_id = Progress.get_necessary_id(tournament_id, user_id)
 
     [small_id, large_id] = Enum.sort([my_id, opponent_id])
@@ -789,7 +790,7 @@ defmodule Milk.Tournaments do
     |> Enum.all?(fn map_id ->
       attrs = %{
         "map_id" => map_id,
-        "state" => "banned",
+        "state" => map_state,
         "large_id" => large_id,
         "small_id" => small_id
       }
@@ -805,54 +806,15 @@ defmodule Milk.Tournaments do
     |>  Tools.boolean_to_tuple("failed to ban maps")
   end
 
-
-  # def ban_maps(user_id, tournament_id, map_id_list) when is_list(map_id_list) do
-  #   my_id = Progress.get_necessary_id(tournament_id, user_id)
-
-  #   tournament_id
-  #   |> __MODULE__.get_opponent(user_id)
-  #   |> elem(1)
-  #   |> Map.get(:id)
-  #   ~> opponent_id
-
-  #   if my_id > opponent_id do
-  #     {my_id, opponent_id}
-  #   else
-  #     {opponent_id, my_id}
-  #   end
-  #   ~> {large_id, small_id}
-
-  #   if state!(tournament_id, user_id) == "ShouldBan" do
-  #     Enum.each(map_id_list, fn map_id ->
-  #       attrs = %{
-  #         "map_id" => map_id,
-  #         "state" => "banned",
-  #         "large_id" => large_id,
-  #         "small_id" => small_id
-  #       }
-
-  #       %MapSelection{}
-  #       |> MapSelection.changeset(attrs)
-  #       |> Repo.insert()
-  #     end)
-
-  #     {:ok, nil}
-  #   else
-  #     {:error, "invalid state"}
-  #   end
-  #   |> case do
-  #     {:ok, nil} ->
-  #       renew_state_after_choosing_maps(user_id, tournament_id)
-
-  #     {:error, error} ->
-  #       {:error, error}
-  #   end
-  # end
-
   @doc """
   Choose a map.
   """
   @spec choose_maps(integer(), integer(), [integer()]) :: {:ok, nil} | {:error, String.t()}
+  # def choose_maps(user_id, _, _) when not is_integer(user_id), do: {:error, "user id should be integer"}
+  # def choose_maps(_, tournament_id, _) when not is_integer(tournament_id), do: {:error, "tournament id should be integer"}
+  # def choose_maps(_, _, map_id_list) when not is_list(map_id_list), do: {:error, "invalid map id list"}
+  # def
+
   def choose_maps(user_id, tournament_id, map_id_list) when is_list(map_id_list) do
     my_id = Progress.get_necessary_id(tournament_id, user_id)
 
