@@ -57,8 +57,11 @@ defmodule Common.Tools do
     |> Enum.reduce("", fn n, acc ->
       "#{acc}.#{to_string(n)}"
     end)
-    |> String.slice(1..1500)
+    |> slice_ip()
   end
+
+  defp slice_ip(ip) when is_binary(ip), do: String.slice(ip, 1..1500)
+  defp slice_ip(_), do: nil
 
   @doc """
   Turn into tuple {:ok, data}

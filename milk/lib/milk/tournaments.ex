@@ -793,6 +793,7 @@ defmodule Milk.Tournaments do
         "large_id" => large_id,
         "small_id" => small_id
       }
+      #map_selection_schema = MapSelection.changeset(%MapSelection{}, attrs)
 
       # TODO: multiを使うべきかも
       %MapSelection{}
