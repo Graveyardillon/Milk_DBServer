@@ -462,7 +462,7 @@ defmodule Milk.Tournaments do
     |> Map.put("master_id", master_id)
     |> Map.put("platform", platform_id)
     |> Map.put("game_id", game_id)
-    |> put_token()
+    |> put_token_as_needed()
   end
 
   defp validate_fields(attrs) do
@@ -584,19 +584,17 @@ defmodule Milk.Tournaments do
   end
   defp create_maps_on_create_tournament(_, _), do: {:error, "maps are nil"}
 
-  @spec put_token(map()) :: map()
-  defp put_token(attrs) do
-    if attrs["url"] != "" && !is_nil(attrs["url"]) do
-      attrs["url"]
-      |> String.split("/")
-      |> Enum.reverse()
-      |> hd()
-      ~> token
+  @spec put_token_as_needed(map()) :: map()
+  defp put_token_as_needed(%{"url" => nil} = attrs), do: attrs
+  defp put_token_as_needed(%{"url" => ""} = attrs), do: attrs
+  defp put_token_as_needed(%{"url" => url} = attrs) do
+    url
+    |> String.split("/")
+    |> Enum.reverse()
+    |> hd()
+    ~> token
 
-      Map.put(attrs, "url_token", token)
-    else
-      attrs
-    end
+    Map.put(attrs, "url_token", token)
   end
 
   @spec create_topic(Tournament.t(), String.t(), integer(), integer()) :: Ecto.Changeset.t()
@@ -626,19 +624,12 @@ defmodule Milk.Tournaments do
   """
   @spec update_topic(Tournament.t(), [TournamentChatTopic.t()], [map()]) :: :ok
   def update_topic(tournament, current_tabs, new_tabs) do
-    Enum.map(current_tabs, fn tab ->
-      tab.chat_room_id
-    end)
-    ~> currentIds
+    current_ids = Enum.map(current_tabs, &(&1.chat_room_id))
+    new_ids = Enum.map(new_tabs, &(&1["chat_room_id"]))
 
-    Enum.map(new_tabs, fn tab ->
-      tab["chat_room_id"]
-    end)
-    ~> newIds
+    removed_tab_ids = current_ids -- new_ids
 
-    removedTabIds = currentIds -- newIds
-
-    Enum.each(removedTabIds, fn id ->
+    Enum.each(removed_tab_ids, fn id ->
       ChatRoom
       |> where([c], c.id == ^id)
       |> Repo.delete_all()
@@ -788,20 +779,18 @@ defmodule Milk.Tournaments do
     map_id_list
     |> Enum.all?(fn map_id ->
       attrs = %{
-        "map_id" => map_id,
-        "state" => map_state,
-        "large_id" => large_id,
-        "small_id" => small_id
+        map_id: map_id,
+        state: map_state,
+        large_id: large_id,
+        small_id: small_id
       }
-      #map_selection_schema = MapSelection.changeset(%MapSelection{}, attrs)
 
-      # TODO: multiを使うべきかも
       %MapSelection{}
       |> MapSelection.changeset(attrs)
       |> Repo.insert()
-      ~> insert_result
+      ~> result
 
-      match?({:ok, _}, insert_result)
+      match?({:ok, _}, result)
     end)
     |>  Tools.boolean_to_tuple("failed to ban maps")
   end
@@ -823,7 +812,6 @@ defmodule Milk.Tournaments do
     tournament_id
     |> __MODULE__.state!(user_id)
     |> change_map_state(user_id, tournament_id, map_id_list, opponent_id, "selected")
-    |> IO.inspect()
     |> case do
       {:ok, _} -> renew_state_after_choosing_maps(user_id, tournament_id)
       {:error, error} -> {:error, error}
@@ -897,25 +885,26 @@ defmodule Milk.Tournaments do
 
   """
   @spec delete_tournament(Tournament.t() | map() | integer()) :: {:ok, Tournament.t()} | {:error, Ecto.Changeset.t() | String.t()}
-  def delete_tournament(%Tournament{} = tournament) do
-    delete_tournament(tournament.id)
-  end
-
   def delete_tournament(nil), do: {:error, "tournament is nil"}
-
-  def delete_tournament(tournament) when is_map(tournament) do
-    delete_tournament(tournament["id"])
-  end
+  def delete_tournament(%Tournament{id: id}), do: delete_tournament(id)
+  def delete_tournament(%{"id" => id}), do: delete_tournament(id)
 
   def delete_tournament(id) when is_integer(id) do
-    tournament =
-      Repo.one(
-        from t in Tournament,
-          left_join: a in assoc(t, :assistant),
-          left_join: e in assoc(t, :entrant),
-          where: t.id == ^id,
-          preload: [assistant: a, entrant: e]
-      )
+    # tournament =
+    #   Repo.one(
+    #     from t in Tournament,
+    #       left_join: a in assoc(t, :assistant),
+    #       left_join: e in assoc(t, :entrant),
+    #       where: t.id == ^id,
+    #       preload: [assistant: a, entrant: e]
+    #   )
+    Tournament
+    |> join(:left, [t], a in assoc(t, :assistant))
+    |> join(:left, [t, a], e in assoc(t, :entrant))
+    |> where([t, a, e], t.id == ^id)
+    |> preload([t, a, e], [assistant: a, entrant: e])
+    |> Repo.one()
+    ~> tournament
 
     entrants =
       Enum.map(tournament.entrant, fn x ->
@@ -2837,33 +2826,28 @@ defmodule Milk.Tournaments do
   @spec do_is_leader?(Tournament.t() | TournamentLog.t() | Team.t() | TeamLog.t() | nil, integer()) :: boolean()
   defp do_is_leader?(nil, _), do: false
 
-  defp do_is_leader?(%Tournament{} = tournament, user_id) do
-    if tournament.is_team do
-      tournament.id
-      |> __MODULE__.get_team_by_tournament_id_and_user_id(user_id)
-      |> do_is_leader?(user_id)
-    else
-      false
-    end
+  defp do_is_leader?(%Tournament{is_team: false}, _), do: false
+  defp do_is_leader?(%Tournament{id: id, is_team: true}, user_id) do
+    id
+    |> __MODULE__.get_team_by_tournament_id_and_user_id(user_id)
+    |> do_is_leader?(user_id)
   end
 
-  defp do_is_leader?(%TournamentLog{} = tournament_log, user_id) do
-    if tournament_log.is_team do
-      tournament_log.tournament_id
-      |> Log.get_team_log_by_tournament_id_and_user_id(user_id)
-      |> do_is_leader?(user_id)
-    else
-      false
-    end
+  defp do_is_leader?(%TournamentLog{is_team: false}, _), do: false
+  defp do_is_leader?(%TournamentLog{tournament_id: tournament_id, is_team: true}, user_id) do
+    tournament_id
+    |> Log.get_team_log_by_tournament_id_and_user_id(user_id)
+    |> do_is_leader?(user_id)
   end
 
-  defp do_is_leader?(%Team{} = team, user_id) do
-    leader = __MODULE__.get_leader(team.id)
+  defp do_is_leader?(%Team{id: id}, user_id) do
+    leader = __MODULE__.get_leader(id)
     leader.user_id == user_id
   end
 
-  defp do_is_leader?(%TeamLog{} = team_log, user_id) do
-    team_log.team_member
+  defp do_is_leader?(%TeamLog{team_id: team_id}, user_id) do
+    team_id
+    |> Log.get_team_member_logs()
     |> Enum.filter(& &1.is_leader)
     |> Enum.all?(&(&1.user_id == user_id))
   end

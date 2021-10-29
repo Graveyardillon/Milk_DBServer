@@ -956,4 +956,13 @@ defmodule Milk.Log do
   def get_team_member_log(id) do
     Repo.get(TeamMemberLog, id)
   end
+
+  @doc """
+  Get team member logs.
+  """
+  def get_team_member_logs(team_id) do
+    TeamMemberLog
+    |> where([tm], tm.team_id == ^team_id)
+    |> Repo.all()
+  end
 end
