@@ -503,6 +503,7 @@ defmodule Milk.Tournaments do
     end
   end
 
+  # TODO: トランザクション
   @spec join_chat_topics_on_create_tournament(Tournament.t()) :: {:ok, nil} | {:error, String.t()}
   defp join_chat_topics_on_create_tournament(tournament) do
     tournament.id
@@ -561,6 +562,7 @@ defmodule Milk.Tournaments do
     |> __MODULE__.create_custom_detail()
   end
 
+  # TODO: トランザクション
   @spec create_maps_on_create_tournament(Tournament.t(), [any()] | map() | nil) :: {:ok, nil} | {:error, String.t()}
   defp create_maps_on_create_tournament(tournament, maps) when is_list(maps) do
     maps
@@ -2598,10 +2600,9 @@ defmodule Milk.Tournaments do
 
   @doc """
   Scores data.
-  TODO: store_scoreに命名変更
   """
-  @spec score(integer(), integer(), integer(), integer(), integer(), integer()) :: boolean()
-  def score(tournament_id, winner_id, loser_id, winner_score, loser_score, match_index) do
+  @spec store_score(integer(), integer(), integer(), integer(), integer(), integer()) :: boolean()
+  def store_score(tournament_id, winner_id, loser_id, winner_score, loser_score, match_index) do
     Progress.create_best_of_x_tournament_match_log(%{
       tournament_id: tournament_id,
       winner_id: winner_id,
@@ -2853,8 +2854,7 @@ defmodule Milk.Tournaments do
       end)
     end)
     |> case do
-      [] ->
-        []
+      [] -> []
 
       teams ->
         teams

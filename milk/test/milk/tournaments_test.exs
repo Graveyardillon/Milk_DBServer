@@ -1879,7 +1879,7 @@ defmodule Milk.TournamentsTest do
           cond do
             n > score ->
               Tournaments.delete_loser_process(tournament_id, [team_id])
-              Tournaments.score(tournament_id, opponent_team_id, team_id, n, score, match_index)
+              Tournaments.store_score(tournament_id, opponent_team_id, team_id, n, score, match_index)
               Progress.delete_match_pending_list(team_id, tournament_id)
               Progress.delete_match_pending_list(opponent_team_id, tournament_id)
               Progress.delete_score(tournament_id, team_id)
@@ -1889,7 +1889,7 @@ defmodule Milk.TournamentsTest do
 
             n < score ->
               Tournaments.delete_loser_process(tournament_id, [opponent_team_id])
-              Tournaments.score(tournament_id, team_id, opponent_team_id, score, n, match_index)
+              Tournaments.store_score(tournament_id, team_id, opponent_team_id, score, n, match_index)
               Progress.delete_match_pending_list(team_id, tournament_id)
               Progress.delete_score(tournament_id, team_id)
               Progress.delete_score(tournament_id, opponent_team_id)
@@ -2627,8 +2627,8 @@ defmodule Milk.TournamentsTest do
       |> Progress.insert_match_list_with_fight_result(tournament.id)
 
       [user1_id, user2_id, user3_id, user4_id] = List.flatten(match_list)
-      Tournaments.score(tournament.id, user1_id, user2_id, 13, 2, 1)
-      Tournaments.score(tournament.id, user3_id, user4_id, 13, 3, 1)
+      Tournaments.store_score(tournament.id, user1_id, user2_id, 13, 2, 1)
+      Tournaments.store_score(tournament.id, user3_id, user4_id, 13, 3, 1)
 
       Progress.get_best_of_x_tournament_match_logs(tournament.id)
 
@@ -2660,7 +2660,7 @@ defmodule Milk.TournamentsTest do
             assert len == 4
           end).()
 
-      Tournaments.score(tournament.id, user3_id, user1_id, 13, 4, 1)
+      Tournaments.store_score(tournament.id, user3_id, user1_id, 13, 4, 1)
 
       Tournaments.data_with_scores_for_brackets(tournament.id)
       |> Enum.map(fn data ->

@@ -1407,7 +1407,7 @@ defmodule MilkWeb.TournamentController do
             )
 
             Tournaments.delete_loser_process(tournament_id, [id])
-            Tournaments.score(tournament_id, opponent_id, id, n, score, match_index)
+            Tournaments.store_score(tournament_id, opponent_id, id, n, score, match_index)
             Progress.delete_match_pending_list(id, tournament_id)
             Progress.delete_match_pending_list(opponent_id, tournament_id)
             Progress.delete_score(tournament_id, id)
@@ -1431,7 +1431,7 @@ defmodule MilkWeb.TournamentController do
             )
 
             Tournaments.delete_loser_process(tournament_id, [opponent_id])
-            Tournaments.score(tournament_id, id, opponent_id, score, n, match_index)
+            Tournaments.store_score(tournament_id, id, opponent_id, score, n, match_index)
             Progress.delete_match_pending_list(id, tournament_id)
             Progress.delete_match_pending_list(opponent_id, tournament_id)
             Progress.delete_score(tournament_id, id)
@@ -1629,7 +1629,7 @@ defmodule MilkWeb.TournamentController do
     |> case do
       {:ok, winner} ->
         Tournaments.promote_rank(%{"tournament_id" => tournament_id, "user_id" => winner.id})
-        Tournaments.score(tournament_id, winner.id, target_user_id, 0, -1, 0)
+        Tournaments.store_score(tournament_id, winner.id, target_user_id, 0, -1, 0)
         Tournaments.delete_loser_process(tournament_id, [target_user_id])
         finish_as_needed?(tournament_id, winner.id)
 
