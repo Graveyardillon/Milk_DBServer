@@ -778,6 +778,7 @@ defmodule Milk.Tournaments do
 
     [small_id, large_id] = Enum.sort([my_id, opponent_id])
 
+    #TODO: トランザクション
     map_id_list
     |> Enum.all?(fn map_id ->
       attrs = %{
@@ -1261,9 +1262,7 @@ defmodule Milk.Tournaments do
   Delete a loser in a matchlist
   """
   @spec delete_loser(match_list(), integer() | [integer()]) :: [any()]
-  def delete_loser(match_list, loser) do
-    Tournamex.delete_loser(match_list, loser)
-  end
+  def delete_loser(match_list, loser), do: Tournamex.delete_loser(match_list, loser)
 
   @doc """
   Promote winners
@@ -1442,9 +1441,7 @@ defmodule Milk.Tournaments do
   Checks whether the user have to wait.
   """
   @spec is_alone?([any()]) :: boolean()
-  def is_alone?(match) do
-    Enum.filter(match, &is_list(&1)) != []
-  end
+  def is_alone?(match), do: Enum.filter(match, &is_list(&1)) != []
 
   @doc """
   Checks whether the user has already lost.
@@ -2695,11 +2692,16 @@ defmodule Milk.Tournaments do
     {:ok, result}
   end
 
-  @spec create_team_invitations([TeamMember.t()], integer()) :: {:ok, any()} | {:error, any()} | {:error, Ecto.Multi.name(), any(), map()}
+  @spec create_team_invitations([TeamMember.t()], integer()) :: {:ok, any()} | {:error, any()}
   def create_team_invitations(team_members, leader_id) do
     team_members
     |> Enum.reduce(Multi.new(), &insert_team_invitation_transaction(&1, leader_id, &2))
     |> Repo.transaction()
+    |> case do
+      {:ok, result} -> {:ok, result}
+      {:error, _, changeset, _} -> {:error, changeset.errors}
+      {:error, _} -> {:error, nil}
+    end
   end
 
   defp insert_team_invitation_transaction(team_member, leader_id, multi) do
