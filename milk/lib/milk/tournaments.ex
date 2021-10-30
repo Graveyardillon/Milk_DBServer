@@ -2694,8 +2694,7 @@ defmodule Milk.Tournaments do
     {:ok, result}
   end
 
-  # debug: 動作確認のために一時的にspecの戻り値をanyにしておく
-  @spec create_team_invitations([TeamMember.t()], integer()) :: any()
+  @spec create_team_invitations([TeamMember.t()], integer()) :: {:ok, any()} | {:error, any()} | {:error, Ecto.Multi.name(), any(), map()}
   def create_team_invitations(team_members, leader_id) do
     team_members
     |> Enum.reduce(Multi.new(), &insert_team_invitation_transaction(&1, leader_id, &2))
@@ -2710,90 +2709,6 @@ defmodule Milk.Tournaments do
       })
     end)
   end
-
-  # def create_team(tournament_id, size, leader, user_id_list) when is_list(user_id_list) do
-  #   # NOTE: 招待をすでに受けている人は弾く
-  #   user_id_list
-  #   |> Enum.all?(fn user_id ->
-  #     Team
-  #     |> join(:inner, [t], tm in TeamMember, on: t.id == tm.team_id)
-  #     |> where([t, tm], t.tournament_id == ^tournament_id)
-  #     |> where([t, tm], tm.user_id == ^user_id)
-  #     |> where([t, tm], tm.is_invitation_confirmed)
-  #     |> Repo.all()
-  #     |> Kernel.==([])
-  #   end)
-  #   |> (fn result ->
-  #         if result do
-  #           {:ok, nil}
-  #         else
-  #           {:error, "invalid invitation to user who is already a member of another team."}
-  #         end
-  #       end).()
-  #   # NOTE: チームの人数によるバリデーションをオフにしてある
-  #   # |> case do
-  #   #   {:ok, nil} ->
-  #   #     # tournament_id
-  #   #     |> get_tournament()
-  #   #     ~> tournament
-
-  #   #     if tournament.team_size == size do
-  #   #       {:ok, nil}
-  #   #     else
-  #   #       {:error, "invalid size"}
-  #   #     end
-
-  #   #   {:error, error} ->
-  #   #     {:error, error}
-  #   # end
-  #   |> case do
-  #     {:ok, nil} ->
-  #       # リーダー情報の取得
-  #       leader_info = Accounts.get_user(leader)
-  #       leader_name = leader_info.name
-  #       leader_icon = leader_info.icon_path
-
-  #       %Team{}
-  #       |> Team.changeset(%{
-  #         "tournament_id" => tournament_id,
-  #         "size" => size,
-  #         "name" => "#{leader_name}のチーム",
-  #         "icon_path" => leader_icon
-  #       })
-  #       |> Repo.insert()
-  #       |> case do
-  #         {:ok, team} ->
-  #           create_team_leader(team.id, leader)
-
-  #           team.id
-  #           |> create_team_members(user_id_list)
-  #           |> Enum.each(fn member ->
-  #             create_team_invitation(member.id, leader)
-  #           end)
-
-  #           team
-  #           |> Repo.preload(:tournament)
-  #           |> Repo.preload(:team_member)
-  #           |> Map.get(:team_member)
-  #           |> Repo.preload(:user)
-  #           |> Enum.map(fn member ->
-  #             user = Repo.preload(member.user, :auth)
-  #             Map.put(member, :user, user)
-  #           end)
-  #           ~> team_members
-
-  #           team = Map.put(team, :team_member, team_members)
-
-  #           {:ok, team}
-
-  #         {:error, error} ->
-  #           {:error, error}
-  #       end
-
-  #     {:error, error} ->
-  #       {:error, error}
-  #   end
-  # end
 
   @doc """
   Get a team.
