@@ -24,6 +24,9 @@ defmodule Milk.Tournaments.TeamMember do
   end
 
   @doc false
+  def changeset(attrs), do: __MODULE__.changeset(%__MODULE__{}, attrs)
+
+  @doc false
   def changeset(team, attrs) do
     team
     |> cast(attrs, [:is_leader, :is_invitation_confirmed, :user_id, :team_id])

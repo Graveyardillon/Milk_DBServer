@@ -1,4 +1,7 @@
 defmodule Milk.Tournaments.TeamInvitation do
+  @moduledoc """
+  Team invitation schema.
+  """
   use Milk.Schema
 
   import Ecto.Changeset
@@ -20,6 +23,9 @@ defmodule Milk.Tournaments.TeamInvitation do
 
     timestamps()
   end
+
+  @doc false
+  def changeset(attrs), do: __MODULE__.changeset(%__MODULE__{}, attrs)
 
   @doc false
   def changeset(team_invitation, attrs) do

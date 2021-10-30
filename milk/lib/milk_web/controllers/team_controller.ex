@@ -251,6 +251,7 @@ defmodule MilkWeb.TeamController do
     if total_count <= team.size do
       team.id
       |> Tournaments.create_team_members(user_id_list)
+      |> elem(1)
       |> Enum.each(&Tournaments.create_team_invitation(&1.id, leader.user_id))
 
       json(conn, %{result: true})
