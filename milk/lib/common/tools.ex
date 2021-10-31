@@ -88,6 +88,7 @@ defmodule Common.Tools do
 
   @doc """
   Checks if the given number is power of 2.
+  NOTE: guardで使えるようにするためにマクロとして定義してある
   """
   @spec is_power_of_two?(integer()) :: Macro.t()
   defmacro is_power_of_two?(num) do

@@ -99,16 +99,25 @@ defmodule MilkWeb.TournamentController do
   @doc """
   Create a tournament.
   """
-  def create(conn, %{"tournament" => attrs, "file" => file, "maps" => maps}), do: create(conn, %{"tournament" => attrs, "image" => file, "maps" => maps})
-  def create(conn, %{"tournament" => attrs, "file" => file}), do: create(conn, %{"tournament" => attrs, "file" => file, "maps" => []})
-  def create(conn, %{"tournament" => attrs, "image" => image, "maps" => maps}) when image == "", do: do_create(conn, attrs, nil, maps)
+  def create(conn, %{"tournament" => attrs, "file" => file, "maps" => maps}),
+    do: __MODULE__.create(conn, %{"tournament" => attrs, "image" => file, "maps" => maps})
+  def create(conn, %{"tournament" => attrs, "file" => file}),
+    do: __MODULE__.create(conn, %{"tournament" => attrs, "file" => file, "maps" => []})
+  # NOTE: サムネイル画像がない場合の大会作成処理
+  def create(conn, %{"tournament" => attrs, "image" => image, "maps" => maps}) when image == "" do
+    attrs = Tools.parse_json_string_as_needed!(attrs)
 
-  def create(conn, %{"tournament" => tournament_params, "image" => image, "maps" => maps}) do
+    do_create(conn, attrs, nil, maps)
+  end
+
+  # NOTE: サムネイル画像がある場合の大会作成処理
+  def create(conn, %{"tournament" => attrs, "image" => image, "maps" => maps}) do
     uuid = SecureRandom.uuid()
     thumbnail_path = "./static/image/tournament_thumbnail/#{uuid}.jpg"
     FileUtils.copy(image.path, thumbnail_path)
 
     case Application.get_env(:milk, :environment) do
+      # coveralls-ignore-start
       :dev -> thumbnail_path
       # coveralls-ignore-stop
       :test -> thumbnail_path
@@ -122,74 +131,59 @@ defmodule MilkWeb.TournamentController do
     end
     ~> thumbnail_path
 
-    do_create(conn, tournament_params, thumbnail_path, maps)
+    attrs = Tools.parse_json_string_as_needed!(attrs)
+
+    do_create(conn, attrs, thumbnail_path, maps)
   end
 
-  def do_create(conn, attrs, thumbnail_path, maps) do
-    if is_binary(attrs) do
-      Poison.decode!(attrs)
-    else
-      attrs
-    end
-    ~> tournament_params
+  defp do_create(conn, %{"join" => join?, "enabled_coin_toss" => enabled_coin_toss, "enabled_map" => enabled_map} = tournament_params, thumbnail_path, maps) do
+    tournament_params
+    |> Map.put("enabled_coin_toss", enabled_coin_toss == "true" || enabled_coin_toss == true)
+    |> Map.put("enabled_map", enabled_map == "true" || enabled_map == true)
+    |> Map.put("maps", maps)
+    |> Tournaments.create_tournament(thumbnail_path)
+    |> case do
+      {:ok, %Tournament{} = tournament} ->
+        if join? == "true", do: Tournaments.create_entrant(%{"user_id" => tournament.master_id, "tournament_id" => tournament.id})
 
-    if is_nil(tournament_params["join"]) do
-      render(conn, "error.json", error: "join parameter is nil")
-    else
-      tournament_params
-      |> Map.put(
-        "enabled_coin_toss",
-        tournament_params["enabled_coin_toss"] == "true" ||
-          tournament_params["enabled_coin_toss"] == true
-      )
-      |> Map.put(
-        "enabled_map",
-        tournament_params["enabled_map"] == "true" || tournament_params["enabled_map"] == true
-      )
-      |> Map.put("maps", maps)
-      |> Tournaments.create_tournament(thumbnail_path)
+        followers = Relations.get_followers(tournament.master_id)
+        tournament = Map.put(tournament, :followers, followers)
+
+        Accounts.gain_score(%{
+          "user_id" => tournament.master_id,
+          "game_name" => tournament.game_name,
+          "score" => 7
+        })
+
+        add_queue_tournament_start_push_notice(tournament)
+        discord_process_on_create(tournament)
+
+        render(conn, "create.json", tournament: tournament)
+
+      {:error, error} -> render(conn, "error.json", error: error)
+    end
+  end
+  defp do_create(conn, %{"join" => join?} = attrs, thumbnail_path, maps) do
+    attrs
+    |> Map.put("join", join?)
+    |> Map.put("enabled_coin_toss", attrs["enabled_coin_toss"])
+    |> Map.put("enabled_map", attrs["enabled_map"])
+    ~> attrs
+
+    do_create(conn, attrs, thumbnail_path, maps)
+  end
+  defp do_create(conn, _, _, _), do: render(conn, "error.json", error: "join parameter is nil")
+
+  defp discord_process_on_create(%Tournament{discord_server_id: discord_server_id, description: description}) when is_nil(discord_server_id) or is_nil(description), do: nil
+  defp discord_process_on_create(%Tournament{discord_server_id: discord_server_id, description: description}) do
+    Task.async(fn ->
+      discord_server_id
+      |> Discord.send_tournament_create_notification()
       |> case do
-        {:ok, %Tournament{} = tournament} ->
-          if tournament_params["join"] == "true" do
-            Tournaments.create_entrant(%{"user_id" => tournament.master_id, "tournament_id" => tournament.id})
-          end
-
-          followers = Relations.get_followers(tournament.master_id)
-          tournament = Map.put(tournament, :followers, followers)
-
-          Accounts.gain_score(%{
-            "user_id" => tournament.master_id,
-            "game_name" => tournament.game_name,
-            "score" => 7
-          })
-
-          unless is_nil(tournament.event_date), do: add_queue_tournament_start_push_notice(tournament)
-
-          Task.async(fn ->
-            if !is_nil(tournament.discord_server_id) do
-              tournament.discord_server_id
-              |> Discord.send_tournament_create_notification()
-              |> case do
-                {:ok, _} ->
-                  if !is_nil(tournament.description) do
-                    Discord.send_tournament_description(
-                      tournament.discord_server_id,
-                      tournament.description
-                    )
-                  end
-
-                _ ->
-                  nil
-              end
-            end
-          end)
-
-          render(conn, "create.json", tournament: tournament)
-
-        {:error, error} ->
-          render(conn, "error.json", error: error)
+        {:ok, _} -> Discord.send_tournament_description(discord_server_id, description)
+        {:error, _} -> nil
       end
-    end
+    end)
   end
 
   @doc """
@@ -579,8 +573,7 @@ defmodule MilkWeb.TournamentController do
     user_id
     |> do_relevant()
     |> Enum.all?(fn t ->
-      tournament.master_id == user_id || t.event_date != tournament.event_date ||
-        is_nil(t.event_date)
+      tournament.master_id == user_id || t.event_date != tournament.event_date || is_nil(t.event_date)
     end)
     |> Kernel.and(result)
     ~> result
@@ -2122,16 +2115,15 @@ defmodule MilkWeb.TournamentController do
     json(conn, %{result: result})
   end
 
-  defp add_queue_tournament_start_push_notice(tournament) do
-    job =
-      %{reminder_to_start_tournament: tournament.id}
-      |> Oban.Processer.new(scheduled_at: tournament.event_date)
-      |> Oban.insert()
-      |> elem(1)
+  defp add_queue_tournament_start_push_notice(%Tournament{event_date: event_date}) when is_nil(event_date), do: {:error, "event date is nil"}
+  defp add_queue_tournament_start_push_notice(%Tournament{event_date: event_date, id: id}) do
+    %{reminder_to_start_tournament: id}
+    |> Oban.Processer.new(scheduled_at: event_date)
+    |> Oban.insert()
+    |> elem(1)
+    ~> job
 
-    result = if Map.get(job, :errors) |> length == 0, do: true, else: false
-
-    case result do
+    case job.errors == [] do
       true -> {:ok, job.id}
       false -> {:error, job.errors}
     end

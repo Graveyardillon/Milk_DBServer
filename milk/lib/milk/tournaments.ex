@@ -587,9 +587,7 @@ defmodule Milk.Tournaments do
   defp create_maps_on_create_tournament(_, _), do: {:error, "maps are nil"}
 
   @spec put_token_as_needed(map()) :: map()
-  defp put_token_as_needed(%{"url" => nil} = attrs), do: attrs
-  defp put_token_as_needed(%{"url" => ""} = attrs), do: attrs
-  defp put_token_as_needed(%{"url" => url} = attrs) do
+  defp put_token_as_needed(%{"url" => url} = attrs) when not is_nil(url) do
     url
     |> String.split("/")
     |> Enum.reverse()
@@ -598,6 +596,7 @@ defmodule Milk.Tournaments do
 
     Map.put(attrs, "url_token", token)
   end
+  defp put_token_as_needed(attrs), do: attrs
 
   @spec create_topic(Tournament.t(), String.t(), integer(), integer()) :: Ecto.Changeset.t()
   defp create_topic(tournament, topic, tab_index, authority \\ 0) do
