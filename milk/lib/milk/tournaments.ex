@@ -2293,6 +2293,22 @@ defmodule Milk.Tournaments do
   #     _ -> raise "Invalid tournament rule"
   #   end
   # end
+  # @spec state!(integer(), integer()) :: String.t()
+  # def state!(tournament_id, user_id) do
+  #   tournament_id
+  #   |> __MODULE__.get_tournament()
+  #   |> do_state!(user_id)
+  # end
+
+  # defp do_state!(%Tournament{rule: rule}, user_id) do
+  #   keyname = Rules.adapt_keyname(user_id)
+
+  #   case rule do
+  #     "basic" -> Basic.state!(keyname)
+  #     "flipban" -> FlipBan.state!(keyname)
+  #     _ -> raise "Invalid tournament rule"
+  #   end
+  # end
   @spec state!(integer(), integer()) :: String.t()
   def state!(tournament_id, user_id) do
     tournament_id

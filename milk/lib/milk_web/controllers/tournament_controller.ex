@@ -17,10 +17,11 @@ defmodule MilkWeb.TournamentController do
   }
 
   alias Milk.CloudStorage.Objects
-
-  alias Milk.Tournaments.Tournament
   alias Milk.Log.TournamentLog
-  alias Milk.Tournaments.Progress
+  alias Milk.Tournaments.{
+    Progress,
+    Tournament
+  }
 
   alias Milk.Media.Image
 
@@ -50,12 +51,9 @@ defmodule MilkWeb.TournamentController do
     |> Tools.to_integer_as_needed()
     |> Tournaments.get_tournaments_by_master_id()
     |> Enum.map(fn tournament ->
-      tournament
-      |> Map.get(:id)
+      tournament.id
       |> Tournaments.get_entrants()
-      |> Enum.map(fn entrant ->
-        Accounts.get_user(entrant.user_id)
-      end)
+      |> Enum.map(&Accounts.get_user(&1.user_id))
       ~> entrants
 
       Map.put(tournament, :entrants, entrants)
@@ -83,9 +81,7 @@ defmodule MilkWeb.TournamentController do
     |> Enum.map(fn tournament ->
       tournament.id
       |> Tournaments.get_entrants()
-      |> Enum.map(fn entrant ->
-        Accounts.get_user(entrant.user_id)
-      end)
+      |> Enum.map(&Accounts.get_user(&1.user_id))
       ~> entrants
 
       Map.put(tournament, :entrants, entrants)
