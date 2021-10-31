@@ -99,36 +99,37 @@ defmodule MilkWeb.TournamentController do
   @doc """
   Create a tournament.
   """
+  def create(conn, %{"tournament" => attrs, "file" => file, "maps" => maps}), do: create(conn, %{"tournament" => attrs, "image" => file, "maps" => maps})
+  def create(conn, %{"tournament" => attrs, "file" => file}), do: create(conn, %{"tournament" => attrs, "file" => file, "maps" => []})
+  def create(conn, %{"tournament" => attrs, "image" => image, "maps" => maps}) when image == "", do: do_create(conn, attrs, nil, maps)
+
   def create(conn, %{"tournament" => tournament_params, "image" => image, "maps" => maps}) do
-    # coveralls-ignore-start
-    if image != "" do
-      uuid = SecureRandom.uuid()
-      thumbnail_path = "./static/image/tournament_thumbnail/#{uuid}.jpg"
-      FileUtils.copy(image.path, thumbnail_path)
+    uuid = SecureRandom.uuid()
+    thumbnail_path = "./static/image/tournament_thumbnail/#{uuid}.jpg"
+    FileUtils.copy(image.path, thumbnail_path)
 
-      case Application.get_env(:milk, :environment) do
-        :dev ->
-          thumbnail_path
+    case Application.get_env(:milk, :environment) do
+      :dev -> thumbnail_path
+      # coveralls-ignore-stop
+      :test -> thumbnail_path
+      # coveralls-ignore-start
+      _ ->
+        object = Milk.CloudStorage.Objects.upload("./static/image/tournament_thumbnail/#{uuid}.jpg")
 
+        File.rm("./static/image/tournament_thumbnail/#{uuid}.jpg")
+        object.name
         # coveralls-ignore-stop
-        :test ->
-          thumbnail_path
-
-        # coveralls-ignore-start
-        _ ->
-          object = Milk.CloudStorage.Objects.upload("./static/image/tournament_thumbnail/#{uuid}.jpg")
-
-          File.rm("./static/image/tournament_thumbnail/#{uuid}.jpg")
-          object.name
-          # coveralls-ignore-stop
-      end
     end
     ~> thumbnail_path
 
-    if is_binary(tournament_params) do
-      Poison.decode!(tournament_params)
+    do_create(conn, tournament_params, thumbnail_path, maps)
+  end
+
+  def do_create(conn, attrs, thumbnail_path, maps) do
+    if is_binary(attrs) do
+      Poison.decode!(attrs)
     else
-      tournament_params
+      attrs
     end
     ~> tournament_params
 
@@ -189,14 +190,6 @@ defmodule MilkWeb.TournamentController do
           render(conn, "error.json", error: error)
       end
     end
-  end
-
-  def create(conn, %{"tournament" => tournament_params, "file" => file, "maps" => maps}) do
-    create(conn, %{"tournament" => tournament_params, "image" => file, "maps" => maps})
-  end
-
-  def create(conn, %{"tournament" => tournament_params, "file" => file}) do
-    create(conn, %{"tournament" => tournament_params, "file" => file, "maps" => []})
   end
 
   @doc """
