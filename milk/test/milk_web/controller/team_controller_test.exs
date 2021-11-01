@@ -1,6 +1,9 @@
 defmodule MilkWeb.TeamControllerTest do
-  use MilkWeb.ConnCase
+  @moduledoc """
+  Team Controller test.
+  """
   use Common.Fixtures
+  use MilkWeb.ConnCase
 
   import Common.Sperm
 
@@ -261,7 +264,8 @@ defmodule MilkWeb.TeamControllerTest do
 
       conn = get(conn, Routes.team_path(conn, :get_confirmed_teams), tournament_id: tournament.id)
 
-      json_response(conn, 200)
+      conn
+      |> json_response(200)
       |> Map.get("data")
       |> length()
       |> Kernel.==(1)

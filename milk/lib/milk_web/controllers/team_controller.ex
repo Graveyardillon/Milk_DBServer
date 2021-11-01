@@ -211,7 +211,6 @@ defmodule MilkWeb.TeamController do
 
   @doc """
   Add members to a team.
-  TODO: テスト記述
   """
   def add_members(conn, %{"team_id" => team_id, "user_id_list" => user_id_list}) do
     team = Tournaments.get_team(team_id)
