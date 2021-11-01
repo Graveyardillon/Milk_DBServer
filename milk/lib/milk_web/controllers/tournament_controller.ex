@@ -143,15 +143,15 @@ defmodule MilkWeb.TournamentController do
     |> Map.put("maps", maps)
     |> Tournaments.create_tournament(thumbnail_path)
     |> case do
-      {:ok, %Tournament{} = tournament} ->
-        if join? == "true", do: Tournaments.create_entrant(%{"user_id" => tournament.master_id, "tournament_id" => tournament.id})
+      {:ok, %Tournament{master_id: master_id, id: id, game_name: game_name} = tournament} ->
+        if join? == "true", do: Tournaments.create_entrant(%{"user_id" => master_id, "tournament_id" => id})
 
-        followers = Relations.get_followers(tournament.master_id)
+        followers = Relations.get_followers(master_id)
         tournament = Map.put(tournament, :followers, followers)
 
         Accounts.gain_score(%{
-          "user_id" => tournament.master_id,
-          "game_name" => tournament.game_name,
+          "user_id" => master_id,
+          "game_name" => game_name,
           "score" => 7
         })
 
