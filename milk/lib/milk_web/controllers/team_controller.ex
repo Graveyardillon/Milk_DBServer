@@ -13,7 +13,8 @@ defmodule MilkWeb.TeamController do
 
   alias Milk.Tournaments.{
     Team,
-    TeamInvitation
+    TeamInvitation,
+    Tournament
   }
 
   def show(conn, %{"team_id" => team_id}) do
@@ -113,44 +114,39 @@ defmodule MilkWeb.TeamController do
   Confirm invitation of team
   """
   def confirm_invitation(conn, %{"invitation_id" => invitation_id}) do
-    invitation_id
-    |> Tools.to_integer_as_needed()
-    |> Tournaments.get_team_by_invitation_id()
-    ~> team
+    invitation_id = Tools.to_integer_as_needed(invitation_id)
 
-    confirm_if_team_exists(conn, team, invitation_id)
+    with team when not is_nil(team) <- Tournaments.get_team_by_invitation_id(invitation_id),
+         tournament when not is_nil(tournament) <- Tournaments.get_tournament(team.tournament_id),
+         {:ok, nil} <- validate_team_count(tournament),
+         {:ok, nil} <- validate_discord_association_of_user(tournament, invitation_id),
+         {:ok, invitation} <- Tournaments.confirm_team_invitation(invitation_id) do
+      team = Tournaments.get_team(invitation.team_id)
+      Task.async(fn -> send_add_team_discord_notification(team) end)
+
+      json(conn, %{result: true, is_confirmed: team.is_confirmed, tournament_id: team.tournament_id})
+    else
+      nil -> render(conn, "error.json", error: "team is or tournament nil")
+      {:error, message} when is_binary(message) -> render(conn, "error.json", error: message)
+      {:error, error} -> render(conn, "error.json", error: Tools.create_error_message(error))
+    end
   end
 
-  defp confirm_if_team_exists(conn, nil, _),
-    do: render(conn, "error.json", error: "team not found")
-
-  defp confirm_if_team_exists(conn, team, invitation_id) do
-    tournament = Tournaments.get_tournament(team.tournament_id)
-    confirm_if_tournament_exists(conn, tournament, invitation_id)
-  end
-
-  defp confirm_if_tournament_exists(conn, nil, _),
-    do: render(conn, "error.json", error: "tournament not found")
-
-  defp confirm_if_tournament_exists(conn, tournament, invitation_id) do
-    tournament.id
+  defp validate_team_count(%Tournament{capacity: capacity, id: id}) do
+    id
     |> Tournaments.get_confirmed_teams()
     |> length()
     ~> confirmed_team_count
 
-    confirm_if_valid_size(conn, confirmed_team_count, tournament, invitation_id)
-  end
-
-  defp confirm_if_valid_size(conn, team_count, tournament, invitation_id) do
-    if tournament.capacity > team_count do
-      confirm_if_associated_with_discord(conn, tournament, invitation_id)
+    if confirmed_team_count >= capacity do
+      {:error, "invalid size"}
     else
-      render(conn, "error.json", error: "invalid size")
+      {:ok, nil}
     end
   end
 
-  defp confirm_if_associated_with_discord(conn, tournament, invitation_id) do
-    # NOTE: チーム承認の前にdiscordのvalidationを入れる
+  defp validate_discord_association_of_user(%Tournament{discord_server_id: discord_server_id}, _) when is_nil(discord_server_id), do: {:ok, nil}
+  defp validate_discord_association_of_user(%Tournament{}, invitation_id) do
     invitation_id
     |> Tournaments.get_team_invitation()
     |> Map.get(:team_member)
@@ -160,29 +156,10 @@ defmodule MilkWeb.TeamController do
     |> Discord.associated?()
     ~> associated?
 
-    if !is_nil(tournament.discord_server_id) && !associated? do
-      render(conn, "error.json", error: "user is not associated with discord")
+    if associated? do
+      {:ok, nil}
     else
-      do_confirm(conn, invitation_id)
-    end
-  end
-
-  defp do_confirm(conn, invitation_id) do
-    invitation_id
-    |> Tournaments.confirm_team_invitation()
-    |> case do
-      {:ok, invitation} ->
-        team = Tournaments.get_team(invitation.team_id)
-        Task.async(fn -> send_add_team_discord_notification(team) end)
-
-        json(conn, %{
-          result: true,
-          is_confirmed: team.is_confirmed,
-          tournament_id: team.tournament_id
-        })
-
-      {:error, error} ->
-        render(conn, "error.json", error: error)
+      {:error, "user is not associated with discord"}
     end
   end
 
@@ -242,7 +219,7 @@ defmodule MilkWeb.TeamController do
   end
 
   defp add_members_if_team_exists(conn, nil, _),
-    do: render(conn, "error.json", error: "team is nil")
+    do: render(conn, "error.json", error: "attr is nil")
 
   defp add_members_if_team_exists(conn, team, user_id_list) do
     leader = Enum.find(team.team_member, &(&1.is_leader == true))
