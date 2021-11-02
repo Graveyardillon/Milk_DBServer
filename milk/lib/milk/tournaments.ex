@@ -445,7 +445,6 @@ defmodule Milk.Tournaments do
 
   @doc """
   Create tournament.
-  TODO: masterとassistantのstate
   """
   @spec create_tournament(map(), String.t() | nil) :: {:ok, Tournament.t()} | {:error, Ecto.Changeset.t()}
   def create_tournament(attrs, thumbnail_path \\ "") do
@@ -1500,8 +1499,9 @@ defmodule Milk.Tournaments do
   def start(tournament_id, master_id) do
     with {:ok, %Tournament{} = tournament} <- load_tournament(tournament_id, master_id),
          {:ok, nil} <- validate_entrant_number(tournament),
-         {:ok, tournament} <- start(tournament),
-         {:ok, tournament} <- initialize_participant_states!(tournament) do
+         {:ok, tournament} <- do_start(tournament),
+         {:ok, tournament} <- start_master_states!(tournament),
+         {:ok, tournament} <- start_entrant_states!(tournament) do
       {:ok, tournament}
     else
       error -> error
@@ -1534,7 +1534,7 @@ defmodule Milk.Tournaments do
   defp validate_entrant_number(num) when num <= 1, do: {:error, "short of participants"}
   defp validate_entrant_number(_), do: {:ok, nil}
 
-  defp start(tournament) do
+  defp do_start(tournament) do
     if tournament.is_started do
       {:error, "tournament is already started"}
     else
@@ -1544,14 +1544,52 @@ defmodule Milk.Tournaments do
     end
   end
 
-  @spec initialize_participant_states!(Tournament.t()) :: {:ok, Tournament.t()}
-  defp initialize_participant_states!(%Tournament{} = tournament) do
-    tournament.id
+  defp start_master_states!(tournament) do
+    with {:ok, nil} <- start_master_state!(tournament),
+         {:ok, nil} <- start_assistant_states!(tournament) do
+      {:ok, tournament}
+    else
+      error -> error
+    end
+  end
+
+  # TODO: 選手登録されてるかどうかのチェックがいる
+  @spec start_master_state!(Tournament.t()) :: {:ok, nil}
+  defp start_master_state!(%Tournament{rule: rule, master_id: master_id}) do
+    keyname = Rules.adapt_keyname(master_id)
+
+    case rule do
+      "basic" -> Basic.trigger!(keyname, Basic.manager_trigger())
+      "flipban" -> FlipBan.trigger!(keyname, FlipBan.manager_trigger())
+    end
+
+    {:ok, nil}
+  end
+
+  @spec start_assistant_states!(Tournament.t()) :: {:ok, nil}
+  defp start_assistant_states!(%Tournament{id: id, rule: rule}) do
+    id
+    |> __MODULE__.get_assistants()
+    |> Enum.each(fn assistant ->
+      keyname = Rules.adapt_keyname(assistant.user_id)
+
+      case rule do
+        "basic" -> Basic.trigger!(keyname, Basic.assistant_trigger())
+        "flipban" -> FlipBan.trigger!(keyname, FlipBan.assistant_trigger())
+      end
+    end)
+
+    {:ok, nil}
+  end
+
+  @spec start_entrant_states!(Tournament.t()) :: {:ok, Tournament.t()}
+  defp start_entrant_states!(%Tournament{id: id, rule: rule} = tournament) do
+    id
     |> __MODULE__.get_entrants()
     |> Enum.each(fn entrant ->
       keyname = Rules.adapt_keyname(entrant.user_id)
 
-      case tournament.rule do
+      case rule do
         "basic" -> Basic.build_dfa_instance(keyname)
         "flipban" -> FlipBan.build_dfa_instance(keyname)
         _ -> raise "Invalid tournament rule"
@@ -1568,8 +1606,9 @@ defmodule Milk.Tournaments do
   def start_team_tournament(tournament_id, master_id) when is_nil(tournament_id) or is_nil(master_id), do: {:error, "master_id or tournament_id is nil"}
   def start_team_tournament(tournament_id, master_id) do
     with {:ok, %Tournament{} = tournament} <- load_tournament(tournament_id, master_id),
-         {:ok, nil} <- validate_team_number(tournament) do
-      start(tournament)
+         {:ok, nil} <- validate_team_number(tournament),
+         {:ok, tournament} <- do_start(tournament) do
+      {:ok, tournament}
     else
       error -> error
     end
