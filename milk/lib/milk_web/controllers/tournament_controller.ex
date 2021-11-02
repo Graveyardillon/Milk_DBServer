@@ -1237,6 +1237,7 @@ defmodule MilkWeb.TournamentController do
     tournament_id = Tools.to_integer_as_needed(tournament_id)
 
     state = Tournaments.state!(tournament_id, user_id)
+      |> IO.inspect()
 
     score =
       if state == "IsPending" do
@@ -1841,15 +1842,7 @@ defmodule MilkWeb.TournamentController do
   Get game masters.
   """
   def get_game_masters(conn, %{"tournament_id" => tournament_id}) do
-    master = Tournaments.get_masters(tournament_id)
-
-    assistants =
-      Tournaments.get_assistants(tournament_id)
-      |> Enum.map(fn assistant ->
-        Tournaments.get_user_info_of_assistant(assistant)
-      end)
-
-    masters = master ++ assistants
+    masters = Tournaments.get_masters(tournament_id)
 
     render(conn, "masters.json", masters: masters)
   end

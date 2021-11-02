@@ -827,9 +827,9 @@ defmodule MilkWeb.TournamentControllerTest do
 
       Relations.block(user.id, tournament["master_id"])
 
-      date_offset =
-        Timex.now()
-        |> Timex.add(Timex.Duration.from_days(1))
+      Timex.now()
+      |> Timex.add(Timex.Duration.from_days(1))
+      ~> date_offset
 
       get(conn, Routes.tournament_path(conn, :home),
         user_id: user.id,

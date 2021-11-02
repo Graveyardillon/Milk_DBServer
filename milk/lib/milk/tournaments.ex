@@ -418,6 +418,14 @@ defmodule Milk.Tournaments do
     User
     |> where([u], u.id == ^tournament.master_id)
     |> Repo.all()
+    ~> masters
+
+    tournament_id
+    |> __MODULE__.get_assistants()
+    |> Enum.map(&Accounts.get_user(&1.user_id))
+    ~> assistants
+
+    masters ++ assistants
   end
 
   @doc """
@@ -437,6 +445,7 @@ defmodule Milk.Tournaments do
 
   @doc """
   Create tournament.
+  TODO: masterとassistantのstate
   """
   @spec create_tournament(map(), String.t() | nil) :: {:ok, Tournament.t()} | {:error, Ecto.Changeset.t()}
   def create_tournament(attrs, thumbnail_path \\ "") do
@@ -547,8 +556,9 @@ defmodule Milk.Tournaments do
   @spec add_flipban_fields(Tournament.t(), map()) :: {:ok, nil} | {:error, String.t()}
   defp add_flipban_fields(tournament, attrs) do
     with :ok <- initialize_state_machine(tournament),
-         {:ok, _}  <- create_tournament_custom_detail_on_create_tournament(tournament, attrs) do
-      create_maps_on_create_tournament(tournament, attrs)
+         {:ok, _}  <- create_tournament_custom_detail_on_create_tournament(tournament, attrs),
+         {:ok, nil} <- create_maps_on_create_tournament(tournament, attrs) do
+      {:ok, nil}
     else
       :error -> {:error, "failed to initialize state machine"}
       errors -> errors
@@ -560,6 +570,11 @@ defmodule Milk.Tournaments do
     attrs
     |> Map.put("tournament_id", tournament.id)
     |> __MODULE__.create_custom_detail()
+  end
+
+  @spec initialize_master_states!(Tournament.t()) :: {:ok, Tournament.t()}
+  defp initialize_master_states!(%Tournament{} = tournament) do
+
   end
 
   # TODO: トランザクション
@@ -2287,22 +2302,6 @@ defmodule Milk.Tournaments do
   #   |> __MODULE__.get_tournament()
   #   |> Map.get(:rule)
   #   |> case do
-  #     "basic" -> Basic.state!(keyname)
-  #     "flipban" -> FlipBan.state!(keyname)
-  #     _ -> raise "Invalid tournament rule"
-  #   end
-  # end
-  # @spec state!(integer(), integer()) :: String.t()
-  # def state!(tournament_id, user_id) do
-  #   tournament_id
-  #   |> __MODULE__.get_tournament()
-  #   |> do_state!(user_id)
-  # end
-
-  # defp do_state!(%Tournament{rule: rule}, user_id) do
-  #   keyname = Rules.adapt_keyname(user_id)
-
-  #   case rule do
   #     "basic" -> Basic.state!(keyname)
   #     "flipban" -> FlipBan.state!(keyname)
   #     _ -> raise "Invalid tournament rule"
