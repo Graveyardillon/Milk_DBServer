@@ -1017,7 +1017,8 @@ defmodule Milk.Tournaments do
          {:ok, nil} <- validate_not_participated_yet(attrs),
          {:ok, nil} <- validate_tournament_size(attrs),
          {:ok, entrant} <- do_create_entrant(attrs),
-         {:ok, nil} <- join_chat_topics_on_create_entrant(entrant) do
+         {:ok, nil} <- join_chat_topics_on_create_entrant(entrant),
+         {:ok, nil} <- initialize_entrant_state!(entrant) do
       {:ok, entrant}
     else
       error -> error
@@ -1107,6 +1108,19 @@ defmodule Milk.Tournaments do
         "authority" => 0
       })
     end)
+    {:ok, nil}
+  end
+
+  defp initialize_entrant_state!(%Entrant{user_id: user_id, tournament_id: tournament_id}) do
+    tournament = __MODULE__.get_tournament(tournament_id)
+    keyname = Rules.adapt_keyname(user_id)
+
+    case tournament.rule do
+      "basic" -> Basic.build_dfa_instance(keyname)
+      "flipban" -> FlipBan.build_dfa_instance(keyname)
+      _ -> raise "Invalid tournament"
+    end
+
     {:ok, nil}
   end
 
@@ -1607,7 +1621,8 @@ defmodule Milk.Tournaments do
   def start_team_tournament(tournament_id, master_id) do
     with {:ok, %Tournament{} = tournament} <- load_tournament(tournament_id, master_id),
          {:ok, nil} <- validate_team_number(tournament),
-         {:ok, tournament} <- do_start(tournament) do
+         {:ok, tournament} <- do_start(tournament),
+         {:ok, nil} <- start_team_states!(tournament) do
       {:ok, tournament}
     else
       error -> error
@@ -1625,7 +1640,27 @@ defmodule Milk.Tournaments do
   defp validate_team_number(_), do: {:ok, nil}
 
   defp start_team_states!(%Tournament{id: id, rule: rule}) do
+    id
+    |> __MODULE__.get_confirmed_team_members_by_tournament_id()
+    |> Enum.each(fn member ->
+      keyname = Rules.adapt_keyname(member.user_id)
 
+      if member.is_leader do
+        case rule do
+          "basic" -> Basic.trigger!(keyname, Basic.start_trigger())
+          "flipban" -> FlipBan.trigger!(keyname, FlipBan.start_trigger())
+          _ -> raise "Invalid tournament rule"
+        end
+      else
+        case rule do
+          "basic" -> Basic.trigger!(keyname, Basic.member_trigger())
+          "flipban" -> FlipBan.trigger!(keyname, FlipBan.member_trigger())
+          _ -> raise "Invalid tournament rule"
+        end
+      end
+    end)
+
+    {:ok, nil}
   end
 
   @doc """
@@ -1884,7 +1919,8 @@ defmodule Milk.Tournaments do
         |> where([u], u.id == ^id)
         |> Repo.exists?()
         |> if do
-          Repo.insert(%Assistant{user_id: id, tournament_id: tournament_id})
+          {:ok, assistant} = Repo.insert(%Assistant{user_id: id, tournament_id: tournament_id})
+          initialize_assistant_state!(assistant)
           true
         else
           false
@@ -1895,6 +1931,17 @@ defmodule Milk.Tournaments do
       {:ok, not_found_users}
     else
       {:error, :tournament_not_found}
+    end
+  end
+
+  defp initialize_assistant_state!(%Assistant{user_id: user_id, tournament_id: tournament_id}) do
+    tournament = __MODULE__.get_tournament(tournament_id)
+    keyname = Rules.adapt_keyname(user_id)
+
+    case tournament.rule do
+      "basic" -> Basic.build_dfa_instance(keyname)
+      "flipban" -> FlipBan.build_dfa_instance(keyname)
+      _ -> raise "Invalid tournament"
     end
   end
 
@@ -3262,6 +3309,7 @@ defmodule Milk.Tournaments do
     |> case do
       {:ok, team} ->
         take_members_into_chat(team)
+        initialize_member_states!(team)
         invite_members_to_discord_as_needed(team)
         {:ok, team}
 
@@ -3287,6 +3335,22 @@ defmodule Milk.Tournaments do
         |> Map.put("chat_room_id", chat_room.id)
         |> Chat.create_chat_member()
       end)
+    end)
+  end
+
+  defp initialize_member_states!(%Team{id: id, tournament_id: tournament_id}) do
+    tournament = __MODULE__.get_tournament(tournament_id)
+
+    id
+    |> __MODULE__.get_team_members_by_team_id()
+    |> Enum.each(fn member ->
+      keyname = Rules.adapt_keyname(member.user_id)
+
+      case tournament.rule do
+        "basic" -> Basic.build_dfa_instance(keyname)
+        "flipban" -> FlipBan.build_dfa_instance(keyname)
+        _ -> raise "Invalid tournament"
+      end
     end)
   end
 

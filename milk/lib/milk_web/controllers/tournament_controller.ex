@@ -1237,7 +1237,6 @@ defmodule MilkWeb.TournamentController do
     tournament_id = Tools.to_integer_as_needed(tournament_id)
 
     state = Tournaments.state!(tournament_id, user_id)
-      |> IO.inspect()
 
     score =
       if state == "IsPending" do
