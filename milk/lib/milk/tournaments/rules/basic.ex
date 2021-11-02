@@ -52,6 +52,7 @@ defmodule Milk.Tournaments.Rules.Basic do
   def build_dfa_instance(instance_name, opts \\ []) do
     is_team = Keyword.get(opts, :is_team, true)
     machine_name = machine_name(is_team)
+
     Predefined.initialize!(instance_name, machine_name, @db_index, is_not_started())
   end
 
@@ -63,7 +64,9 @@ defmodule Milk.Tournaments.Rules.Basic do
 
   @impl Rule
   def list_states(opts \\ []) do
-    Enum.reject(unfiltered_list_states(opts), &is_nil(&1))
+    opts
+    |> unfiltered_list_states()
+    |> Enum.reject(&is_nil(&1))
   end
 
   @spec unfiltered_list_states(Rules.list_state_opts()) :: [String.t()]

@@ -1850,10 +1850,10 @@ defmodule MilkWeb.TournamentController do
   Get tournament entrants.
   """
   def get_entrants(conn, %{"tournament_id" => tournament_id}) do
-    entrants =
-      tournament_id
-      |> Tools.to_integer_as_needed()
-      |> Tournaments.get_entrants()
+    tournament_id
+    |> Tools.to_integer_as_needed()
+    |> Tournaments.get_entrants()
+    ~> entrants
 
     render(conn, "entrants.json", entrants: entrants)
   end
@@ -1976,7 +1976,6 @@ defmodule MilkWeb.TournamentController do
   end
 
   defp get_rank(nil, _), do: nil
-
   defp get_rank(tournament, user_id) do
     if tournament.is_team do
       tournament.id

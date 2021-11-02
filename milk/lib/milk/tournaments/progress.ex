@@ -11,8 +11,10 @@ defmodule Milk.Tournaments.Progress do
   9. a/d state
   """
   import Ecto.Query, warn: false
-  import Common.Sperm
-  import Common.Comment
+  import Common.{
+    Comment,
+    Sperm
+  }
 
   alias Milk.{
     Accounts,
@@ -896,8 +898,7 @@ defmodule Milk.Tournaments.Progress do
   個人大会スタート時に使用する関数群
   """)
 
-  @spec start_single_elimination(integer(), Tournament.t()) ::
-          {:ok, match_list(), match_list_with_fight_result()}
+  @spec start_single_elimination(integer(), Tournament.t()) :: {:ok, match_list(), match_list_with_fight_result()}
   def start_single_elimination(master_id, tournament) do
     Tournaments.start(tournament.id, master_id)
     make_single_elimination_matches(tournament.id)
@@ -911,7 +912,8 @@ defmodule Milk.Tournaments.Progress do
   end
 
   defp make_single_elimination_matches(tournament_id) do
-    Tournaments.get_entrants(tournament_id)
+    tournament_id
+    |> Tournaments.get_entrants()
     |> Enum.map(fn x -> x.user_id end)
     |> Tournaments.generate_matchlist()
     ~> {:ok, match_list}
@@ -976,19 +978,13 @@ defmodule Milk.Tournaments.Progress do
   チーム大会スタートに関する関数群
   """)
 
-  @spec start_team_best_of_format(integer(), Tournament.t()) ::
-          {:ok, match_list(), match_list_with_fight_result()} | {:error, String.t(), nil}
+  @spec start_team_best_of_format(integer(), Tournament.t()) :: {:ok, match_list(), match_list_with_fight_result()} | {:error, String.t(), nil}
   def start_team_best_of_format(master_id, tournament) do
     tournament.id
     |> Tournaments.start_team_tournament(master_id)
     |> case do
-      {:ok, _tournament} ->
-        {:ok, match_list, match_list_with_fight_result} = generate_team_best_of_format_matches(tournament)
-
-        {:ok, match_list, match_list_with_fight_result}
-
-      {:error, error} ->
-        {:error, error, nil}
+      {:ok, _} -> generate_team_best_of_format_matches(tournament)
+      {:error, error} -> {:error, error, nil}
     end
   end
 

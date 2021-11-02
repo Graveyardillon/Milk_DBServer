@@ -74,7 +74,11 @@ defmodule Milk.Tournaments.Rules.FlipBan do
   def trigger!(instance_name, trigger), do: Predefined.trigger!(instance_name, @db_index, trigger)
 
   @impl Rule
-  def list_states(opts \\ []), do: Enum.reject(unfiltered_list_states(opts), &is_nil(&1))
+  def list_states(opts \\ []) do
+    opts
+    |> unfiltered_list_states()
+    |> Enum.reject(&is_nil(&1))
+  end
 
   @spec unfiltered_list_states(Rules.opts()) :: [String.t()]
   defp unfiltered_list_states(opts) do

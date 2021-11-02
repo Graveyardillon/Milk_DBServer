@@ -684,6 +684,7 @@ defmodule Milk.Tournaments do
 
   @spec initialize_state_machine(Tournament.t()) :: :ok | :error
   defp initialize_state_machine(%Tournament{rule: rule, is_team: is_team}) do
+
     case rule do
       "basic" -> Basic.define_dfa!(is_team: is_team)
       "flipban" -> FlipBan.define_dfa!(is_team: is_team)
@@ -766,12 +767,12 @@ defmodule Milk.Tournaments do
 
     Progress.insert_match_pending_list_table(id, tournament_id)
 
-    if tournament.enabled_map do
-      case tournament.rule do
-        # NOTE: map_selection_typeで分岐もできる
-        _ -> Progress.init_ban_order(tournament_id, id)
-      end
-    end
+    # if tournament.enabled_map do
+    #   case tournament.rule do
+    #     # NOTE: map_selection_typeで分岐もできる
+    #     _ -> Progress.init_ban_order(tournament_id, id)
+    #   end
+    # end
   end
 
   @doc """
@@ -919,14 +920,6 @@ defmodule Milk.Tournaments do
   def delete_tournament(%{"id" => id}), do: delete_tournament(id)
 
   def delete_tournament(id) when is_integer(id) do
-    # tournament =
-    #   Repo.one(
-    #     from t in Tournament,
-    #       left_join: a in assoc(t, :assistant),
-    #       left_join: e in assoc(t, :entrant),
-    #       where: t.id == ^id,
-    #       preload: [assistant: a, entrant: e]
-    #   )
     Tournament
     |> join(:left, [t], a in assoc(t, :assistant))
     |> join(:left, [t, a], e in assoc(t, :entrant))
@@ -1108,6 +1101,7 @@ defmodule Milk.Tournaments do
         "authority" => 0
       })
     end)
+
     {:ok, nil}
   end
 
@@ -1116,8 +1110,8 @@ defmodule Milk.Tournaments do
     keyname = Rules.adapt_keyname(user_id)
 
     case tournament.rule do
-      "basic" -> Basic.build_dfa_instance(keyname)
-      "flipban" -> FlipBan.build_dfa_instance(keyname)
+      "basic" -> Basic.build_dfa_instance(keyname, is_team: tournament.is_team)
+      "flipban" -> FlipBan.build_dfa_instance(keyname, is_team: tournament.is_team)
       _ -> raise "Invalid tournament"
     end
 
@@ -1600,12 +1594,12 @@ defmodule Milk.Tournaments do
   defp start_entrant_states!(%Tournament{id: id, rule: rule} = tournament) do
     id
     |> __MODULE__.get_entrants()
-    |> Enum.each(fn entrant ->
-      keyname = Rules.adapt_keyname(entrant.user_id)
+    |> Enum.each(fn %Entrant{user_id: user_id} ->
+      keyname = Rules.adapt_keyname(user_id)
 
       case rule do
-        "basic" -> Basic.build_dfa_instance(keyname)
-        "flipban" -> FlipBan.build_dfa_instance(keyname)
+        "basic" -> Basic.trigger!(keyname, Basic.start_trigger())
+        "flipban" -> FlipBan.trigger!(keyname, FlipBan.start_trigger())
         _ -> raise "Invalid tournament rule"
       end
     end)
