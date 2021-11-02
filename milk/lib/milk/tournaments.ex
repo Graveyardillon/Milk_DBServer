@@ -1624,6 +1624,10 @@ defmodule Milk.Tournaments do
   defp validate_team_number(num) when num <= 1, do: {:error, "short of teams"}
   defp validate_team_number(_), do: {:ok, nil}
 
+  defp start_team_states!(%Tournament{id: id, rule: rule}) do
+
+  end
+
   @doc """
   Finish a tournament.
   トーナメントを終了させ、終了したトーナメントをログの方に移行して削除する
@@ -2835,6 +2839,15 @@ defmodule Milk.Tournaments do
     |> where([tm], tm.team_id == ^team_id)
     |> Repo.all()
     |> Repo.preload(:user)
+  end
+
+  @spec get_confirmed_team_members_by_tournament_id(integer()) :: [TeamMember.t()]
+  def get_confirmed_team_members_by_tournament_id(tournament_id) do
+    TeamMember
+    |> join(:inner, [tm], t in Team, on: tm.team_id == t.id)
+    |> where([tm, t], t.tournament_id == ^tournament_id)
+    |> where([tm, t], t.is_confirmed)
+    |> Repo.all()
   end
 
   @doc """
