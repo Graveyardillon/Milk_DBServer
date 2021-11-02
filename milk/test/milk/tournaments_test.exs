@@ -1353,13 +1353,6 @@ defmodule Milk.TournamentsTest do
         Tournaments.choose_maps(opponent_leader.id, tournament.id, [choose_map1])
       end
 
-      if team.id > opponent_team.id do
-        {team.id, opponent_team.id}
-      else
-        {opponent_team.id, team.id}
-      end
-      ~> {_large_id, _small_id}
-
       ban_map_id_list1
       |> Enum.map(fn map_id ->
         map = Tournaments.get_map(map_id)
@@ -1381,8 +1374,7 @@ defmodule Milk.TournamentsTest do
       map = Tournaments.get_map(choose_map1)
       assert map.state == "selected"
 
-      tournament
-      |> Map.get(:id)
+      tournament.id
       |> Tournaments.is_head_of_coin?(team.id, opponent_team.id)
       |> if do
         assert "ShouldObserveA/D" == Tournaments.state!(tournament.id, leader.id)
@@ -1395,7 +1387,6 @@ defmodule Milk.TournamentsTest do
 
         Tournaments.choose_ad(leader.id, tournament.id, true)
       end
-
       assert "IsPending" == Tournaments.state!(tournament.id, leader.id)
       assert "IsPending" == Tournaments.state!(tournament.id, opponent_leader.id)
 
@@ -1404,6 +1395,8 @@ defmodule Milk.TournamentsTest do
       assert "IsLoser" == Tournaments.state!(tournament.id, opponent_leader.id)
 
       # TODO: 優勝が決まるまでやる
+      # FIXME: 処理が重くてredisからmatch_listが取得できなかったりする
+      # FIXME: stateを呼び出す回数をへらすとうまくいく
     end
   end
 
@@ -1502,7 +1495,6 @@ defmodule Milk.TournamentsTest do
   end
 
   defp renew_match_list(tournament_id, match_list, loser_list) do
-    # koko
     Tournaments.promote_winners_by_loser!(tournament_id, match_list, loser_list)
     updated_match_list = Tournaments.delete_loser(match_list, loser_list)
     Progress.delete_match_list(tournament_id)
