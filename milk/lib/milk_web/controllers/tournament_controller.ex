@@ -1366,8 +1366,9 @@ defmodule MilkWeb.TournamentController do
     match_index = Tools.to_integer_as_needed(match_index)
 
     # チーム大会かどうかを判別し、idを切り替える
-    tournament_id
-    |> Tournaments.get_tournament()
+    tournament = Tournaments.get_tournament(tournament_id)
+
+    tournament
     |> Map.get(:is_team)
     |> if do
       tournament_id
@@ -1397,7 +1398,7 @@ defmodule MilkWeb.TournamentController do
         cond do
           n > score ->
             notify_discord_on_match_finished_as_needed(
-              tournament_id,
+              tournament,
               id,
               opponent_id,
               score,
@@ -1421,7 +1422,7 @@ defmodule MilkWeb.TournamentController do
 
           n < score ->
             notify_discord_on_match_finished_as_needed(
-              tournament_id,
+              tournament,
               id,
               opponent_id,
               score,
@@ -1454,23 +1455,15 @@ defmodule MilkWeb.TournamentController do
     end
   end
 
-  defp notify_discord_on_match_finished_as_needed(
-         tournament_id,
-         id,
-         opponent_id,
-         score,
-         opponent_score
-       ) do
-    tournament_id
-    |> Tournaments.get_tournament()
-    ~> tournament
+  defp notify_discord_on_match_finished_as_needed(tournament, id, opponent_id, score, opponent_score) do
+    tournament
     |> Map.get(:is_team)
     |> if do
       team = Tournaments.get_team(id)
 
       leader = Tournaments.get_leader(team.id)
 
-      tournament_id
+      tournament.id
       |> Tournaments.get_opponent(leader.user_id)
       |> case do
         {:ok, opponent} -> {:ok, opponent.name, team.name}
