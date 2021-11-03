@@ -1352,109 +1352,59 @@ defmodule MilkWeb.TournamentController do
   1. スコアをredisに登録する
   2. 相手もスコアを登録していたらマッチが進む
   """
-  def claim_score(conn, %{
-        "tournament_id" => tournament_id,
-        "user_id" => user_id,
-        "opponent_id" => opponent_id,
-        "score" => score,
-        "match_index" => match_index
-      }) do
+  def claim_score(conn, %{"tournament_id" => tournament_id, "user_id" => user_id, "opponent_id" => opponent_id, "score" => score, "match_index" => match_index}) do
     user_id = Tools.to_integer_as_needed(user_id)
-    opponent_id = Tools.to_integer_as_needed(opponent_id)
+    _opponent_id = Tools.to_integer_as_needed(opponent_id)
     tournament_id = Tools.to_integer_as_needed(tournament_id)
     score = Tools.to_integer_as_needed(score)
     match_index = Tools.to_integer_as_needed(match_index)
 
-    # チーム大会かどうかを判別し、idを切り替える
-    tournament = Tournaments.get_tournament(tournament_id)
-
-    tournament
-    |> Map.get(:is_team)
-    |> if do
-      tournament_id
-      |> Tournaments.get_team_by_tournament_id_and_user_id(user_id)
-      |> Map.get(:id)
-      ~> team_id
-
-      tournament_id
-      |> Tournaments.get_opponent(user_id)
-      |> case do
-        {:ok, opponent} -> {:ok, opponent.id, team_id}
-        {:wait, nil} -> raise "The given user should not wait for the opponent."
-        _ -> raise "Unknown error on claim score."
-      end
+    with tournament when not is_nil(tournament) <- Tournaments.get_tournament(tournament_id),
+         {:ok, opponent} <- Tournaments.get_opponent(tournament_id, user_id),
+         id when not is_nil(id) <- Progress.get_necessary_id(tournament_id, user_id),
+         true <- Progress.insert_score(tournament_id, id, score),
+         opponent_score when opponent_score != [] <- Progress.get_score(tournament_id, opponent.id),
+         {:ok, winner_id, loser_id, _} <- calculate_winner(id, opponent.id, score, opponent_score),
+         is_finished? <- do_claim_score(tournament, winner_id, loser_id, score, opponent_score, match_index) do
+      json(conn, %{validated: true, completed: true, is_finished: is_finished?})
     else
-      {:ok, opponent_id, user_id}
-    end
-    ~> {:ok, opponent_id, id}
-
-    Progress.insert_score(tournament_id, id, score)
-
-    tournament_id
-    |> Progress.get_score(opponent_id)
-    ~> opponent_score
-    |> case do
-      n when is_integer(n) ->
-        cond do
-          n > score ->
-            notify_discord_on_match_finished_as_needed(
-              tournament,
-              id,
-              opponent_id,
-              score,
-              opponent_score
-            )
-
-            Tournaments.delete_loser_process(tournament_id, [id])
-            Tournaments.store_score(tournament_id, opponent_id, id, n, score, match_index)
-            Progress.delete_match_pending_list(id, tournament_id)
-            Progress.delete_match_pending_list(opponent_id, tournament_id)
-            Progress.delete_score(tournament_id, id)
-            Progress.delete_score(tournament_id, opponent_id)
-            Tournaments.delete_map_selections(tournament_id, id)
-            Tournaments.delete_map_selections(tournament_id, opponent_id)
-            Progress.delete_is_attacker_side(id, tournament_id)
-            Progress.delete_is_attacker_side(opponent_id, tournament_id)
-            Progress.delete_ban_order(tournament_id, id)
-            Progress.delete_ban_order(tournament_id, opponent_id)
-            is_finished = finish_as_needed?(tournament_id, opponent_id)
-            json(conn, %{validated: true, completed: true, is_finished: is_finished})
-
-          n < score ->
-            notify_discord_on_match_finished_as_needed(
-              tournament,
-              id,
-              opponent_id,
-              score,
-              opponent_score
-            )
-
-            Tournaments.delete_loser_process(tournament_id, [opponent_id])
-            Tournaments.store_score(tournament_id, id, opponent_id, score, n, match_index)
-            Progress.delete_match_pending_list(id, tournament_id)
-            Progress.delete_match_pending_list(opponent_id, tournament_id)
-            Progress.delete_score(tournament_id, id)
-            Progress.delete_score(tournament_id, opponent_id)
-            Tournaments.delete_map_selections(tournament_id, id)
-            Tournaments.delete_map_selections(tournament_id, opponent_id)
-            Progress.delete_is_attacker_side(id, tournament_id)
-            Progress.delete_is_attacker_side(opponent_id, tournament_id)
-            Progress.delete_ban_order(tournament_id, id)
-            Progress.delete_ban_order(tournament_id, opponent_id)
-            is_finished = finish_as_needed?(tournament_id, id)
-            json(conn, %{validated: true, completed: true, is_finished: is_finished})
-
-          true ->
-            notify_discord_on_duplicate_claim_as_needed(tournament_id, id, opponent_id, score)
-            notify_on_duplicate_match(tournament_id, id, opponent_id)
-            json(conn, %{validated: false, completed: false, is_finished: false})
-        end
-
+      # NOTE: 重複報告
+      {:error, id, opponent_id, _} ->
+        notify_discord_on_duplicate_claim_as_needed(tournament_id, id, opponent_id, score)
+        notify_on_duplicate_match(tournament_id, id, opponent_id)
+        json(conn, %{validated: false, completed: false, is_finished: false})
       [] ->
         json(conn, %{validated: true, completed: false, is_finished: false})
+      _ ->
+        json(conn, %{validated: false, completed: false, is_finished: false})
     end
   end
 
+  @spec calculate_winner(integer(), integer(), integer(), integer()) :: {:ok, integer(), integer(), boolean()} | {:error, integer(), integer(), boolean()}
+  defp calculate_winner(id1, id2, score1, score2) when score1 == score2, do: {:error, id1, id2, false}
+  defp calculate_winner(id1, id2, score1, score2) when score1 > score2, do: {:ok, id1, id2, true}
+  defp calculate_winner(id1, id2, score1, score2) when score1 < score2, do: {:ok, id2, id1, true}
+
+  # TODO: withを使った{:ok, _}/{:error, _}チェーン
+  # TODO: この辺の引数は使うものが決まっているので構造体の使用を検討
+  defp do_claim_score(tournament, winner_id, loser_id, score, opponent_score, match_index) when is_integer(opponent_score) do
+    notify_discord_on_match_finished_as_needed(tournament, winner_id, loser_id, score, opponent_score)
+
+    Tournaments.delete_loser_process(tournament.id, [loser_id])
+    Tournaments.store_score(tournament.id, winner_id, loser_id, opponent_score, score, match_index)
+
+    Enum.each([winner_id, loser_id], fn id ->
+      Progress.delete_match_pending_list(id, tournament.id)
+      Progress.delete_score(tournament.id, id)
+      Tournaments.delete_map_selections(tournament.id, id)
+      Progress.delete_is_attacker_side(id, tournament.id)
+      Progress.delete_ban_order(tournament.id, id)
+    end)
+
+    finish_as_needed?(tournament.id, winner_id)
+  end
+
+  @spec notify_discord_on_match_finished_as_needed(Tournament.t(), integer(), integer(), integer(), integer()) :: {:ok, nil} | {:error, String.t()}
   defp notify_discord_on_match_finished_as_needed(tournament, id, opponent_id, score, opponent_score) do
     with {:ok, opponent_name, name} <- load_names(tournament, id, opponent_id),
          {:ok, nil} <- send_tournament_finish_match_notification(tournament, name, opponent_name, score, opponent_score) do
@@ -1585,6 +1535,7 @@ defmodule MilkWeb.TournamentController do
 
   defp finish_as_needed?(tournament_id, winner_id) do
     match_list = Progress.get_match_list(tournament_id)
+      |> IO.inspect()
 
     if is_integer(match_list) do
       # Finishの処理

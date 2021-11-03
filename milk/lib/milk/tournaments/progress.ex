@@ -22,8 +22,10 @@ defmodule Milk.Tournaments.Progress do
     Tournaments
   }
 
-  alias Milk.Tournaments.Tournament
-
+  alias Milk.Tournaments.{
+    Team,
+    Tournament
+  }
   alias Milk.Tournaments.Progress.{
     BestOfXTournamentMatchLog,
     MatchListWithFightResultLog,
@@ -636,6 +638,7 @@ defmodule Milk.Tournaments.Progress do
     end
   end
 
+  @spec get_score(integer(), integer()) :: integer() | [any()]
   def get_score(tournament_id, user_id) do
     conn = conn()
 
@@ -1031,22 +1034,21 @@ defmodule Milk.Tournaments.Progress do
   @doc """
   Get necessary id for tournament progress.
   """
+  @spec get_necessary_id(integer(), integer()) :: integer() | nil
   def get_necessary_id(tournament_id, user_id) do
     tournament_id
     |> Tournaments.get_tournament()
-    |> Map.get(:is_team)
-    |> if do
-      tournament_id
-      |> Tournaments.get_team_by_tournament_id_and_user_id(user_id)
-      ~> team
-      |> is_nil()
-      |> unless do
-        team.id
-      else
-        user_id
-      end
-    else
-      user_id
-    end
+    |> do_get_necessary_id(user_id)
   end
+
+  defp do_get_necessary_id(nil, _), do: nil
+  defp do_get_necessary_id(%Tournament{id: id, is_team: true}, user_id) do
+    id
+    |> Tournaments.get_team_by_tournament_id_and_user_id(user_id)
+    |> get_team_id()
+  end
+  defp do_get_necessary_id(_, user_id), do: user_id
+
+  defp get_team_id(%Team{id: id}), do: id
+  defp get_team_id(_), do: nil
 end
