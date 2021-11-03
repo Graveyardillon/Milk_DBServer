@@ -1009,7 +1009,6 @@ defmodule MilkWeb.TournamentController do
     user_id = Tools.to_integer_as_needed(user_id)
     tournament_id = Tools.to_integer_as_needed(tournament_id)
 
-    # 大会がチーム用かどうかで分岐の処理を書く
     result = start_each_match(user_id, tournament_id)
     notify_discord_on_start_match_as_needed(tournament_id, user_id)
 

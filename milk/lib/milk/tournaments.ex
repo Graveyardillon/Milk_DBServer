@@ -767,12 +767,12 @@ defmodule Milk.Tournaments do
 
     Progress.insert_match_pending_list_table(id, tournament_id)
 
-    # if tournament.enabled_map do
-    #   case tournament.rule do
-    #     # NOTE: map_selection_typeで分岐もできる
-    #     _ -> Progress.init_ban_order(tournament_id, id)
-    #   end
-    # end
+    if tournament.enabled_map do
+      case tournament.rule do
+        # NOTE: map_selection_typeで分岐もできる
+        _ -> Progress.init_ban_order(tournament_id, id)
+      end
+    end
   end
 
   @doc """
@@ -2392,210 +2392,211 @@ defmodule Milk.Tournaments do
   @doc """
   Checks tournament state.
   """
-  @spec state!(integer(), integer()) :: String.t()
-  def state!(tournament_id, user_id) do
-    keyname = Rules.adapt_keyname(user_id)
-
-    tournament_id
-    |> __MODULE__.get_tournament()
-    |> do_state!(keyname)
-  end
-
-  defp do_state!(nil, _), do: "IsFinished"
-  defp do_state!(%Tournament{rule: rule}, keyname) do
-    case rule do
-      "basic" -> Basic.state!(keyname)
-      "flipban" -> FlipBan.state!(keyname)
-      _ -> raise "Invalid tournament rule"
-    end
-  end
   # @spec state!(integer(), integer()) :: String.t()
   # def state!(tournament_id, user_id) do
+  #   keyname = Rules.adapt_keyname(user_id)
+
   #   tournament_id
   #   |> __MODULE__.get_tournament()
-  #   |> do_state!(user_id)
+  #   |> do_state!(keyname)
   # end
 
   # defp do_state!(nil, _), do: "IsFinished"
-  # defp do_state!(%Tournament{is_started: is_started}, _) when not is_started, do: "IsNotStarted"
-
-  # defp do_state!(tournament, user_id) do
-  #   id = Progress.get_necessary_id(tournament.id, user_id)
-  #   check_user_role!(tournament, id, user_id)
-  # end
-
-  # @spec check_user_role!(Tournament.t(), integer(), integer()) :: String.t()
-  # defp check_user_role!(tournament, id, user_id) do
-  #   is_manager = tournament.master_id == user_id
-  #   is_assistant = is_assistant?(tournament, user_id)
-  #   is_not_entrant = is_not_entrant?(tournament, user_id)
-  #   is_member = is_member?(tournament, user_id)
-
-  #   cond do
-  #     is_manager && is_not_entrant -> "IsManager"
-  #     !is_manager && is_assistant && is_not_entrant -> "IsAssistant"
-  #     is_member -> "IsMember"
-  #     :else -> check_has_lost!(tournament, id)
+  # defp do_state!(%Tournament{rule: rule}, keyname) do
+  #   case rule do
+  #     "basic" -> Basic.state!(keyname)
+  #     "flipban" -> FlipBan.state!(keyname)
+  #     _ -> raise "Invalid tournament rule"
   #   end
   # end
+  @spec state!(integer(), integer()) :: String.t()
+  def state!(tournament_id, user_id) do
+    tournament_id
+    |> __MODULE__.get_tournament()
+    |> do_state!(user_id)
+  end
 
-  # @spec is_assistant?(Tournament.t(), integer()) :: boolean()
-  # defp is_assistant?(tournament, user_id) do
-  #   tournament.id
-  #   |> __MODULE__.get_assistants()
-  #   |> Enum.filter(fn assistant ->
-  #     assistant.user_id == user_id
-  #   end)
-  #   |> length()
-  #   |> Kernel.!=(0)
-  # end
+  defp do_state!(nil, _), do: "IsFinished"
+  defp do_state!(%Tournament{is_started: is_started}, _) when not is_started, do: "IsNotStarted"
 
-  # @spec is_not_entrant?(Tournament.t(), integer()) :: boolean()
-  # defp is_not_entrant?(tournament, user_id) do
-  #   if tournament.is_team do
-  #     tournament.id
-  #     |> get_teams_by_tournament_id()
-  #     |> Enum.map(fn team ->
-  #       get_team_members_by_team_id(team.id)
-  #     end)
-  #     |> List.flatten()
-  #     |> Enum.map(& &1.user_id)
-  #     |> Enum.all?(fn team_member_user_id ->
-  #       team_member_user_id != user_id
-  #     end)
-  #   else
-  #     tournament.id
-  #     |> get_entrants()
-  #     |> Enum.map(& &1.user_id)
-  #     |> Enum.all?(fn entrant_user_id ->
-  #       entrant_user_id != user_id
-  #     end)
-  #   end
-  # end
+  defp do_state!(tournament, user_id) do
+    id = Progress.get_necessary_id(tournament.id, user_id)
+    check_user_role!(tournament, id, user_id)
+  end
 
-  # @spec is_member?(Tournament.t(), integer()) :: boolean()
-  # defp is_member?(tournament, user_id) do
-  #   if tournament.is_team do
-  #     tournament.id
-  #     |> __MODULE__.get_team_by_tournament_id_and_user_id(user_id)
-  #     ~> team
-  #     |> is_nil()
-  #     |> if do
-  #       false
-  #     else
-  #       leader = __MODULE__.get_leader(team.id)
-  #       leader.user_id != user_id
-  #     end
-  #   else
-  #     false
-  #   end
-  # end
+  @spec check_user_role!(Tournament.t(), integer(), integer()) :: String.t()
+  defp check_user_role!(tournament, id, user_id) do
+    is_manager = tournament.master_id == user_id
+    is_assistant = is_assistant?(tournament, user_id)
+    is_not_entrant = is_not_entrant?(tournament, user_id)
+    is_member = is_member?(tournament, user_id)
 
-  # # HACK: is_aloneの分の処理も挟んでいる
-  # @spec check_has_lost!(Tournament.t(), integer()) :: String.t()
-  # defp check_has_lost!(tournament, id) do
-  #   match_list = Progress.get_match_list(tournament.id)
-  #   match = find_match(match_list, id)
+    cond do
+      is_manager && is_not_entrant -> "IsManager"
+      !is_manager && is_assistant && is_not_entrant -> "IsAssistant"
+      is_member -> "IsMember"
+      :else -> check_has_lost!(tournament, id)
+    end
+  end
 
-  #   cond do
-  #     match_list == [] -> "IsFinished"
-  #     has_lost?(match_list, id) -> "IsLoser"
-  #     __MODULE__.is_alone?(match) -> "IsAlone"
-  #     :else -> check_wait_state!(tournament, id, match)
-  #   end
-  # end
+  @spec is_assistant?(Tournament.t(), integer()) :: boolean()
+  defp is_assistant?(tournament, user_id) do
+    tournament.id
+    |> __MODULE__.get_assistants()
+    |> Enum.filter(fn assistant ->
+      assistant.user_id == user_id
+    end)
+    |> length()
+    |> Kernel.!=(0)
+  end
 
-  # @spec check_wait_state!(Tournament.t(), integer(), any()) :: String.t()
-  # defp check_wait_state!(tournament, id, match) do
-  #   opponent_pending_list = load_opponent_pending_list(tournament, match, id)
-  #   pending_list = Progress.get_match_pending_list(id, tournament.id)
+  @spec is_not_entrant?(Tournament.t(), integer()) :: boolean()
+  defp is_not_entrant?(tournament, user_id) do
+    if tournament.is_team do
+      tournament.id
+      |> get_teams_by_tournament_id()
+      |> Enum.map(fn team ->
+        get_team_members_by_team_id(team.id)
+      end)
+      |> List.flatten()
+      |> Enum.map(& &1.user_id)
+      |> Enum.all?(fn team_member_user_id ->
+        team_member_user_id != user_id
+      end)
+    else
+      tournament.id
+      |> get_entrants()
+      |> Enum.map(& &1.user_id)
+      |> Enum.all?(fn entrant_user_id ->
+        entrant_user_id != user_id
+      end)
+    end
+  end
 
-  #   cond do
-  #     pending_list == [] && tournament.enabled_coin_toss ->
-  #       "ShouldFlipCoin"
+  @spec is_member?(Tournament.t(), integer()) :: boolean()
+  defp is_member?(tournament, user_id) do
+    if tournament.is_team do
+      tournament.id
+      |> __MODULE__.get_team_by_tournament_id_and_user_id(user_id)
+      ~> team
+      |> is_nil()
+      |> if do
+        false
+      else
+        leader = __MODULE__.get_leader(team.id)
+        leader.user_id != user_id
+      end
+    else
+      false
+    end
+  end
 
-  #     pending_list == [] ->
-  #       "IsInMatch"
+  # HACK: is_aloneの分の処理も挟んでいる
+  @spec check_has_lost!(Tournament.t(), integer()) :: String.t()
+  defp check_has_lost!(tournament, id) do
+    match_list = Progress.get_match_list(tournament.id)
+    match = find_match(match_list, id)
 
-  #     pending_list != [] && opponent_pending_list == [] ->
-  #       [{_, state}] = pending_list
-  #       state
+    cond do
+      match_list == [] -> "IsFinished"
+      has_lost?(match_list, id) -> "IsLoser"
+      __MODULE__.is_alone?(match) -> "IsAlone"
+      :else -> check_wait_state!(tournament, id, match)
+    end
+  end
 
-  #     pending_list != [] && tournament.enabled_map ->
-  #       check_map_ban_state(tournament, id)
+  @spec check_wait_state!(Tournament.t(), integer(), any()) :: String.t()
+  defp check_wait_state!(tournament, id, match) do
+    opponent_pending_list = load_opponent_pending_list(tournament, match, id)
+    pending_list = Progress.get_match_pending_list(id, tournament.id)
 
-  #     :else ->
-  #       "IsPending"
-  #   end
-  # end
+    cond do
+      pending_list == [] && tournament.enabled_coin_toss ->
+        "ShouldFlipCoin"
 
-  # defp load_opponent_pending_list(tournament, match, id) do
-  #   tournament.is_team
-  #   |> if do
-  #     get_opponent_team(match, id)
-  #   else
-  #     get_opponent_user(match, id)
-  #   end
-  #   |> case do
-  #     {:ok, %User{} = user} -> Progress.get_match_pending_list(user.id, tournament.id)
-  #     {:ok, %Team{} = team} -> Progress.get_match_pending_list(team.id, tournament.id)
-  #     {:wait, nil} -> raise "invalid opponent: {:wait, nil}"
-  #     {:error, error} -> raise "invalid #{error}"
-  #   end
-  # end
+      pending_list == [] ->
+        # "IsInMatch"
+        "ShouldStartMatch"
 
-  # @spec check_map_ban_state(Tournament.t(), integer()) :: String.t()
-  # defp check_map_ban_state(tournament, id) do
-  #   tournament
-  #   |> Map.get(:is_team)
-  #   |> if do
-  #     tournament
-  #     |> Map.get(:id)
-  #     |> Progress.get_match_list()
-  #     |> find_match(id)
-  #     |> get_opponent_team(id)
-  #   else
-  #     tournament
-  #     |> Map.get(:id)
-  #     |> Progress.get_match_list()
-  #     |> find_match(id)
-  #     |> get_opponent_user(id)
-  #   end
-  #   ~> {:ok, opponent}
+      pending_list != [] && opponent_pending_list == [] ->
+        [{_, state}] = pending_list
+        state
 
-  #   is_head? = __MODULE__.is_head_of_coin?(tournament.id, id, opponent.id)
+      pending_list != [] && tournament.enabled_map ->
+        check_map_ban_state(tournament, id)
 
-  #   tournament.id
-  #   |> Progress.get_ban_order(id)
-  #   |> case do
-  #     0 when is_head? ->
-  #       "ShouldBan"
+      :else ->
+        "IsPending"
+    end
+  end
 
-  #     0 ->
-  #       "ShouldObserveBan"
+  defp load_opponent_pending_list(tournament, match, id) do
+    tournament.is_team
+    |> if do
+      get_opponent_team(match, id)
+    else
+      get_opponent_user(match, id)
+    end
+    |> case do
+      {:ok, %User{} = user} -> Progress.get_match_pending_list(user.id, tournament.id)
+      {:ok, %Team{} = team} -> Progress.get_match_pending_list(team.id, tournament.id)
+      {:wait, nil} -> raise "invalid opponent: {:wait, nil}"
+      {:error, error} -> raise "invalid #{error}"
+    end
+  end
 
-  #     1 when is_head? ->
-  #       "ShouldObserveBan"
+  @spec check_map_ban_state(Tournament.t(), integer()) :: String.t()
+  defp check_map_ban_state(tournament, id) do
+    tournament
+    |> Map.get(:is_team)
+    |> if do
+      tournament
+      |> Map.get(:id)
+      |> Progress.get_match_list()
+      |> find_match(id)
+      |> get_opponent_team(id)
+    else
+      tournament
+      |> Map.get(:id)
+      |> Progress.get_match_list()
+      |> find_match(id)
+      |> get_opponent_user(id)
+    end
+    ~> {:ok, opponent}
 
-  #     1 ->
-  #       "ShouldBan"
+    is_head? = __MODULE__.is_head_of_coin?(tournament.id, id, opponent.id)
 
-  #     2 when is_head? ->
-  #       "ShouldChooseMap"
+    tournament.id
+    |> Progress.get_ban_order(id)
+    |> case do
+      0 when is_head? ->
+        "ShouldBan"
 
-  #     2 ->
-  #       "ShouldObserveBan"
+      0 ->
+        "ShouldObserveBan"
 
-  #     3 when is_head? ->
-  #       "ShouldObserveA/D"
+      1 when is_head? ->
+        "ShouldObserveBan"
 
-  #     3 ->
-  #       "ShouldChooseA/D"
+      1 ->
+        "ShouldBan"
 
-  #     4 ->
-  #       "IsPending"
-  #   end
-  # end
+      2 when is_head? ->
+        "ShouldChooseMap"
+
+      2 ->
+        "ShouldObserveBan"
+
+      3 when is_head? ->
+        "ShouldObserveA/D"
+
+      3 ->
+        "ShouldChooseA/D"
+
+      4 ->
+        "IsPending"
+    end
+  end
 
   @doc """
   Returns data for tournament brackets.

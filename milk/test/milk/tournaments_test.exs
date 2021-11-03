@@ -1140,7 +1140,7 @@ defmodule Milk.TournamentsTest do
       assert "IsWaitingForStart" == Tournaments.state!(tournament.id, tournament.master_id)
     end
 
-    test "state!/2 returns IsInMatch" do
+    test "state!/2 returns ShouldStartMatch" do
       %{tournament: tournament} = create_tournament_for_flow(nil)
       create_entrants(7, tournament.id)
 
@@ -1150,7 +1150,7 @@ defmodule Milk.TournamentsTest do
       })
 
       start(tournament.master_id, tournament.id)
-      assert "IsInMatch" == Tournaments.state!(tournament.id, tournament.master_id)
+      assert "ShouldStartMatch" == Tournaments.state!(tournament.id, tournament.master_id)
     end
 
     test "state!/2 returns IsFinished" do
@@ -1195,7 +1195,7 @@ defmodule Milk.TournamentsTest do
       assert "IsAssistant" == Tournaments.state!(tournament.id, assistant_id)
     end
 
-    test "state!/2 returns IsInMatch and IsMember" do
+    test "state!/2 returns ShouldStartMatch and IsMember" do
       tournament = fixture_tournament(is_team: true, capacity: 4, type: 2)
 
       fill_with_team(tournament.id)
@@ -1217,7 +1217,7 @@ defmodule Milk.TournamentsTest do
 
       Progress.start_team_best_of_format(tournament.master_id, tournament)
 
-      assert "IsInMatch" == Tournaments.state!(tournament.id, leader.id)
+      assert "ShouldStartMatch" == Tournaments.state!(tournament.id, leader.id)
       assert "IsMember" == Tournaments.state!(tournament.id, member.id)
     end
 
@@ -1254,7 +1254,7 @@ defmodule Milk.TournamentsTest do
   end
 
   describe "state! with map select" do
-    test "returns IsInMatch -> ShouldFlipCoin -> ShouldBan -> ShouldChooseMap" do
+    test "returns ShouldStartMatch -> ShouldFlipCoin -> ShouldBan -> ShouldChooseMap" do
       maps = [
         %{"name" => "map1"},
         %{"name" => "map2"},
