@@ -1456,38 +1456,43 @@ defmodule MilkWeb.TournamentController do
   end
 
   defp notify_discord_on_match_finished_as_needed(tournament, id, opponent_id, score, opponent_score) do
-    tournament
-    |> Map.get(:is_team)
-    |> if do
-      team = Tournaments.get_team(id)
-
-      leader = Tournaments.get_leader(team.id)
-
-      tournament.id
-      |> Tournaments.get_opponent(leader.user_id)
-      |> case do
-        {:ok, opponent} -> {:ok, opponent.name, team.name}
-        {:wait, nil} -> raise "The given user should wait for the opponent."
-        _ -> raise "Unknown error on claim score."
-      end
+    with {:ok, opponent_name, name} <- load_names(tournament, id, opponent_id),
+         {:ok, nil} <- send_tournament_finish_match_notification(tournament, name, opponent_name, score, opponent_score) do
+      {:ok, nil}
     else
-      user = Accounts.get_user(id)
-      opponent = Accounts.get_user(opponent_id)
-
-      {:ok, opponent.name, user.name}
+      error -> error
     end
-    ~> {:ok, opponent_name, name}
+  end
 
-    unless is_nil(tournament.discord_server_id) do
-      tournament
-      |> Map.get(:discord_server_id)
-      |> Discord.send_tournament_finish_match_notification(
-        name,
-        opponent_name,
-        score,
-        opponent_score
-      )
+  @spec load_names(Tournament.t(), integer(), integer()) :: {:ok, String.t(), String.t()} | {:error, String.t()}
+  defp load_names(%Tournament{is_team: true, id: tournament_id}, id, _) do
+    with team when not is_nil(team) <- Tournaments.get_team(id),
+         leader when not is_nil(leader) <- Tournaments.get_leader(team.id),
+         {:ok, opponent} <- Tournaments.get_opponent(tournament_id, leader.user_id) do
+      {:ok, opponent.name, team.name}
+    else
+      nil -> {:error, "team or leader is nil"}
+      {:wait, nil} -> {:error, "opponent is nil"}
+      error -> error
     end
+  end
+  defp load_names(_, user_id, opponent_id) do
+    user = Accounts.get_user(user_id)
+    opponent = Accounts.get_user(opponent_id)
+
+    {:ok, opponent.name, user.name}
+  end
+
+  defp send_tournament_finish_match_notification(%Tournament{discord_server_id: nil}, _, _, _, _), do: {:ok, nil}
+  defp send_tournament_finish_match_notification(%Tournament{discord_server_id: discord_server_id}, name, opponent_name, score, opponent_score) do
+    Discord.send_tournament_finish_match_notification(
+      discord_server_id,
+      name,
+      opponent_name,
+      score,
+      opponent_score
+    )
+    {:ok, nil}
   end
 
   defp notify_discord_on_duplicate_claim_as_needed(tournament_id, id, opponent_id, score) do
