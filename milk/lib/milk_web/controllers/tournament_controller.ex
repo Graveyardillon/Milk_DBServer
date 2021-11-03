@@ -1009,23 +1009,28 @@ defmodule MilkWeb.TournamentController do
     user_id = Tools.to_integer_as_needed(user_id)
     tournament_id = Tools.to_integer_as_needed(tournament_id)
 
-    result = start_each_match(user_id, tournament_id)
+    tournament_id
+    |> Tournaments.get_tournament()
+    |> do_start_match(user_id)
+    |> case do
+      {:ok, _} -> true
+      {:error, _} -> false
+    end
+    ~> result
+
     notify_discord_on_start_match_as_needed(tournament_id, user_id)
 
     json(conn, %{result: result})
   end
 
-  defp start_each_match(user_id, tournament_id) do
-    tournament_id
-    |> Tools.to_integer_as_needed()
-    ~> tournament_id
-    |> Tournaments.get_tournament()
-    |> Map.get(:is_team)
-    |> if do
-      start_team_match(tournament_id, user_id)
-    else
-      start_individual_match(tournament_id, user_id)
-    end
+  defp do_start_match(nil, _), do: {:error, "tournament is nil"}
+  defp do_start_match(%Tournament{is_team: true, id: id}, user_id) do
+    start_team_match(id, user_id)
+    {:ok, nil}
+  end
+  defp do_start_match(%Tournament{id: id}, user_id) do
+    start_individual_match(id, user_id)
+    {:ok, nil}
   end
 
   defp start_individual_match(tournament_id, user_id) do
@@ -1518,8 +1523,13 @@ defmodule MilkWeb.TournamentController do
     tournament_id = Tools.to_integer_as_needed(tournament_id)
     user_id = Tools.to_integer_as_needed(user_id)
 
-    user_id
-    |> start_each_match(tournament_id)
+    tournament_id
+    |> Tournaments.get_tournament()
+    |> do_start_match(user_id)
+    |> case do
+      {:ok, _} -> true
+      {:error, _} -> false
+    end
     |> if do
       Tournaments.flip_coin(user_id, tournament_id)
     else
