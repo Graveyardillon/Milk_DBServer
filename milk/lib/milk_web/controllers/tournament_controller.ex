@@ -1359,13 +1359,17 @@ defmodule MilkWeb.TournamentController do
     score = Tools.to_integer_as_needed(score)
     match_index = Tools.to_integer_as_needed(match_index)
 
+    do_claim_score(conn, user_id, tournament_id, score, match_index)
+  end
+
+  defp do_claim_score(conn, user_id, tournament_id, score, match_index) do
     with tournament when not is_nil(tournament) <- Tournaments.get_tournament(tournament_id),
          {:ok, opponent} <- Tournaments.get_opponent(tournament_id, user_id),
          id when not is_nil(id) <- Progress.get_necessary_id(tournament_id, user_id),
          true <- Progress.insert_score(tournament_id, id, score),
          opponent_score when opponent_score != [] <- Progress.get_score(tournament_id, opponent.id),
          {:ok, winner_id, loser_id, _} <- calculate_winner(id, opponent.id, score, opponent_score),
-         is_finished? <- do_claim_score(tournament, winner_id, loser_id, score, opponent_score, match_index) do
+         is_finished? <- proceed_to_next_match(tournament, winner_id, loser_id, score, opponent_score, match_index) do
       json(conn, %{validated: true, completed: true, is_finished: is_finished?})
     else
       # NOTE: 重複報告
@@ -1387,7 +1391,7 @@ defmodule MilkWeb.TournamentController do
 
   # TODO: withを使った{:ok, _}/{:error, _}チェーン
   # TODO: この辺の引数は使うものが決まっているので構造体の使用を検討
-  defp do_claim_score(tournament, winner_id, loser_id, score, opponent_score, match_index) when is_integer(opponent_score) do
+  defp proceed_to_next_match(tournament, winner_id, loser_id, score, opponent_score, match_index) when is_integer(opponent_score) do
     notify_discord_on_match_finished_as_needed(tournament, winner_id, loser_id, score, opponent_score)
 
     Tournaments.delete_loser_process(tournament.id, [loser_id])
