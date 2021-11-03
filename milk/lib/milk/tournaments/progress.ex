@@ -32,16 +32,17 @@ defmodule Milk.Tournaments.Progress do
 
   require Logger
 
-  @type match_list :: [any()]
-  @type match_list_with_fight_result :: [any()]
+  @type match_list :: [any()] | integer()
+  @type match_list_with_fight_result :: [any()] | map()
 
   defp conn() do
     host = Application.get_env(:milk, :redix_host)
     port = Application.get_env(:milk, :redix_port)
 
-    with {:ok, conn} <- Redix.start_link(host: host, port: port) do
-      conn
-    else
+    [host: host, port: port]
+    |> Redix.start_link()
+    |> case do
+      {:ok, conn} -> conn
       error -> error
     end
   end

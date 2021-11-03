@@ -1,4 +1,7 @@
 defmodule MilkWeb.TournamentController do
+  @moduledoc """
+  Tournament Controller
+  """
   use MilkWeb, :controller
   use Timex
 
@@ -20,6 +23,7 @@ defmodule MilkWeb.TournamentController do
   alias Milk.Log.TournamentLog
   alias Milk.Tournaments.{
     Progress,
+    Team,
     Tournament
   }
 
@@ -1008,51 +1012,54 @@ defmodule MilkWeb.TournamentController do
   def start_match(conn, %{"user_id" => user_id, "tournament_id" => tournament_id}) do
     user_id = Tools.to_integer_as_needed(user_id)
     tournament_id = Tools.to_integer_as_needed(tournament_id)
+    tournament = Tournaments.get_tournament(tournament_id)
 
-    tournament_id
-    |> Tournaments.get_tournament()
-    |> do_start_match(user_id)
-    |> case do
-      {:ok, _} -> true
-      {:error, _} -> false
+    with {:ok, _} <- do_start_match(tournament, user_id),
+         {:ok, nil} <- notify_discord_on_start_match_as_needed(tournament, user_id) do
+      json(conn, %{result: true})
+    else
+      _ -> json(conn, %{result: false})
     end
-    ~> result
-
-    notify_discord_on_start_match_as_needed(tournament_id, user_id)
-
-    json(conn, %{result: result})
   end
 
+  @spec do_start_match(Tournament.t() | nil, integer()) :: {:ok, nil} | {:error, String.t()}
   defp do_start_match(nil, _), do: {:error, "tournament is nil"}
-  defp do_start_match(%Tournament{is_team: true, id: id}, user_id) do
-    start_team_match(id, user_id)
-    {:ok, nil}
+  defp do_start_match(%Tournament{is_team: true} = tournament, user_id) do
+    if start_team_match(tournament, user_id) do
+      {:ok, nil}
+    else
+      {:error, "failed to start team match."}
+    end
   end
   defp do_start_match(%Tournament{id: id}, user_id) do
-    start_individual_match(id, user_id)
-    {:ok, nil}
+    if start_individual_match(id, user_id) do
+      {:ok, nil}
+    else
+      {:error, "failed to start individual match."}
+    end
   end
 
+  @spec start_individual_match(integer(), integer()) :: boolean()
   defp start_individual_match(tournament_id, user_id) do
     user_id
     |> Progress.get_match_pending_list(tournament_id)
-    |> Kernel.==([])
-    |> if do
-      Progress.insert_match_pending_list_table(user_id, tournament_id)
-    else
-      false
-    end
+    |> insert_match_pending_list_as_needed?(user_id, tournament_id)
   end
 
-  defp start_team_match(tournament_id, user_id) do
-    tournament_id
+  @spec insert_match_pending_list_as_needed?([any()], integer(), integer()) :: boolean()
+  defp insert_match_pending_list_as_needed?([], id, tournament_id), do: Progress.insert_match_pending_list_table(id, tournament_id)
+  defp insert_match_pending_list_as_needed?(_, _, _), do: false
+
+  @spec start_team_match(Tournament.t(), integer()) :: boolean()
+  defp start_team_match(%Tournament{id: id}, user_id) do
+    id
     |> Tournaments.get_team_by_tournament_id_and_user_id(user_id)
     |> Map.get(:id)
     ~> team_id
-    |> Progress.get_match_pending_list(tournament_id)
+    |> Progress.get_match_pending_list(id)
     |> Kernel.==([])
     |> if do
-      Progress.insert_match_pending_list_table(team_id, tournament_id)
+      Progress.insert_match_pending_list_table(team_id, id)
     else
       # FIXME: trueを返すことによってios側でどのユーザーでもコイントスの結果を見られるようにしているが、
       # もっと良い処理があるかもしれない
@@ -1060,36 +1067,41 @@ defmodule MilkWeb.TournamentController do
     end
   end
 
-  defp notify_discord_on_start_match_as_needed(tournament_id, user_id) do
-    tournament_id
-    |> Tournaments.get_tournament()
-    ~> tournament
-    |> Map.get(:discord_server_id)
-    ~> server_id
-    |> is_nil()
-    |> unless do
-      {:ok, opponent} = Tournaments.get_opponent(tournament_id, user_id)
-
-      tournament
-      |> Map.get(:is_team)
-      |> if do
-        team = Tournaments.get_team_by_tournament_id_and_user_id(tournament_id, user_id)
-
-        {team.id, opponent.id, team.name, opponent.name}
-      else
-        user = Accounts.get_user(user_id)
-
-        {user.id, opponent.id, user.name, opponent.name}
-      end
-      ~> {a_id, b_id, a_name, b_name}
-
-      pending_list = Progress.get_match_pending_list(a_id, tournament_id)
-      opponent_pending_list = Progress.get_match_pending_list(b_id, tournament_id)
-
-      if pending_list != [] && opponent_pending_list != [] do
-        Discord.send_tournament_start_match_notification(server_id, a_name, b_name)
-      end
+  defp notify_discord_on_start_match_as_needed(%Tournament{discord_server_id: nil}, _), do: {:ok, nil}
+  defp notify_discord_on_start_match_as_needed(%Tournament{id: id} = tournament, user_id) do
+    with {:ok, opponent} <- Tournaments.get_opponent(id, user_id),
+         {:ok, id, name} <- load_necessary_tournament_info(tournament, user_id),
+         {:ok, nil} <- do_notify_discord_on_start_match_as_needed(tournament, id, opponent.id, name, opponent.name) do
+      {:ok, nil}
+    else
+      error -> error
     end
+  end
+
+  @spec load_necessary_tournament_info(Tournament.t() | nil, integer()) :: {:ok, integer(), String.t()} | {:error, String.t()}
+  defp load_necessary_tournament_info(%Tournament{id: id, is_team: true}, user_id) do
+    id
+    |> Tournaments.get_team_by_tournament_id_and_user_id(user_id)
+    |> load_necessary_team_tournament_info()
+  end
+  defp load_necessary_tournament_info(_, user_id) do
+    user = Accounts.get_user(user_id)
+    {:ok, user.id, user.name}
+  end
+
+  defp load_necessary_team_tournament_info(nil), do: {:error, "team is nil"}
+  defp load_necessary_team_tournament_info(%Team{id: id, name: name}), do: {:ok, id, name}
+
+  @spec do_notify_discord_on_start_match_as_needed(Tournament.t(), integer(), integer(), String.t(), String.t()) :: {:ok, nil}
+  defp do_notify_discord_on_start_match_as_needed(%Tournament{id: tournament_id, discord_server_id: discord_server_id}, id, opponent_id, name, opponent_name) do
+    pending_list = Progress.get_match_pending_list(id, tournament_id)
+    opponent_pending_list = Progress.get_match_pending_list(opponent_id, tournament_id)
+
+    if pending_list != [] && opponent_pending_list != [] do
+      Discord.send_tournament_start_match_notification(discord_server_id, name, opponent_name)
+    end
+
+    {:ok, nil}
   end
 
   @doc """
@@ -1099,20 +1111,14 @@ defmodule MilkWeb.TournamentController do
     tournament_id = Tools.to_integer_as_needed(tournament_id)
     user_id = Tools.to_integer_as_needed(user_id)
 
-    match_list = Progress.get_match_list(tournament_id)
-
-    unless is_integer(match_list) do
-      with {:ok, opponent} <- Tournaments.get_opponent(tournament_id, user_id) do
-        render(conn, "opponent.json", opponent: opponent)
-      else
-        {:wait, _} ->
-          json(conn, %{result: false, opponent: nil, wait: true})
-
-        _ ->
-          render(conn, "error.json", error: nil)
-      end
-    else
-      json(conn, %{result: false})
+    tournament_id
+    |> Progress.get_match_list()
+    |> do_get_opponent(tournament_id, user_id)
+    |> case do
+      {:ok, opponent} -> render(conn, "opponent.json", opponent: opponent)
+      {:wait, _} -> json(conn, %{result: false, opponent: nil, wait: true})
+      {:error, "match list is integer"} -> json(conn, %{result: false})
+      _ -> render(conn, "error.json", error: nil)
     end
   end
 
@@ -1122,30 +1128,36 @@ defmodule MilkWeb.TournamentController do
 
     tournament_id
     |> Progress.get_match_list()
-    |> is_integer()
-    |> unless do
-      leader = Tournaments.get_leader(team_id)
+    |> do_get_team_opponent(tournament_id, team_id)
+    |> case do
+      {:ok, opponent} ->
+        opponent.id
+        |> Tournaments.get_leader()
+        |> Map.get(:user)
+        ~> leader
 
-      tournament_id
-      |> Tournaments.get_opponent(leader.user_id)
-      |> case do
-        {:ok, opponent} ->
-          opponent.id
-          |> Tournaments.get_leader()
-          |> Map.get(:user)
-          ~> leader
+        render(conn, "opponent_team.json", opponent: opponent, leader: leader)
 
-          render(conn, "opponent_team.json", opponent: opponent, leader: leader)
-
-        {:wait, nil} ->
-          json(conn, %{result: false, opponent: nil, wait: true})
-
-        _ ->
-          render(conn, "error.json", error: nil)
-      end
-    else
-      json(conn, %{result: false})
+      {:wait, nil} ->
+        json(conn, %{result: false, opponent: nil, wait: true})
+      {:error, "match list is integer"} ->
+        json(conn, %{result: false})
+      _ ->
+        render(conn, "error.json", error: nil)
     end
+  end
+
+  defp do_get_opponent(match_list, _, _) when is_integer(match_list), do: {:error, "match list is integer"}
+  defp do_get_opponent(_, tournament_id, user_id), do: Tournaments.get_opponent(tournament_id, user_id)
+
+  defp do_get_team_opponent(match_list, _, _) when is_integer(match_list), do: {:error, "match list is integer"}
+  defp do_get_team_opponent(_, tournament_id, team_id) do
+    team_id
+    |> Tournaments.get_leader()
+    |> Map.get(:user_id)
+    ~> leader_id
+
+    Tournaments.get_opponent(tournament_id, leader_id)
   end
 
   @doc """

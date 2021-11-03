@@ -66,8 +66,8 @@ defmodule Milk.Tournaments do
   require Integer
   require Logger
 
-  @type match_list :: [any()]
-  @type match_list_with_fight_result :: [any()]
+  @type match_list :: [any()] | integer()
+  @type match_list_with_fight_result :: [any()] | map()
 
   @doc """
   Gets a single tournament.
