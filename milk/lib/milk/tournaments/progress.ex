@@ -398,6 +398,7 @@ defmodule Milk.Tournaments.Progress do
     end
   end
 
+  @spec get_fight_result(integer(), integer()) :: boolean() | nil
   def get_fight_result(user_id, tournament_id) do
     conn = conn()
 
@@ -405,17 +406,16 @@ defmodule Milk.Tournaments.Progress do
          {:ok, value} <- Redix.command(conn, ["HGET", tournament_id, user_id]) do
       if value do
         {is_win, _} = Code.eval_string(value)
-        [{{user_id, tournament_id}, is_win}]
+        is_win
       else
-        []
+        nil
       end
     else
       {:error, %Redix.Error{message: message}} ->
         Logger.error(message)
-        []
+        nil
 
-      _ ->
-        []
+      _ -> nil
     end
   end
 

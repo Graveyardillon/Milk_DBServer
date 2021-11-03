@@ -1777,7 +1777,7 @@ defmodule MilkWeb.TournamentControllerTest do
             assert len == 1
           end).()
 
-      assert Progress.get_fight_result(hd(losers), tournament.id) == []
+      assert Progress.get_fight_result(hd(losers), tournament.id) == nil
       assert Progress.get_match_pending_list(hd(losers), tournament.id) == []
 
       tournament.id

@@ -1280,7 +1280,7 @@ defmodule MilkWeb.TournamentController do
     tournament_id = Tools.to_integer_as_needed(tournament_id)
 
     case Progress.get_fight_result(opponent_id, tournament_id) do
-      [] ->
+      nil ->
         if Progress.get_fight_result(user_id, tournament_id) != [] do
           Progress.delete_fight_result(user_id, tournament_id)
         end
@@ -1288,8 +1288,7 @@ defmodule MilkWeb.TournamentController do
         Progress.insert_fight_result_table(user_id, tournament_id, true)
         json(conn, %{validated: true, completed: false})
 
-      result_list ->
-        {{_, _tournament_id}, is_win} = hd(result_list)
+      is_win ->
         Progress.delete_fight_result(user_id, tournament_id)
         Progress.delete_fight_result(opponent_id, tournament_id)
 
@@ -1321,7 +1320,7 @@ defmodule MilkWeb.TournamentController do
     tournament_id = Tools.to_integer_as_needed(tournament_id)
 
     case Progress.get_fight_result(opponent_id, tournament_id) do
-      [] ->
+      nil ->
         if Progress.get_fight_result(user_id, tournament_id) != [] do
           Progress.delete_fight_result(user_id, tournament_id)
         end
@@ -1329,9 +1328,7 @@ defmodule MilkWeb.TournamentController do
         Progress.insert_fight_result_table(user_id, tournament_id, false)
         json(conn, %{validated: true, completed: false})
 
-      result_list ->
-        {{_, _tournament_id}, is_win} = hd(result_list)
-
+      is_win ->
         unless is_win do
           Progress.add_duplicate_user_id(tournament_id, user_id)
           Progress.add_duplicate_user_id(tournament_id, opponent_id)
@@ -1374,6 +1371,9 @@ defmodule MilkWeb.TournamentController do
     else
       # NOTE: 重複報告
       {:error, id, opponent_id, _} ->
+        # TODO: この処理が必要かどうか確認する
+        # Progress.add_duplicate_user_id(tournament_id, user_id)
+        # Progress.add_duplicate_user_id(tournament_id, opponent_id)
         notify_discord_on_duplicate_claim_as_needed(tournament_id, id, opponent_id, score)
         notify_on_duplicate_match(tournament_id, id, opponent_id)
         json(conn, %{validated: false, completed: false, is_finished: false})
@@ -1647,12 +1647,10 @@ defmodule MilkWeb.TournamentController do
     tournament_id = Tools.to_integer_as_needed(tournament_id)
 
     case Progress.get_fight_result(user_id, tournament_id) do
-      [] ->
+      nil ->
         json(conn, %{is_win: nil, is_claimed: false})
 
-      result_list ->
-        {{_, tournament_id}, is_win} = hd(result_list)
-
+      is_win ->
         json(conn, %{is_win: is_win, tournament_id: tournament_id, is_claimed: true})
     end
   end
