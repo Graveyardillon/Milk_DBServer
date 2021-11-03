@@ -1275,36 +1275,38 @@ defmodule MilkWeb.TournamentController do
         "user_id" => user_id,
         "tournament_id" => tournament_id
       }) do
-    opponent_id = Tools.to_integer_as_needed(opponent_id)
+    _opponent_id = Tools.to_integer_as_needed(opponent_id)
     user_id = Tools.to_integer_as_needed(user_id)
     tournament_id = Tools.to_integer_as_needed(tournament_id)
 
-    case Progress.get_fight_result(opponent_id, tournament_id) do
-      nil ->
-        if Progress.get_fight_result(user_id, tournament_id) != [] do
-          Progress.delete_fight_result(user_id, tournament_id)
-        end
+    do_claim_score(conn, user_id, tournament_id, 1)
 
-        Progress.insert_fight_result_table(user_id, tournament_id, true)
-        json(conn, %{validated: true, completed: false})
+    # case Progress.get_fight_result(opponent_id, tournament_id) do
+    #   nil ->
+    #     if Progress.get_fight_result(user_id, tournament_id) != [] do
+    #       Progress.delete_fight_result(user_id, tournament_id)
+    #     end
 
-      is_win ->
-        Progress.delete_fight_result(user_id, tournament_id)
-        Progress.delete_fight_result(opponent_id, tournament_id)
+    #     Progress.insert_fight_result_table(user_id, tournament_id, true)
+    #     json(conn, %{validated: true, completed: false})
 
-        if is_win do
-          Progress.add_duplicate_user_id(tournament_id, user_id)
-          Progress.add_duplicate_user_id(tournament_id, opponent_id)
-          json(conn, %{validated: false, completed: false})
-        else
-          # マッチングが正常に終了している
-          Progress.delete_match_pending_list(user_id, tournament_id)
-          Progress.delete_match_pending_list(opponent_id, tournament_id)
-          Progress.delete_duplicate_user(tournament_id, user_id)
-          Progress.delete_duplicate_user(tournament_id, opponent_id)
-          json(conn, %{validated: true, completed: true})
-        end
-    end
+    #   is_win ->
+    #     Progress.delete_fight_result(user_id, tournament_id)
+    #     Progress.delete_fight_result(opponent_id, tournament_id)
+
+    #     if is_win do
+    #       Progress.add_duplicate_user_id(tournament_id, user_id)
+    #       Progress.add_duplicate_user_id(tournament_id, opponent_id)
+    #       json(conn, %{validated: false, completed: false})
+    #     else
+    #       # マッチングが正常に終了している
+    #       Progress.delete_match_pending_list(user_id, tournament_id)
+    #       Progress.delete_match_pending_list(opponent_id, tournament_id)
+    #       Progress.delete_duplicate_user(tournament_id, user_id)
+    #       Progress.delete_duplicate_user(tournament_id, opponent_id)
+    #       json(conn, %{validated: true, completed: true})
+    #     end
+    # end
   end
 
   @doc """
@@ -1315,32 +1317,35 @@ defmodule MilkWeb.TournamentController do
         "user_id" => user_id,
         "tournament_id" => tournament_id
       }) do
-    opponent_id = Tools.to_integer_as_needed(opponent_id)
+    _opponent_id = Tools.to_integer_as_needed(opponent_id)
     user_id = Tools.to_integer_as_needed(user_id)
     tournament_id = Tools.to_integer_as_needed(tournament_id)
 
-    case Progress.get_fight_result(opponent_id, tournament_id) do
-      nil ->
-        if Progress.get_fight_result(user_id, tournament_id) != [] do
-          Progress.delete_fight_result(user_id, tournament_id)
-        end
+    do_claim_score(conn, user_id, tournament_id, 0)
 
-        Progress.insert_fight_result_table(user_id, tournament_id, false)
-        json(conn, %{validated: true, completed: false})
+    # case Progress.get_fight_result(opponent_id, tournament_id) do
+    #   # 対戦相手がまだ報告していなくて、自分がもう報告していた場合はまずレコードを削除する
+    #   nil ->
+    #     if Progress.get_fight_result(user_id, tournament_id) != [] do
+    #       Progress.delete_fight_result(user_id, tournament_id)
+    #     end
 
-      is_win ->
-        unless is_win do
-          Progress.add_duplicate_user_id(tournament_id, user_id)
-          Progress.add_duplicate_user_id(tournament_id, opponent_id)
-          json(conn, %{validated: false, completed: false})
-        else
-          Progress.delete_match_pending_list(user_id, tournament_id)
-          Progress.delete_match_pending_list(opponent_id, tournament_id)
-          Progress.delete_fight_result(user_id, tournament_id)
-          Progress.delete_fight_result(opponent_id, tournament_id)
-          json(conn, %{validated: true, completed: true})
-        end
-    end
+    #     Progress.insert_fight_result_table(user_id, tournament_id, false)
+    #     json(conn, %{validated: true, completed: false})
+
+    #   is_win ->
+    #     unless is_win do
+    #       Progress.add_duplicate_user_id(tournament_id, user_id)
+    #       Progress.add_duplicate_user_id(tournament_id, opponent_id)
+    #       json(conn, %{validated: false, completed: false})
+    #     else
+    #       Progress.delete_match_pending_list(user_id, tournament_id)
+    #       Progress.delete_match_pending_list(opponent_id, tournament_id)
+    #       Progress.delete_fight_result(user_id, tournament_id)
+    #       Progress.delete_fight_result(opponent_id, tournament_id)
+    #       json(conn, %{validated: true, completed: true})
+    #     end
+    # end
   end
 
   @doc """
@@ -1359,7 +1364,7 @@ defmodule MilkWeb.TournamentController do
     do_claim_score(conn, user_id, tournament_id, score, match_index)
   end
 
-  defp do_claim_score(conn, user_id, tournament_id, score, match_index) do
+  defp do_claim_score(conn, user_id, tournament_id, score, match_index \\ 0) do
     with tournament when not is_nil(tournament) <- Tournaments.get_tournament(tournament_id),
          {:ok, opponent} <- Tournaments.get_opponent(tournament_id, user_id),
          id when not is_nil(id) <- Progress.get_necessary_id(tournament_id, user_id),
@@ -1371,9 +1376,9 @@ defmodule MilkWeb.TournamentController do
     else
       # NOTE: 重複報告
       {:error, id, opponent_id, _} ->
-        # TODO: この処理が必要かどうか確認する
-        # Progress.add_duplicate_user_id(tournament_id, user_id)
-        # Progress.add_duplicate_user_id(tournament_id, opponent_id)
+        # TODO: この2つのコメントアウトしてある処理が必要かどうか確認する
+        Progress.add_duplicate_user_id(tournament_id, id)
+        Progress.add_duplicate_user_id(tournament_id, opponent_id)
         notify_discord_on_duplicate_claim_as_needed(tournament_id, id, opponent_id, score)
         notify_on_duplicate_match(tournament_id, id, opponent_id)
         json(conn, %{validated: false, completed: false, is_finished: false})
@@ -1394,6 +1399,7 @@ defmodule MilkWeb.TournamentController do
   defp proceed_to_next_match(tournament, winner_id, loser_id, score, opponent_score, match_index) when is_integer(opponent_score) do
     notify_discord_on_match_finished_as_needed(tournament, winner_id, loser_id, score, opponent_score)
 
+    Progress.delete_duplicate_users_all(tournament.id)
     Tournaments.delete_loser_process(tournament.id, [loser_id])
     Tournaments.store_score(tournament.id, winner_id, loser_id, opponent_score, score, match_index)
 
@@ -1539,7 +1545,6 @@ defmodule MilkWeb.TournamentController do
 
   defp finish_as_needed?(tournament_id, winner_id) do
     match_list = Progress.get_match_list(tournament_id)
-      |> IO.inspect()
 
     if is_integer(match_list) do
       # Finishの処理
@@ -1638,21 +1643,28 @@ defmodule MilkWeb.TournamentController do
     render(conn, "tournament_info.json", tournament: tournament)
   end
 
-  @spec is_user_win(Plug.Conn.t(), map) :: Plug.Conn.t()
   @doc """
   Get a result of fight.
   """
+  @spec is_user_win(Plug.Conn.t(), map) :: Plug.Conn.t()
   def is_user_win(conn, %{"user_id" => user_id, "tournament_id" => tournament_id}) do
     user_id = Tools.to_integer_as_needed(user_id)
     tournament_id = Tools.to_integer_as_needed(tournament_id)
 
-    case Progress.get_fight_result(user_id, tournament_id) do
-      nil ->
-        json(conn, %{is_win: nil, is_claimed: false})
-
-      is_win ->
-        json(conn, %{is_win: is_win, tournament_id: tournament_id, is_claimed: true})
+    case Progress.get_score(tournament_id, user_id) do
+      [] -> json(conn, %{is_win: nil, is_claimed: false})
+      0 -> json(conn, %{is_win: false, tournament_id: tournament_id, is_claimed: true})
+      1 -> json(conn, %{is_win: true, tournament_id: tournament_id, is_claimed: true})
+      _ -> json(conn, %{is_win: nil, tournament_id: tournament_id, is_claimed: true})
     end
+
+    # case Progress.get_fight_result(user_id, tournament_id) do
+    #   nil ->
+    #     json(conn, %{is_win: nil, is_claimed: false})
+
+    #   is_win ->
+    #     json(conn, %{is_win: is_win, tournament_id: tournament_id, is_claimed: true})
+    # end
   end
 
   @doc """

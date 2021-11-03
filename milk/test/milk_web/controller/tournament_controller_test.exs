@@ -17,11 +17,7 @@ defmodule MilkWeb.TournamentControllerTest do
   }
 
   alias Milk.Accounts.ActionHistory
-  alias Milk.Tournaments.{
-    Progress,
-    Rules
-  }
-  alias Milk.Tournaments.Rules.Basic
+  alias Milk.Tournaments.Progress
 
   require Logger
 
@@ -2259,7 +2255,7 @@ defmodule MilkWeb.TournamentControllerTest do
           tournament_id: tournament.id
         )
 
-      conn = post(conn, Routes.tournament_path(conn, :delete_loser), tournament: %{tournament_id: tournament.id, loser_list: [opponent["id"]]})
+      # conn = post(conn, Routes.tournament_path(conn, :delete_loser), tournament: %{tournament_id: tournament.id, loser_list: [opponent["id"]]})
 
       conn = get(conn, Routes.tournament_path(conn, :get_waiting_users), tournament_id: tournament.id)
 
@@ -2341,7 +2337,7 @@ defmodule MilkWeb.TournamentControllerTest do
           tournament_id: tournament.id
         )
 
-      conn = post(conn, Routes.tournament_path(conn, :delete_loser), tournament: %{"tournament_id" => tournament.id, "loser_list" => [user1_id]})
+      # conn = post(conn, Routes.tournament_path(conn, :delete_loser), tournament: %{"tournament_id" => tournament.id, "loser_list" => [user1_id]})
 
       conn =
         get(conn, Routes.tournament_path(conn, :has_lost?),
@@ -2441,7 +2437,7 @@ defmodule MilkWeb.TournamentControllerTest do
           tournament_id: tournament.id
         )
 
-      conn = post(conn, Routes.tournament_path(conn, :delete_loser), tournament: %{"tournament_id" => tournament.id, "loser_list" => [opponent1_id]})
+      # conn = post(conn, Routes.tournament_path(conn, :delete_loser), tournament: %{"tournament_id" => tournament.id, "loser_list" => [opponent1_id]})
 
       conn =
         get(conn, Routes.tournament_path(conn, :state),
@@ -3687,7 +3683,7 @@ defmodule MilkWeb.TournamentControllerTest do
           tournament_id: tournament["id"]
         )
 
-      conn = post(conn, Routes.tournament_path(conn, :delete_loser), tournament: %{tournament_id: tournament["id"], loser_list: [user1_id]})
+      #conn = post(conn, Routes.tournament_path(conn, :delete_loser), tournament: %{tournament_id: tournament["id"], loser_list: [user1_id]})
 
       conn =
         get(conn, Routes.tournament_path(conn, :tournament_topics),
@@ -3707,13 +3703,13 @@ defmodule MilkWeb.TournamentControllerTest do
             assert len == 3
           end).()
 
-      conn =
-        post(conn, Routes.tournament_path(conn, :finish),
-          tournament_id: tournament["id"],
-          user_id: opponent1_id
-        )
+      # conn =
+      #   post(conn, Routes.tournament_path(conn, :finish),
+      #     tournament_id: tournament["id"],
+      #     user_id: opponent1_id
+      #   )
 
-      assert json_response(conn, 200)["result"]
+      # assert json_response(conn, 200)["result"]
 
       conn = get(conn, Routes.tournament_path(conn, :show), tournament_id: tournament["id"])
 
@@ -3830,7 +3826,7 @@ defmodule MilkWeb.TournamentControllerTest do
           tournament_id: tournament.id
         )
 
-      conn = post(conn, Routes.tournament_path(conn, :delete_loser), tournament: %{"tournament_id" => tournament.id, "loser_list" => [opponent1_id]})
+      #conn = post(conn, Routes.tournament_path(conn, :delete_loser), tournament: %{"tournament_id" => tournament.id, "loser_list" => [opponent1_id]})
 
       conn = get(conn, Routes.tournament_path(conn, :brackets_with_fight_result), tournament_id: tournament.id)
 
