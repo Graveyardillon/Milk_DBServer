@@ -3747,32 +3747,33 @@ defmodule MilkWeb.TournamentControllerTest do
         assert topic_log["tournament_id"] == tournament["id"]
       end)
       |> length()
-      |> (fn len ->
-            assert len == 3
-          end).()
+      |> then(fn len ->
+        assert len == 3
+      end)
 
-      Progress.get_match_list(tournament["id"])
-      |> (fn list ->
-            assert list == []
-          end).()
+      tournament["id"]
+      |> Progress.get_match_list()
+      |> is_nil()
+      |> assert()
 
-      Progress.get_match_list_with_fight_result(tournament["id"])
-      |> (fn list ->
-            assert list == []
-          end).()
+      tournament["id"]
+      |> Progress.get_match_list_with_fight_result()
+      |> Enum.empty?()
+      |> assert()
 
-      Progress.get_match_list_with_fight_result_including_log(tournament["id"])
-      |> (fn list ->
-            list
-            |> length()
-            |> Kernel.==(2)
-            |> assert()
-          end).()
+      tournament["id"]
+      |> Progress.get_match_list_with_fight_result_including_log()
+      |> then(fn list ->
+        list
+        |> length()
+        |> Kernel.==(2)
+        |> assert()
+      end)
 
-      Progress.get_match_pending_list_of_tournament(tournament["id"])
-      |> (fn list ->
-            assert list == []
-          end).()
+      tournament["id"]
+      |> Progress.get_match_pending_list_of_tournament()
+      |> Enum.empty?()
+      |> assert()
     end
   end
 

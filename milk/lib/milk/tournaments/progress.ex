@@ -63,6 +63,7 @@ defmodule Milk.Tournaments.Progress do
   # Manages match list which is used in tournament.
   # The data form is like `[[2, 1], 3]`.
 
+  @spec insert_match_list(any(), integer()) :: {:ok, nil} | {:error, String.t()}
   def insert_match_list(match_list, tournament_id) do
     conn = conn()
     bin = inspect(match_list, charlists: false)
@@ -71,40 +72,28 @@ defmodule Milk.Tournaments.Progress do
          {:ok, _} <- Redix.command(conn, ["SELECT", 1]),
          {:ok, _} <- Redix.command(conn, ["SET", tournament_id, bin]),
          {:ok, _} <- Redix.command(conn, ["EXEC"]) do
-      true
+      {:ok, nil}
     else
-      {:error, %Redix.Error{message: message}} ->
-        Logger.error(message)
-        false
-
-      _ ->
-        Logger.error("Could not insert match list")
-        false
+      {:error, %Redix.Error{message: message}} -> {:error, message}
+      _ -> {:error, "Could not insert match list"}
     end
   end
 
-  @spec get_match_list(integer()) :: match_list()
+  @spec get_match_list(integer()) :: match_list() | nil
   def get_match_list(tournament_id) do
     conn = conn()
 
     with {:ok, _} <- Redix.command(conn, ["SELECT", 1]),
-         {:ok, value} <- Redix.command(conn, ["GET", tournament_id]) do
-      if value do
-        {match_list, _} = Code.eval_string(value)
-        match_list
-      else
-        []
-      end
+         {:ok, value} when not is_nil(value) <- Redix.command(conn, ["GET", tournament_id]) do
+      value
+      |> Code.eval_string()
+      |> elem(0)
     else
-      {:error, %Redix.Error{message: message}} ->
-        Logger.error(message)
-        []
-
-      _ ->
-        []
+      _ -> nil
     end
   end
 
+  @spec delete_match_list(integer()) :: {:ok, nil} | {:error, String.t()}
   def delete_match_list(tournament_id) do
     conn = conn()
 
@@ -112,39 +101,35 @@ defmodule Milk.Tournaments.Progress do
          {:ok, _} <- Redix.command(conn, ["SELECT", 1]),
          {:ok, _} <- Redix.command(conn, ["DEL", tournament_id]),
          {:ok, _} <- Redix.command(conn, ["EXEC"]) do
-      true
+      {:ok, nil}
     else
-      {:error, %Redix.Error{message: message}} ->
-        Logger.error(message)
-        []
-
-      _ ->
-        false
+      {:error, %Redix.Error{message: message}} -> {:error, message}
+      _ -> {:error, "Could not delete match list"}
     end
   end
 
   @doc """
-
+  Renew match list
   """
+  @spec renew_match_list(integer() | [integer()], integer()) :: {:ok, nil} | {:error, String.t()}
   def renew_match_list(loser, tournament_id) do
-    # 更新は正常にできている
     conn = conn()
-    {:ok, _} = Redix.command(conn, ["SELECT", 1])
-    {:ok, value} = Redix.command(conn, ["SETNX", -tournament_id, 1])
 
-    if value == 1 do
-      {:ok, _} = Redix.command(conn, ["EXPIRE", -tournament_id, 20])
-      {:ok, _} = Redix.command(conn, ["SELECT", 1])
-      {:ok, value} = Redix.command(conn, ["GET", tournament_id])
-      {match_list, _} = Code.eval_string(value)
-      match_list = Tournamex.delete_loser(match_list, loser)
-      bin = inspect(match_list, charlists: false)
-      {:ok, _} = Redix.command(conn, ["DEL", tournament_id])
-      {:ok, _} = Redix.command(conn, ["SET", tournament_id, bin])
-      {:ok, _} = Redix.command(conn, ["DEL", -tournament_id])
-      true
+    with {:ok, _} <- Redix.command(conn, ["SELECT", 1]),
+         {:ok, value} when value == 1 <- Redix.command(conn, ["SETNX", -tournament_id, 1]),
+         {:ok, _} <-  Redix.command(conn, ["EXPIRE", -tournament_id, 20]),
+         {:ok, _} <- Redix.command(conn, ["SELECT", 1]),
+         {:ok, value} <- Redix.command(conn, ["GET", tournament_id]),
+         {match_list, _} when not is_nil(match_list) <- Code.eval_string(value),
+         match_list <- Tournamex.delete_loser(match_list, loser),
+         bin <- inspect(match_list, charlists: false),
+         {:ok, _} <- Redix.command(conn, ["DEL", tournament_id]),
+         {:ok, _} <- Redix.command(conn, ["SET", tournament_id, bin]),
+         {:ok, _} <- Redix.command(conn, ["DEL", -tournament_id]) do
+      {:ok, nil}
     else
-      false
+      {:error, %Redix.Error{message: message}} -> {:error, message}
+      _ -> {:error, "Could not renew match list"}
     end
   end
 
@@ -187,13 +172,9 @@ defmodule Milk.Tournaments.Progress do
     conn = conn()
 
     with {:ok, _} <- Redix.command(conn, ["SELECT", 2]),
-         {:ok, value} <- Redix.command(conn, ["GET", tournament_id]) do
-      if value do
-        {match_list, _} = Code.eval_string(value)
-        match_list
-      else
-        []
-      end
+         {:ok, value} when not is_nil(value) <- Redix.command(conn, ["GET", tournament_id]),
+         {match_list, _} <- Code.eval_string(value) do
+      match_list
     else
       {:error, %Redix.Error{message: message}} ->
         Logger.error(message)

@@ -93,8 +93,7 @@ defmodule Milk.Tournaments.ProgressTest do
   describe "match list table" do
     test "insert_match_list/2 works fine" do
       match_list = [[1, 2], 3]
-      assert r = Progress.insert_match_list(match_list, 1)
-      assert is_boolean(r)
+      assert {:ok, nil} = Progress.insert_match_list(match_list, 1)
     end
 
     test "get_match_list/1 works fine" do
@@ -147,17 +146,14 @@ defmodule Milk.Tournaments.ProgressTest do
     test "delete_match_list/1 works fine" do
       match_list = [[1, 2], 3]
       Progress.insert_match_list(match_list, 3)
-      assert r = Progress.delete_match_list(3)
-      assert is_boolean(r)
+      assert {:ok, nil} = Progress.delete_match_list(3)
     end
   end
 
   describe "match pending list" do
     test "insert_match_pending_list_table/1 works fine" do
       tournament = fixture_tournament(is_started: true)
-      r = Progress.insert_match_pending_list_table(1, tournament.id)
-      assert r
-      assert is_boolean(r)
+      assert Progress.insert_match_pending_list_table(1, tournament.id)
     end
 
     test "get_match_pending_list/2" do

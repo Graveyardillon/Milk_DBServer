@@ -1286,9 +1286,11 @@ defmodule Milk.Tournaments do
   defp renew(loser_list, tournament_id) do
     loser_list
     |> Progress.renew_match_list(tournament_id)
-    |> unless do
-      Process.sleep(100)
-      renew(loser_list, tournament_id)
+    |> case do
+      {:ok, _} -> nil
+      {:error, _} ->
+        Process.sleep(100)
+        renew(loser_list, tournament_id)
     end
   end
 

@@ -2154,7 +2154,7 @@ defmodule Milk.TournamentsTest do
       # match_listの最終状態確認
       tournament.id
       |> Progress.get_match_list()
-      |> Kernel.==([])
+      |> is_nil()
       |> assert()
 
       # match_list_with_fight_resultの最終状態確認
