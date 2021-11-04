@@ -1243,35 +1243,41 @@ defmodule Milk.Tournaments do
 
   @doc """
   Delete loser.
-  TODO: エラーハンドリング
-  loser_listは一人用
+  NOTE: loser_listは一人用
   """
-  @spec delete_loser_process(integer(), [integer()]) :: [any()]
-  def delete_loser_process(tournament_id, loser_list) when is_list(loser_list) do
+  @spec delete_loser_process(integer(), [integer()]) :: {:ok, [any()]} | {:error, String.t()}
+  def delete_loser_process(tournament_id, loser_list) when is_list(loser_list) and length(loser_list) == 1 do
     match_list = Progress.get_match_list(tournament_id)
+    loser = hd(loser_list)
 
+    with {:ok, _} <- delete_old_match_info(tournament_id, match_list, loser),
+         {:ok, _} <- renew_match_list(tournament_id, match_list, loser_list),
+         {:ok, _} <- renew_match_list_with_fight_result(tournament_id, loser_list),
+         match_list when not is_nil(match_list) <- Progress.get_match_list(tournament_id) do
+      {:ok, match_list}
+    else
+      nil -> {:error, "match list is nil"}
+      error -> error
+    end
+  end
+
+  defp delete_old_match_info(tournament_id, match_list, loser) do
     match_list
-    |> find_match(hd(loser_list))
-    |> Enum.each(fn user_id ->
-      if is_integer(user_id) do
-        Progress.delete_match_pending_list(user_id, tournament_id)
-        Progress.delete_fight_result(user_id, tournament_id)
+    |> find_match(loser)
+    |> Enum.filter(&is_integer(&1))
+    |> Enum.map(fn user_id ->
+      with {:ok, _} <-  Progress.delete_match_pending_list(user_id, tournament_id),
+           {:ok, _} <- Progress.delete_fight_result(user_id, tournament_id) do
+        {:ok, nil}
+      else
+        error -> error
       end
     end)
-
-    renew_match_list(tournament_id, match_list, loser_list)
-    updated_match_list = Progress.get_match_list(tournament_id)
-    renew_match_list_with_fight_result(tournament_id, loser_list)
-
-    updated_match_list
+    |> Enum.all?(&match?({:ok, _}, &1))
+    |> Tools.boolean_to_tuple()
   end
 
-  defp renew_match_list_with_fight_result(tournament_id, [loser]) do
-    tournament_id = Tools.to_integer_as_needed(tournament_id)
-
-    Progress.renew_match_list_with_fight_result(loser, tournament_id)
-  end
-
+  @spec renew_match_list(integer(), match_list(), [integer()]) :: {:ok, nil}
   defp renew_match_list(tournament_id, match_list, loser_list) do
     unless match_list == [] do
       promote_winners_by_loser!(tournament_id, match_list, loser_list)
@@ -1280,15 +1286,21 @@ defmodule Milk.Tournaments do
     renew(loser_list, tournament_id)
   end
 
+  @spec renew([integer()], integer()) :: {:ok, nil}
   defp renew(loser_list, tournament_id) do
     loser_list
     |> Progress.renew_match_list(tournament_id)
     |> case do
-      {:ok, _} -> nil
+      {:ok, _} -> {:ok, nil}
       {:error, _} ->
         Process.sleep(100)
         renew(loser_list, tournament_id)
     end
+  end
+
+  @spec renew_match_list_with_fight_result(integer(), [integer()]) :: {:ok, nil} | {:error, String.t()}
+  defp renew_match_list_with_fight_result(tournament_id, [loser]) do
+    Progress.renew_match_list_with_fight_result(loser, tournament_id)
   end
 
   @doc """

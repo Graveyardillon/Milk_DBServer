@@ -213,6 +213,7 @@ defmodule Milk.Tournaments.Progress do
     end
   end
 
+  @spec renew_match_list_with_fight_result(integer() | [integer()], integer()) :: {:ok, nil} | {:error, String.t()}
   def renew_match_list_with_fight_result(loser, tournament_id) do
     conn = conn()
 

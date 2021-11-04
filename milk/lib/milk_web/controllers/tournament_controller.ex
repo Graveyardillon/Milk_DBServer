@@ -717,31 +717,29 @@ defmodule MilkWeb.TournamentController do
   @doc """
   Delete losers of a loser list.
   """
-  def delete_loser(conn, %{"tournament" => %{"tournament_id" => tournament_id, "loser_list" => loser}})
-    when is_binary(loser) or is_integer(loser) do
+  def delete_loser(conn, %{"tournament" => %{"tournament_id" => tournament_id, "loser_list" => loser}}) when is_binary(loser) or is_integer(loser) do
     delete_loser(conn, %{"tournament" => %{"tournament_id" => tournament_id, "loser_list" => [loser]}})
   end
 
-  def delete_loser(conn, %{
-        "tournament" => %{"tournament_id" => tournament_id, "loser_list" => loser_list}
-      }) do
+  def delete_loser(conn, %{"tournament" => %{"tournament_id" => tournament_id, "loser_list" => loser_list}}) do
     tournament_id = Tools.to_integer_as_needed(tournament_id)
 
-    loser_list =
-      Enum.map(loser_list, fn loser ->
-        Tools.to_integer_as_needed(loser)
-      end)
+    loser_list = Enum.map(loser_list, &Tools.to_integer_as_needed(&1))
 
     tournament_id
     |> Tournaments.get_tournament()
-    |> (fn tournament ->
-          if tournament.type == 1 do
-            store_single_tournament_match_log(tournament_id, hd(loser_list))
-          end
-        end).()
+    |> then(fn tournament ->
+      if tournament.type == 1 do
+        store_single_tournament_match_log(tournament_id, hd(loser_list))
+      end
+    end)
 
-    updated_match_list = Tournaments.delete_loser_process(tournament_id, loser_list)
-    render(conn, "loser.json", list: updated_match_list)
+    tournament_id
+    |> Tournaments.delete_loser_process(loser_list)
+    |> case do
+      {:ok, match_list} -> render(conn, "loser.json", list: match_list)
+      {:error, error} -> render(conn, "error.json", error: error)
+    end
   end
 
   defp store_single_tournament_match_log(tournament_id, loser_list) when is_list(loser_list) do
@@ -1327,17 +1325,20 @@ defmodule MilkWeb.TournamentController do
     else
       # NOTE: 重複報告
       {:error, id, opponent_id, _} ->
-        # TODO: この2つのコメントアウトしてある処理が必要かどうか確認する
-        Progress.add_duplicate_user_id(tournament_id, id)
-        Progress.add_duplicate_user_id(tournament_id, opponent_id)
-        notify_discord_on_duplicate_claim_as_needed(tournament_id, id, opponent_id, score)
-        notify_on_duplicate_match(tournament_id, id, opponent_id)
+        duplicated_claim_process(tournament_id, id, opponent_id, score)
         json(conn, %{validated: false, completed: false, is_finished: false})
       nil ->
         json(conn, %{validated: true, completed: false, is_finished: false})
       _ ->
         json(conn, %{validated: false, completed: false, is_finished: false})
     end
+  end
+
+  defp duplicated_claim_process(tournament_id, id, opponent_id, score) do
+    Progress.add_duplicate_user_id(tournament_id, id)
+    Progress.add_duplicate_user_id(tournament_id, opponent_id)
+    notify_discord_on_duplicate_claim_as_needed(tournament_id, id, opponent_id, score)
+    notify_on_duplicate_match(tournament_id, id, opponent_id)
   end
 
   @spec calculate_winner(integer(), integer(), integer(), integer()) :: {:ok, integer(), integer(), boolean()} | {:error, integer(), integer(), boolean()}
