@@ -1408,34 +1408,39 @@ defmodule MilkWeb.TournamentController do
   end
 
   defp notify_discord_on_duplicate_claim_as_needed(tournament_id, id, opponent_id, score) do
-    tournament_id
-    |> Tournaments.get_tournament()
-    ~> tournament
-    |> Map.get(:is_team)
-    |> if do
-      team = Tournaments.get_team(id)
-      leader = Tournaments.get_leader(team.id)
-
-      tournament_id
-      |> Tournaments.get_opponent(leader.user_id)
-      |> case do
-        {:ok, opponent} -> {:ok, opponent.name, team.name}
-        {:wait, nil} -> raise "The given user should wait for the opponent."
-        _ -> raise "Unknown error on claim score."
-      end
+    with tournament when not is_nil(tournament) <- Tournaments.get_tournament(tournament_id),
+         {:ok, opponent_name, name} <- load_necessary_opponent_info_on_notify_discord(tournament, id, opponent_id),
+         {:ok, nil} <- do_notify_discord_on_duplicate_claim_as_needed(tournament, name, opponent_name, score) do
+      {:ok, nil}
     else
-      user = Accounts.get_user(id)
-      opponent = Accounts.get_user(opponent_id)
-
-      {:ok, opponent.name, user.name}
+      nil -> {:error, "tournament is nil"}
+      error -> error
     end
-    ~> {:ok, opponent_name, name}
+  end
 
-    unless is_nil(tournament.discord_server_id) do
-      tournament
-      |> Map.get(:discord_server_id)
-      |> Discord.send_tournament_duplicate_claim_notification(name, opponent_name, score)
+  defp load_necessary_opponent_info_on_notify_discord(%Tournament{is_team: true, id: tournament_id}, team_id, _) do
+    team = Tournaments.get_team(team_id)
+    leader = Tournaments.get_leader(team.id)
+
+    tournament_id
+    |> Tournaments.get_opponent(leader.user_id)
+    |> case do
+      {:ok, opponent} -> {:ok, opponent.name, team.name}
+      {:wait, nil} -> raise "The given user should wait for the opponent."
+      _ -> raise "Unknown error on claim score."
     end
+  end
+  defp load_necessary_opponent_info_on_notify_discord(_, user_id, opponent_id) do
+    user = Accounts.get_user(user_id)
+    opponent = Accounts.get_user(opponent_id)
+
+    {:ok, opponent.name, user.name}
+  end
+
+  defp do_notify_discord_on_duplicate_claim_as_needed(%Tournament{discord_server_id: nil}, _, _, _), do: {:ok, nil}
+  defp do_notify_discord_on_duplicate_claim_as_needed(%Tournament{discord_server_id: discord_server_id}, name, opponent_name, score) do
+    Discord.send_tournament_duplicate_claim_notification(discord_server_id, name, opponent_name, score)
+    {:ok, nil}
   end
 
   @doc """
@@ -1463,8 +1468,8 @@ defmodule MilkWeb.TournamentController do
   end
 
 
-  # チーム対応
-  defp notify_on_duplicate_match(_tournament_id, user_id, opponent_id) do
+  # TODO: チーム対応
+  defp notify_on_duplicate_match(_, user_id, opponent_id) do
     user = Accounts.get_user(user_id)
     opponent = Accounts.get_user(opponent_id)
 
