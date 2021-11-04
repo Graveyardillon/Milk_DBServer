@@ -1916,7 +1916,6 @@ defmodule Milk.TournamentsTest do
         Progress.delete_match_pending_list_of_tournament(tournament_id)
         Progress.delete_fight_result_of_tournament(tournament_id)
         Progress.delete_duplicate_users_all(tournament_id)
-        Progress.delete_lose_processes(tournament_id)
       end
 
       if match_list == [] do

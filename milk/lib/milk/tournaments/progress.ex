@@ -149,7 +149,7 @@ defmodule Milk.Tournaments.Progress do
   @doc """
   insert match list with fight result.
   """
-  @spec insert_match_list_with_fight_result(match_list(), integer()) :: boolean()
+  @spec insert_match_list_with_fight_result(match_list(), integer()) :: {:ok, nil} | {:error, String.t()}
   def insert_match_list_with_fight_result(match_list, tournament_id) do
     conn = conn()
     bin = inspect(match_list, charlists: false)
@@ -158,14 +158,10 @@ defmodule Milk.Tournaments.Progress do
          {:ok, _} <- Redix.command(conn, ["SELECT", 2]),
          {:ok, _} <- Redix.command(conn, ["SET", tournament_id, bin]),
          {:ok, _} <- Redix.command(conn, ["EXEC"]) do
-      true
+      {:ok, nil}
     else
-      {:error, %Redix.Error{message: message}} ->
-        Logger.error(message)
-        []
-
-      _ ->
-        false
+      {:error, %Redix.Error{message: message}} -> {:error, message}
+      _ -> {:error, "Could not insert match list with fight result"}
     end
   end
 
@@ -477,86 +473,6 @@ defmodule Milk.Tournaments.Progress do
     end
   end
 
-  @doc """
-
-  """
-  def get_lost_pid(user_id, tournament_id) do
-    conn = conn()
-
-    with {:ok, _} <- Redix.command(conn, ["SELECT", 6]),
-         {:ok, value} <- Redix.command(conn, ["HGET", tournament_id, user_id]) do
-      if value do
-        value
-        |> Code.eval_string()
-        |> elem(0)
-        |> :erlang.list_to_pid()
-      else
-        nil
-      end
-    else
-      _ -> nil
-    end
-  end
-
-  @doc """
-  Cancel a process which makes a user lost.
-  TODO: delete処理
-  """
-  def cancel_lose(tournament_id, user_id) do
-    conn = conn()
-
-    with {:ok, _} <- Redix.command(conn, ["SELECT", 6]),
-         {:ok, value} <- Redix.command(conn, ["HGET", tournament_id, user_id]) do
-      if value do
-        pid =
-          value
-          |> Code.eval_string()
-          |> elem(0)
-          |> :erlang.list_to_pid()
-          |> Process.exit(:kill)
-
-        {:ok, pid}
-      else
-        {:error, nil}
-      end
-    else
-      error -> {:error, error}
-    end
-    |> case do
-      {:ok, _} ->
-        with {:ok, _} <- Redix.command(conn, ["SELECT", 6]),
-             {:ok, _value} <- Redix.command(conn, ["HDEL", tournament_id, user_id]) do
-          true
-        else
-          _ -> false
-        end
-
-      {:error, _error} ->
-        false
-    end
-  end
-
-  def delete_lose_processes(tournament_id) do
-    conn = conn()
-
-    with {:ok, _} <- Redix.command(conn, ["SELECT", 6]),
-         {:ok, value} <- Redix.command(conn, ["HKEYS", tournament_id]) do
-      Enum.each(value, fn key ->
-        key = String.to_integer(key)
-        Redix.command(conn, ["HDEL", tournament_id, key])
-      end)
-
-      true
-    else
-      {:error, %Redix.Error{message: message}} ->
-        Logger.error(message)
-        false
-
-      _ ->
-        false
-    end
-  end
-
   # 7. scores
   # Instead of fight result, we use scores for players fight result management.
 
@@ -676,6 +592,7 @@ defmodule Milk.Tournaments.Progress do
     end
   end
 
+  @spec delete_ban_order(integer(), integer()) :: {:ok, nil} | {:error, String.t()}
   def delete_ban_order(tournament_id, id) do
     conn = conn()
 
@@ -683,14 +600,10 @@ defmodule Milk.Tournaments.Progress do
          {:ok, _} <- Redix.command(conn, ["SELECT", 8]),
          {:ok, _} <- Redix.command(conn, ["HDEL", tournament_id, id]),
          {:ok, _} <- Redix.command(conn, ["EXEC"]) do
-      true
+      {:ok, nil}
     else
-      {:error, %Redix.Error{message: message}} ->
-        Logger.error(message)
-        false
-
-      _ ->
-        false
+      {:error, %Redix.Error{message: message}} -> {:error, message}
+      _ -> {:error, "Could not delete ban order"}
     end
   end
 
@@ -793,6 +706,7 @@ defmodule Milk.Tournaments.Progress do
     |> Repo.all()
   end
 
+  @spec create_best_of_x_tournament_match_log(map()) :: {:ok, BestOfXTournamentMatchLog.t()} | {:error, Ecto.Changeset.t()}
   def create_best_of_x_tournament_match_log(attrs \\ %{}) do
     %BestOfXTournamentMatchLog{}
     |> BestOfXTournamentMatchLog.changeset(attrs)

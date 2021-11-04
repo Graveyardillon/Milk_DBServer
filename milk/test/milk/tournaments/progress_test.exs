@@ -203,9 +203,7 @@ defmodule Milk.Tournaments.ProgressTest do
         %{"user_id" => 3}
       ]
 
-      r = Progress.insert_match_list_with_fight_result(match_list, 1)
-      assert r
-      assert is_boolean(r)
+      assert {:ok, _} = Progress.insert_match_list_with_fight_result(match_list, 1)
     end
 
     test "get_match_list_with_fight_result/1" do

@@ -2726,21 +2726,27 @@ defmodule Milk.Tournaments do
   @doc """
   Scores data.
   """
-  @spec store_score(integer(), integer(), integer(), integer(), integer(), integer()) :: boolean()
+  @spec store_score(integer(), integer(), integer(), integer(), integer(), integer()) :: {:ok, nil} | {:error, String.t() | Ecto.Changeset.t()}
   def store_score(tournament_id, winner_id, loser_id, winner_score, loser_score, match_index) do
-    Progress.create_best_of_x_tournament_match_log(%{
+    attrs = %{
       tournament_id: tournament_id,
       winner_id: winner_id,
       loser_id: loser_id,
       winner_score: winner_score,
       loser_score: loser_score,
       match_index: match_index
-    })
+    }
 
-    match_list = Progress.get_match_list_with_fight_result(tournament_id)
-    match_list = Tournamex.win_count_increment(match_list, winner_id)
-    Progress.delete_match_list_with_fight_result(tournament_id)
-    Progress.insert_match_list_with_fight_result(match_list, tournament_id)
+    with {:ok, _} <- Progress.create_best_of_x_tournament_match_log(attrs),
+         match_list when not is_nil(match_list) <- Progress.get_match_list_with_fight_result(tournament_id),
+         match_list <- Tournamex.win_count_increment(match_list, winner_id),
+         {:ok, _} <- Progress.delete_match_list_with_fight_result(tournament_id),
+         {:ok, _} <- Progress.insert_match_list_with_fight_result(match_list, tournament_id) do
+      {:ok, nil}
+    else
+      nil -> {:error, "match list is nil"}
+      error -> error
+    end
   end
 
   @doc """
@@ -3703,17 +3709,18 @@ defmodule Milk.Tournaments do
 
   @doc """
   Delete map selections
+  # TODO: トランザクション
   """
-  @spec delete_map_selections(integer(), integer()) :: :ok
+  @spec delete_map_selections(integer(), integer()) :: {:ok, any()} | {:error, String.t()}
   def delete_map_selections(tournament_id, id) do
     MapSelection
     |> join(:inner, [ms], m in Milk.Tournaments.Map, on: ms.map_id == m.id)
     |> where([ms, m], ms.large_id == ^id or ms.small_id == ^id)
     |> where([ms, m], m.tournament_id == ^tournament_id)
     |> Repo.all()
-    |> Enum.each(fn map_selection ->
-      delete_map_selection(map_selection)
-    end)
+    |> Enum.map(&delete_map_selection(&1))
+    |> Enum.all?(&match?({:ok, _}, &1))
+    |> Tools.boolean_to_tuple()
   end
 
   @doc """

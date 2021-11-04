@@ -437,14 +437,10 @@ defmodule MilkWeb.TournamentController do
     end
   end
 
-  defp notify_discord_on_deleting_tournament_as_needed(tournament) do
-    tournament
-    |> Map.get(:discord_server_id)
-    ~> server_id
-    |> is_nil()
-    |> unless do
-      Discord.send_tournament_delete_notification(server_id)
-    end
+  defp notify_discord_on_deleting_tournament_as_needed(%Tournament{discord_server_id: nil}), do: {:ok, nil}
+  defp notify_discord_on_deleting_tournament_as_needed(%Tournament{discord_server_id: discord_server_id}) do
+    Discord.send_tournament_delete_notification(discord_server_id)
+    {:ok, nil}
   end
 
   @doc """
@@ -1320,8 +1316,8 @@ defmodule MilkWeb.TournamentController do
          {:ok, _} <- Progress.insert_score(tournament_id, id, score),
          opponent_score when not is_nil(opponent_score) <- Progress.get_score(tournament_id, opponent.id),
          {:ok, winner_id, loser_id, _} <- calculate_winner(id, opponent.id, score, opponent_score),
-         is_finished? <- proceed_to_next_match(tournament, winner_id, loser_id, score, opponent_score, match_index) do
-      json(conn, %{validated: true, completed: true, is_finished: is_finished?})
+         {:ok, nil} <- proceed_to_next_match(tournament, winner_id, loser_id, score, opponent_score, match_index) do
+      json(conn, %{validated: true, completed: true, is_finished: true})
     else
       # NOTE: 重複報告
       {:error, id, opponent_id, _} ->
@@ -1334,11 +1330,16 @@ defmodule MilkWeb.TournamentController do
     end
   end
 
+  @spec duplicated_claim_process(integer(), integer(), integer(), integer()) :: {:ok, nil} | {:error, String.t()}
   defp duplicated_claim_process(tournament_id, id, opponent_id, score) do
-    Progress.add_duplicate_user_id(tournament_id, id)
-    Progress.add_duplicate_user_id(tournament_id, opponent_id)
-    notify_discord_on_duplicate_claim_as_needed(tournament_id, id, opponent_id, score)
-    notify_on_duplicate_match(tournament_id, id, opponent_id)
+    with {:ok, nil} <- Progress.add_duplicate_user_id(tournament_id, id),
+         {:ok, nil} <- Progress.add_duplicate_user_id(tournament_id, opponent_id),
+         {:ok, nil} <- notify_discord_on_duplicate_claim_as_needed(tournament_id, id, opponent_id, score),
+         {:ok, nil} <- notify_on_duplicate_match(tournament_id, id, opponent_id) do
+      {:ok, nil}
+    else
+      error -> error
+    end
   end
 
   @spec calculate_winner(integer(), integer(), integer(), integer()) :: {:ok, integer(), integer(), boolean()} | {:error, integer(), integer(), boolean()}
@@ -1346,24 +1347,37 @@ defmodule MilkWeb.TournamentController do
   defp calculate_winner(id1, id2, score1, score2) when score1 > score2, do: {:ok, id1, id2, true}
   defp calculate_winner(id1, id2, score1, score2) when score1 < score2, do: {:ok, id2, id1, true}
 
-  # TODO: withを使った{:ok, _}/{:error, _}チェーン
   # TODO: この辺の引数は使うものが決まっているので構造体の使用を検討
+  @spec proceed_to_next_match(Tournament.t(), integer(), integer(), integer(), integer(), integer()) :: {:ok, nil} | {:error, String.t()}
   defp proceed_to_next_match(tournament, winner_id, loser_id, score, opponent_score, match_index) when is_integer(opponent_score) do
-    notify_discord_on_match_finished_as_needed(tournament, winner_id, loser_id, score, opponent_score)
+    with {:ok, nil} <- notify_discord_on_match_finished_as_needed(tournament, winner_id, loser_id, score, opponent_score),
+         {:ok, _} <- Tournaments.delete_loser_process(tournament.id, [loser_id]),
+         {:ok, nil} <- Tournaments.store_score(tournament.id, winner_id, loser_id, opponent_score, score, match_index),
+         {:ok, nil} <- delete_old_info_for_next_match(tournament.id, [winner_id, loser_id]),
+         {:ok, nil} <- finish_as_needed?(tournament.id, winner_id) do
+      {:ok, nil}
+    else
+      error -> error
+    end
+  end
 
-    Progress.delete_duplicate_users_all(tournament.id)
-    Tournaments.delete_loser_process(tournament.id, [loser_id])
-    Tournaments.store_score(tournament.id, winner_id, loser_id, opponent_score, score, match_index)
-
-    Enum.each([winner_id, loser_id], fn id ->
-      Progress.delete_match_pending_list(id, tournament.id)
-      Progress.delete_score(tournament.id, id)
-      Tournaments.delete_map_selections(tournament.id, id)
-      Progress.delete_is_attacker_side(id, tournament.id)
-      Progress.delete_ban_order(tournament.id, id)
+  @spec delete_old_info_for_next_match(integer(), [integer()]) :: {:ok, nil} | {:error, String.t()}
+  defp delete_old_info_for_next_match(tournament_id, id_list) do
+    id_list
+    |> Enum.map(fn id ->
+      with {:ok, nil} <- Progress.delete_match_pending_list(id, tournament_id),
+           {:ok, nil} <- Progress.delete_score(tournament_id, id),
+           {:ok, nil} <- Progress.delete_duplicate_users_all(tournament_id),
+           {:ok, _} <- Tournaments.delete_map_selections(tournament_id, id),
+           {:ok, nil} <- Progress.delete_is_attacker_side(id, tournament_id),
+           {:ok, nil} <- Progress.delete_ban_order(tournament_id, id) do
+        {:ok, nil}
+      else
+        error -> error
+      end
     end)
-
-    finish_as_needed?(tournament.id, winner_id)
+    |> Enum.all?(&match?({:ok, _}, &1))
+    |> Tools.boolean_to_tuple("Failed to delete old info for next match")
   end
 
   @spec notify_discord_on_match_finished_as_needed(Tournament.t(), integer(), integer(), integer(), integer()) :: {:ok, nil} | {:error, String.t()}
@@ -1467,9 +1481,9 @@ defmodule MilkWeb.TournamentController do
     json(conn, %{result: result})
   end
 
-
   # TODO: チーム対応
-  defp notify_on_duplicate_match(_, user_id, opponent_id) do
+  # TODO: masterも通知対象に入れたい
+  defp notify_on_duplicate_match(_tournament_id, user_id, opponent_id) do
     user = Accounts.get_user(user_id)
     opponent = Accounts.get_user(opponent_id)
 
@@ -1499,38 +1513,37 @@ defmodule MilkWeb.TournamentController do
       }
       |> Milk.Notif.push_ios()
     end)
+
+    {:ok, nil}
   end
 
+  @spec finish_as_needed?(integer(), integer()) :: {:ok, nil} | {:error, String.t()}
   defp finish_as_needed?(tournament_id, winner_id) do
-    match_list = Progress.get_match_list(tournament_id)
-
-    if is_integer(match_list) do
-      # Finishの処理
-
-      tournament_id
-      |> Tournaments.get_tournament()
-      |> notify_discord_on_deleting_tournament_as_needed()
-
-      Tournaments.finish(tournament_id, winner_id)
-
-      tournament_id
-      |> Progress.get_match_list_with_fight_result()
-      |> inspect(charlists: false)
-      |> (fn str ->
-            %{"tournament_id" => tournament_id, "match_list_with_fight_result_str" => str}
-          end).()
-      |> Progress.create_match_list_with_fight_result_log()
-
-      Progress.delete_match_list(tournament_id)
-      Progress.delete_match_list_with_fight_result(tournament_id)
-      Progress.delete_match_pending_list_of_tournament(tournament_id)
-      Progress.delete_fight_result_of_tournament(tournament_id)
-      Progress.delete_duplicate_users_all(tournament_id)
-      Progress.delete_lose_processes(tournament_id)
-      true
+    with match_list when is_integer(match_list) <- Progress.get_match_list(tournament_id),
+         tournament when not is_nil(tournament) <- Tournaments.get_tournament(tournament_id),
+         {:ok, nil} <- notify_discord_on_deleting_tournament_as_needed(tournament),
+         {:ok, _} <- Tournaments.finish(tournament_id, winner_id),
+         {:ok, _} <- create_match_list_with_fight_result_log_on_finish(tournament_id),
+         {:ok, nil} <- Progress.delete_match_list(tournament_id),
+         {:ok, nil} <- Progress.delete_match_list_with_fight_result(tournament_id),
+         {:ok, nil} <- Progress.delete_match_pending_list_of_tournament(tournament_id),
+         {:ok, nil} <- Progress.delete_fight_result_of_tournament(tournament_id),
+         {:ok, nil} <- Progress.delete_duplicate_users_all(tournament_id) do
+      {:ok, nil}
     else
-      false
+      nil -> {:error, "match list or tournament is nil"}
+      match_list when is_list(match_list) -> {:ok, nil}
+      {:error, message} -> {:error, message}
+      _ -> {:error, "unexpected error"}
     end
+  end
+
+  defp create_match_list_with_fight_result_log_on_finish(tournament_id) do
+    tournament_id
+    |> Progress.get_match_list_with_fight_result()
+    |> inspect(charlists: false)
+    |> then(&(%{"tournament_id" => tournament_id, "match_list_with_fight_result_str" => &1}))
+    |> Progress.create_match_list_with_fight_result_log()
   end
 
   @doc """
@@ -1982,7 +1995,6 @@ defmodule MilkWeb.TournamentController do
     Progress.delete_match_pending_list_of_tournament(tournament_id)
     Progress.delete_fight_result_of_tournament(tournament_id)
     Progress.delete_duplicate_users_all(tournament_id)
-    Progress.delete_lose_processes(tournament_id)
 
     json(conn, %{result: result})
   end
