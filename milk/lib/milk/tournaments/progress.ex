@@ -16,6 +16,7 @@ defmodule Milk.Tournaments.Progress do
     Sperm
   }
 
+  alias Common.Tools
   alias Milk.{
     Accounts,
     Repo,
@@ -168,6 +169,7 @@ defmodule Milk.Tournaments.Progress do
     end
   end
 
+  @spec get_match_list_with_fight_result(integer()) :: any()
   def get_match_list_with_fight_result(tournament_id) do
     conn = conn()
 
@@ -176,31 +178,27 @@ defmodule Milk.Tournaments.Progress do
          {match_list, _} <- Code.eval_string(value) do
       match_list
     else
-      {:error, %Redix.Error{message: message}} ->
-        Logger.error(message)
-        []
-
-      _ ->
-        []
+      _ -> nil
     end
   end
 
+  @spec get_match_list_with_fight_result_including_log(integer()) :: match_list()
   def get_match_list_with_fight_result_including_log(tournament_id) do
     tournament_id
     |> get_match_list_with_fight_result()
     |> case do
-      [] ->
+      nil ->
         tournament_id
         |> get_match_list_with_fight_result_log()
         |> Map.get(:match_list_with_fight_result_str)
         |> Code.eval_string()
         |> elem(0)
 
-      match_list ->
-        match_list
+      match_list -> match_list
     end
   end
 
+  @spec delete_match_list_with_fight_result(integer()) :: {:ok, nil} | {:error, String.t()}
   def delete_match_list_with_fight_result(tournament_id) do
     conn = conn()
 
@@ -208,36 +206,31 @@ defmodule Milk.Tournaments.Progress do
          {:ok, _} <- Redix.command(conn, ["SELECT", 2]),
          {:ok, _} <- Redix.command(conn, ["DEL", tournament_id]),
          {:ok, _} <- Redix.command(conn, ["EXEC"]) do
-      true
+      {:ok, nil}
     else
-      {:error, %Redix.Error{message: message}} ->
-        Logger.error(message)
-        false
-
-      _ ->
-        false
+      {:error, %Redix.Error{message: message}} -> {:error, message}
+      _ -> {:error, "Could not delete match list with fight result"}
     end
   end
 
   def renew_match_list_with_fight_result(loser, tournament_id) do
     conn = conn()
 
-    {:ok, _} = Redix.command(conn, ["SELECT", 2])
-    {:ok, value} = Redix.command(conn, ["SETNX", -tournament_id, 2])
-
-    if value == 1 do
-      {:ok, _} = Redix.command(conn, ["EXPIRE", -tournament_id, 20])
-      {:ok, _} = Redix.command(conn, ["SELECT", 2])
-      {:ok, value} = Redix.command(conn, ["GET", tournament_id])
-      {match_list, _} = Code.eval_string(value)
-      match_list = Tournamex.renew_match_list_with_loser(match_list, loser)
-      bin = inspect(match_list, charlists: false)
-      {:ok, _} = Redix.command(conn, ["DEL", tournament_id])
-      {:ok, _} = Redix.command(conn, ["SET", tournament_id, bin])
-      {:ok, _} = Redix.command(conn, ["DEL", -tournament_id])
-      true
+    with {:ok, _} <- Redix.command(conn, ["SELECT", 2]),
+         {:ok, value} when value == 1 <- Redix.command(conn, ["SETNX", -tournament_id, 2]),
+         {:ok, _} <- Redix.command(conn, ["EXPIRE", -tournament_id, 20]),
+         {:ok, _} <- Redix.command(conn, ["SELECT", 2]),
+         {:ok, value} <- Redix.command(conn, ["GET", tournament_id]),
+         {match_list, _} when not is_nil(match_list) <- Code.eval_string(value),
+         match_list <- Tournamex.renew_match_list_with_loser(match_list, loser),
+         bin <- inspect(match_list, charlists: false),
+         {:ok, _} <- Redix.command(conn, ["DEL", tournament_id]),
+         {:ok, _} <- Redix.command(conn, ["SET", tournament_id, bin]),
+         {:ok, _} <- Redix.command(conn, ["DEL", -tournament_id]) do
+      {:ok, nil}
     else
-      false
+      {:error, %Redix.Error{message: message}} -> {:error, message}
+      _ -> {:error, "Could not renew match list with fight result"}
     end
   end
 
@@ -250,6 +243,7 @@ defmodule Milk.Tournaments.Progress do
   @is_waiting_for_coin_flip "IsWaitingForCoinFlip"
   # @should_choose_map "ShouldChooseMap"
 
+  @spec insert_match_pending_list_table(integer(), integer()) :: {:ok, nil} | {:error, String.t()}
   def insert_match_pending_list_table(user_id, tournament_id) do
     # 大会タイプで分岐入れよう
     tournament = Tournaments.get_tournament(tournament_id)
@@ -257,14 +251,11 @@ defmodule Milk.Tournaments.Progress do
 
     should_flip_coin? = tournament.enabled_coin_toss
 
-    cond do
-      should_flip_coin? ->
+    key = if should_flip_coin? do
         @is_waiting_for_coin_flip
-
-      true ->
+      else
         @is_waiting_for_start
-    end
-    ~> key
+      end
 
     conn = conn()
 
@@ -272,37 +263,26 @@ defmodule Milk.Tournaments.Progress do
          {:ok, _} <- Redix.command(conn, ["SELECT", 3]),
          {:ok, _} <- Redix.command(conn, ["HSET", tournament_id, user_id, key]),
          {:ok, _} <- Redix.command(conn, ["EXEC"]) do
-      true
+      {:ok, nil}
     else
-      {:error, %Redix.Error{message: message}} ->
-        Logger.error(message)
-        false
-
-      _ ->
-        false
+      {:error, %Redix.Error{message: message}} -> {:error, message}
+      _ -> {:error, "Could not insert match pending list"}
     end
   end
 
+  @spec get_match_pending_list(integer(), integer()) :: String.t() | nil
   def get_match_pending_list(user_id, tournament_id) do
     conn = conn()
 
     with {:ok, _} <- Redix.command(conn, ["SELECT", 3]),
-         {:ok, value} <- Redix.command(conn, ["HGET", tournament_id, user_id]) do
-      unless is_nil(value) do
-        [{{user_id, tournament_id}, value}]
-      else
-        []
-      end
+         {:ok, value} when not is_nil(value) <- Redix.command(conn, ["HGET", tournament_id, user_id]) do
+      value
     else
-      {:error, %Redix.Error{message: message}} ->
-        Logger.error(message)
-        []
-
-      _ ->
-        []
+      _ -> nil
     end
   end
 
+  @spec get_match_pending_list_of_tournament(integer()) :: any()
   def get_match_pending_list_of_tournament(tournament_id) do
     conn = conn()
 
@@ -310,15 +290,11 @@ defmodule Milk.Tournaments.Progress do
          {:ok, value} <- Redix.command(conn, ["HKEYS", tournament_id]) do
       value
     else
-      {:error, %Redix.Error{message: message}} ->
-        Logger.error(message)
-        []
-
-      _ ->
-        []
+      _ -> nil
     end
   end
 
+  @spec delete_match_pending_list(integer(), integer()) :: {:ok, nil} | {:error, String.t()}
   def delete_match_pending_list(user_id, tournament_id) do
     conn = conn()
 
@@ -326,41 +302,39 @@ defmodule Milk.Tournaments.Progress do
          {:ok, _} <- Redix.command(conn, ["SELECT", 3]),
          {:ok, _} <- Redix.command(conn, ["HDEL", tournament_id, user_id]),
          {:ok, _} <- Redix.command(conn, ["EXEC"]) do
-      true
+      {:ok, nil}
     else
-      {:error, %Redix.Error{message: message}} ->
-        Logger.error(message)
-        false
-
-      _ ->
-        false
+      {:error, %Redix.Error{message: message}} -> {:error, message}
+      _ -> {:error, "Could not delete match pending list"}
     end
   end
 
+  @spec delete_match_pending_list_of_tournament(integer()) :: {:ok, nil} | {:error, String.t()}
   def delete_match_pending_list_of_tournament(tournament_id) do
     conn = conn()
 
     with {:ok, _} <- Redix.command(conn, ["SELECT", 3]),
-         {:ok, value} <- Redix.command(conn, ["HKEYS", tournament_id]) do
-      Enum.each(value, fn key ->
-        key = String.to_integer(key)
-        Redix.command(conn, ["HDEL", tournament_id, key])
-      end)
-
-      true
+         {:ok, value} when is_list(value) <- Redix.command(conn, ["HKEYS", tournament_id]),
+         {:ok, _} <- do_delete_match_pending_list_of_tournament(conn, tournament_id, value) do
+      {:ok, nil}
     else
-      {:error, %Redix.Error{message: message}} ->
-        Logger.error(message)
-        false
-
-      _ ->
-        false
+      {:error, %Redix.Error{message: message}} -> {:error, message}
+      _ -> {:error, "Could not delete match pending list of tournament"}
     end
+  end
+
+  defp do_delete_match_pending_list_of_tournament(conn, tournament_id, keys) do
+    keys
+    |> Enum.map(&String.to_integer(&1))
+    |> Enum.map(&Redix.command(conn, ["HDEL", tournament_id, &1]))
+    |> Enum.all?(&match?({:ok, _}, &1))
+    |> Tools.boolean_to_tuple()
   end
 
   # 4. match_pending_list
   # Manages fight result.
 
+  @spec insert_fight_result_table(integer(), integer(), boolean()) :: {:ok, nil} | {:error, String.t()}
   def insert_fight_result_table(user_id, tournament_id, is_win) do
     conn = conn()
 
@@ -368,14 +342,10 @@ defmodule Milk.Tournaments.Progress do
          {:ok, _} <- Redix.command(conn, ["SELECT", 4]),
          {:ok, _} <- Redix.command(conn, ["HSET", tournament_id, user_id, is_win]),
          {:ok, _} <- Redix.command(conn, ["EXEC"]) do
-      true
+      {:ok, nil}
     else
-      {:error, %Redix.Error{message: message}} ->
-        Logger.error(message)
-        false
-
-      _ ->
-        false
+      {:error, %Redix.Error{message: message}} -> {:error, message}
+      _ -> {:error, "Could not insert fight result"}
     end
   end
 
@@ -384,22 +354,16 @@ defmodule Milk.Tournaments.Progress do
     conn = conn()
 
     with {:ok, _} <- Redix.command(conn, ["SELECT", 4]),
-         {:ok, value} <- Redix.command(conn, ["HGET", tournament_id, user_id]) do
-      if value do
-        {is_win, _} = Code.eval_string(value)
-        is_win
-      else
-        nil
-      end
+         {:ok, value} when not is_nil(value) <- Redix.command(conn, ["HGET", tournament_id, user_id]) do
+      value
+      |> Code.eval_string()
+      |> elem(0)
     else
-      {:error, %Redix.Error{message: message}} ->
-        Logger.error(message)
-        nil
-
       _ -> nil
     end
   end
 
+  @spec delete_fight_result(integer(), integer()) :: {:ok, nil} | {:error, String.t()}
   def delete_fight_result(user_id, tournament_id) do
     conn = conn()
 
@@ -407,41 +371,39 @@ defmodule Milk.Tournaments.Progress do
          {:ok, _} <- Redix.command(conn, ["SELECT", 4]),
          {:ok, _} <- Redix.command(conn, ["HDEL", tournament_id, user_id]),
          {:ok, _} <- Redix.command(conn, ["EXEC"]) do
-      true
+      {:ok, nil}
     else
-      {:error, %Redix.Error{message: message}} ->
-        Logger.error(message)
-        false
-
-      _ ->
-        false
+      {:error, %Redix.Error{message: message}} -> {:error, message}
+      _ -> {:error, "Could not delete fight result"}
     end
   end
 
+  @spec delete_fight_result_of_tournament(integer()) :: {:ok, nil} | {:error, String.t()}
   def delete_fight_result_of_tournament(tournament_id) do
     conn = conn()
 
     with {:ok, _} <- Redix.command(conn, ["SELECT", 4]),
-         {:ok, value} <- Redix.command(conn, ["HKEYS", tournament_id]) do
-      Enum.each(value, fn key ->
-        key = String.to_integer(key)
-        Redix.command(conn, ["HDEL", tournament_id, key])
-      end)
-
-      true
+         {:ok, value} when is_list(value) <- Redix.command(conn, ["HKEYS", tournament_id]),
+         {:ok, _} <- do_delete_fight_result_of_tournament(conn, tournament_id, value) do
+      {:ok, nil}
     else
-      {:error, %Redix.Error{message: message}} ->
-        Logger.error(message)
-        false
-
-      _ ->
-        false
+      {:error, %Redix.Error{message: message}} -> {:error, message}
+      _ -> {:error, "Could not delete fight result of tournament"}
     end
+  end
+
+  # TODO: do_delete_match_pending_list_of_tournamentと共通処理で括れそう
+  defp do_delete_fight_result_of_tournament(conn, tournament_id, keys) do
+    keys
+    |> Enum.map(&String.to_integer(&1))
+    |> Enum.map(&Redix.command(conn, ["HDEL", tournament_id, &1]))
+    |> Enum.all?(&match?({:ok, _}, &1))
+    |> Tools.boolean_to_tuple()
   end
 
   # 5. duplicate_users
   # Manages duplicate users whose claims are same as their opponent.
-
+  @spec add_duplicate_user_id(integer(), integer()) :: {:ok, nil} | {:error, String.t()}
   def add_duplicate_user_id(tournament_id, user_id) do
     conn = conn()
 
@@ -449,72 +411,68 @@ defmodule Milk.Tournaments.Progress do
          {:ok, _} <- Redix.command(conn, ["SELECT", 5]),
          {:ok, _} <- Redix.command(conn, ["SADD", tournament_id, user_id]),
          {:ok, _} <- Redix.command(conn, ["EXEC"]) do
-      true
+      {:ok, nil}
     else
-      {:error, %Redix.Error{message: message}} ->
-        Logger.error(message)
-        false
-
-      _ ->
-        false
+      {:error, %Redix.Error{message: message}} -> {:error, message}
+      _ -> {:error, "Could not add duplicate user id"}
     end
   end
 
+  @doc """
+  重複報告をしたユーザーリストを取得する。
+  """
+  @spec get_duplicate_users(integer()) :: [integer()]
   def get_duplicate_users(tournament_id) do
     conn = conn()
 
     with {:ok, _} <- Redix.command(conn, ["SELECT", 5]),
-         {:ok, value} <- Redix.command(conn, ["SMEMBERS", tournament_id]) do
-      Enum.map(value, fn v ->
-        String.to_integer(v)
-      end)
+         {:ok, value} when is_list(value) <- Redix.command(conn, ["SMEMBERS", tournament_id]) do
+      Enum.map(value, &String.to_integer(&1))
     else
-      {:error, %Redix.Error{message: message}} ->
-        Logger.error(message)
-        []
-
-      _ ->
-        []
+      _ -> []
     end
   end
 
+  @doc """
+  redis上の重複報告者リストに入れられているユーザーを削除する。
+  """
+  @spec delete_duplicate_user(integer(), integer()) :: {:ok, nil} | {:error, String.t()}
   def delete_duplicate_user(tournament_id, user_id) do
     conn = conn()
 
     with {:ok, _} <- Redix.command(conn, ["SELECT", 5]),
          {:ok, n} <- Redix.command(conn, ["SCARD", tournament_id]),
-         {:ok, got_user_id_list} <- Redix.command(conn, ["SPOP", tournament_id, n]) do
-      Enum.each(got_user_id_list, fn got_user_id ->
-        unless got_user_id == to_string(user_id) do
-          Redix.command(conn, ["SADD", tournament_id, got_user_id])
-        end
-      end)
-
-      true
+         {:ok, user_id_list} when is_list(user_id_list) <- Redix.command(conn, ["SPOP", tournament_id, n]),
+         {:ok, _} <- do_delete_duplicate_users(conn, tournament_id, user_id, user_id_list) do
+      {:ok, nil}
     else
-      {:error, %Redix.Error{message: message}} ->
-        Logger.error(message)
-        false
-
-      _ ->
-        false
+      {:error, %Redix.Error{message: message}} -> {:error, message}
+      _ -> {:error, "Could not delete duplicate user"}
     end
   end
 
+  defp do_delete_duplicate_users(conn, tournament_id, user_id, user_id_list) do
+    user_id_list
+    |> Enum.reject(&(to_string(user_id) === to_string(&1)))
+    |> Enum.map(&Redix.command(conn, ["SADD", tournament_id, &1]))
+    |> Enum.all?(&match?({:ok, _}, &1))
+    |> Tools.boolean_to_tuple()
+  end
+
+  @doc """
+  与えられたtournament_idの重複報告者リストを削除する。
+  """
+  @spec delete_duplicate_users_all(integer()) :: {:ok, nil} | {:error, String.t()}
   def delete_duplicate_users_all(tournament_id) do
     conn = conn()
 
     with {:ok, _} <- Redix.command(conn, ["SELECT", 5]),
          {:ok, n} <- Redix.command(conn, ["SCARD", tournament_id]),
          {:ok, _} <- Redix.command(conn, ["SPOP", tournament_id, n]) do
-      true
+      {:ok, nil}
     else
-      {:error, %Redix.Error{message: message}} ->
-        Logger.error(message)
-        false
-
-      _ ->
-        false
+      {:error, %Redix.Error{message: message}} -> {:error, message}
+      _ -> {:error, "Could not delete duplicate users all"}
     end
   end
 
@@ -601,6 +559,10 @@ defmodule Milk.Tournaments.Progress do
   # 7. scores
   # Instead of fight result, we use scores for players fight result management.
 
+  @doc """
+  スコアを記録する
+  """
+  @spec insert_score(integer(), integer(), integer()) :: {:ok, nil} | {:error, String.t()}
   def insert_score(tournament_id, user_id, score) do
     conn = conn()
 
@@ -608,39 +570,31 @@ defmodule Milk.Tournaments.Progress do
          {:ok, _} <- Redix.command(conn, ["SELECT", 7]),
          {:ok, _} <- Redix.command(conn, ["HSET", tournament_id, user_id, score]),
          {:ok, _} <- Redix.command(conn, ["EXEC"]) do
-      true
+      {:ok, nil}
     else
-      {:error, %Redix.Error{message: message}} ->
-        Logger.error(message)
-        false
-
-      _ ->
-        false
+      {:error, %Redix.Error{message: message}} -> {:error, message}
+      _ -> {:error, "Could not insert score"}
     end
   end
 
-  @spec get_score(integer(), integer()) :: integer() | [any()]
+  @doc """
+  ユーザーのその大会でのスコアを取得する
+  """
+  @spec get_score(integer(), integer()) :: integer() | nil
   def get_score(tournament_id, user_id) do
     conn = conn()
 
     with {:ok, _} <- Redix.command(conn, ["SELECT", 7]),
-         {:ok, value} <- Redix.command(conn, ["HGET", tournament_id, user_id]) do
-      if value do
-        {score, _} = Code.eval_string(value)
-        score
-      else
-        []
-      end
+         {:ok, value} when not is_nil(value) <- Redix.command(conn, ["HGET", tournament_id, user_id]) do
+      value
+      |> Code.eval_string()
+      |> elem(0)
     else
-      {:error, %Redix.Error{message: message}} ->
-        Logger.error(message)
-        []
-
-      _ ->
-        []
+      _ -> nil
     end
   end
 
+  @spec delete_score(integer(), integer()) :: {:ok, nil} | {:error, String.t()}
   def delete_score(tournament_id, user_id) do
     conn = conn()
 
@@ -648,14 +602,10 @@ defmodule Milk.Tournaments.Progress do
          {:ok, _} <- Redix.command(conn, ["SELECT", 7]),
          {:ok, _} <- Redix.command(conn, ["HDEL", tournament_id, user_id]),
          {:ok, _} <- Redix.command(conn, ["EXEC"]) do
-      true
+      {:ok, nil}
     else
-      {:error, %Redix.Error{message: message}} ->
-        Logger.error(message)
-        false
-
-      _ ->
-        false
+      {:error, %Redix.Error{message: message}} -> {:error, message}
+      _ -> {:error, "Could not delete score"}
     end
   end
 
@@ -753,39 +703,28 @@ defmodule Milk.Tournaments.Progress do
          {:ok, _} <- Redix.command(conn, ["SELECT", 9]),
          {:ok, _} <- Redix.command(conn, ["HSET", tournament_id, id, is_attacker_side]),
          {:ok, _} <- Redix.command(conn, ["EXEC"]) do
-      true
+      {:ok, nil}
     else
-      {:error, %Redix.Error{message: message}} ->
-        Logger.error(message)
-        false
-
-      _ ->
-        false
+      {:error, %Redix.Error{message: message}} -> {:error, message}
+      _ -> {:error, "Could not insert attacker side information"}
     end
   end
 
+  @spec is_attacker_side?(integer(), integer()) :: boolean() | nil
   def is_attacker_side?(id, tournament_id) do
     conn = conn()
 
     with {:ok, _} <- Redix.command(conn, ["SELECT", 9]),
-         {:ok, value} <- Redix.command(conn, ["HGET", tournament_id, id]) do
-      unless is_nil(value) do
-        value
-        |> Code.eval_string()
-        |> elem(0)
-      else
-        nil
-      end
+         {:ok, value} when is_nil(value) <- Redix.command(conn, ["HGET", tournament_id, id]) do
+      value
+      |> Code.eval_string()
+      |> elem(0)
     else
-      {:error, %Redix.Error{message: message}} ->
-        Logger.error(message)
-        nil
-
-      _ ->
-        nil
+      _ -> nil
     end
   end
 
+  @spec delete_is_attacker_side(integer(), integer()) :: {:ok, nil} | {:error, String.t()}
   def delete_is_attacker_side(id, tournament_id) do
     conn = conn()
 
@@ -793,14 +732,10 @@ defmodule Milk.Tournaments.Progress do
          {:ok, _} <- Redix.command(conn, ["SELECT", 9]),
          {:ok, _} <- Redix.command(conn, ["HDEL", tournament_id, id]),
          {:ok, _} <- Redix.command(conn, ["EXEC"]) do
-      true
+      {:ok, nil}
     else
-      {:error, %Redix.Error{message: message}} ->
-        Logger.error(message)
-        false
-
-      _ ->
-        false
+      {:error, %Redix.Error{message: message}} -> {:error, message}
+      _ -> {:error, "Could not delete attacker side information"}
     end
   end
 

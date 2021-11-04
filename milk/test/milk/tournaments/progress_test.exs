@@ -160,23 +160,19 @@ defmodule Milk.Tournaments.ProgressTest do
       tournament = fixture_tournament(is_started: true)
       Progress.insert_match_pending_list_table(1, tournament.id)
 
-      assert {r, "IsWaitingForStart"} = Progress.get_match_pending_list(1, tournament.id) |> hd()
-
-      assert r == {1, tournament.id}
+      assert "IsWaitingForStart" == Progress.get_match_pending_list(1, tournament.id)
     end
 
     test "delete_match_pending_list" do
       tournament = fixture_tournament(is_started: true)
       Progress.insert_match_pending_list_table(1, tournament.id)
-      assert r = Progress.delete_match_pending_list(1, tournament.id)
-      assert is_boolean(r)
+      assert {:ok, _} = Progress.delete_match_pending_list(1, tournament.id)
     end
   end
 
   describe "fight result table" do
     test "insert_fight_result/2 works fine" do
-      assert r = Progress.insert_fight_result_table(1, 1, true)
-      assert is_boolean(r)
+      assert {:ok, _} = Progress.insert_fight_result_table(1, 1, true)
     end
 
     test "get_fight_result/1 works fine true" do
@@ -193,8 +189,7 @@ defmodule Milk.Tournaments.ProgressTest do
 
     test "delete_fight_result/1 works fine" do
       Progress.insert_fight_result_table(1, 3, true)
-      assert r = Progress.delete_fight_result(1, 3)
-      assert is_boolean(r)
+      assert {:ok, _} = Progress.delete_fight_result(1, 3)
     end
   end
 
@@ -274,8 +269,7 @@ defmodule Milk.Tournaments.ProgressTest do
     test "delete_match_list_with_fight_result/1" do
       match_list = [[1, 2], 3]
       Progress.insert_match_list_with_fight_result(match_list, 3)
-      assert r = Progress.delete_match_list_with_fight_result(3)
-      assert is_boolean(r)
+      assert {:ok, _} = Progress.delete_match_list_with_fight_result(3)
     end
   end
 

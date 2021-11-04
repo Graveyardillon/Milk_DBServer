@@ -1774,7 +1774,7 @@ defmodule MilkWeb.TournamentControllerTest do
           end).()
 
       assert Progress.get_fight_result(hd(losers), tournament.id) == nil
-      assert Progress.get_match_pending_list(hd(losers), tournament.id) == []
+      assert is_nil(Progress.get_match_pending_list(hd(losers), tournament.id))
 
       tournament.id
       |> Progress.get_match_list()
@@ -2119,7 +2119,7 @@ defmodule MilkWeb.TournamentControllerTest do
 
       conn = get(conn, Routes.tournament_path(conn, :get_fighting_users), tournament_id: tournament.id)
 
-      assert length(json_response(conn, 200)["data"]) == 0
+      assert Enum.empty?(json_response(conn, 200)["data"])
     end
 
     test "get fighting and waiting users (team)", %{conn: conn} do
@@ -2703,7 +2703,7 @@ defmodule MilkWeb.TournamentControllerTest do
       conn = get(conn, Routes.tournament_path(conn, :show), tournament_id: tournament.id)
       assert json_response(conn, 200)["is_log"]
 
-      assert Progress.get_match_list_with_fight_result(tournament.id) == []
+      assert is_nil(Progress.get_match_list_with_fight_result(tournament.id))
     end
   end
 
@@ -3713,25 +3713,26 @@ defmodule MilkWeb.TournamentControllerTest do
 
       conn = get(conn, Routes.tournament_path(conn, :show), tournament_id: tournament["id"])
 
-      json_response(conn, 200)
-      |> (fn t ->
-            assert t["is_log"]
-            assert t["result"]
-            t
-          end).()
+      conn
+      |> json_response(200)
+      |> then(fn t ->
+        assert t["is_log"]
+        assert t["result"]
+        t
+      end)
       |> Map.get("data")
-      |> (fn t ->
-            assert t["tournament_id"] == tournament["id"]
-            assert t["capacity"] == tournament["capacity"]
-            assert t["description"] == tournament["description"]
-            assert t["game_id"] == tournament["game_id"]
-            assert t["game_name"] == tournament["game_name"]
-            assert t["winner_id"] == opponent1_id
-            assert t["master_id"] == tournament["master_id"]
-            assert t["name"] == tournament["name"]
-            assert t["url"] == tournament["url"]
-            assert t["type"] == tournament["type"]
-          end).()
+      |> then(fn t ->
+        assert t["tournament_id"] == tournament["id"]
+        assert t["capacity"] == tournament["capacity"]
+        assert t["description"] == tournament["description"]
+        assert t["game_id"] == tournament["game_id"]
+        assert t["game_name"] == tournament["game_name"]
+        assert t["winner_id"] == opponent1_id
+        assert t["master_id"] == tournament["master_id"]
+        assert t["name"] == tournament["name"]
+        assert t["url"] == tournament["url"]
+        assert t["type"] == tournament["type"]
+      end)
 
       conn =
         get(conn, Routes.tournament_path(conn, :tournament_topics),
@@ -3741,7 +3742,8 @@ defmodule MilkWeb.TournamentControllerTest do
 
       assert json_response(conn, 200)["result"]
 
-      json_response(conn, 200)
+      conn
+      |> json_response(200)
       |> Map.get("data")
       |> Enum.map(fn topic_log ->
         assert topic_log["tournament_id"] == tournament["id"]
@@ -3758,7 +3760,7 @@ defmodule MilkWeb.TournamentControllerTest do
 
       tournament["id"]
       |> Progress.get_match_list_with_fight_result()
-      |> Enum.empty?()
+      |> is_nil()
       |> assert()
 
       tournament["id"]
@@ -4087,9 +4089,8 @@ defmodule MilkWeb.TournamentControllerTest do
 
       entrant1.user_id
       |> Progress.get_match_pending_list(tournament.id)
-      |> (fn list ->
-            assert list == []
-          end).()
+      |> is_nil()
+      |> assert()
 
       opponent = json_response(conn, 200)["opponent"]
 
@@ -4107,9 +4108,9 @@ defmodule MilkWeb.TournamentControllerTest do
 
       entrant1.user_id
       |> Progress.get_match_pending_list(tournament.id)
-      |> (fn list ->
-            assert list == [{{entrant1.user_id, tournament.id}, "IsWaitingForStart"}]
-          end).()
+      |> then(fn state ->
+        assert state == "IsWaitingForStart"
+      end)
 
       my_score = 13
       opponent_score = 4
@@ -4255,9 +4256,8 @@ defmodule MilkWeb.TournamentControllerTest do
 
       entrant1.user_id
       |> Progress.get_match_pending_list(tournament.id)
-      |> (fn list ->
-            assert list == []
-          end).()
+      |> is_nil()
+      |> assert()
 
       conn =
         post(conn, Routes.tournament_path(conn, :start_match),
@@ -4273,9 +4273,9 @@ defmodule MilkWeb.TournamentControllerTest do
 
       entrant1.user_id
       |> Progress.get_match_pending_list(tournament.id)
-      |> (fn list ->
-            assert list == [{{entrant1.user_id, tournament.id}, "IsWaitingForStart"}]
-          end).()
+      |> then(fn state ->
+        assert state == "IsWaitingForStart"
+      end)
 
       my_score = 13
       opponent_score = 4

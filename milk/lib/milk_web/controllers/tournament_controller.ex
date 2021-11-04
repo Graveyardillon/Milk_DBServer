@@ -1046,8 +1046,8 @@ defmodule MilkWeb.TournamentController do
     |> insert_match_pending_list_as_needed?(user_id, tournament_id)
   end
 
-  @spec insert_match_pending_list_as_needed?([any()], integer(), integer()) :: boolean()
-  defp insert_match_pending_list_as_needed?([], id, tournament_id), do: Progress.insert_match_pending_list_table(id, tournament_id)
+  @spec insert_match_pending_list_as_needed?(any(), integer(), integer()) :: boolean()
+  defp insert_match_pending_list_as_needed?(nil, id, tournament_id), do: Progress.insert_match_pending_list_table(id, tournament_id)
   defp insert_match_pending_list_as_needed?(_, _, _), do: false
 
   @spec start_team_match(Tournament.t(), integer()) :: boolean()
@@ -1057,13 +1057,16 @@ defmodule MilkWeb.TournamentController do
     |> Map.get(:id)
     ~> team_id
     |> Progress.get_match_pending_list(id)
-    |> Kernel.==([])
-    |> if do
-      Progress.insert_match_pending_list_table(team_id, id)
-    else
-      # FIXME: trueを返すことによってios側でどのユーザーでもコイントスの結果を見られるようにしているが、
-      # もっと良い処理があるかもしれない
-      true
+    |> case do
+      nil ->
+        team_id
+        |> Progress.insert_match_pending_list_table(id)
+        |> case do
+          {:ok, _} -> true
+          {:error, _} -> false
+        end
+      _ ->
+        true
     end
   end
 
@@ -1221,13 +1224,12 @@ defmodule MilkWeb.TournamentController do
     user_id = Tools.to_integer_as_needed(user_id)
     tournament_id = Tools.to_integer_as_needed(tournament_id)
 
-    pending_list = Progress.get_match_pending_list(user_id, tournament_id)
+    state = Progress.get_match_pending_list(user_id, tournament_id)
 
-    unless pending_list == [] do
-      [{{_, id}, _}] = pending_list
-      json(conn, %{result: true, tournament_id: id})
-    else
+    if is_nil(state) do
       json(conn, %{result: false})
+    else
+      json(conn, %{result: true, tournament_id: tournament_id})
     end
   end
 
@@ -1259,7 +1261,7 @@ defmodule MilkWeb.TournamentController do
         tournament_id
         |> Progress.get_score(user_id)
         |> case do
-          [] -> nil
+          nil -> nil
           score -> score
         end
       end
@@ -1280,33 +1282,6 @@ defmodule MilkWeb.TournamentController do
     tournament_id = Tools.to_integer_as_needed(tournament_id)
 
     do_claim_score(conn, user_id, tournament_id, 1)
-
-    # case Progress.get_fight_result(opponent_id, tournament_id) do
-    #   nil ->
-    #     if Progress.get_fight_result(user_id, tournament_id) != [] do
-    #       Progress.delete_fight_result(user_id, tournament_id)
-    #     end
-
-    #     Progress.insert_fight_result_table(user_id, tournament_id, true)
-    #     json(conn, %{validated: true, completed: false})
-
-    #   is_win ->
-    #     Progress.delete_fight_result(user_id, tournament_id)
-    #     Progress.delete_fight_result(opponent_id, tournament_id)
-
-    #     if is_win do
-    #       Progress.add_duplicate_user_id(tournament_id, user_id)
-    #       Progress.add_duplicate_user_id(tournament_id, opponent_id)
-    #       json(conn, %{validated: false, completed: false})
-    #     else
-    #       # マッチングが正常に終了している
-    #       Progress.delete_match_pending_list(user_id, tournament_id)
-    #       Progress.delete_match_pending_list(opponent_id, tournament_id)
-    #       Progress.delete_duplicate_user(tournament_id, user_id)
-    #       Progress.delete_duplicate_user(tournament_id, opponent_id)
-    #       json(conn, %{validated: true, completed: true})
-    #     end
-    # end
   end
 
   @doc """
@@ -1322,30 +1297,6 @@ defmodule MilkWeb.TournamentController do
     tournament_id = Tools.to_integer_as_needed(tournament_id)
 
     do_claim_score(conn, user_id, tournament_id, 0)
-
-    # case Progress.get_fight_result(opponent_id, tournament_id) do
-    #   # 対戦相手がまだ報告していなくて、自分がもう報告していた場合はまずレコードを削除する
-    #   nil ->
-    #     if Progress.get_fight_result(user_id, tournament_id) != [] do
-    #       Progress.delete_fight_result(user_id, tournament_id)
-    #     end
-
-    #     Progress.insert_fight_result_table(user_id, tournament_id, false)
-    #     json(conn, %{validated: true, completed: false})
-
-    #   is_win ->
-    #     unless is_win do
-    #       Progress.add_duplicate_user_id(tournament_id, user_id)
-    #       Progress.add_duplicate_user_id(tournament_id, opponent_id)
-    #       json(conn, %{validated: false, completed: false})
-    #     else
-    #       Progress.delete_match_pending_list(user_id, tournament_id)
-    #       Progress.delete_match_pending_list(opponent_id, tournament_id)
-    #       Progress.delete_fight_result(user_id, tournament_id)
-    #       Progress.delete_fight_result(opponent_id, tournament_id)
-    #       json(conn, %{validated: true, completed: true})
-    #     end
-    # end
   end
 
   @doc """
@@ -1368,8 +1319,8 @@ defmodule MilkWeb.TournamentController do
     with tournament when not is_nil(tournament) <- Tournaments.get_tournament(tournament_id),
          {:ok, opponent} <- Tournaments.get_opponent(tournament_id, user_id),
          id when not is_nil(id) <- Progress.get_necessary_id(tournament_id, user_id),
-         true <- Progress.insert_score(tournament_id, id, score),
-         opponent_score when opponent_score != [] <- Progress.get_score(tournament_id, opponent.id),
+         {:ok, _} <- Progress.insert_score(tournament_id, id, score),
+         opponent_score when not is_nil(opponent_score) <- Progress.get_score(tournament_id, opponent.id),
          {:ok, winner_id, loser_id, _} <- calculate_winner(id, opponent.id, score, opponent_score),
          is_finished? <- proceed_to_next_match(tournament, winner_id, loser_id, score, opponent_score, match_index) do
       json(conn, %{validated: true, completed: true, is_finished: is_finished?})
@@ -1382,7 +1333,7 @@ defmodule MilkWeb.TournamentController do
         notify_discord_on_duplicate_claim_as_needed(tournament_id, id, opponent_id, score)
         notify_on_duplicate_match(tournament_id, id, opponent_id)
         json(conn, %{validated: false, completed: false, is_finished: false})
-      [] ->
+      nil ->
         json(conn, %{validated: true, completed: false, is_finished: false})
       _ ->
         json(conn, %{validated: false, completed: false, is_finished: false})
@@ -1509,6 +1460,7 @@ defmodule MilkWeb.TournamentController do
 
     json(conn, %{result: result})
   end
+
 
   # チーム対応
   defp notify_on_duplicate_match(_tournament_id, user_id, opponent_id) do
@@ -1652,7 +1604,7 @@ defmodule MilkWeb.TournamentController do
     tournament_id = Tools.to_integer_as_needed(tournament_id)
 
     case Progress.get_score(tournament_id, user_id) do
-      [] -> json(conn, %{is_win: nil, is_claimed: false})
+      nil -> json(conn, %{is_win: nil, is_claimed: false})
       0 -> json(conn, %{is_win: false, tournament_id: tournament_id, is_claimed: true})
       1 -> json(conn, %{is_win: true, tournament_id: tournament_id, is_claimed: true})
       _ -> json(conn, %{is_win: nil, tournament_id: tournament_id, is_claimed: true})
@@ -1676,7 +1628,7 @@ defmodule MilkWeb.TournamentController do
 
     Progress.get_score(tournament_id, user_id)
     |> case do
-      [] -> json(conn, %{score: nil, result: false})
+       nil -> json(conn, %{score: nil, result: false})
       score -> json(conn, %{score: score, result: true})
     end
   end

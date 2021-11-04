@@ -874,15 +874,12 @@ defmodule Milk.Tournaments do
   defp do_choose_ad(state, _, _, _, _) when state != "ShouldChooseA/D", do: {:error, "invalid state"}
   defp do_choose_ad(_, _, _, opponent_id, _) when not is_integer(opponent_id), do: {:error, "opponent id is not integer"}
   defp do_choose_ad(_, user_id, tournament_id, opponent_id, is_attacker_side) do
-    my_id = Progress.get_necessary_id(tournament_id, user_id)
-
-    has_me_inserted = Progress.insert_is_attacker_side(my_id, tournament_id, is_attacker_side)
-    has_opponent_inserted = Progress.insert_is_attacker_side(opponent_id, tournament_id, !is_attacker_side)
-
-    if has_me_inserted && has_opponent_inserted do
+    with my_id when not is_nil(my_id) <- Progress.get_necessary_id(tournament_id, user_id),
+         {:ok, _} <- Progress.insert_is_attacker_side(my_id, tournament_id, is_attacker_side),
+         {:ok, _} <- Progress.insert_is_attacker_side(opponent_id, tournament_id, !is_attacker_side) do
       {:ok, nil}
     else
-      {:error, "failed to insert is_attacker_side"}
+      _ -> {:error, "failed to insert is_attacker_side"}
     end
   end
 
@@ -1825,16 +1822,18 @@ defmodule Milk.Tournaments do
     |> if do
       tournament_id
       |> get_confirmed_teams()
-      |> Enum.filter(fn team ->
+      |> Enum.reject(fn team ->
         team.id
         |> Progress.get_match_pending_list(tournament_id)
-        |> Kernel.!=([])
+        |> is_nil()
       end)
     else
       tournament_id
       |> get_entrants()
-      |> Enum.filter(fn entrant ->
-        Progress.get_match_pending_list(entrant.user_id, tournament_id) != []
+      |> Enum.reject(fn entrant ->
+        entrant.user_id
+        |> Progress.get_match_pending_list(tournament_id)
+        |> is_nil()
       end)
       |> Enum.map(fn entrant ->
         Accounts.get_user(entrant.user_id)
@@ -2510,21 +2509,20 @@ defmodule Milk.Tournaments do
   @spec check_wait_state!(Tournament.t(), integer(), any()) :: String.t()
   defp check_wait_state!(tournament, id, match) do
     opponent_pending_list = load_opponent_pending_list(tournament, match, id)
-    pending_list = Progress.get_match_pending_list(id, tournament.id)
+    state = Progress.get_match_pending_list(id, tournament.id)
 
     cond do
-      pending_list == [] && tournament.enabled_coin_toss ->
+      is_nil(state) && tournament.enabled_coin_toss ->
         "ShouldFlipCoin"
 
-      pending_list == [] ->
+      is_nil(state) ->
         # "IsInMatch"
         "ShouldStartMatch"
 
-      pending_list != [] && opponent_pending_list == [] ->
-        [{_, state}] = pending_list
+      !is_nil(state) && is_nil(opponent_pending_list) ->
         state
 
-      pending_list != [] && tournament.enabled_map ->
+      !is_nil(state) && tournament.enabled_map ->
         check_map_ban_state(tournament, id)
 
       :else ->

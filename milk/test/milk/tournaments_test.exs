@@ -1109,11 +1109,11 @@ defmodule Milk.TournamentsTest do
 
       pending_list = Progress.get_match_pending_list(tournament.master_id, tournament.id)
 
-      assert pending_list == []
+      assert is_nil(pending_list)
 
       opponent_pending_list = Progress.get_match_pending_list(opponent.id, tournament.id)
 
-      assert opponent_pending_list == []
+      assert is_nil(opponent_pending_list)
 
       Progress.insert_match_pending_list_table(tournament.master_id, tournament.id)
       Progress.insert_match_pending_list_table(opponent.id, tournament.id)
@@ -1134,7 +1134,7 @@ defmodule Milk.TournamentsTest do
 
       pending_list = Progress.get_match_pending_list(tournament.master_id, tournament.id)
 
-      assert pending_list == []
+      assert pending_list == nil
       Progress.insert_match_pending_list_table(tournament.master_id, tournament.id)
 
       assert "IsWaitingForStart" == Tournaments.state!(tournament.id, tournament.master_id)
@@ -1892,7 +1892,7 @@ defmodule Milk.TournamentsTest do
               %{validated: false, completed: true}
           end
 
-        [] ->
+        nil ->
           %{validated: true, completed: false}
       end
     end
@@ -2160,7 +2160,7 @@ defmodule Milk.TournamentsTest do
       # match_list_with_fight_resultの最終状態確認
       tournament.id
       |> Progress.get_match_list_with_fight_result()
-      |> Kernel.==([])
+      |> is_nil()
       |> assert()
 
       # tournamentがlogになってるか確認
