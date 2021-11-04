@@ -2405,37 +2405,37 @@ defmodule Milk.Tournaments do
   @doc """
   Checks tournament state.
   """
-  # @spec state!(integer(), integer()) :: String.t()
-  # def state!(tournament_id, user_id) do
-  #   keyname = Rules.adapt_keyname(user_id)
-
-  #   tournament_id
-  #   |> __MODULE__.get_tournament()
-  #   |> do_state!(keyname)
-  # end
-
-  # defp do_state!(nil, _), do: "IsFinished"
-  # defp do_state!(%Tournament{rule: rule}, keyname) do
-  #   case rule do
-  #     "basic" -> Basic.state!(keyname)
-  #     "flipban" -> FlipBan.state!(keyname)
-  #     _ -> raise "Invalid tournament rule"
-  #   end
-  # end
   @spec state!(integer(), integer()) :: String.t()
   def state!(tournament_id, user_id) do
+    keyname = Rules.adapt_keyname(user_id)
+
     tournament_id
     |> __MODULE__.get_tournament()
-    |> do_state!(user_id)
+    |> do_state!(keyname)
   end
 
   defp do_state!(nil, _), do: "IsFinished"
-  defp do_state!(%Tournament{is_started: is_started}, _) when not is_started, do: "IsNotStarted"
-
-  defp do_state!(tournament, user_id) do
-    id = Progress.get_necessary_id(tournament.id, user_id)
-    check_user_role!(tournament, id, user_id)
+  defp do_state!(%Tournament{rule: rule}, keyname) do
+    case rule do
+      "basic" -> Basic.state!(keyname)
+      "flipban" -> FlipBan.state!(keyname)
+      _ -> raise "Invalid tournament rule"
+    end
   end
+  # @spec state!(integer(), integer()) :: String.t()
+  # def state!(tournament_id, user_id) do
+  #   tournament_id
+  #   |> __MODULE__.get_tournament()
+  #   |> do_state!(user_id)
+  # end
+
+  # defp do_state!(nil, _), do: "IsFinished"
+  # defp do_state!(%Tournament{is_started: is_started}, _) when not is_started, do: "IsNotStarted"
+
+  # defp do_state!(tournament, user_id) do
+  #   id = Progress.get_necessary_id(tournament.id, user_id)
+  #   check_user_role!(tournament, id, user_id)
+  # end
 
   @spec check_user_role!(Tournament.t(), integer(), integer()) :: String.t()
   defp check_user_role!(tournament, id, user_id) do
