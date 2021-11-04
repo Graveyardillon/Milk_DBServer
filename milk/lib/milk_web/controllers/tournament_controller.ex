@@ -246,16 +246,13 @@ defmodule MilkWeb.TournamentController do
   """
   def get_thumbnail_image(conn, %{"thumbnail_path" => path}) do
     case Application.get_env(:milk, :environment) do
-      :test ->
-        read_thumbnail(path)
+      :test -> read_thumbnail(path)
 
       # coveralls-ignore-start
-      :dev ->
-        read_thumbnail(path)
+      :dev -> read_thumbnail(path)
 
-      _ ->
-        read_thumbnail_prod(path)
-        # coveralls-ignore-stop
+      _ -> read_thumbnail_prod(path)
+      # coveralls-ignore-stop
     end
     ~> map
 
@@ -466,11 +463,11 @@ defmodule MilkWeb.TournamentController do
     |> Tournaments.get_participating_tournaments(offset)
     |> do_home()
     ~> tournaments
-
-    unless length(tournaments) == 0 do
-      render(conn, "home.json", tournaments_info: tournaments)
-    else
+    |> Enum.empty?()
+    |> if do
       render(conn, "error.json", error: nil)
+    else
+      render(conn, "home.json", tournaments_info: tournaments)
     end
   end
 
@@ -480,11 +477,11 @@ defmodule MilkWeb.TournamentController do
     |> Tournaments.get_participating_tournaments()
     |> do_home()
     ~> tournaments
-
-    unless length(tournaments) == 0 do
-      render(conn, "home.json", tournaments_info: tournaments)
-    else
+    |> Enum.empty?()
+    |> if do
       render(conn, "error.json", error: nil)
+    else
+      render(conn, "home.json", tournaments_info: tournaments)
     end
   end
 
@@ -507,9 +504,7 @@ defmodule MilkWeb.TournamentController do
 
     user_id
     |> Tournaments.get_assistants_by_user_id()
-    |> Enum.map(fn assistant ->
-      Tournaments.get_tournament(assistant.tournament_id)
-    end)
+    |> Enum.map(&Tournaments.get_tournament(&1.tournament_id))
     ~> assistants
 
     tournaments = participatings ++ hostings ++ assistants
@@ -539,50 +534,15 @@ defmodule MilkWeb.TournamentController do
     user_id = Tools.to_integer_as_needed(user_id)
 
     tournament = Tournaments.get_tournament(tournament_id)
-    entrants = Tournaments.get_entrants(tournament.id)
+    entrants = Tournaments.get_entrants(tournament_id)
+    result = true
 
-    # NOTE: Deadlineの確認
-    tournament.deadline
-    |> Milk.EctoDate.dump()
-    |> elem(1)
-    |> DateTime.compare(Timex.now())
-    |> Kernel.!=(:lt)
-    ~> result
-
-    # NOTE: キャパシティの確認(個人)
-    tournament.capacity
-    |> Kernel.>(length(entrants))
-    |> Kernel.and(result)
-    ~> result
-
-    # NOTE: キャパシティの確認(チーム)
-    tournament.capacity
-    |> Kernel.>(length(tournament.team))
-    |> Kernel.and(result)
-    ~> result
-
-    # NOTE: 自分が参加しているかどうか
-    entrants
-    |> Enum.all?(fn entrant ->
-      entrant.user_id != user_id
-    end)
-    |> Kernel.and(result)
-    ~> result
-
-    # NOTE: 時刻の確認（自分の主催している大会には参加できる）
-    user_id
-    |> do_relevant()
-    |> Enum.all?(fn t ->
-      tournament.master_id == user_id || t.event_date != tournament.event_date || is_nil(t.event_date)
-    end)
-    |> Kernel.and(result)
-    ~> result
-
-    # NOTE: 自分がチームとして参加しているかどうか
-    user_id
-    |> Tournaments.has_requested_as_team?(tournament_id)
-    |> Kernel.not()
-    |> Kernel.and(result)
+    result
+    |> is_valid_deadline?(tournament)
+    |> is_valid_capacity?(tournament, entrants)
+    |> already_participated?(entrants, user_id)
+    |> already_participated_as_team?(tournament, user_id)
+    |> is_valid_event_date?(tournament, user_id)
     ~> result
 
     requested? = Tournaments.has_requested_as_team?(user_id, tournament_id)
@@ -593,6 +553,48 @@ defmodule MilkWeb.TournamentController do
       has_requested_as_team: requested?,
       has_confirmed_as_team: confirmed?
     })
+  end
+
+  defp is_valid_deadline?(result, %Tournament{deadline: deadline}) do
+    deadline
+    |> Milk.EctoDate.dump()
+    |> elem(1)
+    |> DateTime.compare(Timex.now())
+    |> Kernel.!=(:lt)
+    |> Kernel.and(result)
+  end
+
+  defp is_valid_capacity?(result, %Tournament{is_team: true, capacity: capacity, team: teams}, _) do
+    capacity
+    |> Kernel.>(length(teams))
+    |> Kernel.and(result)
+  end
+  defp is_valid_capacity?(result, %Tournament{capacity: capacity}, entrants) do
+    capacity
+    |> Kernel.>(length(entrants))
+    |> Kernel.and(result)
+  end
+
+  defp already_participated?(result, entrants, user_id) do
+    entrants
+    |> Enum.all?(&(&1.user_id != user_id))
+    |> Kernel.and(result)
+  end
+
+  defp already_participated_as_team?(result, %Tournament{id: id}, user_id) do
+    user_id
+    |> Tournaments.has_requested_as_team?(id)
+    |> Kernel.not()
+    |> Kernel.and(result)
+  end
+
+  defp is_valid_event_date?(result, %Tournament{master_id: master_id, event_date: event_date}, user_id) do
+    user_id
+    |> do_relevant()
+    |> Enum.all?(fn tournament ->
+      master_id == user_id || tournament.event_date != event_date || is_nil(tournament.event_date)
+    end)
+    |> Kernel.and(result)
   end
 
   @doc """
@@ -1594,17 +1596,13 @@ defmodule MilkWeb.TournamentController do
     |> hd()
     ~> token
 
-    token
-    |> Tournaments.get_tournament_by_url_token()
-    ~> tournament
+    tournament = Tournaments.get_tournament_by_url_token(token)
+    team = Enum.filter(tournament.team, &(&1.is_confirmed))
 
-    team = Enum.filter(tournament.team, fn team -> team.is_confirmed end)
-
-    selections =
-      Tournaments.get_maps_by_tournament_id(tournament.id)
-      |> Enum.map(fn map ->
-        Map.put(map, :state, "not_selected")
-      end)
+    tournament.id
+    |> Tournaments.get_maps_by_tournament_id()
+    |> Enum.map(&Map.put(&1, :state, "not_selected"))
+    ~> selections
 
     tournament
     |> Map.put(:team, team)
@@ -1645,7 +1643,8 @@ defmodule MilkWeb.TournamentController do
     user_id = Tools.to_integer_as_needed(user_id)
     tournament_id = Tools.to_integer_as_needed(tournament_id)
 
-    Progress.get_score(tournament_id, user_id)
+    tournament_id
+    |> Progress.get_score(user_id)
     |> case do
        nil -> json(conn, %{score: nil, result: false})
       score -> json(conn, %{score: score, result: true})
@@ -1658,20 +1657,6 @@ defmodule MilkWeb.TournamentController do
   def publish_url(conn, _params) do
     url = SecureRandom.urlsafe_base64()
 
-    # conn
-    # |> Map.get(:scheme)
-    # |> to_string()
-    # ~> scheme
-
-    # conn
-    # |> Map.get(:req_headers)
-    # |> List.pop_at(2)
-    # |> elem(0)
-    # |> elem(1)
-    # ~> host
-
-    # origin = "#{scheme}://#{host}"
-
     :milk
     |> Application.get_env(:environment)
     |> case do
@@ -1681,7 +1666,6 @@ defmodule MilkWeb.TournamentController do
     end
     ~> origin
 
-    # json(conn, %{url: "e-players://e-players/tournament/" <> url, result: true})
     json(conn, %{url: "#{origin}/api/tournament/url/#{url}", result: true})
   end
 
