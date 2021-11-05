@@ -2814,21 +2814,28 @@ defmodule Milk.Tournaments do
 
   @spec create_team_members(integer(), [integer()]) :: {:ok, [TeamMember.t()]}
   def create_team_members(team_id, user_id_list) do
-    # todo: トランザクションを使おう
-    Enum.map(user_id_list, fn id ->
-      %TeamMember{}
-      |> TeamMember.changeset(%{"team_id" => team_id, "user_id" => id})
-      |> Repo.insert()
-      |> elem(1)
-      |> Repo.preload(:user)
-      ~> member
+    user_id_list
+    |> Enum.reduce(Multi.new(), &create_team_member_transaction(&1, team_id, &2))
+    |> Repo.transaction()
+    |> case do
+      {:ok, result} ->
+        result
+        |> Enum.map(fn {_, team_member} ->
+          team_member = Repo.preload(team_member, :user)
+          user = Repo.preload(team_member.user, :auth)
+          Map.put(team_member, :user, user)
+        end)
+        ~> result
+        {:ok, result}
+      {:error, _, changeset, _} -> {:error, changeset.errors}
+      {:error, _} -> {:error, nil}
+    end
+  end
 
-      user = Repo.preload(member.user, :auth)
-      Map.put(member, :user, user)
+  defp create_team_member_transaction(user_id, team_id, multi) do
+    Multi.insert(multi, :"#{user_id}", fn _ ->
+      TeamMember.changeset(%{"team_id" => team_id, "user_id" => user_id})
     end)
-    ~> result
-
-    {:ok, result}
   end
 
   @spec create_team_invitations([TeamMember.t()], integer()) :: {:ok, any()} | {:error, any()}
