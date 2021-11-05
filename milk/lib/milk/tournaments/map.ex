@@ -1,4 +1,7 @@
 defmodule Milk.Tournaments.Map do
+  @moduledoc """
+  Map
+  """
   use Milk.Schema
 
   import Ecto.Changeset
@@ -23,6 +26,8 @@ defmodule Milk.Tournaments.Map do
 
     timestamps()
   end
+
+  def changeset(attrs), do: __MODULE__.changeset(%__MODULE__{}, attrs)
 
   @doc false
   def changeset(map, attrs) do

@@ -589,21 +589,16 @@ defmodule Milk.Tournaments do
     {:ok, nil}
   end
 
-  # TODO: トランザクション
-  @spec create_maps_on_create_tournament(Tournament.t(), [any()] | map() | nil) :: {:ok, nil} | {:error, String.t()}
+  @spec create_maps_on_create_tournament(Tournament.t(), [Milk.Tournaments.Map.t()] | map() | nil) :: {:ok, nil} | {:error, String.t() | nil}
   defp create_maps_on_create_tournament(tournament, maps) when is_list(maps) do
     maps
-    |> Enum.all?(fn map ->
-      map
-      |> Map.put("tournament_id", tournament.id)
-      |> __MODULE__.create_map()
-      |> elem(0)
-      |> Kernel.==(:ok)
-    end)
-    |> if do
-      {:ok, nil}
-    else
-      {:error, "error on creating maps"}
+    |> Enum.map(&Map.put(&1, "tournament_id", tournament.id))
+    |> Enum.reduce(Multi.new(), &create_maps_transaction(&1, tournament.id, &2))
+    |> Repo.transaction()
+    |> case do
+      {:ok, result} -> {:ok, result}
+      {:error, _, changeset, _} -> {:error, changeset.errors}
+      {:error, _} -> {:error, nil}
     end
   end
   defp create_maps_on_create_tournament(tournament, %{maps: maps}), do: create_maps_on_create_tournament(tournament, %{"maps" => maps})
@@ -612,6 +607,14 @@ defmodule Milk.Tournaments do
     create_maps_on_create_tournament(tournament, maps)
   end
   defp create_maps_on_create_tournament(_, _), do: {:error, "maps are nil"}
+
+  defp create_maps_transaction(map, tournament_id, multi) do
+    Multi.insert(multi, :"#{map["name"]}", fn _ ->
+      map
+      |> Map.put("tournament_id", tournament_id)
+      |> Milk.Tournaments.Map.changeset()
+    end)
+  end
 
   @spec put_token_as_needed(map()) :: map()
   defp put_token_as_needed(%{"url" => url} = attrs) when not is_nil(url) do
