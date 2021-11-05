@@ -1,4 +1,7 @@
 defmodule Milk.Chat.ChatMember do
+  @moduledoc """
+  Chat member
+  """
   use Milk.Schema
 
   import Ecto.Changeset
@@ -22,6 +25,8 @@ defmodule Milk.Chat.ChatMember do
 
     timestamps()
   end
+
+  def changeset(attrs), do: __MODULE__.changeset(%__MODULE__{}, attrs)
 
   @doc false
   def changeset(chat_member, attrs) do

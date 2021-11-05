@@ -3703,15 +3703,13 @@ defmodule Milk.Tournaments do
   @doc """
   Delete map selection.
   """
-  @spec delete_map_selection(MapSelection.t()) ::
-          {:ok, MapSelection.t()} | {:error, Ecto.Changeset.t()}
+  @spec delete_map_selection(MapSelection.t()) :: {:ok, MapSelection.t()} | {:error, Ecto.Changeset.t()}
   def delete_map_selection(%MapSelection{} = map_selection) do
     Repo.delete(map_selection)
   end
 
   @doc """
   Delete map selections
-  # TODO: トランザクション
   """
   @spec delete_map_selections(integer(), integer()) :: {:ok, any()} | {:error, String.t()}
   def delete_map_selections(tournament_id, id) do
@@ -3720,16 +3718,23 @@ defmodule Milk.Tournaments do
     |> where([ms, m], ms.large_id == ^id or ms.small_id == ^id)
     |> where([ms, m], m.tournament_id == ^tournament_id)
     |> Repo.all()
-    |> Enum.map(&delete_map_selection(&1))
-    |> Enum.all?(&match?({:ok, _}, &1))
-    |> Tools.boolean_to_tuple()
+    |> Enum.reduce(Multi.new(), &delete_map_selection_transaction(&1, &2))
+    |> Repo.transaction()
+    |> case do
+      {:ok, result} -> {:ok, result}
+      {:error, _, changeset, _} -> {:error, changeset.errors}
+      {:error, _} -> {:error, nil}
+    end
+  end
+
+  defp delete_map_selection_transaction(map_selection, multi) do
+    Multi.delete(multi, :"map_selection:#{map_selection.id}", map_selection)
   end
 
   @doc """
   Update map.
   """
-  @spec update_map(Milk.Tournaments.Map.t(), map()) ::
-          {:ok, Milk.Tournaments.Map.t()} | {:error, Ecto.Changeset.t()}
+  @spec update_map(Milk.Tournaments.Map.t(), map()) :: {:ok, Milk.Tournaments.Map.t()} | {:error, Ecto.Changeset.t()}
   def update_map(%Milk.Tournaments.Map{} = map, attrs) do
     map
     |> Milk.Tournaments.Map.changeset(attrs)
