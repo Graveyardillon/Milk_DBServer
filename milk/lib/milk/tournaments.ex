@@ -814,22 +814,24 @@ defmodule Milk.Tournaments do
 
     #TODO: トランザクション
     map_id_list
-    |> Enum.all?(fn map_id ->
-      attrs = %{
+    |> Enum.reduce(Multi.new(), &create_map_transaction(&1, map_state, large_id, small_id, &2))
+    |> Repo.transaction()
+    |> case do
+      {:ok, _} -> {:ok, nil}
+      {:error, _, changeset, _} -> {:error, changeset.errors}
+      {:error, _} -> {:error, nil}
+    end
+  end
+
+  defp create_map_transaction(map_id, map_state, large_id, small_id, multi) do
+    Multi.insert(multi, :"#{map_id}", fn _ ->
+      MapSelection.changeset(%{
         map_id: map_id,
         state: map_state,
-        large_id: large_id,
-        small_id: small_id
-      }
-
-      %MapSelection{}
-      |> MapSelection.changeset(attrs)
-      |> Repo.insert()
-      ~> result
-
-      match?({:ok, _}, result)
+        small_id: small_id,
+        large_id: large_id
+      })
     end)
-    |>  Tools.boolean_to_tuple("failed to ban maps")
   end
 
   @doc """

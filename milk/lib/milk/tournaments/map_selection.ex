@@ -23,6 +23,8 @@ defmodule Milk.Tournaments.MapSelection do
     timestamps()
   end
 
+  def changeset(attrs), do: __MODULE__.changeset(%__MODULE__{}, attrs)
+
   @doc false
   def changeset(map_selection, attrs) do
     map_selection
