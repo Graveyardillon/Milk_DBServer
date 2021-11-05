@@ -131,7 +131,7 @@ defmodule Common.Fixtures do
           |> Map.get(:id)
         end)
         |> Enum.map(fn user_id ->
-          Map.new()
+          %{}
           |> Map.put("user_id", user_id)
           |> Map.put("tournament_id", tournament_id)
           |> Tournaments.create_entrant()

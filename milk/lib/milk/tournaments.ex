@@ -573,15 +573,15 @@ defmodule Milk.Tournaments do
   end
 
   @spec initialize_master_states!(Tournament.t()) :: {:ok, nil}
-  defp initialize_master_states!(%Tournament{id: id, rule: rule}) do
+  defp initialize_master_states!(%Tournament{id: id, rule: rule, is_team: is_team}) do
     id
     |> __MODULE__.get_masters()
     |> Enum.each(fn user ->
       keyname = Rules.adapt_keyname(user.id)
 
       case rule do
-        "basic" -> Basic.build_dfa_instance(keyname)
-        "flipban" -> Basic.build_dfa_instance(keyname)
+        "basic" -> Basic.build_dfa_instance(keyname, is_team: is_team)
+        "flipban" -> Basic.build_dfa_instance(keyname, is_team: is_team)
         _ -> raise "Invalid tournament urle"
       end
     end)
@@ -967,6 +967,14 @@ defmodule Milk.Tournaments do
     Entrant
     |> where([e], e.tournament_id == ^tournament_id)
     |> Repo.all()
+  end
+
+  @spec is_entrant?(integer(), integer()) :: boolean()
+  def is_entrant?(tournament_id, user_id) do
+    Entrant
+    |> where([e], e.tournament_id == ^tournament_id)
+    |> where([e], e.user_id == ^user_id)
+    |> Repo.exists?()
   end
 
   @doc """
@@ -1412,9 +1420,9 @@ defmodule Milk.Tournaments do
 
   @doc """
   Get an opponent.
+  わざわざリーダーのidを第2引数に入れたりする必要はなく、対戦相手を取得したいユーザーのidを入れれば良い。
   """
-  @spec get_opponent(integer(), integer()) ::
-          {:ok, User.t()} | {:ok, Team.t()} | {:wait, nil} | {:error, String.t()}
+  @spec get_opponent(integer(), integer()) :: {:ok, User.t()} | {:ok, Team.t()} | {:wait, nil} | {:error, String.t()}
   def get_opponent(tournament_id, user_id) do
     tournament_id
     |> __MODULE__.get_tournament()
@@ -1553,18 +1561,16 @@ defmodule Milk.Tournaments do
   defp validate_entrant_number(num) when num <= 1, do: {:error, "short of participants"}
   defp validate_entrant_number(_), do: {:ok, nil}
 
+  defp do_start(%Tournament{is_started: true}), do: {:error, "tournament is already started"}
   defp do_start(tournament) do
-    if tournament.is_started do
-      {:error, "tournament is already started"}
-    else
-      tournament
-      |> Tournament.changeset(%{is_started: true})
-      |> Repo.update()
-    end
+    tournament
+    |> Tournament.changeset(%{is_started: true})
+    |> Repo.update()
   end
 
+
   defp start_master_states!(tournament) do
-    with {:ok, nil} <- start_master_state!(tournament),
+    with {:ok, _} <- start_master_state!(tournament),
          {:ok, nil} <- start_assistant_states!(tournament) do
       {:ok, tournament}
     else
@@ -1572,17 +1578,21 @@ defmodule Milk.Tournaments do
     end
   end
 
-  # TODO: 選手登録されてるかどうかのチェックがいる
-  @spec start_master_state!(Tournament.t()) :: {:ok, nil}
-  defp start_master_state!(%Tournament{rule: rule, master_id: master_id}) do
-    keyname = Rules.adapt_keyname(master_id)
+  @spec start_master_state!(Tournament.t()) :: {:ok, any()}
+  defp start_master_state!(%Tournament{id: id, rule: rule, master_id: master_id}) do
+    id
+    |> __MODULE__.is_entrant?(master_id)
+    |> if do
+      {:ok, nil}
+    else
+      keyname = Rules.adapt_keyname(master_id)
 
-    case rule do
-      "basic" -> Basic.trigger!(keyname, Basic.manager_trigger())
-      "flipban" -> FlipBan.trigger!(keyname, FlipBan.manager_trigger())
+      case rule do
+        "basic" -> Basic.trigger!(keyname, Basic.manager_trigger())
+        "flipban" -> FlipBan.trigger!(keyname, FlipBan.manager_trigger())
+        _ -> {:error, "Invalid tournament rule"}
+      end
     end
-
-    {:ok, nil}
   end
 
   @spec start_assistant_states!(Tournament.t()) :: {:ok, nil}
@@ -1667,6 +1677,185 @@ defmodule Milk.Tournaments do
     end)
 
     {:ok, nil}
+  end
+
+  @doc """
+  Start match
+  """
+  def start_match(%Tournament{rule: rule, is_team: true, id: tournament_id}, user_id) do
+    # NOTE: 一応チームを取得して、そのリーダーのstateを変える処理を入れる（念のため）
+    tournament_id
+    |> __MODULE__.get_team_by_tournament_id_and_user_id(user_id)
+    |> Map.get(:id)
+    |> __MODULE__.get_leader()
+    |> Map.get(:user_id)
+    |> Rules.adapt_keyname()
+    ~> keyname
+
+    case rule do
+      "basic" -> Basic.trigger!(keyname, Basic.start_match_trigger())
+    end
+  end
+  def start_match(%Tournament{rule: rule}, user_id) do
+    keyname = Rules.adapt_keyname(user_id)
+
+    case rule do
+      "basic" -> Basic.trigger!(keyname, Basic.start_match_trigger())
+      # "flipban" ->
+    end
+  end
+
+  @doc """
+  マッチングしているユーザー同士がIsWaitingForStartになったら発火する処理
+  """
+  def break_waiting_state_as_needed(tournament, user_id) do
+    id = Progress.get_necessary_id(tournament.id, user_id)
+
+    tournament.id
+    |> Progress.get_match_list()
+    |> find_match(id)
+    ~> match
+    |> Enum.all?(&Progress.get_match_pending_list(&1, tournament.id))
+    |> if do
+      match
+      |> Enum.map(&break_waiting(&1, tournament))
+      |> Enum.all?(&(!is_nil(&1)))
+      |> Tools.boolean_to_tuple()
+    else
+      {:ok, nil}
+    end
+  end
+
+  @spec break_waiting(integer(), Tournament.t()) :: any()
+  defp break_waiting(team_id, %Tournament{is_team: true, rule: rule}) do
+    # NOTE: ここでget_leaderをしているのは、チームにおいて報告系を行うのはリーダーしかいないという前提に基づいた処理になっている。
+    team_id
+    |> __MODULE__.get_leader()
+    |> Map.get(:user_id)
+    |> Rules.adapt_keyname()
+    ~> keyname
+
+    case rule do
+      "basic" -> Basic.trigger!(keyname, Basic.pend_trigger())
+      # TODO: ban_mapは片方しかならないので、それ用の処理を入れる
+      # "flipban" -> FlipBan.trigger!(keyname, FlipBan.pend_trigger())
+      _ -> nil
+    end
+  end
+
+  defp break_waiting(user_id, %Tournament{rule: rule}) do
+    keyname = Rules.adapt_keyname(user_id)
+
+    case rule do
+      "basic" -> Basic.trigger!(keyname, Basic.pend_trigger())
+      # TODO: ban_mapは片方しかならないので、それ用の処理を入れる
+      # "flipban" -> FlipBan.trigger!(keyname, FlipBan.pend_trigger())
+      _ -> nil
+    end
+  end
+
+  @doc """
+  勝者のstateを変更するための関数
+  """
+  @spec change_winner_state(Tournament.t(), integer()) :: {:ok, any()} | {:error, String.t()}
+  def change_winner_state(tournament, winner_id) do
+    # NOTE: 次の対戦相手がいればshould_start_matchに変える
+    # NOTE: delete_loser_processの後に実行されているので、match_listは更新されているはず
+    tournament.id
+    |> __MODULE__.get_opponent(winner_id)
+    |> case do
+      {:ok, _} -> proceed_to_next_match(tournament, winner_id)
+      {:wait, nil} -> wait_for_next_match(tournament, winner_id)
+      #_ -> {:error, "Failed to get opponent"}
+      _ -> {:ok, nil}
+    end
+  end
+
+  @spec proceed_to_next_match(Tournament.t(), integer()) :: {:ok, any()} | {:error, String.t()}
+  defp proceed_to_next_match(%Tournament{rule: rule, is_team: true, id: id}, winner_team_id) do
+    id
+    |> Progress.get_match_list()
+    |> find_match(winner_team_id)
+    |> Enum.map(fn team_id ->
+      team_id
+      |> __MODULE__.get_leader()
+      |> Map.get(:user_id)
+      |> Rules.adapt_keyname()
+      ~> keyname
+
+      case rule do
+        "basic" -> Basic.trigger!(keyname, Basic.next_trigger())
+        "flipban" -> FlipBan.trigger!(keyname, FlipBan.next_trigger())
+        _ -> {:error, "Invalid tournament rule"}
+      end
+    end)
+    |> Enum.all?(&match?({:ok, _}, &1))
+    |> Tools.boolean_to_tuple()
+  end
+  defp proceed_to_next_match(%Tournament{is_team: false, rule: rule, id: id}, winner_user_id) do
+    id
+    |> Progress.get_match_list()
+    |> find_match(winner_user_id)
+    |> Enum.map(fn user_id ->
+      keyname = Rules.adapt_keyname(user_id)
+
+      case rule do
+        "basic" -> Basic.trigger!(keyname, Basic.next_trigger())
+        "flipban" -> FlipBan.trigger!(keyname, FlipBan.next_trigger())
+        _ -> {:error, "Invalid tournament rule"}
+      end
+    end)
+    |> Enum.all?(&match?({:ok, _}, &1))
+    |> Tools.boolean_to_tuple()
+  end
+
+  @spec wait_for_next_match(Tournament.t(), integer()) :: {:ok, any()} | {:error, String.t()}
+  defp wait_for_next_match(%Tournament{rule: rule, is_team: true}, winner_team_id) do
+    winner_team_id
+    |> __MODULE__.get_leader()
+    |> Map.get(:user_id)
+    |> Rules.adapt_keyname()
+    ~> keyname
+
+    case rule do
+      "basic" -> Basic.trigger!(keyname, Basic.alone_trigger())
+      "flipban" -> FlipBan.trigger!(keyname, FlipBan.alone_trigger())
+      _ -> {:error, "Invalid tournament rule"}
+    end
+  end
+  defp wait_for_next_match(%Tournament{rule: rule, is_team: false}, winner_id) do
+    keyname = Rules.adapt_keyname(winner_id)
+
+    case rule do
+      "basic" -> Basic.trigger!(keyname, Basic.alone_trigger())
+      "flipban" -> FlipBan.trigger!(keyname, FlipBan.alone_trigger())
+      _ -> {:error, "Invalid tournament rule"}
+    end
+  end
+
+  @doc """
+  敗者のstateを変更するための関数
+  """
+  def change_loser_state(%Tournament{rule: rule, is_team: true}, loser_team_id) do
+    # NOTE: 敗者は確実にis_loserに変わる
+    loser_team_id
+    |> __MODULE__.get_leader()
+    |> Map.get(:user_id)
+    |> Rules.adapt_keyname()
+    |> do_change_loser_state(rule)
+  end
+  def change_loser_state(%Tournament{rule: rule, is_team: false}, loser_id) do
+    loser_id
+    |> Rules.adapt_keyname()
+    |> do_change_loser_state(rule)
+  end
+
+  defp do_change_loser_state(keyname, rule) do
+    case rule do
+      "basic" -> Basic.trigger!(keyname, Basic.lose_trigger())
+      "flipban" -> FlipBan.trigger!(keyname, FlipBan.lose_trigger())
+      _ -> {:error, "Invalid tournament rule"}
+    end
   end
 
   @doc """
@@ -2314,7 +2503,8 @@ defmodule Milk.Tournaments do
     case rem(num, 2) do
       0 ->
         # 偶数の場合は2で割り続け、1か0になるんだったらokとする処理が書いてあるこれ
-        div(num, 2)
+        num
+        |> div(2)
         |> check_exponentiation_of_two(base)
 
       _ ->
@@ -2354,8 +2544,7 @@ defmodule Milk.Tournaments do
   end
 
   @spec initialize_rank(any(), integer(), integer(), integer()) :: any()
-  def initialize_rank(user_id, number_of_entrant, tournament_id, count)
-      when is_integer(user_id) do
+  def initialize_rank(user_id, number_of_entrant, tournament_id, count) when is_integer(user_id) do
     final =
       if number_of_entrant < count do
         number_of_entrant

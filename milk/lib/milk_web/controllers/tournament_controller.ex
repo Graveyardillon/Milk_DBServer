@@ -1010,7 +1010,11 @@ defmodule MilkWeb.TournamentController do
     tournament_id = Tools.to_integer_as_needed(tournament_id)
     tournament = Tournaments.get_tournament(tournament_id)
 
+    # debug: 途中
+    Tournaments.start_match(tournament, user_id)
+
     with {:ok, _} <- do_start_match(tournament, user_id),
+         {:ok, _} <- Tournaments.break_waiting_state_as_needed(tournament, user_id),
          {:ok, nil} <- notify_discord_on_start_match_as_needed(tournament, user_id) do
       json(conn, %{result: true})
     else
@@ -1024,14 +1028,14 @@ defmodule MilkWeb.TournamentController do
     if start_team_match(tournament, user_id) do
       {:ok, nil}
     else
-      {:error, "failed to start team match."}
+      {:error, "failed to start team match"}
     end
   end
   defp do_start_match(%Tournament{id: id}, user_id) do
     if start_individual_match(id, user_id) do
       {:ok, nil}
     else
-      {:error, "failed to start individual match."}
+      {:error, "failed to start individual match"}
     end
   end
 
@@ -1078,7 +1082,7 @@ defmodule MilkWeb.TournamentController do
   end
 
   @spec load_necessary_tournament_info(Tournament.t() | nil, integer()) :: {:ok, integer(), String.t()} | {:error, String.t()}
-  defp load_necessary_tournament_info(%Tournament{id: id, is_team: true}, user_id) do
+  defp load_necessary_tournament_info(%Tournament{id: id, is_team: is_team}, user_id) when is_team == true do
     id
     |> Tournaments.get_team_by_tournament_id_and_user_id(user_id)
     |> load_necessary_team_tournament_info()
@@ -1350,12 +1354,15 @@ defmodule MilkWeb.TournamentController do
   defp calculate_winner(id1, id2, score1, score2) when score1 < score2, do: {:ok, id2, id1, true}
 
   # TODO: この辺の引数は使うものが決まっているので構造体の使用を検討
+  # NOTE: この関数ではすでに勝敗が決定している前提で処理が進んでいく。
   @spec proceed_to_next_match(Tournament.t(), integer(), integer(), integer(), integer(), integer()) :: {:ok, nil} | {:error, String.t()}
   defp proceed_to_next_match(tournament, winner_id, loser_id, score, opponent_score, match_index) when is_integer(opponent_score) do
     with {:ok, nil} <- notify_discord_on_match_finished_as_needed(tournament, winner_id, loser_id, score, opponent_score),
          {:ok, _} <- Tournaments.delete_loser_process(tournament.id, [loser_id]),
          {:ok, nil} <- Tournaments.store_score(tournament.id, winner_id, loser_id, opponent_score, score, match_index),
          {:ok, nil} <- delete_old_info_for_next_match(tournament.id, [winner_id, loser_id]),
+         {:ok, _} <- Tournaments.change_winner_state(tournament, winner_id) |> IO.inspect(label: :winner),
+         {:ok, _} <- Tournaments.change_loser_state(tournament, loser_id) |> IO.inspect(label: :loser),
          {:ok, nil} <- finish_as_needed?(tournament.id, winner_id) do
       {:ok, nil}
     else

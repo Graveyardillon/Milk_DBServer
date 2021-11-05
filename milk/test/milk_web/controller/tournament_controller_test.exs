@@ -2271,7 +2271,7 @@ defmodule MilkWeb.TournamentControllerTest do
 
       conn = post(conn, Routes.tournament_path(conn, :start), tournament: %{"master_id" => tournament.master_id, "tournament_id" => tournament.id})
 
-      user1_id = hd(entrants).id
+      user1_id = hd(entrants).user_id
 
       conn =
         get(conn, Routes.tournament_path(conn, :check_pending),
@@ -2406,7 +2406,7 @@ defmodule MilkWeb.TournamentControllerTest do
         )
 
       assert json_response(conn, 200)["result"]
-      assert json_response(conn, 200)["state"] == "IsWaitingForStart"
+      assert json_response(conn, 200)["state"] == "IsWaitingForStartMatch"
 
       conn =
         post(conn, Routes.tournament_path(conn, :start_match),
@@ -2825,6 +2825,16 @@ defmodule MilkWeb.TournamentControllerTest do
       |> Kernel.==(2)
       |> assert()
 
+      conn = post(conn, Routes.tournament_path(conn, :start_match),
+          user_id: entrant1.user_id,
+          tournament_id: tournament.id
+        )
+
+      conn = post(conn, Routes.tournament_path(conn, :start_match),
+          user_id: entrant2.user_id,
+          tournament_id: tournament.id
+        )
+
       conn =
         post(conn, Routes.tournament_path(conn, :claim_score),
           opponent_id: entrant1.user_id,
@@ -3031,7 +3041,7 @@ defmodule MilkWeb.TournamentControllerTest do
       assert is_nil(match_info["is_leader"])
       assert match_info["rank"] == 4
       assert is_nil(match_info["score"])
-      assert match_info["state"] == "IsWaitingForStart"
+      assert match_info["state"] == "IsWaitingForStartMatch"
       refute is_nil(match_info["opponent"]["id"])
       assert Map.has_key?(match_info["opponent"], "icon_path")
       refute is_nil(match_info["opponent"]["name"])
@@ -3180,7 +3190,7 @@ defmodule MilkWeb.TournamentControllerTest do
       assert match_info["is_leader"]
       assert match_info["rank"] == 4
       assert is_nil(match_info["score"])
-      assert match_info["state"] == "IsWaitingForStart"
+      assert match_info["state"] == "IsWaitingForStartMatch"
 
       tournament.id
       |> Tournaments.get_teammates(me.id)
