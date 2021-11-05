@@ -31,7 +31,7 @@ defmodule Milk.Chat.ChatMember do
   @doc false
   def changeset(chat_member, attrs) do
     chat_member
-    |> cast(attrs, [:authority])
+    |> cast(attrs, [:authority, :user_id, :chat_room_id])
     |> unique_constraint([:user_id, :chat_room_id])
     |> foreign_key_constraint(:user_id)
     |> foreign_key_constraint(:chat_room_id)

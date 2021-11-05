@@ -32,7 +32,10 @@ defmodule Milk.Tournaments do
     User
   }
 
-  alias Milk.Chat.ChatRoom
+  alias Milk.Chat.{
+    ChatMember,
+    ChatRoom
+  }
   alias Milk.Games.Game
 
   alias Milk.Log.{
@@ -512,26 +515,27 @@ defmodule Milk.Tournaments do
     end
   end
 
-  # TODO: トランザクション
-  @spec join_chat_topics_on_create_tournament(Tournament.t()) :: {:ok, nil} | {:error, String.t()}
+  @spec join_chat_topics_on_create_tournament(Tournament.t()) :: {:ok, nil} | {:error, String.t() | nil}
   defp join_chat_topics_on_create_tournament(tournament) do
     tournament.id
     |> Chat.get_chat_rooms_by_tournament_id()
-    |> Enum.all?(fn chat_room ->
-      %{
+    |> Enum.reduce(Multi.new(), &create_chat_member_transaction(&1, tournament, &2))
+    |> Repo.transaction()
+    |> case do
+      {:ok, _} -> {:ok, nil}
+      {:error, _, changeset, _} -> {:error, changeset.errors}
+      {:error, _} -> {:error, nil}
+    end
+  end
+
+  defp create_chat_member_transaction(chat_room, tournament, multi) do
+    Multi.insert(multi, :"#{chat_room.id}", fn _ ->
+      ChatMember.changeset(%{
         "user_id" => tournament.master_id,
         "authority" => 1,
         "chat_room_id" => chat_room.id
-      }
-      |> Chat.create_chat_member()
-      |> elem(0)
-      |> Kernel.==(:ok)
+      })
     end)
-    |> if do
-      {:ok, nil}
-    else
-      {:error, "failed to join chat topics"}
-    end
   end
 
   @spec add_necessary_fields(Tournament.t(), map()) :: {:ok, nil} | {:error, String.t()}
