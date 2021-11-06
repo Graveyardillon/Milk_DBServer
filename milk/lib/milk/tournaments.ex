@@ -1014,6 +1014,11 @@ defmodule Milk.Tournaments do
     |> Repo.one()
   end
 
+  @spec rule_needs_score?(String.t()) :: boolean()
+  def rule_needs_score?(rule) do
+    rule == "flipban"
+  end
+
   @doc """
   Creates an entrant.
   """

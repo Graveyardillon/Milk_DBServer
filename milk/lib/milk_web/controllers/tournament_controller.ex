@@ -1271,16 +1271,20 @@ defmodule MilkWeb.TournamentController do
   @doc """
   Claim win of the user.
   """
-  def claim_win(conn, %{
-        "opponent_id" => opponent_id,
-        "user_id" => user_id,
-        "tournament_id" => tournament_id
-      }) do
+  def claim_win(conn, %{"opponent_id" => opponent_id, "user_id" => user_id, "tournament_id" => tournament_id}) do
     _opponent_id = Tools.to_integer_as_needed(opponent_id)
     user_id = Tools.to_integer_as_needed(user_id)
     tournament_id = Tools.to_integer_as_needed(tournament_id)
 
-    do_claim_score(conn, user_id, tournament_id, 1)
+    tournament_id
+    |> Tournaments.get_tournament()
+    |> Map.get(:rule)
+    |> Tournaments.rule_needs_score?()
+    |> if do
+      json(conn, %{result: true, error: "Should provide score in the tournament rule"})
+    else
+      do_claim_score(conn, user_id, tournament_id, 1)
+    end
   end
 
   @doc """
@@ -1295,8 +1299,17 @@ defmodule MilkWeb.TournamentController do
     user_id = Tools.to_integer_as_needed(user_id)
     tournament_id = Tools.to_integer_as_needed(tournament_id)
 
-    do_claim_score(conn, user_id, tournament_id, 0)
+    tournament_id
+    |> Tournaments.get_tournament()
+    |> Map.get(:rule)
+    |> Tournaments.rule_needs_score?()
+    |> if do
+      json(conn, %{result: true, error: "Should provide score in the tournament rule"})
+    else
+      do_claim_score(conn, user_id, tournament_id, 0)
+    end
   end
+
 
   @doc """
   Claims score
@@ -1315,14 +1328,16 @@ defmodule MilkWeb.TournamentController do
   end
 
   defp do_claim_score(conn, user_id, tournament_id, score, match_index \\ 0) do
-    with tournament when not is_nil(tournament) <- Tournaments.get_tournament(tournament_id),
+    with true <- can_claim?(tournament_id, user_id),
+         tournament when not is_nil(tournament) <- Tournaments.get_tournament(tournament_id),
          {:ok, opponent} <- Tournaments.get_opponent(tournament_id, user_id),
          id when not is_nil(id) <- Progress.get_necessary_id(tournament_id, user_id),
          {:ok, _} <- Progress.insert_score(tournament_id, id, score),
          opponent_score when not is_nil(opponent_score) <- Progress.get_score(tournament_id, opponent.id),
          {:ok, winner_id, loser_id, _} <- calculate_winner(id, opponent.id, score, opponent_score),
-         {:ok, nil} <- proceed_to_next_match(tournament, winner_id, loser_id, score, opponent_score, match_index) do
-      json(conn, %{validated: true, completed: true, is_finished: true})
+         {:ok, nil} <- proceed_to_next_match(tournament, winner_id, loser_id, score, opponent_score, match_index),
+         tournament <- Tournaments.get_tournament(tournament_id) do
+      json(conn, %{validated: true, completed: true, is_finished: is_nil(tournament)})
     else
       # NOTE: 重複報告
       {:error, id, opponent_id, _} ->
@@ -1330,9 +1345,16 @@ defmodule MilkWeb.TournamentController do
         json(conn, %{validated: false, completed: false, is_finished: false})
       nil ->
         json(conn, %{validated: true, completed: false, is_finished: false})
+      false ->
+        json(conn, %{result: false, error: "Invalid state"})
       _ ->
         json(conn, %{validated: false, completed: false, is_finished: false})
     end
+  end
+
+  @spec can_claim?(integer(), integer()) :: boolean()
+  defp can_claim?(tournament_id, user_id) do
+    Tournaments.state!(tournament_id, user_id) == "IsPending"
   end
 
   @spec duplicated_claim_process(integer(), integer(), integer(), integer()) :: {:ok, nil} | {:error, String.t()}
