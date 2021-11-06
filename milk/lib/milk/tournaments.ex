@@ -481,6 +481,7 @@ defmodule Milk.Tournaments do
     case attrs["rule"] do
       "flipban" -> validate_flipban_fields(attrs)
       "basic" -> validate_basic_fields(attrs)
+      nil -> {:ok, attrs}
       _ -> {:error, "Invalid tournament rule"}
     end
   end
