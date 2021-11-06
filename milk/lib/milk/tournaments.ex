@@ -480,7 +480,8 @@ defmodule Milk.Tournaments do
   defp validate_fields(attrs) do
     case attrs["rule"] do
       "flipban" -> validate_flipban_fields(attrs)
-      _ -> validate_basic_fields(attrs)
+      "basic" -> validate_basic_fields(attrs)
+      _ -> {:error, "Invalid tournament rule"}
     end
   end
 
@@ -1076,7 +1077,7 @@ defmodule Milk.Tournaments do
   end
 
   @spec validate_tournament_size(map()) :: {:ok, nil} | {:error, String.t()}
-  defp validate_tournament_size(%{"tournament" => %Tournament{capacity: capacity, count: count}}) when capacity > count, do: {:ok, nil}
+  defp validate_tournament_size(%{"tournament" => %Tournament{capacity: capacity, count: count}}) when capacity >= count, do: {:ok, nil}
   defp validate_tournament_size(_), do: {:error, "capacity over"}
 
   @spec do_create_entrant(map()) :: {:ok, Entrant.t()} | {:error, String.t()}

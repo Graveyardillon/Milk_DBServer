@@ -2451,6 +2451,54 @@ defmodule MilkWeb.TournamentControllerTest do
     end
   end
 
+  describe "state machine with controller" do
+    test "basic (individual)", %{conn: conn} do
+      user = fixture_user()
+      attrs = %{
+        "capacity" => 8,
+        "deadline" => "2010-04-17T14:00:00Z",
+        "description" => "some description",
+        "event_date" => "2010-04-17T14:00:00Z",
+        "master_id" => user.id,
+        "name" => "some name",
+        "type" => 1,
+        "join" => "true",
+        "url" => "some url",
+        "platform" => 1,
+        "rule" => "basic"
+      }
+
+      conn = post(conn, Routes.tournament_path(conn, :create), tournament: attrs, file: "")
+
+      assert json_response(conn, 200)["result"]
+      assert json_response(conn, 200)["data"]["rule"] == "basic"
+
+      master_id = json_response(conn, 200)["data"]["master_id"]
+      tournament_id = json_response(conn, 200)["data"]["id"]
+      capacity = json_response(conn, 200)["data"]["capacity"]
+
+      conn = get(conn, Routes.tournament_path(conn, :show), %{"tournament_id" => tournament_id})
+      refute json_response(conn, 200)["data"]["is_started"]
+
+      # debug: entrant作成
+      10..10 + capacity - 1
+      |> Enum.to_list()
+      |> Enum.map(&fixture_user(num: &1))
+      |> Enum.each(fn user ->
+        conn = post(conn, Routes.entrant_path(conn, :create), %{"entrant" => %{"tournament_id" => tournament_id, "user_id" => user.id}})
+        json_response(conn, 200)
+        assert json_response(conn, 200)["result"]
+      end)
+
+      conn = post(conn, Routes.tournament_path(conn, :start), tournament: %{"master_id" => master_id, "tournament_id" => tournament_id})
+
+      assert json_response(conn, 200)["result"]
+
+      conn = get(conn, Routes.tournament_path(conn, :show), %{"tournament_id" => tournament_id})
+      assert json_response(conn, 200)["data"]["is_started"]
+    end
+  end
+
   describe "is user win" do
     setup [:create_tournament]
 
