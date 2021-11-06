@@ -2462,7 +2462,7 @@ defmodule MilkWeb.TournamentControllerTest do
         "master_id" => user.id,
         "name" => "some name",
         "type" => 1,
-        "join" => "true",
+        "join" => "false",
         "url" => "some url",
         "platform" => 1,
         "rule" => "basic"
@@ -2484,10 +2484,15 @@ defmodule MilkWeb.TournamentControllerTest do
       10..10 + capacity - 1
       |> Enum.to_list()
       |> Enum.map(&fixture_user(num: &1))
-      |> Enum.each(fn user ->
+      |> Enum.map(fn user ->
         conn = post(conn, Routes.entrant_path(conn, :create), %{"entrant" => %{"tournament_id" => tournament_id, "user_id" => user.id}})
         json_response(conn, 200)
         assert json_response(conn, 200)["result"]
+        user
+      end)
+      ~> entrant_user_info_list
+      |> then(fn list ->
+        assert length(list) == capacity
       end)
 
       conn = post(conn, Routes.tournament_path(conn, :start), tournament: %{"master_id" => master_id, "tournament_id" => tournament_id})
@@ -2496,6 +2501,11 @@ defmodule MilkWeb.TournamentControllerTest do
 
       conn = get(conn, Routes.tournament_path(conn, :show), %{"tournament_id" => tournament_id})
       assert json_response(conn, 200)["data"]["is_started"]
+
+      # NOTE: Manager
+      conn = get(conn, Routes.tournament_path(conn, :get_match_information), %{"tournament_id" => tournament_id, "user_id" => user.id})
+      json_response(conn, 200)
+      |> IO.inspect()
     end
   end
 

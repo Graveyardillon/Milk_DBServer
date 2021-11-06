@@ -1077,7 +1077,7 @@ defmodule Milk.Tournaments do
   end
 
   @spec validate_tournament_size(map()) :: {:ok, nil} | {:error, String.t()}
-  defp validate_tournament_size(%{"tournament" => %Tournament{capacity: capacity, count: count}}) when capacity >= count, do: {:ok, nil}
+  defp validate_tournament_size(%{"tournament" => %Tournament{capacity: capacity, count: count}}) when capacity > count, do: {:ok, nil}
   defp validate_tournament_size(_), do: {:error, "capacity over"}
 
   @spec do_create_entrant(map()) :: {:ok, Entrant.t()} | {:error, String.t()}
