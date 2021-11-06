@@ -812,7 +812,6 @@ defmodule Milk.Tournaments do
 
     [small_id, large_id] = Enum.sort([my_id, opponent_id])
 
-    #TODO: トランザクション
     map_id_list
     |> Enum.reduce(Multi.new(), &create_map_transaction(&1, map_state, large_id, small_id, &2))
     |> Repo.transaction()
