@@ -2659,13 +2659,13 @@ defmodule MilkWeb.TournamentControllerTest do
         "event_date" => "2010-04-17T14:00:00Z",
         "master_id" => user.id,
         "name" => "some name",
-        "type" => 1,
         "join" => "false",
         "url" => "some url",
         "platform" => 1,
         "is_team" => "true",
         "rule" => "flipban",
         "team_size" => 5,
+        "type" => 2,
         # XXX: ここあとでvalidateに追加しないと
         "enabled_map" => "true",
         "enabled_coin_toss" => "true"
@@ -2727,6 +2727,7 @@ defmodule MilkWeb.TournamentControllerTest do
 
       conn = get(conn, Routes.team_path(conn, :get_confirmed_teams), %{"tournament_id" => tournament_id})
 
+      # NOTE: チームメンバーの人数を確認
       conn
       |> json_response(200)
       |> Map.get("data")
@@ -2738,6 +2739,13 @@ defmodule MilkWeb.TournamentControllerTest do
       end)
       |> length()
       |> then(&(assert &1 == capacity))
+
+      conn = get(conn, Routes.tournament_path(conn, :get_match_information), %{"tournament_id" => tournament_id, "user_id" => master_id})
+      assert json_response(conn, 200)["result"]
+      assert json_response(conn, 200)["state"] == "IsNotStarted"
+
+      conn = post(conn, Routes.tournament_path(conn, :start), %{"tournament" => %{"master_id" => master_id, "tournament_id" => tournament_id}})
+      assert json_response(conn, 200)["result"]
     end
   end
 

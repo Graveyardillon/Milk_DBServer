@@ -583,17 +583,17 @@ defmodule Milk.Tournaments do
   defp initialize_master_states!(%Tournament{id: id, rule: rule, is_team: is_team}) do
     id
     |> __MODULE__.get_masters()
-    |> Enum.each(fn user ->
+    |> Enum.map(fn user ->
       keyname = Rules.adapt_keyname(user.id)
 
       case rule do
         "basic" -> Basic.build_dfa_instance(keyname, is_team: is_team)
-        "flipban" -> Basic.build_dfa_instance(keyname, is_team: is_team)
-        _ -> raise "Invalid tournament urle"
+        "flipban" -> FlipBan.build_dfa_instance(keyname, is_team: is_team)
+        _ -> raise "Invalid tournament rule"
       end
     end)
-
-    {:ok, nil}
+    |> Enum.all?(&(&1 == "OK"))
+    |> Tools.boolean_to_tuple()
   end
 
   @spec create_maps_on_create_tournament(Tournament.t(), [Milk.Tournaments.Map.t()] | map() | nil) :: {:ok, nil} | {:error, String.t() | nil}
@@ -694,7 +694,6 @@ defmodule Milk.Tournaments do
 
   @spec initialize_state_machine(Tournament.t()) :: :ok | :error
   defp initialize_state_machine(%Tournament{rule: rule, is_team: is_team}) do
-
     case rule do
       "basic" -> Basic.define_dfa!(is_team: is_team)
       "flipban" -> FlipBan.define_dfa!(is_team: is_team)
@@ -2157,8 +2156,8 @@ defmodule Milk.Tournaments do
     keyname = Rules.adapt_keyname(user_id)
 
     case tournament.rule do
-      "basic" -> Basic.build_dfa_instance(keyname)
-      "flipban" -> FlipBan.build_dfa_instance(keyname)
+      "basic" -> Basic.build_dfa_instance(keyname, is_team: tournament.is_team)
+      "flipban" -> FlipBan.build_dfa_instance(keyname, is_team: tournament.is_team)
       _ -> raise "Invalid tournament"
     end
   end
@@ -2220,11 +2219,8 @@ defmodule Milk.Tournaments do
     |> TournamentChatTopic.changeset(attrs)
     |> Repo.insert()
     |> case do
-      {:ok, topic} ->
-        {:ok, Map.put(topic, :tournament_id, attrs["tournament_id"])}
-
-      {:error, error} ->
-        {:error, error}
+      {:ok, topic} -> {:ok, Map.put(topic, :tournament_id, attrs["tournament_id"])}
+      {:error, error} -> {:error, error}
     end
   end
 
@@ -3413,8 +3409,8 @@ defmodule Milk.Tournaments do
       keyname = Rules.adapt_keyname(member.user_id)
 
       case tournament.rule do
-        "basic" -> Basic.build_dfa_instance(keyname)
-        "flipban" -> FlipBan.build_dfa_instance(keyname)
+        "basic" -> Basic.build_dfa_instance(keyname, is_team: tournament.is_team)
+        "flipban" -> FlipBan.build_dfa_instance(keyname, is_team: tournament.is_team)
         _ -> raise "Invalid tournament"
       end
     end)
