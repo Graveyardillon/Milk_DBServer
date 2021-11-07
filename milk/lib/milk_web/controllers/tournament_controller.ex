@@ -1842,80 +1842,27 @@ defmodule MilkWeb.TournamentController do
     user_id = Tools.to_integer_as_needed(user_id)
 
     opponent = get_opponent_for_match_info(tournament_id, user_id)
-
     is_leader = Tournaments.is_leader?(tournament_id, user_id)
-
     tournament = get_tournament_for_match_info(tournament_id)
 
     rank = get_rank(tournament, user_id)
     state = Tournaments.state!(tournament.id, user_id)
     score = load_score(state, tournament, user_id)
 
-    # id = Progress.get_necessary_id(tournament_id, user_id)
-
-    # NOTE: hashの比較を行うために、opponent_idとmy_idを取り出す。
-    # NOTE: それぞれ個人戦ならuser_idでチーム戦ならteam_idとなる。
-    unless is_nil(opponent) || !tournament.enabled_coin_toss do
-      if tournament.is_team do
-        tournament_id
-        |> Tournaments.get_team_by_tournament_id_and_user_id(user_id)
-        |> Map.get(:id)
-        ~> team_id
-
-        opponent_id = opponent.id
-        my_id = team_id
-
-        {my_id, opponent_id}
-      else
-        {user_id, opponent.id}
-      end
-      ~> {my_id, opponent_id}
-
-      Tournaments.is_head_of_coin?(tournament_id, my_id, opponent_id)
-    else
-      nil
-    end
-    ~> is_coin_head
-
-    # is_coin_head = is_coin_head_on_match_info?(opponent, tournament, id)
+    id = Progress.get_necessary_id(tournament_id, user_id)
+    is_coin_head = is_coin_head_on_match_info?(opponent, tournament, id)
+    custom_detail = Tournaments.get_custom_detail_by_tournament_id(tournament_id)
+    is_attacker_side = Progress.is_attacker_side?(id, tournament_id)
 
     tournament_id
-    |> Tournaments.get_custom_detail_by_tournament_id()
-    ~> custom_detail
-
-    tournament_id
-    |> Tournaments.get_tournament()
-    |> is_nil()
-    |> unless do
-      tournament
-      |> Map.get(:is_team)
-      |> if do
-        tournament_id
-        |> Tournaments.get_team_by_tournament_id_and_user_id(user_id)
-        |> Map.get(:id)
-      else
-        user_id
-      end
-      ~> id
-      |> Progress.is_attacker_side?(tournament_id)
-      ~> is_attacker_side
-
-      tournament_id
-      |> Tournaments.get_selected_map(id)
-      |> case do
-        {:ok, map} -> map
-        {:error, _} -> nil
-      end
-      ~> map
-
-      {is_attacker_side, map}
-    else
-      {nil, nil}
+    |> Tournaments.get_selected_map(id)
+    |> case do
+      {:ok, map} -> map
+      {:error, _} -> nil
     end
-    ~> {is_attacker_side, map}
+    ~> map
 
     is_team = tournament.is_team
-
     rule = tournament.rule
 
     render(conn, "match_info.json", %{
@@ -1953,9 +1900,9 @@ defmodule MilkWeb.TournamentController do
     end
   end
 
-  #@spec is_coin_head_on_match_info?(User.t() | Team.t() | nil, Tournament.t() | TournamentLog.t() | nil,  integer()) :: boolean() | nil
+  @spec is_coin_head_on_match_info?(User.t() | Team.t() | nil, Tournament.t() | TournamentLog.t() | nil,  integer()) :: boolean() | nil
   defp is_coin_head_on_match_info?(nil, _, _), do: nil
-  defp is_coin_head_on_match_info?(_, nil, _), do: nil
+  #defp is_coin_head_on_match_info?(_, nil, _), do: nil
   defp is_coin_head_on_match_info?(_, %Tournament{enabled_coin_toss: false}, _), do: nil
   defp is_coin_head_on_match_info?(%User{id: opponent_id}, %Tournament{is_team: false, id: id}, user_id) do
     Tournaments.is_head_of_coin?(id, user_id, opponent_id)

@@ -1435,8 +1435,13 @@ defmodule Milk.Tournaments do
   defp pick_user_id_as_needed(id), do: id
 
   @doc """
-  Get an opponent.
+  現在マッチ中の相手をタプルで返す関数。
   わざわざリーダーのidを第2引数に入れたりする必要はなく、対戦相手を取得したいユーザーのidを入れれば良い。
+
+  {:ok, opponent}
+  {:wait, nil}
+  {:error, error}
+  の3種類の戻り値がある。
   """
   @spec get_opponent(integer(), integer()) :: {:ok, User.t()} | {:ok, Team.t()} | {:wait, nil} | {:error, String.t()}
   def get_opponent(tournament_id, user_id) do

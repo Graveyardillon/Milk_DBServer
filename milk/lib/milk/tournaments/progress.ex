@@ -19,8 +19,14 @@ defmodule Milk.Tournaments.Progress do
   alias Common.Tools
   alias Milk.{
     Accounts,
+    Log,
     Repo,
     Tournaments
+  }
+
+  alias Milk.Log.{
+    TeamLog,
+    TournamentLog
   }
 
   alias Milk.Tournaments.{
@@ -782,7 +788,7 @@ defmodule Milk.Tournaments.Progress do
   defp make_best_of_format_matches(tournament) do
     tournament.id
     |> Tournaments.get_entrants()
-    |> Enum.map(fn entrant -> entrant.user_id end)
+    |> Enum.map(&(&1.user_id))
     |> Tournaments.generate_matchlist()
     ~> {:ok, match_list}
     |> elem(1)
@@ -868,11 +874,14 @@ defmodule Milk.Tournaments.Progress do
   @spec get_necessary_id(integer(), integer()) :: integer() | nil
   def get_necessary_id(tournament_id, user_id) do
     tournament_id
-    |> Tournaments.get_tournament()
-    |> do_get_necessary_id(user_id)
+    |> Tournaments.get_tournament_including_logs()
+    |> case do
+      {:ok, %Tournament{} = tournament} -> do_get_necessary_id(tournament, user_id)
+      {:ok, %TournamentLog{} = tournament} -> do_get_necessary_log_id(tournament, user_id)
+      _ -> nil
+    end
   end
 
-  defp do_get_necessary_id(nil, _), do: nil
   defp do_get_necessary_id(%Tournament{id: id, is_team: true}, user_id) do
     id
     |> Tournaments.get_team_by_tournament_id_and_user_id(user_id)
@@ -882,4 +891,14 @@ defmodule Milk.Tournaments.Progress do
 
   defp get_team_id(%Team{id: id}), do: id
   defp get_team_id(_), do: nil
+
+  defp do_get_necessary_log_id(%TournamentLog{tournament_id: id, is_team: true}, user_id) do
+    id
+    |> Log.get_team_log_by_tournament_id_and_user_id(user_id)
+    |> get_team_log_id()
+  end
+  defp do_get_necessary_log_id(_, user_id), do: user_id
+
+  defp get_team_log_id(%TeamLog{team_id: id}), do: id
+  defp get_team_log_id(_), do: nil
 end
