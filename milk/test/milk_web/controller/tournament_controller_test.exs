@@ -2684,6 +2684,8 @@ defmodule MilkWeb.TournamentControllerTest do
       assert json_response(conn, 200)["result"]
       assert json_response(conn, 200)["data"]["rule"] == "flipban"
       assert json_response(conn, 200)["data"]["is_team"]
+      assert json_response(conn, 200)["data"]["enabled_map"]
+      assert json_response(conn, 200)["data"]["enabled_coin_toss"]
 
       master_id = json_response(conn, 200)["data"]["master_id"]
       tournament_id = json_response(conn, 200)["data"]["id"]
