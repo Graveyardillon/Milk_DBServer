@@ -2690,9 +2690,9 @@ defmodule MilkWeb.TournamentControllerTest do
       capacity = json_response(conn, 200)["data"]["capacity"]
       team_size = json_response(conn, 200)["data"]["team_size"]
 
-      # conn = get(conn, Routes.tournament_path(conn, :get_match_information), %{"tournament_id" => tournament_id, "user_id" => master_id})
-      # assert json_response(conn, 200)["result"]
-      # assert json_response(conn, 200)["state"] == "IsNotStarted"
+      conn = get(conn, Routes.tournament_path(conn, :get_match_information), %{"tournament_id" => tournament_id, "user_id" => master_id})
+      assert json_response(conn, 200)["result"]
+      assert json_response(conn, 200)["state"] == "IsNotStarted"
 
       10..10 + capacity * team_size - 1
       |> Enum.to_list()
@@ -2701,15 +2701,41 @@ defmodule MilkWeb.TournamentControllerTest do
       |> Enum.map(fn [leader_id | member_id_list] ->
         conn = post(conn, Routes.team_path(conn, :create), %{"tournament_id" => tournament_id, "leader_id" => leader_id, "user_id_list" => member_id_list, "size" => team_size})
         assert json_response(conn, 200)["result"]
-        # [leader_id | member_id_list]
-        # |> Enum.each(fn user_id ->
-        #   conn = get(conn, Routes.tournament_path(conn, :get_match_information), %{"tournament_id" => tournament_id, "user_id" => user_id})
-        #   assert json_response(conn, 200)["state"] == "IsNotStarted"
-        # end)
-      end)
-      # |> Enum.map(fn [leader_id | member_id] ->
+        [leader_id | member_id_list]
+        |> Enum.each(fn user_id ->
+          conn = get(conn, Routes.tournament_path(conn, :get_match_information), %{"tournament_id" => tournament_id, "user_id" => user_id})
+          assert json_response(conn, 200)["state"] == "IsNotStarted"
+        end)
 
-      # end)
+        [leader_id | member_id_list]
+      end)
+      |> Enum.map(fn [leader_id | member_id_list] ->
+        member_id_list
+        |> Enum.each(fn user_id ->
+          user_id
+          |> Tournaments.get_invitations()
+          |> Enum.each(fn invitation ->
+            conn = post(conn, Routes.team_path(conn, :confirm_invitation), %{"invitation_id" => invitation.id})
+            assert json_response(conn, 200)["result"]
+          end)
+        end)
+        leader_id
+      end)
+      ~> leader_id_list
+
+      conn = get(conn, Routes.team_path(conn, :get_confirmed_teams), %{"tournament_id" => tournament_id})
+
+      conn
+      |> json_response(200)
+      |> Map.get("data")
+      |> Enum.map(fn team ->
+        team["team_member"]
+        |> Enum.each(fn member ->
+          assert member["is_invitation_confirmed"]
+        end)
+      end)
+      |> length()
+      |> then(&(assert &1 == capacity))
     end
   end
 

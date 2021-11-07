@@ -882,6 +882,7 @@ defmodule Milk.Tournaments.Progress do
     end
   end
 
+  defp do_get_necessary_id(%Tournament{master_id: master_id}, user_id) when master_id == user_id, do: user_id
   defp do_get_necessary_id(%Tournament{id: id, is_team: true}, user_id) do
     id
     |> Tournaments.get_team_by_tournament_id_and_user_id(user_id)
@@ -892,6 +893,7 @@ defmodule Milk.Tournaments.Progress do
   defp get_team_id(%Team{id: id}), do: id
   defp get_team_id(_), do: nil
 
+  defp do_get_necessary_log_id(%TournamentLog{master_id: master_id}, user_id) when master_id == user_id, do: user_id
   defp do_get_necessary_log_id(%TournamentLog{tournament_id: id, is_team: true}, user_id) do
     id
     |> Log.get_team_log_by_tournament_id_and_user_id(user_id)

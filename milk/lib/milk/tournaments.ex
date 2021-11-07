@@ -2782,7 +2782,8 @@ defmodule Milk.Tournaments do
          {:ok, team} <- do_create_team(tournament_id, size, leader_id),
          {:ok, _} <- create_team_leader(team.id, leader_id),
          {:ok, members} <- __MODULE__.create_team_members(team.id, user_id_list),
-         {:ok, _} <- __MODULE__.create_team_invitations(members, leader_id) do
+         {:ok, _} <- __MODULE__.create_team_invitations(members, leader_id),
+         {:ok, nil} <- initialize_team_member_states!(team) do
       {:ok, Map.put(team, :team_member, members)}
     else
       error -> error
@@ -2875,6 +2876,24 @@ defmodule Milk.Tournaments do
         "sender_id" => leader_id
       })
     end)
+  end
+
+  defp initialize_team_member_states!(%Team{id: id, tournament_id: tournament_id}) do
+    tournament = __MODULE__.get_tournament(tournament_id)
+
+    id
+    |> __MODULE__.get_team_members_by_team_id()
+    |> Enum.map(fn member ->
+      keyname = Rules.adapt_keyname(member.user_id)
+
+      case tournament.rule do
+        "basic" -> Basic.build_dfa_instance(keyname, is_team: tournament.is_team)
+        "flipban" -> Basic.build_dfa_instance(keyname, is_team: tournament.is_team)
+        _ -> {:error, "Invalid tournament rule"}
+      end
+    end)
+    |> Enum.all?(&match?({:ok, _}, &1))
+    |> Tools.boolean_to_tuple()
   end
 
   @doc """
