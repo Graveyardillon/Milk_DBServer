@@ -2666,7 +2666,7 @@ defmodule MilkWeb.TournamentControllerTest do
         "rule" => "flipban",
         "team_size" => 5,
         "type" => 2,
-        # XXX: ここあとでvalidateに追加しないと
+        # XXX: ここあとでvalidateに追加しないと head_fieldとかもいるかも
         "enabled_map" => "true",
         "enabled_coin_toss" => "true"
       }
@@ -2721,9 +2721,9 @@ defmodule MilkWeb.TournamentControllerTest do
             assert json_response(conn, 200)["result"]
           end)
         end)
-        leader_id
+        [leader_id | member_id_list]
       end)
-      ~> leader_id_list
+      ~> all_member_id_list
 
       conn = get(conn, Routes.team_path(conn, :get_confirmed_teams), %{"tournament_id" => tournament_id})
 
@@ -2746,6 +2746,76 @@ defmodule MilkWeb.TournamentControllerTest do
 
       conn = post(conn, Routes.tournament_path(conn, :start), %{"tournament" => %{"master_id" => master_id, "tournament_id" => tournament_id}})
       assert json_response(conn, 200)["result"]
+
+      conn = get(conn, Routes.tournament_path(conn, :get_match_information), %{"tournament_id" => tournament_id, "user_id" => master_id})
+      assert json_response(conn, 200)["result"]
+      assert json_response(conn, 200)["state"] == "IsManager"
+
+      # NOTE: 大会がスタートした直後のすべてのメンバーのstateを確認
+      all_member_id_list
+      |> Enum.map(fn [leader_id | member_id_list] ->
+        conn = get(conn, Routes.tournament_path(conn, :get_match_information), %{"tournament_id" => tournament_id, "user_id" => leader_id})
+        assert json_response(conn, 200)["result"]
+        assert json_response(conn, 200)["state"] == "ShouldFlipCoin"
+        assert json_response(conn, 200)["is_leader"]
+
+        member_id_list
+        |> Enum.map(fn member_id ->
+          conn = get(conn, Routes.tournament_path(conn, :get_match_information), %{"tournament_id" => tournament_id, "user_id" => member_id})
+          assert json_response(conn, 200)["result"]
+          assert json_response(conn, 200)["state"] == "IsMember"
+        end)
+        |> length()
+        |> then(&(assert &1 == team_size - 1))
+      end)
+
+      conn = get(conn, Routes.tournament_path(conn, :get_match_list), %{"tournament_id" => tournament_id})
+      assert json_response(conn, 200)["result"]
+      match_list = json_response(conn, 200)["match_list"]
+
+      match_list
+      |> List.flatten()
+      |> then(fn list ->
+        assert length(list) == capacity
+        list
+      end)
+      |> Enum.map(fn team_id ->
+        team_id
+        |> Tournaments.get_leader()
+        |> Map.get(:user_id)
+        ~> leader_id
+
+        {:ok, team_id, leader_id}
+      end)
+      |> Enum.chunk_every(2)
+      |> Enum.map(fn [{:ok, team1_id, leader1_id}, {:ok, team2_id, leader2_id}] ->
+        flip_fight(conn, team1_id, leader1_id, team2_id, leader2_id, tournament_id)
+      end)
+    end
+
+    defp flip_fight(conn, team1_id, leader1_id, team2_id, leader2_id, tournament_id) do
+      conn = get(conn, Routes.tournament_path(conn, :get_match_information), %{"tournament_id" => tournament_id, "user_id" => leader1_id})
+      assert json_response(conn, 200)["opponent"]["id"] == team2_id
+      assert is_nil(json_response(conn, 200)["score"])
+      assert json_response(conn, 200)["state"] == "ShouldFlipCoin"
+      assert json_response(conn, 200)["rule"] == "flipban"
+      conn = get(conn, Routes.tournament_path(conn, :state), %{"tournament_id" => tournament_id, "user_id" => leader1_id})
+      assert json_response(conn, 200)["state"] == "ShouldFlipCoin"
+
+      conn = get(conn, Routes.tournament_path(conn, :get_match_information), %{"tournament_id" => tournament_id, "user_id" => leader2_id})
+      json_response(conn, 200)
+      |> IO.inspect()
+      assert json_response(conn, 200)["opponent"]["id"] == team1_id
+      assert is_nil(json_response(conn, 200)["score"])
+      assert json_response(conn, 200)["state"] == "ShouldFlipCoin"
+      assert json_response(conn, 200)["rule"] == "flipban"
+      conn = get(conn, Routes.tournament_path(conn, :state), %{"tournament_id" => tournament_id, "user_id" => leader2_id})
+      assert json_response(conn, 200)["state"] == "ShouldFlipCoin"
+
+      conn = post(conn, Routes.tournament_path(conn, :flip_coin), %{"tournament_id" => tournament_id, "user_id" => leader1_id})
+      assert json_response(conn, 200)["result"]
+      conn = get(conn, Routes.tournament_path(conn, :get_match_information), %{"tournament_id" => tournament_id, "user_id" => leader1_id})
+      assert json_response(conn, 200)["state"] == "IsWaitingForCoinFlip"
     end
   end
 

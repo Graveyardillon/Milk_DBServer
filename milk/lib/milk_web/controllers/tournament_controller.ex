@@ -1025,7 +1025,7 @@ defmodule MilkWeb.TournamentController do
   end
 
   @spec do_start_match(Tournament.t() | nil, integer()) :: {:ok, nil} | {:error, String.t()}
-  defp do_start_match(nil, _), do: {:error, "tournament is nil"}
+  #defp do_start_match(nil, _), do: {:error, "tournament is nil"}
   defp do_start_match(%Tournament{is_team: true} = tournament, user_id) do
     if start_team_match(tournament, user_id) do
       {:ok, nil}
@@ -1497,21 +1497,12 @@ defmodule MilkWeb.TournamentController do
     tournament_id = Tools.to_integer_as_needed(tournament_id)
     user_id = Tools.to_integer_as_needed(user_id)
 
-    tournament_id
-    |> Tournaments.get_tournament()
-    |> do_start_match(user_id)
+    user_id
+    |> Tournaments.flip_coin(tournament_id)
     |> case do
-      {:ok, _} -> true
-      {:error, _} -> false
+      {:ok, nil} -> json(conn, %{result: true})
+      {:error, error} -> render(conn, "error.json", error: error)
     end
-    |> if do
-      Tournaments.flip_coin(user_id, tournament_id)
-    else
-      false
-    end
-    ~> result
-
-    json(conn, %{result: result})
   end
 
   # TODO: チーム対応

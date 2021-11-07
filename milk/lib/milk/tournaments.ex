@@ -769,18 +769,25 @@ defmodule Milk.Tournaments do
   @doc """
   Flip coin request.
   """
-  @spec flip_coin(integer(), integer()) :: boolean() | nil
+  @spec flip_coin(integer(), integer()) :: {:ok, nil} | {:error, String.t()}
   def flip_coin(user_id, tournament_id) do
-    tournament = __MODULE__.get_tournament(tournament_id)
-    id = Progress.get_necessary_id(tournament_id, user_id)
+    with id when not is_nil(id) <- Progress.get_necessary_id(tournament_id, user_id),
+         {:ok, nil} <- Progress.insert_match_pending_list_table(id, tournament_id),
+         tournament when not is_nil(tournament) <- __MODULE__.get_tournament(tournament_id),
+         {:ok, _} <- change_state_on_flip_coin(tournament, user_id) do
+      {:ok, nil}
+    else
+      nil -> {:error, "tournament is nil"}
+      error -> error
+    end
+  end
 
-    Progress.insert_match_pending_list_table(id, tournament_id)
+  defp change_state_on_flip_coin(%Tournament{rule: rule}, user_id) do
+    keyname = Rules.adapt_keyname(user_id)
 
-    if tournament.enabled_map do
-      case tournament.rule do
-        # NOTE: map_selection_typeで分岐もできる
-        _ -> Progress.init_ban_order(tournament_id, id)
-      end
+    case rule do
+      "flipban" -> FlipBan.trigger!(keyname, FlipBan.flip_trigger())
+      _ -> {:error, "Invalid tournament rule"}
     end
   end
 

@@ -19,6 +19,16 @@ defmodule Common.Tools do
     |> Map.new()
   end
 
+  @doc """
+  Boolean to integer
+  """
+  @spec boolean_to_integer(boolean()) :: integer()
+  def boolean_to_integer(true), do: 1
+  def boolean_to_integer(false), do: 0
+
+  @doc """
+  Boolean to {:ok, nil} | {:error, nil}
+  """
   @spec boolean_to_tuple(boolean()) :: {:ok, nil} | {:error, nil}
   def boolean_to_tuple(boolean), do: __MODULE__.boolean_to_tuple(boolean, nil)
 
