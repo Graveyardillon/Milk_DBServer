@@ -44,7 +44,6 @@ defmodule MilkWeb.TeamController do
   @doc """
   Create team.
   """
-  @spec create(Plug.Conn.t(), map) :: Plug.Conn.t()
   def create(conn, %{"tournament_id" => tournament_id, "size" => size, "leader_id" => leader_id, "user_id_list" => user_id_list}) do
     tournament_id = Tools.to_integer_as_needed(tournament_id)
     size = Tools.to_integer_as_needed(size)
