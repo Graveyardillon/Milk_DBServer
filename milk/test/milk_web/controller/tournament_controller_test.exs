@@ -2665,7 +2665,10 @@ defmodule MilkWeb.TournamentControllerTest do
         "platform" => 1,
         "is_team" => "true",
         "rule" => "flipban",
-        "team_size" => 5
+        "team_size" => 5,
+        # XXX: ここあとでvalidateに追加しないと
+        "enabled_map" => "true",
+        "enabled_coin_toss" => "true"
       }
 
       maps = [
@@ -2687,9 +2690,9 @@ defmodule MilkWeb.TournamentControllerTest do
       capacity = json_response(conn, 200)["data"]["capacity"]
       team_size = json_response(conn, 200)["data"]["team_size"]
 
-      conn = get(conn, Routes.tournament_path(conn, :get_match_information), %{"tournament_id" => tournament_id, "user_id" => master_id})
-      assert json_response(conn, 200)["result"]
-      assert json_response(conn, 200)["state"] == "IsNotStarted"
+      # conn = get(conn, Routes.tournament_path(conn, :get_match_information), %{"tournament_id" => tournament_id, "user_id" => master_id})
+      # assert json_response(conn, 200)["result"]
+      # assert json_response(conn, 200)["state"] == "IsNotStarted"
 
       10..10 + capacity * team_size - 1
       |> Enum.to_list()
@@ -2698,15 +2701,15 @@ defmodule MilkWeb.TournamentControllerTest do
       |> Enum.map(fn [leader_id | member_id_list] ->
         conn = post(conn, Routes.team_path(conn, :create), %{"tournament_id" => tournament_id, "leader_id" => leader_id, "user_id_list" => member_id_list, "size" => team_size})
         assert json_response(conn, 200)["result"]
-        [leader_id | member_id_list]
-        |> Enum.each(fn user_id ->
-          conn = get(conn, Routes.tournament_path(conn, :get_match_information), %{"tournament_id" => tournament_id, "user_id" => user_id})
-          assert json_response(conn, 200)["state"] == "IsNotStarted"
-        end)
+        # [leader_id | member_id_list]
+        # |> Enum.each(fn user_id ->
+        #   conn = get(conn, Routes.tournament_path(conn, :get_match_information), %{"tournament_id" => tournament_id, "user_id" => user_id})
+        #   assert json_response(conn, 200)["state"] == "IsNotStarted"
+        # end)
       end)
-      |> Enum.map(fn [leader_id | member_id] ->
+      # |> Enum.map(fn [leader_id | member_id] ->
 
-      end)
+      # end)
     end
   end
 

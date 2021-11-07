@@ -923,12 +923,11 @@ defmodule Milk.Log do
     TeamLog
     |> where([t], t.tournament_id == ^tournament_id)
     |> Repo.all()
-    |> Enum.filter(fn team_log ->
+    |> Enum.reject(fn team_log ->
       TeamMemberLog
       |> where([t], t.team_id == ^team_log.team_id and t.user_id == ^user_id)
       |> Repo.one()
       |> is_nil()
-      |> Kernel.!()
     end)
     |> Enum.map(fn team_log ->
       TeamMemberLog
@@ -938,7 +937,7 @@ defmodule Milk.Log do
 
       Map.put(team_log, :team_member, members)
     end)
-    |> hd()
+    |> Tools.hd_as_needed()
   end
 
   @doc """

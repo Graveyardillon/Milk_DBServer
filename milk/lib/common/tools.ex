@@ -64,6 +64,12 @@ defmodule Common.Tools do
   defp slice_ip(_), do: nil
 
   @doc """
+  Take head as needed.
+  """
+  def hd_as_needed([]), do: nil
+  def hd_as_needed(list), do: hd(list)
+
+  @doc """
   Turn into tuple {:ok, data}
   """
   @spec into_ok_tuple(any()) :: {:ok, any()}
