@@ -330,6 +330,7 @@ defmodule MilkWeb.TournamentView do
         description: tournament.description,
         master_id: tournament.master_id,
         is_team: tournament.is_team,
+        team_size: tournament.team_size,
         url: tournament.url,
         create_time: tournament.create_time,
         update_time: tournament.update_time,

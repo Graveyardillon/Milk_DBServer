@@ -44,57 +44,48 @@ defmodule MilkWeb.TeamController do
   @doc """
   Create team.
   """
-  def create(conn, %{
-        "tournament_id" => tournament_id,
-        "size" => size,
-        "leader_id" => leader_id,
-        "user_id_list" => user_id_list
-      }) do
+  def create(conn, %{"tournament_id" => tournament_id, "size" => size, "leader_id" => leader_id, "user_id_list" => user_id_list}) do
     tournament_id = Tools.to_integer_as_needed(tournament_id)
     size = Tools.to_integer_as_needed(size)
     leader_id = Tools.to_integer_as_needed(leader_id)
     user_id_list = Enum.map(user_id_list, &Tools.to_integer_as_needed(&1))
 
-    # NOTE:Elixir.Argon2.Base 人数確認
-    tournament_id
-    |> Tournaments.get_confirmed_teams()
-    |> length()
-    ~> team_count
+    confirmed_teams = Tournaments.get_confirmed_teams(tournament_id)
 
-    render_if_invalid_size(conn, team_count, tournament_id, size, leader_id, user_id_list)
-  end
-
-  defp render_if_invalid_size(conn, team_count, tournament_id, size, leader_id, user_id_list) do
-    tournament = Tournaments.get_tournament(tournament_id)
-
-    if tournament.capacity <= team_count do
-      render(conn, "error.json", error: "over tournament size")
+    with tournament when not is_nil(tournament) <- Tournaments.get_tournament(tournament_id),
+         {:ok, nil} <- validate_team_size(tournament, confirmed_teams),
+         {:ok, nil} <- validate_duplicated_request(tournament.id, leader_id),
+         {:ok, nil} <- validate_associated_with_discord(tournament, leader_id),
+         {:ok, team} <- Tournaments.create_team(tournament.id, size, leader_id, user_id_list) do
+      render(conn, "show.json", team: team)
     else
-      render_if_duplicated_request(conn, tournament, size, leader_id, user_id_list)
+      nil -> render(conn, "error.json", error: "tournament is nil")
+      {:error, error} -> render(conn, "error.json", error: error)
     end
   end
 
-  defp render_if_duplicated_request(conn, tournament, size, leader_id, user_id_list) do
-    tournament.id
+  defp validate_team_size(nil, _), do: {:error, "tournament is nil"}
+  defp validate_team_size(%Tournament{capacity: capacity}, teams) when capacity > length(teams), do: {:ok, nil}
+  defp validate_team_size(%Tournament{capacity: capacity}, teams) when capacity <= length(teams), do: {:error, "over tournament size"}
+  defp validate_team_size(_, _), do: {:error, "unexpected error on creating tournament"}
+
+  defp validate_duplicated_request(tournament_id, leader_id) do
+    tournament_id
     |> Tournaments.get_teammates(leader_id)
     |> Enum.any?(&(&1.user_id == leader_id))
     |> if do
-      render(conn, "error.json", error: "duplicated request from leader")
+      {:error, "duplicated request from leader"}
     else
-      render_if_not_associated_with_discord(conn, tournament, size, leader_id, user_id_list)
+      {:ok, nil}
     end
   end
 
-  defp render_if_not_associated_with_discord(conn, tournament, size, leader_id, user_id_list) do
-    if !is_nil(tournament.discord_server_id) && !Discord.associated?(leader_id) do
-      render(conn, "error.json", error: "user is not associated with discord")
+  defp validate_associated_with_discord(%Tournament{discord_server_id: nil}, _), do: {:ok, nil}
+  defp validate_associated_with_discord(_, leader_id) do
+    if Discord.associated?(leader_id) do
+      {:ok, nil}
     else
-      tournament.id
-      |> Tournaments.create_team(size, leader_id, user_id_list)
-      |> case do
-        {:ok, team} -> render(conn, "show.json", team: team)
-        {:error, error} -> render(conn, "error.json", error: Tools.create_error_message(error))
-      end
+      {:error, "user is not associated with discord"}
     end
   end
 

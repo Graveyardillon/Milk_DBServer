@@ -108,7 +108,7 @@ defmodule MilkWeb.TournamentController do
   def create(conn, %{"tournament" => attrs, "file" => file}),
     do: __MODULE__.create(conn, %{"tournament" => attrs, "file" => file, "maps" => []})
   # NOTE: サムネイル画像がない場合の大会作成処理
-  def create(conn, %{"tournament" => attrs, "image" => image, "maps" => maps}) when image == "" do
+  def create(conn, %{"tournament" => attrs, "image" => image, "maps" => maps}) when image == "" or is_nil(image) do
     attrs = Tools.parse_json_string_as_needed!(attrs)
 
     do_create(conn, attrs, nil, maps)
@@ -116,6 +116,13 @@ defmodule MilkWeb.TournamentController do
 
   # NOTE: サムネイル画像がある場合の大会作成処理
   def create(conn, %{"tournament" => attrs, "image" => image, "maps" => maps}) do
+    thumbnail_path = store_thumbnail(image)
+    attrs = Tools.parse_json_string_as_needed!(attrs)
+
+    do_create(conn, attrs, thumbnail_path, maps)
+  end
+
+  defp store_thumbnail(image) do
     uuid = SecureRandom.uuid()
     thumbnail_path = "./static/image/tournament_thumbnail/#{uuid}.jpg"
     FileUtils.copy(image.path, thumbnail_path)
@@ -133,11 +140,6 @@ defmodule MilkWeb.TournamentController do
         object.name
         # coveralls-ignore-stop
     end
-    ~> thumbnail_path
-
-    attrs = Tools.parse_json_string_as_needed!(attrs)
-
-    do_create(conn, attrs, thumbnail_path, maps)
   end
 
   defp do_create(conn, %{"join" => join?, "enabled_coin_toss" => enabled_coin_toss, "enabled_map" => enabled_map} = tournament_params, thumbnail_path, maps) do

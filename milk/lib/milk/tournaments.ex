@@ -448,6 +448,7 @@ defmodule Milk.Tournaments do
 
   @doc """
   Create tournament.
+  TODO: チーム用のvalidate記述
   """
   @spec create_tournament(map(), String.t() | nil) :: {:ok, Tournament.t()} | {:error, Ecto.Changeset.t()}
   def create_tournament(attrs, thumbnail_path \\ "") do

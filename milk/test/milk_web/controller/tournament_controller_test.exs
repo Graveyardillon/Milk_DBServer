@@ -2301,7 +2301,7 @@ defmodule MilkWeb.TournamentControllerTest do
   describe "has lost?" do
     test "works", %{conn: conn} do
       tournament = fixture_tournament()
-      entrants = create_entrants(8, tournament.id)
+      create_entrants(8, tournament.id)
 
       conn = post(conn, Routes.tournament_path(conn, :start), tournament: %{"master_id" => tournament.master_id, "tournament_id" => tournament.id})
 
@@ -2474,6 +2474,7 @@ defmodule MilkWeb.TournamentControllerTest do
 
       assert json_response(conn, 200)["result"]
       assert json_response(conn, 200)["data"]["rule"] == "basic"
+      refute json_response(conn, 200)["data"]["is_team"]
 
       master_id = json_response(conn, 200)["data"]["master_id"]
       tournament_id = json_response(conn, 200)["data"]["id"]
@@ -2644,12 +2645,52 @@ defmodule MilkWeb.TournamentControllerTest do
       assert json_response(conn, 200)["completed"]
       refute json_response(conn, 200)["is_finished"]
     end
+
+    test "flipban (team)", %{conn: conn} do
+      user = fixture_user()
+      attrs = %{
+        "capacity" => 8,
+        "deadline" => "2010-04-17T14:00:00Z",
+        "description" => "some description",
+        "event_date" => "2010-04-17T14:00:00Z",
+        "master_id" => user.id,
+        "name" => "some name",
+        "type" => 1,
+        "join" => "false",
+        "url" => "some url",
+        "platform" => 1,
+        "is_team" => "true",
+        "rule" => "flipban",
+        "team_size" => 5
+      }
+
+      maps = [
+        %{"name" => "map1"},
+        %{"name" => "map2"},
+        %{"name" => "map3"},
+        %{"name" => "map4"},
+        %{"name" => "map5"},
+        %{"name" => "map6"}
+      ]
+
+      conn = post(conn, Routes.tournament_path(conn, :create), tournament: attrs, file: nil, maps: maps)
+      assert json_response(conn, 200)["result"]
+      assert json_response(conn, 200)["data"]["rule"] == "flipban"
+      assert json_response(conn, 200)["data"]["is_team"]
+
+      master_id = json_response(conn, 200)["data"]["master_id"]
+      tournament_id = json_response(conn, 200)["data"]["id"]
+      capacity = json_response(conn, 200)["data"]["capacity"]
+      team_size = json_response(conn, 200)["data"]["team_size"]
+
+      10..10 + capacity * team_size
+    end
   end
 
   describe "is user win" do
     test "works", %{conn: conn} do
       tournament = fixture_tournament()
-      entrants = create_entrants(8, tournament.id)
+      create_entrants(8, tournament.id)
 
       conn = post(conn, Routes.tournament_path(conn, :start), tournament: %{"master_id" => tournament.master_id, "tournament_id" => tournament.id})
 
