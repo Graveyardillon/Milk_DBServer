@@ -19,6 +19,7 @@ defmodule MilkWeb.TournamentController do
     Tournaments
   }
 
+  alias Milk.Accounts.User
   alias Milk.CloudStorage.Objects
   alias Milk.Log.TournamentLog
   alias Milk.Tournaments.{
@@ -1840,34 +1841,17 @@ defmodule MilkWeb.TournamentController do
     tournament_id = Tools.to_integer_as_needed(tournament_id)
     user_id = Tools.to_integer_as_needed(user_id)
 
-    tournament_id
-    |> Tournaments.get_opponent(user_id)
-    |> case do
-      {:ok, opponent} -> opponent
-      _ -> nil
-    end
-    ~> opponent
+    opponent = get_opponent_for_match_info(tournament_id, user_id)
 
     is_leader = Tournaments.is_leader?(tournament_id, user_id)
 
-    tournament_id
-    |> Tournaments.get_tournament_including_logs()
-    |> case do
-      {:ok, %Tournament{} = tournament} ->
-        {tournament, tournament.is_team, tournament.rule}
-
-      {:ok, %TournamentLog{} = tournament_log} ->
-        t = Map.put(tournament_log, :id, tournament_log.tournament_id)
-        {t, t.is_team, t.rule}
-
-      _ ->
-        {nil, false, nil}
-    end
-    ~> {tournament, is_team, rule}
+    tournament = get_tournament_for_match_info(tournament_id)
 
     rank = get_rank(tournament, user_id)
     state = Tournaments.state!(tournament.id, user_id)
     score = load_score(state, tournament, user_id)
+
+    # id = Progress.get_necessary_id(tournament_id, user_id)
 
     # NOTE: hashの比較を行うために、opponent_idとmy_idを取り出す。
     # NOTE: それぞれ個人戦ならuser_idでチーム戦ならteam_idとなる。
@@ -1893,13 +1877,14 @@ defmodule MilkWeb.TournamentController do
     end
     ~> is_coin_head
 
+    # is_coin_head = is_coin_head_on_match_info?(opponent, tournament, id)
+
     tournament_id
     |> Tournaments.get_custom_detail_by_tournament_id()
     ~> custom_detail
 
     tournament_id
     |> Tournaments.get_tournament()
-    ~> tournament
     |> is_nil()
     |> unless do
       tournament
@@ -1929,6 +1914,10 @@ defmodule MilkWeb.TournamentController do
     end
     ~> {is_attacker_side, map}
 
+    is_team = tournament.is_team
+
+    rule = tournament.rule
+
     render(conn, "match_info.json", %{
       opponent: opponent,
       rank: rank,
@@ -1944,6 +1933,38 @@ defmodule MilkWeb.TournamentController do
     })
   end
 
+  defp get_opponent_for_match_info(tournament_id, user_id) do
+    tournament_id
+    |> Tournaments.get_opponent(user_id)
+    |> case do
+      {:ok, opponent} -> opponent
+      _ -> nil
+    end
+  end
+
+  @spec get_tournament_for_match_info(integer()) :: Tournament.t() | TournamentLog.t() | nil
+  defp get_tournament_for_match_info(tournament_id) do
+    tournament_id
+    |> Tournaments.get_tournament_including_logs()
+    |> case do
+      {:ok, %Tournament{} = tournament} -> tournament
+      {:ok, %TournamentLog{} = tournament_log} -> Map.put(tournament_log, :id, tournament_log.tournament_id)
+      _ -> nil
+    end
+  end
+
+  #@spec is_coin_head_on_match_info?(User.t() | Team.t() | nil, Tournament.t() | TournamentLog.t() | nil,  integer()) :: boolean() | nil
+  defp is_coin_head_on_match_info?(nil, _, _), do: nil
+  defp is_coin_head_on_match_info?(_, nil, _), do: nil
+  defp is_coin_head_on_match_info?(_, %Tournament{enabled_coin_toss: false}, _), do: nil
+  defp is_coin_head_on_match_info?(%User{id: opponent_id}, %Tournament{is_team: false, id: id}, user_id) do
+    Tournaments.is_head_of_coin?(id, user_id, opponent_id)
+  end
+  defp is_coin_head_on_match_info?(%Team{id: opponent_id}, %Tournament{is_team: true, id: id}, team_id) do
+    Tournaments.is_head_of_coin?(id, team_id, opponent_id)
+  end
+
+  @spec get_rank(Tournament.t() | nil, integer()) :: integer() | nil
   defp get_rank(nil, _), do: nil
   defp get_rank(tournament, user_id) do
     if tournament.is_team do
