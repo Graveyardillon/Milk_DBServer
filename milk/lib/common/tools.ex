@@ -80,6 +80,12 @@ defmodule Common.Tools do
   def hd_as_needed(list), do: hd(list)
 
   @doc """
+  Integer to boolean
+  """
+  def integer_to_boolean(0), do: false
+  def integer_to_boolean(_), do: true
+
+  @doc """
   Turn into tuple {:ok, data}
   """
   @spec into_ok_tuple(any()) :: {:ok, any()}
