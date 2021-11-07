@@ -1497,10 +1497,13 @@ defmodule MilkWeb.TournamentController do
     tournament_id = Tools.to_integer_as_needed(tournament_id)
     user_id = Tools.to_integer_as_needed(user_id)
 
-    user_id
-    |> Tournaments.flip_coin(tournament_id)
-    |> case do
-      {:ok, nil} -> json(conn, %{result: true})
+    with tournament when not is_nil(tournament) <- Tournaments.get_tournament(tournament_id),
+         {:ok, nil} <- Tournaments.flip_coin(user_id, tournament_id),
+         {:ok, nil} <- Progress.insert_match_pending_list_table(user_id, tournament_id),
+         {:ok, _} <- Tournaments.break_waiting_state_as_needed(tournament, user_id) do
+      json(conn, %{result: true})
+    else
+      nil -> render(conn, "error.json", error: "tournament is nil")
       {:error, error} -> render(conn, "error.json", error: error)
     end
   end

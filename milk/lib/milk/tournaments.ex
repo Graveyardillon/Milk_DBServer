@@ -1754,7 +1754,7 @@ defmodule Milk.Tournaments do
   end
 
   @spec break_waiting(integer(), Tournament.t()) :: any()
-  defp break_waiting(team_id, %Tournament{is_team: true, rule: rule}) do
+  defp break_waiting(team_id, %Tournament{id: id, is_team: true, rule: rule} = tournament) do
     # NOTE: ここでget_leaderをしているのは、チームにおいて報告系を行うのはリーダーしかいないという前提に基づいた処理になっている。
     team_id
     |> __MODULE__.get_leader()
@@ -1764,8 +1764,7 @@ defmodule Milk.Tournaments do
 
     case rule do
       "basic" -> Basic.trigger!(keyname, Basic.pend_trigger())
-      # TODO: ban_mapは片方しかならないので、それ用の処理を入れる
-      # "flipban" -> FlipBan.trigger!(keyname, FlipBan.pend_trigger())
+      "flipban" -> break_on_flipban(tournament, team_id)
       _ -> nil
     end
   end
@@ -1779,6 +1778,33 @@ defmodule Milk.Tournaments do
       # "flipban" -> FlipBan.trigger!(keyname, FlipBan.pend_trigger())
       _ -> nil
     end
+  end
+
+  defp break_on_flipban(%Tournament{id: tournament_id, is_team: true}, id) do
+    tournament_id
+    |> Progress.get_match_list()
+    |> find_match(id)
+    ~> [id1, id2]
+
+    if __MODULE__.is_head_of_coin?(tournament_id, id1, id2) do
+      [id1, id2]
+    else
+      [id2, id1]
+    end
+    |> Enum.map(fn id ->
+      id
+      |> __MODULE__.get_leader()
+      |> Map.get(:user_id)
+    end)
+    ~> [id1, id2]
+
+    id1
+    |> Rules.adapt_keyname()
+    |> FlipBan.trigger!(FlipBan.ban_map_trigger())
+
+    id2
+    |> Rules.adapt_keyname()
+    |> FlipBan.trigger!(FlipBan.observe_ban_map_trigger())
   end
 
   @doc """
@@ -3795,19 +3821,18 @@ defmodule Milk.Tournaments do
   Calculate given user(team) is head of a flipped coin.
   """
   @spec is_head_of_coin?(integer(), integer(), integer()) :: boolean()
-  def is_head_of_coin?(tournament_id, id, opponent_id)
-      when is_integer(tournament_id) and
-             is_integer(id) and
-             is_integer(opponent_id) do
+  def is_head_of_coin?(tournament_id, id, opponent_id) when is_integer(tournament_id) and is_integer(id) and is_integer(opponent_id) do
     mine_str = to_string(tournament_id + id)
     opponent_str = to_string(tournament_id + opponent_id)
 
-    :crypto.hash(:sha256, mine_str)
+    :sha256
+    |> :crypto.hash(mine_str)
     |> Base.encode16()
     |> String.downcase()
     ~> mine
 
-    :crypto.hash(:sha256, opponent_str)
+    :sha256
+    |> :crypto.hash(opponent_str)
     |> Base.encode16()
     |> String.downcase()
     ~> his
