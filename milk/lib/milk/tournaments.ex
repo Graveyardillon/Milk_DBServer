@@ -454,11 +454,11 @@ defmodule Milk.Tournaments do
   def create_tournament(attrs, thumbnail_path \\ "") do
     attrs = modify_necessary_fields(attrs)
 
-    with {:ok, _} <- validate_fields(attrs),
+    with {:ok, _} <- Rules.validate_fields(attrs),
          {:ok, tournament} <- do_create_tournament(attrs, thumbnail_path),
          {:ok, nil} <- join_chat_topics_on_create_tournament(tournament),
          {:ok, _} <- add_necessary_fields(tournament, attrs),
-         {:ok, nil} <- initialize_master_states!(tournament) do
+         {:ok, nil} <- Rules.initialize_master_states(tournament) do
       {:ok, tournament}
     else
       error -> error
@@ -476,23 +476,6 @@ defmodule Milk.Tournaments do
     |> Map.put("platform", platform_id)
     |> Map.put("game_id", game_id)
     |> put_token_as_needed()
-  end
-
-  defp validate_fields(attrs) do
-    case attrs["rule"] do
-      "flipban" -> validate_flipban_fields(attrs)
-      "basic" -> validate_basic_fields(attrs)
-      nil -> {:ok, attrs}
-      _ -> {:error, "Invalid tournament rule"}
-    end
-  end
-
-  defp validate_basic_fields(attrs) do
-    {:ok, attrs}
-  end
-
-  defp validate_flipban_fields(attrs) do
-    {:ok, attrs}
   end
 
   defp do_create_tournament(%{"master_id" => master_id, "platform" => platform, "game_id" => game_id} = attrs, thumbnail_path) do
@@ -577,23 +560,6 @@ defmodule Milk.Tournaments do
     attrs
     |> Map.put("tournament_id", tournament.id)
     |> __MODULE__.create_custom_detail()
-  end
-
-  @spec initialize_master_states!(Tournament.t()) :: {:ok, nil}
-  defp initialize_master_states!(%Tournament{id: id, rule: rule, is_team: is_team}) do
-    id
-    |> __MODULE__.get_masters()
-    |> Enum.map(fn user ->
-      keyname = Rules.adapt_keyname(user.id)
-
-      case rule do
-        "basic" -> Basic.build_dfa_instance(keyname, is_team: is_team)
-        "flipban" -> FlipBan.build_dfa_instance(keyname, is_team: is_team)
-        _ -> raise "Invalid tournament rule"
-      end
-    end)
-    |> Enum.all?(&(&1 == "OK"))
-    |> Tools.boolean_to_tuple()
   end
 
   @spec create_maps_on_create_tournament(Tournament.t(), [Milk.Tournaments.Map.t()] | map() | nil) :: {:ok, nil} | {:error, String.t() | nil}

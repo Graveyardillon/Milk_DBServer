@@ -1322,7 +1322,8 @@ defmodule MilkWeb.TournamentController do
          tournament                                     <- Tournaments.get_tournament(tournament_id) do
       json(conn, %{validated: true, completed: true, is_finished: is_nil(tournament)})
     else
-      # NOTE: 重複報告
+      # NOTE: 重複報告が起きたときの処理
+      # 重複報告が起こった時用の処理を呼び出す
       {:error, id, opponent_id, _} ->
         duplicated_claim_process(tournament_id, id, opponent_id, score)
         json(conn, %{validated: false, completed: false, is_finished: false})

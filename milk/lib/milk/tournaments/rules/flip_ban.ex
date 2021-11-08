@@ -6,10 +6,9 @@ defmodule Milk.Tournaments.Rules.FlipBan do
   @behaviour Milk.Tournaments.Rules.Rule
 
   alias Dfa.Predefined
-  alias Milk.Tournaments.Rules
   alias Milk.Tournaments.Rules.Rule
 
-  @db_index Rules.db_index()
+  @db_index Rule.db_index()
 
   @impl Rule
   def machine_name(true), do: "flipban_team"
@@ -25,7 +24,7 @@ defmodule Milk.Tournaments.Rules.FlipBan do
     |> do_define_dfa!(opts)
   end
 
-  @spec do_define_dfa!(boolean(), Rules.opts()) :: :ok
+  @spec do_define_dfa!(boolean(), Rule.opts()) :: :ok
   defp do_define_dfa!(true, _), do: :ok
   defp do_define_dfa!(false, opts) do
     is_team = Keyword.get(opts, :is_team, true)
@@ -80,7 +79,7 @@ defmodule Milk.Tournaments.Rules.FlipBan do
     |> Enum.reject(&is_nil(&1))
   end
 
-  @spec unfiltered_list_states(Rules.opts()) :: [String.t()]
+  @spec unfiltered_list_states(Rule.opts()) :: [String.t()]
   defp unfiltered_list_states(opts) do
     [
       is_not_started(),

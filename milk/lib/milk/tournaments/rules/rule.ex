@@ -1,8 +1,22 @@
 defmodule Milk.Tournaments.Rules.Rule do
   @moduledoc """
-  ルールに関するビヘイビアを実装するためのモジュール
+  ルールに基づいて作動するオートマトンを定義するためのモジュール
+  ルールのモジュールに依存する形で使われる。
   """
-  alias Milk.Tournaments.Rules
+  @type opts :: [
+    machine_name: String.t() | nil,
+    is_team: boolean() | nil
+  ]
+
+  @type list_state_opts :: [
+    is_team: boolean() | nil
+  ]
+
+  @doc """
+  オートマトンを定義するredisデータベースのインデックスを決めるための関数
+  """
+  @spec db_index() :: integer()
+  def db_index(), do: Application.get_env(:milk, :dfa_db_index)
 
   @doc """
   オートマトンの名前を返す関数
@@ -12,12 +26,12 @@ defmodule Milk.Tournaments.Rules.Rule do
   @doc """
   オートマトンを定義するための関数
   """
-  @callback define_dfa!(Rules.opts()) :: :ok
+  @callback define_dfa!(__MODULE__.opts()) :: :ok
 
   @doc """
   オートマトンの型から新しいインスタンスを生成するための関数
   """
-  @callback build_dfa_instance(String.t(), Rules.opts()) :: any()
+  @callback build_dfa_instance(String.t(), __MODULE__.opts()) :: any()
 
   @doc """
   現在のオートマトン・インスタンスの状態を返す関数
@@ -32,5 +46,5 @@ defmodule Milk.Tournaments.Rules.Rule do
   @doc """
   オートマトンの保持している状態一覧を返す関数
   """
-  @callback list_states(Rules.list_state_opts()) :: [String.t()]
+  @callback list_states(__MODULE__.list_state_opts()) :: [String.t()]
 end
