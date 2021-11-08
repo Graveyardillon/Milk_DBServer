@@ -1886,7 +1886,6 @@ defmodule MilkWeb.TournamentController do
 
   @spec is_coin_head_on_match_info?(User.t() | Team.t() | nil, Tournament.t() | TournamentLog.t() | nil,  integer()) :: boolean() | nil
   defp is_coin_head_on_match_info?(nil, _, _), do: nil
-  #defp is_coin_head_on_match_info?(_, nil, _), do: nil
   defp is_coin_head_on_match_info?(_, %Tournament{enabled_coin_toss: false}, _), do: nil
   defp is_coin_head_on_match_info?(%User{id: opponent_id}, %Tournament{is_team: false, id: id}, user_id) do
     Tournaments.is_head_of_coin?(id, user_id, opponent_id)
