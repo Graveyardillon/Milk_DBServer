@@ -1000,9 +1000,10 @@ defmodule MilkWeb.TournamentController do
     tournament = Tournaments.get_tournament(tournament_id)
 
 
-    Tournaments.start_match(tournament, user_id)
-    with {:ok, _} <- do_start_match(tournament, user_id),
-         {:ok, _} <- Tournaments.break_waiting_state_as_needed(tournament, user_id),
+
+    with {:ok, _}   <- Tournaments.start_match(tournament, user_id),
+         {:ok, _}   <- do_start_match(tournament, user_id),
+         {:ok, _}   <- Tournaments.break_waiting_state_as_needed(tournament, user_id),
          {:ok, nil} <- notify_discord_on_start_match_as_needed(tournament, user_id) do
       json(conn, %{result: true})
     else
@@ -1310,15 +1311,15 @@ defmodule MilkWeb.TournamentController do
   end
 
   defp do_claim_score(conn, user_id, tournament_id, score, match_index \\ 0) do
-    with true <- can_claim?(tournament_id, user_id),
-         tournament when not is_nil(tournament) <- Tournaments.get_tournament(tournament_id),
-         {:ok, opponent} <- Tournaments.get_opponent(tournament_id, user_id),
-         id when not is_nil(id) <- Progress.get_necessary_id(tournament_id, user_id),
-         {:ok, _} <- Progress.insert_score(tournament_id, id, score),
+    with true                                           <- can_claim?(tournament_id, user_id),
+         tournament     when not is_nil(tournament)     <- Tournaments.get_tournament(tournament_id),
+         id             when not is_nil(id)             <- Progress.get_necessary_id(tournament_id, user_id),
+         {:ok, opponent}                                <- Tournaments.get_opponent(tournament_id, user_id),
+         {:ok, _}                                       <- Progress.insert_score(tournament_id, id, score),
          opponent_score when not is_nil(opponent_score) <- Progress.get_score(tournament_id, opponent.id),
-         {:ok, winner_id, loser_id, _} <- calculate_winner(id, opponent.id, score, opponent_score),
-         {:ok, nil} <- proceed_to_next_match(tournament, winner_id, loser_id, score, opponent_score, match_index),
-         tournament <- Tournaments.get_tournament(tournament_id) do
+         {:ok, winner_id, loser_id, _}                  <- calculate_winner(id, opponent.id, score, opponent_score),
+         {:ok, nil}                                     <- proceed_to_next_match(tournament, winner_id, loser_id, score, opponent_score, match_index),
+         tournament                                     <- Tournaments.get_tournament(tournament_id) do
       json(conn, %{validated: true, completed: true, is_finished: is_nil(tournament)})
     else
       # NOTE: 重複報告
@@ -1364,8 +1365,8 @@ defmodule MilkWeb.TournamentController do
          {:ok, _}   <- Tournaments.delete_loser_process(tournament.id, [loser_id]),
          {:ok, nil} <- Tournaments.store_score(tournament.id, winner_id, loser_id, opponent_score, score, match_index),
          {:ok, nil} <- delete_old_info_for_next_match(tournament.id, [winner_id, loser_id]),
-         {:ok, _}   <- Tournaments.change_winner_state(tournament, winner_id) |> IO.inspect(label: :winner),
-         {:ok, _}   <- Tournaments.change_loser_state(tournament, loser_id) |> IO.inspect(label: :loser),
+         {:ok, _}   <- Tournaments.change_winner_state(tournament, winner_id),
+         {:ok, _}   <- Tournaments.change_loser_state(tournament, loser_id),
          {:ok, nil} <- finish_as_needed?(tournament.id, winner_id) do
       {:ok, nil}
     else
@@ -1395,7 +1396,7 @@ defmodule MilkWeb.TournamentController do
   @spec notify_discord_on_match_finished_as_needed(Tournament.t(), integer(), integer(), integer(), integer()) :: {:ok, nil} | {:error, String.t()}
   defp notify_discord_on_match_finished_as_needed(tournament, id, opponent_id, score, opponent_score) do
     with {:ok, opponent_name, name} <- load_names(tournament, id, opponent_id),
-         {:ok, nil} <- send_tournament_finish_match_notification(tournament, name, opponent_name, score, opponent_score) do
+         {:ok, nil}                 <- send_tournament_finish_match_notification(tournament, name, opponent_name, score, opponent_score) do
       {:ok, nil}
     else
       error -> error
@@ -1404,14 +1405,14 @@ defmodule MilkWeb.TournamentController do
 
   @spec load_names(Tournament.t(), integer(), integer()) :: {:ok, String.t(), String.t()} | {:error, String.t()}
   defp load_names(%Tournament{is_team: true, id: tournament_id}, id, _) do
-    with team when not is_nil(team) <- Tournaments.get_team(id),
+    with team   when not is_nil(team)   <- Tournaments.get_team(id),
          leader when not is_nil(leader) <- Tournaments.get_leader(team.id),
-         {:ok, opponent} <- Tournaments.get_opponent(tournament_id, leader.user_id) do
+         {:ok, opponent}                <- Tournaments.get_opponent(tournament_id, leader.user_id) do
       {:ok, opponent.name, team.name}
     else
-      nil -> {:error, "team or leader is nil"}
+      nil          -> {:error, "team or leader is nil"}
       {:wait, nil} -> {:error, "opponent is nil"}
-      error -> error
+      error        -> error
     end
   end
   defp load_names(_, user_id, opponent_id) do

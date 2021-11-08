@@ -1352,21 +1352,15 @@ defmodule Milk.Tournaments do
   @spec delete_entrant(Entrant.t()) :: {:ok, Entrant.t()} | {:error, Ecto.Changeset.t()}
   def delete_entrant(nil), do: {:error, "entrant is nil"}
   def delete_entrant(%Entrant{} = entrant) do
-    # map =
-    #   entrant
-    #   |> Map.from_struct()
-    #   |> Map.put(:entrant_id, entrant.id)
+    tournament = __MODULE__.get_tournament(entrant.tournament_id)
 
-    # %EntrantLog{}
-    # |> EntrantLog.changeset(map)
-    # |> Repo.insert()
-
-    tournament = Repo.get(Tournament, entrant.tournament_id)
-
-    Tournament.changeset(tournament, %{count: tournament.count - 1})
+    tournament
+    |> Tournament.changeset(%{count: tournament.count - 1})
     |> Repo.update()
-
-    Repo.delete(entrant)
+    |> case do
+      {:ok, _} -> Repo.delete(entrant)
+      {:error, error} -> {:error, error}
+    end
   end
 
   @doc """
@@ -1393,9 +1387,9 @@ defmodule Milk.Tournaments do
     match_list = Progress.get_match_list(tournament_id)
     loser = hd(loser_list)
 
-    with {:ok, _} <- delete_old_match_info(tournament_id, match_list, loser),
-         {:ok, _} <- renew_match_list(tournament_id, match_list, loser_list),
-         {:ok, _} <- renew_match_list_with_fight_result(tournament_id, loser_list),
+    with {:ok, _}                               <- delete_old_match_info(tournament_id, match_list, loser),
+         {:ok, _}                               <- renew_match_list(tournament_id, match_list, loser_list),
+         {:ok, _}                               <- renew_match_list_with_fight_result(tournament_id, loser_list),
          match_list when not is_nil(match_list) <- Progress.get_match_list(tournament_id) do
       {:ok, match_list}
     else
@@ -1409,7 +1403,7 @@ defmodule Milk.Tournaments do
     |> find_match(loser)
     |> Enum.filter(&is_integer(&1))
     |> Enum.map(fn user_id ->
-      with {:ok, _} <-  Progress.delete_match_pending_list(user_id, tournament_id),
+      with {:ok, _} <- Progress.delete_match_pending_list(user_id, tournament_id),
            {:ok, _} <- Progress.delete_fight_result(user_id, tournament_id) do
         {:ok, nil}
       else
