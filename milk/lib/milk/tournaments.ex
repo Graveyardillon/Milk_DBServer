@@ -454,7 +454,7 @@ defmodule Milk.Tournaments do
   def create_tournament(attrs, thumbnail_path \\ "") do
     attrs = modify_necessary_fields(attrs)
 
-    with {:ok, _} <- Rules.validate_fields(attrs),
+    with {:ok, _} <- validate_fields(attrs),
          {:ok, tournament} <- do_create_tournament(attrs, thumbnail_path),
          {:ok, nil} <- join_chat_topics_on_create_tournament(tournament),
          {:ok, _} <- add_necessary_fields(tournament, attrs),
@@ -477,6 +477,25 @@ defmodule Milk.Tournaments do
     |> Map.put("game_id", game_id)
     |> put_token_as_needed()
   end
+
+  @spec validate_fields(map()) :: {:ok, map()} | {:error, String.t()}
+  defp validate_fields(fields) do
+    case fields["rule"] do
+      "flipban" -> validate_flipban_fields(fields)
+      "basic" -> validate_basic_fields(fields)
+      nil -> {:ok, fields}
+      _ -> {:error, "Invalid tournament rule"}
+    end
+  end
+
+  defp validate_basic_fields(attrs) do
+    {:ok, attrs}
+  end
+
+  defp validate_flipban_fields(attrs) do
+    {:ok, attrs}
+  end
+
 
   defp do_create_tournament(%{"master_id" => master_id, "platform" => platform, "game_id" => game_id} = attrs, thumbnail_path) do
     tournament = %Tournament{
@@ -536,7 +555,7 @@ defmodule Milk.Tournaments do
   @spec add_basic_fields(Tournament.t(), any()) :: {:ok, nil} | {:error, String.t()}
   defp add_basic_fields(tournament, _attrs) do
     tournament
-    |> initialize_state_machine()
+    |> Rules.initialize_state_machine()
     |> case do
       :ok -> {:ok, nil}
       :error -> {:error, "failed to initialize state machine"}
@@ -545,7 +564,7 @@ defmodule Milk.Tournaments do
 
   @spec add_flipban_fields(Tournament.t(), map()) :: {:ok, nil} | {:error, String.t()}
   defp add_flipban_fields(tournament, attrs) do
-    with :ok <- initialize_state_machine(tournament),
+    with :ok <- Rules.initialize_state_machine(tournament),
          {:ok, _}  <- create_tournament_custom_detail_on_create_tournament(tournament, attrs),
          {:ok, nil} <- create_maps_on_create_tournament(tournament, attrs) do
       {:ok, nil}
@@ -656,15 +675,6 @@ defmodule Milk.Tournaments do
         |> Repo.insert()
       end
     end)
-  end
-
-  @spec initialize_state_machine(Tournament.t()) :: :ok | :error
-  defp initialize_state_machine(%Tournament{rule: rule, is_team: is_team}) do
-    case rule do
-      "basic" -> Basic.define_dfa!(is_team: is_team)
-      "flipban" -> FlipBan.define_dfa!(is_team: is_team)
-      _ -> :error
-    end
   end
 
   @doc """
@@ -1627,7 +1637,7 @@ defmodule Milk.Tournaments do
     with {:ok, %Tournament{} = tournament} <- load_tournament(tournament_id, master_id),
          {:ok, nil} <- validate_entrant_number(tournament),
          {:ok, tournament} <- do_start(tournament),
-         {:ok, tournament} <- start_master_states!(tournament),
+         {:ok, tournament} <- Rules.start_master_states!(tournament),
          {:ok, tournament} <- start_entrant_states!(tournament) do
       {:ok, tournament}
     else
@@ -1668,49 +1678,6 @@ defmodule Milk.Tournaments do
     |> Repo.update()
   end
 
-
-  defp start_master_states!(tournament) do
-    with {:ok, _} <- start_master_state!(tournament),
-         {:ok, nil} <- start_assistant_states!(tournament) do
-      {:ok, tournament}
-    else
-      error -> error
-    end
-  end
-
-  @spec start_master_state!(Tournament.t()) :: {:ok, any()}
-  defp start_master_state!(%Tournament{id: id, rule: rule, master_id: master_id}) do
-    id
-    |> __MODULE__.is_entrant?(master_id)
-    |> if do
-      {:ok, nil}
-    else
-      keyname = Rules.adapt_keyname(master_id)
-
-      case rule do
-        "basic" -> Basic.trigger!(keyname, Basic.manager_trigger())
-        "flipban" -> FlipBan.trigger!(keyname, FlipBan.manager_trigger())
-        _ -> {:error, "Invalid tournament rule"}
-      end
-    end
-  end
-
-  @spec start_assistant_states!(Tournament.t()) :: {:ok, nil}
-  defp start_assistant_states!(%Tournament{id: id, rule: rule}) do
-    id
-    |> __MODULE__.get_assistants()
-    |> Enum.each(fn assistant ->
-      keyname = Rules.adapt_keyname(assistant.user_id)
-
-      case rule do
-        "basic" -> Basic.trigger!(keyname, Basic.assistant_trigger())
-        "flipban" -> FlipBan.trigger!(keyname, FlipBan.assistant_trigger())
-      end
-    end)
-
-    {:ok, nil}
-  end
-
   @spec start_entrant_states!(Tournament.t()) :: {:ok, Tournament.t()}
   defp start_entrant_states!(%Tournament{id: id, rule: rule} = tournament) do
     id
@@ -1737,7 +1704,7 @@ defmodule Milk.Tournaments do
     with {:ok, %Tournament{} = tournament} <- load_tournament(tournament_id, master_id),
          {:ok, nil} <- validate_team_number(tournament),
          {:ok, tournament} <- do_start(tournament),
-         {:ok, tournament} <- start_master_states!(tournament),
+         {:ok, tournament} <- Rules.start_master_states!(tournament),
          {:ok, nil} <- start_team_states!(tournament) do
       {:ok, tournament}
     else
