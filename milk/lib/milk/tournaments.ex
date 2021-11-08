@@ -750,20 +750,11 @@ defmodule Milk.Tournaments do
     with id when not is_nil(id) <- Progress.get_necessary_id(tournament_id, user_id),
          {:ok, nil} <- Progress.insert_match_pending_list_table(id, tournament_id),
          tournament when not is_nil(tournament) <- __MODULE__.get_tournament(tournament_id),
-         {:ok, _} <- change_state_on_flip_coin(tournament, user_id) do
+         {:ok, _} <- Rules.change_state_on_flip_coin(tournament, user_id) do
       {:ok, nil}
     else
       nil -> {:error, "tournament is nil"}
       error -> error
-    end
-  end
-
-  defp change_state_on_flip_coin(%Tournament{rule: rule}, user_id) do
-    keyname = Rules.adapt_keyname(user_id)
-
-    case rule do
-      "flipban" -> FlipBan.trigger!(keyname, FlipBan.flip_trigger())
-      _ -> {:error, "Invalid tournament rule"}
     end
   end
 
@@ -789,7 +780,7 @@ defmodule Milk.Tournaments do
     with {:ok, _} <- change_map_state_result,
          tournament when not is_nil(tournament) <- __MODULE__.get_tournament(tournament_id),
          {:ok, _} <- renew_redis_after_choosing_maps(user_id, tournament_id),
-         {:ok, _} <- change_state_on_ban(tournament, user_id, opponent_id) do
+         {:ok, _} <- Rules.change_state_on_ban(tournament, user_id, opponent_id) do
       {:ok, nil}
     else
       nil -> {:error, "tournament is nil"}
@@ -825,45 +816,6 @@ defmodule Milk.Tournaments do
     end)
   end
 
-  defp change_state_on_ban(%Tournament{rule: rule, id: tournament_id, is_team: is_team}, user_id, opponent_id) do
-    id = Progress.get_necessary_id(tournament_id, user_id)
-    is_head = __MODULE__.is_head_of_coin?(tournament_id, id, opponent_id)
-
-    # TODO: match_listの中身をteam_idからleader_idに変えたら不要になる処理
-    if is_team do
-      opponent_id
-      |> __MODULE__.get_leader()
-      |> Map.get(:user_id)
-    else
-      opponent_id
-    end
-    ~> opponent_id
-
-    keyname = Rules.adapt_keyname(user_id)
-    opponent_keyname = Rules.adapt_keyname(opponent_id)
-
-    # NOTE: 自分のコインが裏で、banを終えていた場合遷移を変える
-    do_change_state_on_ban(is_head, rule, keyname, opponent_keyname)
-  end
-
-  defp do_change_state_on_ban(_, rule, _, _) when rule != "flipban", do: {:error, "Invalid tournament rule"}
-  defp do_change_state_on_ban(true, _, keyname, opponent_keyname) do
-    with {:ok, _} <- FlipBan.trigger!(keyname, FlipBan.observe_ban_map_trigger()),
-         {:ok, _} <- FlipBan.trigger!(opponent_keyname, FlipBan.ban_map_trigger()) do
-      {:ok, nil}
-    else
-      error -> error
-    end
-  end
-  defp do_change_state_on_ban(false, _, keyname, opponent_keyname) do
-    with {:ok, _} <- FlipBan.trigger!(keyname, FlipBan.observe_choose_map_trigger()),
-         {:ok, _} <- FlipBan.trigger!(opponent_keyname, FlipBan.choose_map_trigger()) do
-      {:ok, nil}
-    else
-      error -> error
-    end
-  end
-
   @doc """
   Choose a map.
   """
@@ -883,37 +835,10 @@ defmodule Milk.Tournaments do
     |> change_map_state(user_id, tournament_id, map_id_list, opponent_id, "selected")
     ~> change_map_state_result
 
-    with {:ok, _} <- change_map_state_result,
+    with {:ok, _}                               <- change_map_state_result,
          tournament when not is_nil(tournament) <- __MODULE__.get_tournament(tournament_id),
-         {:ok, _} <- renew_redis_after_choosing_maps(user_id, tournament_id),
-         {:ok, _} <- change_state_on_choose_map(tournament, user_id, opponent_id) do
-      {:ok, nil}
-    else
-      error -> error
-    end
-  end
-
-  defp change_state_on_choose_map(%Tournament{rule: rule, is_team: is_team}, user_id, opponent_id) do
-    # TODO: match_listの中身をteam_idからleader_idに変えたら不要になる処理
-    if is_team do
-      opponent_id
-      |> __MODULE__.get_leader()
-      |> Map.get(:user_id)
-    else
-      opponent_id
-    end
-    ~> opponent_id
-
-    keyname = Rules.adapt_keyname(user_id)
-    opponent_keyname = Rules.adapt_keyname(opponent_id)
-
-    do_change_state_on_choose_map(rule, keyname, opponent_keyname)
-  end
-
-  defp do_change_state_on_choose_map(rule, _, _) when rule != "flipban", do: {:error, "Invalid tournament rule"}
-  defp do_change_state_on_choose_map(_, keyname, opponent_keyname) do
-    with {:ok, _} <- FlipBan.trigger!(keyname, FlipBan.observe_choose_ad_trigger()),
-         {:ok, _} <- FlipBan.trigger!(opponent_keyname, FlipBan.choose_ad_trigger()) do
+         {:ok, _}                               <- renew_redis_after_choosing_maps(user_id, tournament_id),
+         {:ok, _}                               <- Rules.change_state_on_choose_map(tournament, user_id, opponent_id) do
       {:ok, nil}
     else
       error -> error
@@ -939,10 +864,10 @@ defmodule Milk.Tournaments do
     |> do_choose_ad(user_id, tournament_id, opponent_id, is_attack_side)
     ~> choose_ad_result
 
-    with {:ok, _} <- choose_ad_result,
-         {:ok, _} <- renew_redis_after_choosing_maps(user_id, tournament_id),
+    with {:ok, _}                               <- choose_ad_result,
+         {:ok, _}                               <- renew_redis_after_choosing_maps(user_id, tournament_id),
          tournament when not is_nil(tournament) <- __MODULE__.get_tournament(tournament_id),
-         {:ok, _} <- change_state_on_choose_ad(tournament, user_id, opponent_id) do
+         {:ok, _}                               <- Rules.change_state_on_choose_ad(tournament, user_id, opponent_id) do
       {:ok, nil}
     else
       nil -> {:error, "tournament is nil"}
@@ -954,38 +879,11 @@ defmodule Milk.Tournaments do
   defp do_choose_ad(_, _, _, opponent_id, _) when not is_integer(opponent_id), do: {:error, "opponent id is not integer"}
   defp do_choose_ad(_, user_id, tournament_id, opponent_id, is_attacker_side) do
     with my_id when not is_nil(my_id) <- Progress.get_necessary_id(tournament_id, user_id),
-         {:ok, _} <- Progress.insert_is_attacker_side(my_id, tournament_id, is_attacker_side),
-         {:ok, _} <- Progress.insert_is_attacker_side(opponent_id, tournament_id, !is_attacker_side) do
+         {:ok, _}                     <- Progress.insert_is_attacker_side(my_id, tournament_id, is_attacker_side),
+         {:ok, _}                     <- Progress.insert_is_attacker_side(opponent_id, tournament_id, !is_attacker_side) do
       {:ok, nil}
     else
       _ -> {:error, "failed to insert is_attacker_side"}
-    end
-  end
-
-  defp change_state_on_choose_ad(%Tournament{rule: rule, is_team: is_team}, user_id, opponent_id) do
-    # TODO: match_listの中身をteam_idからleader_idに変えたら不要になる処理
-    if is_team do
-      opponent_id
-      |> __MODULE__.get_leader()
-      |> Map.get(:user_id)
-    else
-      opponent_id
-    end
-    ~> opponent_id
-
-    keyname = Rules.adapt_keyname(user_id)
-    opponent_keyname = Rules.adapt_keyname(opponent_id)
-
-    do_change_state_on_choose_ad(rule, keyname, opponent_keyname)
-  end
-
-  defp do_change_state_on_choose_ad(rule, _, _) when rule != "flipban", do: {:error, "Invalid tournament rule"}
-  defp do_change_state_on_choose_ad(_, keyname, opponent_keyname) do
-    with {:ok, _} <- FlipBan.trigger!(keyname, FlipBan.pend_trigger()),
-         {:ok, _} <- FlipBan.trigger!(opponent_keyname, FlipBan.pend_trigger()) do
-      {:ok, nil}
-    else
-      error -> error
     end
   end
 
@@ -1018,9 +916,9 @@ defmodule Milk.Tournaments do
 
   """
   @spec delete_tournament(Tournament.t() | map() | integer()) :: {:ok, Tournament.t()} | {:error, Ecto.Changeset.t() | String.t()}
-  def delete_tournament(nil), do: {:error, "tournament is nil"}
+  def delete_tournament(nil),                 do: {:error, "tournament is nil"}
   def delete_tournament(%Tournament{id: id}), do: delete_tournament(id)
-  def delete_tournament(%{"id" => id}), do: delete_tournament(id)
+  def delete_tournament(%{"id" => id}),       do: delete_tournament(id)
 
   def delete_tournament(id) when is_integer(id) do
     Tournament
@@ -1120,14 +1018,14 @@ defmodule Milk.Tournaments do
   """
   @spec create_entrant(map()) :: {:ok, Entrant.t()} | {:error, Ecto.Changeset.t() | String.t() | nil}
   def create_entrant(attrs) do
-    with {:ok, nil} <- validate_user_id(attrs),
-         {:ok, attrs} <- validate_tournament_id(attrs),
-         {:ok, nil} <- validate_not_team_tournament(attrs),
-         {:ok, nil} <- validate_not_participated_yet(attrs),
-         {:ok, nil} <- validate_tournament_size(attrs),
+    with {:ok, nil}     <- validate_user_id(attrs),
+         {:ok, attrs}   <- validate_tournament_id(attrs),
+         {:ok, nil}     <- validate_not_team_tournament(attrs),
+         {:ok, nil}     <- validate_not_participated_yet(attrs),
+         {:ok, nil}     <- validate_tournament_size(attrs),
          {:ok, entrant} <- do_create_entrant(attrs),
-         {:ok, nil} <- join_chat_topics_on_create_entrant(entrant),
-         {:ok, nil} <- initialize_entrant_state!(entrant) do
+         {:ok, nil}     <- join_chat_topics_on_create_entrant(entrant),
+         {:ok, nil}     <- initialize_entrant_state!(entrant) do
       {:ok, entrant}
     else
       error -> error
@@ -1226,9 +1124,9 @@ defmodule Milk.Tournaments do
     keyname = Rules.adapt_keyname(user_id)
 
     case tournament.rule do
-      "basic" -> Basic.build_dfa_instance(keyname, is_team: tournament.is_team)
+      "basic"   -> Basic.build_dfa_instance(keyname, is_team: tournament.is_team)
       "flipban" -> FlipBan.build_dfa_instance(keyname, is_team: tournament.is_team)
-      _ -> raise "Invalid tournament"
+      _         -> raise "Invalid tournament"
     end
 
     {:ok, nil}
@@ -1404,7 +1302,7 @@ defmodule Milk.Tournaments do
     loser_list
     |> Progress.renew_match_list(tournament_id)
     |> case do
-      {:ok, _} -> {:ok, nil}
+      {:ok, _}    -> {:ok, nil}
       {:error, _} ->
         Process.sleep(100)
         renew(loser_list, tournament_id)
@@ -1431,8 +1329,7 @@ defmodule Milk.Tournaments do
       match_list
       |> find_match(loser)
       |> case do
-        [] ->
-          {:error, nil}
+        [] -> {:error, nil}
 
         _match ->
           tournament = __MODULE__.get_tournament(tournament_id)
@@ -1468,11 +1365,8 @@ defmodule Milk.Tournaments do
             |> promote_rank()
           end
 
-        {:wait, nil, _} ->
-          {:wait, nil, nil}
-
-        {:error, nil} ->
-          {:error, nil}
+        {:wait, nil, _} -> {:wait, nil, nil}
+        {:error, nil}   ->{:error, nil}
       end
     end)
   end
@@ -1485,14 +1379,9 @@ defmodule Milk.Tournaments do
       tournament_id
       |> __MODULE__.get_opponent(loser)
       |> case do
-        {:ok, opponent} ->
-          promote_rank(%{"tournament_id" => tournament_id, "user_id" => opponent.id})
-
-        {:wait, nil} ->
-          raise RuntimeError, "Expected {:ok, opponent}, got: {:wait, nil}"
-
-        _ ->
-          raise RuntimeError, "Unexpected Output"
+        {:ok, opponent} -> promote_rank(%{"tournament_id" => tournament_id, "user_id" => opponent.id})
+        {:wait, nil}    -> raise RuntimeError, "Expected {:ok, opponent}, got: {:wait, nil}"
+        _               -> raise RuntimeError, "Unexpected Output"
       end
     end
   end
@@ -1509,9 +1398,9 @@ defmodule Milk.Tournaments do
       y = pick_user_id_as_needed(x)
 
       case y do
-        y when is_list(y) -> find_match(y, id, acc)
+        y when is_list(y)                -> find_match(y, id, acc)
         y when is_integer(y) and y == id -> acc ++ match_list
-        y when is_integer(y) -> acc
+        y when is_integer(y)             -> acc
       end
     end)
   end
@@ -1635,10 +1524,10 @@ defmodule Milk.Tournaments do
   def start(tournament_id, master_id) when is_nil(master_id) or is_nil(tournament_id), do: {:error, "master_id or tournament_id is nil"}
   def start(tournament_id, master_id) do
     with {:ok, %Tournament{} = tournament} <- load_tournament(tournament_id, master_id),
-         {:ok, nil} <- validate_entrant_number(tournament),
-         {:ok, tournament} <- do_start(tournament),
-         {:ok, tournament} <- Rules.start_master_states!(tournament),
-         {:ok, tournament} <- start_entrant_states!(tournament) do
+         {:ok, nil}                        <- validate_entrant_number(tournament),
+         {:ok, tournament}                 <- do_start(tournament),
+         {:ok, tournament}                 <- Rules.start_master_states!(tournament),
+         {:ok, tournament}                 <- start_entrant_states!(tournament) do
       {:ok, tournament}
     else
       error -> error
@@ -1686,9 +1575,9 @@ defmodule Milk.Tournaments do
       keyname = Rules.adapt_keyname(user_id)
 
       case rule do
-        "basic" -> Basic.trigger!(keyname, Basic.start_trigger())
+        "basic"   -> Basic.trigger!(keyname, Basic.start_trigger())
         "flipban" -> FlipBan.trigger!(keyname, FlipBan.start_trigger())
-        _ -> raise "Invalid tournament rule"
+        _         -> raise "Invalid tournament rule"
       end
     end)
 
@@ -1702,10 +1591,10 @@ defmodule Milk.Tournaments do
   def start_team_tournament(tournament_id, master_id) when is_nil(tournament_id) or is_nil(master_id), do: {:error, "master_id or tournament_id is nil"}
   def start_team_tournament(tournament_id, master_id) do
     with {:ok, %Tournament{} = tournament} <- load_tournament(tournament_id, master_id),
-         {:ok, nil} <- validate_team_number(tournament),
-         {:ok, tournament} <- do_start(tournament),
-         {:ok, tournament} <- Rules.start_master_states!(tournament),
-         {:ok, nil} <- start_team_states!(tournament) do
+         {:ok, nil}                        <- validate_team_number(tournament),
+         {:ok, tournament}                 <- do_start(tournament),
+         {:ok, tournament}                 <- Rules.start_master_states!(tournament),
+         {:ok, nil}                        <- start_team_states!(tournament) do
       {:ok, tournament}
     else
       error -> error
@@ -1730,15 +1619,15 @@ defmodule Milk.Tournaments do
 
       if member.is_leader do
         case rule do
-          "basic" -> Basic.trigger!(keyname, Basic.start_trigger())
+          "basic"   -> Basic.trigger!(keyname, Basic.start_trigger())
           "flipban" -> FlipBan.trigger!(keyname, FlipBan.start_trigger())
-          _ -> raise "Invalid tournament rule"
+          _         -> raise "Invalid tournament rule"
         end
       else
         case rule do
-          "basic" -> Basic.trigger!(keyname, Basic.member_trigger())
+          "basic"   -> Basic.trigger!(keyname, Basic.member_trigger())
           "flipban" -> FlipBan.trigger!(keyname, FlipBan.member_trigger())
-          _ -> raise "Invalid tournament rule"
+          _         -> raise "Invalid tournament rule"
         end
       end
     end)
@@ -1761,6 +1650,7 @@ defmodule Milk.Tournaments do
 
     case rule do
       "basic" -> Basic.trigger!(keyname, Basic.start_match_trigger())
+      _       -> {:error, "Invalid tournament rule"}
     end
   end
   def start_match(%Tournament{rule: rule}, user_id) do
@@ -1768,7 +1658,7 @@ defmodule Milk.Tournaments do
 
     case rule do
       "basic" -> Basic.trigger!(keyname, Basic.start_match_trigger())
-      # "flipban" ->
+      _       -> {:error, "Invalid tournament rule"}
     end
   end
 
@@ -1803,9 +1693,9 @@ defmodule Milk.Tournaments do
     ~> keyname
 
     case rule do
-      "basic" -> Basic.trigger!(keyname, Basic.pend_trigger())
+      "basic"   -> Basic.trigger!(keyname, Basic.pend_trigger())
       "flipban" -> break_on_flipban(tournament, team_id)
-      _ -> nil
+      _         -> nil
     end
   end
 
@@ -1816,7 +1706,7 @@ defmodule Milk.Tournaments do
       "basic" -> Basic.trigger!(keyname, Basic.pend_trigger())
       # TODO: ban_mapは片方しかならないので、それ用の処理を入れる
       # "flipban" -> FlipBan.trigger!(keyname, FlipBan.pend_trigger())
-      _ -> nil
+      _       -> nil
     end
   end
 
@@ -1869,10 +1759,9 @@ defmodule Milk.Tournaments do
     tournament.id
     |> __MODULE__.get_opponent(winner_id)
     |> case do
-      {:ok, _} -> proceed_to_next_match(tournament, winner_id)
+      {:ok, _}     -> proceed_to_next_match(tournament, winner_id)
       {:wait, nil} -> wait_for_next_match(tournament, winner_id)
-      #_ -> {:error, "Failed to get opponent"}
-      _ -> {:ok, nil}
+      _            -> {:ok, nil}
     end
   end
 
@@ -1894,9 +1783,9 @@ defmodule Milk.Tournaments do
       ~> keyname
 
       case rule do
-        "basic" -> Basic.trigger!(keyname, Basic.next_trigger())
+        "basic"   -> Basic.trigger!(keyname, Basic.next_trigger())
         "flipban" -> FlipBan.trigger!(keyname, FlipBan.next_trigger())
-        _ -> {:error, "Invalid tournament rule"}
+        _         -> {:error, "Invalid tournament rule"}
       end
     end)
     |> Enum.all?(&match?({:ok, _}, &1))
@@ -1910,9 +1799,9 @@ defmodule Milk.Tournaments do
       keyname = Rules.adapt_keyname(user_id)
 
       case rule do
-        "basic" -> Basic.trigger!(keyname, Basic.next_trigger())
+        "basic"   -> Basic.trigger!(keyname, Basic.next_trigger())
         "flipban" -> FlipBan.trigger!(keyname, FlipBan.next_trigger())
-        _ -> {:error, "Invalid tournament rule"}
+        _         -> {:error, "Invalid tournament rule"}
       end
     end)
     |> Enum.all?(&match?({:ok, _}, &1))
@@ -1924,9 +1813,9 @@ defmodule Milk.Tournaments do
     keyname = Rules.adapt_keyname(winner_id)
 
     case rule do
-      "basic" -> Basic.trigger!(keyname, Basic.alone_trigger())
+      "basic"   -> Basic.trigger!(keyname, Basic.alone_trigger())
       "flipban" -> FlipBan.trigger!(keyname, FlipBan.alone_trigger())
-      _ -> {:error, "Invalid tournament rule"}
+      _         -> {:error, "Invalid tournament rule"}
     end
   end
 
@@ -1949,9 +1838,9 @@ defmodule Milk.Tournaments do
 
   defp do_change_loser_state(keyname, rule) do
     case rule do
-      "basic" -> Basic.trigger!(keyname, Basic.lose_trigger())
+      "basic"   -> Basic.trigger!(keyname, Basic.lose_trigger())
       "flipban" -> FlipBan.trigger!(keyname, FlipBan.lose_trigger())
-      _ -> {:error, "Invalid tournament rule"}
+      _         -> {:error, "Invalid tournament rule"}
     end
   end
 
@@ -1963,8 +1852,8 @@ defmodule Milk.Tournaments do
   def finish(tournament_id, winner_user_id) do
     tournament = __MODULE__.get_tournament(tournament_id)
 
-    with {:ok, _} <- finish_participants(tournament),
-         {:ok, _} <- finish_topics(tournament_id),
+    with {:ok, _}          <- finish_participants(tournament),
+         {:ok, _}          <- finish_topics(tournament_id),
          {:ok, tournament} <- do_finish(tournament, winner_user_id) do
       {:ok, tournament}
     else
@@ -2019,7 +1908,7 @@ defmodule Milk.Tournaments do
   end
 
   defp do_finish(%Tournament{} = tournament, winner_user_id) do
-    with {:ok, _} <- create_tournament_log_on_finish(tournament, winner_user_id),
+    with {:ok, _}          <- create_tournament_log_on_finish(tournament, winner_user_id),
          {:ok, tournament} <- __MODULE__.delete_tournament(tournament) do
       {:ok, tournament}
     else
@@ -2063,8 +1952,7 @@ defmodule Milk.Tournaments do
   @doc """
   Initialize fight result of match list of teams.
   """
-  @spec initialize_match_list_of_team_with_fight_result(match_list()) ::
-          match_list_with_fight_result()
+  @spec initialize_match_list_of_team_with_fight_result(match_list()) :: match_list_with_fight_result()
   def initialize_match_list_of_team_with_fight_result(match_list) do
     Tournamex.initialize_match_list_of_team_with_fight_result(match_list)
   end
@@ -2072,8 +1960,7 @@ defmodule Milk.Tournaments do
   @doc """
   Put value on brackets.
   """
-  @spec put_value_on_brackets(match_list(), integer() | String.t() | atom(), any()) ::
-          match_list() | match_list_with_fight_result()
+  @spec put_value_on_brackets(match_list(), integer() | String.t() | atom(), any()) :: match_list() | match_list_with_fight_result()
   def put_value_on_brackets(match_list, key, value) do
     Tournamex.put_value_on_brackets(match_list, key, value)
   end
@@ -2233,9 +2120,9 @@ defmodule Milk.Tournaments do
     keyname = Rules.adapt_keyname(user_id)
 
     case tournament.rule do
-      "basic" -> Basic.build_dfa_instance(keyname, is_team: tournament.is_team)
+      "basic"   -> Basic.build_dfa_instance(keyname, is_team: tournament.is_team)
       "flipban" -> FlipBan.build_dfa_instance(keyname, is_team: tournament.is_team)
-      _ -> raise "Invalid tournament"
+      _         -> raise "Invalid tournament"
     end
   end
 
@@ -2313,8 +2200,7 @@ defmodule Milk.Tournaments do
       {:error, %Ecto.Changeset{}}
 
   """
-  @spec update_tournament_chat_topic(TournamentChatTopic.t(), map()) ::
-          {:ok, TournamentChatTopic.t()} | {:error, Ecto.Changeset.t()}
+  @spec update_tournament_chat_topic(TournamentChatTopic.t(), map()) :: {:ok, TournamentChatTopic.t()} | {:error, Ecto.Changeset.t()}
   def update_tournament_chat_topic(%TournamentChatTopic{} = tournament_chat_topic, attrs) do
     tournament_chat_topic
     |> TournamentChatTopic.changeset(attrs)
@@ -2343,11 +2229,11 @@ defmodule Milk.Tournaments do
   """
   @spec force_to_promote_rank(map()) :: {:ok, Entrant.t() | Team.t()} | {:error, Ecto.Changeset.t() | String.t() | nil}
   def force_to_promote_rank(%{"user_id" => user_id, "tournament_id" => tournament_id} = attrs) do
-    with {:ok, nil} <- validate_user_id(attrs),
-         {:ok, attrs} <- validate_tournament_id(attrs),
-         {:ok, nil} <- validate_tournament_started(attrs),
+    with {:ok, nil}       <- validate_user_id(attrs),
+         {:ok, attrs}     <- validate_tournament_id(attrs),
+         {:ok, nil}       <- validate_tournament_started(attrs),
          {:ok, next_rank} <- find_next_rank(attrs),
-         {:ok, entrant} <- __MODULE__.update_entrant(tournament_id, user_id, %{rank: next_rank}) do
+         {:ok, entrant}   <- __MODULE__.update_entrant(tournament_id, user_id, %{rank: next_rank}) do
       {:ok, entrant}
     else
       error -> error
@@ -2400,15 +2286,15 @@ defmodule Milk.Tournaments do
   end
 
   @spec calculate_next_rank(integer()) :: integer()
-  defp calculate_next_rank(0), do: 1
-  defp calculate_next_rank(1), do: 1
+  defp calculate_next_rank(0),                                do: 1
+  defp calculate_next_rank(1),                                do: 1
   defp calculate_next_rank(rank) when is_power_of_two?(rank), do: div(rank, 2)
-  defp calculate_next_rank(rank) when rank <= 4, do: 2
+  defp calculate_next_rank(rank) when rank <= 4,              do: 2
 
   @spec calculate_next_rank(integer(), integer()) :: integer()
   defp calculate_next_rank(rank, next_min \\ 8)
   defp calculate_next_rank(rank, next_min) when rank <= next_min, do: div(next_min, 2)
-  defp calculate_next_rank(rank, next_min), do: calculate_next_rank(rank, next_min * 2)
+  defp calculate_next_rank(rank, next_min),                       do: calculate_next_rank(rank, next_min * 2)
 
   @doc """
   Promote rank
@@ -2419,15 +2305,12 @@ defmodule Milk.Tournaments do
     |> tournament_exists?()
     |> tournament_start_check()
     |> case do
-      {:ok, _} ->
-        get_match_list_if_possible(tournament_id)
-
-      {:error, error} ->
-        {:error, error}
+      {:ok, _}        -> get_match_list_if_possible(tournament_id)
+      {:error, error} -> {:error, error}
     end
     |> case do
       {:ok, match_list} -> update_rank(match_list, user_id, tournament_id)
-      {:error, error} -> {:error, error}
+      {:error, error}   -> {:error, error}
     end
   end
 
@@ -2437,12 +2320,12 @@ defmodule Milk.Tournaments do
     |> tournament_exists?()
     |> tournament_start_check()
     |> case do
-      {:ok, _} -> get_match_list_if_possible(tournament_id)
+      {:ok, _}        -> get_match_list_if_possible(tournament_id)
       {:error, error} -> {:error, error}
     end
     |> case do
       {:ok, match_list} -> update_team_rank(match_list, team_id, tournament_id)
-      {:error, error} -> {:error, error}
+      {:error, error}   -> {:error, error}
     end
   end
 
@@ -2458,11 +2341,8 @@ defmodule Milk.Tournaments do
     tournament_id
     |> Progress.get_match_list()
     |> case do
-      [] ->
-        {:error, nil}
-
-      match_list ->
-        {:ok, match_list}
+      []         -> {:error, nil}
+      match_list -> {:ok, match_list}
     end
   end
 
@@ -2482,14 +2362,9 @@ defmodule Milk.Tournaments do
         ~> entrant
         |> Map.get(:rank)
         |> case do
-          rank when rank > opponents_rank ->
-            update_entrant(opponent, %{rank: rank})
-
-          rank when rank < opponents_rank ->
-            update_entrant(entrant, %{rank: opponents_rank})
-
-          _ ->
-            nil
+          rank when rank > opponents_rank -> update_entrant(opponent, %{rank: rank})
+          rank when rank < opponents_rank -> update_entrant(entrant, %{rank: opponents_rank})
+          _                               -> nil
         end
 
         opponent
@@ -2508,11 +2383,8 @@ defmodule Milk.Tournaments do
         |> get_entrant_by_user_id_and_tournament_id(tournament_id)
         |> __MODULE__.update_entrant(%{rank: updated_rank})
 
-      {:wait, nil} ->
-        {:wait, nil}
-
-      {:error, _} ->
-        {:error, nil}
+      {:wait, nil} -> {:wait, nil}
+      {:error, _}  -> {:error, nil}
     end
   end
 
