@@ -808,13 +808,20 @@ defmodule Milk.Tournaments do
     tournament_id
     |> __MODULE__.state!(user_id)
     |> change_map_state(user_id, tournament_id, map_id_list, opponent_id, "banned")
-    |> case do
-      {:ok, _} -> renew_state_after_choosing_maps(user_id, tournament_id)
-      {:error, error} -> {:error, error}
+    ~> change_map_state_result
+
+    with {:ok, _} <- change_map_state_result,
+         tournament when not is_nil(tournament) <- __MODULE__.get_tournament(tournament_id),
+         {:ok, _} <- renew_redis_after_choosing_maps(user_id, tournament_id),
+         {:ok, _} <- change_state_on_ban(tournament, user_id, opponent_id) do
+      {:ok, nil}
+    else
+      nil -> {:error, "tournament is nil"}
+      error -> error
     end
   end
 
-  defp change_map_state(state, _, _, _, _, _) when state != "ShouldBan" and state != "ShouldChooseMap", do: {:error, "invalid state"}
+  defp change_map_state(state, _, _, _, _, _) when state != "ShouldBanMap" and state != "ShouldChooseMap", do: {:error, "invalid state"}
   defp change_map_state(_, _, _, _, opponent_id, _) when not is_integer(opponent_id), do: {:error, "opponent id is not integer"}
   defp change_map_state(_, user_id, tournament_id, map_id_list, opponent_id, map_state) do
     my_id = Progress.get_necessary_id(tournament_id, user_id)
@@ -842,6 +849,45 @@ defmodule Milk.Tournaments do
     end)
   end
 
+  defp change_state_on_ban(%Tournament{rule: rule, id: tournament_id, is_team: is_team}, user_id, opponent_id) do
+    id = Progress.get_necessary_id(tournament_id, user_id)
+    is_head = __MODULE__.is_head_of_coin?(tournament_id, id, opponent_id)
+
+    # TODO: match_listの中身をteam_idからleader_idに変えたら不要になる処理
+    if is_team do
+      opponent_id
+      |> __MODULE__.get_leader()
+      |> Map.get(:user_id)
+    else
+      opponent_id
+    end
+    ~> opponent_id
+
+    keyname = Rules.adapt_keyname(user_id)
+    opponent_keyname = Rules.adapt_keyname(opponent_id)
+
+    # NOTE: 自分のコインが裏で、banを終えていた場合遷移を変える
+    do_change_state_on_ban(is_head, rule, keyname, opponent_keyname)
+  end
+
+  defp do_change_state_on_ban(_, rule, _, _) when rule != "flipban", do: {:error, "Invalid tournament rule"}
+  defp do_change_state_on_ban(true, _, keyname, opponent_keyname) do
+    with {:ok, _} <- FlipBan.trigger!(keyname, FlipBan.observe_ban_map_trigger()),
+         {:ok, _} <- FlipBan.trigger!(opponent_keyname, FlipBan.ban_map_trigger()) do
+      {:ok, nil}
+    else
+      error -> error
+    end
+  end
+  defp do_change_state_on_ban(false, _, keyname, opponent_keyname) do
+    with {:ok, _} <- FlipBan.trigger!(keyname, FlipBan.observe_choose_map_trigger()),
+         {:ok, _} <- FlipBan.trigger!(opponent_keyname, FlipBan.choose_map_trigger()) do
+      {:ok, nil}
+    else
+      error -> error
+    end
+  end
+
   @doc """
   Choose a map.
   """
@@ -860,7 +906,7 @@ defmodule Milk.Tournaments do
     |> __MODULE__.state!(user_id)
     |> change_map_state(user_id, tournament_id, map_id_list, opponent_id, "selected")
     |> case do
-      {:ok, _} -> renew_state_after_choosing_maps(user_id, tournament_id)
+      {:ok, _} -> renew_redis_after_choosing_maps(user_id, tournament_id)
       {:error, error} -> {:error, error}
     end
   end
@@ -883,7 +929,7 @@ defmodule Milk.Tournaments do
     |> __MODULE__.state!(user_id)
     |> do_choose_ad(user_id, tournament_id, opponent_id, is_attack_side)
     |> case do
-      {:ok, nil} -> renew_state_after_choosing_maps(user_id, tournament_id)
+      {:ok, nil} -> renew_redis_after_choosing_maps(user_id, tournament_id)
       {:error, error} -> {:error, error}
     end
   end
@@ -900,18 +946,18 @@ defmodule Milk.Tournaments do
     end
   end
 
-  @spec renew_state_after_choosing_maps(integer(), integer()) :: {:ok, nil}
-  defp renew_state_after_choosing_maps(user_id, tournament_id) do
-    id = Progress.get_necessary_id(tournament_id, user_id)
+  @spec renew_redis_after_choosing_maps(integer(), integer()) :: {:ok, nil}
+  defp renew_redis_after_choosing_maps(_user_id, _tournament_id) do
+    # id = Progress.get_necessary_id(tournament_id, user_id)
 
-    {:ok, opponent} = __MODULE__.get_opponent(tournament_id, user_id)
+    # {:ok, opponent} = __MODULE__.get_opponent(tournament_id, user_id)
 
-    order = Progress.get_ban_order(tournament_id, id)
-    opponent_order = Progress.get_ban_order(tournament_id, opponent.id)
-    Progress.delete_ban_order(tournament_id, id)
-    Progress.delete_ban_order(tournament_id, opponent.id)
-    Progress.insert_ban_order(tournament_id, id, order + 1)
-    Progress.insert_ban_order(tournament_id, opponent.id, opponent_order + 1)
+    # order = Progress.get_ban_order(tournament_id, id)
+    # opponent_order = Progress.get_ban_order(tournament_id, opponent.id)
+    # Progress.delete_ban_order(tournament_id, id)
+    # Progress.delete_ban_order(tournament_id, opponent.id)
+    # Progress.insert_ban_order(tournament_id, id, order + 1)
+    # Progress.insert_ban_order(tournament_id, opponent.id, opponent_order + 1)
 
     {:ok, nil}
   end
@@ -1754,7 +1800,7 @@ defmodule Milk.Tournaments do
   end
 
   @spec break_waiting(integer(), Tournament.t()) :: any()
-  defp break_waiting(team_id, %Tournament{id: id, is_team: true, rule: rule} = tournament) do
+  defp break_waiting(team_id, %Tournament{is_team: true, rule: rule} = tournament) do
     # NOTE: ここでget_leaderをしているのは、チームにおいて報告系を行うのはリーダーしかいないという前提に基づいた処理になっている。
     team_id
     |> __MODULE__.get_leader()

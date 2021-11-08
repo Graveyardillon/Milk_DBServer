@@ -813,9 +813,7 @@ defmodule MilkWeb.TournamentController do
     tournament_id
     |> Tools.to_integer_as_needed()
     |> Tournaments.get_maps_by_tournament_id()
-    |> Enum.map(fn map ->
-      Map.put(map, :state, "not_selected")
-    end)
+    |> Enum.map(&Map.put(&1, :state, "not_selected"))
     ~> maps
 
     render(conn, "maps.json", maps: maps)
@@ -845,11 +843,7 @@ defmodule MilkWeb.TournamentController do
   @doc """
   Ban maps.
   """
-  def ban_maps(conn, %{
-        "user_id" => user_id,
-        "tournament_id" => tournament_id,
-        "map_id_list" => map_id_list
-      }) do
+  def ban_maps(conn, %{"user_id" => user_id, "tournament_id" => tournament_id, "map_id_list" => map_id_list}) do
     user_id = Tools.to_integer_as_needed(user_id)
     tournament_id = Tools.to_integer_as_needed(tournament_id)
     map_id_list = Enum.map(map_id_list, fn id -> Tools.to_integer_as_needed(id) end)
@@ -905,11 +899,7 @@ defmodule MilkWeb.TournamentController do
   @doc """
   Choose a map.
   """
-  def choose_map(conn, %{
-        "user_id" => user_id,
-        "tournament_id" => tournament_id,
-        "map_id" => map_id
-      }) do
+  def choose_map(conn, %{"user_id" => user_id, "tournament_id" => tournament_id, "map_id" => map_id}) do
     user_id = Tools.to_integer_as_needed(user_id)
     tournament_id = Tools.to_integer_as_needed(tournament_id)
     map_id = Tools.to_integer_as_needed(map_id)

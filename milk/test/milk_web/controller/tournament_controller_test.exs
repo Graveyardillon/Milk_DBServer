@@ -2825,15 +2825,37 @@ defmodule MilkWeb.TournamentControllerTest do
       is_team2_head = json_response(conn, 200)["is_coin_head"]
 
       assert is_team1_head <|> is_team2_head
-      assert [{leader1_id, team1_id, false}, {leader2_id, team2_id, true}] = Enum.sort_by([{leader1_id, team1_id, is_team1_head}, {leader2_id, team2_id, is_team2_head}], &elem(&1, 2))
+      assert [{leader1_id, team1_id, true}, {leader2_id, team2_id, false}] = Enum.sort_by([{leader1_id, team1_id, is_team1_head}, {leader2_id, team2_id, is_team2_head}], &elem(&1, 2), :desc)
+
+      conn = get(conn, Routes.tournament_path(conn, :maps), %{"tournament_id" => tournament_id})
+
+      conn
+      |> json_response(200)
+      |> Map.get("data")
+      |> Enum.map(&(&1["id"]))
+      ~> map_id_list
 
       conn = get(conn, Routes.tournament_path(conn, :get_match_information), %{"tournament_id" => tournament_id, "user_id" => leader1_id})
+      assert json_response(conn, 200)["is_coin_head"]
+      assert json_response(conn, 200)["state"] == "ShouldBanMap"
+      assert json_response(conn, 200)["opponent"]["id"] == team2_id
+
+      conn = get(conn, Routes.tournament_path(conn, :get_match_information), %{"tournament_id" => tournament_id, "user_id" => leader2_id})
       refute json_response(conn, 200)["is_coin_head"]
+      assert json_response(conn, 200)["state"] == "ShouldObserveBan"
+      assert json_response(conn, 200)["opponent"]["id"] == team1_id
+
+      maps = [Enum.at(map_id_list, 0), Enum.at(map_id_list, 1)]
+      conn = post(conn, Routes.tournament_path(conn, :ban_maps), %{"user_id" => leader1_id, "tournament_id" => tournament_id, "map_id_list" => maps})
+      assert json_response(conn, 200)["result"]
+
+      conn = get(conn, Routes.tournament_path(conn, :get_match_information), %{"tournament_id" => tournament_id, "user_id" => leader1_id})
+      assert json_response(conn, 200)["is_coin_head"]
       assert json_response(conn, 200)["state"] == "ShouldObserveBan"
       assert json_response(conn, 200)["opponent"]["id"] == team2_id
 
       conn = get(conn, Routes.tournament_path(conn, :get_match_information), %{"tournament_id" => tournament_id, "user_id" => leader2_id})
-      assert json_response(conn, 200)["is_coin_head"]
+      refute json_response(conn, 200)["is_coin_head"]
       assert json_response(conn, 200)["state"] == "ShouldBanMap"
       assert json_response(conn, 200)["opponent"]["id"] == team1_id
     end
