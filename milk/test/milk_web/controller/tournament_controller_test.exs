@@ -2457,7 +2457,6 @@ defmodule MilkWeb.TournamentControllerTest do
   end
 
   describe "state machine with controller" do
-    # todo: loserのテスト
     test "basic (individual)", %{conn: conn} do
       user = fixture_user()
       attrs = %{
@@ -2652,6 +2651,13 @@ defmodule MilkWeb.TournamentControllerTest do
       assert json_response(conn, 200)["validated"]
       assert json_response(conn, 200)["completed"]
       refute json_response(conn, 200)["is_finished"]
+
+      conn = get(conn, Routes.tournament_path(conn, :get_match_information), %{"tournament_id" => tournament_id, "user_id" => user2_id})
+      assert json_response(conn, 200)["state"] == "IsLoser"
+      conn = get(conn, Routes.tournament_path(conn, :state), %{"tournament_id" => tournament_id, "user_id" => user2_id})
+      assert json_response(conn, 200)["state"] == "IsLoser"
+
+      # TODO: winnerのassert
     end
 
     test "flipban (team)", %{conn: conn} do
@@ -2802,32 +2808,33 @@ defmodule MilkWeb.TournamentControllerTest do
       match_list = json_response(conn, 200)["match_list"]
 
       # NOTE: 第2回戦
-      # match_list
-      # |> List.flatten()
-      # |> then(fn list ->
-      #   assert length(list) == capacity / 2
-      #   list
-      # end)
-      # |> Enum.map(fn team_id ->
-      #   team_id
-      #   |> Tournaments.get_leader()
-      #   |> Map.get(:user_id)
-      #   ~> leader_id
+      match_list
+      |> List.flatten()
+      |> then(fn list ->
+        assert length(list) == capacity / 2
+        list
+      end)
+      |> Enum.map(fn team_id ->
+        team_id
+        |> Tournaments.get_leader()
+        |> Map.get(:user_id)
+        ~> leader_id
 
-      #   {:ok, team_id, leader_id}
-      # end)
-      # |> Enum.chunk_every(2)
-      # |> Enum.each(fn [{:ok, team1_id, leader1_id}, {:ok, team2_id, leader2_id}] ->
-      #   flip_fight(conn, team1_id, leader1_id, team2_id, leader2_id, tournament_id)
-      # end)
+        {:ok, team_id, leader_id}
+      end)
+      |> Enum.chunk_every(2)
+      |> Enum.each(fn [{:ok, team1_id, leader1_id}, {:ok, team2_id, leader2_id}] ->
+        flip_fight(conn, team1_id, leader1_id, team2_id, leader2_id, tournament_id)
+      end)
     end
 
     defp flip_fight(conn, team1_id, leader1_id, team2_id, leader2_id, tournament_id) do
       # NOTE: flip前の状態確認
       conn = get(conn, Routes.tournament_path(conn, :get_match_information), %{"tournament_id" => tournament_id, "user_id" => leader1_id})
+      json_response(conn, 200)
+      assert json_response(conn, 200)["state"] == "ShouldFlipCoin"
       assert json_response(conn, 200)["opponent"]["id"] == team2_id
       assert is_nil(json_response(conn, 200)["score"])
-      assert json_response(conn, 200)["state"] == "ShouldFlipCoin"
       assert json_response(conn, 200)["rule"] == "flipban"
       conn = get(conn, Routes.tournament_path(conn, :state), %{"tournament_id" => tournament_id, "user_id" => leader1_id})
       assert json_response(conn, 200)["state"] == "ShouldFlipCoin"
@@ -2949,6 +2956,7 @@ defmodule MilkWeb.TournamentControllerTest do
       refute json_response(conn, 200)["is_finished"]
 
       conn = get(conn, Routes.tournament_path(conn, :get_match_information), %{"tournament_id" => tournament_id, "user_id" => leader1_id})
+      assert json_response(conn, 200)["state"] == "IsAlone" || json_response(conn, 200)["state"] == "ShouldFlipCoin"
       refute json_response(conn, 200)["score"]
       conn = get(conn, Routes.tournament_path(conn, :get_match_information), %{"tournament_id" => tournament_id, "user_id" => leader2_id})
       assert json_response(conn, 200)["state"] == "IsLoser"

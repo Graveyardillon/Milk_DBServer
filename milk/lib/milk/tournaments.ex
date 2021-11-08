@@ -1030,31 +1030,6 @@ defmodule Milk.Tournaments do
   end
 
   @doc """
-  Change state on claim score.
-  Although most of other functions which changes state is defined in private,
-  this function is used in public.
-  """
-  # def change_state_on_claim_score(%Tournament{rule: rule, is_team: true}, winner_id, loser_id) do
-  #   winner_id
-  #   |> __MODULE__.get_leader()
-  #   |> Map.get(:user_id)
-  #   |> Rules.adapt_keyname()
-  #   ~> winner_keyname
-
-  #   loser_id
-  #   |> __MODULE__.get_leader()
-  #   |> Map.get(:user_id)
-  #   |> Rules.adapt_keyname()
-  #   ~> loser_keyname
-
-  #   case rule do
-  #     "flipban" ->
-  #       FlipBan.trigger!(winner_keyname, FlipBan.alone)
-  #     _ -> {:error, "Invalid tournament rule"}
-  #   end
-  # end
-
-  @doc """
   Deletes a tournament.
 
   ## Examples
@@ -1966,7 +1941,6 @@ defmodule Milk.Tournaments do
     # NOTE: delete_loser_processの後に実行されているので、match_listは更新されているはず
     tournament.id
     |> __MODULE__.get_opponent(winner_id)
-    |> IO.inspect(label: :asdf)
     |> case do
       {:ok, _} -> proceed_to_next_match(tournament, winner_id)
       {:wait, nil} -> wait_for_next_match(tournament, winner_id)
@@ -1976,7 +1950,12 @@ defmodule Milk.Tournaments do
   end
 
   @spec proceed_to_next_match(Tournament.t(), integer()) :: {:ok, any()} | {:error, String.t()}
-  defp proceed_to_next_match(%Tournament{rule: rule, is_team: true, id: id}, winner_team_id) do
+  defp proceed_to_next_match(%Tournament{rule: rule, is_team: true, id: id}, winner_leader_id) do
+    id
+    |> __MODULE__.get_team_by_tournament_id_and_user_id(winner_leader_id)
+    |> Map.get(:id)
+    ~> winner_team_id
+
     id
     |> Progress.get_match_list()
     |> find_match(winner_team_id)
