@@ -1030,6 +1030,31 @@ defmodule Milk.Tournaments do
   end
 
   @doc """
+  Change state on claim score.
+  Although most of other functions which changes state is defined in private,
+  this function is used in public.
+  """
+  # def change_state_on_claim_score(%Tournament{rule: rule, is_team: true}, winner_id, loser_id) do
+  #   winner_id
+  #   |> __MODULE__.get_leader()
+  #   |> Map.get(:user_id)
+  #   |> Rules.adapt_keyname()
+  #   ~> winner_keyname
+
+  #   loser_id
+  #   |> __MODULE__.get_leader()
+  #   |> Map.get(:user_id)
+  #   |> Rules.adapt_keyname()
+  #   ~> loser_keyname
+
+  #   case rule do
+  #     "flipban" ->
+  #       FlipBan.trigger!(winner_keyname, FlipBan.alone)
+  #     _ -> {:error, "Invalid tournament rule"}
+  #   end
+  # end
+
+  @doc """
   Deletes a tournament.
 
   ## Examples
@@ -1924,11 +1949,24 @@ defmodule Milk.Tournaments do
   勝者のstateを変更するための関数
   """
   @spec change_winner_state(Tournament.t(), integer()) :: {:ok, any()} | {:error, String.t()}
-  def change_winner_state(tournament, winner_id) do
+  def change_winner_state(%Tournament{is_team: false} = tournament, winner_user_id) do
+    do_change_winner_state(tournament, winner_user_id)
+  end
+  def change_winner_state(%Tournament{is_team: true} = tournament, winner_team_id) do
+    winner_team_id
+    |> __MODULE__.get_leader()
+    |> Map.get(:user_id)
+    ~> winner_leader_id
+
+    do_change_winner_state(tournament, winner_leader_id)
+  end
+
+  defp do_change_winner_state(tournament, winner_id) do
     # NOTE: 次の対戦相手がいればshould_start_matchに変える
     # NOTE: delete_loser_processの後に実行されているので、match_listは更新されているはず
     tournament.id
     |> __MODULE__.get_opponent(winner_id)
+    |> IO.inspect(label: :asdf)
     |> case do
       {:ok, _} -> proceed_to_next_match(tournament, winner_id)
       {:wait, nil} -> wait_for_next_match(tournament, winner_id)
@@ -1976,20 +2014,7 @@ defmodule Milk.Tournaments do
   end
 
   @spec wait_for_next_match(Tournament.t(), integer()) :: {:ok, any()} | {:error, String.t()}
-  defp wait_for_next_match(%Tournament{rule: rule, is_team: true}, winner_team_id) do
-    winner_team_id
-    |> __MODULE__.get_leader()
-    |> Map.get(:user_id)
-    |> Rules.adapt_keyname()
-    ~> keyname
-
-    case rule do
-      "basic" -> Basic.trigger!(keyname, Basic.alone_trigger())
-      "flipban" -> FlipBan.trigger!(keyname, FlipBan.alone_trigger())
-      _ -> {:error, "Invalid tournament rule"}
-    end
-  end
-  defp wait_for_next_match(%Tournament{rule: rule, is_team: false}, winner_id) do
+  defp wait_for_next_match(%Tournament{rule: rule}, winner_id) do
     keyname = Rules.adapt_keyname(winner_id)
 
     case rule do

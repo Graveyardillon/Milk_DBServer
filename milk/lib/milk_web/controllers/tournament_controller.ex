@@ -1260,8 +1260,7 @@ defmodule MilkWeb.TournamentController do
   @doc """
   Claim win of the user.
   """
-  def claim_win(conn, %{"opponent_id" => opponent_id, "user_id" => user_id, "tournament_id" => tournament_id}) do
-    _opponent_id = Tools.to_integer_as_needed(opponent_id)
+  def claim_win(conn, %{"user_id" => user_id, "tournament_id" => tournament_id}) do
     user_id = Tools.to_integer_as_needed(user_id)
     tournament_id = Tools.to_integer_as_needed(tournament_id)
 
@@ -1279,12 +1278,7 @@ defmodule MilkWeb.TournamentController do
   @doc """
   Claim lose of the user.
   """
-  def claim_lose(conn, %{
-        "opponent_id" => opponent_id,
-        "user_id" => user_id,
-        "tournament_id" => tournament_id
-      }) do
-    _opponent_id = Tools.to_integer_as_needed(opponent_id)
+  def claim_lose(conn, %{"user_id" => user_id, "tournament_id" => tournament_id}) do
     user_id = Tools.to_integer_as_needed(user_id)
     tournament_id = Tools.to_integer_as_needed(tournament_id)
 
@@ -1306,9 +1300,8 @@ defmodule MilkWeb.TournamentController do
   1. スコアをredisに登録する
   2. 相手もスコアを登録していたらマッチが進む
   """
-  def claim_score(conn, %{"tournament_id" => tournament_id, "user_id" => user_id, "opponent_id" => opponent_id, "score" => score, "match_index" => match_index}) do
+  def claim_score(conn, %{"tournament_id" => tournament_id, "user_id" => user_id, "score" => score, "match_index" => match_index}) do
     user_id = Tools.to_integer_as_needed(user_id)
-    _opponent_id = Tools.to_integer_as_needed(opponent_id)
     tournament_id = Tools.to_integer_as_needed(tournament_id)
     score = Tools.to_integer_as_needed(score)
     match_index = Tools.to_integer_as_needed(match_index)
@@ -1368,11 +1361,11 @@ defmodule MilkWeb.TournamentController do
   @spec proceed_to_next_match(Tournament.t(), integer(), integer(), integer(), integer(), integer()) :: {:ok, nil} | {:error, String.t()}
   defp proceed_to_next_match(tournament, winner_id, loser_id, score, opponent_score, match_index) when is_integer(opponent_score) do
     with {:ok, nil} <- notify_discord_on_match_finished_as_needed(tournament, winner_id, loser_id, score, opponent_score),
-         {:ok, _} <- Tournaments.delete_loser_process(tournament.id, [loser_id]),
+         {:ok, _}   <- Tournaments.delete_loser_process(tournament.id, [loser_id]),
          {:ok, nil} <- Tournaments.store_score(tournament.id, winner_id, loser_id, opponent_score, score, match_index),
          {:ok, nil} <- delete_old_info_for_next_match(tournament.id, [winner_id, loser_id]),
-         {:ok, _} <- Tournaments.change_winner_state(tournament, winner_id) |> IO.inspect(label: :winner),
-         {:ok, _} <- Tournaments.change_loser_state(tournament, loser_id) |> IO.inspect(label: :loser),
+         {:ok, _}   <- Tournaments.change_winner_state(tournament, winner_id) |> IO.inspect(label: :winner),
+         {:ok, _}   <- Tournaments.change_loser_state(tournament, loser_id) |> IO.inspect(label: :loser),
          {:ok, nil} <- finish_as_needed?(tournament.id, winner_id) do
       {:ok, nil}
     else
@@ -1387,7 +1380,7 @@ defmodule MilkWeb.TournamentController do
       with {:ok, nil} <- Progress.delete_match_pending_list(id, tournament_id),
            {:ok, nil} <- Progress.delete_score(tournament_id, id),
            {:ok, nil} <- Progress.delete_duplicate_users_all(tournament_id),
-           {:ok, _} <- Tournaments.delete_map_selections(tournament_id, id),
+           {:ok, _}   <- Tournaments.delete_map_selections(tournament_id, id),
            {:ok, nil} <- Progress.delete_is_attacker_side(id, tournament_id),
            {:ok, nil} <- Progress.delete_ban_order(tournament_id, id) do
         {:ok, nil}
