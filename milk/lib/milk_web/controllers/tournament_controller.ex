@@ -944,11 +944,7 @@ defmodule MilkWeb.TournamentController do
   @doc """
   Choose a map.
   """
-  def choose_ad(conn, %{
-        "user_id" => user_id,
-        "tournament_id" => tournament_id,
-        "is_attacker_side" => is_attacker_side
-      }) do
+  def choose_ad(conn, %{"user_id" => user_id, "tournament_id" => tournament_id, "is_attacker_side" => is_attacker_side}) do
     user_id = Tools.to_integer_as_needed(user_id)
     tournament_id = Tools.to_integer_as_needed(tournament_id)
 

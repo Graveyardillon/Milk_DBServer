@@ -961,9 +961,16 @@ defmodule Milk.Tournaments do
     tournament_id
     |> __MODULE__.state!(user_id)
     |> do_choose_ad(user_id, tournament_id, opponent_id, is_attack_side)
-    |> case do
-      {:ok, nil} -> renew_redis_after_choosing_maps(user_id, tournament_id)
-      {:error, error} -> {:error, error}
+    ~> choose_ad_result
+
+    with {:ok, _} <- choose_ad_result,
+         {:ok, _} <- renew_redis_after_choosing_maps(user_id, tournament_id),
+         tournament when not is_nil(tournament) <- __MODULE__.get_tournament(tournament_id),
+         {:ok, _} <- change_state_on_choose_ad(tournament, user_id, opponent_id) do
+      {:ok, nil}
+    else
+      nil -> {:error, "tournament is nil"}
+      error -> error
     end
   end
 
@@ -976,6 +983,33 @@ defmodule Milk.Tournaments do
       {:ok, nil}
     else
       _ -> {:error, "failed to insert is_attacker_side"}
+    end
+  end
+
+  defp change_state_on_choose_ad(%Tournament{rule: rule, is_team: is_team}, user_id, opponent_id) do
+    # TODO: match_listの中身をteam_idからleader_idに変えたら不要になる処理
+    if is_team do
+      opponent_id
+      |> __MODULE__.get_leader()
+      |> Map.get(:user_id)
+    else
+      opponent_id
+    end
+    ~> opponent_id
+
+    keyname = Rules.adapt_keyname(user_id)
+    opponent_keyname = Rules.adapt_keyname(opponent_id)
+
+    do_change_state_on_choose_ad(rule, keyname, opponent_keyname)
+  end
+
+  defp do_change_state_on_choose_ad(rule, _, _) when rule != "flipban", do: {:error, "Invalid tournament rule"}
+  defp do_change_state_on_choose_ad(_, keyname, opponent_keyname) do
+    with {:ok, _} <- FlipBan.trigger!(keyname, FlipBan.pend_trigger()),
+         {:ok, _} <- FlipBan.trigger!(opponent_keyname, FlipBan.pend_trigger()) do
+      {:ok, nil}
+    else
+      error -> error
     end
   end
 
