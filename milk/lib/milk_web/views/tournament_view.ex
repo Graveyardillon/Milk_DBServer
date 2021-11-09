@@ -358,7 +358,10 @@ defmodule MilkWeb.TournamentView do
   end
 
   def render("loser.json", %{list: list}) do
-    %{updated_match_list: list}
+    %{
+      result: true,
+      updated_match_list: list
+    }
   end
 
   def render("tournament_topics.json", %{topics: topics}) do
@@ -389,7 +392,8 @@ defmodule MilkWeb.TournamentView do
             language: master.language,
             bio: master.bio
           }
-        end)
+        end),
+      result: true
     }
   end
 
@@ -487,6 +491,7 @@ defmodule MilkWeb.TournamentView do
     }
   end
 
+  # NOTE: フロント側で型を固定してある
   def render("maps.json", %{maps: maps}) do
     %{
       data:

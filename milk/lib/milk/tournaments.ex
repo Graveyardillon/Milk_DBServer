@@ -1203,23 +1203,25 @@ defmodule Milk.Tournaments do
     tournament_id = Tools.to_integer_as_needed(tournament_id)
     user_id = Tools.to_integer_as_needed(user_id)
 
-    unless Repo.exists?(from e in Entrant, where: e.tournament_id == ^tournament_id and e.user_id == ^user_id) do
-      {:error, "entrant not found"}
-    else
-      entrant =
-        Entrant
-        |> where([e], e.tournament_id == ^tournament_id and e.user_id == ^user_id)
-        |> Repo.one()
+    Entrant
+    |> where([e], e.tournament_id == ^tournament_id)
+    |> where([e], e.user_id == ^user_id)
+    |> Repo.exists?()
+    |> if do
+      Entrant
+      |> where([e], e.tournament_id == ^tournament_id)
+      |> where([e], e.user_id == ^user_id)
+      |> Repo.one()
+      ~> entrant
+      |> delete_entrant()
 
-      delete_entrant(entrant)
-
-      get_tabs_including_logs_by_tourament_id(tournament_id)
-      |> Enum.each(fn x ->
-        x.chat_room_id
-        |> Chat.delete_chat_member(user_id)
-      end)
+      tournament_id
+      |> get_tabs_including_logs_by_tourament_id()
+      |> Enum.each(&Chat.delete_chat_member(&1.chat_room_id, user_id))
 
       {:ok, entrant}
+    else
+      {:error, "entrant not found"}
     end
   end
 
