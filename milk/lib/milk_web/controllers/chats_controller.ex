@@ -101,7 +101,7 @@ defmodule MilkWeb.ChatsController do
           uuid
 
         _ ->
-          object = Milk.CloudStorage.Objects.upload("./static/image/chat/#{uuid}.jpg")
+          {:ok, object} = Milk.CloudStorage.Objects.upload("./static/image/chat/#{uuid}.jpg")
 
           File.rm("./static/image/chat/#{uuid}.jpg")
           object.name
@@ -145,7 +145,7 @@ defmodule MilkWeb.ChatsController do
   end
 
   defp loadimg_prod(name) do
-    object = Objects.get(name)
+    {:ok, object} = Objects.get(name)
 
     {:ok, file} = Image.get(object.mediaLink)
     b64 = Base.encode64(file)

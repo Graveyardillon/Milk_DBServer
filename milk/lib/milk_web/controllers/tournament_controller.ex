@@ -135,7 +135,7 @@ defmodule MilkWeb.TournamentController do
       :test -> thumbnail_path
       # coveralls-ignore-start
       _ ->
-        object = Milk.CloudStorage.Objects.upload("./static/image/tournament_thumbnail/#{uuid}.jpg")
+        {:ok, object} = Milk.CloudStorage.Objects.upload("./static/image/tournament_thumbnail/#{uuid}.jpg")
 
         File.rm("./static/image/tournament_thumbnail/#{uuid}.jpg")
         object.name
@@ -306,7 +306,7 @@ defmodule MilkWeb.TournamentController do
 
   #  coveralls-ignore-start
   defp read_thumbnail_prod(path) do
-    object = Objects.get(path)
+    {:ok, object} = Objects.get(path)
     {:ok, file} = Image.get(object.mediaLink)
     b64 = Base.encode64(file)
     %{b64: b64}

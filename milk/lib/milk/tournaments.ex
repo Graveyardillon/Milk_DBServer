@@ -3514,6 +3514,7 @@ defmodule Milk.Tournaments do
         :prod ->
           "./static/image/options/#{uuid}.jpg"
           |> Milk.CloudStorage.Objects.upload()
+          |> elem(1)
           |> Map.get(:name)
           ~> name
 
