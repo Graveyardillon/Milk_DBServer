@@ -15,8 +15,8 @@ defmodule Milk.Tournaments.Rules do
     FlipBan
   }
 
-  @spec adapt_keyname(integer()) :: String.t()
-  def adapt_keyname(user_id), do: "user:#{user_id}"
+  @spec adapt_keyname(integer(), integer()) :: String.t()
+  def adapt_keyname(user_id, tournament_id), do: "user:#{user_id}_tournament:#{tournament_id}"
 
   @doc """
   オートマトンの動作がredisに存在していなければ定義する
@@ -38,7 +38,7 @@ defmodule Milk.Tournaments.Rules do
     tournament_id
     |> Tournaments.get_masters()
     |> Enum.map(fn user ->
-      keyname = __MODULE__.adapt_keyname(user.id)
+      keyname = __MODULE__.adapt_keyname(user.id, tournament_id)
 
       case rule do
         "basic"   -> Basic.build_dfa_instance(keyname, is_team: is_team)
@@ -67,7 +67,7 @@ defmodule Milk.Tournaments.Rules do
     |> if do
       {:ok, nil}
     else
-      keyname = __MODULE__.adapt_keyname(master_id)
+      keyname = __MODULE__.adapt_keyname(master_id, tournament_id)
 
       case rule do
         "basic" -> Basic.trigger!(keyname, Basic.manager_trigger())
@@ -82,7 +82,7 @@ defmodule Milk.Tournaments.Rules do
     tournament_id
     |> Tournaments.get_assistants()
     |> Enum.map(fn assistant ->
-      keyname = __MODULE__.adapt_keyname(assistant.user_id)
+      keyname = __MODULE__.adapt_keyname(assistant.user_id, tournament_id)
 
       case rule do
         "basic" -> Basic.trigger!(keyname, Basic.assistant_trigger())
@@ -98,8 +98,8 @@ defmodule Milk.Tournaments.Rules do
   ShouldFlipCoin -> IsWaitingForFlip
   """
   @spec change_state_on_flip_coin(Tournament.t(), integer()) :: {:ok, any()} | {:error, String.t()}
-  def change_state_on_flip_coin(%Tournament{rule: rule}, user_id) do
-    keyname = __MODULE__.adapt_keyname(user_id)
+  def change_state_on_flip_coin(%Tournament{rule: rule, id: tournament_id}, user_id) do
+    keyname = __MODULE__.adapt_keyname(user_id, tournament_id)
 
     case rule do
       "flipban" -> FlipBan.trigger!(keyname, FlipBan.flip_trigger())
@@ -131,8 +131,8 @@ defmodule Milk.Tournaments.Rules do
     end
     ~> opponent_id
 
-    keyname = __MODULE__.adapt_keyname(user_id)
-    opponent_keyname = __MODULE__.adapt_keyname(opponent_id)
+    keyname = __MODULE__.adapt_keyname(user_id, tournament_id)
+    opponent_keyname = __MODULE__.adapt_keyname(opponent_id, tournament_id)
 
     # NOTE: 自分のコインが裏で、banを終えていた場合遷移を変える
     do_change_state_on_ban(is_head, rule, keyname, opponent_keyname)
@@ -162,7 +162,7 @@ defmodule Milk.Tournaments.Rules do
   ShouldObserveChoose -> ShouldChooseA/D
   """
   @spec change_state_on_choose_map(Tournament.t(), integer(), integer()) :: {:ok, nil} | {:error, String.t()}
-  def change_state_on_choose_map(%Tournament{rule: rule, is_team: is_team}, user_id, opponent_id) do
+  def change_state_on_choose_map(%Tournament{rule: rule, is_team: is_team, id: tournament_id}, user_id, opponent_id) do
     # TODO: match_listの中身をteam_idからleader_idに変えたら不要になる処理
     if is_team do
       opponent_id
@@ -173,8 +173,8 @@ defmodule Milk.Tournaments.Rules do
     end
     ~> opponent_id
 
-    keyname = __MODULE__.adapt_keyname(user_id)
-    opponent_keyname = __MODULE__.adapt_keyname(opponent_id)
+    keyname = __MODULE__.adapt_keyname(user_id, tournament_id)
+    opponent_keyname = __MODULE__.adapt_keyname(opponent_id, tournament_id)
 
     do_change_state_on_choose_map(rule, keyname, opponent_keyname)
   end
@@ -195,7 +195,7 @@ defmodule Milk.Tournaments.Rules do
   ShouldObserveA/D -> IsPending
   """
   @spec change_state_on_choose_ad(Tournament.t(), integer(), integer()) :: {:ok, nil} | {:error, String.t()}
-  def change_state_on_choose_ad(%Tournament{rule: rule, is_team: is_team}, user_id, opponent_id) do
+  def change_state_on_choose_ad(%Tournament{rule: rule, is_team: is_team, id: tournament_id}, user_id, opponent_id) do
     # TODO: match_listの中身をteam_idからleader_idに変えたら不要になる処理
     if is_team do
       opponent_id
@@ -206,8 +206,8 @@ defmodule Milk.Tournaments.Rules do
     end
     ~> opponent_id
 
-    keyname = __MODULE__.adapt_keyname(user_id)
-    opponent_keyname = __MODULE__.adapt_keyname(opponent_id)
+    keyname = __MODULE__.adapt_keyname(user_id, tournament_id)
+    opponent_keyname = __MODULE__.adapt_keyname(opponent_id, tournament_id)
 
     do_change_state_on_choose_ad(rule, keyname, opponent_keyname)
   end

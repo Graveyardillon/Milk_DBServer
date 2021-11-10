@@ -1121,7 +1121,7 @@ defmodule Milk.Tournaments do
 
   defp initialize_entrant_state!(%Entrant{user_id: user_id, tournament_id: tournament_id}) do
     tournament = __MODULE__.get_tournament(tournament_id)
-    keyname = Rules.adapt_keyname(user_id)
+    keyname = Rules.adapt_keyname(user_id, tournament_id)
 
     case tournament.rule do
       "basic"   -> Basic.build_dfa_instance(keyname, is_team: tournament.is_team)
@@ -1573,8 +1573,8 @@ defmodule Milk.Tournaments do
   defp start_entrant_states!(%Tournament{id: id, rule: rule} = tournament) do
     id
     |> __MODULE__.get_entrants()
-    |> Enum.each(fn %Entrant{user_id: user_id} ->
-      keyname = Rules.adapt_keyname(user_id)
+    |> Enum.each(fn %Entrant{user_id: user_id, tournament_id: tournament_id} ->
+      keyname = Rules.adapt_keyname(user_id, tournament_id)
 
       case rule do
         "basic"   -> Basic.trigger!(keyname, Basic.start_trigger())
@@ -1617,7 +1617,7 @@ defmodule Milk.Tournaments do
     id
     |> __MODULE__.get_confirmed_team_members_by_tournament_id()
     |> Enum.each(fn member ->
-      keyname = Rules.adapt_keyname(member.user_id)
+      keyname = Rules.adapt_keyname(member.user_id, id)
 
       if member.is_leader do
         case rule do
@@ -1647,7 +1647,7 @@ defmodule Milk.Tournaments do
     |> Map.get(:id)
     |> __MODULE__.get_leader()
     |> Map.get(:user_id)
-    |> Rules.adapt_keyname()
+    |> Rules.adapt_keyname(tournament_id)
     ~> keyname
 
     case rule do
@@ -1655,8 +1655,8 @@ defmodule Milk.Tournaments do
       _       -> {:error, "Invalid tournament rule"}
     end
   end
-  def start_match(%Tournament{rule: rule}, user_id) do
-    keyname = Rules.adapt_keyname(user_id)
+  def start_match(%Tournament{rule: rule, id: id}, user_id) do
+    keyname = Rules.adapt_keyname(user_id, id)
 
     case rule do
       "basic" -> Basic.trigger!(keyname, Basic.start_match_trigger())
@@ -1691,7 +1691,7 @@ defmodule Milk.Tournaments do
     team_id
     |> __MODULE__.get_leader()
     |> Map.get(:user_id)
-    |> Rules.adapt_keyname()
+    |> Rules.adapt_keyname(tournament.id)
     ~> keyname
 
     case rule do
@@ -1701,8 +1701,8 @@ defmodule Milk.Tournaments do
     end
   end
 
-  defp break_waiting(user_id, %Tournament{rule: rule}) do
-    keyname = Rules.adapt_keyname(user_id)
+  defp break_waiting(user_id, %Tournament{rule: rule, id: tournament_id}) do
+    keyname = Rules.adapt_keyname(user_id, tournament_id)
 
     case rule do
       "basic" -> Basic.trigger!(keyname, Basic.pend_trigger())
@@ -1731,11 +1731,11 @@ defmodule Milk.Tournaments do
     ~> [id1, id2]
 
     id1
-    |> Rules.adapt_keyname()
+    |> Rules.adapt_keyname(tournament_id)
     |> FlipBan.trigger!(FlipBan.ban_map_trigger())
 
     id2
-    |> Rules.adapt_keyname()
+    |> Rules.adapt_keyname(tournament_id)
     |> FlipBan.trigger!(FlipBan.observe_ban_map_trigger())
   end
 
@@ -1781,7 +1781,7 @@ defmodule Milk.Tournaments do
       team_id
       |> __MODULE__.get_leader()
       |> Map.get(:user_id)
-      |> Rules.adapt_keyname()
+      |> Rules.adapt_keyname(id)
       ~> keyname
 
       case rule do
@@ -1798,7 +1798,7 @@ defmodule Milk.Tournaments do
     |> Progress.get_match_list()
     |> find_match(winner_user_id)
     |> Enum.map(fn user_id ->
-      keyname = Rules.adapt_keyname(user_id)
+      keyname = Rules.adapt_keyname(user_id, id)
 
       case rule do
         "basic"   -> Basic.trigger!(keyname, Basic.next_trigger())
@@ -1811,8 +1811,8 @@ defmodule Milk.Tournaments do
   end
 
   @spec wait_for_next_match(Tournament.t(), integer()) :: {:ok, any()} | {:error, String.t()}
-  defp wait_for_next_match(%Tournament{rule: rule}, winner_id) do
-    keyname = Rules.adapt_keyname(winner_id)
+  defp wait_for_next_match(%Tournament{rule: rule, id: id}, winner_id) do
+    keyname = Rules.adapt_keyname(winner_id, id)
 
     case rule do
       "basic"   -> Basic.trigger!(keyname, Basic.alone_trigger())
@@ -1824,17 +1824,17 @@ defmodule Milk.Tournaments do
   @doc """
   敗者のstateを変更するための関数
   """
-  def change_loser_state(%Tournament{rule: rule, is_team: true}, loser_team_id) do
+  def change_loser_state(%Tournament{rule: rule, is_team: true, id: id}, loser_team_id) do
     # NOTE: 敗者は確実にis_loserに変わる
     loser_team_id
     |> __MODULE__.get_leader()
     |> Map.get(:user_id)
-    |> Rules.adapt_keyname()
+    |> Rules.adapt_keyname(id)
     |> do_change_loser_state(rule)
   end
-  def change_loser_state(%Tournament{rule: rule, is_team: false}, loser_id) do
+  def change_loser_state(%Tournament{rule: rule, is_team: false, id: id}, loser_id) do
     loser_id
-    |> Rules.adapt_keyname()
+    |> Rules.adapt_keyname(id)
     |> do_change_loser_state(rule)
   end
 
@@ -2119,7 +2119,7 @@ defmodule Milk.Tournaments do
 
   defp initialize_assistant_state!(%Assistant{user_id: user_id, tournament_id: tournament_id}) do
     tournament = __MODULE__.get_tournament(tournament_id)
-    keyname = Rules.adapt_keyname(user_id)
+    keyname = Rules.adapt_keyname(user_id, tournament_id)
 
     case tournament.rule do
       "basic"   -> Basic.build_dfa_instance(keyname, is_team: tournament.is_team)
@@ -2564,7 +2564,7 @@ defmodule Milk.Tournaments do
   """
   @spec state!(integer(), integer()) :: String.t()
   def state!(tournament_id, user_id) do
-    keyname = Rules.adapt_keyname(user_id)
+    keyname = Rules.adapt_keyname(user_id, tournament_id)
 
     tournament_id
     |> __MODULE__.get_tournament()
@@ -2831,7 +2831,7 @@ defmodule Milk.Tournaments do
     id
     |> __MODULE__.get_team_members_by_team_id()
     |> Enum.map(fn member ->
-      keyname = Rules.adapt_keyname(member.user_id)
+      keyname = Rules.adapt_keyname(member.user_id, tournament_id)
 
       case tournament.rule do
         "basic" -> Basic.build_dfa_instance(keyname, is_team: tournament.is_team)
@@ -3357,7 +3357,7 @@ defmodule Milk.Tournaments do
     id
     |> __MODULE__.get_team_members_by_team_id()
     |> Enum.each(fn member ->
-      keyname = Rules.adapt_keyname(member.user_id)
+      keyname = Rules.adapt_keyname(member.user_id, tournament_id)
 
       case tournament.rule do
         "basic" -> Basic.build_dfa_instance(keyname, is_team: tournament.is_team)
