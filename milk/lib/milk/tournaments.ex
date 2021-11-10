@@ -336,8 +336,7 @@ defmodule Milk.Tournaments do
   Gets single tournament or tournament log.
   If tournament does not exist in the table, it checks log table.
   """
-  @spec get_tournament_including_logs(integer()) ::
-          {:ok, Tournament.t()} | {:ok, TournamentLog.t()} | {:error, nil}
+  @spec get_tournament_including_logs(integer()) :: {:ok, Tournament.t()} | {:ok, TournamentLog.t()} | {:error, nil}
   def get_tournament_including_logs(tournament_id) do
     tournament_id
     |> __MODULE__.get_tournament()
@@ -3158,8 +3157,7 @@ defmodule Milk.Tournaments do
   @doc """
   Create team invitation
   """
-  @spec create_team_invitation(integer(), integer()) ::
-          {:ok, TeamInvitation.t()} | {:error, Ecto.Changeset.t()}
+  @spec create_team_invitation(integer(), integer()) :: {:ok, TeamInvitation.t()} | {:error, Ecto.Changeset.t()}
   def create_team_invitation(team_member_id, sender_id) do
     %TeamInvitation{}
     |> TeamInvitation.changeset(%{

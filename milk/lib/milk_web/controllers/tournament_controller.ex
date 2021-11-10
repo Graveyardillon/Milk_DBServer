@@ -21,7 +21,10 @@ defmodule MilkWeb.TournamentController do
 
   alias Milk.Accounts.User
   alias Milk.CloudStorage.Objects
-  alias Milk.Log.TournamentLog
+  alias Milk.Log.{
+    TeamLog,
+    TournamentLog
+  }
   alias Milk.Tournaments.{
     Progress,
     Team,
@@ -1679,94 +1682,85 @@ defmodule MilkWeb.TournamentController do
   @doc """
   Get members of a match.
   TODO: ログの処理書き足し
+  HACK: リファクタリング
   """
   def get_match_members(conn, %{"tournament_id" => tournament_id}) do
-    tournament = Tournaments.get_tournament(tournament_id)
-
-    if tournament do
-      master = Accounts.get_user(tournament.master_id)
-
-      Tournaments.get_assistants(tournament.id)
-      |> Enum.map(fn assistant ->
-        Accounts.get_user(assistant.user_id)
-      end)
-      ~> assistants
-
-      Tournaments.get_entrants(tournament.id)
-      |> Enum.map(fn entrant ->
-        Accounts.get_user(entrant.user_id)
-      end)
-      ~> entrants
-
-      tournament.id
-      |> Tournaments.get_confirmed_teams()
-      |> Enum.map(fn team ->
-        team
-        |> Map.get(:id)
-        |> Tournaments.get_leader()
-        |> Map.get(:user)
-        ~> user
-
-        team
-        |> Map.put(:name, user.name)
-        |> Map.put(:icon_path, user.icon_path)
-      end)
-      ~> teams
-
-      render(conn, "tournament_members.json",
-        master: master,
-        assistants: assistants,
-        entrants: entrants,
-        teams: teams
-      )
-    else
-      tournament_id
-      |> Tournaments.get_tournament_including_logs()
-      |> elem(1)
-      ~> tournament_log
-      |> is_nil()
-      |> unless do
-        master = Accounts.get_user(tournament_log.master_id)
-
-        tournament_id
-        |> Log.get_entrant_logs_by_tournament_id()
-        |> Enum.map(fn entrant_log ->
-          Accounts.get_user(entrant_log.user_id)
-        end)
-        ~> entrants
-
-        tournament_id
-        |> Log.get_assistant_logs_by_tournament_id()
-        |> Enum.map(fn assistant_log ->
-          Accounts.get_user(assistant_log.user_id)
-        end)
-        ~> assistants
-
-        tournament_id
-        |> Log.get_team_logs_by_tournament_id()
-        |> Enum.map(fn team_log ->
-          team_log
-          |> Map.get(:team_id)
-          |> Tournaments.get_leader()
-          |> Map.get(:user)
-          ~> user
-
-          team_log
-          |> Map.put(:name, user.name)
-          |> Map.put(:icon_path, user.icon_path)
-        end)
-        ~> teams
-
-        render(conn, "tournament_members.json",
-          master: master,
-          assistants: assistants,
-          entrants: entrants,
-          teams: teams
-        )
-      else
-        render(conn, "error.json", error: nil)
-      end
+    tournament_id
+    |> Tournaments.get_tournament_including_logs()
+    |> case do
+      {:ok, %Tournament{}    = tournament} -> load_match_members(tournament)
+      {:ok, %TournamentLog{} = tournament} -> load_match_members_from_log(tournament)
+      _                                    -> {:error, "tournament is nil"}
     end
+    |> case do
+      {:ok, master, assistants, entrants, teams} ->
+        render(conn, "tournament_members.json", master: master, assistants: assistants, entrants: entrants, teams: teams)
+      {:error, error} ->
+        render(conn, "error.json", error: error)
+    end
+  end
+
+  @spec load_match_members(Tournament.t()) :: {:ok, User.t(), [User.t()], [User.t()], [Team.t()]}
+  defp load_match_members(%Tournament{master_id: master_id, id: tournament_id}) do
+    master = Accounts.get_user(master_id)
+
+    tournament_id
+    |> Tournaments.get_assistants()
+    |> Enum.map(&Accounts.get_user(&1.user_id))
+    ~> assistants
+
+    tournament_id
+    |> Tournaments.get_entrants()
+    |> Enum.map(&Accounts.get_user(&1.user_id))
+    ~> entrants
+
+    tournament_id
+    |> Tournaments.get_confirmed_teams()
+    |> Enum.map(fn team ->
+      team.id
+      |> Tournaments.get_leader()
+      |> Map.get(:user)
+      ~> user
+
+      team
+      |> Map.put(:name, user.name)
+      |> Map.put(:icon_path, user.icon_path)
+    end)
+    ~> teams
+
+    {:ok, master, assistants, entrants, teams}
+  end
+
+  @spec load_match_members_from_log(TournamentLog.t()) :: {:ok, User.t(), [User.t()], [User.t()], [TeamLog.t()]}
+  defp load_match_members_from_log(%TournamentLog{master_id: master_id, tournament_id: tournament_id}) do
+    master = Accounts.get_user(master_id)
+
+    tournament_id
+    |> Log.get_assistant_logs_by_tournament_id()
+    |> Enum.map(&Accounts.get_user(&1.user_id))
+    ~> assistants
+
+    tournament_id
+    |> Log.get_entrant_logs_by_tournament_id()
+    |> Enum.map(&Accounts.get_user(&1.user_id))
+    ~> entrants
+
+    tournament_id
+    |> Log.get_team_logs_by_tournament_id()
+    |> Enum.map(fn team_log ->
+      team_log
+      |> Map.get(:team_id)
+      |> Tournaments.get_leader()
+      |> Map.get(:user)
+      ~> user
+
+      team_log
+      |> Map.put(:name, user.name)
+      |> Map.put(:icon_path, user.icon_path)
+    end)
+    ~> teams
+
+    {:ok, master, assistants, entrants, teams}
   end
 
   @doc """
