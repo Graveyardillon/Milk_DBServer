@@ -1,6 +1,9 @@
 defmodule Milk.Tournaments do
   @moduledoc """
-  The Tournaments context.
+  トーナメントのコンテキストについて記述したファイル。
+
+  # TODO: get_tournament/1関数にpreloadがたくさん含まれていてコストが高い。
+    TODO: preloadが必要ない場合もあるので、それに応じて処理を切り分ける。
   """
   use Timex
 
@@ -73,9 +76,7 @@ defmodule Milk.Tournaments do
   @type match_list_with_fight_result :: [any()] | map()
 
   @doc """
-  Gets a single tournament.
-
-  Raises `Ecto.NoResultsError` if the Tournament does not exist.
+  Tournament構造体を取得する関数。
   """
   @spec get_tournament(integer()) :: Tournament.t() | nil
   def get_tournament(id) do
@@ -776,13 +777,13 @@ defmodule Milk.Tournaments do
     |> change_map_state(user_id, tournament_id, map_id_list, opponent_id, "banned")
     ~> change_map_state_result
 
-    with {:ok, _} <- change_map_state_result,
+    with {:ok, _}                               <- change_map_state_result,
          tournament when not is_nil(tournament) <- __MODULE__.get_tournament(tournament_id),
-         {:ok, _} <- renew_redis_after_choosing_maps(user_id, tournament_id),
-         {:ok, _} <- Rules.change_state_on_ban(tournament, user_id, opponent_id) do
+         {:ok, _}                               <- renew_redis_after_choosing_maps(user_id, tournament_id),
+         {:ok, _}                               <- Rules.change_state_on_ban(tournament, user_id, opponent_id) do
       {:ok, nil}
     else
-      nil -> {:error, "tournament is nil"}
+      nil   -> {:error, "tournament is nil"}
       error -> error
     end
   end

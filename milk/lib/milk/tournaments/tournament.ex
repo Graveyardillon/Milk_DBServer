@@ -107,8 +107,8 @@ defmodule Milk.Tournaments.Tournament do
       :url,
       :url_token
     ])
-    |> validate_required([:name, :capacity, :type])
     |> generate_rule_if_empty()
+    |> validate_required([:name, :capacity, :type, :master_id, :is_team, :rule])
     |> foreign_key_constraint(:platform_id)
     |> foreign_key_constraint(:game_id)
     |> foreign_key_constraint(:master_id)
