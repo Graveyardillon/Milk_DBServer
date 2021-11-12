@@ -148,7 +148,6 @@ defmodule MilkWeb.TournamentController do
 
   defp do_create(conn, %{"join" => join?, "enabled_coin_toss" => enabled_coin_toss, "enabled_map" => enabled_map} = tournament_params, thumbnail_path, maps) do
     tournament_params
-    |> IO.inspect()
     |> Map.put("enabled_coin_toss", enabled_coin_toss == "true" || enabled_coin_toss == true)
     |> Map.put("enabled_map", enabled_map == "true" || enabled_map == true)
     |> Map.put("maps", maps)

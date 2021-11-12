@@ -454,11 +454,11 @@ defmodule Milk.Tournaments do
   def create_tournament(attrs, thumbnail_path \\ "") do
     attrs = modify_necessary_fields(attrs)
 
-    with {:ok, _} <- validate_fields(attrs),
+    with {:ok, _}          <- validate_fields(attrs),
          {:ok, tournament} <- do_create_tournament(attrs, thumbnail_path),
-         {:ok, nil} <- join_chat_topics_on_create_tournament(tournament),
-         {:ok, _} <- add_necessary_fields(tournament, attrs),
-         {:ok, nil} <- Rules.initialize_master_states(tournament) do
+         {:ok, nil}        <- join_chat_topics_on_create_tournament(tournament),
+         {:ok, _}          <- add_necessary_fields(tournament, attrs),
+         {:ok, nil}        <- Rules.initialize_master_states(tournament) do
       {:ok, tournament}
     else
       error -> error
@@ -499,11 +499,12 @@ defmodule Milk.Tournaments do
 
   defp do_create_tournament(%{"master_id" => master_id, "platform" => platform, "game_id" => game_id} = attrs, thumbnail_path) do
     tournament = %Tournament{
-      master_id: master_id,
-      game_id: game_id,
-      thumbnail_path: thumbnail_path,
-      platform_id: platform
-    }
+        master_id: master_id,
+        game_id: game_id,
+        thumbnail_path: thumbnail_path,
+        platform_id: platform
+      }
+
     tournament_schema = Tournament.create_changeset(tournament, attrs)
 
     Multi.new()
@@ -513,10 +514,10 @@ defmodule Milk.Tournaments do
     |> Multi.insert(:q_and_a_topic, &create_topic(&1.tournament, "Q&A", 2))
     |> Repo.transaction()
     |> case do
-      {:ok, result} -> {:ok, result.tournament}
+      {:ok, result}                       -> {:ok, result.tournament}
       {:error, :tournament, changeset, _} -> {:error, Tools.create_error_message(changeset.errors)}
-      {:error, changeset} -> {:error, changeset.errors}
-      _ -> {:error, nil}
+      {:error, changeset}                 -> {:error, changeset.errors}
+      _                                   -> {:error, nil}
     end
   end
 
@@ -527,17 +528,17 @@ defmodule Milk.Tournaments do
     |> Enum.reduce(Multi.new(), &create_chat_member_transaction(&1, tournament, &2))
     |> Repo.transaction()
     |> case do
-      {:ok, _} -> {:ok, nil}
+      {:ok, _}                  -> {:ok, nil}
       {:error, _, changeset, _} -> {:error, changeset.errors}
-      {:error, _} -> {:error, nil}
+      {:error, _}               -> {:error, nil}
     end
   end
 
   defp create_chat_member_transaction(chat_room, tournament, multi) do
     Multi.insert(multi, :"#{chat_room.id}", fn _ ->
       ChatMember.changeset(%{
-        "user_id" => tournament.master_id,
-        "authority" => 1,
+        "user_id"      => tournament.master_id,
+        "authority"    => 1,
         "chat_room_id" => chat_room.id
       })
     end)
@@ -547,8 +548,8 @@ defmodule Milk.Tournaments do
   defp add_necessary_fields(%Tournament{rule: rule} = tournament, attrs) do
     case rule do
       "flipban" -> add_flipban_fields(tournament, attrs)
-      "basic" -> add_basic_fields(tournament, attrs)
-      _ -> {:error, "invalid tournament rule"}
+      "basic"   -> add_basic_fields(tournament, attrs)
+      _         -> {:error, "invalid tournament rule"}
     end
   end
 
@@ -557,15 +558,15 @@ defmodule Milk.Tournaments do
     tournament
     |> Rules.initialize_state_machine()
     |> case do
-      :ok -> {:ok, nil}
+      :ok    -> {:ok, nil}
       :error -> {:error, "failed to initialize state machine"}
     end
   end
 
   @spec add_flipban_fields(Tournament.t(), map()) :: {:ok, nil} | {:error, String.t()}
   defp add_flipban_fields(tournament, attrs) do
-    with :ok <- Rules.initialize_state_machine(tournament),
-         {:ok, _}  <- create_tournament_custom_detail_on_create_tournament(tournament, attrs),
+    with :ok        <- Rules.initialize_state_machine(tournament),
+         {:ok, _}   <- create_tournament_custom_detail_on_create_tournament(tournament, attrs),
          {:ok, nil} <- create_maps_on_create_tournament(tournament, attrs) do
       {:ok, nil}
     else
@@ -588,9 +589,9 @@ defmodule Milk.Tournaments do
     |> Enum.reduce(Multi.new(), &create_maps_transaction(&1, tournament.id, &2))
     |> Repo.transaction()
     |> case do
-      {:ok, result} -> {:ok, result}
+      {:ok, result}             -> {:ok, result}
       {:error, _, changeset, _} -> {:error, changeset.errors}
-      {:error, _} -> {:error, nil}
+      {:error, _}               -> {:error, nil}
     end
   end
   defp create_maps_on_create_tournament(tournament, %{maps: maps}), do: create_maps_on_create_tournament(tournament, %{"maps" => maps})
@@ -622,13 +623,11 @@ defmodule Milk.Tournaments do
 
   @spec create_topic(Tournament.t(), String.t(), integer(), integer()) :: Ecto.Changeset.t()
   defp create_topic(tournament, topic, tab_index, authority \\ 0) do
-    {:ok, chat_room} =
-      %{
+    {:ok, chat_room} = Chat.create_chat_room(%{
         name: tournament.name <> "-" <> topic,
         member_count: tournament.count,
         authority: authority
-      }
-      |> Chat.create_chat_room()
+      })
 
     # NOTE: メンバー追加
     tournament.id
@@ -747,13 +746,13 @@ defmodule Milk.Tournaments do
   """
   @spec flip_coin(integer(), integer()) :: {:ok, nil} | {:error, String.t()}
   def flip_coin(user_id, tournament_id) do
-    with id when not is_nil(id) <- Progress.get_necessary_id(tournament_id, user_id),
-         {:ok, nil} <- Progress.insert_match_pending_list_table(id, tournament_id),
+    with id when not is_nil(id)                 <- Progress.get_necessary_id(tournament_id, user_id),
+         {:ok, nil}                             <- Progress.insert_match_pending_list_table(id, tournament_id),
          tournament when not is_nil(tournament) <- __MODULE__.get_tournament(tournament_id),
-         {:ok, _} <- Rules.change_state_on_flip_coin(tournament, user_id) do
+         {:ok, _}                               <- Rules.change_state_on_flip_coin(tournament, user_id) do
       {:ok, nil}
     else
-      nil -> {:error, "tournament is nil"}
+      nil   -> {:error, "tournament is nil"}
       error -> error
     end
   end
@@ -762,9 +761,9 @@ defmodule Milk.Tournaments do
   Ban a map.
   """
   @spec ban_maps(integer(), integer(), [integer()]) :: {:ok, nil} | {:error, String.t()}
-  def ban_maps(user_id, _, _) when not is_integer(user_id), do: {:error, "user id should be integer"}
+  def ban_maps(user_id, _, _)       when not is_integer(user_id),       do: {:error, "user id should be integer"}
   def ban_maps(_, tournament_id, _) when not is_integer(tournament_id), do: {:error, "tournament id should be integer"}
-  def ban_maps(_, _, map_id_list) when not is_list(map_id_list), do: {:error, "invalid map id list"}
+  def ban_maps(_, _, map_id_list)   when not is_list(map_id_list),      do: {:error, "invalid map id list"}
   def ban_maps(user_id, tournament_id, map_id_list) do
     tournament_id
     |> __MODULE__.get_opponent(user_id)
@@ -788,8 +787,8 @@ defmodule Milk.Tournaments do
     end
   end
 
-  defp change_map_state(state, _, _, _, _, _) when state != "ShouldBanMap" and state != "ShouldChooseMap", do: {:error, "invalid state"}
-  defp change_map_state(_, _, _, _, opponent_id, _) when not is_integer(opponent_id), do: {:error, "opponent id is not integer"}
+  defp change_map_state(state, _, _, _, _, _)       when state != "ShouldBanMap" and state != "ShouldChooseMap", do: {:error, "invalid state"}
+  defp change_map_state(_, _, _, _, opponent_id, _) when not is_integer(opponent_id),                            do: {:error, "opponent id is not integer"}
   defp change_map_state(_, user_id, tournament_id, map_id_list, opponent_id, map_state) do
     my_id = Progress.get_necessary_id(tournament_id, user_id)
 
@@ -820,9 +819,9 @@ defmodule Milk.Tournaments do
   Choose a map.
   """
   @spec choose_maps(integer(), integer(), [integer()]) :: {:ok, nil} | {:error, String.t()}
-  def choose_maps(user_id, _, _) when not is_integer(user_id), do: {:error, "user id should be integer"}
+  def choose_maps(user_id, _, _)       when not is_integer(user_id),       do: {:error, "user id should be integer"}
   def choose_maps(_, tournament_id, _) when not is_integer(tournament_id), do: {:error, "tournament id should be integer"}
-  def choose_maps(_, _, map_id_list) when not is_list(map_id_list), do: {:error, "invalid map id list"}
+  def choose_maps(_, _, map_id_list)   when not is_list(map_id_list),      do: {:error, "invalid map id list"}
   def choose_maps(user_id, tournament_id, map_id_list) do
     tournament_id
     |> __MODULE__.get_opponent(user_id)
@@ -849,8 +848,8 @@ defmodule Milk.Tournaments do
   Choose A/D
   """
   @spec choose_ad(integer(), integer(), boolean()) :: {:ok, nil} | {:error, String.t()}
-  def choose_ad(user_id, _, _) when not is_integer(user_id), do: {:error, "user id should be integer"}
-  def choose_ad(_, tournament_id, _) when not is_integer(tournament_id), do: {:error, "tournament id should be integer"}
+  def choose_ad(user_id, _, _)          when not is_integer(user_id),          do: {:error, "user id should be integer"}
+  def choose_ad(_, tournament_id, _)    when not is_integer(tournament_id),    do: {:error, "tournament id should be integer"}
   def choose_ad(_, _, is_attacker_side) when not is_boolean(is_attacker_side), do: {:error, "attacker side information should be boolean"}
   def choose_ad(user_id, tournament_id, is_attack_side) do
     tournament_id
@@ -870,12 +869,12 @@ defmodule Milk.Tournaments do
          {:ok, _}                               <- Rules.change_state_on_choose_ad(tournament, user_id, opponent_id) do
       {:ok, nil}
     else
-      nil -> {:error, "tournament is nil"}
+      nil   -> {:error, "tournament is nil"}
       error -> error
     end
   end
 
-  defp do_choose_ad(state, _, _, _, _) when state != "ShouldChooseA/D", do: {:error, "invalid state"}
+  defp do_choose_ad(state, _, _, _, _)       when state != "ShouldChooseA/D",  do: {:error, "invalid state"}
   defp do_choose_ad(_, _, _, opponent_id, _) when not is_integer(opponent_id), do: {:error, "opponent id is not integer"}
   defp do_choose_ad(_, user_id, tournament_id, opponent_id, is_attacker_side) do
     with my_id when not is_nil(my_id) <- Progress.get_necessary_id(tournament_id, user_id),
@@ -1086,9 +1085,9 @@ defmodule Milk.Tournaments do
     tournament_id = Tools.to_integer_as_needed(tournament_id)
 
     entrant = %Entrant{
-      user_id: user_id,
-      tournament_id: tournament_id
-    }
+        user_id: user_id,
+        tournament_id: tournament_id
+      }
 
     Multi.new()
     |> Multi.put(:attrs, attrs)
@@ -1234,7 +1233,7 @@ defmodule Milk.Tournaments do
     |> Tournament.changeset(%{count: tournament.count - 1})
     |> Repo.update()
     |> case do
-      {:ok, _} -> Repo.delete(entrant)
+      {:ok, _}        -> Repo.delete(entrant)
       {:error, error} -> {:error, error}
     end
   end
