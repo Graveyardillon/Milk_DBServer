@@ -2724,12 +2724,13 @@ defmodule Milk.Tournaments do
   @spec create_team(integer(), integer(), integer(), [integer()]) :: {:ok, Team.t()} | {:error, Ecto.Changeset.t()}
   def create_team(_, _, _, user_id_list) when not is_list(user_id_list), do: {:error, "user id list should be list"}
   def create_team(tournament_id, size, leader_id, user_id_list) do
-    with {:ok, nil} <- validate_user_is_not_member(tournament_id, user_id_list),
-         {:ok, team} <- do_create_team(tournament_id, size, leader_id),
-         {:ok, _} <- create_team_leader(team.id, leader_id),
-         {:ok, members} <- __MODULE__.create_team_members(team.id, user_id_list),
-         {:ok, _} <- __MODULE__.create_team_invitations(members, leader_id),
-         {:ok, nil} <- initialize_team_member_states!(team) do
+    with {:ok, nil}         <- validate_user_is_not_member(tournament_id, user_id_list),
+         {:ok, team}        <- do_create_team(tournament_id, size, leader_id),
+         {:ok, _}           <- create_team_leader(team.id, leader_id),
+         {:ok, members}     <- __MODULE__.create_team_members(team.id, user_id_list),
+         {:ok, invitations} <- __MODULE__.create_team_invitations(members, leader_id),
+         {:ok, _}           <- create_team_invitation_notifications(invitations),
+         {:ok, nil}         <- initialize_team_member_states!(team) do
       {:ok, Map.put(team, :team_member, members)}
     else
       error -> error
@@ -2809,9 +2810,9 @@ defmodule Milk.Tournaments do
     |> Enum.reduce(Multi.new(), &insert_team_invitation_transaction(&1, leader_id, &2))
     |> Repo.transaction()
     |> case do
-      {:ok, result} -> {:ok, result}
+      {:ok, result}             -> {:ok, result}
       {:error, _, changeset, _} -> {:error, changeset.errors}
-      {:error, _} -> {:error, nil}
+      {:error, _}               -> {:error, nil}
     end
   end
 
@@ -2833,13 +2834,25 @@ defmodule Milk.Tournaments do
       keyname = Rules.adapt_keyname(member.user_id, tournament_id)
 
       case tournament.rule do
-        "basic" -> Basic.build_dfa_instance(keyname, is_team: tournament.is_team)
+        "basic"   -> Basic.build_dfa_instance(keyname, is_team: tournament.is_team)
         "flipban" -> Basic.build_dfa_instance(keyname, is_team: tournament.is_team)
-        _ -> {:error, "Invalid tournament rule"}
+        _         -> {:error, "Invalid tournament rule"}
       end
     end)
     |> Enum.all?(&match?({:ok, _}, &1))
     |> Tools.boolean_to_tuple()
+  end
+
+  defp create_team_invitation_notifications(invitations) do
+    invitations
+    |> Enum.each(fn {_, invitation} ->
+      invitation
+      |> Repo.preload(:team_member)
+      |> Repo.preload(:sender)
+      |> create_invitation_notification()
+    end)
+
+    {:ok, nil}
   end
 
   @doc """
@@ -3136,8 +3149,7 @@ defmodule Milk.Tournaments do
     |> Repo.preload(team_member: :user)
   end
 
-  @spec team_invitation_decline(integer()) ::
-          {:ok, TeamInvitation.t()} | {:error, Ecto.Changeset.t()}
+  @spec team_invitation_decline(integer()) :: {:ok, TeamInvitation.t()} | {:error, Ecto.Changeset.t()}
   def team_invitation_decline(id) do
     id
     |> __MODULE__.get_team_invitation()
@@ -3193,11 +3205,8 @@ defmodule Milk.Tournaments do
     }
     |> Notif.create_notification()
     |> case do
-      {:ok, notification} ->
-        push_invitation_notification(notification)
-
-      {:error, error} ->
-        {:error, error}
+      {:ok, notification} -> push_invitation_notification(notification)
+      {:error, error}     -> {:error, error}
     end
 
     for device <- Accounts.get_devices_by_user_id(invitation.team_member.user_id) do
@@ -3213,7 +3222,8 @@ defmodule Milk.Tournaments do
     end
   end
 
-  defp push_invitation_notification(%Notification{} = _notification) do
+  defp push_invitation_notification(%Notification{} = _) do
+    {:ok, nil}
     # TODO: push通知に関する処理を書く
   end
 

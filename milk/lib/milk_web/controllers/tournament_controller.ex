@@ -199,7 +199,6 @@ defmodule MilkWeb.TournamentController do
   @doc """
   Show tournament information.
   """
-  # TODO: user_idがnilのときの処理を書く
   def show(conn, %{"user_id" => user_id, "tournament_id" => tournament_id}) do
     tournament_id = Tools.to_integer_as_needed(tournament_id)
 

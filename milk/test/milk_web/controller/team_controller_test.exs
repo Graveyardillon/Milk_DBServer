@@ -139,14 +139,33 @@ defmodule MilkWeb.TeamControllerTest do
           user_id_list: user_id_list
         )
 
-      json_response(conn, 200)
+      conn
+      |> json_response(200)
       |> Map.get("data")
-      |> (fn data ->
-            assert data["tournament_id"] == tournament.id
-            assert data["size"] == size
-          end).()
+      |> then(fn data ->
+        assert data["tournament_id"] == tournament.id
+        assert data["size"] == size
+      end)
 
       assert json_response(conn, 200)["result"]
+
+      # NOTE: 通知が作成されているかどうかの確認
+      user_id_list
+      |> Enum.each(fn user_id ->
+        conn
+        |> get(Routes.notif_path(conn, :get_list), %{"user_id" => user_id})
+        |> json_response(200)
+        |> Map.get("data")
+        |> Enum.map(fn notification ->
+          assert notification["user_id"] == user_id
+          assert String.contains?(notification["title"], "からチーム招待されました")
+          assert notification["process_id"] == "TEAM_INVITE"
+        end)
+        |> length()
+        |> then(fn len ->
+          assert len != 0
+        end)
+      end)
     end
 
     test "over tournament size", %{conn: conn} do
