@@ -190,7 +190,7 @@ defmodule MilkWeb.TournamentController do
       discord_server_id
       |> Discord.send_tournament_create_notification()
       |> case do
-        {:ok, _} -> Discord.send_tournament_description(discord_server_id, description)
+        {:ok, _}    -> Discord.send_tournament_description(discord_server_id, description)
         {:error, _} -> nil
       end
     end)
@@ -199,28 +199,25 @@ defmodule MilkWeb.TournamentController do
   @doc """
   Show tournament information.
   """
-  def show(conn, params) do
-    user_id = params["user_id"]
-    id = Tools.to_integer_as_needed(params["tournament_id"])
+  # TODO: user_idがnilのときの処理を書く
+  def show(conn, %{"user_id" => user_id, "tournament_id" => tournament_id}) do
+    tournament_id = Tools.to_integer_as_needed(tournament_id)
 
-    tournament = Tournaments.get_tournament(id)
-    tournament_log = Log.get_tournament_log_by_tournament_id(id)
-
-    cond do
-      !is_nil(tournament) ->
+    tournament_id
+    |> Tournaments.get_tournament_including_logs()
+    |> case do
+      {:ok, %Tournament{} = tournament} ->
         unless is_nil(user_id) do
-          %{"user_id" => user_id, "game_name" => tournament.game_name, "score" => 1}
-          |> Accounts.gain_score()
+          user_id = Tools.to_integer_as_needed(user_id)
+
+          Accounts.gain_score(%{"user_id" => user_id, "game_name" => tournament.game_name, "score" => 1})
         end
 
         team = Enum.filter(tournament.team, fn team -> team.is_confirmed end)
 
-        tournament
-        |> Map.get(:id)
+        tournament.id
         |> Tournaments.get_maps_by_tournament_id()
-        |> Enum.map(fn map ->
-          Map.put(map, :state, "not_selected")
-        end)
+        |> Enum.map(&Map.put(&1, :state, "not_selected"))
         ~> selections
 
         tournament
@@ -230,20 +227,24 @@ defmodule MilkWeb.TournamentController do
 
         render(conn, "tournament_info.json", tournament: tournament)
 
-      !is_nil(tournament_log) ->
+      {:ok, %TournamentLog{} = tournament_log} ->
+        unless is_nil(user_id) do
+          user_id = Tools.to_integer_as_needed(user_id)
+
+          Accounts.gain_score(%{"user_id" => user_id, "game_name" => tournament_log.game_name, "score" => 1})
+        end
+
         entrants = Log.get_entrant_logs_by_tournament_id(tournament_log.tournament_id)
         tournament_log = Map.put(tournament_log, :entrants, entrants)
 
-        unless is_nil(user_id) do
-          %{"user_id" => user_id, "game_name" => tournament_log.game_name, "score" => 1}
-          |> Accounts.gain_score()
-        end
-
         render(conn, "tournament_log.json", tournament_log: tournament_log)
 
-      true ->
+      _ ->
         render(conn, "error.json", error: nil)
     end
+  end
+  def show(conn, %{"tournament_id" => tournament_id}) do
+    show(conn, %{"user_id" => nil, "tournament_id" => tournament_id})
   end
 
   # TODO: web版で必要になっているから置いてあるが、必要なくなったら消す
@@ -253,10 +254,8 @@ defmodule MilkWeb.TournamentController do
   def get_thumbnail_image(conn, %{"thumbnail_path" => path}) do
     case Application.get_env(:milk, :environment) do
       :test -> read_thumbnail(path)
-
       # coveralls-ignore-start
       :dev -> read_thumbnail(path)
-
       _ -> read_thumbnail_prod(path)
       # coveralls-ignore-stop
     end
