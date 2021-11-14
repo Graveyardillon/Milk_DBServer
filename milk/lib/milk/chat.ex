@@ -588,7 +588,7 @@ defmodule Milk.Chat do
 
   # グループチャット用の関数
   # TODO: チャットメンバーのユーザーのidをすべて返すようにする
-  def dialogue(attrs = %{"user_id" => user_id, "chat_room_id" => chat_room_id}) do
+  def dialogue(%{"user_id" => user_id, "chat_room_id" => chat_room_id} = attrs) do
     user_id = Tools.to_integer_as_needed(user_id)
     chat_room_id = Tools.to_integer_as_needed(chat_room_id)
 
@@ -617,7 +617,7 @@ defmodule Milk.Chat do
             "data" =>
               Jason.encode!(%{
                 tournament_id: tournament.id,
-                chant_room_id: chat_room_id
+                chat_room_id: chat_room_id
               })
           }
           |> Notif.create_notification()
