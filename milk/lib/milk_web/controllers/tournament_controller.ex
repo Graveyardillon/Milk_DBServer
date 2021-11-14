@@ -428,7 +428,6 @@ defmodule MilkWeb.TournamentController do
     |> Tools.to_integer_as_needed()
     |> Tournaments.get_tournament()
     |> Tournaments.delete_tournament()
-    |> IO.inspect()
     |> case do
       {:ok, %Tournament{} = tournament} ->
         notify_discord_on_deleting_tournament_as_needed(tournament)
@@ -441,6 +440,7 @@ defmodule MilkWeb.TournamentController do
 
   defp notify_discord_on_deleting_tournament_as_needed(%Tournament{discord_server_id: nil}), do: {:ok, nil}
   defp notify_discord_on_deleting_tournament_as_needed(%Tournament{discord_server_id: discord_server_id}) do
+    # NOTE: discordサーバーが起動していない場合はここがタイムアウトの原因となる
     Discord.send_tournament_delete_notification(discord_server_id)
     {:ok, nil}
   end

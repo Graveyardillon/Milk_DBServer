@@ -185,8 +185,7 @@ defmodule Milk.Discord do
   @doc """
   Send notification on added team to the server
   """
-  @spec send_tournament_add_team_notification(String.t(), String.t()) ::
-          {:ok, HTTPoison.Response.t()} | {:error, HTTPoison.Error.t()}
+  @spec send_tournament_add_team_notification(String.t(), String.t()) :: {:ok, HTTPoison.Response.t()} | {:error, HTTPoison.Error.t()}
   def send_tournament_add_team_notification(server_id, team_name) when is_binary(server_id) do
     discord_server_url = Application.get_env(:milk, :discord_server)
     access_token = Application.get_env(:milk, :discord_server_access_token)
@@ -210,8 +209,7 @@ defmodule Milk.Discord do
   @doc """
   Send notification on start match
   """
-  @spec send_tournament_start_match_notification(String.t(), String.t(), String.t()) ::
-          {:ok, HTTPoison.Response.t()} | {:error, HTTPoison.Error.t()}
+  @spec send_tournament_start_match_notification(String.t(), String.t(), String.t()) :: {:ok, HTTPoison.Response.t()} | {:error, HTTPoison.Error.t()}
   def send_tournament_start_match_notification(server_id, a_name, b_name)
       when is_binary(server_id) do
     discord_server_url = Application.get_env(:milk, :discord_server)
@@ -237,8 +235,7 @@ defmodule Milk.Discord do
   @doc """
   Send notification on ban maps.
   """
-  @spec send_tournament_ban_map_notification(String.t(), String.t(), String.t(), [String.t()]) ::
-          {:ok, HTTPoison.Response.t()} | {:error, HTTPoison.Error.t()}
+  @spec send_tournament_ban_map_notification(String.t(), String.t(), String.t(), [String.t()]) :: {:ok, HTTPoison.Response.t()} | {:error, HTTPoison.Error.t()}
   def send_tournament_ban_map_notification(server_id, a_name, b_name, banned_map_names)
       when is_binary(server_id) and is_list(banned_map_names) do
     discord_server_url = Application.get_env(:milk, :discord_server)
@@ -265,8 +262,7 @@ defmodule Milk.Discord do
   @doc """
   Send notification on choose maps.
   """
-  @spec send_tournament_choose_map_notification(String.t(), String.t(), String.t(), String.t()) ::
-          {:ok, HTTPoison.Response.t()} | {:error, HTTPoison.Error.t()}
+  @spec send_tournament_choose_map_notification(String.t(), String.t(), String.t(), String.t()) :: {:ok, HTTPoison.Response.t()} | {:error, HTTPoison.Error.t()}
   def send_tournament_choose_map_notification(server_id, a_name, b_name, map_name)
       when is_binary(server_id) do
     discord_server_url = Application.get_env(:milk, :discord_server)
@@ -293,8 +289,7 @@ defmodule Milk.Discord do
   @doc """
   Send notification on choose a/d
   """
-  @spec send_tournament_choose_ad_notification(String.t(), String.t(), String.t(), boolean()) ::
-          {:ok, HTTPoison.Response.t()} | {:error, HTTPoison.Error.t()}
+  @spec send_tournament_choose_ad_notification(String.t(), String.t(), String.t(), boolean()) :: {:ok, HTTPoison.Response.t()} | {:error, HTTPoison.Error.t()}
   def send_tournament_choose_ad_notification(server_id, a_name, b_name, is_attacker_side)
       when is_binary(server_id) do
     discord_server_url = Application.get_env(:milk, :discord_server)
@@ -321,14 +316,8 @@ defmodule Milk.Discord do
   @doc """
   Send notification on duplication claim.
   """
-  @spec send_tournament_duplicate_claim_notification(
-          String.t(),
-          String.t(),
-          String.t(),
-          integer()
-        ) :: {:ok, HTTPoison.Response.t()} | {:error, HTTPoison.Error.t()}
-  def send_tournament_duplicate_claim_notification(server_id, a_name, b_name, score)
-      when is_binary(server_id) do
+  @spec send_tournament_duplicate_claim_notification(String.t(), String.t(), String.t(), integer()) :: {:ok, HTTPoison.Response.t()} | {:error, HTTPoison.Error.t()}
+  def send_tournament_duplicate_claim_notification(server_id, a_name, b_name, score) when is_binary(server_id) do
     discord_server_url = Application.get_env(:milk, :discord_server)
     access_token = Application.get_env(:milk, :discord_server_access_token)
 
@@ -343,7 +332,7 @@ defmodule Milk.Discord do
     |> Jason.encode!()
     ~> params
 
-    HTTPoison.post(url, params, "Content-Type": "application/json")
+    HTTPoison.post(url, params, "Content-Type": "application/json", timeout: 5000)
   end
 
   def send_tournament_duplicate_claim_notification(_, _, _, _) do
