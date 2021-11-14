@@ -60,7 +60,6 @@ defmodule Milk.Tournaments.Rules do
     end
   end
 
-  # TODO: masterがチーム参加していたときの条件分岐も追加
   @spec start_master_state!(Tournament.t()) :: {:ok, any()} | {:error, String.t()}
   defp start_master_state!(%Tournament{id: tournament_id, rule: rule, master_id: master_id}) do
     tournament_id

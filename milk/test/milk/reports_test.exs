@@ -1,4 +1,8 @@
 defmodule Milk.ReportsTest do
+  @moduledoc """
+  通報機能に関するテスト
+  """
+
   use Milk.DataCase
   use Common.Fixtures
 

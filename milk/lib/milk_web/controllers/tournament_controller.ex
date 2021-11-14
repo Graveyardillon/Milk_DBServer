@@ -428,6 +428,7 @@ defmodule MilkWeb.TournamentController do
     |> Tools.to_integer_as_needed()
     |> Tournaments.get_tournament()
     |> Tournaments.delete_tournament()
+    |> IO.inspect()
     |> case do
       {:ok, %Tournament{} = tournament} ->
         notify_discord_on_deleting_tournament_as_needed(tournament)
@@ -1558,10 +1559,7 @@ defmodule MilkWeb.TournamentController do
   @doc """
   Force to defeat a user.
   """
-  def force_to_defeat(conn, %{
-        "tournament_id" => tournament_id,
-        "target_user_id" => target_user_id
-      }) do
+  def force_to_defeat(conn, %{"tournament_id" => tournament_id, "target_user_id" => target_user_id}) do
     tournament_id = Tools.to_integer_as_needed(tournament_id)
     target_user_id = Tools.to_integer_as_needed(target_user_id)
 
