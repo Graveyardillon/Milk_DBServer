@@ -60,19 +60,20 @@ defmodule Milk.Tournaments.Rules do
     end
   end
 
+  # TODO: masterがチーム参加していたときの条件分岐も追加
   @spec start_master_state!(Tournament.t()) :: {:ok, any()} | {:error, String.t()}
   defp start_master_state!(%Tournament{id: tournament_id, rule: rule, master_id: master_id}) do
     tournament_id
-    |> Tournaments.is_entrant?(master_id)
+    |> Tournaments.is_participant?(master_id)
     |> if do
       {:ok, nil}
     else
       keyname = __MODULE__.adapt_keyname(master_id, tournament_id)
 
       case rule do
-        "basic" -> Basic.trigger!(keyname, Basic.manager_trigger())
+        "basic"   -> Basic.trigger!(keyname, Basic.manager_trigger())
         "flipban" -> FlipBan.trigger!(keyname, FlipBan.manager_trigger())
-        _ -> {:error, "Invalid tournament rule"}
+        _         -> {:error, "Invalid tournament rule"}
       end
     end
   end
@@ -85,7 +86,7 @@ defmodule Milk.Tournaments.Rules do
       keyname = __MODULE__.adapt_keyname(assistant.user_id, tournament_id)
 
       case rule do
-        "basic" -> Basic.trigger!(keyname, Basic.assistant_trigger())
+        "basic"   -> Basic.trigger!(keyname, Basic.assistant_trigger())
         "flipban" -> FlipBan.trigger!(keyname, FlipBan.assistant_trigger())
       end
     end)

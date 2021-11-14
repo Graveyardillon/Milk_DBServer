@@ -794,6 +794,45 @@ defmodule Milk.TournamentsTest do
     end
   end
 
+  describe "is_participant?" do
+    test "team works" do
+      tournament = fixture_tournament(is_team: true, team_size: 2)
+
+      # NOTE: 参加チームを作成し、テスト用のユーザーを一人取り出す。
+      tournament.id
+      |> fill_with_team()
+      |> Enum.map(fn team ->
+        team.id
+        |> Tournaments.get_leader()
+        |> Map.get(:user)
+      end)
+      |> hd()
+      ~> user
+
+      assert Tournaments.is_participant?(tournament.id, user.id)
+
+      invalid_user = fixture_user(num: 200)
+
+      refute Tournaments.is_participant?(tournament.id, invalid_user.id)
+    end
+
+    test "individual works" do
+      tournament = fixture_tournament(capacity: 2)
+
+      tournament.id
+      |> fill_with_entrant()
+      |> hd()
+      |> Map.get(:user_id)
+      ~> user_id
+
+      assert Tournaments.is_participant?(tournament.id, user_id)
+
+      invalid_user = fixture_user(num: 200)
+
+      refute Tournaments.is_participant?(tournament.id, invalid_user.id)
+    end
+  end
+
   describe "create entrant" do
     test "create_entrant/1 with a valid data works fine" do
       user = fixture_user()
@@ -1073,78 +1112,8 @@ defmodule Milk.TournamentsTest do
     |> Progress.insert_match_list_with_fight_result(tournament_id)
   end
 
-  defp start_team(master_id, tournament_id) do
-    Tournaments.start_team_tournament(tournament_id, master_id)
-
-    tournament_id
-    |> Tournaments.get_confirmed_teams()
-    ~> teams
-    |> Enum.map(fn team -> team.id end)
-    |> Tournaments.generate_matchlist()
-    ~> {:ok, match_list}
-    |> elem(1)
-    |> Progress.insert_match_list(tournament_id)
-
-    count = length(teams)
-    Tournaments.initialize_team_rank(match_list, count)
-
-    match_list
-    |> Tournaments.initialize_match_list_of_team_with_fight_result()
-    ~> match_list_with_fight_result
-
-    match_list_with_fight_result
-    |> List.flatten()
-    |> Enum.reduce(match_list_with_fight_result, fn x, acc ->
-      team = Tournaments.get_team(x["team_id"])
-
-      # leaderの情報を記載したいため、そのデータを入れる
-      team.id
-      |> Tournaments.get_leader()
-      |> Map.get(:user)
-      ~> user
-
-      acc
-      |> Tournaments.put_value_on_brackets(user.id, %{"name" => user.name})
-      |> Tournaments.put_value_on_brackets(user.id, %{"win_count" => 0})
-      |> Tournaments.put_value_on_brackets(user.id, %{"icon_path" => user.icon_path})
-      |> Tournaments.put_value_on_brackets(user.id, %{"round" => 0})
-    end)
-    |> Progress.insert_match_list_with_fight_result(tournament_id)
-  end
-
   defp match_list_with_fight_result(match_list) do
     Tournaments.initialize_match_list_with_fight_result(match_list)
-  end
-
-  defp delete_loser(tournament_id, loser_list) do
-    match_list = Progress.get_match_list(tournament_id)
-
-    match_list
-    |> Tournaments.find_match(hd(loser_list))
-    |> Enum.each(fn user_id ->
-      Progress.delete_match_pending_list(user_id, tournament_id)
-      Progress.delete_fight_result(user_id, tournament_id)
-    end)
-
-    renew_match_list(tournament_id, match_list, loser_list)
-    get_lost(tournament_id, match_list, loser_list)
-  end
-
-  defp renew_match_list(tournament_id, match_list, loser_list) do
-    Tournaments.promote_winners_by_loser!(tournament_id, match_list, loser_list)
-    updated_match_list = Tournaments.delete_loser(match_list, loser_list)
-    Progress.delete_match_list(tournament_id)
-    Progress.insert_match_list(updated_match_list, tournament_id)
-  end
-
-  defp get_lost(tournament_id, _match_list, [loser]) do
-    match_list =
-      tournament_id
-      |> Progress.get_match_list_with_fight_result()
-
-    updated_match_list = Tournaments.get_lost(match_list, loser)
-    Progress.delete_match_list_with_fight_result(tournament_id)
-    Progress.insert_match_list_with_fight_result(updated_match_list, tournament_id)
   end
 
   defp create_tournament_for_flow(_) do
@@ -1241,7 +1210,7 @@ defmodule Milk.TournamentsTest do
       topic = fixture(:tournament_chat_topic)
       tabs = Tournaments.get_tabs_including_logs_by_tourament_id(topic.tournament_id)
       assert is_list(tabs)
-      refute length(tabs) == 0
+      refute Enum.empty?(tabs)
 
       Enum.each(tabs, fn tab ->
         assert %TournamentChatTopic{} = tab
@@ -1284,7 +1253,7 @@ defmodule Milk.TournamentsTest do
 
       ranked_entrants = Tournaments.initialize_rank(match_list, 6, tournament.id)
       assert is_list(ranked_entrants)
-      refute length(ranked_entrants) == 0
+      refute Enum.empty?(ranked_entrants)
     end
   end
 
@@ -1341,7 +1310,7 @@ defmodule Milk.TournamentsTest do
 
       Progress.insert_match_list(match_list, entrant.tournament_id)
 
-      assert {:ok, promoted} = Tournaments.promote_rank(attrs)
+      assert {:ok, _} = Tournaments.promote_rank(attrs)
     end
 
     test "promote_rank/1 returns error with invalid attrs(tournament_id)", %{entrant: entrant} do
@@ -1470,12 +1439,13 @@ defmodule Milk.TournamentsTest do
 
       num = 1
 
-      {:ok, match_list} =
-        create_entrants(num, entrant.tournament_id)
-        |> Enum.map(fn x -> %{x | rank: num + 1} end)
-        |> Kernel.++([%{entrant | rank: num + 1}])
-        |> Enum.map(fn entrant -> entrant.user_id end)
-        |> Tournaments.generate_matchlist()
+      num
+      |> create_entrants(entrant.tournament_id)
+      |> Enum.map(fn x -> %{x | rank: num + 1} end)
+      |> Kernel.++([%{entrant | rank: num + 1}])
+      |> Enum.map(fn entrant -> entrant.user_id end)
+      |> Tournaments.generate_matchlist()
+      ~> {:ok, match_list}
 
       Progress.insert_match_list(match_list, entrant.tournament_id)
 

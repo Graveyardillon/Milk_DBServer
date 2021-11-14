@@ -972,12 +972,22 @@ defmodule Milk.Tournaments do
     |> Repo.all()
   end
 
-  @spec is_entrant?(integer(), integer()) :: boolean()
-  def is_entrant?(tournament_id, user_id) do
+  @spec is_participant?(integer(), integer()) :: boolean()
+  def is_participant?(tournament_id, user_id) do
     Entrant
     |> where([e], e.tournament_id == ^tournament_id)
     |> where([e], e.user_id == ^user_id)
     |> Repo.exists?()
+    ~> is_entrant?
+
+    TeamMember
+    |> join(:inner, [tm], t in Team, on: t.id == tm.team_id)
+    |> where([tm, t], t.tournament_id == ^tournament_id)
+    |> where([tm, t], tm.user_id == ^user_id)
+    |> Repo.exists?()
+    ~> is_team_member?
+
+    is_entrant? or is_team_member?
   end
 
   @doc """
