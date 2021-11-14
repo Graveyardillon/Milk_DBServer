@@ -588,7 +588,7 @@ defmodule Milk.Chat do
 
   # グループチャット用の関数
   # TODO: チャットメンバーのユーザーのidをすべて返すようにする
-  def dialogue(%{"user_id" => user_id, "chat_room_id" => chat_room_id} = attrs) do
+  def dialogue(%{"user_id" => user_id, "chat_room_id" => chat_room_id, "word" => message}) do
     user_id = Tools.to_integer_as_needed(user_id)
     chat_room_id = Tools.to_integer_as_needed(chat_room_id)
 
@@ -611,7 +611,7 @@ defmodule Milk.Chat do
 
           %{
             "title" => "大会チャットに新着があります",
-            "body_text" => attrs["word"],
+            "body_text" => message,
             "process_id" => "RECEIVED_TOURNAMENT_CHAT",
             "user_id" => device.user_id,
             "data" =>
@@ -629,7 +629,7 @@ defmodule Milk.Chat do
             device_token: device.token,
             process_id: "RECEIVED_TOURNAMENT_CHAT",
             title: title,
-            message: attrs["word"]
+            message: message
           }
           |> Notif.push_ios()
 
@@ -637,7 +637,8 @@ defmodule Milk.Chat do
         end
       end)
 
-      create_chats(attrs)
+      %{"user_id" => user_id, "chat_room_id" => chat_room_id, "word" => message}
+      |> create_chats()
     end
   end
 
