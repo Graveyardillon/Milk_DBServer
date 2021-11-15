@@ -11,7 +11,7 @@ defmodule Milk.Tournaments.Rules.FlipBan do
   @db_index Rule.db_index()
 
   @impl Rule
-  def machine_name(true), do: "flipban_team"
+  def machine_name(true),  do: "flipban_team"
   def machine_name(false), do: "flipban"
 
   @impl Rule

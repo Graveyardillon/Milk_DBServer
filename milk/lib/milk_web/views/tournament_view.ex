@@ -421,6 +421,7 @@ defmodule MilkWeb.TournamentView do
     }
   end
 
+  # NOTE: フロント側で型を固定してある
   def render("match_info.json", %{
         opponent: opponent,
         rank: rank,
