@@ -87,6 +87,7 @@ defmodule Milk.Tournaments.Rules.FlipBan do
         is_member()
       end,
       is_manager(),
+      is_assistant(),
       should_flip_coin(),
       is_waiting_for_coin_flip(),
       should_ban_map(),

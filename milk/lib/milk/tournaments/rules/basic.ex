@@ -76,6 +76,7 @@ defmodule Milk.Tournaments.Rules.Basic do
         is_member()
       end,
       is_manager(),
+      is_assistant(),
       should_start_match(),
       is_waiting_for_start_match(),
       is_pending(),
