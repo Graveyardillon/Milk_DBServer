@@ -90,7 +90,7 @@ defmodule Milk.Tournaments.Progress do
   def get_match_list(tournament_id) do
     conn = conn()
 
-    with {:ok, _} <- Redix.command(conn, ["SELECT", 1]),
+    with {:ok, _}                            <- Redix.command(conn, ["SELECT", 1]),
          {:ok, value} when not is_nil(value) <- Redix.command(conn, ["GET", tournament_id]) do
       value
       |> Code.eval_string()
@@ -122,17 +122,17 @@ defmodule Milk.Tournaments.Progress do
   def renew_match_list(loser, tournament_id) do
     conn = conn()
 
-    with {:ok, _} <- Redix.command(conn, ["SELECT", 1]),
-         {:ok, value} when value == 1 <- Redix.command(conn, ["SETNX", -tournament_id, 1]),
-         {:ok, _} <-  Redix.command(conn, ["EXPIRE", -tournament_id, 20]),
-         {:ok, _} <- Redix.command(conn, ["SELECT", 1]),
-         {:ok, value} <- Redix.command(conn, ["GET", tournament_id]),
+    with {:ok, _}                                    <- Redix.command(conn, ["SELECT", 1]),
+         {:ok, value} when value == 1                <- Redix.command(conn, ["SETNX", -tournament_id, 1]),
+         {:ok, _}                                    <-  Redix.command(conn, ["EXPIRE", -tournament_id, 20]),
+         {:ok, _}                                    <- Redix.command(conn, ["SELECT", 1]),
+         {:ok, value}                                <- Redix.command(conn, ["GET", tournament_id]),
          {match_list, _} when not is_nil(match_list) <- Code.eval_string(value),
-         match_list <- Tournamex.delete_loser(match_list, loser),
-         bin <- inspect(match_list, charlists: false),
-         {:ok, _} <- Redix.command(conn, ["DEL", tournament_id]),
-         {:ok, _} <- Redix.command(conn, ["SET", tournament_id, bin]),
-         {:ok, _} <- Redix.command(conn, ["DEL", -tournament_id]) do
+         match_list                                  <- Tournamex.delete_loser(match_list, loser),
+         bin                                         <- inspect(match_list, charlists: false),
+         {:ok, _}                                    <- Redix.command(conn, ["DEL", tournament_id]),
+         {:ok, _}                                    <- Redix.command(conn, ["SET", tournament_id, bin]),
+         {:ok, _}                                    <- Redix.command(conn, ["DEL", -tournament_id]) do
       {:ok, nil}
     else
       {:error, %Redix.Error{message: message}} -> {:error, message}
@@ -175,9 +175,9 @@ defmodule Milk.Tournaments.Progress do
   def get_match_list_with_fight_result(tournament_id) do
     conn = conn()
 
-    with {:ok, _} <- Redix.command(conn, ["SELECT", 2]),
+    with {:ok, _}                            <- Redix.command(conn, ["SELECT", 2]),
          {:ok, value} when not is_nil(value) <- Redix.command(conn, ["GET", tournament_id]),
-         {match_list, _} <- Code.eval_string(value) do
+         {match_list, _}                     <- Code.eval_string(value) do
       match_list
     else
       _ -> nil
@@ -192,6 +192,7 @@ defmodule Milk.Tournaments.Progress do
       nil ->
         tournament_id
         |> get_match_list_with_fight_result_log()
+        # TODO: nilだったときのエラーハンドリング
         |> Map.get(:match_list_with_fight_result_str)
         |> Code.eval_string()
         |> elem(0)
@@ -219,17 +220,17 @@ defmodule Milk.Tournaments.Progress do
   def renew_match_list_with_fight_result(loser, tournament_id) do
     conn = conn()
 
-    with {:ok, _} <- Redix.command(conn, ["SELECT", 2]),
-         {:ok, value} when value == 1 <- Redix.command(conn, ["SETNX", -tournament_id, 2]),
-         {:ok, _} <- Redix.command(conn, ["EXPIRE", -tournament_id, 20]),
-         {:ok, _} <- Redix.command(conn, ["SELECT", 2]),
-         {:ok, value} <- Redix.command(conn, ["GET", tournament_id]),
+    with {:ok, _}                                    <- Redix.command(conn, ["SELECT", 2]),
+         {:ok, value} when value == 1                <- Redix.command(conn, ["SETNX", -tournament_id, 2]),
+         {:ok, _}                                    <- Redix.command(conn, ["EXPIRE", -tournament_id, 20]),
+         {:ok, _}                                    <- Redix.command(conn, ["SELECT", 2]),
+         {:ok, value}                                <- Redix.command(conn, ["GET", tournament_id]),
          {match_list, _} when not is_nil(match_list) <- Code.eval_string(value),
-         match_list <- Tournamex.renew_match_list_with_loser(match_list, loser),
-         bin <- inspect(match_list, charlists: false),
-         {:ok, _} <- Redix.command(conn, ["DEL", tournament_id]),
-         {:ok, _} <- Redix.command(conn, ["SET", tournament_id, bin]),
-         {:ok, _} <- Redix.command(conn, ["DEL", -tournament_id]) do
+         match_list                                  <- Tournamex.renew_match_list_with_loser(match_list, loser),
+         bin                                         <- inspect(match_list, charlists: false),
+         {:ok, _}                                    <- Redix.command(conn, ["DEL", tournament_id]),
+         {:ok, _}                                    <- Redix.command(conn, ["SET", tournament_id, bin]),
+         {:ok, _}                                    <- Redix.command(conn, ["DEL", -tournament_id]) do
       {:ok, nil}
     else
       {:error, %Redix.Error{message: message}} -> {:error, message}
@@ -277,7 +278,7 @@ defmodule Milk.Tournaments.Progress do
   def get_match_pending_list(user_id, tournament_id) do
     conn = conn()
 
-    with {:ok, _} <- Redix.command(conn, ["SELECT", 3]),
+    with {:ok, _}                            <- Redix.command(conn, ["SELECT", 3]),
          {:ok, value} when not is_nil(value) <- Redix.command(conn, ["HGET", tournament_id, user_id]) do
       value
     else
@@ -289,7 +290,7 @@ defmodule Milk.Tournaments.Progress do
   def get_match_pending_list_of_tournament(tournament_id) do
     conn = conn()
 
-    with {:ok, _} <- Redix.command(conn, ["SELECT", 3]),
+    with {:ok, _}     <- Redix.command(conn, ["SELECT", 3]),
          {:ok, value} <- Redix.command(conn, ["HKEYS", tournament_id]) do
       value
     else
@@ -316,9 +317,9 @@ defmodule Milk.Tournaments.Progress do
   def delete_match_pending_list_of_tournament(tournament_id) do
     conn = conn()
 
-    with {:ok, _} <- Redix.command(conn, ["SELECT", 3]),
+    with {:ok, _}                         <- Redix.command(conn, ["SELECT", 3]),
          {:ok, value} when is_list(value) <- Redix.command(conn, ["HKEYS", tournament_id]),
-         {:ok, _} <- do_delete_match_pending_list_of_tournament(conn, tournament_id, value) do
+         {:ok, _}                         <- do_delete_match_pending_list_of_tournament(conn, tournament_id, value) do
       {:ok, nil}
     else
       {:error, %Redix.Error{message: message}} -> {:error, message}
@@ -356,7 +357,7 @@ defmodule Milk.Tournaments.Progress do
   def get_fight_result(user_id, tournament_id) do
     conn = conn()
 
-    with {:ok, _} <- Redix.command(conn, ["SELECT", 4]),
+    with {:ok, _}                            <- Redix.command(conn, ["SELECT", 4]),
          {:ok, value} when not is_nil(value) <- Redix.command(conn, ["HGET", tournament_id, user_id]) do
       value
       |> Code.eval_string()
@@ -385,9 +386,9 @@ defmodule Milk.Tournaments.Progress do
   def delete_fight_result_of_tournament(tournament_id) do
     conn = conn()
 
-    with {:ok, _} <- Redix.command(conn, ["SELECT", 4]),
+    with {:ok, _}                         <- Redix.command(conn, ["SELECT", 4]),
          {:ok, value} when is_list(value) <- Redix.command(conn, ["HKEYS", tournament_id]),
-         {:ok, _} <- do_delete_fight_result_of_tournament(conn, tournament_id, value) do
+         {:ok, _}                         <- do_delete_fight_result_of_tournament(conn, tournament_id, value) do
       {:ok, nil}
     else
       {:error, %Redix.Error{message: message}} -> {:error, message}
@@ -428,7 +429,7 @@ defmodule Milk.Tournaments.Progress do
   def get_duplicate_users(tournament_id) do
     conn = conn()
 
-    with {:ok, _} <- Redix.command(conn, ["SELECT", 5]),
+    with {:ok, _}                         <- Redix.command(conn, ["SELECT", 5]),
          {:ok, value} when is_list(value) <- Redix.command(conn, ["SMEMBERS", tournament_id]) do
       Enum.map(value, &String.to_integer(&1))
     else
@@ -443,10 +444,10 @@ defmodule Milk.Tournaments.Progress do
   def delete_duplicate_user(tournament_id, user_id) do
     conn = conn()
 
-    with {:ok, _} <- Redix.command(conn, ["SELECT", 5]),
-         {:ok, n} <- Redix.command(conn, ["SCARD", tournament_id]),
+    with {:ok, _}                                       <- Redix.command(conn, ["SELECT", 5]),
+         {:ok, n}                                       <- Redix.command(conn, ["SCARD", tournament_id]),
          {:ok, user_id_list} when is_list(user_id_list) <- Redix.command(conn, ["SPOP", tournament_id, n]),
-         {:ok, _} <- do_delete_duplicate_users(conn, tournament_id, user_id, user_id_list) do
+         {:ok, _}                                       <- do_delete_duplicate_users(conn, tournament_id, user_id, user_id_list) do
       {:ok, nil}
     else
       {:error, %Redix.Error{message: message}} -> {:error, message}
@@ -507,7 +508,7 @@ defmodule Milk.Tournaments.Progress do
   def get_score(tournament_id, user_id) do
     conn = conn()
 
-    with {:ok, _} <- Redix.command(conn, ["SELECT", 7]),
+    with {:ok, _}                            <- Redix.command(conn, ["SELECT", 7]),
          {:ok, value} when not is_nil(value) <- Redix.command(conn, ["HGET", tournament_id, user_id]) do
       value
       |> Code.eval_string()
@@ -581,7 +582,7 @@ defmodule Milk.Tournaments.Progress do
   def get_ban_order(tournament_id, id) do
     conn = conn()
 
-    with {:ok, _} <- Redix.command(conn, ["SELECT", 8]),
+    with {:ok, _}     <- Redix.command(conn, ["SELECT", 8]),
          {:ok, value} <- Redix.command(conn, ["HGET", tournament_id, id]) do
       unless is_nil(value) do
         value
@@ -634,7 +635,7 @@ defmodule Milk.Tournaments.Progress do
   def is_attacker_side?(id, tournament_id) do
     conn = conn()
 
-    with {:ok, _} <- Redix.command(conn, ["SELECT", 9]),
+    with {:ok, _}                        <- Redix.command(conn, ["SELECT", 9]),
          {:ok, value} when is_nil(value) <- Redix.command(conn, ["HGET", tournament_id, id]) do
       value
       |> Code.eval_string()

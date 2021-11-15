@@ -588,6 +588,7 @@ defmodule Milk.Chat do
 
   # グループチャット用の関数
   # TODO: チャットメンバーのユーザーのidをすべて返すようにする
+  # TODO: リファクタリング
   def dialogue(%{"user_id" => user_id, "chat_room_id" => chat_room_id, "word" => message}) do
     if Repo.exists?(from u in User, where: u.id == ^user_id) and
          Repo.exists?(from cr in ChatRoom, where: cr.id == ^chat_room_id) do
