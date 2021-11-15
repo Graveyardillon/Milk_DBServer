@@ -159,23 +159,20 @@ defmodule MilkWeb.ChatsController do
   If the user already have a room for him,
   it doesn't create a room but just send a chat.
   """
-  def create_dialogue(conn, %{"chat" => chats_params}) do
-    case Chat.dialogue(chats_params) do
-      {:ok, %Chats{} = chats} ->
-        conn
-        |> render("show.json", chats: chats)
+  def create_dialogue(conn, %{"chat" => %{"user_id" => user_id, "partner_id" => partner_id, "word" => message}}) do
+    user_id = Tools.to_integer_as_needed(user_id)
+    partner_id = Tools.to_integer_as_needed(partner_id)
 
-      {:error, error} ->
-        render(conn, "error.json", error: error)
-
-      _ ->
-        render(conn, "error.json", error: nil)
+    case Chat.dialogue(%{"user_id" => user_id, "partner_id" => partner_id, "word" => message}) do
+      {:ok, %Chats{} = chats} -> render(conn, "show.json",  chats: chats)
+      {:error, error}         -> render(conn, "error.json", error: error)
+      _                       -> render(conn, "error.json", error: nil)
     end
   end
 
-  def create_dialogue(conn, %{"chat_group" => chats_params}) do
-    chats_params
-    |> Chat.dialogue()
+  def create_dialogue(conn, %{"chat_group" => %{"user_id" => user_id, "chat_room_id" => chat_room_id, "word" => message}}) do
+    user_id
+    |> Chat.dialogue(chat_room_id, message)
     |> case do
       {:ok, %Chats{} = chats} ->
         members =
