@@ -422,71 +422,38 @@ defmodule MilkWeb.TournamentView do
   end
 
   # NOTE: フロント側で型を固定してある
-  def render("match_info.json", %{
-        opponent: opponent,
-        rank: rank,
-        is_team: is_team,
-        is_leader: is_leader,
-        is_attacker_side: is_attacker_side,
-        score: score,
-        state: state,
-        map: map,
-        rule: rule,
-        is_coin_head: is_coin_head,
-        custom_detail: custom_detail
-      }) do
+  def render("match_info.json", %{match_info: match_info}) do
     %{
-      opponent:
-        cond do
-          is_binary(opponent) ->
-            nil
-
-          is_nil(opponent) ->
-            nil
-
-          state == "IsAlone" ->
-            nil
-
-          is_team ->
-            %{
-              name: opponent.name,
-              icon_path: opponent.icon_path,
-              id: opponent.id
-            }
-
-          true ->
-            %{
-              name: opponent.name,
-              icon_path: opponent.icon_path,
-              id: opponent.id
-            }
-        end,
-      rank: rank,
+      opponent: if !is_nil(match_info.opponent) do
+        %{
+          name: match_info.opponent.name,
+          icon_path: match_info.opponent.icon_path,
+          id: match_info.opponent.id
+        }
+      end,
+      rank: match_info.rank,
       result: true,
-      is_leader:
-        if is_team do
-          is_leader
-        end,
-      is_attacker_side: is_attacker_side,
-      score: score,
-      state: state,
-      is_team: is_team,
-      is_coin_head: is_coin_head,
-      rule: rule,
+      is_leader: match_info.is_leader,
+      is_attacker_side: match_info.is_attacker_side,
+      score: match_info.score,
+      state: match_info.state,
+      is_team: match_info.is_team,
+      is_coin_head: match_info.is_coin_head,
+      rule: match_info.rule,
       map:
-        if map do
+        if match_info.map do
           %{
-            state: map.state,
-            name: map.name,
-            icon_path: map.icon_path,
-            id: map.id
+            state: match_info.map.state,
+            name: match_info.map.name,
+            icon_path: match_info.map.icon_path,
+            id: match_info.map.id
           }
         end,
       custom_detail:
-        if custom_detail do
+        if match_info.custom_detail do
           %{
-            coin_head_field: custom_detail.coin_head_field,
-            coin_tail_field: custom_detail.coin_tail_field
+            coin_head_field: match_info.custom_detail.coin_head_field,
+            coin_tail_field: match_info.custom_detail.coin_tail_field
           }
         end
     }

@@ -26,6 +26,7 @@ defmodule MilkWeb.TournamentController do
     TournamentLog
   }
   alias Milk.Tournaments.{
+    MatchInformation,
     Progress,
     Team,
     Tournament
@@ -1806,13 +1807,14 @@ defmodule MilkWeb.TournamentController do
     tournament_id = Tools.to_integer_as_needed(tournament_id)
     user_id = Tools.to_integer_as_needed(user_id)
 
-    opponent = get_opponent_for_match_info(tournament_id, user_id)
-    is_leader = Tournaments.is_leader?(tournament_id, user_id)
     tournament = get_tournament_for_match_info(tournament_id)
 
     rank = get_rank(tournament, user_id)
     state = Tournaments.state!(tournament.id, user_id)
     score = load_score(state, tournament, user_id)
+
+    opponent = get_opponent_for_match_info(tournament_id, user_id, state)
+    is_leader = Tournaments.is_leader?(tournament_id, user_id)
 
     id = Progress.get_necessary_id(tournament_id, user_id)
     is_coin_head = is_coin_head_on_match_info?(opponent, tournament, id)
@@ -1830,7 +1832,7 @@ defmodule MilkWeb.TournamentController do
     is_team = tournament.is_team
     rule = tournament.rule
 
-    render(conn, "match_info.json", %{
+    match_info = %MatchInformation{
       opponent: opponent,
       rank: rank,
       is_team: is_team,
@@ -1842,15 +1844,18 @@ defmodule MilkWeb.TournamentController do
       rule: rule,
       is_coin_head: is_coin_head,
       custom_detail: custom_detail
-    })
+    }
+
+    render(conn, "match_info.json", match_info: match_info)
   end
 
-  defp get_opponent_for_match_info(tournament_id, user_id) do
+  defp get_opponent_for_match_info(_, _, "IsAlone"), do: nil
+  defp get_opponent_for_match_info(tournament_id, user_id, _) do
     tournament_id
     |> Tournaments.get_opponent(user_id)
     |> case do
-      {:ok, opponent} -> opponent
-      _ -> nil
+      {:ok, opponent} when not is_nil(opponent) -> opponent
+      _                                         -> nil
     end
   end
 
@@ -1859,9 +1864,9 @@ defmodule MilkWeb.TournamentController do
     tournament_id
     |> Tournaments.get_tournament_including_logs()
     |> case do
-      {:ok, %Tournament{} = tournament} -> tournament
+      {:ok, %Tournament{} = tournament}        -> tournament
       {:ok, %TournamentLog{} = tournament_log} -> Map.put(tournament_log, :id, tournament_log.tournament_id)
-      _ -> nil
+      _                                        -> nil
     end
   end
 

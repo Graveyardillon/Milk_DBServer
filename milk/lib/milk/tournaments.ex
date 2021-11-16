@@ -1622,11 +1622,11 @@ defmodule Milk.Tournaments do
   defp validate_team_number(num) when num <= 1, do: {:error, "short of teams"}
   defp validate_team_number(_), do: {:ok, nil}
 
-  defp start_team_states!(%Tournament{id: id, rule: rule}) do
-    id
+  defp start_team_states!(%Tournament{id: tournament_id, rule: rule}) do
+    tournament_id
     |> __MODULE__.get_confirmed_team_members_by_tournament_id()
-    |> Enum.each(fn member ->
-      keyname = Rules.adapt_keyname(member.user_id, id)
+    |> Enum.map(fn member ->
+      keyname = Rules.adapt_keyname(member.user_id, tournament_id)
 
       if member.is_leader do
         case rule do
@@ -1642,8 +1642,8 @@ defmodule Milk.Tournaments do
         end
       end
     end)
-
-    {:ok, nil}
+    |> Enum.all?(&match?({:ok, _}, &1))
+    |> Tools.boolean_to_tuple()
   end
 
   @doc """
@@ -2845,7 +2845,7 @@ defmodule Milk.Tournaments do
 
       case tournament.rule do
         "basic"   -> Basic.build_dfa_instance(keyname, is_team: tournament.is_team)
-        "flipban" -> Basic.build_dfa_instance(keyname, is_team: tournament.is_team)
+        "flipban" -> FlipBan.build_dfa_instance(keyname, is_team: tournament.is_team)
         _         -> {:error, "Invalid tournament rule"}
       end
     end)
@@ -2959,14 +2959,14 @@ defmodule Milk.Tournaments do
   @doc """
   Checks if the user is a leader
   """
-  @spec is_leader?(integer(), integer()) :: boolean()
+  @spec is_leader?(integer(), integer()) :: boolean() | nil
   def is_leader?(tournament_id, user_id) do
     tournament_id
     |> __MODULE__.get_tournament_including_logs()
     |> case do
-      {:ok, %Tournament{} = tournament} -> tournament
+      {:ok, %Tournament{} = tournament}        -> tournament
       {:ok, %TournamentLog{} = tournament_log} -> tournament_log
-      _ -> nil
+      _                                        -> nil
     end
     |> do_is_leader?(user_id)
   end
@@ -2974,7 +2974,7 @@ defmodule Milk.Tournaments do
   @spec do_is_leader?(Tournament.t() | TournamentLog.t() | Team.t() | TeamLog.t() | nil, integer()) :: boolean()
   defp do_is_leader?(nil, _), do: false
 
-  defp do_is_leader?(%Tournament{is_team: false}, _), do: false
+  defp do_is_leader?(%Tournament{is_team: false}, _), do: nil
   defp do_is_leader?(%Tournament{id: id, is_team: true}, user_id) do
     id
     |> __MODULE__.get_team_by_tournament_id_and_user_id(user_id)
@@ -3679,16 +3679,13 @@ defmodule Milk.Tournaments do
 
     map_selections
     |> Enum.concat(maps)
-    |> Enum.uniq_by(fn map ->
-      map.id
-    end)
+    |> Enum.uniq_by(&(&1.id))
   end
 
   @doc """
   Get selected map by tournament id.
   """
-  @spec get_selected_map(integer(), integer()) ::
-          {:ok, Milk.Tournaments.Map.t()} | {:error, String.t()}
+  @spec get_selected_map(integer(), integer()) :: {:ok, Milk.Tournaments.Map.t()} | {:error, String.t()}
   def get_selected_map(tournament_id, id) do
     MapSelection
     |> join(:inner, [ms], m in Milk.Tournaments.Map, on: ms.map_id == m.id)
@@ -3696,9 +3693,7 @@ defmodule Milk.Tournaments do
     |> where([ms, m], ms.large_id == ^id or ms.small_id == ^id)
     |> Repo.all()
     |> Repo.preload(:map)
-    |> Enum.filter(fn map ->
-      map.state == "selected"
-    end)
+    |> Enum.filter(&(&1.state == "selected"))
     |> Enum.map(fn map_selection ->
       map_selection
       |> Map.get(:map)
@@ -3734,9 +3729,9 @@ defmodule Milk.Tournaments do
     |> Enum.reduce(Multi.new(), &delete_map_selection_transaction(&1, &2))
     |> Repo.transaction()
     |> case do
-      {:ok, result} -> {:ok, result}
+      {:ok, result}             -> {:ok, result}
       {:error, _, changeset, _} -> {:error, changeset.errors}
-      {:error, _} -> {:error, nil}
+      {:error, _}               -> {:error, nil}
     end
   end
 

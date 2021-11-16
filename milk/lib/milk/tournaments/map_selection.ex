@@ -1,4 +1,8 @@
 defmodule Milk.Tournaments.MapSelection do
+  @moduledoc """
+  対戦時に選択したマップについて記録しておくテーブルについてのスキーマ
+  """
+
   use Milk.Schema
 
   import Ecto.Changeset
