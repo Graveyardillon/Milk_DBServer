@@ -897,41 +897,31 @@ defmodule MilkWeb.TournamentController do
     tournament_id = Tools.to_integer_as_needed(tournament_id)
     map_id = Tools.to_integer_as_needed(map_id)
 
-    user_id
-    |> Tournaments.choose_maps(tournament_id, [map_id])
-    |> case do
-      {:ok, nil} ->
-        notify_discord_on_choose_map_as_needed!(user_id, tournament_id, map_id)
-        json(conn, %{result: true})
-
-      {:error, error} ->
-        render(conn, "error.json", error: error)
+    with {:ok, tournament} <- Tournaments.choose_maps(user_id, tournament_id, [map_id]),
+         {:ok, _}          <- notify_discord_on_choose_map_as_needed!(user_id, tournament, map_id),
+         state             <- Tournaments.state!(tournament_id, user_id) do
+      json(conn, %{result: true, state: state})
+    else
+      _ -> render(conn, "error.json", error: nil)
     end
   end
 
-  def notify_discord_on_choose_map_as_needed!(user_id, tournament_id, map_id) do
-    tournament_id
-    |> Tournaments.get_tournament()
-    ~> tournament
-    |> Map.get(:discord_server_id)
-    ~> server_id
-    |> is_nil()
-    |> unless do
-      {:ok, opponent} = Tournaments.get_opponent(tournament_id, user_id)
+  defp notify_discord_on_choose_map_as_needed!(_, %Tournament{discord_server_id: nil}, _), do: {:ok, nil}
+  defp notify_discord_on_choose_map_as_needed!(user_id, %Tournament{id: tournament_id, discord_server_id: discord_server_id, is_team: is_team}, map_id) do
+    {:ok, opponent} = Tournaments.get_opponent(tournament_id, user_id)
 
-      if tournament.is_team do
-        team = Tournaments.get_team_by_tournament_id_and_user_id(tournament_id, user_id)
-        team.name
-      else
-        user = Accounts.get_user(user_id)
-        user.name
-      end
-      ~> name
-
-      map_name = Tournaments.get_map(map_id).name
-
-      Discord.send_tournament_choose_map_notification(server_id, name, opponent.name, map_name)
+    if is_team do
+      team = Tournaments.get_team_by_tournament_id_and_user_id(tournament_id, user_id)
+      team.name
+    else
+      user = Accounts.get_user(user_id)
+      user.name
     end
+    ~> name
+
+    map_name = Tournaments.get_map(map_id).name
+
+    Discord.send_tournament_choose_map_notification(discord_server_id, name, opponent.name, map_name)
   end
 
   @doc """
@@ -941,47 +931,36 @@ defmodule MilkWeb.TournamentController do
     user_id = Tools.to_integer_as_needed(user_id)
     tournament_id = Tools.to_integer_as_needed(tournament_id)
 
-    user_id
-    |> Tournaments.choose_ad(
-      tournament_id,
-      is_attacker_side == "1" || is_attacker_side == true || is_attacker_side == "true"
-    )
-    |> case do
-      {:ok, nil} ->
-        notify_discord_on_choose_ad_as_needed!(user_id, tournament_id, is_attacker_side)
-        json(conn, %{result: true})
+    is_attacker_side = is_attacker_side == "1" || is_attacker_side == true || is_attacker_side == "true"
 
-      {:error, error} ->
-        render(conn, "error.json", error: error)
+    with {:ok, tournament} <- Tournaments.choose_ad(user_id, tournament_id, is_attacker_side),
+         {:ok, _}          <- notify_discord_on_choose_ad_as_needed!(user_id, tournament, is_attacker_side),
+         state             <- Tournaments.state!(tournament_id, user_id) do
+      json(conn, %{result: true, state: state})
+    else
+      _ -> render(conn, "error.json", error: nil)
     end
   end
 
-  def notify_discord_on_choose_ad_as_needed!(user_id, tournament_id, is_attacker_side) do
-    tournament_id
-    |> Tournaments.get_tournament()
-    ~> tournament
-    |> Map.get(:discord_server_id)
-    ~> server_id
-    |> is_nil()
-    |> unless do
-      {:ok, opponent} = Tournaments.get_opponent(tournament_id, user_id)
+  defp notify_discord_on_choose_ad_as_needed!(_, %Tournament{discord_server_id: nil}, _), do: {:ok, nil}
+  defp notify_discord_on_choose_ad_as_needed!(user_id, %Tournament{id: tournament_id, discord_server_id: discord_server_id, is_team: is_team}, is_attacker_side) do
+    {:ok, opponent} = Tournaments.get_opponent(tournament_id, user_id)
 
-      if tournament.is_team do
-        team = Tournaments.get_team_by_tournament_id_and_user_id(tournament_id, user_id)
-        team.name
-      else
-        user = Accounts.get_user(user_id)
-        user.name
-      end
-      ~> name
-
-      Discord.send_tournament_choose_ad_notification(
-        server_id,
-        name,
-        opponent.name,
-        is_attacker_side
-      )
+    if is_team do
+      team = Tournaments.get_team_by_tournament_id_and_user_id(tournament_id, user_id)
+      team.name
+    else
+      user = Accounts.get_user(user_id)
+      user.name
     end
+    ~> name
+
+    Discord.send_tournament_choose_ad_notification(
+      discord_server_id,
+      name,
+      opponent.name,
+      is_attacker_side
+    )
   end
 
   @doc """
@@ -991,8 +970,6 @@ defmodule MilkWeb.TournamentController do
     user_id = Tools.to_integer_as_needed(user_id)
     tournament_id = Tools.to_integer_as_needed(tournament_id)
     tournament = Tournaments.get_tournament(tournament_id)
-
-
 
     with {:ok, _}   <- Tournaments.start_match(tournament, user_id),
          {:ok, _}   <- do_start_match(tournament, user_id),

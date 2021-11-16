@@ -818,7 +818,7 @@ defmodule Milk.Tournaments do
   @doc """
   Choose a map.
   """
-  @spec choose_maps(integer(), integer(), [integer()]) :: {:ok, nil} | {:error, String.t()}
+  @spec choose_maps(integer(), integer(), [integer()]) :: {:ok, Tournament.t()} | {:error, String.t()}
   def choose_maps(user_id, _, _)       when not is_integer(user_id),       do: {:error, "user id should be integer"}
   def choose_maps(_, tournament_id, _) when not is_integer(tournament_id), do: {:error, "tournament id should be integer"}
   def choose_maps(_, _, map_id_list)   when not is_list(map_id_list),      do: {:error, "invalid map id list"}
@@ -838,7 +838,7 @@ defmodule Milk.Tournaments do
          tournament when not is_nil(tournament) <- __MODULE__.get_tournament(tournament_id),
          {:ok, _}                               <- renew_redis_after_choosing_maps(user_id, tournament_id),
          {:ok, _}                               <- Rules.change_state_on_choose_map(tournament, user_id, opponent_id) do
-      {:ok, nil}
+      {:ok, tournament}
     else
       error -> error
     end
@@ -847,7 +847,7 @@ defmodule Milk.Tournaments do
   @doc """
   Choose A/D
   """
-  @spec choose_ad(integer(), integer(), boolean()) :: {:ok, nil} | {:error, String.t()}
+  @spec choose_ad(integer(), integer(), boolean()) :: {:ok, Tournament.t()} | {:error, String.t()}
   def choose_ad(user_id, _, _)          when not is_integer(user_id),          do: {:error, "user id should be integer"}
   def choose_ad(_, tournament_id, _)    when not is_integer(tournament_id),    do: {:error, "tournament id should be integer"}
   def choose_ad(_, _, is_attacker_side) when not is_boolean(is_attacker_side), do: {:error, "attacker side information should be boolean"}
@@ -867,7 +867,7 @@ defmodule Milk.Tournaments do
          {:ok, _}                               <- renew_redis_after_choosing_maps(user_id, tournament_id),
          tournament when not is_nil(tournament) <- __MODULE__.get_tournament(tournament_id),
          {:ok, _}                               <- Rules.change_state_on_choose_ad(tournament, user_id, opponent_id) do
-      {:ok, nil}
+      {:ok, tournament}
     else
       nil   -> {:error, "tournament is nil"}
       error -> error
