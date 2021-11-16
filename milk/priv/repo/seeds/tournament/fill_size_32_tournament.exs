@@ -46,7 +46,7 @@ Tournaments.start(tournament.id, tournament.master_id)
   |> Enum.map(fn x -> x.user_id end)
   |> Tournaments.generate_matchlist()
 count =
-  Tournaments.get_tournament(tournament.id)
+  Tournaments.load_tournament(tournament.id)
   |> Map.get(:count)
 match_list
 |> Tournaments.initialize_rank(count, tournament.id)

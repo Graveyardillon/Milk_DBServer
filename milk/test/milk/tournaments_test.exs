@@ -139,7 +139,7 @@ defmodule Milk.TournamentsTest do
       opts["tournament_id"]
       |> is_nil()
       |> unless do
-        Tournaments.get_tournament(opts["tournament_id"])
+        Tournaments.load_tournament(opts["tournament_id"])
       else
         fixture_tournament(is_started: true)
       end
@@ -163,10 +163,10 @@ defmodule Milk.TournamentsTest do
   end
 
   describe "get tournament" do
-    test "get_tournament/1" do
+    test "load_tournament/1" do
       tournament = fixture_tournament()
 
-      t = Tournaments.get_tournament(tournament.id)
+      t = Tournaments.load_tournament(tournament.id)
       assert t.capacity == tournament.capacity
       assert t.description == tournament.description
       assert t.name == tournament.name
@@ -178,17 +178,17 @@ defmodule Milk.TournamentsTest do
       assert t.game_name == tournament.game_name
     end
 
-    test "get_tournament/1 fails" do
+    test "load_tournament/1 fails" do
       1
-      |> Tournaments.get_tournament()
+      |> Tournaments.load_tournament()
       |> is_nil()
       |> assert()
     end
 
-    test "get_tournament/1 (is_team)" do
+    test "load_tournament/1 (is_team)" do
       tournament = fixture_tournament(is_team: true)
 
-      assert %Tournament{} = Tournaments.get_tournament(tournament.id)
+      assert %Tournament{} = Tournaments.load_tournament(tournament.id)
     end
 
     test "get_tournament_by_room_id works" do
@@ -268,15 +268,15 @@ defmodule Milk.TournamentsTest do
       |> assert()
     end
 
-    test "get_tournament/1 with valid data works fine" do
+    test "load_tournament/1 with valid data works fine" do
       tournament = fixture_tournament()
-      assert %Tournament{} = obtained_tournament = Tournaments.get_tournament(tournament.id)
+      assert %Tournament{} = obtained_tournament = Tournaments.load_tournament(tournament.id)
       assert obtained_tournament.id == tournament.id
     end
 
     test "get_participating_tournaments!/1 with valid data works fine" do
       entrant = fixture_entrant()
-      _tournament = Tournaments.get_tournament(entrant.tournament_id)
+      _tournament = Tournaments.load_tournament(entrant.tournament_id)
 
       assert tournaments = Tournaments.get_participating_tournaments(entrant.user_id, 0)
       assert is_list(tournaments)
@@ -509,7 +509,7 @@ defmodule Milk.TournamentsTest do
     test "delete_tournament/1 of Tournament structure works fine with a valid data" do
       tournament = fixture_tournament()
       assert {:ok, %Tournament{}} = Tournaments.delete_tournament(tournament)
-      refute Tournaments.get_tournament(tournament.id)
+      refute Tournaments.load_tournament(tournament.id)
     end
 
     test "delete_tournament/1 of map works fine with a valid data" do
@@ -521,13 +521,13 @@ defmodule Milk.TournamentsTest do
         |> Tournaments.create_tournament()
 
       assert {:ok, %Tournament{}} = Tournaments.delete_tournament(tournament)
-      refute Tournaments.get_tournament(tournament.id)
+      refute Tournaments.load_tournament(tournament.id)
     end
 
     test "delete_tournament/1 of id works fine with a valid data" do
       tournament = fixture_tournament()
       assert {:ok, %Tournament{}} = Tournaments.delete_tournament(tournament.id)
-      refute Tournaments.get_tournament(tournament.id)
+      refute Tournaments.load_tournament(tournament.id)
     end
   end
 
@@ -1084,7 +1084,7 @@ defmodule Milk.TournamentsTest do
       |> Tournaments.generate_matchlist()
 
     count =
-      Tournaments.get_tournament(tournament_id)
+      Tournaments.load_tournament(tournament_id)
       |> Map.get(:count)
 
     match_list

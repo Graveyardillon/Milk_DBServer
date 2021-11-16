@@ -53,7 +53,7 @@ defmodule MilkWeb.TeamController do
 
     confirmed_teams = Tournaments.get_confirmed_teams(tournament_id)
 
-    with tournament when not is_nil(tournament) <- Tournaments.get_tournament(tournament_id),
+    with tournament when not is_nil(tournament) <- Tournaments.load_tournament(tournament_id),
          {:ok, nil}                             <- validate_team_size(tournament, confirmed_teams),
          {:ok, nil}                             <- validate_duplicated_request(tournament.id, leader_id),
          {:ok, nil}                             <- validate_associated_with_discord(tournament, leader_id),
@@ -109,7 +109,7 @@ defmodule MilkWeb.TeamController do
     invitation_id = Tools.to_integer_as_needed(invitation_id)
 
     with team when not is_nil(team) <- Tournaments.get_team_by_invitation_id(invitation_id),
-         tournament when not is_nil(tournament) <- Tournaments.get_tournament(team.tournament_id),
+         tournament when not is_nil(tournament) <- Tournaments.load_tournament(team.tournament_id),
          {:ok, nil} <- validate_team_count(tournament),
          {:ok, nil} <- validate_discord_association_of_user(tournament, invitation_id),
          {:ok, invitation} <- Tournaments.confirm_team_invitation(invitation_id) do
@@ -165,7 +165,7 @@ defmodule MilkWeb.TeamController do
     |> if do
       team
       |> Map.get(:tournament_id)
-      |> Tournaments.get_tournament()
+      |> Tournaments.load_tournament()
       |> Map.get(:discord_server_id)
       ~> discord_server_id
       |> is_nil()

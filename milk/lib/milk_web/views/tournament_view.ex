@@ -485,4 +485,16 @@ defmodule MilkWeb.TournamentView do
   def render("error.json", %{error: error}) do
     %{result: false, error: error, data: nil}
   end
+
+  def render("interaction_message.json", %{interaction_messages: messages}) do
+    %{
+      result: true,
+      messages: Enum.map(messages, fn message ->
+        %{
+          state: message.state,
+          user_id: message.user_id,
+        }
+      end)
+    }
+  end
 end

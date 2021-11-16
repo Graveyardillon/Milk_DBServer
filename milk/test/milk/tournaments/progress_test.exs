@@ -58,7 +58,7 @@ defmodule Milk.Tournaments.ProgressTest do
       |> Tournaments.generate_matchlist()
 
     count =
-      Tournaments.get_tournament(tournament_id)
+      Tournaments.load_tournament(tournament_id)
       |> Map.get(:count)
 
     match_list

@@ -53,7 +53,7 @@ defmodule MilkWeb.DiscordController do
   def create_invitation_link(conn, %{"tournament_id" => tournament_id}) do
     tournament_id
     |> Tools.to_integer_as_needed()
-    |> Tournaments.get_tournament()
+    |> Tournaments.load_tournament()
     |> Map.get(:discord_server_id)
     ~> discord_server_id
 
@@ -83,7 +83,7 @@ defmodule MilkWeb.DiscordController do
     |> Tools.to_integer_as_needed()
     |> Tournaments.get_team()
     |> Map.get(:tournament_id)
-    |> Tournaments.get_tournament()
+    |> Tournaments.load_tournament()
     ~> tournament
 
     invitation_link = Discord.create_invitation_link!(tournament.discord_server_id)

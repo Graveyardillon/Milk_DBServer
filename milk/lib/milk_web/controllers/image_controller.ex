@@ -44,7 +44,7 @@ defmodule MilkWeb.ImageController do
   end
 
   def get_thumbnail_by_tournament_id(conn, %{"tournament_id" => id}) do
-    case Tournaments.get_tournament(id) do
+    case Tournaments.load_tournament(id) do
       nil ->
         json(conn, %{result: false})
 

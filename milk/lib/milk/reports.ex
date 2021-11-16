@@ -89,7 +89,7 @@ defmodule Milk.Reports do
     tournament_id = Tools.to_integer_as_needed(tournament_id)
 
     tournament_id
-    |> Tournaments.get_tournament()
+    |> Tournaments.load_tournament()
     |> case do
       nil ->
         {:error, nil}

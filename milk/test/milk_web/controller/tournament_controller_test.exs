@@ -4136,7 +4136,7 @@ defmodule MilkWeb.TournamentControllerTest do
     #   ~> attrs
     #   |> fixture_tournament()
     #   |> Map.get(:id)
-    #   |> Tournaments.get_tournament()
+    #   |> Tournaments.load_tournament()
     #   ~> tournament
 
     #   assert tournament.custom_detail.coin_head_field == attrs[:coin_head_field]

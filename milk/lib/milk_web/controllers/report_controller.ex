@@ -85,7 +85,7 @@ defmodule MilkWeb.ReportController do
 
     report["tournament_id"]
     |> Tools.to_integer_as_needed()
-    |> Tournaments.get_tournament()
+    |> Tournaments.load_tournament()
     ~> tournament
 
     DiscordWebhook.post_text_to_tournament_report_channel("#{tournament.name}が#{reporter.name}によって通報されました。")
@@ -96,7 +96,7 @@ defmodule MilkWeb.ReportController do
 
     report["tournament_id"]
     |> Tools.to_integer_as_needed()
-    |> Tournaments.get_tournament()
+    |> Tournaments.load_tournament()
     |> Map.get(:master_id)
     ~> reportee_id
 
