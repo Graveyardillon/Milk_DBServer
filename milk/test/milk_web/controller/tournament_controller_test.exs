@@ -3539,6 +3539,41 @@ defmodule MilkWeb.TournamentControllerTest do
     end
   end
 
+  describe "data for ios" do
+    test "works just like get_match_information", %{conn: conn} do
+      tournament = fixture_tournament(capacity: 4)
+      entrants = fill_with_entrant(tournament.id)
+
+      conn = post(conn, Routes.tournament_path(conn, :start), tournament: %{"master_id" => tournament.master_id, "tournament_id" => tournament.id})
+
+      tournament.id
+      |> Progress.get_match_list()
+      |> List.flatten()
+      |> length()
+      |> Kernel.==(4)
+      |> assert()
+
+      me = hd(entrants).user_id
+
+      conn =
+        get(conn, Routes.tournament_path(conn, :get_match_information),
+          tournament_id: tournament.id,
+          user_id: me
+        )
+
+      match_info = json_response(conn, 200)
+
+      conn =
+        get(conn, Routes.tournament_path(conn, :data_for_ios),
+          user_id: me
+        )
+
+      data_for_ios = json_response(conn, 200)
+
+      assert match_info == data_for_ios
+    end
+  end
+
   describe "get match information" do
     test "individual tournament works", %{conn: conn} do
       tournament = fixture_tournament(capacity: 4)

@@ -1794,24 +1794,27 @@ defmodule MilkWeb.TournamentController do
     render(conn, "entrants.json", entrants: entrants)
   end
 
-  # @doc """
-  # iosの起動時に画面遷移をするために必要な情報を取り出すための関数
-  # """
-  # def data_for_ios(conn, %{"user_id" => user_id}) do
-  #   user_id = Tools.to_integer_as_needed(user_id)
+  @doc """
+  iosの起動時に画面遷移をするために必要な情報を取り出すための関数
+  get match informationと比べてtournament idを取得しないといけないのでコストが少し高い
+  """
+  def data_for_ios(conn, %{"user_id" => user_id}) do
+    user_id = Tools.to_integer_as_needed(user_id)
 
-  #   with tournament when not is_nil(tournament) <- started_tournament(user_id),
-  #        match_info                             <- do_get_match_information(tournament.id, user_id) do
-  #     render
-  #   end
-  # end
+    user_id
+    |> started_tournament()
+    |> case do
+      nil        -> render(conn, "error.json", error: "tournament is nil")
+      tournament -> render(conn, "match_info.json", match_info: do_get_match_information(tournament.id, user_id))
+    end
+  end
 
-  # defp started_tournament(user_id) do
-  #   user_id
-  #   |> do_relevant()
-  #   |> Enum.filter(&(&1.is_started))
-  #   |> List.first()
-  # end
+  defp started_tournament(user_id) do
+    user_id
+    |> do_relevant()
+    |> Enum.filter(&(&1.is_started))
+    |> List.first()
+  end
 
   @doc """
   Get information for match
@@ -1859,18 +1862,18 @@ defmodule MilkWeb.TournamentController do
     rule = tournament.rule
 
     %MatchInformation{
-      tournament: tournament,
-      opponent: opponent,
-      rank: rank,
-      is_team: is_team,
-      is_leader: is_leader,
+      tournament:       tournament,
+      opponent:         opponent,
+      rank:             rank,
+      is_team:          is_team,
+      is_leader:        is_leader,
       is_attacker_side: is_attacker_side,
-      score: score,
-      state: state,
-      map: map,
-      rule: rule,
-      is_coin_head: is_coin_head,
-      custom_detail: custom_detail
+      score:            score,
+      state:            state,
+      map:              map,
+      rule:             rule,
+      is_coin_head:     is_coin_head,
+      custom_detail:    custom_detail
     }
   end
 
