@@ -4,13 +4,16 @@ defmodule Milk.Tournaments.MatchInformation do
   """
 
   alias Milk.Accounts.User
+  alias Milk.Log.TournamentLog
   alias Milk.Tournaments.{
     Map,
     Team,
+    Tournament,
     TournamentCustomDetail
   }
 
   defstruct [
+    :tournament,
     :opponent,
     :rank,
     :is_team,
@@ -25,6 +28,7 @@ defmodule Milk.Tournaments.MatchInformation do
   ]
 
   @type t :: %__MODULE__{
+    tournament: Tournament.t() | TournamentLog.t() | nil,
     opponent: User.t() | Team.t() | nil,
     rank: integer() | nil,
     is_team: boolean(),

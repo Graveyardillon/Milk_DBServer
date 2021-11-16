@@ -1831,6 +1831,7 @@ defmodule MilkWeb.TournamentController do
     render(conn, "match_info.json", match_info: match_info)
   end
 
+  @spec do_get_match_information(integer(), integer()) :: MatchInformation.t()
   defp do_get_match_information(tournament_id, user_id) do
     tournament = get_tournament_for_match_info(tournament_id)
 
@@ -1858,6 +1859,7 @@ defmodule MilkWeb.TournamentController do
     rule = tournament.rule
 
     %MatchInformation{
+      tournament: tournament,
       opponent: opponent,
       rank: rank,
       is_team: is_team,

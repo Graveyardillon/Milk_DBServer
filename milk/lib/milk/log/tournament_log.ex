@@ -36,6 +36,7 @@ defmodule Milk.Log.TournamentLog do
           update_time: any()
         }
 
+  # FIXME: platform_idが足りない
   schema "tournaments_log" do
     field :capacity, :integer
     field :count, :integer

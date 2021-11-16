@@ -424,6 +424,14 @@ defmodule MilkWeb.TournamentView do
   # NOTE: フロント側で型を固定してある
   def render("match_info.json", %{match_info: match_info}) do
     %{
+      tournament: if !is_nil(match_info.tournament) do
+        # NOTE: IDはLogでも事前処理でちゃんとtournament固有のものが付けられている。
+        # XXX: フロントの処理を見てちょっとずつ置き換えていかなければならないので、idやnameといった少ない情報しかここには入れていない
+        %{
+          name: match_info.tournament.name,
+          id: match_info.tournament.id,
+        }
+      end,
       opponent: if !is_nil(match_info.opponent) do
         %{
           name: match_info.opponent.name,
