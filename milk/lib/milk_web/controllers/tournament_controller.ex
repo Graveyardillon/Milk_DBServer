@@ -849,54 +849,44 @@ defmodule MilkWeb.TournamentController do
   def ban_maps(conn, %{"user_id" => user_id, "tournament_id" => tournament_id, "map_id_list" => map_id_list}) do
     user_id = Tools.to_integer_as_needed(user_id)
     tournament_id = Tools.to_integer_as_needed(tournament_id)
-    map_id_list = Enum.map(map_id_list, fn id -> Tools.to_integer_as_needed(id) end)
+    map_id_list = Enum.map(map_id_list, &Tools.to_integer_as_needed(&1))
 
-    user_id
-    |> Tournaments.ban_maps(tournament_id, map_id_list)
-    |> case do
-      {:ok, nil} ->
-        notify_discord_on_ban_maps_as_needed!(user_id, tournament_id, map_id_list)
-        json(conn, %{result: true})
-
-      {:error, error} ->
-        render(conn, "error.json", error: error)
+    with {:ok, tournament} <- Tournaments.ban_maps(user_id, tournament_id, map_id_list),
+         {:ok, _}          <- notify_discord_on_ban_maps_as_needed!(user_id, tournament, map_id_list),
+         state             <- Tournaments.state!(tournament_id, user_id) do
+      json(conn, %{result: true, state: state})
+    else
+      _ -> render(conn, "error.json", error: nil)
     end
   end
 
-  defp notify_discord_on_ban_maps_as_needed!(user_id, tournament_id, map_id_list) do
-    tournament_id
-    |> Tournaments.get_tournament()
-    ~> tournament
-    |> Map.get(:discord_server_id)
-    ~> server_id
-    |> is_nil()
-    |> unless do
-      {:ok, opponent} = Tournaments.get_opponent(tournament_id, user_id)
+  defp notify_discord_on_ban_maps_as_needed!(_, %Tournament{discord_server_id: nil}, _), do: {:ok, nil}
+  defp notify_discord_on_ban_maps_as_needed!(user_id, %Tournament{id: tournament_id, discord_server_id: discord_server_id, is_team: is_team}, map_id_list) do
+    {:ok, opponent} = Tournaments.get_opponent(tournament_id, user_id)
 
-      if tournament.is_team do
-        team = Tournaments.get_team_by_tournament_id_and_user_id(tournament_id, user_id)
-        team.name
-      else
-        user = Accounts.get_user(user_id)
-        user.name
-      end
-      ~> name
-
-      map_id_list
-      |> Enum.map(fn map_id ->
-        map_id
-        |> Tournaments.get_map()
-        |> Map.get(:name)
-      end)
-      ~> banned_map_names
-
-      Discord.send_tournament_ban_map_notification(
-        server_id,
-        name,
-        opponent.name,
-        banned_map_names
-      )
+    if is_team do
+      team = Tournaments.get_team_by_tournament_id_and_user_id(tournament_id, user_id)
+      team.name
+    else
+      user = Accounts.get_user(user_id)
+      user.name
     end
+    ~> name
+
+    map_id_list
+    |> Enum.map(fn map_id ->
+      map_id
+      |> Tournaments.get_map()
+      |> Map.get(:name)
+    end)
+    ~> banned_map_names
+
+    Discord.send_tournament_ban_map_notification(
+      discord_server_id,
+      name,
+      opponent.name,
+      banned_map_names
+    )
   end
 
   @doc """
