@@ -79,6 +79,7 @@ defmodule Milk.Tournaments do
   @doc """
   Tournament構造体を取得する。load_tournament/1に比べて軽量。
   """
+  @spec get_tournament(integer()) :: Tournament.t() | nil
   def get_tournament(tournament_id), do: Repo.get(Tournament, tournament_id)
 
   @doc """
@@ -2594,7 +2595,7 @@ defmodule Milk.Tournaments do
     keyname = Rules.adapt_keyname(user_id, tournament_id)
 
     tournament_id
-    |> __MODULE__.load_tournament()
+    |> __MODULE__.get_tournament()
     |> do_state!(keyname)
   end
 

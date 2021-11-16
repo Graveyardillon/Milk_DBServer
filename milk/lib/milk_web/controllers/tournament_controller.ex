@@ -1301,8 +1301,7 @@ defmodule MilkWeb.TournamentController do
         json(conn, %{validated: true, completed: false, is_finished: false})
       false ->
         json(conn, %{result: false, error: "Invalid state"})
-      e ->
-        IO.inspect(e)
+      _ ->
         json(conn, %{validated: false, completed: false, is_finished: false})
     end
   end
