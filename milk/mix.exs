@@ -100,7 +100,8 @@ defmodule Milk.MixProject do
       {:typed_struct, "~> 0.2.1"},
       {:ex_image_info, "~> 0.2.4"},
       {:dfa, "~> 0.1.10"},
-      {:benchfella, "~> 0.3.0", only: :dev}
+      {:benchfella, "~> 0.3.0", only: :dev},
+      {:flow, "~> 1.1.0"}
     ]
   end
 

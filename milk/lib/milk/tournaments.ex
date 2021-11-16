@@ -423,19 +423,23 @@ defmodule Milk.Tournaments do
   """
   @spec get_masters(integer()) :: [User.t()]
   def get_masters(tournament_id) do
-    tournament = __MODULE__.load_tournament(tournament_id)
-
-    User
-    |> where([u], u.id == ^tournament.master_id)
-    |> Repo.all()
-    ~> masters
-
     tournament_id
-    |> __MODULE__.get_assistants()
-    |> Enum.map(&Accounts.get_user(&1.user_id))
-    ~> assistants
+    |> __MODULE__.load_tournament()
+    |> case do
+      nil -> []
+      tournament ->
+        User
+        |> where([u], u.id == ^tournament.master_id)
+        |> Repo.all()
+        ~> masters
 
-    masters ++ assistants
+        tournament_id
+        |> __MODULE__.get_assistants()
+        |> Enum.map(&Accounts.get_user(&1.user_id))
+        ~> assistants
+
+        masters ++ assistants
+    end
   end
 
   @doc """
@@ -453,17 +457,30 @@ defmodule Milk.Tournaments do
     |> Repo.preload(:custom_detail)
   end
 
-  # @doc """
-  # 大会に関係しているユーザー一覧を返す関数
-  # all_states!関数で使用している。
-  # master entrant team_member assistantを取得
-  # """
-  # @spec relevant_users(integer()) :: [User.t()]
-  # def relevant_users(tournament_id) do
-  #   masters = __MODULE__.get_masters(tournament_id)
+  @doc """
+  大会に関係しているユーザーid一覧を返す関数
+  all_states!関数で使用している。
+  master entrant team_leaders assistantを取得
+  """
+  @spec relevant_user_id_list(integer()) :: [integer()]
+  def relevant_user_id_list(tournament_id) do
+    tournament_id
+    |> __MODULE__.get_masters()
+    |> Enum.map(&(&1.id))
+    ~> masters
 
+    tournament_id
+    |> __MODULE__.get_entrants()
+    |> Enum.map(&(&1.user_id))
+    ~> entrants
 
-  # end
+    tournament_id
+    |> __MODULE__.get_team_leaders()
+    |> Enum.map(&(&1.user_id))
+    ~> team_members
+
+    masters ++ entrants ++ team_members
+  end
 
   @doc """
   Create tournament.
@@ -2608,13 +2625,24 @@ defmodule Milk.Tournaments do
     end
   end
 
-  # @doc """
-  # 大会に参加しているすべてのユーザーのstateを返す。
-  # """
-  # @spec all_states!(integer()) :: [InteractionMessage.t()]
-  # def all_states!(tournament_id) do
+  @doc """
+  大会に参加しているすべてのユーザーのstateを返す。
+  """
+  @spec all_states!(integer()) :: [InteractionMessage.t()]
+  def all_states!(tournament_id) do
+    tournament_id
+    |> __MODULE__.relevant_user_id_list()
+    |> Flow.from_enumerable(stages: 1)
+    |> Flow.map(fn user_id ->
+      state = __MODULE__.state!(tournament_id, user_id)
 
-  # end
+      %InteractionMessage{
+        state: state,
+        user_id: user_id
+      }
+    end)
+    |> Enum.to_list()
+  end
 
   @doc """
   Returns data for tournament brackets.
@@ -2969,6 +2997,28 @@ defmodule Milk.Tournaments do
     |> join(:inner, [t, tm], ti in TeamInvitation, on: tm.id == ti.team_member_id)
     |> where([t, tm, ti], ti.id == ^invitation_id)
     |> Repo.one()
+  end
+
+  @doc """
+  TeamMemberをtournament_idに基づいて取得
+  """
+  @spec get_team_members_by_tournament_id(integer()) :: [TeamMember.t()]
+  def get_team_members_by_tournament_id(tournament_id) do
+    TeamMember
+    |> join(:inner, [tm], t in Team, on: tm.team_id == t.id)
+    |> where([tm, t], t.tournament_id == ^tournament_id)
+    |> Repo.all()
+  end
+
+  @doc """
+  大会のリーダーのみ取得
+  """
+  def get_team_leaders(tournament_id) do
+    TeamMember
+    |> join(:inner, [tm], t in Team, on: tm.team_id == t.id)
+    |> where([tm, t], t.tournament_id == ^tournament_id)
+    |> where([tm, t], tm.is_leader)
+    |> Repo.all()
   end
 
   @doc """

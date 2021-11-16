@@ -497,4 +497,19 @@ defmodule MilkWeb.TournamentView do
       end)
     }
   end
+
+  def render("claim.json", %{claim: claim}) do
+    %{
+      result: true,
+      validated: claim.validated,
+      completed: claim.completed,
+      is_finished: claim.is_finished,
+      messages: Enum.map(claim.interaction_messages, fn message ->
+        %{
+          state: message.state,
+          user_id: message.user_id
+        }
+      end)
+    }
+  end
 end

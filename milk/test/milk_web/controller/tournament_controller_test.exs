@@ -2880,12 +2880,34 @@ defmodule MilkWeb.TournamentControllerTest do
       # NOTE: コインのflip
       conn = post(conn, Routes.tournament_path(conn, :flip_coin), %{"tournament_id" => tournament_id, "user_id" => leader1_id})
       assert json_response(conn, 200)["result"]
+
+      conn
+      |> json_response(200)
+      |> Map.get("messages")
+      |> Enum.map(fn message ->
+        assert is_binary(message["state"])
+        assert is_integer(message["user_id"])
+      end)
+      |> Enum.empty?()
+      |> refute()
+
       conn = get(conn, Routes.tournament_path(conn, :get_match_information), %{"tournament_id" => tournament_id, "user_id" => leader1_id})
       assert json_response(conn, 200)["state"] == "IsWaitingForCoinFlip"
       is_team1_head = json_response(conn, 200)["is_coin_head"]
 
       conn = post(conn, Routes.tournament_path(conn, :flip_coin), %{"tournament_id" => tournament_id, "user_id" => leader2_id})
       assert json_response(conn, 200)["result"]
+
+      conn
+      |> json_response(200)
+      |> Map.get("messages")
+      |> Enum.map(fn message ->
+        assert is_binary(message["state"])
+        assert is_integer(message["user_id"])
+      end)
+      |> Enum.empty?()
+      |> refute()
+
       conn = get(conn, Routes.tournament_path(conn, :get_match_information), %{"tournament_id" => tournament_id, "user_id" => leader2_id})
       is_team2_head = json_response(conn, 200)["is_coin_head"]
 
@@ -2931,6 +2953,16 @@ defmodule MilkWeb.TournamentControllerTest do
       conn = post(conn, Routes.tournament_path(conn, :ban_maps), %{"user_id" => leader2_id, "tournament_id" => tournament_id, "map_id_list" => maps})
       assert json_response(conn, 200)["result"]
 
+      conn
+      |> json_response(200)
+      |> Map.get("messages")
+      |> Enum.map(fn message ->
+        assert is_binary(message["state"])
+        assert is_integer(message["user_id"])
+      end)
+      |> Enum.empty?()
+      |> refute()
+
       conn = get(conn, Routes.tournament_path(conn, :get_match_information), %{"tournament_id" => tournament_id, "user_id" => leader1_id})
       assert json_response(conn, 200)["is_coin_head"]
       assert json_response(conn, 200)["state"] == "ShouldChooseMap"
@@ -2946,6 +2978,16 @@ defmodule MilkWeb.TournamentControllerTest do
       conn = post(conn, Routes.tournament_path(conn, :choose_map), %{"user_id" => leader1_id, "tournament_id" => tournament_id, "map_id" => map})
       assert json_response(conn, 200)["result"]
 
+      conn
+      |> json_response(200)
+      |> Map.get("messages")
+      |> Enum.map(fn message ->
+        assert is_binary(message["state"])
+        assert is_integer(message["user_id"])
+      end)
+      |> Enum.empty?()
+      |> refute()
+
       conn = get(conn, Routes.tournament_path(conn, :get_match_information), %{"tournament_id" => tournament_id, "user_id" => leader1_id})
       assert json_response(conn, 200)["is_coin_head"]
       assert json_response(conn, 200)["state"] == "ShouldObserveA/D"
@@ -2959,6 +3001,16 @@ defmodule MilkWeb.TournamentControllerTest do
       # NOTE: A/D選択
       conn = post(conn, Routes.tournament_path(conn, :choose_ad), %{"user_id" => leader2_id, "tournament_id" => tournament_id, "is_attacker_side" => true})
       assert json_response(conn, 200)["result"]
+
+      conn
+      |> json_response(200)
+      |> Map.get("messages")
+      |> Enum.map(fn message ->
+        assert is_binary(message["state"])
+        assert is_integer(message["user_id"])
+      end)
+      |> Enum.empty?()
+      |> refute()
 
       conn = get(conn, Routes.tournament_path(conn, :get_match_information), %{"tournament_id" => tournament_id, "user_id" => leader1_id})
       assert json_response(conn, 200)["is_coin_head"]
@@ -2976,6 +3028,13 @@ defmodule MilkWeb.TournamentControllerTest do
       refute json_response(conn, 200)["completed"]
       refute json_response(conn, 200)["is_finished"]
 
+      # NOTE: 勝敗報告がお互いに完了するまではstateは動かないので、messagesもempty
+      conn
+      |> json_response(200)
+      |> Map.get("messages")
+      |> Enum.empty?()
+      |> assert()
+
       conn = get(conn, Routes.tournament_path(conn, :get_match_information), %{"tournament_id" => tournament_id, "user_id" => leader1_id})
       assert json_response(conn, 200)["state"] == "IsPending"
       assert json_response(conn, 200)["score"] == 13
@@ -2984,6 +3043,18 @@ defmodule MilkWeb.TournamentControllerTest do
       assert json_response(conn, 200)["validated"]
       assert json_response(conn, 200)["completed"]
       assert json_response(conn, 200)["is_finished"] or match_index != 3
+
+      conn
+      |> json_response(200)
+      |> Map.get("messages")
+      |> Enum.map(fn message ->
+        assert is_binary(message["state"])
+        assert is_integer(message["user_id"])
+      end)
+      |> Enum.empty?()
+      ~> empty?
+
+      assert empty? or match_index != 3
 
       conn = get(conn, Routes.tournament_path(conn, :get_match_information), %{"tournament_id" => tournament_id, "user_id" => leader1_id})
       state = json_response(conn, 200)["state"]

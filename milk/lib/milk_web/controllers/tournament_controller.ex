@@ -26,6 +26,7 @@ defmodule MilkWeb.TournamentController do
     TournamentLog
   }
   alias Milk.Tournaments.{
+    Claim,
     MatchInformation,
     Progress,
     Team,
@@ -853,8 +854,8 @@ defmodule MilkWeb.TournamentController do
 
     with {:ok, tournament} <- Tournaments.ban_maps(user_id, tournament_id, map_id_list),
          {:ok, _}          <- notify_discord_on_ban_maps_as_needed!(user_id, tournament, map_id_list),
-         state             <- Tournaments.state!(tournament_id, user_id) do
-      json(conn, %{result: true, state: state})
+         messages          <- Tournaments.all_states!(tournament_id) do
+      render(conn, "interaction_message.json", interaction_messages: messages)
     else
       _ -> render(conn, "error.json", error: nil)
     end
@@ -899,8 +900,8 @@ defmodule MilkWeb.TournamentController do
 
     with {:ok, tournament} <- Tournaments.choose_maps(user_id, tournament_id, [map_id]),
          {:ok, _}          <- notify_discord_on_choose_map_as_needed!(user_id, tournament, map_id),
-         state             <- Tournaments.state!(tournament_id, user_id) do
-      json(conn, %{result: true, state: state})
+         messages          <- Tournaments.all_states!(tournament_id) do
+      render(conn, "interaction_message.json", interaction_messages: messages)
     else
       _ -> render(conn, "error.json", error: nil)
     end
@@ -935,8 +936,8 @@ defmodule MilkWeb.TournamentController do
 
     with {:ok, tournament} <- Tournaments.choose_ad(user_id, tournament_id, is_attacker_side),
          {:ok, _}          <- notify_discord_on_choose_ad_as_needed!(user_id, tournament, is_attacker_side),
-         state             <- Tournaments.state!(tournament_id, user_id) do
-      json(conn, %{result: true, state: state})
+         messages          <- Tournaments.all_states!(tournament_id) do
+      render(conn, "interaction_message.json", interaction_messages: messages)
     else
       _ -> render(conn, "error.json", error: nil)
     end
@@ -1289,20 +1290,21 @@ defmodule MilkWeb.TournamentController do
          opponent_score when not is_nil(opponent_score) <- Progress.get_score(tournament_id, opponent.id),
          {:ok, winner_id, loser_id, _}                  <- calculate_winner(id, opponent.id, score, opponent_score),
          {:ok, nil}                                     <- proceed_to_next_match(tournament, winner_id, loser_id, score, opponent_score, match_index),
-         tournament                                     <- Tournaments.load_tournament(tournament_id) do
-      json(conn, %{validated: true, completed: true, is_finished: is_nil(tournament)})
+         tournament                                     <- Tournaments.load_tournament(tournament_id),
+         messages                                       <- Tournaments.all_states!(tournament_id) do
+      render(conn, "claim.json", claim: %Claim{validated: true, completed: true, is_finished: is_nil(tournament), interaction_messages: messages})
     else
       # NOTE: 重複報告が起きたときの処理
       # 重複報告が起こった時用の処理を呼び出す
       {:error, id, opponent_id, _} ->
         duplicated_claim_process(tournament_id, id, opponent_id, score)
-        json(conn, %{validated: false, completed: false, is_finished: false})
+        render(conn, "claim.json", claim: %Claim{validated: false, completed: false, is_finished: false, interaction_messages: []})
       nil ->
-        json(conn, %{validated: true, completed: false, is_finished: false})
+        render(conn, "claim.json", claim: %Claim{validated: true, completed: false, is_finished: false, interaction_messages: []})
       false ->
-        json(conn, %{result: false, error: "Invalid state"})
+        render(conn, "error.json", error: "Invalid state")
       _ ->
-        json(conn, %{validated: false, completed: false, is_finished: false})
+        render(conn, "claim.json", claim: %Claim{validated: false, completed: false, is_finished: false, interaction_messages: []})
     end
   end
 
@@ -1451,8 +1453,9 @@ defmodule MilkWeb.TournamentController do
     with tournament when not is_nil(tournament) <- Tournaments.load_tournament(tournament_id),
          {:ok, nil} <- Tournaments.flip_coin(user_id, tournament_id),
          {:ok, nil} <- Progress.insert_match_pending_list_table(user_id, tournament_id),
-         {:ok, _} <- Tournaments.break_waiting_state_as_needed(tournament, user_id) do
-      json(conn, %{result: true})
+         {:ok, _} <- Tournaments.break_waiting_state_as_needed(tournament, user_id),
+         messages <- Tournaments.all_states!(tournament_id) do
+      render(conn, "interaction_message.json", interaction_messages: messages)
     else
       nil -> render(conn, "error.json", error: "tournament is nil")
       {:error, error} -> render(conn, "error.json", error: error)
