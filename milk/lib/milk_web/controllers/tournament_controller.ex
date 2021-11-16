@@ -1794,6 +1794,25 @@ defmodule MilkWeb.TournamentController do
     render(conn, "entrants.json", entrants: entrants)
   end
 
+  # @doc """
+  # iosの起動時に画面遷移をするために必要な情報を取り出すための関数
+  # """
+  # def data_for_ios(conn, %{"user_id" => user_id}) do
+  #   user_id = Tools.to_integer_as_needed(user_id)
+
+  #   with tournament when not is_nil(tournament) <- started_tournament(user_id),
+  #        match_info                             <- do_get_match_information(tournament.id, user_id) do
+  #     render
+  #   end
+  # end
+
+  # defp started_tournament(user_id) do
+  #   user_id
+  #   |> do_relevant()
+  #   |> Enum.filter(&(&1.is_started))
+  #   |> List.first()
+  # end
+
   @doc """
   Get information for match
   - Opponent
@@ -1807,6 +1826,12 @@ defmodule MilkWeb.TournamentController do
     tournament_id = Tools.to_integer_as_needed(tournament_id)
     user_id = Tools.to_integer_as_needed(user_id)
 
+    match_info = do_get_match_information(tournament_id, user_id)
+
+    render(conn, "match_info.json", match_info: match_info)
+  end
+
+  defp do_get_match_information(tournament_id, user_id) do
     tournament = get_tournament_for_match_info(tournament_id)
 
     rank = get_rank(tournament, user_id)
@@ -1832,7 +1857,7 @@ defmodule MilkWeb.TournamentController do
     is_team = tournament.is_team
     rule = tournament.rule
 
-    match_info = %MatchInformation{
+    %MatchInformation{
       opponent: opponent,
       rank: rank,
       is_team: is_team,
@@ -1845,8 +1870,6 @@ defmodule MilkWeb.TournamentController do
       is_coin_head: is_coin_head,
       custom_detail: custom_detail
     }
-
-    render(conn, "match_info.json", match_info: match_info)
   end
 
   defp get_opponent_for_match_info(_, _, "IsAlone"), do: nil
