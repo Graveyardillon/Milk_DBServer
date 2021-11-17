@@ -2566,6 +2566,7 @@ defmodule MilkWeb.TournamentControllerTest do
       # NOTE: 対戦相手がマッチをスタートしていないのにclaim_win/loseしようとするとどうなるか
       conn = post(conn, Routes.tournament_path(conn, :start_match), %{"user_id" => user1_id, "tournament_id" => tournament_id})
       assert json_response(conn, 200)["result"]
+      assert json_response(conn, 200)["rule"] == "basic"
 
       conn
       |> json_response(200)
@@ -2584,6 +2585,7 @@ defmodule MilkWeb.TournamentControllerTest do
 
       conn = post(conn, Routes.tournament_path(conn, :start_match), %{"user_id" => user2_id, "tournament_id" => tournament_id})
       assert json_response(conn, 200)["result"]
+      assert json_response(conn, 200)["rule"] == "basic"
 
       conn = get(conn, Routes.tournament_path(conn, :get_match_information), %{"tournament_id" => tournament_id, "user_id" => user2_id})
       assert json_response(conn, 200)["state"] == "IsPending"
@@ -2596,6 +2598,7 @@ defmodule MilkWeb.TournamentControllerTest do
 
       # NOTE: 重複報告
       conn = post(conn, Routes.tournament_path(conn, :claim_win), %{"tournament_id" => tournament_id, "user_id" => user1_id, "opponent_id" => user2_id})
+      assert json_response(conn, 200)["rule"] == "basic"
       assert json_response(conn, 200)["validated"]
       refute json_response(conn, 200)["completed"]
       refute json_response(conn, 200)["is_finished"]
@@ -2607,6 +2610,7 @@ defmodule MilkWeb.TournamentControllerTest do
 
       # NOTE: 大会終了
       conn = post(conn, Routes.tournament_path(conn, :claim_lose), %{"tournament_id" => tournament_id, "user_id" => user2_id, "opponent_id" => user1_id})
+      assert json_response(conn, 200)["rule"] == "basic"
       assert json_response(conn, 200)["validated"]
       assert json_response(conn, 200)["completed"]
       assert json_response(conn, 200)["is_finished"]
