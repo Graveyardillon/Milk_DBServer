@@ -20,9 +20,7 @@ defmodule Milk.Media.Image do
   end
 
   def read_image_prod(name) do
-    name
-    |> Objects.get()
-    |> Map.get(:mediaLink)
-    |> __MODULE__.get()
+    {:ok, object} = Objects.get(name)
+    __MODULE__.get(object.mediaLink)
   end
 end

@@ -257,6 +257,8 @@ defmodule Milk.Relations do
   @doc """
   Get blocked users.
   """
+  def blocked_users(nil), do: []
+
   def blocked_users(user_id) do
     BlockRelation
     |> where([br], br.block_user_id == ^user_id)

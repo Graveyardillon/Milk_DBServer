@@ -6,12 +6,12 @@ defmodule Milk.Accounts.ExternalService do
   alias Milk.Accounts.User
 
   @type t :: %__MODULE__{
-    content: String.t(),
-    name: String.t(),
-    # NOTE: timestamps
-    create_time: any(),
-    update_time: any()
-  }
+          content: String.t(),
+          name: String.t(),
+          # NOTE: timestamps
+          create_time: any(),
+          update_time: any()
+        }
 
   schema "external_services" do
     field :content, :string, null: false

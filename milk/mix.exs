@@ -99,7 +99,9 @@ defmodule Milk.MixProject do
       {:oban, "~> 2.7"},
       {:typed_struct, "~> 0.2.1"},
       {:ex_image_info, "~> 0.2.4"},
-      {:dfa, "~> 0.1.3"}
+      {:dfa, "~> 0.1.10"},
+      {:benchfella, "~> 0.3.0", only: :dev},
+      {:flow, "~> 1.1.0"}
     ]
   end
 
@@ -112,7 +114,7 @@ defmodule Milk.MixProject do
   defp aliases do
     [
       "ecto.setup": ["ecto.create", "ecto.migrate"],
-      "ecto.reset": ["ecto.drop", "ecto.setup", "run -e Milk.TournamentProgress.flushall"],
+      "ecto.reset": ["ecto.drop", "ecto.setup", "run -e Milk.Tournaments.Progress.flushall"],
       test: [
         "ecto.create --quiet",
         "ecto.migrate",
@@ -120,11 +122,11 @@ defmodule Milk.MixProject do
         "test"
       ],
       check: [
-        "compile --warnings-as-errors",
+        "compile",
         "format --check-formatted",
         "credo --strict",
         "coveralls.html",
-        "dialyzer --format short"
+        "dialyzer"
       ]
     ]
   end

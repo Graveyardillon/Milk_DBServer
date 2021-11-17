@@ -1,15 +1,27 @@
-defmodule Milk.TournamentProgress.BestOfXTournamentMatchLog do
+defmodule Milk.Tournaments.Progress.BestOfXTournamentMatchLog do
   use Milk.Schema
 
   import Ecto.Changeset
 
+  @type t :: %__MODULE__{
+    loser_id: integer(),
+    loser_score: integer(),
+    match_index: integer(),
+    tournament_id: integer(),
+    winner_id: integer(),
+    winner_score: integer(),
+    # NOTE: timestamps
+    create_time: any(),
+    update_time: any()
+  }
+
   schema "best_of_x_tournament_match_log" do
-    field :tournament_id, :integer
-    field :winner_id, :integer
     field :loser_id, :integer
-    field :winner_score, :integer
     field :loser_score, :integer
     field :match_index, :integer
+    field :tournament_id, :integer
+    field :winner_id, :integer
+    field :winner_score, :integer
 
     timestamps()
   end

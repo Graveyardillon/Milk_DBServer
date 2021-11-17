@@ -100,7 +100,7 @@ defmodule MilkWeb.ProfileController do
   end
 
   defp update_account_prod(user, path) do
-    object = Objects.upload(path)
+    {:ok, object} = Objects.upload(path)
     File.rm(path)
     Accounts.update_icon_path(user.id, object.name)
     path
@@ -133,7 +133,7 @@ defmodule MilkWeb.ProfileController do
   end
 
   defp get_image_prod(name) do
-    object = Objects.get(name)
+    {:ok, object} = Objects.get(name)
     Image.get(object.mediaLink)
   end
 

@@ -30,8 +30,7 @@ defmodule MilkWeb.Router do
     get "/check/connection", CheckController, :connection_check
     post "/check/data_for_web", CheckController, :data_for_web
 
-    resources "/user", UserController,
-      except: [:new, :edit, :index, :show, :create, :update, :delete]
+    resources "/user", UserController, except: [:new, :edit, :index, :show, :create, :update, :delete]
 
     get "/user/num", UserController, :number
     get "/user/check_username_duplication", UserController, :check_username_duplication
@@ -113,6 +112,7 @@ defmodule MilkWeb.Router do
     get "/tournament/get_opponent", TournamentController, :get_opponent
     get "/tournament/fighting_users", TournamentController, :get_fighting_users
     get "/tournament/waiting_users", TournamentController, :get_waiting_users
+    get "/tournament/data_for_ios", TournamentController, :data_for_ios
     get "/tournament/match_info", TournamentController, :get_match_information
 
     get "/tournament/get_participating_tournaments",
@@ -196,13 +196,9 @@ defmodule MilkWeb.Router do
     post "/team/add_members", TeamController, :add_members
     delete "/team", TeamController, :delete
 
-    resources "/assistant", AssistantController,
-      except: [:new, :edit, :index, :show, :delete, :update]
+    resources "/assistant", AssistantController, except: [:new, :edit, :index, :show, :delete, :update]
 
     post "/assistant/delete", AssistantController, :delete
-
-    get "/live/home", LiveController, :home
-    post "/live", LiveController, :create
 
     post "/sync", SyncController, :sync
 

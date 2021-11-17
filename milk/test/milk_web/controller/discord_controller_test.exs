@@ -20,8 +20,7 @@ defmodule MilkWeb.DiscordControllerTest do
       assert is_nil(json_response(conn, 200)["data"])
       assert json_response(conn, 200)["error"] == "already associated"
 
-      conn =
-        delete(conn, Routes.discord_path(conn, :dissociate), %{user_id: discord_user.user_id})
+      conn = delete(conn, Routes.discord_path(conn, :dissociate), %{user_id: discord_user.user_id})
 
       assert json_response(conn, 200)["result"]
     end

@@ -25,12 +25,11 @@ defmodule Milk.Reports do
 
     if Accounts.get_user(reporter) && Accounts.get_user(reportee) && reporter != reportee do
       Enum.map(report_types, fn type ->
-        with {:ok, report} <-
-                %UserReport{reporter_id: reporter, reportee_id: reportee}
-                |> UserReport.changeset(%{report_type: type})
-                |> Repo.insert() do
-          report
-        else
+        %UserReport{reporter_id: reporter, reportee_id: reportee}
+        |> UserReport.changeset(%{report_type: type})
+        |> Repo.insert()
+        |> case do
+          {:ok, report} -> report
           _ -> nil
         end
       end)
@@ -44,8 +43,14 @@ defmodule Milk.Reports do
 
   @doc """
   Create tournament report
-  FIXME: report_type -> report_types
   """
+  def create_tournament_report(attrs = %{"report_types" => report_types}) when is_list(report_types) do
+    attrs
+    |> Map.put("report_type", report_types)
+    |> Map.delete("report_types")
+    |> __MODULE__.create_tournament_report()
+  end
+
   def create_tournament_report(%{
         "reporter_id" => reporter_id,
         "report_type" => report_type,
@@ -84,7 +89,7 @@ defmodule Milk.Reports do
     tournament_id = Tools.to_integer_as_needed(tournament_id)
 
     tournament_id
-    |> Tournaments.get_tournament()
+    |> Tournaments.load_tournament()
     |> case do
       nil ->
         {:error, nil}

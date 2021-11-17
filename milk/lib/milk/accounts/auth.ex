@@ -6,13 +6,13 @@ defmodule Milk.Accounts.Auth do
   alias Milk.Accounts.User
 
   @type t :: %__MODULE__{
-    email: String.t(),
-    password: String.t() | nil,
-    service_name: String.t() | nil,
-    # NOTE: timestamps
-    create_time: any(),
-    update_time: any()
-  }
+          email: String.t(),
+          password: String.t() | nil,
+          service_name: String.t() | nil,
+          # NOTE: timestamps
+          create_time: any(),
+          update_time: any()
+        }
 
   schema "auth" do
     field :email, :string, null: false
@@ -54,9 +54,7 @@ defmodule Milk.Accounts.Auth do
     |> validate_required(:email)
   end
 
-  defp put_password_hash(
-         %Ecto.Changeset{valid?: true, changes: %{password: password}} = changeset
-       ) do
+  defp put_password_hash(%Ecto.Changeset{valid?: true, changes: %{password: password}} = changeset) do
     change(changeset, password: create_pass(password))
   end
 

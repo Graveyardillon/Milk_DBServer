@@ -1,8 +1,12 @@
-defmodule Milk.TournamentStates.FlipBanTest do
+defmodule Milk.Tournaments.Rules.FlipBanTest do
+  @moduledoc """
+  Test for flip and ban rule.
+  """
   use Milk.DataCase
   use Common.Fixtures
 
-  alias Milk.TournamentStates.FlipBan
+  alias Milk.Tournaments.Rules
+  alias Milk.Tournaments.Rules.FlipBan
 
   describe "building dfa" do
     test "just works" do
@@ -10,20 +14,38 @@ defmodule Milk.TournamentStates.FlipBanTest do
 
       user1 = fixture_user(num: 1)
       user2 = fixture_user(num: 2)
-      keyname1 = "user:#{user1.id}"
-      keyname2 = "user:#{user2.id}"
-      machine_name = "flipban"
-      FlipBan.define_dfa(machine_name)
-      FlipBan.build_dfa_instance(keyname1, machine_name)
-      FlipBan.build_dfa_instance(keyname2, machine_name)
+      user3 = fixture_user(num: 3)
+      user4 = fixture_user(num: 4)
+      user5 = fixture_user(num: 5)
+      tournament_id = 1
+      keyname1 = Rules.adapt_keyname(user1.id, tournament_id)
+      keyname2 = Rules.adapt_keyname(user2.id, tournament_id)
+      keyname3 = Rules.adapt_keyname(user3.id, tournament_id)
+      keyname4 = Rules.adapt_keyname(user4.id, tournament_id)
+      keyname5 = Rules.adapt_keyname(user5.id, tournament_id)
+      FlipBan.define_dfa!()
+      FlipBan.build_dfa_instance(keyname1)
+      FlipBan.build_dfa_instance(keyname2)
+      FlipBan.build_dfa_instance(keyname3)
+      FlipBan.build_dfa_instance(keyname4)
+      FlipBan.build_dfa_instance(keyname5)
 
       # NOTE: startまで
       assert FlipBan.state!(keyname1) == FlipBan.is_not_started()
       assert FlipBan.state!(keyname2) == FlipBan.is_not_started()
+      assert FlipBan.state!(keyname3) == FlipBan.is_not_started()
+      assert FlipBan.state!(keyname4) == FlipBan.is_not_started()
+      assert FlipBan.state!(keyname5) == FlipBan.is_not_started()
       assert {:ok, _} = FlipBan.trigger!(keyname1, FlipBan.start_trigger())
       assert FlipBan.state!(keyname1) == FlipBan.should_flip_coin()
       assert {:ok, _} = FlipBan.trigger!(keyname2, FlipBan.start_trigger())
       assert FlipBan.state!(keyname2) == FlipBan.should_flip_coin()
+      assert {:ok, _} = FlipBan.trigger!(keyname3, FlipBan.manager_trigger())
+      assert FlipBan.state!(keyname3) == FlipBan.is_manager()
+      assert {:ok, _} = FlipBan.trigger!(keyname4, FlipBan.member_trigger())
+      assert FlipBan.state!(keyname4) == FlipBan.is_member()
+      assert {:ok, _} = FlipBan.trigger!(keyname5, FlipBan.assistant_trigger())
+      assert FlipBan.state!(keyname5) == FlipBan.is_assistant()
 
       # NOTE: mapのban完了まで
       assert {:ok, _} = FlipBan.trigger!(keyname1, FlipBan.flip_trigger())
@@ -64,6 +86,7 @@ defmodule Milk.TournamentStates.FlipBanTest do
       assert FlipBan.state!(keyname1) == FlipBan.is_loser()
       assert FlipBan.state!(keyname2) == FlipBan.is_alone()
 
+      # NOTE: 大会終了
       assert {:ok, _} = FlipBan.trigger!(keyname1, FlipBan.finish_trigger())
       assert {:ok, _} = FlipBan.trigger!(keyname2, FlipBan.finish_trigger())
       assert FlipBan.state!(keyname1) == FlipBan.is_finished()

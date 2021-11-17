@@ -1,6 +1,9 @@
 defmodule MilkWeb.TeamControllerTest do
-  use MilkWeb.ConnCase
+  @moduledoc """
+  Team Controller test.
+  """
   use Common.Fixtures
+  use MilkWeb.ConnCase
 
   import Common.Sperm
 
@@ -40,7 +43,8 @@ defmodule MilkWeb.TeamControllerTest do
     test "works", %{conn: conn} do
       tournament = fixture_tournament(is_team: true, type: 2, capacity: 2)
 
-      fill_with_team(tournament.id)
+      tournament.id
+      |> fill_with_team()
       |> Enum.each(fn team ->
         conn = get(conn, Routes.team_path(conn, :show), team_id: team.id)
         assert json_response(conn, 200)["result"]
@@ -117,13 +121,13 @@ defmodule MilkWeb.TeamControllerTest do
       size = 5
       leader_id = fixture_user(num: 1).id
 
-      user_id_list =
-        2..5
-        |> Enum.to_list()
-        |> Enum.map(fn n ->
-          user = fixture_user(num: n)
-          user.id
-        end)
+      2..5
+      |> Enum.to_list()
+      |> Enum.map(fn n ->
+        user = fixture_user(num: n)
+        user.id
+      end)
+      ~> user_id_list
 
       conn =
         post(
@@ -135,14 +139,33 @@ defmodule MilkWeb.TeamControllerTest do
           user_id_list: user_id_list
         )
 
-      json_response(conn, 200)
+      conn
+      |> json_response(200)
       |> Map.get("data")
-      |> (fn data ->
-            assert data["tournament_id"] == tournament.id
-            assert data["size"] == size
-          end).()
+      |> then(fn data ->
+        assert data["tournament_id"] == tournament.id
+        assert data["size"] == size
+      end)
 
       assert json_response(conn, 200)["result"]
+
+      # NOTE: 通知が作成されているかどうかの確認
+      user_id_list
+      |> Enum.each(fn user_id ->
+        conn
+        |> get(Routes.notif_path(conn, :get_list), %{"user_id" => user_id})
+        |> json_response(200)
+        |> Map.get("data")
+        |> Enum.map(fn notification ->
+          assert notification["user_id"] == user_id
+          assert String.contains?(notification["title"], "からチーム招待されました")
+          assert notification["process_id"] == "TEAM_INVITE"
+        end)
+        |> length()
+        |> then(fn len ->
+          assert len != 0
+        end)
+      end)
     end
 
     test "over tournament size", %{conn: conn} do
@@ -260,7 +283,8 @@ defmodule MilkWeb.TeamControllerTest do
 
       conn = get(conn, Routes.team_path(conn, :get_confirmed_teams), tournament_id: tournament.id)
 
-      json_response(conn, 200)
+      conn
+      |> json_response(200)
       |> Map.get("data")
       |> length()
       |> Kernel.==(1)
@@ -272,10 +296,10 @@ defmodule MilkWeb.TeamControllerTest do
     test "works", %{conn: conn} do
       {tournament, _users} = setup_team(5)
 
-      team =
-        tournament.id
-        |> Tournaments.get_teams_by_tournament_id()
-        |> hd()
+      tournament.id
+      |> Tournaments.get_teams_by_tournament_id()
+      |> hd()
+      ~> team
 
       conn = get(conn, Routes.team_path(conn, :show), team_id: team.id)
       json_response(conn, 200)
@@ -285,6 +309,50 @@ defmodule MilkWeb.TeamControllerTest do
 
       conn = get(conn, Routes.team_path(conn, :show), team_id: team.id)
       refute json_response(conn, 200)["result"]
+    end
+  end
+
+  describe "add members" do
+    test "works", %{conn: conn} do
+      tournament = fixture_tournament(is_team: true, capacity: 4, team_size: 5)
+      leader = fixture_user(num: 1)
+      member = fixture_user(num: 2)
+      size = 5
+
+      conn =
+        post(
+          conn,
+          Routes.team_path(conn, :create),
+          tournament_id: tournament.id,
+          size: size,
+          leader_id: leader.id,
+          user_id_list: [member.id]
+        )
+
+      assert json_response(conn, 200)["result"]
+      team_id = json_response(conn, 200)["data"]["id"]
+
+      added_member = fixture_user(num: 3)
+
+      conn =
+        post(
+          conn,
+          Routes.team_path(conn, :add_members),
+          team_id: team_id,
+          user_id_list: [added_member.id]
+        )
+
+      assert json_response(conn, 200)["result"]
+
+      conn = get(conn, Routes.team_path(conn, :show), team_id: team_id)
+
+      conn
+      |> json_response(200)
+      |> Map.get("data")
+      |> Map.get("team_member")
+      |> length()
+      |> Kernel.==(3)
+      |> assert()
     end
   end
 end

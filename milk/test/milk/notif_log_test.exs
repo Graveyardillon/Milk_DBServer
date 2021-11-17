@@ -20,8 +20,7 @@ defmodule Milk.NotifLogTest do
     end
 
     test "create_notification_log/1 with valid data creates a notification_log" do
-      assert {:ok, %NotificationLog{} = notification_log} =
-               Log.create_notification_log(@valid_attrs)
+      assert {:ok, %NotificationLog{} = notification_log} = Log.create_notification_log(@valid_attrs)
 
       assert notification_log.title == "some title"
       assert notification_log.user_id == 42
@@ -34,8 +33,7 @@ defmodule Milk.NotifLogTest do
     test "update_notification_log/2 with valid data updates the notification_log" do
       notification_log = notification_log_fixture()
 
-      assert {:ok, %NotificationLog{} = notification_log} =
-               Log.update_notification_log(notification_log, @update_attrs)
+      assert {:ok, %NotificationLog{} = notification_log} = Log.update_notification_log(notification_log, @update_attrs)
 
       assert notification_log.title == "some updated title"
       assert notification_log.user_id == 43

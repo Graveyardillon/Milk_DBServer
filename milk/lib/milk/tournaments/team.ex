@@ -7,16 +7,16 @@ defmodule Milk.Tournaments.Team do
   alias Milk.Tournaments.TeamMember
 
   @type t :: %__MODULE__{
-    icon_path: String.t() | nil,
-    is_confirmed: boolean(),
-    name: String.t(),
-    rank: integer(),
-    size: integer(),
-    tournament_id: integer(),
-    # NOTE: timestamps
-    create_time: any(),
-    update_time: any()
-  }
+          icon_path: String.t() | nil,
+          is_confirmed: boolean(),
+          name: String.t(),
+          rank: integer(),
+          size: integer(),
+          tournament_id: integer(),
+          # NOTE: timestamps
+          create_time: any(),
+          update_time: any()
+        }
 
   schema "teams" do
     field :icon_path, :string

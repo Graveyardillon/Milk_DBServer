@@ -6,12 +6,12 @@ defmodule Milk.Accounts.Device do
   alias Milk.Accounts.User
 
   @type t :: %__MODULE__{
-    token: String.t(),
-    user_id: integer(),
-    # NOTE: timestamps
-    create_time: any(),
-    update_time: any()
-  }
+          token: String.t(),
+          user_id: integer(),
+          # NOTE: timestamps
+          create_time: any(),
+          update_time: any()
+        }
 
   schema "devices" do
     field :token, :string

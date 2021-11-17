@@ -12,8 +12,6 @@ defmodule Milk.Accounts.User do
     ChatRoom
   }
 
-  alias Milk.Lives.Live
-
   alias Milk.Tournaments.{
     Assistant,
     Entrant,
@@ -23,21 +21,21 @@ defmodule Milk.Accounts.User do
   alias Milk.Notif.Notification
 
   @type t :: %__MODULE__{
-    bio: String.t() | nil,
-    birthday: any(),
-    icon_path: String.t() | nil,
-    id_for_show: String.t() | nil,
-    is_birthday_private: boolean(),
-    name: String.t(),
-    notification_number: integer(),
-    point: integer(),
-    win_count: integer(),
-    language: String.t(),
-    logout_fl: boolean(),
-    # NOTE: timestamps
-    create_time: any(),
-    update_time: any()
-  }
+          bio: String.t() | nil,
+          birthday: any(),
+          icon_path: String.t() | nil,
+          id_for_show: String.t() | nil,
+          is_birthday_private: boolean(),
+          name: String.t(),
+          notification_number: integer(),
+          point: integer(),
+          win_count: integer(),
+          language: String.t(),
+          logout_fl: boolean(),
+          # NOTE: timestamps
+          create_time: any(),
+          update_time: any()
+        }
 
   schema "users" do
     field :bio, :string, default: nil
@@ -60,7 +58,6 @@ defmodule Milk.Accounts.User do
     has_many :tournament, Tournament, foreign_key: :master_id
     has_many :entrant, Entrant
     has_many :assistant, Assistant
-    has_many :lives, Live, foreign_key: :streamer_id
     has_many :notif, Notification
 
     timestamps()

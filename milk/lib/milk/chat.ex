@@ -234,9 +234,7 @@ defmodule Milk.Chat do
   end
 
   def get_member(chat_room_id, user_id) do
-    Repo.one(
-      from cm in ChatMember, where: cm.chat_room_id == ^chat_room_id and cm.user_id == ^user_id
-    )
+    Repo.one(from cm in ChatMember, where: cm.chat_room_id == ^chat_room_id and cm.user_id == ^user_id)
   end
 
   defp get_chat_member_by_user_id(user_id) do
@@ -410,10 +408,7 @@ defmodule Milk.Chat do
     do: Repo.one(from c in Chats, where: c.chat_room_id == ^chat_room_id and c.index == ^index)
 
   def get_latest_chat(id),
-    do:
-      Repo.all(
-        from c in Chats, where: c.chat_room_id == ^id, order_by: [desc: c.index], limit: 20
-      )
+    do: Repo.all(from c in Chats, where: c.chat_room_id == ^id, order_by: [desc: c.index], limit: 20)
 
   @doc """
   Get all chat by room id.
@@ -548,7 +543,7 @@ defmodule Milk.Chat do
 
   # 個人チャット用の関数
   # TODO: 通知処理
-  def dialogue(attrs = %{"user_id" => user_id, "partner_id" => partner_id, "word" => word}) do
+  def dialogue(%{"user_id" => user_id, "partner_id" => partner_id, "word" => word} = attrs) do
     user_id = Tools.to_integer_as_needed(user_id)
     partner_id = Tools.to_integer_as_needed(partner_id)
 
@@ -593,10 +588,8 @@ defmodule Milk.Chat do
 
   # グループチャット用の関数
   # TODO: チャットメンバーのユーザーのidをすべて返すようにする
-  def dialogue(attrs = %{"user_id" => user_id, "chat_room_id" => chat_room_id}) do
-    user_id = Tools.to_integer_as_needed(user_id)
-    chat_room_id = Tools.to_integer_as_needed(chat_room_id)
-
+  # TODO: リファクタリング
+  def dialogue(%{"user_id" => user_id, "chat_room_id" => chat_room_id, "word" => message}) do
     if Repo.exists?(from u in User, where: u.id == ^user_id) and
          Repo.exists?(from cr in ChatRoom, where: cr.id == ^chat_room_id) do
       _ = Repo.one(from cr in ChatRoom, where: cr.id == ^chat_room_id)
@@ -616,13 +609,13 @@ defmodule Milk.Chat do
 
           %{
             "title" => "大会チャットに新着があります",
-            "body_text" => attrs["word"],
+            "body_text" => message,
             "process_id" => "RECEIVED_TOURNAMENT_CHAT",
             "user_id" => device.user_id,
             "data" =>
               Jason.encode!(%{
                 tournament_id: tournament.id,
-                chant_room_id: chat_room_id
+                chat_room_id: chat_room_id
               })
           }
           |> Notif.create_notification()
@@ -634,7 +627,7 @@ defmodule Milk.Chat do
             device_token: device.token,
             process_id: "RECEIVED_TOURNAMENT_CHAT",
             title: title,
-            message: attrs["word"]
+            message: message
           }
           |> Notif.push_ios()
 
@@ -642,8 +635,13 @@ defmodule Milk.Chat do
         end
       end)
 
-      create_chats(attrs)
+      %{"user_id" => user_id, "chat_room_id" => chat_room_id, "word" => message}
+      |> create_chats()
     end
+  end
+
+  def dialogue(user_id, chat_room_id, message) do
+    dialogue(%{"user_id" => user_id, "chat_room_id" => chat_room_id, "word" => message})
   end
 
   # user_idに関連するチャットを全て取り出す
