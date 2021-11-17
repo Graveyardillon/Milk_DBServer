@@ -672,36 +672,26 @@ defmodule MilkWeb.TournamentController do
   """
   def start(conn, %{"tournament" => %{"master_id" => master_id, "tournament_id" => tournament_id}}) do
     master_id = Tools.to_integer_as_needed(master_id)
+    tournament_id = Tools.to_integer_as_needed(tournament_id)
 
-    tournament_id
-    |> Tools.to_integer_as_needed()
-    |> Tournaments.load_tournament()
-    ~> tournament
-    |> Map.get(:is_started)
-    |> unless do
-      tournament
-      |> Map.get(:is_team)
-      |> if do
-        start_team_tournament(master_id, tournament)
-      else
-        start_tournament(master_id, tournament)
-      end
-      |> case do
-        {:ok, match_list, match_list_with_fight_result} ->
-          Oban.Processer.notify_tournament_start(tournament_id)
-          Discord.send_tournament_start_notification(tournament.discord_server_id)
-
-          render(conn, "match.json", %{
-            match_list: match_list,
-            match_list_with_fight_result: match_list_with_fight_result
-          })
-
-        {:error, error, nil} ->
-          render(conn, "error.json", error: Tools.create_error_message(error))
-      end
+    with %Tournament{is_started: false} = tournament <- Tournaments.load_tournament(tournament_id),
+         true                                        <- validate_master_id?(tournament, master_id),
+         {:ok, match_list, match_list_with_fight_result} <- do_start(tournament) do
+      render(conn, "match.json", %{match_list: match_list, match_list_with_fight_result: match_list_with_fight_result})
     else
-      render(conn, "error.json", error: "Tournament has already been started.")
+      %Tournament{is_started: true} -> render(conn, "error.json", error: "Tournament has already been started.")
+      false                         -> render(conn, "error.json", error: "invalid master id")
+      {:error, error, nil}          -> render(conn, "error.json", error: Tools.create_error_message(error))
     end
+  end
+
+  defp validate_master_id?(%Tournament{master_id: mid}, master_id), do: master_id == mid
+
+  defp do_start(%Tournament{is_team: true, master_id: master_id} = tournament) do
+    start_team_tournament(master_id, tournament)
+  end
+  defp do_start(%Tournament{is_team: false, master_id: master_id} = tournament) do
+    start_tournament(master_id, tournament)
   end
 
   defp start_team_tournament(master_id, tournament) do
