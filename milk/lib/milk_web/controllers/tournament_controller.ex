@@ -674,10 +674,11 @@ defmodule MilkWeb.TournamentController do
     master_id = Tools.to_integer_as_needed(master_id)
     tournament_id = Tools.to_integer_as_needed(tournament_id)
 
-    with %Tournament{is_started: false} = tournament <- Tournaments.load_tournament(tournament_id),
-         true                                        <- validate_master_id?(tournament, master_id),
-         {:ok, match_list, match_list_with_fight_result} <- do_start(tournament) do
-      render(conn, "match.json", %{match_list: match_list, match_list_with_fight_result: match_list_with_fight_result})
+    with %Tournament{is_started: false} = tournament     <- Tournaments.load_tournament(tournament_id),
+         true                                            <- validate_master_id?(tournament, master_id),
+         {:ok, match_list, match_list_with_fight_result} <- do_start(tournament),
+         user_id_list                                    <- Tournaments.relevant_user_id_list(tournament_id) do
+      render(conn, "start.json", %{match_list: match_list, match_list_with_fight_result: match_list_with_fight_result, user_id_list: user_id_list})
     else
       %Tournament{is_started: true} -> render(conn, "error.json", error: "Tournament has already been started.")
       false                         -> render(conn, "error.json", error: "invalid master id")

@@ -2509,6 +2509,13 @@ defmodule MilkWeb.TournamentControllerTest do
       assert json_response(conn, 200)["result"]
       match_list = json_response(conn, 200)["data"]["match_list"]
 
+      conn
+      |> json_response(200)
+      |> Map.get("data")
+      |> Map.get("user_id_list")
+      |> Enum.empty?()
+      |> refute()
+
       conn = get(conn, Routes.tournament_path(conn, :show), %{"tournament_id" => tournament_id})
       assert json_response(conn, 200)["data"]["is_started"]
 

@@ -347,12 +347,13 @@ defmodule MilkWeb.TournamentView do
     }
   end
 
-  def render("match.json", %{match_list: list, match_list_with_fight_result: list2}) do
+  def render("start.json", %{match_list: list, match_list_with_fight_result: list2, user_id_list: user_id_list}) do
     %{
       result: true,
       data: %{
         match_list: list,
-        match_list_with_fight_result: list2
+        match_list_with_fight_result: list2,
+        user_id_list: user_id_list
       }
     }
   end
