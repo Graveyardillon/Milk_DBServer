@@ -1791,7 +1791,6 @@ defmodule MilkWeb.TournamentController do
 
     user_id
     |> started_tournament()
-    |> IO.inspect()
     |> case do
       nil         -> render(conn, "error.json", error: "tournament is nil")
       tournament  -> render(conn, "match_info.json", match_info: do_get_match_information(tournament.id, user_id))
