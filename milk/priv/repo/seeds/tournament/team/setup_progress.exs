@@ -7,6 +7,8 @@ alias Milk.{
   Tournaments
 }
 
+# XXX: DEPRECATED
+
 team_n = 4
 team_size = 5
 

@@ -7,6 +7,8 @@ alias Milk.Tournaments.{
   Tournament
 }
 
+# XXX: DEPRECATED
+
 Tournament
 |> where([t], t.is_team)
 |> Repo.one()
