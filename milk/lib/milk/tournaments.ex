@@ -3717,57 +3717,20 @@ defmodule Milk.Tournaments do
   @doc """
   Get selectable maps by user id and tournament id.
   """
-  @spec get_selectable_maps_by_tournament_id_and_user_id(integer(), integer()) :: [
-          Milk.Tournaments.Map.t() | MapSelection.t()
-        ]
+  @spec get_selectable_maps_by_tournament_id_and_user_id(integer(), integer()) :: [Milk.Tournaments.Map.t() | MapSelection.t()] | nil
   def get_selectable_maps_by_tournament_id_and_user_id(tournament_id, user_id) do
     tournament_id
-    |> load_tournament()
-    ~> tournament
-
-    tournament
-    |> Map.get(:is_team)
-    |> if do
-      tournament_id
-      |> get_team_by_tournament_id_and_user_id(user_id)
-      |> Map.get(:id)
-    else
-      user_id
+    |> __MODULE__.get_opponent(user_id)
+    |> case do
+      {:ok, opponent} -> do_get_selectable_maps(tournament_id, user_id, opponent.id)
+      _               -> []
     end
-    ~> my_id
+  end
 
-    tournament
-    |> Map.get(:is_team)
-    |> if do
-      tournament_id
-      |> Progress.get_match_list()
-      |> find_match(my_id)
-      |> get_opponent_team(my_id)
-    else
-      tournament_id
-      |> Progress.get_match_list()
-      |> find_match(my_id)
-      |> get_opponent_user(my_id)
-    end
-    |> elem(1)
-    |> Map.get(:id)
-    ~> opponent_id
+  defp do_get_selectable_maps(tournament_id, user_id, opponent_id) do
+    my_id = Progress.get_necessary_id(tournament_id, user_id)
 
-    if opponent_id > my_id do
-      {opponent_id, my_id}
-    else
-      {my_id, opponent_id}
-    end
-    ~> {large_id, small_id}
-
-    tournament_id
-    |> get_map_selections(small_id, large_id)
-    |> Enum.map(fn map_selection ->
-      map_selection
-      |> Map.get(:map)
-      |> Map.put(:state, map_selection.state)
-    end)
-    ~> map_selections
+    [small_id, large_id] = Enum.sort([my_id, opponent_id])
 
     tournament_id
     |> get_maps_by_tournament_id()
@@ -3776,7 +3739,13 @@ defmodule Milk.Tournaments do
     end)
     ~> maps
 
-    map_selections
+    tournament_id
+    |> get_map_selections(small_id, large_id)
+    |> Enum.map(fn map_selection ->
+      map_selection
+      |> Map.get(:map)
+      |> Map.put(:state, map_selection.state)
+    end)
     |> Enum.concat(maps)
     |> Enum.uniq_by(&(&1.id))
   end
