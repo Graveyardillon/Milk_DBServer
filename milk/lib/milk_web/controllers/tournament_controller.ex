@@ -975,15 +975,15 @@ defmodule MilkWeb.TournamentController do
     with {:ok, _}   <- Tournaments.start_match(tournament, user_id),
          {:ok, _}   <- do_start_match(tournament, user_id),
          {:ok, _}   <- Tournaments.break_waiting_state_as_needed(tournament, user_id),
-         {:ok, nil} <- notify_discord_on_start_match_as_needed(tournament, user_id) do
-      json(conn, %{result: true})
+         {:ok, nil} <- notify_discord_on_start_match_as_needed(tournament, user_id),
+         messages   <- Tournaments.all_states!(tournament_id) do
+      render(conn, "interaction_message.json", interaction_messages: messages)
     else
-      _ -> json(conn, %{result: false})
+      _ -> render(conn, "error.json", error: nil)
     end
   end
 
   @spec do_start_match(Tournament.t() | nil, integer()) :: {:ok, nil} | {:error, String.t()}
-  #defp do_start_match(nil, _), do: {:error, "tournament is nil"}
   defp do_start_match(%Tournament{is_team: true} = tournament, user_id) do
     if start_team_match(tournament, user_id) do
       {:ok, nil}
@@ -1602,14 +1602,6 @@ defmodule MilkWeb.TournamentController do
       1 -> json(conn, %{is_win: true, tournament_id: tournament_id, is_claimed: true})
       _ -> json(conn, %{is_win: nil, tournament_id: tournament_id, is_claimed: true})
     end
-
-    # case Progress.get_fight_result(user_id, tournament_id) do
-    #   nil ->
-    #     json(conn, %{is_win: nil, is_claimed: false})
-
-    #   is_win ->
-    #     json(conn, %{is_win: is_win, tournament_id: tournament_id, is_claimed: true})
-    # end
   end
 
   @doc """

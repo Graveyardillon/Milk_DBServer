@@ -2558,6 +2558,13 @@ defmodule MilkWeb.TournamentControllerTest do
       # NOTE: 対戦相手がマッチをスタートしていないのにclaim_win/loseしようとするとどうなるか
       conn = post(conn, Routes.tournament_path(conn, :start_match), %{"user_id" => user1_id, "tournament_id" => tournament_id})
       assert json_response(conn, 200)["result"]
+
+      conn
+      |> json_response(200)
+      |> Map.get("messages")
+      |> Enum.empty?()
+      |> refute()
+
       conn = get(conn, Routes.tournament_path(conn, :get_match_information), %{"tournament_id" => tournament_id, "user_id" => user1_id})
       assert json_response(conn, 200)["state"] == "IsWaitingForStartMatch"
 
