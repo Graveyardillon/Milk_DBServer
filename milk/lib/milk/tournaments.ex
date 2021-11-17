@@ -477,6 +477,28 @@ defmodule Milk.Tournaments do
     tournament_id
     |> __MODULE__.get_team_leaders()
     |> Enum.map(&(&1.user_id))
+    ~> team_leaders
+
+    masters ++ entrants ++ team_leaders
+  end
+
+  @doc """
+  大会に関係しているすべてのユーザーid一覧を返す関数
+  """
+  def all_relevant_user_id_list(tournament_id) do
+    tournament_id
+    |> __MODULE__.get_masters()
+    |> Enum.map(&(&1.id))
+    ~> masters
+
+    tournament_id
+    |> __MODULE__.get_entrants()
+    |> Enum.map(&(&1.user_id))
+    ~> entrants
+
+    tournament_id
+    |> __MODULE__.get_team_members_by_tournament_id()
+    |> Enum.map(&(&1.user_id))
     ~> team_members
 
     masters ++ entrants ++ team_members

@@ -397,7 +397,6 @@ defmodule MilkWeb.TournamentControllerTest do
       refute json_response(conn, 200)["data"]["enabled_coin_toss"]
     end
 
-    # FIXME: オートマトンでの処理に書き換える途中で、仕様も少し変わるのでそれに合わせてコメントアウト
     test "create tournament (custom details)", %{conn: conn} do
       user = fixture_user(num: 2)
 
@@ -2513,8 +2512,10 @@ defmodule MilkWeb.TournamentControllerTest do
       |> json_response(200)
       |> Map.get("data")
       |> Map.get("user_id_list")
-      |> Enum.empty?()
-      |> refute()
+      |> then(fn user_id_list ->
+        # NOTE: masterの分を加算して+1
+        assert length(user_id_list) == capacity + 1
+      end)
 
       conn = get(conn, Routes.tournament_path(conn, :show), %{"tournament_id" => tournament_id})
       assert json_response(conn, 200)["data"]["is_started"]
@@ -2773,6 +2774,15 @@ defmodule MilkWeb.TournamentControllerTest do
 
       conn = post(conn, Routes.tournament_path(conn, :start), %{"tournament" => %{"master_id" => master_id, "tournament_id" => tournament_id}})
       assert json_response(conn, 200)["result"]
+
+      conn
+      |> json_response(200)
+      |> Map.get("data")
+      |> Map.get("user_id_list")
+      |> then(fn user_id_list ->
+        # NOTE: masterの分を加算して+1
+        assert length(user_id_list) == team_size*capacity + 1
+      end)
 
       conn = get(conn, Routes.tournament_path(conn, :get_match_information), %{"tournament_id" => tournament_id, "user_id" => master_id})
       assert json_response(conn, 200)["result"]
