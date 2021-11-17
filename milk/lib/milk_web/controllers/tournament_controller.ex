@@ -1234,7 +1234,8 @@ defmodule MilkWeb.TournamentController do
     |> if do
       json(conn, %{result: true, error: "Should provide score in the tournament rule"})
     else
-      do_claim_score(conn, user_id, tournament_id, 1)
+      tournament = Tournaments.load_tournament(tournament_id)
+      do_claim_score(conn, user_id, tournament, 1)
     end
   end
 
@@ -1252,7 +1253,8 @@ defmodule MilkWeb.TournamentController do
     |> if do
       json(conn, %{result: true, error: "Should provide score in the tournament rule"})
     else
-      do_claim_score(conn, user_id, tournament_id, 0)
+      tournament = Tournaments.load_tournament(tournament_id)
+      do_claim_score(conn, user_id, tournament, 0)
     end
   end
 
@@ -1269,12 +1271,17 @@ defmodule MilkWeb.TournamentController do
     score = Tools.to_integer_as_needed(score)
     match_index = Tools.to_integer_as_needed(match_index)
 
-    do_claim_score(conn, user_id, tournament_id, score, match_index)
+    tournament = Tournaments.load_tournament(tournament_id)
+    do_claim_score(conn, user_id, tournament, score, match_index)
   end
 
-  defp do_claim_score(conn, user_id, tournament_id, score, match_index \\ 0) do
+  # bodyless clause
+  defp do_claim_score(conn, user_id, tournament, score, match_index \\ 0)
+  defp do_claim_score(conn,    _,    nil,        _,     _),          do: render(conn, "error.json", error: "tournament is nil")
+  defp do_claim_score(conn, user_id, tournament, score, match_index) do
+    # あとでtournament変数はシャドウイングするのでidだけ退避しておく
+    tournament_id = tournament.id
     with true                                           <- can_claim?(tournament_id, user_id),
-         tournament     when not is_nil(tournament)     <- Tournaments.load_tournament(tournament_id),
          id             when not is_nil(id)             <- Progress.get_necessary_id(tournament_id, user_id),
          {:ok, opponent}                                <- Tournaments.get_opponent(tournament_id, user_id),
          {:ok, _}                                       <- Progress.insert_score(tournament_id, id, score),
@@ -1288,7 +1295,7 @@ defmodule MilkWeb.TournamentController do
       # NOTE: 重複報告が起きたときの処理
       # 重複報告が起こった時用の処理を呼び出す
       {:error, id, opponent_id, _} ->
-        duplicated_claim_process(tournament_id, id, opponent_id, score)
+        duplicated_claim_process(tournament.id, id, opponent_id, score)
         render(conn, "claim.json", claim: %Claim{validated: false, completed: false, is_finished: false, interaction_messages: []})
       nil ->
         render(conn, "claim.json", claim: %Claim{validated: true, completed: false, is_finished: false, interaction_messages: []})
@@ -1318,8 +1325,8 @@ defmodule MilkWeb.TournamentController do
 
   @spec calculate_winner(integer(), integer(), integer(), integer()) :: {:ok, integer(), integer(), boolean()} | {:error, integer(), integer(), boolean()}
   defp calculate_winner(id1, id2, score1, score2) when score1 == score2, do: {:error, id1, id2, false}
-  defp calculate_winner(id1, id2, score1, score2) when score1 > score2, do: {:ok, id1, id2, true}
-  defp calculate_winner(id1, id2, score1, score2) when score1 < score2, do: {:ok, id2, id1, true}
+  defp calculate_winner(id1, id2, score1, score2) when score1 > score2,  do: {:ok, id1, id2, true}
+  defp calculate_winner(id1, id2, score1, score2) when score1 < score2,  do: {:ok, id2, id1, true}
 
   # TODO: この辺の引数は使うものが決まっているので構造体の使用を検討
   # NOTE: この関数ではすでに勝敗が決定している前提で処理が進んでいく。
