@@ -1279,9 +1279,10 @@ defmodule MilkWeb.TournamentController do
   defp do_claim_score(conn, user_id, tournament, score, match_index \\ 0)
   defp do_claim_score(conn,    _,    nil,        _,     _),          do: render(conn, "error.json", error: "tournament is nil")
   defp do_claim_score(conn, user_id, tournament, score, match_index) do
-    # あとでtournament変数はシャドウイングするのでidだけ退避しておく
+    # NOTE: あとでtournament変数はシャドウイングするので必要な情報だけ退避しておく
     tournament_id = tournament.id
-    with true                                           <- can_claim?(tournament_id, user_id),
+    rule = tournament.rule
+    with true                                           <- claimable_state?(tournament_id, user_id),
          id             when not is_nil(id)             <- Progress.get_necessary_id(tournament_id, user_id),
          {:ok, opponent}                                <- Tournaments.get_opponent(tournament_id, user_id),
          {:ok, _}                                       <- Progress.insert_score(tournament_id, id, score),
@@ -1290,24 +1291,51 @@ defmodule MilkWeb.TournamentController do
          {:ok, nil}                                     <- proceed_to_next_match(tournament, winner_id, loser_id, score, opponent_score, match_index),
          tournament                                     <- Tournaments.load_tournament(tournament_id),
          messages                                       <- Tournaments.all_states!(tournament_id) do
-      render(conn, "claim.json", claim: %Claim{validated: true, completed: true, is_finished: is_nil(tournament), interaction_messages: messages})
+      claim = %Claim{
+        validated: true,
+        completed: true,
+        is_finished: is_nil(tournament),
+        interaction_messages: messages,
+        rule: rule
+      }
+      render(conn, "claim.json", claim: claim)
     else
       # NOTE: 重複報告が起きたときの処理
-      # 重複報告が起こった時用の処理を呼び出す
       {:error, id, opponent_id, _} ->
         duplicated_claim_process(tournament.id, id, opponent_id, score)
-        render(conn, "claim.json", claim: %Claim{validated: false, completed: false, is_finished: false, interaction_messages: []})
+        claim = %Claim{
+          validated:   false,
+          completed:   false,
+          is_finished: false,
+          interaction_messages: [],
+          rule: rule
+        }
+        render(conn, "claim.json", claim: claim)
       nil ->
-        render(conn, "claim.json", claim: %Claim{validated: true, completed: false, is_finished: false, interaction_messages: []})
+        claim = %Claim{
+          validated:   true,
+          completed:   false,
+          is_finished: false,
+          interaction_messages: [],
+          rule: rule
+        }
+        render(conn, "claim.json", claim: claim)
       false ->
         render(conn, "error.json", error: "Invalid state")
       _ ->
-        render(conn, "claim.json", claim: %Claim{validated: false, completed: false, is_finished: false, interaction_messages: []})
+        claim = %Claim{
+          validated:   false,
+          completed:   false,
+          is_finished: false,
+          interaction_messages: [],
+          rule: rule
+        }
+        render(conn, "claim.json", claim: claim)
     end
   end
 
-  @spec can_claim?(integer(), integer()) :: boolean()
-  defp can_claim?(tournament_id, user_id) do
+  @spec claimable_state?(integer(), integer()) :: boolean()
+  defp claimable_state?(tournament_id, user_id) do
     Tournaments.state!(tournament_id, user_id) == "IsPending"
   end
 

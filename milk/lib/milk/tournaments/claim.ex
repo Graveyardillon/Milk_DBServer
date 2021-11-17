@@ -8,13 +8,15 @@ defmodule Milk.Tournaments.Claim do
     :interaction_messages,
     :validated,
     :completed,
-    :is_finished
+    :is_finished,
+    :rule
   ]
 
   @type t :: %__MODULE__{
     interaction_messages: [InteractionMessage.t()],
-    validated: boolean(),
-    completed: boolean(),
-    is_finished: boolean()
+    validated:            boolean(),
+    completed:            boolean(),
+    is_finished:          boolean(),
+    rule:                 String.t()
   }
 end

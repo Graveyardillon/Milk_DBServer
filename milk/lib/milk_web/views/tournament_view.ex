@@ -505,6 +505,7 @@ defmodule MilkWeb.TournamentView do
       validated: claim.validated,
       completed: claim.completed,
       is_finished: claim.is_finished,
+      rule: claim.rule,
       messages: Enum.map(claim.interaction_messages, fn message ->
         %{
           state: message.state,
