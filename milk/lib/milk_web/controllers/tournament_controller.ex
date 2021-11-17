@@ -112,7 +112,7 @@ defmodule MilkWeb.TournamentController do
   def create(conn, %{"tournament" => attrs, "file" => file, "maps" => maps}),
     do: __MODULE__.create(conn, %{"tournament" => attrs, "image" => file, "maps" => maps})
   def create(conn, %{"tournament" => attrs, "file" => file}),
-    do: __MODULE__.create(conn, %{"tournament" => attrs, "file" => file, "maps" => []})
+    do: __MODULE__.create(conn, %{"tournament" => attrs, "image" => file, "maps" => []})
   # NOTE: サムネイル画像がない場合の大会作成処理
   def create(conn, %{"tournament" => attrs, "image" => image, "maps" => maps}) when image == "" or is_nil(image) do
     attrs = Tools.parse_json_string_as_needed!(attrs)
@@ -848,7 +848,8 @@ defmodule MilkWeb.TournamentController do
          messages          <- Tournaments.all_states!(tournament_id) do
       render(conn, "interaction_message.json", interaction_messages: messages, rule: tournament.rule)
     else
-      _ -> render(conn, "error.json", error: nil)
+      {:error, error} -> render(conn, "error.json", error: error)
+      _               -> render(conn, "error.json", error: nil)
     end
   end
 
@@ -894,7 +895,8 @@ defmodule MilkWeb.TournamentController do
          messages          <- Tournaments.all_states!(tournament_id) do
       render(conn, "interaction_message.json", interaction_messages: messages, rule: tournament.rule)
     else
-      _ -> render(conn, "error.json", error: nil)
+      {:error, error} -> render(conn, "error.json", error: error)
+      _               -> render(conn, "error.json", error: nil)
     end
   end
 
@@ -930,7 +932,8 @@ defmodule MilkWeb.TournamentController do
          messages          <- Tournaments.all_states!(tournament_id) do
       render(conn, "interaction_message.json", interaction_messages: messages, rule: tournament.rule)
     else
-      _ -> render(conn, "error.json", error: nil)
+      {:error, error} -> render(conn, "error.json", error: error)
+      _               -> render(conn, "error.json", error: nil)
     end
   end
 
@@ -1277,7 +1280,7 @@ defmodule MilkWeb.TournamentController do
 
   # bodyless clause
   defp do_claim_score(conn, user_id, tournament, score, match_index \\ 0)
-  defp do_claim_score(conn,    _,    nil,        _,     _),          do: render(conn, "error.json", error: "tournament is nil")
+  defp do_claim_score(conn, _,       nil,        _,     _),          do: render(conn, "error.json", error: "tournament is nil")
   defp do_claim_score(conn, user_id, tournament, score, match_index) do
     # NOTE: あとでtournament変数はシャドウイングするので必要な情報だけ退避しておく
     tournament_id = tournament.id
@@ -1289,8 +1292,9 @@ defmodule MilkWeb.TournamentController do
          opponent_score when not is_nil(opponent_score) <- Progress.get_score(tournament_id, opponent.id),
          {:ok, winner_id, loser_id, _}                  <- calculate_winner(id, opponent.id, score, opponent_score),
          {:ok, nil}                                     <- proceed_to_next_match(tournament, winner_id, loser_id, score, opponent_score, match_index),
-         tournament                                     <- Tournaments.load_tournament(tournament_id),
-         messages                                       <- Tournaments.all_states!(tournament_id) do
+         tournament                                     <- Tournaments.load_tournament(tournament_id) do
+      # TODO: このall_statesの大会終了後処理
+      messages = Tournaments.all_states!(tournament_id)
       claim = %Claim{
         validated: true,
         completed: true,
@@ -1435,11 +1439,11 @@ defmodule MilkWeb.TournamentController do
 
   defp notify_discord_on_duplicate_claim_as_needed(tournament_id, id, opponent_id, score) do
     with tournament when not is_nil(tournament) <- Tournaments.load_tournament(tournament_id),
-         {:ok, opponent_name, name} <- load_necessary_opponent_info_on_notify_discord(tournament, id, opponent_id),
-         {:ok, nil} <- do_notify_discord_on_duplicate_claim_as_needed(tournament, name, opponent_name, score) do
+         {:ok, opponent_name, name}             <- load_necessary_opponent_info_on_notify_discord(tournament, id, opponent_id),
+         {:ok, nil}                             <- do_notify_discord_on_duplicate_claim_as_needed(tournament, name, opponent_name, score) do
       {:ok, nil}
     else
-      nil -> {:error, "tournament is nil"}
+      nil   -> {:error, "tournament is nil"}
       error -> error
     end
   end
@@ -1452,8 +1456,8 @@ defmodule MilkWeb.TournamentController do
     |> Tournaments.get_opponent(leader.user_id)
     |> case do
       {:ok, opponent} -> {:ok, opponent.name, team.name}
-      {:wait, nil} -> raise "The given user should wait for the opponent."
-      _ -> raise "Unknown error on claim score."
+      {:wait, nil}    -> raise "The given user should wait for the opponent."
+      _               -> raise "Unknown error on claim score."
     end
   end
   defp load_necessary_opponent_info_on_notify_discord(_, user_id, opponent_id) do
@@ -1479,11 +1483,11 @@ defmodule MilkWeb.TournamentController do
     with tournament when not is_nil(tournament) <- Tournaments.load_tournament(tournament_id),
          {:ok, nil} <- Tournaments.flip_coin(user_id, tournament_id),
          {:ok, nil} <- Progress.insert_match_pending_list_table(user_id, tournament_id),
-         {:ok, _} <- Tournaments.break_waiting_state_as_needed(tournament, user_id),
-         messages <- Tournaments.all_states!(tournament_id) do
+         {:ok, _}   <- Tournaments.break_waiting_state_as_needed(tournament, user_id),
+         messages   <- Tournaments.all_states!(tournament_id) do
       render(conn, "interaction_message.json", interaction_messages: messages, rule: tournament.rule)
     else
-      nil -> render(conn, "error.json", error: "tournament is nil")
+      nil             -> render(conn, "error.json", error: "tournament is nil")
       {:error, error} -> render(conn, "error.json", error: error)
     end
   end
@@ -1529,8 +1533,8 @@ defmodule MilkWeb.TournamentController do
     with match_list when is_integer(match_list) <- Progress.get_match_list(tournament_id),
          tournament when not is_nil(tournament) <- Tournaments.load_tournament(tournament_id),
          {:ok, nil} <- notify_discord_on_deleting_tournament_as_needed(tournament),
-         {:ok, _} <- Tournaments.finish(tournament_id, winner_id),
-         {:ok, _} <- create_match_list_with_fight_result_log_on_finish(tournament_id),
+         {:ok, _}   <- Tournaments.finish(tournament_id, winner_id),
+         {:ok, _}   <- create_match_list_with_fight_result_log_on_finish(tournament_id),
          {:ok, nil} <- Progress.delete_match_list(tournament_id),
          {:ok, nil} <- Progress.delete_match_list_with_fight_result(tournament_id),
          {:ok, nil} <- Progress.delete_match_pending_list_of_tournament(tournament_id),
@@ -1538,10 +1542,10 @@ defmodule MilkWeb.TournamentController do
          {:ok, nil} <- Progress.delete_duplicate_users_all(tournament_id) do
       {:ok, nil}
     else
-      nil -> {:error, "match list or tournament is nil"}
+      nil                                 -> {:error, "match list or tournament is nil"}
       match_list when is_list(match_list) -> {:ok, nil}
-      {:error, message} -> {:error, message}
-      _ -> {:error, "unexpected error"}
+      {:error, message}                   -> {:error, message}
+      _                                   -> {:error, "unexpected error"}
     end
   end
 

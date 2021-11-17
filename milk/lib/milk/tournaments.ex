@@ -426,7 +426,7 @@ defmodule Milk.Tournaments do
     tournament_id
     |> __MODULE__.load_tournament()
     |> case do
-      nil -> []
+      nil        -> []
       tournament ->
         User
         |> where([u], u.id == ^tournament.master_id)
@@ -502,6 +502,43 @@ defmodule Milk.Tournaments do
     ~> team_members
 
     masters ++ entrants ++ team_members
+  end
+
+  @doc """
+  all_relevant_user_id_listの大会終了後に使う版
+  """
+  def all_relevant_user_id_log_list(tournament_id) do
+    tournament_id
+    |> Log.get_tournament_log_by_tournament_id()
+    |> do_all_relevant_user_id_log_list()
+  end
+
+  defp do_all_relevant_user_id_log_list(nil),           do: []
+  defp do_all_relevant_user_id_log_list(tournament_log) do
+    User
+    |> where([u], u.id == ^tournament_log.master_id)
+    |> Repo.all()
+    |> Enum.map(&(&1.id))
+    ~> masters
+
+    tournament_log.tournament_id
+    |> Log.get_assistant_logs_by_tournament_id()
+    |> Enum.map(&(&1.user_id))
+    ~> assistants
+
+    tournament_log.tournament_id
+    |> Log.get_entrant_logs_by_tournament_id()
+    |> Enum.map(&(&1.user_id))
+    ~> entrants
+
+    tournament_log.tournament_id
+    |> Log.get_team_logs_by_tournament_id()
+    |> Enum.map(&Log.get_team_member_logs(&1.team_id))
+    |> List.flatten()
+    |> Enum.map(&(&1.user_id))
+    ~> team_members
+
+    masters ++ assistants ++ entrants ++ team_members
   end
 
   @doc """
@@ -856,9 +893,9 @@ defmodule Milk.Tournaments do
     |> Enum.reduce(Multi.new(), &create_map_transaction(&1, map_state, large_id, small_id, &2))
     |> Repo.transaction()
     |> case do
-      {:ok, _} -> {:ok, nil}
+      {:ok, _}                  -> {:ok, nil}
       {:error, _, changeset, _} -> {:error, changeset.errors}
-      {:error, _} -> {:error, nil}
+      {:error, _}               -> {:error, nil}
     end
   end
 
@@ -2641,9 +2678,9 @@ defmodule Milk.Tournaments do
   defp do_state!(nil, _), do: "IsFinished"
   defp do_state!(%Tournament{rule: rule}, keyname) do
     case rule do
-      "basic" -> Basic.state!(keyname)
+      "basic"   -> Basic.state!(keyname)
       "flipban" -> FlipBan.state!(keyname)
-      _ -> raise "Invalid tournament rule"
+      _         -> raise "Invalid tournament rule"
     end
   end
 
@@ -2653,7 +2690,8 @@ defmodule Milk.Tournaments do
   @spec all_states!(integer()) :: [InteractionMessage.t()]
   def all_states!(tournament_id) do
     tournament_id
-    |> __MODULE__.relevant_user_id_list()
+    |> __MODULE__.get_tournament()
+    |> load_relevant_user_id_list(tournament_id)
     |> Flow.from_enumerable(stages: 1)
     |> Flow.map(fn user_id ->
       state = __MODULE__.state!(tournament_id, user_id)
@@ -2664,6 +2702,13 @@ defmodule Milk.Tournaments do
       }
     end)
     |> Enum.to_list()
+  end
+
+  defp load_relevant_user_id_list(nil, tournament_id) do
+    __MODULE__.all_relevant_user_id_log_list(tournament_id)
+  end
+  defp load_relevant_user_id_list(tournament, _) do
+    __MODULE__.all_relevant_user_id_list(tournament.id)
   end
 
   @doc """

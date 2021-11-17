@@ -103,7 +103,7 @@ defmodule Milk.Tournaments.Rules do
 
     case rule do
       "flipban" -> FlipBan.trigger!(keyname, FlipBan.flip_trigger())
-      _ -> {:error, "Invalid tournament rule"}
+      _         -> {:error, "Invalid tournament rule"}
     end
   end
 

@@ -345,9 +345,9 @@ defmodule Milk.Log do
   @doc """
   Gets a single tournament log by tournament id.
   """
-  def get_tournament_log_by_tournament_id(id) do
+  def get_tournament_log_by_tournament_id(tournament_id) do
     TournamentLog
-    |> where([t], t.tournament_id == ^id)
+    |> where([t], t.tournament_id == ^tournament_id)
     |> Repo.one()
   end
 
