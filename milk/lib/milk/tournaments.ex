@@ -2219,7 +2219,7 @@ defmodule Milk.Tournaments do
   end
 
   defp initialize_assistant_state!(%Assistant{user_id: user_id, tournament_id: tournament_id}) do
-    tournament = __MODULE__.load_tournament(tournament_id)
+    tournament = __MODULE__.get_tournament(tournament_id)
     keyname = Rules.adapt_keyname(user_id, tournament_id)
 
     case tournament.rule do
@@ -2955,7 +2955,7 @@ defmodule Milk.Tournaments do
   end
 
   defp initialize_team_member_states!(%Team{id: id, tournament_id: tournament_id}) do
-    tournament = __MODULE__.load_tournament(tournament_id)
+    tournament = __MODULE__.get_tournament(tournament_id)
 
     id
     |> __MODULE__.get_team_members_by_team_id()
@@ -3511,7 +3511,7 @@ defmodule Milk.Tournaments do
   end
 
   defp initialize_member_states!(%Team{id: id, tournament_id: tournament_id}) do
-    tournament = __MODULE__.load_tournament(tournament_id)
+    tournament = __MODULE__.get_tournament(tournament_id)
 
     id
     |> __MODULE__.get_team_members_by_team_id()
@@ -3529,7 +3529,7 @@ defmodule Milk.Tournaments do
   defp invite_members_to_discord_as_needed(team) do
     team
     |> Map.get(:tournament_id)
-    |> load_tournament()
+    |> __MODULE__.get_tournament()
     ~> tournament
     |> Map.get(:discord_server_id)
     ~> server_id

@@ -269,26 +269,17 @@ defmodule MilkWeb.TournamentController do
   Get a thumbnail image of a tournament by tournament id.
   """
   def get_thumbnail_by_tournament_id(conn, %{"tournament_id" => id}) do
-    case Tournaments.load_tournament(id) do
-      nil ->
-        json(conn, %{result: false})
-
+    case Tournaments.get_tournament(id) do
+      nil        -> json(conn, %{result: false})
       tournament ->
-        path = tournament.thumbnail_path
-
-        map =
-          case Application.get_env(:milk, :environment) do
-            :test ->
-              read_thumbnail(path)
-
-            # coveralls-ignore-start
-            :dev ->
-              read_thumbnail(path)
-
-            _ ->
-              read_thumbnail_prod(path)
-              # coveralls-ignore-stop
-          end
+        case Application.get_env(:milk, :environment) do
+          :test -> read_thumbnail(tournament.thumbnail_path)
+          # coveralls-ignore-start
+          :dev  -> read_thumbnail(tournament.thumbnail_path)
+          _     -> read_thumbnail_prod(tournament.thumbnail_path)
+            # coveralls-ignore-stop
+        end
+        ~> map
 
         json(conn, %{result: true, b64: map.b64})
     end
@@ -511,7 +502,7 @@ defmodule MilkWeb.TournamentController do
 
     user_id
     |> Tournaments.get_assistants_by_user_id()
-    |> Enum.map(&Tournaments.load_tournament(&1.tournament_id))
+    |> Enum.map(&Tournaments.get_tournament(&1.tournament_id))
     ~> assistants
 
     tournaments = participatings ++ hostings ++ assistants
@@ -1481,10 +1472,10 @@ defmodule MilkWeb.TournamentController do
     user_id = Tools.to_integer_as_needed(user_id)
 
     with tournament when not is_nil(tournament) <- Tournaments.load_tournament(tournament_id),
-         {:ok, nil} <- Tournaments.flip_coin(user_id, tournament_id),
-         {:ok, nil} <- Progress.insert_match_pending_list_table(user_id, tournament_id),
-         {:ok, _}   <- Tournaments.break_waiting_state_as_needed(tournament, user_id),
-         messages   <- Tournaments.all_states!(tournament_id) do
+         {:ok, nil}                             <- Tournaments.flip_coin(user_id, tournament_id),
+         {:ok, nil}                             <- Progress.insert_match_pending_list_table(user_id, tournament_id),
+         {:ok, _}                               <- Tournaments.break_waiting_state_as_needed(tournament, user_id),
+         messages                               <- Tournaments.all_states!(tournament_id) do
       render(conn, "interaction_message.json", interaction_messages: messages, rule: tournament.rule)
     else
       nil             -> render(conn, "error.json", error: "tournament is nil")
@@ -1531,15 +1522,15 @@ defmodule MilkWeb.TournamentController do
   @spec finish_as_needed?(integer(), integer()) :: {:ok, nil} | {:error, String.t()}
   defp finish_as_needed?(tournament_id, winner_id) do
     with match_list when is_integer(match_list) <- Progress.get_match_list(tournament_id),
-         tournament when not is_nil(tournament) <- Tournaments.load_tournament(tournament_id),
-         {:ok, nil} <- notify_discord_on_deleting_tournament_as_needed(tournament),
-         {:ok, _}   <- Tournaments.finish(tournament_id, winner_id),
-         {:ok, _}   <- create_match_list_with_fight_result_log_on_finish(tournament_id),
-         {:ok, nil} <- Progress.delete_match_list(tournament_id),
-         {:ok, nil} <- Progress.delete_match_list_with_fight_result(tournament_id),
-         {:ok, nil} <- Progress.delete_match_pending_list_of_tournament(tournament_id),
-         {:ok, nil} <- Progress.delete_fight_result_of_tournament(tournament_id),
-         {:ok, nil} <- Progress.delete_duplicate_users_all(tournament_id) do
+         tournament when not is_nil(tournament) <- Tournaments.get_tournament(tournament_id),
+         {:ok, nil}                             <- notify_discord_on_deleting_tournament_as_needed(tournament),
+         {:ok, _}                               <- Tournaments.finish(tournament_id, winner_id),
+         {:ok, _}                               <- create_match_list_with_fight_result_log_on_finish(tournament_id),
+         {:ok, nil}                             <- Progress.delete_match_list(tournament_id),
+         {:ok, nil}                             <- Progress.delete_match_list_with_fight_result(tournament_id),
+         {:ok, nil}                             <- Progress.delete_match_pending_list_of_tournament(tournament_id),
+         {:ok, nil}                             <- Progress.delete_fight_result_of_tournament(tournament_id),
+         {:ok, nil}                             <- Progress.delete_duplicate_users_all(tournament_id) do
       {:ok, nil}
     else
       nil                                 -> {:error, "match list or tournament is nil"}

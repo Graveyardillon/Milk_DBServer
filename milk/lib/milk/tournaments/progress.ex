@@ -250,7 +250,7 @@ defmodule Milk.Tournaments.Progress do
   @spec insert_match_pending_list_table(integer(), integer()) :: {:ok, nil} | {:error, String.t()}
   def insert_match_pending_list_table(user_id, tournament_id) do
     # 大会タイプで分岐入れよう
-    tournament = Tournaments.load_tournament(tournament_id)
+    tournament = Tournaments.get_tournament(tournament_id)
     _pending_state = get_match_pending_list(user_id, tournament_id)
 
     should_flip_coin? = tournament.enabled_coin_toss
@@ -759,7 +759,7 @@ defmodule Milk.Tournaments.Progress do
     |> Tournaments.generate_matchlist()
     ~> {:ok, match_list}
 
-    tournament = Tournaments.load_tournament(tournament_id)
+    tournament = Tournaments.get_tournament(tournament_id)
     count = tournament.count
 
     Tournaments.initialize_rank(match_list, count, tournament_id)

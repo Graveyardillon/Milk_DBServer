@@ -90,7 +90,7 @@ defmodule MilkWeb.EntrantController do
     user_id = Tools.to_integer_as_needed(user_id)
 
     tournament_id
-    |> Tournaments.load_tournament()
+    |> Tournaments.get_tournament()
     |> get_rank_by_tournament(user_id)
     |> case do
       {:ok, rank} -> render(conn, "rank.json", rank: rank)
