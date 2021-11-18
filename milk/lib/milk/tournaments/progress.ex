@@ -616,8 +616,7 @@ defmodule Milk.Tournaments.Progress do
 
   # 9. a/d state
   # attacker side or defender side.
-  def insert_is_attacker_side(id, tournament_id, is_attacker_side)
-      when is_boolean(is_attacker_side) do
+  def insert_is_attacker_side(id, tournament_id, is_attacker_side) when is_boolean(is_attacker_side) do
     conn = conn()
 
     with {:ok, _} <- Redix.command(conn, ["MULTI"]),
@@ -635,8 +634,8 @@ defmodule Milk.Tournaments.Progress do
   def is_attacker_side?(id, tournament_id) do
     conn = conn()
 
-    with {:ok, _}                        <- Redix.command(conn, ["SELECT", 9]),
-         {:ok, value} when is_nil(value) <- Redix.command(conn, ["HGET", tournament_id, id]) do
+    with {:ok, _}                            <- Redix.command(conn, ["SELECT", 9]),
+         {:ok, value} when not is_nil(value) <- Redix.command(conn, ["HGET", tournament_id, id]) do
       value
       |> Code.eval_string()
       |> elem(0)

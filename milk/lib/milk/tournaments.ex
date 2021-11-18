@@ -943,10 +943,10 @@ defmodule Milk.Tournaments do
   Choose A/D
   """
   @spec choose_ad(integer(), integer(), boolean()) :: {:ok, Tournament.t()} | {:error, String.t()}
-  def choose_ad(user_id, _, _)          when not is_integer(user_id),          do: {:error, "user id should be integer"}
-  def choose_ad(_, tournament_id, _)    when not is_integer(tournament_id),    do: {:error, "tournament id should be integer"}
-  def choose_ad(_, _, is_attacker_side) when not is_boolean(is_attacker_side), do: {:error, "attacker side information should be boolean"}
-  def choose_ad(user_id, tournament_id, is_attack_side) do
+  def choose_ad(user_id,  _,            _               ) when not is_integer(user_id),          do: {:error, "user id should be integer"}
+  def choose_ad(_,       tournament_id, _               ) when not is_integer(tournament_id),    do: {:error, "tournament id should be integer"}
+  def choose_ad(_,       _,             is_attacker_side) when not is_boolean(is_attacker_side), do: {:error, "attacker side information should be boolean"}
+  def choose_ad(user_id, tournament_id, is_attacker_side) do
     tournament_id
     |> __MODULE__.get_opponent(user_id)
     |> elem(1)
@@ -955,7 +955,7 @@ defmodule Milk.Tournaments do
 
     tournament_id
     |> __MODULE__.state!(user_id)
-    |> do_choose_ad(user_id, tournament_id, opponent_id, is_attack_side)
+    |> do_choose_ad(user_id, tournament_id, opponent_id, is_attacker_side)
     ~> choose_ad_result
 
     with {:ok, _}                               <- choose_ad_result,
@@ -969,9 +969,9 @@ defmodule Milk.Tournaments do
     end
   end
 
-  defp do_choose_ad(state, _, _, _, _)       when state != "ShouldChooseA/D",  do: {:error, "invalid state"}
-  defp do_choose_ad(_, _, _, opponent_id, _) when not is_integer(opponent_id), do: {:error, "opponent id is not integer"}
-  defp do_choose_ad(_, user_id, tournament_id, opponent_id, is_attacker_side) do
+  defp do_choose_ad(state, _,       _,             _,           _               ) when state != "ShouldChooseA/D",  do: {:error, "invalid state"}
+  defp do_choose_ad(_,     _,       _,             opponent_id, _               ) when not is_integer(opponent_id), do: {:error, "opponent id is not integer"}
+  defp do_choose_ad(_,     user_id, tournament_id, opponent_id, is_attacker_side) do
     with my_id when not is_nil(my_id) <- Progress.get_necessary_id(tournament_id, user_id),
          {:ok, _}                     <- Progress.insert_is_attacker_side(my_id, tournament_id, is_attacker_side),
          {:ok, _}                     <- Progress.insert_is_attacker_side(opponent_id, tournament_id, !is_attacker_side) do

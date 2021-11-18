@@ -2685,7 +2685,7 @@ defmodule MilkWeb.TournamentControllerTest do
     test "flipban (team)", %{conn: conn} do
       user = fixture_user()
       attrs = %{
-        "capacity" => 8,
+        "capacity" => 4,
         "deadline" => "2010-04-17T14:00:00Z",
         "description" => "some description",
         "event_date" => "2010-04-17T14:00:00Z",
@@ -2858,29 +2858,29 @@ defmodule MilkWeb.TournamentControllerTest do
         flip_fight(conn, team1_id, leader1_id, team2_id, leader2_id, tournament_id, 2)
       end)
 
-      conn = get(conn, Routes.tournament_path(conn, :get_match_list), %{"tournament_id" => tournament_id})
-      assert json_response(conn, 200)["result"]
-      match_list = json_response(conn, 200)["match_list"]
+      # conn = get(conn, Routes.tournament_path(conn, :get_match_list), %{"tournament_id" => tournament_id})
+      # assert json_response(conn, 200)["result"]
+      # match_list = json_response(conn, 200)["match_list"]
 
       # NOTE: 第3回線
-      match_list
-      |> List.flatten()
-      |> then(fn list ->
-        assert length(list) == capacity / 4
-        list
-      end)
-      |> Enum.map(fn team_id ->
-        team_id
-        |> Tournaments.get_leader()
-        |> Map.get(:user_id)
-        ~> leader_id
+      # match_list
+      # |> List.flatten()
+      # |> then(fn list ->
+      #   assert length(list) == capacity / 4
+      #   list
+      # end)
+      # |> Enum.map(fn team_id ->
+      #   team_id
+      #   |> Tournaments.get_leader()
+      #   |> Map.get(:user_id)
+      #   ~> leader_id
 
-        {:ok, team_id, leader_id}
-      end)
-      |> Enum.chunk_every(2)
-      |> Enum.each(fn [{:ok, team1_id, leader1_id}, {:ok, team2_id, leader2_id}] ->
-        flip_fight(conn, team1_id, leader1_id, team2_id, leader2_id, tournament_id, 3)
-      end)
+      #   {:ok, team_id, leader_id}
+      # end)
+      # |> Enum.chunk_every(2)
+      # |> Enum.each(fn [{:ok, team1_id, leader1_id}, {:ok, team2_id, leader2_id}] ->
+      #   flip_fight(conn, team1_id, leader1_id, team2_id, leader2_id, tournament_id, 3)
+      # end)
 
       conn = get(conn, Routes.tournament_path(conn, :get_match_information), %{"tournament_id" => tournament_id, "user_id" => master_id})
       assert json_response(conn, 200)["state"] == "IsFinished"
@@ -3044,11 +3044,13 @@ defmodule MilkWeb.TournamentControllerTest do
       assert json_response(conn, 200)["is_coin_head"]
       assert json_response(conn, 200)["state"] == "IsPending"
       assert json_response(conn, 200)["opponent"]["id"] == team2_id
+      refute json_response(conn, 200)["is_attacker_side"]
 
       conn = get(conn, Routes.tournament_path(conn, :get_match_information), %{"tournament_id" => tournament_id, "user_id" => leader2_id})
       refute json_response(conn, 200)["is_coin_head"]
       assert json_response(conn, 200)["state"] == "IsPending"
       assert json_response(conn, 200)["opponent"]["id"] == team1_id
+      assert json_response(conn, 200)["is_attacker_side"]
 
       # NOTE: スコア報告
       conn = post(conn, Routes.tournament_path(conn, :claim_score), %{"tournament_id" => tournament_id, "user_id" => leader1_id, "score" => 13, "match_index" => match_index})
@@ -3070,7 +3072,7 @@ defmodule MilkWeb.TournamentControllerTest do
       conn = post(conn, Routes.tournament_path(conn, :claim_score), %{"tournament_id" => tournament_id, "user_id" => leader2_id, "score" => 8, "match_index" => match_index})
       assert json_response(conn, 200)["validated"]
       assert json_response(conn, 200)["completed"]
-      assert json_response(conn, 200)["is_finished"] or match_index != 3
+      assert json_response(conn, 200)["is_finished"] or match_index != 2
 
       conn
       |> json_response(200)
@@ -3080,9 +3082,7 @@ defmodule MilkWeb.TournamentControllerTest do
         assert is_integer(message["user_id"])
       end)
       |> Enum.empty?()
-      ~> empty?
-
-      assert empty? or match_index != 3
+      |> refute()
 
       conn = get(conn, Routes.tournament_path(conn, :get_match_information), %{"tournament_id" => tournament_id, "user_id" => leader1_id})
       state = json_response(conn, 200)["state"]
