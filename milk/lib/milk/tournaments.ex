@@ -3519,9 +3519,9 @@ defmodule Milk.Tournaments do
       keyname = Rules.adapt_keyname(member.user_id, tournament_id)
 
       case tournament.rule do
-        "basic" -> Basic.build_dfa_instance(keyname, is_team: tournament.is_team)
+        "basic"   -> Basic.build_dfa_instance(keyname, is_team: tournament.is_team)
         "flipban" -> FlipBan.build_dfa_instance(keyname, is_team: tournament.is_team)
-        _ -> raise "Invalid tournament"
+        _         -> raise "Invalid tournament"
       end
     end)
   end
