@@ -1,9 +1,6 @@
 defmodule Milk.Tournaments do
   @moduledoc """
   トーナメントのコンテキストについて記述したファイル。
-
-  # TODO: load_tournament/1関数にpreloadがたくさん含まれていてコストが高い。
-    TODO: preloadが必要ない場合もあるので、それに応じて処理を切り分ける。
   """
   use Timex
 
@@ -285,7 +282,7 @@ defmodule Milk.Tournaments do
     |> where([a], a.user_id == ^user_id)
     |> Repo.all()
     |> Enum.map(fn assistant ->
-      __MODULE__.load_tournament(assistant.tournament_id)
+      __MODULE__.get_tournament(assistant.tournament_id)
     end)
   end
 
@@ -424,7 +421,7 @@ defmodule Milk.Tournaments do
   @spec get_masters(integer()) :: [User.t()]
   def get_masters(tournament_id) do
     tournament_id
-    |> __MODULE__.load_tournament()
+    |> __MODULE__.get_tournament()
     |> case do
       nil        -> []
       tournament ->
@@ -776,7 +773,7 @@ defmodule Milk.Tournaments do
   """
   @spec verify?(integer(), String.t()) :: boolean()
   def verify?(tournament_id, password) do
-    tournament = load_tournament(tournament_id)
+    tournament = get_tournament(tournament_id)
     Argon2.verify_pass(password, tournament.password)
   end
 
@@ -843,7 +840,7 @@ defmodule Milk.Tournaments do
   def flip_coin(user_id, tournament_id) do
     with id when not is_nil(id)                 <- Progress.get_necessary_id(tournament_id, user_id),
          {:ok, nil}                             <- Progress.insert_match_pending_list_table(id, tournament_id),
-         tournament when not is_nil(tournament) <- __MODULE__.load_tournament(tournament_id),
+         tournament when not is_nil(tournament) <- __MODULE__.get_tournament(tournament_id),
          {:ok, _}                               <- Rules.change_state_on_flip_coin(tournament, user_id) do
       {:ok, nil}
     else
@@ -872,7 +869,7 @@ defmodule Milk.Tournaments do
     ~> change_map_state_result
 
     with {:ok, _}                               <- change_map_state_result,
-         tournament when not is_nil(tournament) <- __MODULE__.load_tournament(tournament_id),
+         tournament when not is_nil(tournament) <- __MODULE__.get_tournament(tournament_id),
          {:ok, _}                               <- renew_redis_after_choosing_maps(user_id, tournament_id),
          {:ok, _}                               <- Rules.change_state_on_ban(tournament, user_id, opponent_id) do
       {:ok, tournament}
@@ -930,7 +927,7 @@ defmodule Milk.Tournaments do
     ~> change_map_state_result
 
     with {:ok, _}                               <- change_map_state_result,
-         tournament when not is_nil(tournament) <- __MODULE__.load_tournament(tournament_id),
+         tournament when not is_nil(tournament) <- __MODULE__.get_tournament(tournament_id),
          {:ok, _}                               <- renew_redis_after_choosing_maps(user_id, tournament_id),
          {:ok, _}                               <- Rules.change_state_on_choose_map(tournament, user_id, opponent_id) do
       {:ok, tournament}
@@ -960,7 +957,7 @@ defmodule Milk.Tournaments do
 
     with {:ok, _}                               <- choose_ad_result,
          {:ok, _}                               <- renew_redis_after_choosing_maps(user_id, tournament_id),
-         tournament when not is_nil(tournament) <- __MODULE__.load_tournament(tournament_id),
+         tournament when not is_nil(tournament) <- __MODULE__.get_tournament(tournament_id),
          {:ok, _}                               <- Rules.change_state_on_choose_ad(tournament, user_id, opponent_id) do
       {:ok, tournament}
     else
@@ -1224,7 +1221,7 @@ defmodule Milk.Tournaments do
   end
 
   defp initialize_entrant_state!(%Entrant{user_id: user_id, tournament_id: tournament_id}) do
-    tournament = __MODULE__.load_tournament(tournament_id)
+    tournament = __MODULE__.get_tournament(tournament_id)
     keyname = Rules.adapt_keyname(user_id, tournament_id)
 
     case tournament.rule do
@@ -1332,7 +1329,7 @@ defmodule Milk.Tournaments do
   @spec delete_entrant(Entrant.t()) :: {:ok, Entrant.t()} | {:error, Ecto.Changeset.t()}
   def delete_entrant(nil), do: {:error, "entrant is nil"}
   def delete_entrant(%Entrant{} = entrant) do
-    tournament = __MODULE__.load_tournament(entrant.tournament_id)
+    tournament = __MODULE__.get_tournament(entrant.tournament_id)
 
     tournament
     |> Tournament.changeset(%{count: tournament.count - 1})
@@ -1530,7 +1527,7 @@ defmodule Milk.Tournaments do
   @spec get_opponent(integer(), integer()) :: {:ok, User.t()} | {:ok, Team.t()} | {:wait, nil} | {:error, String.t()}
   def get_opponent(tournament_id, user_id) do
     tournament_id
-    |> __MODULE__.load_tournament()
+    |> __MODULE__.get_tournament()
     |> get_opponent_if_started(user_id)
   end
 

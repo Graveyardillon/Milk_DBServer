@@ -29,5 +29,5 @@ defmodule MilkWeb.CheckController do
   defp unchecked_notifications_exist?(0), do: false
   defp unchecked_notifications_exist?(_), do: true
 
-  # NOTE: data_for_iosはtournament_controllerに定義した。
+  # NOTE: get_started_match_informationはtournament_controllerに定義した。
 end

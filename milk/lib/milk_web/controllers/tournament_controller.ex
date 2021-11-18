@@ -1755,12 +1755,10 @@ defmodule MilkWeb.TournamentController do
   Get duplicate members.
   """
   def get_duplicate_claim_members(conn, %{"tournament_id" => tournament_id}) do
-    users =
-      tournament_id
-      |> Progress.get_duplicate_users()
-      |> Enum.map(fn user_id ->
-        Accounts.get_user(user_id)
-      end)
+    tournament_id
+    |> Progress.get_duplicate_users()
+    |> Enum.map(&Accounts.get_user(&1))
+    ~> users
 
     render(conn, "users.json", users: users)
   end
@@ -1790,14 +1788,14 @@ defmodule MilkWeb.TournamentController do
   iosの起動時に画面遷移をするために必要な情報を取り出すための関数
   get match informationと比べてtournament idを取得しないといけないのでコストが少し高い
   """
-  def data_for_ios(conn, %{"user_id" => user_id}) do
+  def get_started_match_information(conn, %{"user_id" => user_id}) do
     user_id = Tools.to_integer_as_needed(user_id)
 
     user_id
     |> started_tournament()
     |> case do
-      nil         -> render(conn, "error.json", error: "tournament is nil")
-      tournament  -> render(conn, "match_info.json", match_info: do_get_match_information(tournament.id, user_id))
+      nil        -> render(conn, "error.json", error: "tournament is nil")
+      tournament -> render(conn, "match_info.json", match_info: do_get_match_information(tournament.id, user_id))
     end
   end
 
@@ -1845,7 +1843,7 @@ defmodule MilkWeb.TournamentController do
     tournament_id
     |> Tournaments.get_selected_map(id)
     |> case do
-      {:ok, map} -> map
+      {:ok, map}  -> map
       {:error, _} -> nil
     end
     ~> map

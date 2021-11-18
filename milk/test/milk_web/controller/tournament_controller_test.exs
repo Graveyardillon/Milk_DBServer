@@ -2858,30 +2858,6 @@ defmodule MilkWeb.TournamentControllerTest do
         flip_fight(conn, team1_id, leader1_id, team2_id, leader2_id, tournament_id, 2)
       end)
 
-      # conn = get(conn, Routes.tournament_path(conn, :get_match_list), %{"tournament_id" => tournament_id})
-      # assert json_response(conn, 200)["result"]
-      # match_list = json_response(conn, 200)["match_list"]
-
-      # NOTE: 第3回線
-      # match_list
-      # |> List.flatten()
-      # |> then(fn list ->
-      #   assert length(list) == capacity / 4
-      #   list
-      # end)
-      # |> Enum.map(fn team_id ->
-      #   team_id
-      #   |> Tournaments.get_leader()
-      #   |> Map.get(:user_id)
-      #   ~> leader_id
-
-      #   {:ok, team_id, leader_id}
-      # end)
-      # |> Enum.chunk_every(2)
-      # |> Enum.each(fn [{:ok, team1_id, leader1_id}, {:ok, team2_id, leader2_id}] ->
-      #   flip_fight(conn, team1_id, leader1_id, team2_id, leader2_id, tournament_id, 3)
-      # end)
-
       conn = get(conn, Routes.tournament_path(conn, :get_match_information), %{"tournament_id" => tournament_id, "user_id" => master_id})
       assert json_response(conn, 200)["state"] == "IsFinished"
     end
@@ -3663,13 +3639,13 @@ defmodule MilkWeb.TournamentControllerTest do
       match_info = json_response(conn, 200)
 
       conn =
-        get(conn, Routes.tournament_path(conn, :data_for_ios),
+        get(conn, Routes.tournament_path(conn, :get_started_match_information),
           user_id: me
         )
 
-      data_for_ios = json_response(conn, 200)
+      get_started_match_information = json_response(conn, 200)
 
-      assert match_info == data_for_ios
+      assert match_info == get_started_match_information
     end
   end
 
