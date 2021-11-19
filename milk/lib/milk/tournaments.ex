@@ -1020,32 +1020,52 @@ defmodule Milk.Tournaments do
     |> Repo.one()
     ~> tournament
 
+    # TODO: ここでチーム分岐を入れる
+
+    insert_entrant_logs_on_delete(tournament)
+    insert_assistant_logs_on_delete(tournament)
+
+    # NOTE: オートマトン全削除
+    remove_state_machines_on_delete(tournament)
+
+    Repo.delete(tournament)
+  end
+
+  defp insert_entrant_logs_on_delete(%Tournament{entrant: entrants}) do
     entrants =
-      Enum.map(tournament.entrant, fn x ->
+      Enum.map(entrants, fn entrant ->
         %{
-          rank: x.rank,
-          user_id: x.user_id,
-          tournament_id: x.tournament_id,
-          update_time: x.update_time,
-          create_time: x.create_time
+          rank: entrant.rank,
+          user_id: entrant.user_id,
+          tournament_id: entrant.tournament_id,
+          update_time: entrant.update_time,
+          create_time: entrant.create_time
         }
       end)
 
     unless entrants == [], do: Repo.insert_all(EntrantLog, entrants)
+  end
 
+  defp insert_assistant_logs_on_delete(%Tournament{assistant: assistants}) do
     assistants =
-      Enum.map(tournament.assistant, fn x ->
+      Enum.map(assistants, fn assistant ->
         %{
-          user_id: x.user_id,
-          tournament_id: x.tournament_id,
-          update_time: x.update_time,
-          create_time: x.create_time
+          user_id: assistant.user_id,
+          tournament_id: assistant.tournament_id,
+          update_time: assistant.update_time,
+          create_time: assistant.create_time
         }
       end)
 
     unless assistants == [], do: Repo.insert_all(AssistantLog, assistants)
+  end
 
-    Repo.delete(tournament)
+  defp remove_state_machines_on_delete(%Tournament{id: tournament_id, rule: _rule}) do
+    tournament_id
+    |> __MODULE__.all_relevant_user_id_list()
+    |> Enum.each(fn user_id ->
+      user_id
+    end)
   end
 
   @doc """
@@ -1469,7 +1489,7 @@ defmodule Milk.Tournaments do
           end
 
         {:wait, nil, _} -> {:wait, nil, nil}
-        {:error, nil}   ->{:error, nil}
+        {:error, nil}   -> {:error, nil}
       end
     end)
   end
@@ -2691,10 +2711,8 @@ defmodule Milk.Tournaments do
     |> load_relevant_user_id_list(tournament_id)
     |> Flow.from_enumerable(stages: 1)
     |> Flow.map(fn user_id ->
-      state = __MODULE__.state!(tournament_id, user_id)
-
       %InteractionMessage{
-        state: state,
+        state: __MODULE__.state!(tournament_id, user_id),
         user_id: user_id
       }
     end)
