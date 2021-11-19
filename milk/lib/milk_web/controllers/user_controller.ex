@@ -79,7 +79,7 @@ defmodule MilkWeb.UserController do
   end
 
   # NOTE: アカウント作成のためのラッパー関数
-  defp create_user(email, username, service_name \\ "e-players") do
+  defp create_user(email, username, service_name) do
     Map.new()
     |> Map.put("email", email)
     |> Map.put("name", username)
