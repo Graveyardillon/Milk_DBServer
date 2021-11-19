@@ -10,7 +10,7 @@ defmodule Milk.Tournaments.Rules.Basic do
   @db_index Rule.db_index()
 
   @impl Rule
-  def machine_name(true), do: "basic_team"
+  def machine_name(true),  do: "basic_team"
   def machine_name(false), do: "basic"
 
   @impl Rule
@@ -53,6 +53,11 @@ defmodule Milk.Tournaments.Rules.Basic do
     machine_name = machine_name(is_team)
 
     Predefined.initialize!(instance_name, machine_name, @db_index, is_not_started())
+  end
+
+  @impl Rule
+  def destroy_dfa_instance(instance_name, opts \\ []) do
+    Predefined.deinitialize!(instance_name, @db_index, opts)
   end
 
   @impl Rule

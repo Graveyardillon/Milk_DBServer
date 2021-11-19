@@ -1060,11 +1060,16 @@ defmodule Milk.Tournaments do
     unless assistants == [], do: Repo.insert_all(AssistantLog, assistants)
   end
 
-  defp remove_state_machines_on_delete(%Tournament{id: tournament_id, rule: _rule}) do
+  defp remove_state_machines_on_delete(%Tournament{id: tournament_id, rule: rule}) do
     tournament_id
     |> __MODULE__.all_relevant_user_id_list()
     |> Enum.each(fn user_id ->
-      user_id
+      keyname = Rules.adapt_keyname(user_id, tournament_id)
+
+      case rule do
+        "basic"   -> Basic.destroy_dfa_instance(keyname)
+        "flipban" -> FlipBan.destroy_dfa_instance(keyname)
+      end
     end)
   end
 

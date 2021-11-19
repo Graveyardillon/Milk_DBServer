@@ -34,6 +34,11 @@ defmodule Milk.Tournaments.Rules.Rule do
   @callback build_dfa_instance(String.t(), __MODULE__.opts()) :: any()
 
   @doc """
+  インスタンスを破壊する関数
+  """
+  @callback destroy_dfa_instance(String.t(), __MODULE__.opts()) :: any()
+
+  @doc """
   現在のオートマトン・インスタンスの状態を返す関数
   """
   @callback state!(String.t()) :: String.t()

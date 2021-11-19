@@ -67,6 +67,11 @@ defmodule Milk.Tournaments.Rules.FlipBan do
   end
 
   @impl Rule
+  def destroy_dfa_instance(instance_name, opts \\ []) do
+    Predefined.deinitialize!(instance_name, @db_index, opts)
+  end
+
+  @impl Rule
   def state!(instance_name), do: Predefined.state!(instance_name, @db_index)
 
   @impl Rule
