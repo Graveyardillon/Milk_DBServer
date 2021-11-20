@@ -80,6 +80,7 @@ interface Map {
 
 export {
     NewmanJson,
+    Item,
     CreateTournament,
     Signup
 }
