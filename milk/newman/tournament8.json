@@ -6,7 +6,7 @@
     {
       "name": "Tournament create request",
       "request": {
-        "url": "http://localhost:4000/api/tournament",
+        "url": "http://localhost:4001/api/tournament",
         "method": "POST",
         "header": [
           {
@@ -36,7 +36,7 @@
     {
       "name": "Enter tournament request",
       "request": {
-        "url": "http://localhost:4000/api/entrant",
+        "url": "http://localhost:4001/api/entrant",
         "method": "POST",
         "header": [
           {
@@ -53,7 +53,7 @@
     {
       "name": "Enter tournament request",
       "request": {
-        "url": "http://localhost:4000/api/entrant",
+        "url": "http://localhost:4001/api/entrant",
         "method": "POST",
         "header": [
           {
@@ -70,7 +70,7 @@
     {
       "name": "Enter tournament request",
       "request": {
-        "url": "http://localhost:4000/api/entrant",
+        "url": "http://localhost:4001/api/entrant",
         "method": "POST",
         "header": [
           {
@@ -87,7 +87,7 @@
     {
       "name": "Enter tournament request",
       "request": {
-        "url": "http://localhost:4000/api/entrant",
+        "url": "http://localhost:4001/api/entrant",
         "method": "POST",
         "header": [
           {
@@ -104,7 +104,7 @@
     {
       "name": "Enter tournament request",
       "request": {
-        "url": "http://localhost:4000/api/entrant",
+        "url": "http://localhost:4001/api/entrant",
         "method": "POST",
         "header": [
           {
@@ -121,7 +121,7 @@
     {
       "name": "Enter tournament request",
       "request": {
-        "url": "http://localhost:4000/api/entrant",
+        "url": "http://localhost:4001/api/entrant",
         "method": "POST",
         "header": [
           {
@@ -138,7 +138,7 @@
     {
       "name": "Enter tournament request",
       "request": {
-        "url": "http://localhost:4000/api/entrant",
+        "url": "http://localhost:4001/api/entrant",
         "method": "POST",
         "header": [
           {
@@ -155,7 +155,7 @@
     {
       "name": "Enter tournament request",
       "request": {
-        "url": "http://localhost:4000/api/entrant",
+        "url": "http://localhost:4001/api/entrant",
         "method": "POST",
         "header": [
           {
@@ -172,7 +172,7 @@
     {
       "name": "Start tournament request",
       "request": {
-        "url": "http://localhost:4000/api/tournament/start",
+        "url": "http://localhost:4001/api/tournament/start",
         "method": "POST",
         "header": [
           {

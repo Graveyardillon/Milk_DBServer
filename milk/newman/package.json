@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "@types/newman": "^5.1.4",
+    "newman": "^5.3.0"
+  }
+}
