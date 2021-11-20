@@ -15,6 +15,7 @@ const argv = yargs(process.argv.slice(2))
         master_id:              { type: 'number',  default: 1 },
         name:                   { type: 'string',  default: 'FlipBan Team Tournament' },
         platform_id:            { type: 'number',  default: 1 },
+        team_size:              { type: 'number',  default: 5 },
         type:                   { type: 'number',  default: 2 },
     })
     .argv
@@ -35,6 +36,7 @@ const tournamentJson: CreateTournament = {
     platform_id:            argv.platform_id,
     rule:                   "flipban",
     start_recruiting:       "2049-04-17T14:00:00Z",
+    team_size:              argv.team_size,
     type:                   argv.type
 }
 
