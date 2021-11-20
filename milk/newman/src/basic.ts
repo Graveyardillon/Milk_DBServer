@@ -1,26 +1,46 @@
+#!/usr/bin/env node
+
 const newman = require('newman')
+const yargs = require('yargs/yargs')
+const { hideBin } = require('yargs/helpers')
 import { NewmanJson, CreateTournament } from './utils/interfaces'
+import { parseBool } from './utils/functions'
+
+const argv = yargs(process.argv.slice(2))
+    .options({
+        enabled_discord_server: { type: 'boolean', default: false },
+        enabled_coin_toss:      { type: 'boolean', default: false },
+        enabled_map:            { type: 'boolean', default: false },
+        capacity:               { type: 'number',  default: 4 },
+        game_name:              { type: 'string',  default: 'VALORANT' },
+        is_team:                { type: 'boolean', default: false },
+        master_id:              { type: 'number',  default: 1 },
+        name:                   { type: 'string',  default: 'Basic Individual Tournament' },
+        platform_id:            { type: 'number',  default: 1 },
+        type:                   { type: 'number',  default: 2 },
+    })
+    .argv
 
 // NOTE: masterが1の大会を作成する
 
 const tournamentJson: CreateTournament = {
-    capacity: 4,
-    deadline: "2050-04-17T14:00:00Z",
-    description: "asdf",
-    enabled_discord_server: false,
-    enabled_coin_toss: false,
-    enabled_map: false,
-    event_date: "2050-04-17T14:00:00Z",
-    game_id: 0,
-    game_name: "VALORANT",
-    is_team: false,
-    join: false,
-    master_id: 1,
-    name: "Basic Individual Tournament",
-    platform_id: 1,
-    rule: "basic",
-    start_recruiting: "2049-04-17T14:00:00Z",
-    type: 2
+    capacity:               argv.capacity,
+    deadline:               "2050-04-17T14:00:00Z",
+    description:            "asdf",
+    enabled_discord_server: parseBool(argv.enabled_discord_server) || false,
+    enabled_coin_toss:      parseBool(argv.enabled_coin_toss) || false,
+    enabled_map:            parseBool(argv.enabled_map) || false,
+    event_date:             "2050-04-17T14:00:00Z",
+    game_id:                0,
+    game_name:              argv.game_name,
+    is_team:                argv.is_team,
+    join:                   false,
+    master_id:              argv.master_id,
+    name:                   "Basic Individual Tournament",
+    platform_id:            argv.platform_id,
+    rule:                   "basic",
+    start_recruiting:       "2049-04-17T14:00:00Z",
+    type:                   argv.type
 }
 
 const newmanJson: NewmanJson = {
