@@ -64,13 +64,22 @@ interface CreateTournament {
     url?:                   string
 }
 
+interface Signup {
+    user: {
+        email:    string
+        password: string
+        name:     string
+    }
+}
+
 interface Map {
     icon_path?: string
-    icon?: string
-    name: string
+    icon?:      string
+    name:       string
 }
 
 export {
     NewmanJson,
-    CreateTournament
+    CreateTournament,
+    Signup
 }

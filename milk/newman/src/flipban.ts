@@ -40,11 +40,11 @@ const tournamentJson: CreateTournament = {
 
 const newmanJson: NewmanJson = {
     info: {
-        name: 'flip tournament request'
+        name: 'Flip tournament request'
     },
     item: [
         {
-            name: 'flip tournament',
+            name: 'Flip tournament',
             request: {
                 url: Urls.createTournament,
                 method: 'POST',
