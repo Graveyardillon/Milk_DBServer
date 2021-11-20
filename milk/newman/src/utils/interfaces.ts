@@ -46,7 +46,7 @@ interface CreateTournament {
     enabled_coin_toss:      boolean
     enabled_map:            boolean
     event_date:             string
-    game_id:                number
+    game_id?:               number
     game_name:              string
     is_team:                boolean
     join:                   false
