@@ -580,10 +580,12 @@ defmodule Milk.Tournaments do
     end
   end
 
+  # TODO: basicルール用に必要なフィールドが書かれているか確認する
   defp validate_basic_fields(attrs) do
     {:ok, attrs}
   end
 
+  # TODO: flipbanルール用に必要なフィールドが書かれているか確認する
   defp validate_flipban_fields(attrs) do
     {:ok, attrs}
   end
