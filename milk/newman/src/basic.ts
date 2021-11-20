@@ -2,6 +2,7 @@ const newman = require('newman')
 const yargs = require('yargs/yargs')
 import { NewmanJson, CreateTournament } from './utils/interfaces'
 import { parseBool } from './utils/functions'
+import { Urls } from './utils/urls'
 
 const argv = yargs(process.argv.slice(2))
     .options({
@@ -45,7 +46,7 @@ const newmanJson: NewmanJson = {
         {
             name: 'basic tournament',
             request: {
-                url: 'http://localhost:4001/api/tournament',
+                url: Urls.createTournament,
                 method: 'POST',
                 header: [
                     {

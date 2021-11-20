@@ -2,6 +2,7 @@ const newman = require('newman')
 const yargs = require('yargs/yargs')
 import { NewmanJson, CreateTournament } from './utils/interfaces'
 import { parseBool } from './utils/functions'
+import { Urls } from './utils/urls'
 
 const argv = yargs(process.argv.slice(2))
     .options({
@@ -10,9 +11,9 @@ const argv = yargs(process.argv.slice(2))
         enabled_map:            { type: 'boolean', default: true },
         capacity:               { type: 'number',  default: 4 },
         game_name:              { type: 'string',  default: 'VALORANT' },
-        is_team:                { type: 'boolean', default: false },
+        is_team:                { type: 'boolean', default: true },
         master_id:              { type: 'number',  default: 1 },
-        name:                   { type: 'string',  default: 'Basic Individual Tournament' },
+        name:                   { type: 'string',  default: 'FlipBan Team Tournament' },
         platform_id:            { type: 'number',  default: 1 },
         type:                   { type: 'number',  default: 2 },
     })
@@ -39,13 +40,13 @@ const tournamentJson: CreateTournament = {
 
 const newmanJson: NewmanJson = {
     info: {
-        name: 'basic tournament request'
+        name: 'flip tournament request'
     },
     item: [
         {
-            name: 'basic tournament',
+            name: 'flip tournament',
             request: {
-                url: 'http://localhost:4001/api/tournament',
+                url: Urls.createTournament,
                 method: 'POST',
                 header: [
                     {
