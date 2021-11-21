@@ -297,15 +297,10 @@ defmodule Milk.Accounts do
     unless is_nil(old_icon_path) do
       case Application.get_env(:milk, :environment) do
         # coveralls-ignore-start
-        :dev ->
-          rm(old_icon_path)
-
-        :test ->
-          rm(old_icon_path)
-
-        _ ->
-          rm_prod(old_icon_path)
-          # coveralls-ignore-stop
+        :dev  -> rm(old_icon_path)
+        :test -> rm(old_icon_path)
+        _     -> rm_prod(old_icon_path)
+        # coveralls-ignore-stop
       end
     end
 
