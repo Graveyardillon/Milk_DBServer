@@ -118,7 +118,7 @@ defmodule MilkWeb.TeamController do
 
       json(conn, %{result: true, is_confirmed: team.is_confirmed, tournament_id: team.tournament_id})
     else
-      nil                                       -> render(conn, "error.json", error: "team is or tournament nil")
+      nil                                       -> render(conn, "error.json", error: "team or tournament nil")
       {:error, message} when is_binary(message) -> render(conn, "error.json", error: message)
       {:error, error}                           -> render(conn, "error.json", error: Tools.create_error_message(error))
     end

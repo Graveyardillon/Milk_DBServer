@@ -71,6 +71,10 @@ interface CreateTournament {
     url?:                   string
 }
 
+interface ConfirmInvitation {
+    invitation_id: number
+}
+
 interface Signup {
     user: {
         email:    string
@@ -90,5 +94,6 @@ export {
     Item,
     CreateTournament,
     CreateTeam,
+    ConfirmInvitation,
     Signup
 }
