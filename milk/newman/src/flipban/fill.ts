@@ -12,7 +12,7 @@ function teamItems(teamCount: number): Item[] {
     let items: Item[] = []
     for (let i=2; i<teamCount*5+2; i+=5) {
         const teamJson: CreateTeam = {
-            tournament_id: 1,
+            tournament_id: argv.tournament_id,
             size:          5,
             leader_id:     i,
             user_id_list:  [i+1, i+2, i+3, i+4]
