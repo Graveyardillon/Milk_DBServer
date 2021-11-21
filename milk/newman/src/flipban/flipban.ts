@@ -1,8 +1,8 @@
 const newman = require('newman')
 const yargs = require('yargs/yargs')
-import { NewmanJson, CreateTournament } from './utils/interfaces'
-import { parseBool } from './utils/functions'
-import { Urls } from './utils/urls'
+import { NewmanJson, CreateTournament } from '../utils/interfaces'
+import { parseBool } from '../utils/functions'
+import { Urls } from '../utils/urls'
 
 const argv = yargs(process.argv.slice(2))
     .options({

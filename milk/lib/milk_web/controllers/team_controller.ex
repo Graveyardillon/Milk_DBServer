@@ -47,9 +47,9 @@ defmodule MilkWeb.TeamController do
   @spec create(Plug.Conn.t(), map) :: Plug.Conn.t()
   def create(conn, %{"tournament_id" => tournament_id, "size" => size, "leader_id" => leader_id, "user_id_list" => user_id_list}) do
     tournament_id = Tools.to_integer_as_needed(tournament_id)
-    size = Tools.to_integer_as_needed(size)
-    leader_id = Tools.to_integer_as_needed(leader_id)
-    user_id_list = Enum.map(user_id_list, &Tools.to_integer_as_needed(&1))
+    size          = Tools.to_integer_as_needed(size)
+    leader_id     = Tools.to_integer_as_needed(leader_id)
+    user_id_list  = Enum.map(user_id_list, &Tools.to_integer_as_needed(&1))
 
     confirmed_teams = Tournaments.get_confirmed_teams(tournament_id)
 
@@ -110,17 +110,17 @@ defmodule MilkWeb.TeamController do
 
     with team when not is_nil(team) <- Tournaments.get_team_by_invitation_id(invitation_id),
          tournament when not is_nil(tournament) <- Tournaments.load_tournament(team.tournament_id),
-         {:ok, nil} <- validate_team_count(tournament),
-         {:ok, nil} <- validate_discord_association_of_user(tournament, invitation_id),
-         {:ok, invitation} <- Tournaments.confirm_team_invitation(invitation_id) do
+         {:ok, nil}                             <- validate_team_count(tournament),
+         {:ok, nil}                             <- validate_discord_association_of_user(tournament, invitation_id),
+         {:ok, invitation}                      <- Tournaments.confirm_team_invitation(invitation_id) do
       team = Tournaments.get_team(invitation.team_id)
       Task.async(fn -> send_add_team_discord_notification(team) end)
 
       json(conn, %{result: true, is_confirmed: team.is_confirmed, tournament_id: team.tournament_id})
     else
-      nil -> render(conn, "error.json", error: "team is or tournament nil")
+      nil                                       -> render(conn, "error.json", error: "team is or tournament nil")
       {:error, message} when is_binary(message) -> render(conn, "error.json", error: message)
-      {:error, error} -> render(conn, "error.json", error: Tools.create_error_message(error))
+      {:error, error}                           -> render(conn, "error.json", error: Tools.create_error_message(error))
     end
   end
 

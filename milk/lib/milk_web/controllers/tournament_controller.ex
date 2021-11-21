@@ -812,9 +812,9 @@ defmodule MilkWeb.TournamentController do
     :milk
     |> Application.get_env(:environment)
     |> case do
-      :dev -> Image.read_image(path)
+      :dev  -> Image.read_image(path)
       :test -> Image.read_image(path)
-      _ -> Image.read_image_prod(path)
+      _     -> Image.read_image_prod(path)
     end
     |> case do
       {:ok, image} ->

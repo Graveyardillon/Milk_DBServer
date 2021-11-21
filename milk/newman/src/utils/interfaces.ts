@@ -34,6 +34,13 @@ interface FormData {
     value?:  string
 }
 
+interface CreateTeam {
+    tournament_id:          number
+    size:                   number
+    leader_id:              number
+    user_id_list:           number[]
+}
+
 interface CreateTournament {
     assistants?:            number[]
     capacity:               number
@@ -82,5 +89,6 @@ export {
     NewmanJson,
     Item,
     CreateTournament,
+    CreateTeam,
     Signup
 }
