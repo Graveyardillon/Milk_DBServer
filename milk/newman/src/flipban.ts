@@ -6,6 +6,8 @@ import { Urls } from './utils/urls'
 
 const argv = yargs(process.argv.slice(2))
     .options({
+        coin_head_field:        { type: 'string',  default: 'マップ選択' },
+        coin_tail_field:        { type: 'string',  default: 'A/D選択' },
         enabled_discord_server: { type: 'boolean', default: false },
         enabled_coin_toss:      { type: 'boolean', default: true },
         enabled_map:            { type: 'boolean', default: true },
@@ -22,15 +24,25 @@ const argv = yargs(process.argv.slice(2))
 
 const tournamentJson: CreateTournament = {
     capacity:               argv.capacity,
+    coin_head_field:        argv.coin_head_field,
+    coin_tail_field:        argv.coin_tail_field,
     deadline:               "2050-04-17T14:00:00Z",
     description:            "asdf",
     enabled_discord_server: parseBool(argv.enabled_discord_server) || false,
-    enabled_coin_toss:      parseBool(argv.enabled_coin_toss) || false,
-    enabled_map:            parseBool(argv.enabled_map) || false,
+    enabled_coin_toss:      parseBool(argv.enabled_coin_toss) || true,
+    enabled_map:            parseBool(argv.enabled_map) || true,
     event_date:             "2050-04-17T14:00:00Z",
     game_name:              argv.game_name,
     is_team:                argv.is_team,
     join:                   false,
+    maps:                   [
+        { name: "アイスボックス", icon: undefined },
+        { name: "アセント",      icon: undefined },
+        { name: "バインド",      icon: undefined },
+        { name: "ヘイブン",      icon: undefined },
+        { name: "ブリーズ",      icon: undefined },
+        { name: "スプリット",    icon: undefined }
+    ],
     master_id:              argv.master_id,
     name:                   argv.name,
     platform_id:            argv.platform_id,
@@ -60,16 +72,22 @@ const newmanJson: NewmanJson = {
                     mode: 'formdata',
                     formdata: [
                         {
-                            key: "tournament",
-                            type: "text",
+                            key:     "tournament",
+                            type:    "text",
                             enabled: true,
-                            value: JSON.stringify(tournamentJson)
+                            value:   JSON.stringify(tournamentJson)
                         },
                         {
-                            key: "token",
-                            type: "text",
+                            key:     "token",
+                            type:    "text",
                             enabled: true,
-                            value: ""
+                            value:   ""
+                        },
+                        {
+                            key:     "maps",
+                            type:    "text",
+                            enabled: true,
+                            value:   JSON.stringify(tournamentJson.maps)
                         }
                     ]
                 }
