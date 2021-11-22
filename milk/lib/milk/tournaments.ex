@@ -1022,13 +1022,22 @@ defmodule Milk.Tournaments do
     |> Repo.one()
     ~> tournament
 
-    # TODO: ここでチーム分岐を入れる
-
     insert_entrant_logs_on_delete(tournament)
     insert_assistant_logs_on_delete(tournament)
 
     # NOTE: オートマトン全削除
     remove_state_machines_on_delete(tournament)
+
+    # NOTE: 不要になったchat_roomをすべて削除
+    tournament.id
+    |> __MODULE__.get_tabs_by_tournament_id()
+    |> Enum.each(fn topic ->
+      __MODULE__.delete_tournament_chat_topic(topic)
+
+      topic.chat_room_id
+      |> Chat.get_chat_room()
+      |> Chat.delete_chat_room()
+    end)
 
     Repo.delete(tournament)
   end

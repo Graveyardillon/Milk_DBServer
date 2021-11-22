@@ -506,10 +506,13 @@ defmodule Milk.TournamentsTest do
   end
 
   describe "delete tournament" do
-    test "delete_tournament/1 of Tournament structure works fine with a valid data" do
+    test "delete_tournament/1 of Tournament structure works fine with a valid data and deletes all chat rooms" do
       tournament = fixture_tournament()
       assert {:ok, %Tournament{}} = Tournaments.delete_tournament(tournament)
-      refute Tournaments.load_tournament(tournament.id)
+      refute Tournaments.get_tournament(tournament.id)
+
+      assert Chat.get_chat_rooms_by_tournament_id(tournament.id) == []
+      assert Tournaments.get_tabs_by_tournament_id(tournament.id) == []
     end
 
     test "delete_tournament/1 of map works fine with a valid data" do
