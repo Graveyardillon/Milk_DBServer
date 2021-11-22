@@ -16,6 +16,11 @@ Ready to run in production? Please [check our deployment guides](https://hexdocs
 too many openみたいなFile.Errorを解消するには
 https://superuser.com/questions/433746/is-there-a-fix-for-the-too-many-open-files-in-system-error-on-os-x-10-7-1/443168#443168
 
+mix.exsにたくさん赤線が出てしまうとき（Can't continue due to errors on dependencies）
+```
+rm -r deps _build .elixir_ls && mix deps.get
+```
+
 ### MacOS
 
 `/etc/sysctl.conf`を作成する。

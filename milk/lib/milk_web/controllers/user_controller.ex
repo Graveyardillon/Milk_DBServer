@@ -79,7 +79,7 @@ defmodule MilkWeb.UserController do
   end
 
   # NOTE: アカウント作成のためのラッパー関数
-  defp create_user(email, username, service_name \\ "e-players") do
+  defp create_user(email, username, service_name) do
     Map.new()
     |> Map.put("email", email)
     |> Map.put("name", username)
@@ -89,7 +89,12 @@ defmodule MilkWeb.UserController do
   @doc """
   Sign in with discord.
   """
-  def signin_with_discord(conn, %{"email" => email, "username" => username, "discriminator" => _, "discord_id" => discord_id}) do
+  def signin_with_discord(conn, %{
+        "email" => email,
+        "username" => username,
+        "discriminator" => _,
+        "discord_id" => discord_id
+      }) do
     email
     |> Accounts.email_exists?()
     |> if do
@@ -179,6 +184,7 @@ defmodule MilkWeb.UserController do
     |> Map.get(:user_id)
     |> Accounts.get_user()
     ~> user
+
     {:ok, :already, user}
   end
 
@@ -196,6 +202,7 @@ defmodule MilkWeb.UserController do
     |> Accounts.get_user()
     |> generate_token()
   end
+
   defp signin_with_apple_user(_) do
     {:error, "apple user does not exist"}
   end

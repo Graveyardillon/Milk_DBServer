@@ -6,6 +6,7 @@ defmodule Milk.Discord do
   import Common.Sperm
 
   alias Milk.Discord.User, as: DiscordUser
+
   alias Milk.{
     Repo,
     Tournaments
@@ -95,7 +96,8 @@ defmodule Milk.Discord do
   @doc """
   update discord user.
   """
-  @spec update_discord_user(DiscordUser.t(), map()) :: {:ok, DiscordUser.t()} | {:error, Ecto.Changeset.t()}
+  @spec update_discord_user(DiscordUser.t(), map()) ::
+          {:ok, DiscordUser.t()} | {:error, Ecto.Changeset.t()}
   def update_discord_user(%DiscordUser{} = discord_user, attrs) do
     discord_user
     |> DiscordUser.changeset(attrs)
@@ -105,7 +107,8 @@ defmodule Milk.Discord do
   @doc """
   Delete discord user.
   """
-  @spec delete_discord_user(DiscordUser.t()) :: {:ok, DiscordUser.t()} | {:error, Ecto.Changeset.t()}
+  @spec delete_discord_user(DiscordUser.t()) ::
+          {:ok, DiscordUser.t()} | {:error, Ecto.Changeset.t()}
   def delete_discord_user(%DiscordUser{} = discord_user) do
     Repo.delete(discord_user)
   end
@@ -132,7 +135,8 @@ defmodule Milk.Discord do
     end
   end
 
-  @spec send_tournament_create_notification(String.t()) :: {:ok, HTTPoison.Response.t()} | {:error, HTTPoison.Error.t()}
+  @spec send_tournament_create_notification(String.t()) ::
+          {:ok, HTTPoison.Response.t()} | {:error, HTTPoison.Error.t()}
   def send_tournament_create_notification(server_id) when is_binary(server_id) do
     discord_server_url = Application.get_env(:milk, :discord_server)
     access_token = Application.get_env(:milk, :discord_server_access_token)
@@ -143,12 +147,15 @@ defmodule Milk.Discord do
     HTTPoison.post(url, params, "Content-Type": "application/json")
   end
 
-  @spec send_tournament_description(String.t(), String.t()) :: {:ok, HTTPoison.Response.t()} | {:error, HTTPoison.Error.t()}
-  def send_tournament_description(server_id, description) when is_binary(server_id) and is_binary(description) do
+  @spec send_tournament_description(String.t(), String.t()) ::
+          {:ok, HTTPoison.Response.t()} | {:error, HTTPoison.Error.t()}
+  def send_tournament_description(server_id, description)
+      when is_binary(server_id) and is_binary(description) do
     discord_server_url = Application.get_env(:milk, :discord_server)
     access_token = Application.get_env(:milk, :discord_server_access_token)
 
     url = "#{discord_server_url}/description"
+
     params = Jason.encode!(%{server_id: server_id, access_token: access_token, description: description})
 
     HTTPoison.post(url, params, "Content-Type": "application/json")
@@ -159,7 +166,8 @@ defmodule Milk.Discord do
   @doc """
   Send notification on tournament start.
   """
-  @spec send_tournament_start_notification(String.t()) :: {:ok, HTTPoison.Response.t()} | {:error, HTTPoison.Error.t()}
+  @spec send_tournament_start_notification(String.t()) ::
+          {:ok, HTTPoison.Response.t()} | {:error, HTTPoison.Error.t()}
   def send_tournament_start_notification(server_id) when is_binary(server_id) do
     discord_server_url = Application.get_env(:milk, :discord_server)
     access_token = Application.get_env(:milk, :discord_server_access_token)
@@ -309,8 +317,7 @@ defmodule Milk.Discord do
   Send notification on duplication claim.
   """
   @spec send_tournament_duplicate_claim_notification(String.t(), String.t(), String.t(), integer()) :: {:ok, HTTPoison.Response.t()} | {:error, HTTPoison.Error.t()}
-  def send_tournament_duplicate_claim_notification(server_id, a_name, b_name, score)
-      when is_binary(server_id) do
+  def send_tournament_duplicate_claim_notification(server_id, a_name, b_name, score) when is_binary(server_id) do
     discord_server_url = Application.get_env(:milk, :discord_server)
     access_token = Application.get_env(:milk, :discord_server_access_token)
 
@@ -325,7 +332,7 @@ defmodule Milk.Discord do
     |> Jason.encode!()
     ~> params
 
-    HTTPoison.post(url, params, "Content-Type": "application/json")
+    HTTPoison.post(url, params, "Content-Type": "application/json", timeout: 5000)
   end
 
   def send_tournament_duplicate_claim_notification(_, _, _, _) do
@@ -335,7 +342,13 @@ defmodule Milk.Discord do
   @doc """
   Send notification on finish match.
   """
-  @spec send_tournament_finish_match_notification(String.t(), String.t(), String.t(), integer(), integer()) :: {:ok, HTTPoison.Response.t()} | {:error, HTTPoison.Error.t()}
+  @spec send_tournament_finish_match_notification(
+          String.t(),
+          String.t(),
+          String.t(),
+          integer(),
+          integer()
+        ) :: {:ok, HTTPoison.Response.t()} | {:error, HTTPoison.Error.t()}
   def send_tournament_finish_match_notification(server_id, a_name, b_name, a_score, b_score)
       when is_binary(server_id) do
     discord_server_url = Application.get_env(:milk, :discord_server)
@@ -363,7 +376,8 @@ defmodule Milk.Discord do
   @doc """
   Sending notification on tournament finish
   """
-  @spec send_tournament_finish_notification(String.t(), String.t(), String.t()) :: {:ok, HTTPoison.Response.t()} | {:error, HTTPoison.Error.t()}
+  @spec send_tournament_finish_notification(String.t(), String.t(), String.t()) ::
+          {:ok, HTTPoison.Response.t()} | {:error, HTTPoison.Error.t()}
   def send_tournament_finish_notification(server_id, tournament_name, winner_name)
       when is_binary(server_id) do
     discord_server_url = Application.get_env(:milk, :discord_server)
@@ -389,7 +403,8 @@ defmodule Milk.Discord do
   @doc """
   Sending notification on tournament delete
   """
-  @spec send_tournament_delete_notification(String.t()) :: {:ok, HTTPoison.Response.t()} | {:error, HTTPoison.Error.t()}
+  @spec send_tournament_delete_notification(String.t()) ::
+          {:ok, HTTPoison.Response.t()} | {:error, HTTPoison.Error.t()}
   def send_tournament_delete_notification(server_id) when is_binary(server_id) do
     discord_server_url = Application.get_env(:milk, :discord_server)
     access_token = Application.get_env(:milk, :discord_server_access_token)

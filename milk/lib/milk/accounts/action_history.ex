@@ -4,13 +4,13 @@ defmodule Milk.Accounts.ActionHistory do
   import Ecto.Changeset
 
   @type t :: %__MODULE__{
-    user_id: integer(),
-    game_name: String.t(),
-    gain: integer(),
-    # NOTE: timestamps
-    create_time: any(),
-    update_time: any()
-  }
+          user_id: integer(),
+          game_name: String.t(),
+          gain: integer(),
+          # NOTE: timestamps
+          create_time: any(),
+          update_time: any()
+        }
 
   schema "action_histories" do
     field :user_id, :integer

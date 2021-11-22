@@ -35,10 +35,7 @@ defmodule MilkWeb.ProfileView do
         is_birthday_private: user.is_birthday_private,
         win_count: user.win_count,
         records: render_many(records, ProfileView, "rank.json", as: :record),
-        external_services:
-          render_many(external_services, ProfileView, "external_service.json",
-            as: :external_service
-          ),
+        external_services: render_many(external_services, ProfileView, "external_service.json", as: :external_service),
         associated_with_discord: associated_with_discord
       },
       result: true
@@ -68,8 +65,7 @@ defmodule MilkWeb.ProfileView do
 
   def render("external_services.json", %{external_services: external_services}) do
     %{
-      data:
-        render_many(external_services, ProfileView, "external_service.json", as: :external_service)
+      data: render_many(external_services, ProfileView, "external_service.json", as: :external_service)
     }
   end
 

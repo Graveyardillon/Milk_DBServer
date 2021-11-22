@@ -1,6 +1,8 @@
 defmodule MilkWeb.ReportController do
   use MilkWeb, :controller
 
+  import Common.Sperm
+
   require Logger
 
   alias Common.Tools
@@ -19,11 +21,11 @@ defmodule MilkWeb.ReportController do
   def create_user_report(conn, %{"report" => report_params}) do
     case Reports.create_user_report(report_params) do
       {:ok, reports} ->
-        Enum.all?(reports, fn report ->
-          !is_nil(report)
-        end)
+        reports
+        |> Enum.all?(&(!is_nil(&1)))
         |> if do
-          Application.get_env(:milk, :environment)
+          :milk
+          |> Application.get_env(:environment)
           |> Kernel.==(:test)
           |> unless do
             notify_user_report(report_params)
@@ -40,18 +42,17 @@ defmodule MilkWeb.ReportController do
   end
 
   defp notify_user_report(report) do
-    reporter =
-      report["reporter"]
-      |> Tools.to_integer_as_needed()
-      |> Accounts.get_user()
+    report["reporter"]
+    |> Tools.to_integer_as_needed()
+    |> Accounts.get_user()
+    ~> reporter
 
-    reportee =
-      report["reportee"]
-      |> Tools.to_integer_as_needed()
-      |> Accounts.get_user()
+    report["reportee"]
+    |> Tools.to_integer_as_needed()
+    |> Accounts.get_user()
+    ~> reportee
 
-    (reportee.name <> "が" <> reporter.name <> "によって通報されました。")
-    |> DiscordWebhook.post_text_to_user_report_channel()
+    DiscordWebhook.post_text_to_user_report_channel("#{reportee.name}が#{reporter.name}によって通報されました。")
   end
 
   @doc """
@@ -77,55 +78,38 @@ defmodule MilkWeb.ReportController do
   end
 
   defp notify_tournament_report(report) do
-    reporter =
-      report["reporter_id"]
-      |> Tools.to_integer_as_needed()
-      |> Accounts.get_user()
+    report["reporter_id"]
+    |> Tools.to_integer_as_needed()
+    |> Accounts.get_user()
+    ~> reporter
 
-    tournament =
-      report["tournament_id"]
-      |> Tools.to_integer_as_needed()
-      |> Tournaments.get_tournament()
+    report["tournament_id"]
+    |> Tools.to_integer_as_needed()
+    |> Tournaments.load_tournament()
+    ~> tournament
 
-    (tournament.name <> "が" <> reporter.name <> "によって通報されました。")
-    |> DiscordWebhook.post_text_to_tournament_report_channel()
+    DiscordWebhook.post_text_to_tournament_report_channel("#{tournament.name}が#{reporter.name}によって通報されました。")
   end
 
   defp block_user_as_necessary(report) do
-    reporter_id =
-      report["reporter_id"]
-      |> Tools.to_integer_as_needed()
+    reporter_id = Tools.to_integer_as_needed(report["reporter_id"])
 
-    reportee_id =
-      report["tournament_id"]
-      |> Tools.to_integer_as_needed()
-      |> Tournaments.get_tournament()
-      |> Map.get(:master_id)
+    report["tournament_id"]
+    |> Tools.to_integer_as_needed()
+    |> Tournaments.load_tournament()
+    |> Map.get(:master_id)
+    ~> reportee_id
 
-    report["report_type"]
-    |> is_integer()
-    |> if do
-      [report["report_type"]]
-    else
-      report["report_type"]
-    end
-    |> Enum.map(fn type ->
-      Tools.to_integer_as_needed(type)
-    end)
-    |> Enum.any?(fn type ->
-      type == 6
-    end)
+    report
+    |> report_type_to_list()
+    |> Enum.map(&Tools.to_integer_as_needed(&1))
+    |> Enum.any?(&(&1 == 6))
     |> if do
       Relations.block(reporter_id, reportee_id)
     end
-    |> case do
-      {:ok, _} ->
-        Logger.info(to_string(reporter_id) <> " Blocked " <> to_string(reportee_id))
-
-      _ ->
-        Logger.info(
-          to_string(reporter_id) <> " Did not block " <> to_string(reportee_id) <> "but reported"
-        )
-    end
   end
+
+  defp report_type_to_list(%{"report_types" => report_types}) when is_list(report_types), do: report_types
+  defp report_type_to_list(%{"report_type" => report_type}) when is_list(report_type), do: report_type
+  defp report_type_to_list(%{"report_type" => report_type}), do: [report_type]
 end

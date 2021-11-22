@@ -21,6 +21,10 @@ defmodule Milk.Log do
     TeamMemberLog
   }
 
+  alias Milk.Tournaments.{
+    Entrant
+  }
+
   @doc """
   Returns the list of chat_room_log.
 
@@ -341,9 +345,9 @@ defmodule Milk.Log do
   @doc """
   Gets a single tournament log by tournament id.
   """
-  def get_tournament_log_by_tournament_id(id) do
+  def get_tournament_log_by_tournament_id(tournament_id) do
     TournamentLog
-    |> where([t], t.tournament_id == ^id)
+    |> where([t], t.tournament_id == ^tournament_id)
     |> Repo.one()
   end
 
@@ -484,7 +488,21 @@ defmodule Milk.Log do
       {:error, %Ecto.Changeset{}}
 
   """
-  def create_entrant_log(attrs \\ %{}) do
+  @spec create_entrant_log(Entrant.t() | integer() | map()) :: {:ok, EntrantLog.t()} | {:error, String.t() | nil}
+  def create_entrant_log(entrant_id) when is_integer(entrant_id) do
+    entrant_id
+    |> Tournaments.get_entrant()
+    |> __MODULE__.create_entrant_log()
+  end
+
+  def create_entrant_log(%Entrant{} = entrant) do
+    entrant
+    |> Map.from_struct()
+    |> Map.put(:entrant_id, entrant.id)
+    |> __MODULE__.create_entrant_log()
+  end
+
+  def create_entrant_log(attrs) do
     %EntrantLog{}
     |> EntrantLog.changeset(attrs)
     |> Repo.insert()
@@ -900,16 +918,16 @@ defmodule Milk.Log do
   @doc """
   Get team log by tournament id and user id.
   """
+  @spec get_team_log_by_tournament_id_and_user_id(integer(), integer()) :: TeamLog.t() | nil
   def get_team_log_by_tournament_id_and_user_id(tournament_id, user_id) do
     TeamLog
     |> where([t], t.tournament_id == ^tournament_id)
     |> Repo.all()
-    |> Enum.filter(fn team_log ->
+    |> Enum.reject(fn team_log ->
       TeamMemberLog
       |> where([t], t.team_id == ^team_log.team_id and t.user_id == ^user_id)
       |> Repo.one()
       |> is_nil()
-      |> Kernel.!()
     end)
     |> Enum.map(fn team_log ->
       TeamMemberLog
@@ -919,7 +937,7 @@ defmodule Milk.Log do
 
       Map.put(team_log, :team_member, members)
     end)
-    |> hd()
+    |> Tools.hd_as_needed()
   end
 
   @doc """
@@ -936,5 +954,14 @@ defmodule Milk.Log do
   """
   def get_team_member_log(id) do
     Repo.get(TeamMemberLog, id)
+  end
+
+  @doc """
+  Get team member logs.
+  """
+  def get_team_member_logs(team_id) do
+    TeamMemberLog
+    |> where([tm], tm.team_id == ^team_id)
+    |> Repo.all()
   end
 end

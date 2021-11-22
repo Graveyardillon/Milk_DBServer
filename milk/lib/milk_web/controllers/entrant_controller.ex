@@ -23,17 +23,10 @@ defmodule MilkWeb.EntrantController do
     |> case do
       {:ok, %Entrant{} = entrant} ->
         action_history(entrant)
-
-        conn
-        # |> put_status(:created)
-        # |> put_resp_header("location", Routes.entrant_path(conn, :show, entrant))
-        |> render("show.json", entrant: entrant)
+        render(conn, "show.json", entrant: entrant)
 
       {:error, error} ->
         render(conn, "error.json", error: error)
-
-      {:multierror, error} ->
-        render(conn, "multierror.json", error: error)
     end
   end
 
@@ -114,6 +107,7 @@ defmodule MilkWeb.EntrantController do
       Tournaments.get_rank(tournament.id, user_id)
     end
   end
+
   defp get_rank_by_tournament(nil, _), do: {:error, "tournament is nil"}
 
   defp get_rank_by_team(%Team{} = team), do: {:ok, team.rank}

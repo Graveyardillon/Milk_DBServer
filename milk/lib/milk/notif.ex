@@ -152,7 +152,8 @@ defmodule Milk.Notif do
       {:error, %Ecto.Changeset{}}
 
   """
-  @spec update_notification(Notification.t(), map()) :: {:ok, Notification.t()} | {:error, Ecto.Changeset.t()}
+  @spec update_notification(Notification.t(), map()) ::
+          {:ok, Notification.t()} | {:error, Ecto.Changeset.t()}
   def update_notification(%Notification{} = notification, attrs) do
     notification
     |> Notification.update_changeset(attrs)
@@ -171,7 +172,8 @@ defmodule Milk.Notif do
       {:error, %Ecto.Changeset{}}
 
   """
-  @spec delete_notification(Notification.t()) :: {:ok, Notification.t()} | {:error, Ecto.Changeset.t()}
+  @spec delete_notification(Notification.t()) ::
+          {:ok, Notification.t()} | {:error, Ecto.Changeset.t()}
   def delete_notification(%Notification{} = notification) do
     %NotificationLog{}
     |> NotificationLog.changeset(Map.from_struct(notification))
@@ -183,8 +185,10 @@ defmodule Milk.Notif do
   @doc """
   Delete notifications relevant for the tournament.
   """
-  @spec delete_notifications_relevant_for_tournament(integer()) :: {:ok, nil} | {:error, Ecto.Changeset.t() | nil}
-  def delete_notifications_relevant_for_tournament(tournament_id) when is_integer(tournament_id) do
+  @spec delete_notifications_relevant_for_tournament(integer()) ::
+          {:ok, nil} | {:error, Ecto.Changeset.t() | nil}
+  def delete_notifications_relevant_for_tournament(tournament_id)
+      when is_integer(tournament_id) do
     tournament_id
     |> __MODULE__.get_notifications_relevant_for_tournament()
     |> Enum.each(fn notification ->
@@ -194,7 +198,8 @@ defmodule Milk.Notif do
     {:ok, nil}
   end
 
-  def delete_notifications_relevant_for_tournament(_), do: {:error, "should provide tournament_id in integer"}
+  def delete_notifications_relevant_for_tournament(_),
+    do: {:error, "should provide tournament_id in integer"}
 
   @doc """
   Creates a notification log.
@@ -215,9 +220,7 @@ defmodule Milk.Notif do
     |> put_sound("default")
     |> put_badge(badge_num)
     |> put_category(push_ios.process_id)
-    |> put_alert(
-      Map.merge(%{"body" => push_ios.message, "title" => push_ios.title}, push_ios.params)
-    )
+    |> put_alert(Map.merge(%{"body" => push_ios.message, "title" => push_ios.title}, push_ios.params))
     |> put_content_available
     |> put_mutable_content
     |> Pigeon.APNS.push()

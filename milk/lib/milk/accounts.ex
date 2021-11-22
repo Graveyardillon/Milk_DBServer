@@ -17,6 +17,7 @@ defmodule Milk.Accounts do
     Tournaments
   }
 
+  alias Milk.CloudStorage.Objects
   alias Milk.Discord.User, as: DiscordUser
 
   alias Milk.Accounts.{
@@ -44,7 +45,6 @@ defmodule Milk.Accounts do
   }
 
   alias Milk.UserManager.Guardian
-  alias Milk.CloudStorage.Objects
 
   @doc """
   Lists all users.
@@ -168,19 +168,20 @@ defmodule Milk.Accounts do
 
     Multi.new()
     |> Multi.insert(:user, User.changeset(%User{}, attrs))
-    |> Multi.insert(:auth, fn %{user: user} ->
-      apply_changeset_of_oauth(user, attrs, service_name)
-    end)
+    |> Multi.insert(:auth, &apply_oauth_changeset(&1.user, attrs, service_name))
     |> Repo.transaction()
     |> case do
-      {:ok, user} -> {:ok, Map.put(user.user, :auth, %Auth{email: user.auth.email})}
-      {:error, _, error, _data} -> {:error, error.errors}
-      _ -> {:error, nil}
+      {:ok, user}           -> {:ok, Map.put(user.user, :auth, %Auth{email: user.auth.email})}
+      {:error, _, error, _} -> {:error, error.errors}
+      _                     -> {:error, nil}
     end
   end
 
-  defp put_id_for_show(attrs = %{"id_for_show" => id}), do: Map.put(attrs, "id_for_show", generate_id_for_show(id))
-  defp put_id_for_show(attrs), do: Map.put(attrs, "id_for_show", generate_id_for_show())
+  defp put_id_for_show(%{"id_for_show" => id} = attrs),
+    do: Map.put(attrs, "id_for_show", generate_id_for_show(id))
+
+  defp put_id_for_show(attrs),
+    do: Map.put(attrs, "id_for_show", generate_id_for_show())
 
   defp generate_id_for_show() do
     0..999_999
@@ -194,20 +195,20 @@ defmodule Milk.Accounts do
     User
     |> where([u], u.id_for_show == ^tmp_id)
     |> Repo.exists?()
-    |> unless do
-      tmp_id
-    else
+    |> if do
       generate_id_for_show(tmp_id + 1)
+    else
+      tmp_id
     end
   end
 
-  defp apply_changeset_of_oauth(user, attrs, "e-players") do
+  defp apply_oauth_changeset(user, attrs, "e-players") do
     user
     |> Ecto.build_assoc(:auth)
     |> Auth.changeset(attrs)
   end
 
-  defp apply_changeset_of_oauth(user, attrs, service_name) do
+  defp apply_oauth_changeset(user, attrs, service_name) do
     user
     |> Map.put("service_name", service_name)
     |> Ecto.build_assoc(:auth)
@@ -236,9 +237,9 @@ defmodule Milk.Accounts do
     end)
     |> Repo.transaction()
     |> case do
-      {:ok, user} -> {:ok, user.user}
-      {:error, _, error, _data} -> {:error, error.errors}
-      _ -> {:error, nil}
+      {:ok, result}         -> {:ok, result.user}
+      {:error, _, error, _} -> {:error, error.errors}
+      _                     -> {:error, nil}
     end
   end
 
@@ -249,13 +250,14 @@ defmodule Milk.Accounts do
   def change_password_by_email(email, new_password) do
     email
     |> __MODULE__.get_user_by_email()
-    ~> user
-    |> is_nil()
-    |> unless do
-      user.auth
-      |> Auth.changeset(%{password: new_password})
-      |> Repo.update()
-    end
+    |> do_change_password_by_email(new_password)
+  end
+
+  defp do_change_password_by_email(nil, _), do: {:error, "user is nil"}
+  defp do_change_password_by_email(%User{auth: auth}, new_password) do
+    auth
+    |> Auth.changeset(%{password: new_password})
+    |> Repo.update()
   end
 
   @spec get_user_by_email(String.t()) :: User.t() | nil
@@ -295,10 +297,10 @@ defmodule Milk.Accounts do
     unless is_nil(old_icon_path) do
       case Application.get_env(:milk, :environment) do
         # coveralls-ignore-start
-        :dev -> rm(old_icon_path)
+        :dev  -> rm(old_icon_path)
         :test -> rm(old_icon_path)
-        _ -> rm_prod(old_icon_path)
-          # coveralls-ignore-stop
+        _     -> rm_prod(old_icon_path)
+        # coveralls-ignore-stop
       end
     end
 
@@ -439,14 +441,18 @@ defmodule Milk.Accounts do
           "That token does not exist"
         end
 
-      {:error, :not_exist} -> "That token can't use"
-      _ -> "That token does not exist"
+      {:error, :not_exist} ->
+        "That token can't use"
+
+      _ ->
+        "That token does not exist"
     end
     |> case do
       %User{} = user ->
         if Argon2.verify_pass(password, user.auth.password), do: user
 
-      errors -> errors
+      errors ->
+        errors
     end
   end
 
@@ -550,7 +556,11 @@ defmodule Milk.Accounts do
   レコメンドシステム用にスコアを取得する関数
   """
   def gain_score(%{"user_id" => user_id, "game_name" => game_name, "score" => gain}) do
-    __MODULE__.create_action_history(%{"user_id" => user_id, "game_name" => game_name, "gain" => gain})
+    __MODULE__.create_action_history(%{
+      "user_id" => user_id,
+      "game_name" => game_name,
+      "gain" => gain
+    })
   end
 
   @doc """
@@ -589,7 +599,7 @@ defmodule Milk.Accounts do
     |> Repo.insert()
     |> case do
       {:ok, device} -> {:ok, device}
-      {:error, %Ecto.Changeset{} = error} ->  {:error, Tools.create_error_message(error.errors)}
+      {:error, %Ecto.Changeset{} = error} -> {:error, Tools.create_error_message(error.errors)}
       {:error, error} -> {:error, Tools.create_error_message(error)}
     end
   end
@@ -628,14 +638,16 @@ defmodule Milk.Accounts do
   @doc """
   Update external service.
   """
-  @spec update_external_service(ExternalService.t(), map()) :: {:ok, ExternalService.t()} | {:error, Ecto.Changeset.t()}
+  @spec update_external_service(ExternalService.t(), map()) ::
+          {:ok, ExternalService.t()} | {:error, Ecto.Changeset.t()}
   def update_external_service(%ExternalService{} = external_service, attrs) do
     external_service
     |> ExternalService.changeset(attrs)
     |> Repo.update()
   end
 
-  @spec delete_external_service(integer()) :: {:ok, ExternalService.t()} | {:error, Ecto.Changeset.t()}
+  @spec delete_external_service(integer()) ::
+          {:ok, ExternalService.t()} | {:error, Ecto.Changeset.t()}
   def delete_external_service(external_service_id) do
     external_service_id
     |> __MODULE__.get_external_service()

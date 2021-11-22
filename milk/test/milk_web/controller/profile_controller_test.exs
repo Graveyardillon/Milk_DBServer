@@ -12,14 +12,14 @@ defmodule MilkWeb.ProfileControllerTest do
   end
 
   describe "profile" do
-
     test "get profile", %{conn: conn} do
       user = fixture_user()
 
-      profile = conn
-      |> get(Routes.profile_path(conn, :get_profile), user_id: user.id)
-      |> json_response(200)
-      |> Map.get("data")
+      profile =
+        conn
+        |> get(Routes.profile_path(conn, :get_profile), user_id: user.id)
+        |> json_response(200)
+        |> Map.get("data")
 
       assert profile["name"] == "name0"
     end
@@ -28,33 +28,33 @@ defmodule MilkWeb.ProfileControllerTest do
       user = fixture_user()
 
       update_attrs = %{
-          "user_id" => user.id,
-          "name" => user.name <> "updated",
-          "bio" => "updated bio",
-          "birthday" => DateTime.utc_now(),
-          "is_birthday_private" => false,
-          "records" => []
+        "user_id" => user.id,
+        "name" => user.name <> "updated",
+        "bio" => "updated bio",
+        "birthday" => DateTime.utc_now(),
+        "is_birthday_private" => false,
+        "records" => []
       }
 
       result =
-      conn
-      |> post(Routes.profile_path(conn, :update), profile: update_attrs)
-      |> json_response(200)
-      |> Map.get("result")
+        conn
+        |> post(Routes.profile_path(conn, :update), profile: update_attrs)
+        |> json_response(200)
+        |> Map.get("result")
+
       assert result == true
 
       updated_profile =
-      conn
-      |> get(Routes.profile_path(conn, :get_profile), user_id: user.id)
-      |> json_response(200)
-      |> Map.get("data")
+        conn
+        |> get(Routes.profile_path(conn, :get_profile), user_id: user.id)
+        |> json_response(200)
+        |> Map.get("data")
 
       assert updated_profile["name"] == update_attrs["name"]
       assert updated_profile["bio"] == update_attrs["bio"]
       assert updated_profile["records"] == update_attrs["records"]
       assert updated_profile["is_birthday_private"] == update_attrs["is_birthday_private"]
     end
-
 
     test "records of profile", %{conn: conn} do
       user = fixture_user()
@@ -65,7 +65,7 @@ defmodule MilkWeb.ProfileControllerTest do
       |> Tournaments.create_entrant()
 
       setup_tournament_having_participants(tournament.id)
-      Tournaments.start(user.id, tournament.id)
+      Tournaments.start(tournament.id, user.id)
       Tournaments.finish(tournament.id, user.id)
 
       get(conn, Routes.profile_path(conn, :records), %{"user_id" => user.id})

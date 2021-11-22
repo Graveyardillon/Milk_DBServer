@@ -14,8 +14,7 @@ defmodule MilkWeb.CheckController do
   end
 
   @doc """
-  Check some data for web.
-  NOTE: web版用
+  WebでUI表示に利用するための情報を伝えるための関数
   """
   def data_for_web(conn, %{"user_id" => user_id}) do
     user_id
@@ -29,4 +28,6 @@ defmodule MilkWeb.CheckController do
 
   defp unchecked_notifications_exist?(0), do: false
   defp unchecked_notifications_exist?(_), do: true
+
+  # NOTE: get_started_match_informationはtournament_controllerに定義した。
 end

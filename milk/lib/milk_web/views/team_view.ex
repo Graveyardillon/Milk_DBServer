@@ -43,6 +43,7 @@ defmodule MilkWeb.TeamView do
     }
   end
 
+  # NOTE: フロント側で型を固定してある
   def render("members.json", %{members: members}) do
     %{
       data:

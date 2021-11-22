@@ -5,7 +5,6 @@ defmodule Milk.Tournaments.Tournament do
 
   alias Milk.Accounts.User
   alias Milk.Games.Game
-  alias Milk.Lives.Live
   alias Milk.Platforms.Platform
 
   alias Milk.Tournaments.{
@@ -17,32 +16,33 @@ defmodule Milk.Tournaments.Tournament do
   }
 
   @type t :: %__MODULE__{
-    capacity: integer(),
-    count: integer(),
-    deadline: any(),
-    description: String.t() | nil,
-    discord_server_id: String.t() | nil,
-    enabled_coin_toss: boolean(),
-    enabled_map: boolean(),
-    event_date: any(),
-    game_name: String.t() | nil,
-    is_started: boolean(),
-    is_team: boolean(),
-    name: String.t(),
-    password: String.t() | nil,
-    start_recruiting: any(),
-    team_size: integer() | nil,
-    thumbnail_path: String.t() | nil,
-    type: integer(),
-    url: String.t() | nil,
-    url_token: String.t() | nil,
-    platform_id: integer(),
-    game_id: integer() | nil,
-    master_id: integer(),
-    # NOTE: timestamps
-    create_time: any(),
-    update_time: any()
-  }
+          capacity: integer(),
+          count: integer(),
+          deadline: any(),
+          description: String.t() | nil,
+          discord_server_id: String.t() | nil,
+          enabled_coin_toss: boolean(),
+          enabled_map: boolean(),
+          event_date: any(),
+          game_id: integer() | nil,
+          game_name: String.t() | nil,
+          is_started: boolean(),
+          is_team: boolean(),
+          master_id: integer(),
+          name: String.t(),
+          password: String.t() | nil,
+          platform_id: integer(),
+          rule: String.t(),
+          start_recruiting: any(),
+          team_size: integer() | nil,
+          thumbnail_path: String.t() | nil,
+          type: integer(),
+          url: String.t() | nil,
+          url_token: String.t() | nil,
+          # NOTE: timestamps
+          create_time: any(),
+          update_time: any()
+        }
 
   schema "tournaments" do
     field :capacity, :integer
@@ -58,6 +58,7 @@ defmodule Milk.Tournaments.Tournament do
     field :is_team, :boolean, default: false
     field :name, :string
     field :password, :string
+    field :rule, :string, default: "basic"
     field :start_recruiting, EctoDate
     field :team_size, :integer, default: nil
     field :thumbnail_path, :string
@@ -69,7 +70,6 @@ defmodule Milk.Tournaments.Tournament do
     belongs_to :game, Game
     belongs_to :master, User
 
-    has_many :lives, Live
     has_many :entrant, Entrant
     has_many :assistant, Assistant
     has_many :tournament_chat_topics, TournamentChatTopic
@@ -85,6 +85,7 @@ defmodule Milk.Tournaments.Tournament do
     tournament
     |> cast(attrs, [
       :name,
+      :count,
       :capacity,
       :description,
       :deadline,
@@ -93,36 +94,25 @@ defmodule Milk.Tournaments.Tournament do
       :enabled_map,
       :event_date,
       :game_name,
-      :thumbnail_path,
-      :password,
-      :type,
-      :url,
-      :url_token,
-      :platform_id,
-      :master_id,
-      :count,
       :is_started,
       :is_team,
+      :master_id,
+      :password,
+      :platform_id,
+      :rule,
       :start_recruiting,
-      :team_size
+      :team_size,
+      :thumbnail_path,
+      :type,
+      :url,
+      :url_token
     ])
-    |> validate_required([:name, :capacity, :type])
+    |> generate_rule_if_empty()
+    |> validate_required([:name, :capacity, :type, :master_id, :is_team, :rule])
     |> foreign_key_constraint(:platform_id)
     |> foreign_key_constraint(:game_id)
     |> foreign_key_constraint(:master_id)
     |> put_password_hash()
-  end
-
-  defp put_password_hash(
-         %Ecto.Changeset{valid?: true, changes: %{password: password}} = changeset
-       ) do
-    change(changeset, password: create_pass(password))
-  end
-
-  defp put_password_hash(changeset), do: changeset
-
-  defp create_pass(password) do
-    Argon2.hash_pwd_salt(password)
   end
 
   @doc false
@@ -141,6 +131,7 @@ defmodule Milk.Tournaments.Tournament do
       :thumbnail_path,
       :password,
       :type,
+      :rule,
       :url,
       :url_token,
       :platform_id,
@@ -156,4 +147,20 @@ defmodule Milk.Tournaments.Tournament do
     |> foreign_key_constraint(:master_id)
     |> put_password_hash()
   end
+
+  defp generate_rule_if_empty(changeset) do
+    case get_change(changeset, :rule) do
+      nil -> put_change(changeset, :rule, "basic")
+      "" -> put_change(changeset, :rule, "basic")
+      _ -> changeset
+    end
+  end
+
+  defp put_password_hash(%Ecto.Changeset{valid?: true, changes: %{password: password}} = changeset) do
+    change(changeset, password: create_pass(password))
+  end
+
+  defp put_password_hash(changeset), do: changeset
+
+  defp create_pass(password), do: Argon2.hash_pwd_salt(password)
 end

@@ -1,4 +1,7 @@
 defmodule Milk.Tournaments.TeamInvitation do
+  @moduledoc """
+  Team invitation schema.
+  """
   use Milk.Schema
 
   import Ecto.Changeset
@@ -7,12 +10,12 @@ defmodule Milk.Tournaments.TeamInvitation do
   alias Milk.Tournaments.TeamMember
 
   @type t :: %__MODULE__{
-    team_member_id: integer(),
-    sender_id: integer(),
-    # NOTE: timestamps
-    create_time: any(),
-    update_time: any()
-  }
+          team_member_id: integer(),
+          sender_id: integer(),
+          # NOTE: timestamps
+          create_time: any(),
+          update_time: any()
+        }
 
   schema "team_invitations" do
     belongs_to :team_member, TeamMember
@@ -20,6 +23,9 @@ defmodule Milk.Tournaments.TeamInvitation do
 
     timestamps()
   end
+
+  @doc false
+  def changeset(attrs), do: __MODULE__.changeset(%__MODULE__{}, attrs)
 
   @doc false
   def changeset(team_invitation, attrs) do

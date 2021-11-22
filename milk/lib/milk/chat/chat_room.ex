@@ -13,16 +13,16 @@ defmodule Milk.Chat.ChatRoom do
   alias Milk.Tournaments.TournamentChatTopic
 
   @type t :: %__MODULE__{
-    authority: integer(),
-    count: integer(),
-    is_private: boolean(),
-    last_chat: String.t() | nil,
-    name: String.t(),
-    member_count: integer(),
-    # NOTE: timestamps
-    create_time: any(),
-    update_time: any()
-  }
+          authority: integer(),
+          count: integer(),
+          is_private: boolean(),
+          last_chat: String.t() | nil,
+          name: String.t(),
+          member_count: integer(),
+          # NOTE: timestamps
+          create_time: any(),
+          update_time: any()
+        }
 
   schema "chat_rooms" do
     field :authority, :integer, default: 0

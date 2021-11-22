@@ -7,6 +7,8 @@ alias Milk.{
   Tournaments
 }
 
+# XXX: DEPRECATED
+
 team_n = 4
 team_size = 5
 
@@ -57,6 +59,7 @@ organizer
     "game_id" => nil,
     "coin_head_field" => "マップ選択",
     "coin_tail_field" => "A/D選択",
+    "rule" => "flipban",
     #"multiple_selection_label" => "マップ",
     "maps" => [
       %{
@@ -99,13 +102,16 @@ end)
   tournament.id
   |> Tournaments.create_team(team_size, leader, members)
   |> elem(1)
+  ~> team
+
+  {team, leader}
 end)
-|> Enum.map(fn team ->
+|> Enum.map(fn {team, leader} ->
   team.id
   |> Tournaments.get_team_members_by_team_id()
   |> Enum.map(fn member ->
     member.id
-    |> Tournaments.create_team_invitation(1)
+    |> Tournaments.create_team_invitation(leader)
     |> elem(1)
     |> Map.get(:id)
     |> Tournaments.confirm_team_invitation()

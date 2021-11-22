@@ -65,9 +65,9 @@ config :milk, Oban,
   plugins: [
     Oban.Plugins.Pruner,
     {Oban.Plugins.Cron,
-      crontab: [
-        # {"work", MilkWeb._Worker}
-    ]}
+     crontab: [
+       # {"work", MilkWeb._Worker}
+     ]}
   ],
   queues: [default: 10, event: 50]
 

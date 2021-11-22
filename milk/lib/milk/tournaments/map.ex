@@ -1,4 +1,7 @@
 defmodule Milk.Tournaments.Map do
+  @moduledoc """
+  Map
+  """
   use Milk.Schema
 
   import Ecto.Changeset
@@ -7,13 +10,13 @@ defmodule Milk.Tournaments.Map do
   alias Milk.Tournaments.Tournament
 
   @type t :: %__MODULE__{
-    name: String.t(),
-    icon_path: String.t() | nil,
-    tournament_id: integer(),
-    # NOTE: timestamps
-    create_time: any(),
-    update_time: any()
-  }
+          name: String.t(),
+          icon_path: String.t() | nil,
+          tournament_id: integer(),
+          # NOTE: timestamps
+          create_time: any(),
+          update_time: any()
+        }
 
   schema "maps" do
     field :name, :string
@@ -23,6 +26,8 @@ defmodule Milk.Tournaments.Map do
 
     timestamps()
   end
+
+  def changeset(attrs), do: __MODULE__.changeset(%__MODULE__{}, attrs)
 
   @doc false
   def changeset(map, attrs) do

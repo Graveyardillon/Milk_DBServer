@@ -1,7 +1,6 @@
 alias Milk.{
   Accounts,
   Repo,
-  TournamentProgress,
   Tournaments
 }
 alias Milk.Accounts.{
@@ -10,6 +9,7 @@ alias Milk.Accounts.{
 }
 alias Milk.Tournaments.{
   Entrant,
+  Progress,
   Tournament
 }
 
@@ -45,18 +45,18 @@ end)
   |> Tournaments.create_entrant()
 end)
 
-Tournaments.start(tournament.master_id, tournament.id)
+Tournaments.start(tournament.id, tournament.master_id)
 {:ok, match_list} =
   Tournaments.get_entrants(tournament.id)
   |> Enum.map(fn x -> x.user_id end)
   |> Tournaments.generate_matchlist()
 count =
-  Tournaments.get_tournament(tournament.id)
+  Tournaments.load_tournament(tournament.id)
   |> Map.get(:count)
 match_list
 |> Tournaments.initialize_rank(count, tournament.id)
 match_list
-|> TournamentProgress.insert_match_list(tournament.id)
+|> Progress.insert_match_list(tournament.id)
 
 list_with_fight_result =
   match_list
@@ -74,4 +74,4 @@ Enum.reduce(lis, list_with_fight_result, fn x, acc ->
   |> Tournaments.put_value_on_brackets(user.id, %{"win_count" => 0})
   |> Tournaments.put_value_on_brackets(user.id, %{"icon_path" => user.icon_path})
 end)
-|> TournamentProgress.insert_match_list_with_fight_result(tournament.id)
+|> Progress.insert_match_list_with_fight_result(tournament.id)

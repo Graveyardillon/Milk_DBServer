@@ -68,8 +68,7 @@ defmodule Milk.AccountsTest do
     test "get_users_in_touch/1 gets users in touch", %{user: user} do
       %User{} = user2 = fixture_user(2)
 
-      {:ok, %Chats{} = _chat} =
-        Chat.dialogue(%{"user_id" => user.id, "partner_id" => user2.id, "word" => "Hello"})
+      {:ok, %Chats{} = _chat} = Chat.dialogue(%{"user_id" => user.id, "partner_id" => user2.id, "word" => "Hello"})
 
       user =
         Accounts.get_users_in_touch(user.id)
@@ -129,7 +128,7 @@ defmodule Milk.AccountsTest do
     end
 
     test "create_user/1 with invalid data returns error changeset" do
-      assert {:error, error} = Accounts.create_user(@invalid_attrs)
+      assert {:error, _} = Accounts.create_user(@invalid_attrs)
     end
   end
 
@@ -233,8 +232,7 @@ defmodule Milk.AccountsTest do
 
       assert {:ok, %User{}} = Accounts.login(login_params)
 
-      assert {:error, "That token does not exist"} =
-               Accounts.delete_user(user.id, @user_valid_attrs["password"], user.auth.email, "a")
+      assert {:error, "That token does not exist"} = Accounts.delete_user(user.id, @user_valid_attrs["password"], user.auth.email, "a")
 
       assert Accounts.get_user(user.id)
     end
@@ -382,7 +380,7 @@ defmodule Milk.AccountsTest do
           "password" => "Password123"
         })
 
-      assert {:ok, %Relation{} = relation} =
+      assert {:ok, %Relation{}} =
                @valid_attrs
                |> Map.put("followee_id", user1.id)
                |> Map.put("follower_id", user2.id)
@@ -400,12 +398,12 @@ defmodule Milk.AccountsTest do
 
     test "update_relation/2 with valid data updates the relation" do
       relation = relation_fixture()
-      assert {:ok, %Relation{} = relation} = Relations.update_relation(relation, @update_attrs)
+      assert {:ok, %Relation{}} = Relations.update_relation(relation, @update_attrs)
     end
 
     test "update_relation/2 with invalid data returns unchanged data" do
       relation = relation_fixture()
-      assert relation = Relations.update_relation(relation, @invalid_attrs)
+      assert _ = Relations.update_relation(relation, @invalid_attrs)
       # assert relation == Relations.get_relation!(relation.id)
     end
   end

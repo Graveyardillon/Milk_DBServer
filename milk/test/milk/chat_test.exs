@@ -56,11 +56,9 @@ defmodule Milk.ChatTest do
   end
 
   def create_private_chat_room(_) do
-    {:ok, user1} =
-      Accounts.create_user(%{@user_attrs | "name" => "mgrke", "email" => "mgrke@mfedsawif.com"})
+    {:ok, user1} = Accounts.create_user(%{@user_attrs | "name" => "mgrke", "email" => "mgrke@mfedsawif.com"})
 
-    {:ok, user2} =
-      Accounts.create_user(%{@user_attrs | "name" => "mgrfewke", "email" => "mgrke@mfewif.com"})
+    {:ok, user2} = Accounts.create_user(%{@user_attrs | "name" => "mgrfewke", "email" => "mgrke@mfewif.com"})
 
     Chat.dialogue(%{"user_id" => user1.id, "partner_id" => user2.id, "word" => "fneijk"})
     {:ok, priv_chat_room} = Chat.get_private_chat_room(user1.id, user2.id)
@@ -214,15 +212,13 @@ defmodule Milk.ChatTest do
     test "update_chat_member/2 with valid data updates the chat_member", %{
       chat_member: chat_member
     } do
-      assert {:ok, %ChatMember{} = chat_member} =
-               Chat.update_chat_member(chat_member, @update_attrs)
+      assert {:ok, %ChatMember{} = chat_member} = Chat.update_chat_member(chat_member, @update_attrs)
 
       assert chat_member.authority == 43
     end
 
     test "delete_chat_member/1 deletes the chat_member", %{chat_member: chat_member} do
-      assert {:ok, %ChatMember{}} =
-               Chat.delete_chat_member(chat_member.chat_room_id, chat_member.user_id)
+      assert {:ok, %ChatMember{}} = Chat.delete_chat_member(chat_member.chat_room_id, chat_member.user_id)
 
       # assert_raise Ecto.NoResultsError, fn -> Chat.get_chat_member!(chat_member.id) end
     end
@@ -243,7 +239,7 @@ defmodule Milk.ChatTest do
 
     test "sync/2 returns all chat rooms with date and id", %{chat_member: chat_member} do
       chat_room = Chat.get_chat_room(chat_member.chat_room_id)
-      assert chat_rooms = Chat.sync(chat_room.update_time, chat_member.user_id)
+      assert _ = Chat.sync(chat_room.update_time, chat_member.user_id)
     end
   end
 
@@ -279,7 +275,7 @@ defmodule Milk.ChatTest do
     end
 
     test "sync/1 gets all chats from user_id", %{user_id: user_id} do
-      assert [%{"data" => chat_list, "room_id" => room_id}] = Chat.sync(user_id)
+      assert [%{"data" => _, "room_id" => _}] = Chat.sync(user_id)
     end
 
     test "get_latest_chat gets a latest chat", %{

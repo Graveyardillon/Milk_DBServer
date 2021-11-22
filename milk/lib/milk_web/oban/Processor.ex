@@ -21,7 +21,7 @@ defmodule Oban.Processer do
   end
 
   defp reminder_to_start_tournament(id) do
-    tournament = Tournaments.get_tournament(id)
+    tournament = Tournaments.load_tournament(id)
     devices = Accounts.get_devices_by_user_id(tournament.master_id)
 
     %{
@@ -51,7 +51,7 @@ defmodule Oban.Processer do
   end
 
   def notify_tournament_start(id) do
-    tournament = Tournaments.get_tournament(id)
+    tournament = Tournaments.load_tournament(id)
 
     if tournament do
       devices =

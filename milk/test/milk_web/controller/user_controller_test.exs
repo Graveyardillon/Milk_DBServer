@@ -50,8 +50,7 @@ defmodule MilkWeb.UserControllerTest do
       conn = get(conn, Routes.user_path(conn, :check_username_duplication), name: "some name")
       refute json_response(conn, 200)["is_unique"]
 
-      conn =
-        get(conn, Routes.user_path(conn, :check_username_duplication), name: "WHATaUNIQUEname")
+      conn = get(conn, Routes.user_path(conn, :check_username_duplication), name: "WHATaUNIQUEname")
 
       assert json_response(conn, 200)["is_unique"]
     end
@@ -99,13 +98,6 @@ defmodule MilkWeb.UserControllerTest do
       assert json_response(conn, 200)["error_code"] == 103
     end
 
-    # FIXME: スペースのやつはうまく動いていないらしい
-    # test "renders errors when password includes space", %{conn: conn} do
-    #   attrs = %{@create_attrs | "password" => "Password 123", "name" => "invalid"}
-    #   conn = post(conn, Routes.user_path(conn, :create), user: attrs)
-    #   assert json_response(conn, 200) == 103
-    # end
-
     test "renders errors when data is invalid", %{conn: conn} do
       conn = post(conn, Routes.user_path(conn, :create), user: @invalid_attrs)
       assert json_response(conn, 200)["errors"] != %{}
@@ -147,11 +139,12 @@ defmodule MilkWeb.UserControllerTest do
       username = "applechan"
       apple_id = email
 
-      conn = post(conn, Routes.user_path(conn, :signin_with_apple), %{
-        email: email,
-        username: username,
-        apple_id: apple_id
-      })
+      conn =
+        post(conn, Routes.user_path(conn, :signin_with_apple), %{
+          email: email,
+          username: username,
+          apple_id: apple_id
+        })
 
       response = json_response(conn, 200)
 
@@ -165,9 +158,10 @@ defmodule MilkWeb.UserControllerTest do
       assert data["name"] == username
       refute is_nil(data["id"])
 
-      conn = post(conn, Routes.user_path(conn, :signin_with_apple), %{
-        apple_id: apple_id
-      })
+      conn =
+        post(conn, Routes.user_path(conn, :signin_with_apple), %{
+          apple_id: apple_id
+        })
 
       response = json_response(conn, 200)
 
@@ -185,9 +179,10 @@ defmodule MilkWeb.UserControllerTest do
     test "does not work", %{conn: conn} do
       apple_id = "apple2@icloud.com"
 
-      conn = post(conn, Routes.user_path(conn, :signin_with_apple), %{
-        apple_id: apple_id
-      })
+      conn =
+        post(conn, Routes.user_path(conn, :signin_with_apple), %{
+          apple_id: apple_id
+        })
 
       refute json_response(conn, 200)["result"]
     end
@@ -211,10 +206,7 @@ defmodule MilkWeb.UserControllerTest do
           "logout_fl" => true
         })
 
-      conn =
-        post(conn, Routes.chats_path(conn, :create_dialogue),
-          chat: %{user_id: user1.id, partner_id: user2.id, word: "Hello"}
-        )
+      conn = post(conn, Routes.chats_path(conn, :create_dialogue), chat: %{user_id: user1.id, partner_id: user2.id, word: "Hello"})
 
       conn = get(conn, Routes.user_path(conn, :users_in_touch), user_id: user1.id)
 
@@ -242,10 +234,7 @@ defmodule MilkWeb.UserControllerTest do
           "logout_fl" => true
         })
 
-      conn =
-        post(conn, Routes.user_path(conn, :login),
-          user: %{"email_or_username" => "e@mail.com", "password" => "Password123"}
-        )
+      conn = post(conn, Routes.user_path(conn, :login), user: %{"email_or_username" => "e@mail.com", "password" => "Password123"})
 
       response = json_response(conn, 200)
 
@@ -274,10 +263,7 @@ defmodule MilkWeb.UserControllerTest do
           "logout_fl" => true
         })
 
-      conn =
-        post(conn, Routes.user_path(conn, :login),
-          user: %{"email_or_username" => "ew@mail.com", "password" => "Password123"}
-        )
+      conn = post(conn, Routes.user_path(conn, :login), user: %{"email_or_username" => "ew@mail.com", "password" => "Password123"})
 
       assert json_response(conn, 200)["error_code"] == 104
     end
@@ -291,10 +277,7 @@ defmodule MilkWeb.UserControllerTest do
           "logout_fl" => true
         })
 
-      conn =
-        post(conn, Routes.user_path(conn, :login),
-          user: %{"email_or_username" => "e@mail.com", "password" => "Password1234z"}
-        )
+      conn = post(conn, Routes.user_path(conn, :login), user: %{"email_or_username" => "e@mail.com", "password" => "Password1234z"})
 
       assert json_response(conn, 200)["error_code"] == 104
     end
@@ -377,8 +360,7 @@ defmodule MilkWeb.UserControllerTest do
 
       attrs = %{"name" => "updated name"}
 
-      conn =
-        post(conn, Routes.user_path(conn, :update), %{id: user["id"], user: attrs, token: token})
+      conn = post(conn, Routes.user_path(conn, :update), %{id: user["id"], user: attrs, token: token})
 
       json_response(conn, 200)
       |> Map.get("data")
