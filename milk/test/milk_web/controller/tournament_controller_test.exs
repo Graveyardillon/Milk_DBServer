@@ -4368,9 +4368,9 @@ defmodule MilkWeb.TournamentControllerTest do
         assert topic_log["tournament_id"] == tournament["id"]
       end)
       |> length()
-      |> (fn len ->
-            assert len == 3
-          end).()
+      |> then(fn len ->
+            assert len == 0
+      end)
 
       # conn =
       #   post(conn, Routes.tournament_path(conn, :finish),
@@ -4419,7 +4419,7 @@ defmodule MilkWeb.TournamentControllerTest do
       end)
       |> length()
       |> then(fn len ->
-        assert len == 3
+        assert len == 0
       end)
 
       tournament["id"]

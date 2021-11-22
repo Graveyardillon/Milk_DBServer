@@ -619,15 +619,22 @@ defmodule MilkWeb.TournamentController do
     |> Tournaments.get_tabs_including_logs_by_tourament_id()
     |> Enum.map(fn tab ->
       chat_room = Chat.get_chat_room(tab.chat_room_id)
-      member = Chat.get_member(chat_room.id, user_id)
 
-      tab
-      |> Map.put(:authority, chat_room.authority)
-      |> Map.put(:can_speak, chat_room.authority <= member.authority)
+      put_info_on_tab(tab, chat_room, user_id)
     end)
+    |> Enum.reject(&is_nil(&1))
     ~> tabs
 
     render(conn, "tournament_topics.json", topics: tabs)
+  end
+
+  defp put_info_on_tab(_,   nil, _), do: nil
+  defp put_info_on_tab(tab, chat_room, user_id) do
+    member = Chat.get_member(chat_room.id, user_id)
+
+    tab
+    |> Map.put(:authority, chat_room.authority)
+    |> Map.put(:can_speak, chat_room.authority <= member.authority)
   end
 
   @doc """

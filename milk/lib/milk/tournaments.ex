@@ -2360,6 +2360,10 @@ defmodule Milk.Tournaments do
   """
   @spec delete_tournament_chat_topic(TournamentChatTopic.t()) :: {:ok, TournamentChatTopic.t()} | {:error, Ecto.Changeset.t()}
   def delete_tournament_chat_topic(%TournamentChatTopic{} = tournament_chat_topic) do
+    tournament_chat_topic
+    |> Map.from_struct()
+    |> Log.create_tournament_chat_topic_log()
+
     Repo.delete(tournament_chat_topic)
   end
 
