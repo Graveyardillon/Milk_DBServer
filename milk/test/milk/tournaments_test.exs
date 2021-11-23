@@ -390,29 +390,6 @@ defmodule Milk.TournamentsTest do
     test "create_tournament/1 with invalid data returns error changeset" do
       assert {:error, _} = Tournaments.create_tournament(@invalid_attrs)
     end
-
-    test "create_tournament/1 (enabled coin toss)" do
-      tournament = fixture_tournament(enabled_coin_toss: true)
-      assert tournament.enabled_coin_toss
-      tournament = fixture_tournament(num: 2)
-      refute tournament.enabled_coin_toss
-    end
-
-    # FIXME: オートマトンでの処理に書き換える途中で、仕様も少し変わるのでそれに合わせてコメントアウト
-  #   test "create_tournament/1 (custom detail)" do
-  #     tournament =
-  #       fixture_tournament(
-  #         enabled_coin_toss: true,
-  #         coin_head_field: "head!",
-  #         coin_tail_field: "tail!"
-  #       )
-
-  #     detail = Tournaments.get_custom_detail_by_tournament_id(tournament.id)
-
-  #     assert tournament.enabled_coin_toss
-  #     assert detail.coin_head_field == "head!"
-  #     assert detail.coin_tail_field == "tail!"
-    # end
   end
 
   describe "update_topics" do
@@ -506,10 +483,13 @@ defmodule Milk.TournamentsTest do
   end
 
   describe "delete tournament" do
-    test "delete_tournament/1 of Tournament structure works fine with a valid data" do
+    test "delete_tournament/1 of Tournament structure works fine with a valid data and deletes all chat rooms" do
       tournament = fixture_tournament()
       assert {:ok, %Tournament{}} = Tournaments.delete_tournament(tournament)
-      refute Tournaments.load_tournament(tournament.id)
+      refute Tournaments.get_tournament(tournament.id)
+
+      assert Chat.get_chat_rooms_by_tournament_id(tournament.id) == []
+      assert Tournaments.get_tabs_by_tournament_id(tournament.id) == []
     end
 
     test "delete_tournament/1 of map works fine with a valid data" do

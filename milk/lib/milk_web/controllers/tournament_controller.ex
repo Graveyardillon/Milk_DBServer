@@ -148,16 +148,14 @@ defmodule MilkWeb.TournamentController do
     end
   end
 
-  defp do_create(conn, %{"join" => join?, "enabled_coin_toss" => enabled_coin_toss, "enabled_map" => enabled_map} = tournament_params, thumbnail_path, maps) do
+  defp do_create(conn, %{"enabled_coin_toss" => enabled_coin_toss, "enabled_map" => enabled_map} = tournament_params, thumbnail_path, maps) do
     tournament_params
     |> Map.put("enabled_coin_toss", enabled_coin_toss == "true" || enabled_coin_toss == true)
     |> Map.put("enabled_map", enabled_map == "true" || enabled_map == true)
     |> Map.put("maps", maps)
     |> Tournaments.create_tournament(thumbnail_path)
     |> case do
-      {:ok, %Tournament{master_id: master_id, id: id, game_name: game_name} = tournament} ->
-        if join? == "true", do: Tournaments.create_entrant(%{"user_id" => master_id, "tournament_id" => id})
-
+      {:ok, %Tournament{master_id: master_id, game_name: game_name} = tournament} ->
         followers = Relations.get_followers(master_id)
         tournament = Map.put(tournament, :followers, followers)
 
@@ -175,16 +173,14 @@ defmodule MilkWeb.TournamentController do
       {:error, error} -> render(conn, "error.json", error: error)
     end
   end
-  defp do_create(conn, %{"join" => join?} = attrs, thumbnail_path, maps) do
+  defp do_create(conn, attrs, thumbnail_path, maps) do
     attrs
-    |> Map.put("join", join?)
     |> Map.put("enabled_coin_toss", attrs["enabled_coin_toss"])
     |> Map.put("enabled_map", attrs["enabled_map"])
     ~> attrs
 
     do_create(conn, attrs, thumbnail_path, maps)
   end
-  defp do_create(conn, _, _, _), do: render(conn, "error.json", error: "join parameter is nil")
 
   defp discord_process_on_create(%Tournament{discord_server_id: discord_server_id, description: description}) when is_nil(discord_server_id) or is_nil(description), do: nil
   defp discord_process_on_create(%Tournament{discord_server_id: discord_server_id, description: description}) do
@@ -619,15 +615,22 @@ defmodule MilkWeb.TournamentController do
     |> Tournaments.get_tabs_including_logs_by_tourament_id()
     |> Enum.map(fn tab ->
       chat_room = Chat.get_chat_room(tab.chat_room_id)
-      member = Chat.get_member(chat_room.id, user_id)
 
-      tab
-      |> Map.put(:authority, chat_room.authority)
-      |> Map.put(:can_speak, chat_room.authority <= member.authority)
+      put_info_on_tab(tab, chat_room, user_id)
     end)
+    |> Enum.reject(&is_nil(&1))
     ~> tabs
 
     render(conn, "tournament_topics.json", topics: tabs)
+  end
+
+  defp put_info_on_tab(_,   nil, _), do: nil
+  defp put_info_on_tab(tab, chat_room, user_id) do
+    member = Chat.get_member(chat_room.id, user_id)
+
+    tab
+    |> Map.put(:authority, chat_room.authority)
+    |> Map.put(:can_speak, chat_room.authority <= member.authority)
   end
 
   @doc """
