@@ -619,7 +619,7 @@ defmodule MilkWeb.TournamentControllerTest do
       assert json_response(conn, 200)["result"]
     end
 
-    test "individual without coin_head_fields does not work", %{conn: conn} do
+    test "individual without coin_fields does not work", %{conn: conn} do
       user = fixture_user()
       attrs = %{
         "capacity" => 4,
@@ -671,6 +671,95 @@ defmodule MilkWeb.TournamentControllerTest do
         "enabled_coin_toss" => false,
         "master_id" => user.id,
         "name" => "some name",
+        "type" => 1,
+        "url" => "some url",
+        "platform" => 1,
+        "rule" => "flipban"
+      }
+
+      conn = post(conn, Routes.tournament_path(conn, :create), tournament: attrs, file: "")
+      refute json_response(conn, 200)["result"]
+    end
+
+    test "team works", %{conn: conn} do
+      user = fixture_user()
+      attrs = %{
+        "capacity" => 4,
+        "coin_head_field" => "map選択",
+        "coin_tail_field" => "a/d選択",
+        "deadline" => "2050-04-17T14:00:00Z",
+        "description" => "some description",
+        "event_date" => "2050-04-17T14:00:00Z",
+        "enabled_map" => true,
+        "enabled_coin_toss" => true,
+        "master_id" => user.id,
+        "name" => "some name",
+        "type" => 1,
+        "url" => "some url",
+        "is_team" => true,
+        "platform" => 1,
+        "rule" => "flipban"
+      }
+
+      conn = post(conn, Routes.tournament_path(conn, :create), tournament: attrs, file: "")
+      assert json_response(conn, 200)["result"]
+    end
+
+    test "team without coin_fields does not work", %{conn: conn} do
+      user = fixture_user()
+      attrs = %{
+        "capacity" => 4,
+        "deadline" => "2050-04-17T14:00:00Z",
+        "description" => "some description",
+        "event_date" => "2050-04-17T14:00:00Z",
+        "enabled_map" => true,
+        "enabled_coin_toss" => true,
+        "master_id" => user.id,
+        "name" => "some name",
+        "is_team" => true,
+        "type" => 1,
+        "url" => "some url",
+        "platform" => 1,
+        "rule" => "flipban"
+      }
+
+      conn = post(conn, Routes.tournament_path(conn, :create), tournament: attrs, file: "")
+      refute json_response(conn, 200)["result"]
+    end
+
+    test "team without enabling maps and coin_toss does not work", %{conn: conn} do
+      user = fixture_user()
+      attrs = %{
+        "capacity" => 4,
+        "coin_head_field" => "map選択",
+        "coin_tail_field" => "a/d選択",
+        "deadline" => "2050-04-17T14:00:00Z",
+        "description" => "some description",
+        "event_date" => "2050-04-17T14:00:00Z",
+        "master_id" => user.id,
+        "name" => "some name",
+        "is_team" => true,
+        "type" => 1,
+        "url" => "some url",
+        "platform" => 1,
+        "rule" => "flipban"
+      }
+
+      conn = post(conn, Routes.tournament_path(conn, :create), tournament: attrs, file: "")
+      refute json_response(conn, 200)["result"]
+
+      attrs = %{
+        "capacity" => 4,
+        "coin_head_field" => "map選択",
+        "coin_tail_field" => "a/d選択",
+        "deadline" => "2050-04-17T14:00:00Z",
+        "description" => "some description",
+        "event_date" => "2050-04-17T14:00:00Z",
+        "enabled_map" => false,
+        "enabled_coin_toss" => false,
+        "master_id" => user.id,
+        "name" => "some name",
+        "is_team" => true,
         "type" => 1,
         "url" => "some url",
         "platform" => 1,
