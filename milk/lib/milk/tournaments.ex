@@ -575,21 +575,31 @@ defmodule Milk.Tournaments do
   defp validate_fields(fields) do
     case fields["rule"] do
       "flipban" -> validate_flipban_fields(fields)
-      "basic" -> validate_basic_fields(fields)
-      nil -> {:ok, fields}
-      _ -> {:error, "Invalid tournament rule"}
+      "basic"   -> validate_basic_fields(fields)
+      nil       -> validate_basic_fields(fields)
+      _         -> {:error, "Invalid tournament rule"}
     end
   end
 
-  # TODO: basicルール用に必要なフィールドが書かれているか確認する
+  defp validate_basic_fields(%{"enabled_map" => true}),         do: {:error, "Map must be disabled"}
+  defp validate_basic_fields(%{"enabled_map" => "true"}),       do: {:error, "Map must be disabled"}
+  defp validate_basic_fields(%{"enabled_coin_toss" => true}),   do: {:error, "Coin toss must be disabled"}
+  defp validate_basic_fields(%{"enabled_coin_toss" => "true"}), do: {:error, "Coin toss must be disabled"}
   defp validate_basic_fields(attrs) do
     {:ok, attrs}
   end
 
   # TODO: flipbanルール用に必要なフィールドが書かれているか確認する
-  defp validate_flipban_fields(attrs) do
+  defp validate_flipban_fields(%{"enabled_map" => "true", "enabled_coin_toss" => "true"} = attrs) do
+    attrs
+    |> Map.put("enabled_map", true)
+    |> Map.put("enabled_coin_toss", true)
+    |> validate_flipban_fields()
+  end
+  defp validate_flipban_fields(%{"enabled_map" => true, "enabled_coin_toss" => true, "coin_head_field" => hf, "coin_tail_field" => tf} = attrs) when not is_nil(hf) and not is_nil(tf) do
     {:ok, attrs}
   end
+  defp validate_flipban_fields(_), do: {:error, "Short of field for flipban"}
 
 
   defp do_create_tournament(%{"master_id" => master_id, "platform" => platform, "game_id" => game_id} = attrs, thumbnail_path) do

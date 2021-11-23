@@ -12,7 +12,7 @@ const argv = yargs(process.argv.slice(2))
 function teamItems(teamCount: number): Item[] {
     let items: Item[] = []
     const initialValue = argv.master_as_entrant ? 1 : 2
-    for (let i=initialValue; i<teamCount*5+2; i+=5) {
+    for (let i=initialValue; i<teamCount*5+initialValue; i+=5) {
         const teamJson: CreateTeam = {
             tournament_id: argv.tournament_id,
             size:          5,
