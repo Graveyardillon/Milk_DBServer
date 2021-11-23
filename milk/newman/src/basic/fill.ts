@@ -4,13 +4,15 @@ import { NewmanJson, CreateEntrant, Item, ConfirmInvitation } from '../utils/int
 
 const argv = yargs(process.argv.slice(2))
     .options({
-        tournament_id: { type: 'number', default: 1}
+        tournament_id:     { type: 'number',  default: 1},
+        master_as_entrant: { type: 'boolean', default: false }
     })
     .argv
 
 function entrantItems(entrantCount: number): Item[] {
     let items: Item[] = []
-    for (let i=2; i<entrantCount+2; i++) {
+    const initialValue = argv.master_as_entrant ? 1 : 2
+    for (let i=initialValue; i<entrantCount+initialValue; i++) {
         const entrantJson: CreateEntrant = {
             entrant: {
                 tournament_id: argv.tournament_id,
