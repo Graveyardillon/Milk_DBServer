@@ -2626,7 +2626,7 @@ defmodule MilkWeb.TournamentControllerTest do
       assert json_response(conn, 200)["state"] == "IsFinished"
     end
 
-    test "basic (individual) (master is entrant)", %{conn: conn} do
+    test "basic (individual) (master is entrant) (until the tournament starts)", %{conn: conn} do
       user = fixture_user()
       attrs = %{
         "capacity" => 4,
@@ -2691,6 +2691,10 @@ defmodule MilkWeb.TournamentControllerTest do
       |> then(fn user_id_list ->
         assert length(user_id_list) == capacity
       end)
+
+      conn = get(conn, Routes.tournament_path(conn, :get_match_information), %{"tournament_id" => tournament_id, "user_id" => master_id})
+      assert json_response(conn, 200)["result"]
+      assert json_response(conn, 200)["state"] == "ShouldStartMatch"
     end
 
     defp basic_fight(conn, user1_id, user2_id, tournament_id) do
