@@ -2626,6 +2626,73 @@ defmodule MilkWeb.TournamentControllerTest do
       assert json_response(conn, 200)["state"] == "IsFinished"
     end
 
+    test "basic (individual) (master is entrant)", %{conn: conn} do
+      user = fixture_user()
+      attrs = %{
+        "capacity" => 4,
+        "deadline" => "2010-04-17T14:00:00Z",
+        "description" => "some description",
+        "event_date" => "2010-04-17T14:00:00Z",
+        "master_id" => user.id,
+        "name" => "some name",
+        "type" => 1,
+        "join" => "false",
+        "url" => "some url",
+        "platform" => 1,
+        "rule" => "basic"
+      }
+
+      conn = post(conn, Routes.tournament_path(conn, :create), tournament: attrs, file: "")
+
+      assert json_response(conn, 200)["result"]
+      assert json_response(conn, 200)["data"]["rule"] == "basic"
+      refute json_response(conn, 200)["data"]["is_team"]
+
+      master_id = json_response(conn, 200)["data"]["master_id"]
+      tournament_id = json_response(conn, 200)["data"]["id"]
+      capacity = json_response(conn, 200)["data"]["capacity"]
+
+      # NOTE: masterにも参加させるのでその人数を引く
+      10..10 + capacity - 1 - 1
+      |> Enum.to_list()
+      |> Enum.map(&fixture_user(num: &1))
+      |> Enum.map(&(&1.id))
+      |> Enum.concat([master_id])
+      |> Enum.reverse()
+      |> Enum.map(fn user_id ->
+        conn = post(conn, Routes.entrant_path(conn, :create), %{"entrant" => %{"tournament_id" => tournament_id, "user_id" => user_id}})
+        json_response(conn, 200)
+        assert json_response(conn, 200)["result"]
+        user
+      end)
+      |> then(fn list ->
+        assert length(list) == capacity
+      end)
+
+      conn = get(conn, Routes.tournament_path(conn, :get_match_information), %{"tournament_id" => tournament_id, "user_id" => master_id})
+      assert json_response(conn, 200)["result"]
+      assert json_response(conn, 200)["state"] == "IsNotStarted"
+
+      conn = post(conn, Routes.tournament_path(conn, :start), tournament: %{"master_id" => master_id, "tournament_id" => tournament_id})
+
+      assert json_response(conn, 200)["result"]
+      match_list = json_response(conn, 200)["data"]["match_list"]
+
+      # NOTE: masterがちゃんと参加できているか確認
+      match_list
+      |> List.flatten()
+      |> Enum.member?(master_id)
+      |> assert()
+
+      conn
+      |> json_response(200)
+      |> Map.get("data")
+      |> Map.get("user_id_list")
+      |> then(fn user_id_list ->
+        assert length(user_id_list) == capacity
+      end)
+    end
+
     defp basic_fight(conn, user1_id, user2_id, tournament_id) do
       conn = get(conn, Routes.tournament_path(conn, :get_match_information), %{"tournament_id" => tournament_id, "user_id" => user1_id})
       assert json_response(conn, 200)["opponent"]["id"] == user2_id
@@ -4369,7 +4436,7 @@ defmodule MilkWeb.TournamentControllerTest do
       end)
       |> length()
       |> then(fn len ->
-            assert len == 0
+        assert len == 0
       end)
 
       # conn =

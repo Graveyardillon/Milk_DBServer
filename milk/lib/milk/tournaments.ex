@@ -499,6 +499,7 @@ defmodule Milk.Tournaments do
     ~> team_members
 
     masters ++ entrants ++ team_members
+    |> Enum.uniq()
   end
 
   @doc """
