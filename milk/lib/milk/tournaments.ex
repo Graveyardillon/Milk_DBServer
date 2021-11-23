@@ -576,12 +576,11 @@ defmodule Milk.Tournaments do
     case fields["rule"] do
       "flipban" -> validate_flipban_fields(fields)
       "basic"   -> validate_basic_fields(fields)
-      nil -> {:ok, fields}
-      _ -> {:error, "Invalid tournament rule"}
+      nil       -> {:ok, fields}
+      _         -> {:error, "Invalid tournament rule"}
     end
   end
 
-  # TODO: basicルール用に必要なフィールドが書かれているか確認する
   defp validate_basic_fields(%{"enabled_map" => true}),       do: {:error, "Map must be disabled"}
   defp validate_basic_fields(%{"enabled_coin_toss" => true}), do: {:error, "Coin toss must be disabled"}
   defp validate_basic_fields(attrs) do

@@ -494,7 +494,7 @@ defmodule MilkWeb.TournamentControllerTest do
   end
 
   describe "create basic tournament" do
-    test "without master (individual) works", %{conn: conn} do
+    test "individual works", %{conn: conn} do
       user = fixture_user()
       attrs = %{
         "capacity" => 4,
@@ -530,7 +530,50 @@ defmodule MilkWeb.TournamentControllerTest do
       assert json_response(conn, 200)["result"]
     end
 
-    test "without master (individual) does not work", %{conn: conn} do
+    test "individual does not work", %{conn: conn} do
+      user = fixture_user()
+      attrs = %{
+        "capacity" => 4,
+        "deadline" => "2050-04-17T14:00:00Z",
+        "description" => "some description",
+        "event_date" => "2050-04-17T14:00:00Z",
+        "enabled_map" => true,
+        "enabled_coin_toss" => true,
+        "master_id" => user.id,
+        "name" => "some name",
+        "type" => 1,
+        "url" => "some url",
+        "platform" => 1,
+        "rule" => "basic"
+      }
+
+      conn = post(conn, Routes.tournament_path(conn, :create), tournament: attrs, file: "")
+      refute json_response(conn, 200)["result"]
+    end
+
+    test "team works", %{conn: conn} do
+      user = fixture_user()
+      attrs = %{
+        "capacity" => 4,
+        "deadline" => "2050-04-17T14:00:00Z",
+        "description" => "some description",
+        "event_date" => "2050-04-17T14:00:00Z",
+        "enabled_map" => false,
+        "enabled_coin_toss" => false,
+        "master_id" => user.id,
+        "name" => "some name",
+        "type" => 1,
+        "is_team" => true,
+        "url" => "some url",
+        "platform" => 1,
+        "rule" => "basic"
+      }
+
+      conn = post(conn, Routes.tournament_path(conn, :create), tournament: attrs, file: "")
+      assert json_response(conn, 200)["result"]
+    end
+
+    test "team does not work", %{conn: conn} do
       user = fixture_user()
       attrs = %{
         "capacity" => 4,
