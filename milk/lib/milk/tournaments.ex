@@ -576,7 +576,7 @@ defmodule Milk.Tournaments do
     case fields["rule"] do
       "flipban" -> validate_flipban_fields(fields)
       "basic"   -> validate_basic_fields(fields)
-      nil       -> {:ok, fields}
+      nil       -> validate_basic_fields(fields)
       _         -> {:error, "Invalid tournament rule"}
     end
   end
@@ -588,9 +588,10 @@ defmodule Milk.Tournaments do
   end
 
   # TODO: flipbanルール用に必要なフィールドが書かれているか確認する
-  defp validate_flipban_fields(attrs) do
+  defp validate_flipban_fields(%{"enabled_map" => true, "enabled_coin_toss" => true, "coin_head_field" => hf, "coin_tail_field" => tf} = attrs) when not is_nil(hf) and not is_nil(tf) do
     {:ok, attrs}
   end
+  defp validate_flipban_fields(_), do: {:error, "Short of field for flipban"}
 
 
   defp do_create_tournament(%{"master_id" => master_id, "platform" => platform, "game_id" => game_id} = attrs, thumbnail_path) do
