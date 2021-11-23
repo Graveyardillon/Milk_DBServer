@@ -1276,57 +1276,113 @@ defmodule MilkWeb.TournamentController do
     # NOTE: あとでtournament変数はシャドウイングするので必要な情報だけ退避しておく
     tournament_id = tournament.id
     rule = tournament.rule
-    with true                                           <- claimable_state?(tournament_id, user_id),
-         id             when not is_nil(id)             <- Progress.get_necessary_id(tournament_id, user_id),
-         {:ok, opponent}                                <- Tournaments.get_opponent(tournament_id, user_id),
-         {:ok, _}                                       <- Progress.insert_score(tournament_id, id, score),
-         opponent_score when not is_nil(opponent_score) <- Progress.get_score(tournament_id, opponent.id),
-         {:ok, winner_id, loser_id, _}                  <- calculate_winner(id, opponent.id, score, opponent_score),
-         {:ok, nil}                                     <- proceed_to_next_match(tournament, winner_id, loser_id, score, opponent_score, match_index),
-         tournament                                     <- Tournaments.load_tournament(tournament_id) do
-      # TODO: このall_statesの大会終了後処理
-      messages = Tournaments.all_states!(tournament_id)
-      claim = %Claim{
-        validated: true,
-        completed: true,
-        is_finished: is_nil(tournament),
-        interaction_messages: messages,
-        rule: rule
-      }
-      render(conn, "claim.json", claim: claim)
-    else
-      # NOTE: 重複報告が起きたときの処理
-      {:error, id, opponent_id, _} ->
-        duplicated_claim_process(tournament.id, id, opponent_id, score)
-        claim = %Claim{
-          validated:   false,
-          completed:   false,
-          is_finished: false,
-          interaction_messages: [],
-          rule: rule
-        }
-        render(conn, "claim.json", claim: claim)
-      nil ->
-        claim = %Claim{
-          validated:   true,
-          completed:   false,
-          is_finished: false,
-          interaction_messages: [],
-          rule: rule
-        }
-        render(conn, "claim.json", claim: claim)
-      false ->
-        render(conn, "error.json", error: "Invalid state")
-      _ ->
-        claim = %Claim{
-          validated:   false,
-          completed:   false,
-          is_finished: false,
-          interaction_messages: [],
-          rule: rule
-        }
-        render(conn, "claim.json", claim: claim)
+
+    with  true                                    <- claimable_state?(tournament_id, user_id),
+          id when not is_nil(id)                       <- Progress.get_necessary_id(tournament_id, user_id),
+          {:ok, opponent}                              <- Tournaments.get_opponent(tournament_id, user_id),
+          {:ok, _}                                     <- Progress.insert_score(tournament_id, id, score) do
+      case Progress.get_score(tournament_id, opponent.id) do
+        nil ->
+          with {:ok, tournament } <- Tournaments.waiting_scoreinput_state(tournament, user_id) do
+            messages = Tournaments.all_states!(tournament_id)
+            claim = %Claim{
+              validated: true,
+              completed: true,
+              is_finished: is_nil(tournament),
+              interaction_messages: messages,
+              rule: rule
+            }
+            render(conn, "claim.json", claim: claim)
+          end
+        opponent_score ->
+          with  {:ok, winner_id, loser_id, _}     <- calculate_winner(id, opponent.id, score, opponent_score),
+                {:ok, nil}                        <- proceed_to_next_match(tournament, winner_id, loser_id, score, opponent_score, match_index),
+                tournament                        <- Tournaments.load_tournament(tournament_id) do
+            messages = Tournaments.all_states!(tournament_id)
+            claim = %Claim{
+              validated: true,
+              completed: true,
+              is_finished: is_nil(tournament),
+              interaction_messages: messages,
+              rule: rule
+            }
+            render(conn, "claim.json", claim: claim)
+          end
+      end
     end
+
+
+
+    # with true                                           <- claimable_state?(tournament_id, user_id),
+    #      id             when not is_nil(id)             <- Progress.get_necessary_id(tournament_id, user_id),
+    #      {:ok, opponent}                                <- Tournaments.get_opponent(tournament_id, user_id),
+    #      {:ok, _}                                       <- Progress.insert_score(tournament_id, id, score),
+    #      opponent_score when is_nil(opponent_score)     <- Progress.get_score(tournament_id, opponent.id),
+    #      {:ok, tournament}                              <- Tournaments.waiting_scoreinput_state(tournament, user_id) do
+
+    #   messages = Tournaments.all_states!(tournament_id)
+    #   claim = %Claim{
+    #     validated: true,
+    #     completed: true,
+    #     is_finished: is_nil(tournament),
+    #     interaction_messages: messages,
+    #     rule: rule
+    #   }
+    #   render(conn, "claim.json", claim: claim)
+    # else
+    #   _ ->
+    #     with true                                           <- claimable_state?(tournament_id, user_id),
+    #         id             when not is_nil(id)             <- Progress.get_necessary_id(tournament_id, user_id),
+    #         {:ok, opponent}                                <- Tournaments.get_opponent(tournament_id, user_id),
+    #         {:ok, _}                                       <- Progress.insert_score(tournament_id, id, score),
+    #         opponent_score when not is_nil(opponent_score) <- Progress.get_score(tournament_id, opponent.id),
+    #         {:ok, winner_id, loser_id, _}                  <- calculate_winner(id, opponent.id, score, opponent_score),
+    #         {:ok, nil}                                     <- proceed_to_next_match(tournament, winner_id, loser_id, score, opponent_score, match_index),
+    #         tournament                                     <- Tournaments.load_tournament(tournament_id) do
+    #       # TODO: このall_statesの大会終了後処理
+    #       messages = Tournaments.all_states!(tournament_id)
+    #       claim = %Claim{
+    #         validated: true,
+    #         completed: true,
+    #         is_finished: is_nil(tournament),
+    #         interaction_messages: messages,
+    #         rule: rule
+    #       }
+    #       render(conn, "claim.json", claim: claim)
+    #     else
+    #       # NOTE: 重複報告が起きたときの処理
+    #       {:error, id, opponent_id, _} ->
+    #         duplicated_claim_process(tournament.id, id, opponent_id, score)
+    #         claim = %Claim{
+    #           validated:   false,
+    #           completed:   false,
+    #           is_finished: false,
+    #           interaction_messages: [],
+    #           rule: rule
+    #         }
+    #         render(conn, "claim.json", claim: claim)
+    #       nil ->
+    #         claim = %Claim{
+    #           validated:   true,
+    #           completed:   false,
+    #           is_finished: false,
+    #           interaction_messages: [],
+    #           rule: rule
+    #         }
+    #         render(conn, "claim.json", claim: claim)
+    #       false ->
+    #         render(conn, "error.json", error: "Invalid state")
+    #       _ ->
+    #         claim = %Claim{
+    #           validated:   false,
+    #           completed:   false,
+    #           is_finished: false,
+    #           interaction_messages: [],
+    #           rule: rule
+    #         }
+    #         render(conn, "claim.json", claim: claim)
+    #     end
+    # end
   end
 
   @spec claimable_state?(integer(), integer()) :: boolean()

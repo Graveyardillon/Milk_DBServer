@@ -47,8 +47,11 @@ defmodule Milk.Tournaments.Rules.FlipBan do
     Predefined.on!(machine_name, @db_index, observe_choose_ad_trigger(), should_choose_map(), should_observe_ad())
     Predefined.on!(machine_name, @db_index, pend_trigger(), should_choose_ad(), is_pending())
     Predefined.on!(machine_name, @db_index, pend_trigger(), should_observe_ad(), is_pending())
+    Predefined.on!(machine_name, @db_index, waiting_scoreinput_trigger(), is_pending(), is_waiting_scoreinput())
     Predefined.on!(machine_name, @db_index, lose_trigger(), is_pending(), is_loser())
     Predefined.on!(machine_name, @db_index, alone_trigger(), is_pending(), is_alone())
+    Predefined.on!(machine_name, @db_index, lose_trigger(), is_waiting_scoreinput(), is_loser())
+    Predefined.on!(machine_name, @db_index, alone_trigger(), is_waiting_scoreinput(), is_alone())
     Predefined.on!(machine_name, @db_index, next_trigger(), is_alone(), should_flip_coin())
     Predefined.on!(machine_name, @db_index, next_trigger(), is_pending(), should_flip_coin())
 
@@ -153,6 +156,9 @@ defmodule Milk.Tournaments.Rules.FlipBan do
   @spec is_pending() :: String.t()
   def is_pending(), do: "IsPending"
 
+  @spec is_waiting_scoreinput() :: String.t()
+  def is_waiting_scoreinput(), do: "IsWaitingScoreInput"
+
   @spec is_loser() :: String.t()
   def is_loser(), do: "IsLoser"
 
@@ -203,6 +209,9 @@ defmodule Milk.Tournaments.Rules.FlipBan do
 
   @spec pend_trigger() :: String.t()
   def pend_trigger(), do: "pend"
+
+  @spec waiting_scoreinput_trigger() :: String.t()
+  def waiting_scoreinput_trigger(), do: "waiting_scoreinput"
 
   @spec lose_trigger() :: String.t()
   def lose_trigger(), do: "lose"

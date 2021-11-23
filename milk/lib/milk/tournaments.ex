@@ -1895,6 +1895,16 @@ defmodule Milk.Tournaments do
     end
   end
 
+  def waiting_scoreinput_state(tournament, user_id) do
+    keyname = Rules.adapt_keyname(user_id, tournament.id)
+
+    case tournament.rule do
+      "basic" -> Basic.trigger!(keyname, Basic.waiting_scoreinput_trigger())
+      "flipban" -> FlipBan.trigger!(keyname, FlipBan.waiting_scoreinput_trigger())
+    end
+    {:ok, tournament}
+  end
+
   @spec proceed_to_next_match(Tournament.t(), integer()) :: {:ok, any()} | {:error, String.t()}
   defp proceed_to_next_match(%Tournament{rule: rule, is_team: true, id: id}, winner_leader_id) do
     id
