@@ -39,6 +39,11 @@ MIX_ENV=test mix coveralls.detail --filter general.ex
 MIX_ENV=test mix coveralls.html
 ```
 
+## bench
+```
+mix ecto.reset && mix bench
+```
+
 ### debug seed data
 ```
 mix ecto.reset && \
