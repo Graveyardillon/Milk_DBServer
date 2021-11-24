@@ -35,6 +35,6 @@ defmodule Milk.Tournaments.Team do
   def changeset(team, attrs) do
     team
     |> cast(attrs, [:name, :size, :tournament_id, :icon_path, :is_confirmed, :rank])
-    |> validate_required([:name, :size])
+    |> validate_required([:name, :size, :tournament_id])
   end
 end

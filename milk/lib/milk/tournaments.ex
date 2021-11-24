@@ -3430,7 +3430,7 @@ defmodule Milk.Tournaments do
   @doc """
   Confirm invitation.
   """
-  @spec confirm_team_invitation(integer()) :: {:ok, TeamMember.t()} | {:error, Ecto.Changeset.t()}
+  @spec confirm_team_invitation(integer()) :: {:ok, TeamMember.t()} | {:error, Ecto.Changeset.t() | nil}
   def confirm_team_invitation(team_invitation_id) do
     TeamMember
     |> join(:inner, [tm], ti in TeamInvitation, on: tm.id == ti.team_member_id)
@@ -3440,10 +3440,15 @@ defmodule Milk.Tournaments do
     |> Repo.update()
     |> case do
       {:ok, team_member} ->
-        with %TeamInvitation{} = invitation <- get_team_invitation(team_invitation_id) do
-          create_team_invitation_result_notification(invitation, true)
-          verify_team_as_needed(team_member.team_id)
-          {:ok, team_member}
+        team_invitation_id
+        |> get_team_invitation()
+        |> case do
+          %TeamInvitation{} = invitation ->
+            create_team_invitation_result_notification(invitation, true)
+            verify_team_as_needed(team_member.team_id)
+            {:ok, team_member}
+          _ ->
+            {:error, nil}
         end
 
       {:error, error} ->
@@ -3559,10 +3564,10 @@ defmodule Milk.Tournaments do
     end)
   end
 
-  defp initialize_member_states!(%Team{id: id, tournament_id: tournament_id}) do
+  defp initialize_member_states!(%Team{id: team_id, tournament_id: tournament_id}) do
     tournament = __MODULE__.get_tournament(tournament_id)
 
-    id
+    team_id
     |> __MODULE__.get_team_members_by_team_id()
     |> Enum.each(fn member ->
       keyname = Rules.adapt_keyname(member.user_id, tournament_id)
