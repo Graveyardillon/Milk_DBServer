@@ -26,7 +26,7 @@ defmodule MilkWeb.TeamController do
     do_show(conn, team)
   end
 
-  defp do_show(conn, nil), do: render(conn, "error.json", error: nil)
+  defp do_show(conn, nil),            do: render(conn, "error.json", error: nil)
   defp do_show(conn, %Team{} = team), do: render(conn, "show.json", team: team)
 
   @doc """
