@@ -119,7 +119,7 @@ defmodule Milk.Tournaments.Rules.Basic do
   def is_pending(), do: "IsPending"
 
   @spec is_waiting_scoreinput() :: String.t()
-  def is_waiting_scoreinput(), do: "IsWaitingScoreInput"
+  def is_waiting_scoreinput(), do: "IsWaitingForScoreInput"
 
   @spec is_loser() :: String.t()
   def is_loser(), do: "IsLoser"
