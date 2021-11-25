@@ -1288,12 +1288,11 @@ defmodule MilkWeb.TournamentController do
         nil ->
           with  {:ok, tournament }    <- Tournaments.waiting_scoreinput_state(tournament, user_id),
                 tournament            <- Tournaments.load_tournament(tournament_id) do
-            messages = Tournaments.all_states!(tournament_id)
             claim = %Claim{
               validated: true,
-              completed: true,
+              completed: false,
               is_finished: is_nil(tournament),
-              interaction_messages: messages,
+              interaction_messages: [],
               rule: rule
             }
             render(conn, "claim.json", claim: claim)
@@ -1312,6 +1311,15 @@ defmodule MilkWeb.TournamentController do
             }
             render(conn, "claim.json", claim: claim)
           else
+            nil ->
+              claim = %Claim{
+                validated:   true,
+                completed:   false,
+                is_finished: false,
+                interaction_messages: [],
+                rule: rule
+              }
+              render(conn, "claim.json", claim: claim)
             # NOTE: 重複報告が起きたときの処理
             {:error, id, opponent_id, _} ->
               duplicated_claim_process(tournament.id, id, opponent_id, score)
@@ -1323,26 +1331,17 @@ defmodule MilkWeb.TournamentController do
                 rule: rule
               }
               render(conn, "claim.json", claim: claim)
-            nil ->
-              claim = %Claim{
-                validated:   true,
-                completed:   false,
-                is_finished: false,
-                interaction_messages: [],
-                rule: rule
-              }
-              render(conn, "claim.json", claim: claim)
             {:error, msg} ->
               render(conn, "error.json", error: msg)
             end
           end
     else
+      nil ->
+        render(conn, "error.json", error: "Invalid state")
       false ->
         render(conn, "error.json", error: "Invalid state")
       {:error, msg} ->
         render(conn, "error.json", error: msg)
-      nil ->
-        render(conn, "error.json", error: "Invalid state")
     end
   end
 
@@ -1937,6 +1936,14 @@ defmodule MilkWeb.TournamentController do
 
   @spec load_score(String.t(), Tournament.t() | TournamentLog.t(), integer()) :: integer()
   defp load_score("IsPending", tournament, user_id) do
+    if tournament.is_team do
+      team = Tournaments.get_team_by_tournament_id_and_user_id(tournament.id, user_id)
+      Progress.get_score(tournament.id, team.id)
+    else
+      Progress.get_score(tournament.id, user_id)
+    end
+  end
+  defp load_score("IsWaitingForScoreInput", tournament, user_id) do
     if tournament.is_team do
       team = Tournaments.get_team_by_tournament_id_and_user_id(tournament.id, user_id)
       Progress.get_score(tournament.id, team.id)
