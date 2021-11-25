@@ -36,6 +36,9 @@ defmodule Milk.Tournaments.Rules.Basic do
     Predefined.on!(machine_name, @db_index, assistant_trigger(), is_not_started(), is_assistant())
     Predefined.on!(machine_name, @db_index, start_match_trigger(), should_start_match(), is_waiting_for_start_match())
     Predefined.on!(machine_name, @db_index, pend_trigger(), is_waiting_for_start_match(), is_pending())
+    # Predefined.on!(machine_name, @db_index, waiting_scoreinput_trigger(), is_pending(), is_waiting_scoreinput())
+    # Predefined.on!(machine_name, @db_index, lose_trigger(), is_waiting_scoreinput(), is_loser())
+    # Predefined.on!(machine_name, @db_index, alone_trigger(), is_waiting_scoreinput(), is_alone())
     Predefined.on!(machine_name, @db_index, lose_trigger(), is_pending(), is_loser())
     Predefined.on!(machine_name, @db_index, alone_trigger(), is_pending(), is_alone())
     Predefined.on!(machine_name, @db_index, next_trigger(), is_alone(), should_start_match())
@@ -85,6 +88,7 @@ defmodule Milk.Tournaments.Rules.Basic do
       should_start_match(),
       is_waiting_for_start_match(),
       is_pending(),
+      is_waiting_scoreinput(),
       is_loser(),
       is_alone(),
       is_finished()
