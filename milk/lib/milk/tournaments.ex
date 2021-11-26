@@ -1947,7 +1947,6 @@ defmodule Milk.Tournaments do
         "flipban" -> FlipBan.trigger!(keyname, FlipBan.next_trigger())
         _         -> {:error, "Invalid tournament rule"}
       end
-      |> IO.inspect(label: :proceed_to_next_match)
     end)
     |> Enum.all?(&match?({:ok, _}, &1))
     |> Tools.boolean_to_tuple()

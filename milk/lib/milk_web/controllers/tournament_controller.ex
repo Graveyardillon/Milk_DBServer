@@ -1285,7 +1285,6 @@ defmodule MilkWeb.TournamentController do
           {:ok, opponent}           <- Tournaments.get_opponent(tournament_id, user_id),
           {:ok, _}                  <- Progress.insert_score(tournament_id, id, score) do
       Progress.get_score(tournament_id, opponent.id)
-      |> IO.inspect(label: :get_score)
       case Progress.get_score(tournament_id, opponent.id) do
         nil ->
           with  {:ok, _tournament} <- Tournaments.waiting_for_score_input_state(tournament, user_id),
@@ -1300,8 +1299,8 @@ defmodule MilkWeb.TournamentController do
             render(conn, "claim.json", claim: claim)
           end
         opponent_score ->
-          with  {:ok, winner_id, loser_id, _}     <- calculate_winner(id, opponent.id, score, opponent_score) |> IO.inspect(label: :bere),
-                {:ok, nil}                        <- proceed_to_next_match(tournament, winner_id, loser_id, score, opponent_score, match_index) |> IO.inspect(),
+          with  {:ok, winner_id, loser_id, _}     <- calculate_winner(id, opponent.id, score, opponent_score),
+                {:ok, nil}                        <- proceed_to_next_match(tournament, winner_id, loser_id, score, opponent_score, match_index),
                 tournament                        <- Tournaments.load_tournament(tournament_id) do
             messages = Tournaments.all_states!(tournament_id)
             claim = %Claim{
