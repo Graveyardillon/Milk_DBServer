@@ -118,8 +118,8 @@ defmodule Milk.Tournaments.Rules.Basic do
   @spec is_pending() :: String.t()
   def is_pending(), do: "IsPending"
 
-  @spec is_waiting_scoreinput() :: String.t()
-  def is_waiting_scoreinput(), do: "IsWaitingForScoreInput"
+  @spec is_waiting_for_score_input() :: String.t()
+  def is_waiting_for_score_input(), do: "IsWaitingForScoreInput"
 
   @spec is_loser() :: String.t()
   def is_loser(), do: "IsLoser"
@@ -154,8 +154,8 @@ defmodule Milk.Tournaments.Rules.Basic do
   @spec pend_trigger() :: String.t()
   def pend_trigger(), do: "pend"
 
-  @spec waiting_scoreinput_trigger() :: String.t()
-  def waiting_scoreinput_trigger(), do: "waiting_scoreinput"
+  @spec waiting_for_score_input_trigger() :: String.t()
+  def waiting_for_score_input_trigger(), do: "waiting_for_score_input"
 
   @spec lose_trigger() :: String.t()
   def lose_trigger(), do: "lose"

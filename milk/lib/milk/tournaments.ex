@@ -1571,7 +1571,7 @@ defmodule Milk.Tournaments do
   {:error, error}
   の3種類の戻り値がある。
   """
-  @spec get_opponent(integer(), integer()) :: {:ok, User.t()} | {:ok, Team.t()} | {:wait, nil} | {:error, String.t()}
+  @spec get_opponent(integer(), integer()) :: {:ok, User.t() | Team.t()} | {:wait, nil} | {:error, String.t()}
   def get_opponent(tournament_id, user_id) do
     tournament_id
     |> __MODULE__.get_tournament()
@@ -1915,12 +1915,12 @@ defmodule Milk.Tournaments do
     end
   end
 
-  def waiting_scoreinput_state(tournament, user_id) do
+  def waiting_for_score_input_state(tournament, user_id) do
     keyname = Rules.adapt_keyname(user_id, tournament.id)
 
     case tournament.rule do
-      "basic" -> Basic.trigger!(keyname, Basic.waiting_scoreinput_trigger())
-      "flipban" -> FlipBan.trigger!(keyname, FlipBan.waiting_scoreinput_trigger())
+      "basic"   -> Basic.trigger!(keyname, Basic.waiting_for_score_input_trigger())
+      "flipban" -> FlipBan.trigger!(keyname, FlipBan.waiting_for_score_input_trigger())
     end
     {:ok, tournament}
   end
@@ -1947,6 +1947,7 @@ defmodule Milk.Tournaments do
         "flipban" -> FlipBan.trigger!(keyname, FlipBan.next_trigger())
         _         -> {:error, "Invalid tournament rule"}
       end
+      |> IO.inspect(label: :proceed_to_next_match)
     end)
     |> Enum.all?(&match?({:ok, _}, &1))
     |> Tools.boolean_to_tuple()
