@@ -244,7 +244,7 @@ defmodule MilkWeb.TournamentController do
     show(conn, %{"user_id" => nil, "tournament_id" => tournament_id})
   end
 
-  # TODO: web版で必要になっているから置いてあるが、必要なくなったら消す
+  # NOTE: web版で必要になっているから置いてあるが、必要なくなったら消す
   @doc """
   Get a thumbnail image of a tournament.
   """
@@ -1996,24 +1996,10 @@ defmodule MilkWeb.TournamentController do
     json(conn, %{result: true, data: brackets, count: count})
   end
 
+
   @doc """
-  Registers PID of start notification.
-  The notification is handled in Web Server, so the pid does not belong to this server.
+  大会パスワードの認証を行う
   """
-  def register_pid_of_start_notification(conn, %{"tournament_id" => tournament_id, "pid" => pid}) do
-    tournament_id = Tools.to_integer_as_needed(tournament_id)
-
-    # FIXME: エラーハンドリング
-    tournament_id
-    |> Tournaments.load_tournament()
-    |> Tournaments.update_tournament(%{"start_notification_pid" => pid})
-    |> case do
-      {:ok, _tournament} -> json(conn, %{result: true})
-      {:error, nil} -> json(conn, %{result: false})
-      {:error, _error} -> json(conn, %{result: false})
-    end
-  end
-
   def verify_password(conn, %{"tournament_id" => tournament_id, "password" => password}) do
     result =
       tournament_id
@@ -2031,16 +2017,16 @@ defmodule MilkWeb.TournamentController do
     |> elem(1)
     ~> job
 
-    case job.errors == [] do
-      true -> {:ok, job.id}
-      false -> {:error, job.errors}
+    if job.errors == [] do
+      {:ok, job.id}
+    else
+      {:error, job.errors}
     end
   end
 
   defp update_queue_tournament_start_push_notice(tournament) do
     case Tournaments.get_push_notice_job("reminder_to_start_tournament", tournament.id) do
-      nil ->
-        IO.puts("notice job not found")
+      nil -> IO.puts("notice job not found")
 
       job ->
         Oban.cancel_job(job.id)
