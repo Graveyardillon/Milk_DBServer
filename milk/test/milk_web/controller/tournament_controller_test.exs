@@ -4173,7 +4173,7 @@ defmodule MilkWeb.TournamentControllerTest do
       match_info = json_response(conn, 200)
       assert match_info["opponent"]["id"] == opponent_id
       assert match_info["score"] == my_score
-      assert match_info["state"] == "IsPending"
+      assert match_info["state"] == "IsWaitingForScoreInput"
 
       conn =
         post(conn, Routes.tournament_path(conn, :claim_score),
@@ -4583,7 +4583,7 @@ defmodule MilkWeb.TournamentControllerTest do
       assert match_info["is_team"]
       assert match_info["opponent"]["id"] == opponent_team_id
       refute is_nil(match_info["opponent"]["name"])
-      assert match_info["state"] === "IsPending"
+      assert match_info["state"] === "IsWaitingForScoreInput"
 
       # NOTE: 通知が存在するか確認
       tournament.id

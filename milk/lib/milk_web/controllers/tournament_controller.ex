@@ -1348,7 +1348,7 @@ defmodule MilkWeb.TournamentController do
 
   @spec claimable_state?(integer(), integer()) :: boolean()
   defp claimable_state?(tournament_id, user_id) do
-    Tournaments.state!(tournament_id, user_id) == "IsPending"
+    Enum.member?(["IsPending", "IsWaitingForScoreInput"], Tournaments.state!(tournament_id, user_id))
   end
 
   @spec duplicated_claim_process(integer(), integer(), integer(), integer()) :: {:ok, nil} | {:error, String.t()}
