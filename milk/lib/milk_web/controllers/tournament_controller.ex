@@ -1324,11 +1324,12 @@ defmodule MilkWeb.TournamentController do
             # NOTE: 重複報告が起きたときの処理
             {:error, id, opponent_id, _} ->
               duplicated_claim_process(tournament.id, id, opponent_id, score)
+              messages = Tournaments.all_states!(tournament.id)
               claim = %Claim{
                 validated:   false,
                 completed:   false,
                 is_finished: false,
-                interaction_messages: [],
+                interaction_messages: messages,
                 rule: rule
               }
               render(conn, "claim.json", claim: claim)
