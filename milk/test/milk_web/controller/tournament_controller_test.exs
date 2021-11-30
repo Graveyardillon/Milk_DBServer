@@ -2753,10 +2753,10 @@ defmodule MilkWeb.TournamentControllerTest do
       conn
       |> json_response(200)
       |> Map.get("data")
-      |> Map.get("user_id_list")
-      |> then(fn user_id_list ->
+      |> Map.get("messages")
+      |> then(fn messages ->
         # NOTE: masterの分を加算して+1
-        assert length(user_id_list) == capacity + 1
+        assert length(messages) == capacity + 1
       end)
 
       conn = get(conn, Routes.tournament_path(conn, :show), %{"tournament_id" => tournament_id})
@@ -2929,9 +2929,9 @@ defmodule MilkWeb.TournamentControllerTest do
       conn
       |> json_response(200)
       |> Map.get("data")
-      |> Map.get("user_id_list")
-      |> then(fn user_id_list ->
-        assert length(user_id_list) == capacity
+      |> Map.get("messages")
+      |> then(fn messages ->
+        assert length(messages) == capacity
       end)
 
       conn = get(conn, Routes.tournament_path(conn, :get_match_information), %{"tournament_id" => tournament_id, "user_id" => master_id})
@@ -3097,10 +3097,10 @@ defmodule MilkWeb.TournamentControllerTest do
       conn
       |> json_response(200)
       |> Map.get("data")
-      |> Map.get("user_id_list")
-      |> then(fn user_id_list ->
+      |> Map.get("messages")
+      |> then(fn messages ->
         # NOTE: masterの分を加算して+1
-        assert length(user_id_list) == team_size*capacity + 1
+        assert length(messages) == team_size*capacity + 1
       end)
 
       conn = get(conn, Routes.tournament_path(conn, :get_match_information), %{"tournament_id" => tournament_id, "user_id" => master_id})
@@ -3276,9 +3276,9 @@ defmodule MilkWeb.TournamentControllerTest do
       conn
       |> json_response(200)
       |> Map.get("data")
-      |> Map.get("user_id_list")
-      |> then(fn user_id_list ->
-        assert length(user_id_list) == team_size*capacity
+      |> Map.get("messages")
+      |> then(fn messages ->
+        assert length(messages) == team_size*capacity
       end)
 
       conn = get(conn, Routes.tournament_path(conn, :get_match_information), %{"tournament_id" => tournament_id, "user_id" => master_id})

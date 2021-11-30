@@ -347,13 +347,19 @@ defmodule MilkWeb.TournamentView do
     }
   end
 
-  def render("start.json", %{match_list: list, match_list_with_fight_result: list2, user_id_list: user_id_list}) do
+  def render("start.json", %{match_list: list, match_list_with_fight_result: list2, messages: messages, rule: rule}) do
     %{
       result: true,
       data: %{
         match_list: list,
         match_list_with_fight_result: list2,
-        user_id_list: user_id_list
+        rule: rule,
+        messages: Enum.map(messages, fn message ->
+          %{
+            state: message.state,
+            user_id: message.user_id,
+          }
+        end)
       }
     }
   end
