@@ -33,24 +33,28 @@ defmodule Milk.Tournaments.Rules.FlipBan do
     # NOTE: チーム戦のときはis_memberのstateが追加される
     if is_team, do: Predefined.on!(machine_name, @db_index, member_trigger(), is_not_started(), is_member())
 
-    Predefined.on!(machine_name, @db_index, start_trigger(), is_not_started(), should_flip_coin())
-    Predefined.on!(machine_name, @db_index, manager_trigger(), is_not_started(), is_manager())
-    Predefined.on!(machine_name, @db_index, assistant_trigger(), is_not_started(), is_assistant())
-    Predefined.on!(machine_name, @db_index, flip_trigger(), should_flip_coin(), is_waiting_for_coin_flip())
-    Predefined.on!(machine_name, @db_index, ban_map_trigger(), is_waiting_for_coin_flip(), should_ban_map())
-    Predefined.on!(machine_name, @db_index, observe_ban_map_trigger(), is_waiting_for_coin_flip(), should_observe_ban())
-    Predefined.on!(machine_name, @db_index, observe_ban_map_trigger(), should_ban_map(), should_observe_ban())
-    Predefined.on!(machine_name, @db_index, ban_map_trigger(), should_observe_ban(), should_ban_map())
-    Predefined.on!(machine_name, @db_index, choose_map_trigger(), should_observe_ban(), should_choose_map())
-    Predefined.on!(machine_name, @db_index, observe_choose_map_trigger(), should_ban_map(), should_observe_choose())
-    Predefined.on!(machine_name, @db_index, choose_ad_trigger(), should_observe_choose(), should_choose_ad())
-    Predefined.on!(machine_name, @db_index, observe_choose_ad_trigger(), should_choose_map(), should_observe_ad())
-    Predefined.on!(machine_name, @db_index, pend_trigger(), should_choose_ad(), is_pending())
-    Predefined.on!(machine_name, @db_index, pend_trigger(), should_observe_ad(), is_pending())
-    Predefined.on!(machine_name, @db_index, lose_trigger(), is_pending(), is_loser())
-    Predefined.on!(machine_name, @db_index, alone_trigger(), is_pending(), is_alone())
-    Predefined.on!(machine_name, @db_index, next_trigger(), is_alone(), should_flip_coin())
-    Predefined.on!(machine_name, @db_index, next_trigger(), is_pending(), should_flip_coin())
+    Predefined.on!(machine_name, @db_index, start_trigger(),                   is_not_started(),             should_flip_coin())
+    Predefined.on!(machine_name, @db_index, manager_trigger(),                 is_not_started(),             is_manager())
+    Predefined.on!(machine_name, @db_index, assistant_trigger(),               is_not_started(),             is_assistant())
+    Predefined.on!(machine_name, @db_index, flip_trigger(),                    should_flip_coin(),           is_waiting_for_coin_flip())
+    Predefined.on!(machine_name, @db_index, ban_map_trigger(),                 is_waiting_for_coin_flip(),   should_ban_map())
+    Predefined.on!(machine_name, @db_index, observe_ban_map_trigger(),         is_waiting_for_coin_flip(),   should_observe_ban())
+    Predefined.on!(machine_name, @db_index, observe_ban_map_trigger(),         should_ban_map(),             should_observe_ban())
+    Predefined.on!(machine_name, @db_index, ban_map_trigger(),                 should_observe_ban(),         should_ban_map())
+    Predefined.on!(machine_name, @db_index, choose_map_trigger(),              should_observe_ban(),         should_choose_map())
+    Predefined.on!(machine_name, @db_index, observe_choose_map_trigger(),      should_ban_map(),             should_observe_choose())
+    Predefined.on!(machine_name, @db_index, choose_ad_trigger(),               should_observe_choose(),      should_choose_ad())
+    Predefined.on!(machine_name, @db_index, observe_choose_ad_trigger(),       should_choose_map(),          should_observe_ad())
+    Predefined.on!(machine_name, @db_index, pend_trigger(),                    should_choose_ad(),           is_pending())
+    Predefined.on!(machine_name, @db_index, pend_trigger(),                    should_observe_ad(),          is_pending())
+    Predefined.on!(machine_name, @db_index, waiting_for_score_input_trigger(), is_pending(),                 is_waiting_for_score_input())
+    Predefined.on!(machine_name, @db_index, lose_trigger(),                    is_pending(),                 is_loser())
+    Predefined.on!(machine_name, @db_index, lose_trigger(),                    is_waiting_for_score_input(), is_loser())
+    Predefined.on!(machine_name, @db_index, alone_trigger(),                   is_pending(),                 is_alone())
+    Predefined.on!(machine_name, @db_index, alone_trigger(),                   is_waiting_for_score_input(), is_alone())
+    Predefined.on!(machine_name, @db_index, next_trigger(),                    is_waiting_for_score_input(), should_flip_coin())
+    Predefined.on!(machine_name, @db_index, next_trigger(),                    is_alone(),                   should_flip_coin())
+    Predefined.on!(machine_name, @db_index, next_trigger(),                    is_pending(),                 should_flip_coin())
 
     opts
     |> list_states()
@@ -153,6 +157,9 @@ defmodule Milk.Tournaments.Rules.FlipBan do
   @spec is_pending() :: String.t()
   def is_pending(), do: "IsPending"
 
+  @spec is_waiting_for_score_input() :: String.t()
+  def is_waiting_for_score_input(), do: "IsWaitingForScoreInput"
+
   @spec is_loser() :: String.t()
   def is_loser(), do: "IsLoser"
 
@@ -203,6 +210,9 @@ defmodule Milk.Tournaments.Rules.FlipBan do
 
   @spec pend_trigger() :: String.t()
   def pend_trigger(), do: "pend"
+
+  @spec waiting_for_score_input_trigger() :: String.t()
+  def waiting_for_score_input_trigger(), do: "waiting_for_score_input"
 
   @spec lose_trigger() :: String.t()
   def lose_trigger(), do: "lose"

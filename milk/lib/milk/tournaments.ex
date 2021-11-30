@@ -1571,7 +1571,7 @@ defmodule Milk.Tournaments do
   {:error, error}
   の3種類の戻り値がある。
   """
-  @spec get_opponent(integer(), integer()) :: {:ok, User.t()} | {:ok, Team.t()} | {:wait, nil} | {:error, String.t()}
+  @spec get_opponent(integer(), integer()) :: {:ok, User.t() | Team.t()} | {:wait, nil} | {:error, String.t()}
   def get_opponent(tournament_id, user_id) do
     tournament_id
     |> __MODULE__.get_tournament()
@@ -1913,6 +1913,16 @@ defmodule Milk.Tournaments do
       {:wait, nil} -> wait_for_next_match(tournament, winner_id)
       _            -> {:ok, nil}
     end
+  end
+
+  def waiting_for_score_input_state(tournament, user_id) do
+    keyname = Rules.adapt_keyname(user_id, tournament.id)
+
+    case tournament.rule do
+      "basic"   -> Basic.trigger!(keyname, Basic.waiting_for_score_input_trigger())
+      "flipban" -> FlipBan.trigger!(keyname, FlipBan.waiting_for_score_input_trigger())
+    end
+    {:ok, tournament}
   end
 
   @spec proceed_to_next_match(Tournament.t(), integer()) :: {:ok, any()} | {:error, String.t()}

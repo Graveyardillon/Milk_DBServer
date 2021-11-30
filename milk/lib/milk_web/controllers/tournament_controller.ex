@@ -1279,62 +1279,76 @@ defmodule MilkWeb.TournamentController do
     # NOTE: あとでtournament変数はシャドウイングするので必要な情報だけ退避しておく
     tournament_id = tournament.id
     rule = tournament.rule
-    with true                                           <- claimable_state?(tournament_id, user_id),
-         id             when not is_nil(id)             <- Progress.get_necessary_id(tournament_id, user_id),
-         {:ok, opponent}                                <- Tournaments.get_opponent(tournament_id, user_id),
-         {:ok, _}                                       <- Progress.insert_score(tournament_id, id, score),
-         opponent_score when not is_nil(opponent_score) <- Progress.get_score(tournament_id, opponent.id),
-         {:ok, winner_id, loser_id, _}                  <- calculate_winner(id, opponent.id, score, opponent_score),
-         {:ok, nil}                                     <- proceed_to_next_match(tournament, winner_id, loser_id, score, opponent_score, match_index),
-         tournament                                     <- Tournaments.load_tournament(tournament_id) do
-      # TODO: このall_statesの大会終了後処理
-      messages = Tournaments.all_states!(tournament_id)
-      claim = %Claim{
-        validated: true,
-        completed: true,
-        is_finished: is_nil(tournament),
-        interaction_messages: messages,
-        rule: rule
-      }
-      render(conn, "claim.json", claim: claim)
+
+    with  true                      <- claimable_state?(tournament_id, user_id),
+          id when not is_nil(id)    <- Progress.get_necessary_id(tournament_id, user_id),
+          {:ok, opponent}           <- Tournaments.get_opponent(tournament_id, user_id),
+          {:ok, _}                  <- Progress.insert_score(tournament_id, id, score) do
+      Progress.get_score(tournament_id, opponent.id)
+      case Progress.get_score(tournament_id, opponent.id) do
+        nil ->
+          with  {:ok, _tournament} <- Tournaments.waiting_for_score_input_state(tournament, user_id),
+                tournament         <- Tournaments.load_tournament(tournament_id) do
+            claim = %Claim{
+              validated: true,
+              completed: false,
+              is_finished: is_nil(tournament),
+              interaction_messages: [],
+              rule: rule
+            }
+            render(conn, "claim.json", claim: claim)
+          end
+        opponent_score ->
+          with  {:ok, winner_id, loser_id, _}     <- calculate_winner(id, opponent.id, score, opponent_score),
+                {:ok, nil}                        <- proceed_to_next_match(tournament, winner_id, loser_id, score, opponent_score, match_index),
+                tournament                        <- Tournaments.load_tournament(tournament_id) do
+            messages = Tournaments.all_states!(tournament_id)
+            claim = %Claim{
+              validated: true,
+              completed: true,
+              is_finished: is_nil(tournament),
+              interaction_messages: messages,
+              rule: rule
+            }
+            render(conn, "claim.json", claim: claim)
+          else
+            nil ->
+              claim = %Claim{
+                validated:   true,
+                completed:   false,
+                is_finished: false,
+                interaction_messages: [],
+                rule: rule
+              }
+              render(conn, "claim.json", claim: claim)
+            # NOTE: 重複報告が起きたときの処理
+            {:error, id, opponent_id, _} ->
+              duplicated_claim_process(tournament.id, id, opponent_id, score)
+              claim = %Claim{
+                validated:   false,
+                completed:   false,
+                is_finished: false,
+                interaction_messages: [],
+                rule: rule
+              }
+              render(conn, "claim.json", claim: claim)
+            {:error, msg} ->
+              render(conn, "error.json", error: msg)
+            end
+          end
     else
-      # NOTE: 重複報告が起きたときの処理
-      {:error, id, opponent_id, _} ->
-        duplicated_claim_process(tournament.id, id, opponent_id, score)
-        claim = %Claim{
-          validated:   false,
-          completed:   false,
-          is_finished: false,
-          interaction_messages: [],
-          rule: rule
-        }
-        render(conn, "claim.json", claim: claim)
       nil ->
-        claim = %Claim{
-          validated:   true,
-          completed:   false,
-          is_finished: false,
-          interaction_messages: [],
-          rule: rule
-        }
-        render(conn, "claim.json", claim: claim)
+        render(conn, "error.json", error: "Invalid state")
       false ->
         render(conn, "error.json", error: "Invalid state")
-      _ ->
-        claim = %Claim{
-          validated:   false,
-          completed:   false,
-          is_finished: false,
-          interaction_messages: [],
-          rule: rule
-        }
-        render(conn, "claim.json", claim: claim)
+      {:error, msg} ->
+        render(conn, "error.json", error: msg)
     end
   end
 
   @spec claimable_state?(integer(), integer()) :: boolean()
   defp claimable_state?(tournament_id, user_id) do
-    Tournaments.state!(tournament_id, user_id) == "IsPending"
+    Enum.member?(["IsPending", "IsWaitingForScoreInput"], Tournaments.state!(tournament_id, user_id))
   end
 
   @spec duplicated_claim_process(integer(), integer(), integer(), integer()) :: {:ok, nil} | {:error, String.t()}
@@ -1923,6 +1937,14 @@ defmodule MilkWeb.TournamentController do
 
   @spec load_score(String.t(), Tournament.t() | TournamentLog.t(), integer()) :: integer()
   defp load_score("IsPending", tournament, user_id) do
+    if tournament.is_team do
+      team = Tournaments.get_team_by_tournament_id_and_user_id(tournament.id, user_id)
+      Progress.get_score(tournament.id, team.id)
+    else
+      Progress.get_score(tournament.id, user_id)
+    end
+  end
+  defp load_score("IsWaitingForScoreInput", tournament, user_id) do
     if tournament.is_team do
       team = Tournaments.get_team_by_tournament_id_and_user_id(tournament.id, user_id)
       Progress.get_score(tournament.id, team.id)
