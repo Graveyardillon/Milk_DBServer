@@ -20,6 +20,7 @@ defmodule MilkWeb.TeamView do
   def render("team.json", %{team: team}) do
     %{
       id: team.id,
+      is_confirmed: team.is_confirmed,
       name: team.name,
       size: team.size,
       tournament_id: team.tournament_id,
