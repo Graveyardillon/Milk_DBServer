@@ -27,6 +27,7 @@ defmodule MilkWeb.TournamentController do
   }
   alias Milk.Tournaments.{
     Claim,
+    InteractionMessage,
     MatchInformation,
     Progress,
     Team,
@@ -1323,16 +1324,21 @@ defmodule MilkWeb.TournamentController do
               render(conn, "claim.json", claim: claim)
             # NOTE: 重複報告が起きたときの処理
             {:error, id, opponent_id, _} ->
-              duplicated_claim_process(tournament.id, id, opponent_id, score)
-              messages = Tournaments.all_states!(tournament.id)
-              claim = %Claim{
-                validated:   false,
-                completed:   false,
-                is_finished: false,
-                interaction_messages: messages,
-                rule: rule
-              }
-              render(conn, "claim.json", claim: claim)
+              tournament.id
+              |> duplicated_claim_process(id, opponent_id, score)
+              |> case do
+                {:ok, messages} ->
+                  claim = %Claim{
+                    validated:   false,
+                    completed:   false,
+                    is_finished: false,
+                    interaction_messages: messages,
+                    rule: rule
+                  }
+                  render(conn, "claim.json", claim: claim)
+                _ ->
+                  render(conn, "error.json", error: "error on duplicated claim process")
+              end
             {:error, msg} ->
               render(conn, "error.json", error: msg)
             end
@@ -1352,16 +1358,51 @@ defmodule MilkWeb.TournamentController do
     Enum.member?(["IsPending", "IsWaitingForScoreInput"], Tournaments.state!(tournament_id, user_id))
   end
 
-  @spec duplicated_claim_process(integer(), integer(), integer(), integer()) :: {:ok, nil} | {:error, String.t()}
+  @spec duplicated_claim_process(integer(), integer(), integer(), integer()) :: {:ok, [InteractionMessage.t()]} | {:error, String.t()}
   defp duplicated_claim_process(tournament_id, id, opponent_id, score) do
-    with {:ok, nil} <- Progress.add_duplicate_user_id(tournament_id, id),
-         {:ok, nil} <- Progress.add_duplicate_user_id(tournament_id, opponent_id),
-         {:ok, nil} <- notify_discord_on_duplicate_claim_as_needed(tournament_id, id, opponent_id, score),
-         {:ok, nil} <- notify_on_duplicate_match(tournament_id, id, opponent_id) do
-      {:ok, nil}
+    with {:ok, nil}                   <- Progress.add_duplicate_user_id(tournament_id, id),
+         {:ok, nil}                   <- Progress.add_duplicate_user_id(tournament_id, opponent_id),
+         {:ok, nil}                   <- notify_discord_on_duplicate_claim_as_needed(tournament_id, id, opponent_id, score),
+         {:ok, nil}                   <- notify_on_duplicate_match(tournament_id, id, opponent_id),
+         messages when messages != [] <- duplicated_claim_messages(tournament_id, id, opponent_id) do
+      {:ok, messages}
     else
       error -> error
     end
+  end
+
+  defp duplicated_claim_messages(nil, _, _), do: []
+
+  defp duplicated_claim_messages(%Tournament{is_team: true, id: tournament_id, master_id: master_id}, id, opponent_id) do
+    [id, opponent_id]
+    |> Enum.map(fn team_id ->
+      team_id
+      |> Tournaments.get_leader()
+      |> Map.get(:user_id)
+    end)
+    |> Enum.concat([master_id])
+    |> Enum.map(fn user_id ->
+      %InteractionMessage{
+        user_id: user_id,
+        state:   Tournaments.state!(tournament_id, user_id)
+      }
+    end)
+  end
+
+  defp duplicated_claim_messages(%Tournament{is_team: false, id: tournament_id, master_id: master_id}, id, opponent_id) do
+    [id, opponent_id, master_id]
+    |> Enum.map(fn user_id ->
+      %InteractionMessage{
+        user_id: user_id,
+        state:   Tournaments.state!(tournament_id, user_id)
+      }
+    end)
+  end
+
+  defp duplicated_claim_messages(tournament_id, id, opponent_id) do
+    tournament_id
+    |> Tournaments.get_tournament()
+    |> duplicated_claim_messages(id, opponent_id)
   end
 
   @spec calculate_winner(integer(), integer(), integer(), integer()) :: {:ok, integer(), integer(), boolean()} | {:error, integer(), integer(), boolean()}
