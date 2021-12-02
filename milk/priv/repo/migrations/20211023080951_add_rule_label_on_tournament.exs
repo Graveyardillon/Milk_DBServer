@@ -3,7 +3,7 @@ defmodule Milk.Repo.Migrations.AddRuleLabelOnTournament do
 
   def change do
     alter table(:tournaments) do
-      add :rule, :string
+      add :rule, :string, default: "basic"
     end
   end
 end
