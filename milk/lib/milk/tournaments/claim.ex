@@ -9,7 +9,9 @@ defmodule Milk.Tournaments.Claim do
     :validated,
     :completed,
     :is_finished,
-    :rule
+    :opponent_user_id,
+    :rule,
+    :user_id
   ]
 
   @type t :: %__MODULE__{
@@ -17,6 +19,8 @@ defmodule Milk.Tournaments.Claim do
     validated:            boolean(),
     completed:            boolean(),
     is_finished:          boolean(),
-    rule:                 String.t()
+    opponent_user_id:     integer() | nil,
+    rule:                 String.t(),
+    user_id:              integer() | nil
   }
 end
