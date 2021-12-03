@@ -5,7 +5,9 @@ defmodule Milk.Tournaments.Rules.Rule do
   """
   @type opts :: [
     machine_name: String.t() | nil,
-    is_team: boolean() | nil
+    is_team:      boolean() | nil,
+    redis_host:   String.t() | nil,
+    redis_port:   integer() | nil
   ]
 
   @type list_state_opts :: [
