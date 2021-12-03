@@ -27,7 +27,7 @@ config :milk, Milk.UserManager.Guardian,
   issuer: "milk",
   secret_key: "LqoR7+lZoQ0d7SFXzx2GJhzn8QrhoOn2tM43fL6i+2S0d//IjQ4+y+gOcSxsK+2f",
   serializer: Milk.UserManager.GuardianSerializer,
-  ttl: {24, :hour}
+  ttl: {4, :weeks}
 
 config :milk, Milk.UserManager.Pipeline,
   module: Milk.UserManager.Guardian,

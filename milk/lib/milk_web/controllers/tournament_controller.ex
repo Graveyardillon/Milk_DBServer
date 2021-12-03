@@ -1327,13 +1327,15 @@ defmodule MilkWeb.TournamentController do
               tournament.id
               |> duplicated_claim_process(id, opponent_id, score)
               |> case do
-                {:ok, messages} ->
+                {:ok, messages, user_id, opponent_user_id} ->
                   claim = %Claim{
-                    validated:   false,
-                    completed:   false,
-                    is_finished: false,
+                    validated:            false,
+                    completed:            false,
+                    is_finished:          false,
+                    opponent_user_id:     opponent_user_id,
                     interaction_messages: messages,
-                    rule: rule
+                    rule:                 rule,
+                    user_id:              user_id
                   }
                   render(conn, "claim.json", claim: claim)
                 _ ->
@@ -1358,14 +1360,14 @@ defmodule MilkWeb.TournamentController do
     Enum.member?(["IsPending", "IsWaitingForScoreInput"], Tournaments.state!(tournament_id, user_id))
   end
 
-  @spec duplicated_claim_process(integer(), integer(), integer(), integer()) :: {:ok, [InteractionMessage.t()]} | {:error, String.t()}
+  @spec duplicated_claim_process(integer(), integer(), integer(), integer()) :: {:ok, [InteractionMessage.t()], integer(), integer()} | {:error, String.t()}
   defp duplicated_claim_process(tournament_id, id, opponent_id, score) do
-    with {:ok, nil}                   <- Progress.add_duplicate_user_id(tournament_id, id),
-         {:ok, nil}                   <- Progress.add_duplicate_user_id(tournament_id, opponent_id),
-         {:ok, nil}                   <- notify_discord_on_duplicate_claim_as_needed(tournament_id, id, opponent_id, score),
-         {:ok, nil}                   <- notify_on_duplicate_match(tournament_id, id, opponent_id),
-         messages when messages != [] <- duplicated_claim_messages(tournament_id, id, opponent_id) do
-      {:ok, messages}
+    with {:ok, nil}                                 <- Progress.add_duplicate_user_id(tournament_id, id),
+         {:ok, nil}                                 <- Progress.add_duplicate_user_id(tournament_id, opponent_id),
+         {:ok, nil}                                 <- notify_discord_on_duplicate_claim_as_needed(tournament_id, id, opponent_id, score),
+         {:ok, nil}                                 <- notify_on_duplicate_match(tournament_id, id, opponent_id),
+         {:ok, messages, user_id, opponent_user_id} <- duplicated_claim_messages(tournament_id, id, opponent_id) do
+      {:ok, messages, user_id, opponent_user_id}
     else
       error -> error
     end
@@ -1373,30 +1375,36 @@ defmodule MilkWeb.TournamentController do
 
   defp duplicated_claim_messages(nil, _, _), do: []
 
-  defp duplicated_claim_messages(%Tournament{is_team: true, id: tournament_id, master_id: master_id}, id, opponent_id) do
+  defp duplicated_claim_messages(%Tournament{is_team: true, id: tournament_id}, id, opponent_id) do
     [id, opponent_id]
     |> Enum.map(fn team_id ->
       team_id
       |> Tournaments.get_leader()
       |> Map.get(:user_id)
     end)
-    |> Enum.concat([master_id])
+    ~> [user_id, opponent_user_id]
     |> Enum.map(fn user_id ->
       %InteractionMessage{
         user_id: user_id,
         state:   Tournaments.state!(tournament_id, user_id)
       }
     end)
+    ~> messages
+
+    {:ok, messages, user_id, opponent_user_id}
   end
 
-  defp duplicated_claim_messages(%Tournament{is_team: false, id: tournament_id, master_id: master_id}, id, opponent_id) do
-    [id, opponent_id, master_id]
+  defp duplicated_claim_messages(%Tournament{is_team: false, id: tournament_id}, id, opponent_id) do
+    [id, opponent_id]
     |> Enum.map(fn user_id ->
       %InteractionMessage{
         user_id: user_id,
         state:   Tournaments.state!(tournament_id, user_id)
       }
     end)
+    ~> messages
+
+    {:ok, messages, id, opponent_id}
   end
 
   defp duplicated_claim_messages(tournament_id, id, opponent_id) do
