@@ -169,7 +169,6 @@ defmodule MilkWeb.TeamController do
       |> is_nil()
       |> unless do
         Discord.send_tournament_add_team_notification(discord_server_id, team.name)
-        |> IO.inspect(label: :send_tournament_add_team_notification)
       end
     end
   end
