@@ -821,12 +821,8 @@ defmodule MilkWeb.TournamentController do
       _     -> Image.read_image_prod(path)
     end
     |> case do
-      {:ok, image} ->
-        b64 = Base.encode64(image)
-        json(conn, %{b64: b64})
-
-      {:error, error} ->
-        render(conn, "error.json", error: error)
+      {:ok, image}    -> json(conn, %{b64: Base.encode64(image)})
+      {:error, error} -> render(conn, "error.json", error: error)
     end
   end
 
@@ -840,7 +836,7 @@ defmodule MilkWeb.TournamentController do
 
     with {:ok, tournament} <- Tournaments.ban_maps(user_id, tournament_id, map_id_list),
          {:ok, _}          <- notify_discord_on_ban_maps_as_needed!(user_id, tournament, map_id_list),
-         messages          <- Tournaments.all_states!(tournament_id) do
+         messages          <- Tournaments.interaction_message_of_me_and_opponent(tournament, user_id) do
       render(conn, "interaction_message.json", interaction_messages: messages, rule: tournament.rule)
     else
       {:error, error} -> render(conn, "error.json", error: error)

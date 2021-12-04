@@ -2768,6 +2768,47 @@ defmodule Milk.Tournaments do
   end
 
   @doc """
+  自身と対戦相手のinteraction messageのみを返す関数
+  """
+  @spec interaction_message_of_me_and_opponent(Tournament.t(), integer()) :: [InteractionMessage.t()]
+  def interaction_message_of_me_and_opponent(%Tournament{is_team: true} = tournament, user_id) do
+    tournament.id
+    |> __MODULE__.get_opponent(user_id)
+    |> case do
+      {:ok, opponent_team} ->
+        opponent_team.id
+        |> __MODULE__.get_leader()
+        |> Map.get(:user_id)
+        ~> opponent_user_id
+
+        [user_id, opponent_user_id]
+        |> Enum.map(fn id ->
+          %InteractionMessage{
+            state: __MODULE__.state!(tournament.id, id),
+            user_id: id
+          }
+        end)
+      _ -> []
+    end
+  end
+
+  def interaction_message_of_me_and_opponent(%Tournament{is_team: false} = tournament, user_id) do
+    tournament.id
+    |> __MODULE__.get_opponent(user_id)
+    |> case do
+      {:ok, opponent} ->
+        [user_id, opponent.id]
+        |> Enum.map(fn id ->
+          %InteractionMessage{
+            state: __MODULE__.state!(tournament.id, id),
+            user_id: id
+          }
+        end)
+      _ -> []
+    end
+  end
+
+  @doc """
   Returns data for tournament brackets.
   """
   @spec data_for_brackets(match_list()) :: [any()]

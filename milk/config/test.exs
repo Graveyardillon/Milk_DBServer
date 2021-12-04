@@ -38,3 +38,6 @@ config :milk, :redix_port, System.get_env("MILK_TEST_REDISPORT") || 6379
 config :milk, Milk.Repo, migration_timestamps: [type: :timestamptz, inserted_at: :create_time, updated_at: :update_time]
 
 config :milk, :environment, :test
+
+config :dfa, :redis_host, "localhost"
+config :dfa, :redis_port, 6379
