@@ -883,7 +883,7 @@ defmodule MilkWeb.TournamentController do
 
     with {:ok, tournament} <- Tournaments.choose_maps(user_id, tournament_id, [map_id]),
          {:ok, _}          <- notify_discord_on_choose_map_as_needed!(user_id, tournament, map_id),
-         messages          <- Tournaments.all_states!(tournament_id) do
+         messages          <- Tournaments.interaction_message_of_me_and_opponent(tournament, user_id) do
       render(conn, "interaction_message.json", interaction_messages: messages, rule: tournament.rule)
     else
       {:error, error} -> render(conn, "error.json", error: error)
@@ -920,7 +920,7 @@ defmodule MilkWeb.TournamentController do
 
     with {:ok, tournament} <- Tournaments.choose_ad(user_id, tournament_id, is_attacker_side),
          {:ok, _}          <- notify_discord_on_choose_ad_as_needed!(user_id, tournament, is_attacker_side),
-         messages          <- Tournaments.all_states!(tournament_id) do
+         messages          <- Tournaments.interaction_message_of_me_and_opponent(tournament, user_id) do
       render(conn, "interaction_message.json", interaction_messages: messages, rule: tournament.rule)
     else
       {:error, error} -> render(conn, "error.json", error: error)
