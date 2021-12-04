@@ -84,5 +84,5 @@ config :milk, :domain, "https://e-players-web.web.app"
 
 config :milk, :discord_server, "https://discordserver-dot-e-players6814.an.r.appspot.com"
 
-config :dfa, :redis_host, "localhost"
+config :dfa, :redis_host, "10.231.150.131"
 config :dfa, :redis_port, 6379
