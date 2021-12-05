@@ -39,5 +39,5 @@ config :milk, Milk.Repo, migration_timestamps: [type: :timestamptz, inserted_at:
 
 config :milk, :environment, :test
 
-config :dfa, :redis_host, "localhost"
-config :dfa, :redis_port, 6379
+config :dfa, :redis_host, System.get_env("MILK_TEST_REDISHOST") || "localhost"
+config :dfa, :redis_port, System.get_env("MILK_TEST_REDISPORT") || 6379

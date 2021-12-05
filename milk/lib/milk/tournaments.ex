@@ -2744,6 +2744,7 @@ defmodule Milk.Tournaments do
 
   @doc """
   大会に参加しているすべてのユーザーのstateを返す。
+  TODO: Deprecatedかも？処理を見直して不必要そうだったら削除する
   """
   @spec all_states!(integer()) :: [InteractionMessage.t()]
   def all_states!(tournament_id) do
