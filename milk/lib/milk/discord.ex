@@ -135,8 +135,7 @@ defmodule Milk.Discord do
     end
   end
 
-  @spec send_tournament_create_notification(String.t()) ::
-          {:ok, HTTPoison.Response.t()} | {:error, HTTPoison.Error.t()}
+  @spec send_tournament_create_notification(String.t()) :: {:ok, HTTPoison.Response.t()} | {:error, HTTPoison.Error.t()}
   def send_tournament_create_notification(server_id) when is_binary(server_id) do
     discord_server_url = Application.get_env(:milk, :discord_server)
     access_token = Application.get_env(:milk, :discord_server_access_token)
@@ -147,8 +146,7 @@ defmodule Milk.Discord do
     HTTPoison.post(url, params, "Content-Type": "application/json")
   end
 
-  @spec send_tournament_description(String.t(), String.t()) ::
-          {:ok, HTTPoison.Response.t()} | {:error, HTTPoison.Error.t()}
+  @spec send_tournament_description(String.t(), String.t()) :: {:ok, HTTPoison.Response.t()} | {:error, HTTPoison.Error.t()}
   def send_tournament_description(server_id, description)
       when is_binary(server_id) and is_binary(description) do
     discord_server_url = Application.get_env(:milk, :discord_server)
@@ -166,8 +164,7 @@ defmodule Milk.Discord do
   @doc """
   Send notification on tournament start.
   """
-  @spec send_tournament_start_notification(String.t()) ::
-          {:ok, HTTPoison.Response.t()} | {:error, HTTPoison.Error.t()}
+  @spec send_tournament_start_notification(String.t()) :: {:ok, HTTPoison.Response.t()} | {:error, HTTPoison.Error.t()}
   def send_tournament_start_notification(server_id) when is_binary(server_id) do
     discord_server_url = Application.get_env(:milk, :discord_server)
     access_token = Application.get_env(:milk, :discord_server_access_token)
@@ -203,6 +200,27 @@ defmodule Milk.Discord do
   end
 
   def send_tournament_add_team_notification(_, _) do
+    {:error, "need to provide server id in binary format."}
+  end
+
+  @spec send_tournament_remove_team_notification(String.t(), String.t()) :: {:ok, HTTPoison.Response.t()} | {:error, HTTPoison.Error.t() | String.t()}
+  def send_tournament_remove_team_notification(server_id, team_name) when is_binary(server_id) do
+    discord_server_url = Application.get_env(:milk, :discord_server)
+    access_token = Application.get_env(:milk, :discord_server_access_token)
+
+    url = "#{discord_server_url}/remove_team"
+
+    %{}
+    |> Map.put(:server_id, server_id)
+    |> Map.put(:access_token, access_token)
+    |> Map.put(:team_name, team_name)
+    |> Jason.encode!()
+    ~> params
+
+    HTTPoison.post(url, params, "Content-Type": "application/json")
+  end
+
+  def send_tournament_remove_team_notification(_, _) do
     {:error, "need to provide server id in binary format."}
   end
 
