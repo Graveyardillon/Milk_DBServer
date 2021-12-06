@@ -689,7 +689,11 @@ defmodule Milk.Tournaments do
   @spec create_maps_on_create_tournament(Tournament.t(), [Milk.Tournaments.Map.t()] | map() | nil) :: {:ok, nil} | {:error, String.t() | nil}
   defp create_maps_on_create_tournament(tournament, maps) when is_list(maps) do
     maps
-    |> Enum.map(&Map.put(&1, "tournament_id", tournament.id))
+    |> Enum.map(fn map ->
+      map
+      |> Map.put("tournament_id", tournament.id)
+      |> put_map_icon_as_needed()
+    end)
     |> Enum.reduce(Multi.new(), &create_maps_transaction(&1, tournament.id, &2))
     |> Repo.transaction()
     |> case do
@@ -882,7 +886,6 @@ defmodule Milk.Tournaments do
 
     with {:ok, _}                               <- change_map_state_result,
          tournament when not is_nil(tournament) <- __MODULE__.get_tournament(tournament_id),
-         {:ok, _}                               <- renew_redis_after_choosing_maps(user_id, tournament_id),
          {:ok, _}                               <- Rules.change_state_on_ban(tournament, user_id, opponent_id) do
       {:ok, tournament}
     else
@@ -940,7 +943,6 @@ defmodule Milk.Tournaments do
 
     with {:ok, _}                               <- change_map_state_result,
          tournament when not is_nil(tournament) <- __MODULE__.get_tournament(tournament_id),
-         {:ok, _}                               <- renew_redis_after_choosing_maps(user_id, tournament_id),
          {:ok, _}                               <- Rules.change_state_on_choose_map(tournament, user_id, opponent_id) do
       {:ok, tournament}
     else
@@ -968,7 +970,6 @@ defmodule Milk.Tournaments do
     ~> choose_ad_result
 
     with {:ok, _}                               <- choose_ad_result,
-         {:ok, _}                               <- renew_redis_after_choosing_maps(user_id, tournament_id),
          tournament when not is_nil(tournament) <- __MODULE__.get_tournament(tournament_id),
          {:ok, _}                               <- Rules.change_state_on_choose_ad(tournament, user_id, opponent_id) do
       {:ok, tournament}
@@ -988,22 +989,6 @@ defmodule Milk.Tournaments do
     else
       _ -> {:error, "failed to insert is_attacker_side"}
     end
-  end
-
-  @spec renew_redis_after_choosing_maps(integer(), integer()) :: {:ok, nil}
-  defp renew_redis_after_choosing_maps(_user_id, _tournament_id) do
-    # id = Progress.get_necessary_id(tournament_id, user_id)
-
-    # {:ok, opponent} = __MODULE__.get_opponent(tournament_id, user_id)
-
-    # order = Progress.get_ban_order(tournament_id, id)
-    # opponent_order = Progress.get_ban_order(tournament_id, opponent.id)
-    # Progress.delete_ban_order(tournament_id, id)
-    # Progress.delete_ban_order(tournament_id, opponent.id)
-    # Progress.insert_ban_order(tournament_id, id, order + 1)
-    # Progress.insert_ban_order(tournament_id, opponent.id, opponent_order + 1)
-
-    {:ok, nil}
   end
 
   @doc """
@@ -1134,7 +1119,7 @@ defmodule Milk.Tournaments do
   @spec get_entrant_including_logs(integer()) :: Entrant.t() | EntrantLog.t() | nil
   def get_entrant_including_logs(id) do
     case __MODULE__.get_entrant(id) do
-      nil -> Log.get_entrant_log_by_entrant_id(id)
+      nil     -> Log.get_entrant_log_by_entrant_id(id)
       entrant -> entrant
     end
   end
@@ -1142,7 +1127,7 @@ defmodule Milk.Tournaments do
   @spec get_entrant_including_logs(integer(), integer()) :: Entrant.t() | EntrantLog.t() | nil
   def get_entrant_including_logs(tournament_id, user_id) do
     case get_entrant_by_user_id_and_tournament_id(user_id, tournament_id) do
-      nil -> Log.get_entrant_log_by_user_id_and_tournament_id(user_id, tournament_id)
+      nil     -> Log.get_entrant_log_by_user_id_and_tournament_id(user_id, tournament_id)
       entrant -> entrant
     end
   end
@@ -1156,9 +1141,7 @@ defmodule Milk.Tournaments do
   end
 
   @spec rule_needs_score?(String.t()) :: boolean()
-  def rule_needs_score?(rule) do
-    rule == "flipban"
-  end
+  def rule_needs_score?(rule), do: rule == "flipban"
 
   @doc """
   Creates an entrant.
@@ -1244,10 +1227,10 @@ defmodule Milk.Tournaments do
     |> Multi.update(:update, &Tournament.changeset(&1.tournament, %{count: &1.tournament.count + 1}))
     |> Repo.transaction()
     |> case do
-      {:ok, result} -> {:ok, result.entrant}
+      {:ok, result}                       -> {:ok, result.entrant}
       {:error, :tournament, changeset, _} -> {:error, Tools.create_error_message(changeset.errors)}
-      {:error, changeset} -> {:error, changeset.errors}
-      _ -> {:error, nil}
+      {:error, changeset}                 -> {:error, changeset.errors}
+      _                                   -> {:error, nil}
     end
   end
 
@@ -3750,47 +3733,41 @@ defmodule Milk.Tournaments do
   """
   @spec create_map(map()) :: {:ok, Milk.Tournaments.Map.t()} | {:error, Ecto.Changeset.t()}
   def create_map(attrs \\ %{}) do
-    attrs
-    |> Map.has_key?("icon_b64")
-    |> if do
-      b64 = attrs["icon_b64"]
-
-      # XXX: inspectしないとb64が正常に読み込まれないことがある
-      inspect(b64)
-      img = Base.decode64!(b64)
-
-      uuid = SecureRandom.uuid()
-      path = "./static/image/options/#{uuid}.jpg"
-      FileUtils.write(path, img)
-
-      :milk
-      |> Application.get_env(:environment)
-      |> case do
-        :prod ->
-          "./static/image/options/#{uuid}.jpg"
-          |> Milk.CloudStorage.Objects.upload()
-          |> elem(1)
-          |> Map.get(:name)
-          ~> name
-
-          File.rm(path)
-          name
-
-        _ ->
-          path
-      end
-      ~> name
-
-      Map.put(attrs, "icon_path", name)
-    else
-      attrs
-    end
-    ~> attrs
+    attrs = put_map_icon_as_needed(attrs)
 
     %Milk.Tournaments.Map{}
     |> Milk.Tournaments.Map.changeset(attrs)
     |> Repo.insert()
   end
+
+  defp put_map_icon_as_needed(%{"icon_b64" => icon_b64} = attrs) do
+    # XXX: inspectしないとb64が正常に読み込まれないことがある
+    inspect(icon_b64)
+    img = Base.decode64!(icon_b64)
+
+    path = "./static/image/options/#{SecureRandom.uuid()}.jpg"
+    FileUtils.write(path, img)
+
+    :milk
+    |> Application.get_env(:environment)
+    |> case do
+      :prod ->
+        path
+        |> Milk.CloudStorage.Objects.upload()
+        |> elem(1)
+        |> Map.get(:name)
+        ~> name
+
+        File.rm(path)
+        name
+
+      _ -> path
+    end
+    ~> name
+
+    Map.put(attrs, "icon_path", name)
+  end
+  defp put_map_icon_as_needed(attrs), do: attrs
 
   @doc """
   Get a map.

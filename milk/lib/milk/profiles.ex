@@ -18,7 +18,7 @@ defmodule Milk.Profiles do
   """
   def get_records(user) do
     EntrantLog
-    |> where([el], el.user_id == ^user.id and el.show_on_profile == true)
+    |> where([el], el.user_id == ^user.id and el.show_on_profile)
     |> Repo.all()
     |> Enum.map(fn entrant_log ->
       TournamentLog

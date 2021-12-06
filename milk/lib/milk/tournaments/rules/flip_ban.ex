@@ -31,7 +31,8 @@ defmodule Milk.Tournaments.Rules.FlipBan do
     machine_name = Keyword.get(opts, :machine_name, machine_name(is_team))
 
     # NOTE: チーム戦のときはis_memberのstateが追加される
-    if is_team, do: Predefined.on!(machine_name, @db_index, member_trigger(), is_not_started(), is_member())
+    if is_team, do:
+      Predefined.on!(machine_name, @db_index, member_trigger(),                is_not_started(),             is_member())
 
     Predefined.on!(machine_name, @db_index, start_trigger(),                   is_not_started(),             should_flip_coin())
     Predefined.on!(machine_name, @db_index, manager_trigger(),                 is_not_started(),             is_manager())

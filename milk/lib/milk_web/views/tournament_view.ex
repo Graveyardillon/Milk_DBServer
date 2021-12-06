@@ -437,6 +437,7 @@ defmodule MilkWeb.TournamentView do
         %{
           name: match_info.tournament.name,
           id: match_info.tournament.id,
+          master_id: match_info.tournament.master_id,
         }
       end,
       opponent: if !is_nil(match_info.opponent) do

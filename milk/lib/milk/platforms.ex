@@ -3,27 +3,21 @@ defmodule Milk.Platforms do
   The platforms context.
   """
 
+  import Common.Sperm
   import Ecto.Query, warn: false
 
   alias Milk.Platforms.Platform
   alias Milk.Repo
 
   def create_basic_platforms() do
-    platform_names =
-      Platform
-      |> where([p], p.name == "pc" or p.name == "mobile")
-      |> Repo.all()
-      |> Enum.map(fn platform ->
-        platform.name
-      end)
+    Platform
+    |> where([p], p.name == "pc" or p.name == "mobile")
+    |> Repo.all()
+    |> Enum.map(&(&1.name))
+    ~> platform_names
 
-    unless "pc" in platform_names do
-      create_platform(%{"name" => "pc"})
-    end
-
-    unless "mobile" in platform_names do
-      create_platform(%{"name" => "mobile"})
-    end
+    unless "pc" in platform_names,     do: create_platform(%{"name" => "pc"})
+    unless "mobile" in platform_names, do: create_platform(%{"name" => "mobile"})
   end
 
   def create_platform(attrs \\ %{}) do
