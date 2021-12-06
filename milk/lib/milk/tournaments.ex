@@ -688,7 +688,6 @@ defmodule Milk.Tournaments do
 
   @spec create_maps_on_create_tournament(Tournament.t(), [Milk.Tournaments.Map.t()] | map() | nil) :: {:ok, nil} | {:error, String.t() | nil}
   defp create_maps_on_create_tournament(tournament, maps) when is_list(maps) do
-    # TODO: mapの画像をアップロード・・パスをputする処理
     maps
     |> Enum.map(fn map ->
       map
@@ -3746,8 +3745,7 @@ defmodule Milk.Tournaments do
     inspect(icon_b64)
     img = Base.decode64!(icon_b64)
 
-    uuid = SecureRandom.uuid()
-    path = "./static/image/options/#{uuid}.jpg"
+    path = "./static/image/options/#{SecureRandom.uuid()}.jpg"
     FileUtils.write(path, img)
 
     :milk
