@@ -64,14 +64,9 @@ defmodule Milk.Chat do
     |> ChatRoom.changeset(attrs)
     |> Repo.insert()
     |> case do
-      {:ok, chat} ->
-        {:ok, chat}
-
-      {:error, error} ->
-        {:error, error.errors}
-
-      _ ->
-        {:error, nil}
+      {:ok, chat}     -> {:ok, chat}
+      {:error, error} -> {:error, error.errors}
+      _               -> {:error, nil}
     end
   end
 

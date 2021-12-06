@@ -1,6 +1,8 @@
 defmodule Milk.Reports do
+  @moduledoc """
+  通報関連のモジュール
+  """
   import Ecto.Query, warn: false
-  import Common.Sperm
 
   alias Common.Tools
 
@@ -15,30 +17,31 @@ defmodule Milk.Reports do
     UserReport
   }
 
-  def create_user_report(%{
-        "reporter" => reporter,
-        "reportee" => reportee,
-        "report_types" => report_types
-      }) do
+  def create_user_report(%{"reporter" => reporter, "reportee" => reportee, "report_types" => report_types}) do
     reporter = Tools.to_integer_as_needed(reporter)
     reportee = Tools.to_integer_as_needed(reportee)
 
     if Accounts.get_user(reporter) && Accounts.get_user(reportee) && reporter != reportee do
-      Enum.map(report_types, fn type ->
-        %UserReport{reporter_id: reporter, reportee_id: reportee}
-        |> UserReport.changeset(%{report_type: type})
-        |> Repo.insert()
-        |> case do
-          {:ok, report} -> report
-          _ -> nil
-        end
-      end)
-      ~> user_reports
+      user_reports = insert_reports(report_types, reporter, reportee)
 
       {:ok, user_reports}
     else
       {:error, "user error"}
     end
+  end
+
+  defp insert_reports(report_types, reporter_id, reportee_id) do
+    report_types
+    |> Enum.map(fn type ->
+      %UserReport{reporter_id: reporter_id, reportee_id: reportee_id}
+      |> UserReport.changeset(%{report_type: type})
+      |> Repo.insert()
+      |> case do
+        {:ok, report} -> report
+        _             -> nil
+      end
+    end)
+    |> Enum.reject(&is_nil(&1))
   end
 
   @doc """
