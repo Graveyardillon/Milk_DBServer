@@ -690,6 +690,7 @@ defmodule Milk.Tournaments do
   defp create_maps_on_create_tournament(tournament, maps) when is_list(maps) do
     # TODO: mapの画像をアップロード・・パスをputする処理
 
+
     maps
     |> Enum.map(&Map.put(&1, "tournament_id", tournament.id))
     |> Enum.reduce(Multi.new(), &create_maps_transaction(&1, tournament.id, &2))
@@ -3731,47 +3732,42 @@ defmodule Milk.Tournaments do
   """
   @spec create_map(map()) :: {:ok, Milk.Tournaments.Map.t()} | {:error, Ecto.Changeset.t()}
   def create_map(attrs \\ %{}) do
-    attrs
-    |> Map.has_key?("icon_b64")
-    |> if do
-      b64 = attrs["icon_b64"]
-
-      # XXX: inspectしないとb64が正常に読み込まれないことがある
-      inspect(b64)
-      img = Base.decode64!(b64)
-
-      uuid = SecureRandom.uuid()
-      path = "./static/image/options/#{uuid}.jpg"
-      FileUtils.write(path, img)
-
-      :milk
-      |> Application.get_env(:environment)
-      |> case do
-        :prod ->
-          "./static/image/options/#{uuid}.jpg"
-          |> Milk.CloudStorage.Objects.upload()
-          |> elem(1)
-          |> Map.get(:name)
-          ~> name
-
-          File.rm(path)
-          name
-
-        _ ->
-          path
-      end
-      ~> name
-
-      Map.put(attrs, "icon_path", name)
-    else
-      attrs
-    end
-    ~> attrs
+    attrs = put_map_icon_as_needed(attrs)
 
     %Milk.Tournaments.Map{}
     |> Milk.Tournaments.Map.changeset(attrs)
     |> Repo.insert()
   end
+
+  defp put_map_icon_as_needed(%{"icon_b64" => icon_b64} = attrs) do
+    # XXX: inspectしないとb64が正常に読み込まれないことがある
+    inspect(icon_b64)
+    img = Base.decode64!(icon_b64)
+
+    uuid = SecureRandom.uuid()
+    path = "./static/image/options/#{uuid}.jpg"
+    FileUtils.write(path, img)
+
+    :milk
+    |> Application.get_env(:environment)
+    |> case do
+      :prod ->
+        path
+        |> Milk.CloudStorage.Objects.upload()
+        |> elem(1)
+        |> Map.get(:name)
+        ~> name
+
+        File.rm(path)
+        name
+
+      _ -> path
+    end
+    ~> name
+
+    Map.put(attrs, "icon_path", name)
+  end
+  defp put_map_icon_as_needed(attrs), do: attrs
 
   @doc """
   Get a map.
