@@ -3645,7 +3645,7 @@ defmodule Milk.Tournaments do
   Delete a team
   """
   @spec delete_team(Team.t() | integer()) :: {:ok, Team.t()} | {:error, Ecto.Changeset.t()}
-  def delete_team(nil), do: {:error, "team is nil"}
+  def delete_team(nil),            do: {:error, "team is nil"}
   def delete_team(%Team{} = team), do: Repo.delete(team)
 
   def delete_team(team_id) do

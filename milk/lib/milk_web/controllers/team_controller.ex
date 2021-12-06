@@ -156,22 +156,17 @@ defmodule MilkWeb.TeamController do
   end
 
   @spec send_add_team_discord_notification(Team.t()) :: any()
-  defp send_add_team_discord_notification(team) do
-    team.id
-    |> Tournaments.get_team()
-    ~> team
-    |> Map.get(:is_confirmed)
-    |> if do
-      team.tournament_id
-      |> Tournaments.load_tournament()
-      |> Map.get(:discord_server_id)
-      ~> discord_server_id
-      |> is_nil()
-      |> unless do
-        Discord.send_tournament_add_team_notification(discord_server_id, team.name)
-      end
+  defp send_add_team_discord_notification(%Team{is_confirmed: true, name: name, tournament_id: tournament_id}) do
+    tournament_id
+    |> Tournaments.get_tournament()
+    |> Map.get(:discord_server_id)
+    ~> discord_server_id
+    |> is_nil()
+    |> unless do
+      Discord.send_tournament_add_team_notification(discord_server_id, name)
     end
   end
+  defp send_add_team_discord_notification(_), do: {:ok, nil}
 
   @doc """
   Delete a team
@@ -181,10 +176,24 @@ defmodule MilkWeb.TeamController do
     |> Tools.to_integer_as_needed()
     |> Tournaments.delete_team()
     |> case do
-      {:ok, team} -> render(conn, "show.json", team: team)
+      {:ok, team} ->
+        Task.async(fn -> send_remove_team_discord_notification(team) end)
+        render(conn, "show.json", team: team)
       {:error, error} -> render(conn, "error.json", error: error)
     end
   end
+
+  defp send_remove_team_discord_notification(%Team{is_confirmed: true, name: name, tournament_id: tournament_id}) do
+    tournament_id
+    |> Tournaments.get_tournament()
+    |> Map.get(:discord_server_id)
+    ~> discord_server_id
+    |> is_nil()
+    |> unless do
+      Discord.send_tournament_remove_team_notification(discord_server_id, name)
+    end
+  end
+  defp send_remove_team_discord_notification(_), do: {:ok, nil}
 
   @doc """
   Decline an invitation.
