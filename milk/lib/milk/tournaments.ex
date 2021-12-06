@@ -882,7 +882,6 @@ defmodule Milk.Tournaments do
 
     with {:ok, _}                               <- change_map_state_result,
          tournament when not is_nil(tournament) <- __MODULE__.get_tournament(tournament_id),
-         {:ok, _}                               <- renew_redis_after_choosing_maps(user_id, tournament_id),
          {:ok, _}                               <- Rules.change_state_on_ban(tournament, user_id, opponent_id) do
       {:ok, tournament}
     else
@@ -940,7 +939,6 @@ defmodule Milk.Tournaments do
 
     with {:ok, _}                               <- change_map_state_result,
          tournament when not is_nil(tournament) <- __MODULE__.get_tournament(tournament_id),
-         {:ok, _}                               <- renew_redis_after_choosing_maps(user_id, tournament_id),
          {:ok, _}                               <- Rules.change_state_on_choose_map(tournament, user_id, opponent_id) do
       {:ok, tournament}
     else
@@ -968,7 +966,6 @@ defmodule Milk.Tournaments do
     ~> choose_ad_result
 
     with {:ok, _}                               <- choose_ad_result,
-         {:ok, _}                               <- renew_redis_after_choosing_maps(user_id, tournament_id),
          tournament when not is_nil(tournament) <- __MODULE__.get_tournament(tournament_id),
          {:ok, _}                               <- Rules.change_state_on_choose_ad(tournament, user_id, opponent_id) do
       {:ok, tournament}
@@ -988,22 +985,6 @@ defmodule Milk.Tournaments do
     else
       _ -> {:error, "failed to insert is_attacker_side"}
     end
-  end
-
-  @spec renew_redis_after_choosing_maps(integer(), integer()) :: {:ok, nil}
-  defp renew_redis_after_choosing_maps(_user_id, _tournament_id) do
-    # id = Progress.get_necessary_id(tournament_id, user_id)
-
-    # {:ok, opponent} = __MODULE__.get_opponent(tournament_id, user_id)
-
-    # order = Progress.get_ban_order(tournament_id, id)
-    # opponent_order = Progress.get_ban_order(tournament_id, opponent.id)
-    # Progress.delete_ban_order(tournament_id, id)
-    # Progress.delete_ban_order(tournament_id, opponent.id)
-    # Progress.insert_ban_order(tournament_id, id, order + 1)
-    # Progress.insert_ban_order(tournament_id, opponent.id, opponent_order + 1)
-
-    {:ok, nil}
   end
 
   @doc """
