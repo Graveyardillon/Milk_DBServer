@@ -689,10 +689,12 @@ defmodule Milk.Tournaments do
   @spec create_maps_on_create_tournament(Tournament.t(), [Milk.Tournaments.Map.t()] | map() | nil) :: {:ok, nil} | {:error, String.t() | nil}
   defp create_maps_on_create_tournament(tournament, maps) when is_list(maps) do
     # TODO: mapの画像をアップロード・・パスをputする処理
-
-
     maps
-    |> Enum.map(&Map.put(&1, "tournament_id", tournament.id))
+    |> Enum.map(fn map ->
+      map
+      |> Map.put("tournament_id", tournament.id)
+      |> put_map_icon_as_needed()
+    end)
     |> Enum.reduce(Multi.new(), &create_maps_transaction(&1, tournament.id, &2))
     |> Repo.transaction()
     |> case do
