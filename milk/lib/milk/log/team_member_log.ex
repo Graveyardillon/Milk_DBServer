@@ -1,4 +1,7 @@
 defmodule Milk.Log.TeamMemberLog do
+  @moduledoc """
+  TeamMemberのログ
+  """
   use Milk.Schema
 
   import Ecto.Changeset

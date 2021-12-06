@@ -923,11 +923,10 @@ defmodule Milk.Log do
     TeamLog
     |> where([t], t.tournament_id == ^tournament_id)
     |> Repo.all()
-    |> Enum.reject(fn team_log ->
+    |> Enum.filter(fn team_log ->
       TeamMemberLog
       |> where([t], t.team_id == ^team_log.team_id and t.user_id == ^user_id)
-      |> Repo.one()
-      |> is_nil()
+      |> Repo.exists?()
     end)
     |> Enum.map(fn team_log ->
       TeamMemberLog

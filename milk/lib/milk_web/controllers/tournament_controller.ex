@@ -1978,7 +1978,7 @@ defmodule MilkWeb.TournamentController do
   defp get_team_rank(team, _, _), do: team.rank
 
   @spec get_team_log_rank(TournamentLog.t() | nil) :: integer() | nil
-  defp get_team_log_rank(nil), do: nil
+  defp get_team_log_rank(nil),      do: nil
   defp get_team_log_rank(team_log), do: team_log.rank
 
   @spec load_score(String.t(), Tournament.t() | TournamentLog.t(), integer()) :: integer()
@@ -1990,6 +1990,7 @@ defmodule MilkWeb.TournamentController do
       Progress.get_score(tournament.id, user_id)
     end
   end
+
   defp load_score("IsWaitingForScoreInput", tournament, user_id) do
     if tournament.is_team do
       team = Tournaments.get_team_by_tournament_id_and_user_id(tournament.id, user_id)
