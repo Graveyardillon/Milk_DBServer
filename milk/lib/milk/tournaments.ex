@@ -688,6 +688,8 @@ defmodule Milk.Tournaments do
 
   @spec create_maps_on_create_tournament(Tournament.t(), [Milk.Tournaments.Map.t()] | map() | nil) :: {:ok, nil} | {:error, String.t() | nil}
   defp create_maps_on_create_tournament(tournament, maps) when is_list(maps) do
+    # TODO: mapの画像をアップロード・・パスをputする処理
+
     maps
     |> Enum.map(&Map.put(&1, "tournament_id", tournament.id))
     |> Enum.reduce(Multi.new(), &create_maps_transaction(&1, tournament.id, &2))
@@ -1115,7 +1117,7 @@ defmodule Milk.Tournaments do
   @spec get_entrant_including_logs(integer()) :: Entrant.t() | EntrantLog.t() | nil
   def get_entrant_including_logs(id) do
     case __MODULE__.get_entrant(id) do
-      nil -> Log.get_entrant_log_by_entrant_id(id)
+      nil     -> Log.get_entrant_log_by_entrant_id(id)
       entrant -> entrant
     end
   end
@@ -1123,7 +1125,7 @@ defmodule Milk.Tournaments do
   @spec get_entrant_including_logs(integer(), integer()) :: Entrant.t() | EntrantLog.t() | nil
   def get_entrant_including_logs(tournament_id, user_id) do
     case get_entrant_by_user_id_and_tournament_id(user_id, tournament_id) do
-      nil -> Log.get_entrant_log_by_user_id_and_tournament_id(user_id, tournament_id)
+      nil     -> Log.get_entrant_log_by_user_id_and_tournament_id(user_id, tournament_id)
       entrant -> entrant
     end
   end
@@ -1137,9 +1139,7 @@ defmodule Milk.Tournaments do
   end
 
   @spec rule_needs_score?(String.t()) :: boolean()
-  def rule_needs_score?(rule) do
-    rule == "flipban"
-  end
+  def rule_needs_score?(rule), do: rule == "flipban"
 
   @doc """
   Creates an entrant.
@@ -1225,10 +1225,10 @@ defmodule Milk.Tournaments do
     |> Multi.update(:update, &Tournament.changeset(&1.tournament, %{count: &1.tournament.count + 1}))
     |> Repo.transaction()
     |> case do
-      {:ok, result} -> {:ok, result.entrant}
+      {:ok, result}                       -> {:ok, result.entrant}
       {:error, :tournament, changeset, _} -> {:error, Tools.create_error_message(changeset.errors)}
-      {:error, changeset} -> {:error, changeset.errors}
-      _ -> {:error, nil}
+      {:error, changeset}                 -> {:error, changeset.errors}
+      _                                   -> {:error, nil}
     end
   end
 
