@@ -2874,30 +2874,27 @@ defmodule Milk.Tournaments do
     |> Enum.map(fn list ->
       inspect(list, charlists: false)
 
-      Enum.map(list, fn bracket ->
-        unless is_nil(bracket) do
-          id = bracket["user_id"] || bracket["team_id"]
-
-          tournament_id
-          |> Progress.get_best_of_x_tournament_match_logs_by_winner(id)
-          |> Enum.map(fn log ->
-            log.winner_score
-          end)
-          ~> win_game_scores
-
-          tournament_id
-          |> Progress.get_best_of_x_tournament_match_logs_by_loser(id)
-          |> Enum.map(fn log ->
-            log.loser_score
-          end)
-          |> Enum.concat(win_game_scores)
-          ~> game_scores
-
-          Map.put(bracket, "game_scores", game_scores)
-        end
-      end)
+      Enum.map(list, &put_values_on_bracket(&1, tournament_id))
     end)
     |> List.flatten()
+  end
+
+  defp put_values_on_bracket(nil,     _            ), do: nil
+  defp put_values_on_bracket(bracket, tournament_id) do
+    id = bracket["user_id"] || bracket["team_id"]
+
+    tournament_id
+    |> Progress.get_best_of_x_tournament_match_logs_by_winner(id)
+    |> Enum.map(&(&1.winner_score))
+    ~> win_game_scores
+
+    tournament_id
+    |> Progress.get_best_of_x_tournament_match_logs_by_loser(id)
+    |> Enum.map(&(&1.loser_score))
+    |> Enum.concat(win_game_scores)
+    ~> game_scores
+
+    Map.put(bracket, "game_scores", game_scores)
   end
 
   @doc """
@@ -3632,41 +3629,33 @@ defmodule Milk.Tournaments do
   end
 
   defp invite_members_to_discord_as_needed(team) do
+    tournament = __MODULE__.get_tournament(team.tournament_id)
+
+    invite_members_to_discord(team, tournament)
+  end
+
+  defp invite_members_to_discord(_,    %Tournament{discord_server_id: nil}), do: nil
+  defp invite_members_to_discord(team, tournament) do
+    url = Discord.create_invitation_link!(tournament.discord_server_id)
+
     team
-    |> Map.get(:tournament_id)
-    |> __MODULE__.get_tournament()
-    ~> tournament
-    |> Map.get(:discord_server_id)
-    ~> server_id
-    |> is_nil()
-    |> unless do
-      url = Discord.create_invitation_link!(server_id)
-
-      team
-      |> Map.get(:id)
-      |> get_team_members_by_team_id()
-      |> Enum.each(fn member ->
-        %{
-          "user_id" => member.user_id,
-          "process_id" => "DISCORD_SERVER_INVITATION",
-          "icon_path" => tournament.thumbnail_path,
-          "title" => "#{tournament.name}のDiscordサーバーへの招待を受け取りました",
-          "body_text" => "",
-          "data" =>
-            Jason.encode!(%{
-              url: url
-            })
-        }
-        |> Notif.create_notification()
-        |> case do
-          {:ok, notification} ->
-            push_invitation_notification(notification)
-
-          {:error, error} ->
-            {:error, error}
-        end
-      end)
-    end
+    |> Map.get(:id)
+    |> get_team_members_by_team_id()
+    |> Enum.each(fn member ->
+      %{
+        "user_id" => member.user_id,
+        "process_id" => "DISCORD_SERVER_INVITATION",
+        "icon_path" => tournament.thumbnail_path,
+        "title" => "#{tournament.name}のDiscordサーバーへの招待を受け取りました",
+        "body_text" => "",
+        "data" => Jason.encode!(%{url: url})
+      }
+      |> Notif.create_notification()
+      |> case do
+        {:ok, notification} -> push_invitation_notification(notification)
+        {:error, error}     -> {:error, error}
+      end
+    end)
   end
 
   @doc """
@@ -3819,12 +3808,12 @@ defmodule Milk.Tournaments do
     |> Repo.one()
     ~> map
 
-    unless is_nil(map_selection) do
+    if is_nil(map_selection) do
+      Map.put(map, :state, "not_selected")
+    else
       map_selection
       |> Map.get(:map)
       |> Map.put(:state, map_selection.state)
-    else
-      Map.put(map, :state, "not_selected")
     end
   end
 

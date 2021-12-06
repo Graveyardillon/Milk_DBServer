@@ -1,4 +1,7 @@
 defmodule Milk.EctoDate do
+  @moduledoc """
+  Ectodate変換をするモジュール
+  """
   use Ecto.Type
 
   def type, do: :utc_datetime_usec
