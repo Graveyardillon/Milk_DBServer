@@ -24,25 +24,20 @@ defmodule Milk.EctoDate do
   end
 
   def dump(%DateTime{} = date) do
-    if(!String.contains?(date.time_zone, "UTC")) do
-      Calendar.DateTime.shift_zone(date, "Etc/UTC")
-    else
+    if String.contains?(date.time_zone, "UTC") do
       {:ok, date}
+    else
+      Calendar.DateTime.shift_zone(date, "Etc/UTC")
     end
   end
 
-  def dump(date) do
-    if is_bitstring(date) do
-      with {:ok, time, _} <- DateTime.from_iso8601(date) do
-        {:ok, time}
-      else
-        _ ->
-          {:ok, DateTime.utc_now()}
-      end
-    else
-      {:ok, DateTime.utc_now()}
+  def dump(date) when is_bitstring(date) do
+    case DateTime.from_iso8601(date) do
+      {:ok, time, _} -> {:ok, time}
+      _              -> {:ok, DateTime.utc_now()}
     end
   end
+  def dump(_), do: {:ok, DateTime.utc_now()}
 
   def from_unix!(time, atom) do
     DateTime.from_unix!(time, atom)

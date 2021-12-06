@@ -589,7 +589,6 @@ defmodule Milk.Tournaments do
     {:ok, attrs}
   end
 
-  # TODO: flipbanルール用に必要なフィールドが書かれているか確認する
   defp validate_flipban_fields(%{"enabled_map" => "true", "enabled_coin_toss" => "true"} = attrs) do
     attrs
     |> Map.put("enabled_map", true)
@@ -807,10 +806,10 @@ defmodule Milk.Tournaments do
     attrs
     |> Map.get("platform")
     |> is_nil()
-    |> unless do
-      Map.put(attrs, "platform_id", attrs["platform"])
-    else
+    |> if do
       attrs
+    else
+      Map.put(attrs, "platform_id", attrs["platform"])
     end
     ~> attrs
 

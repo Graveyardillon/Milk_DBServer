@@ -28,7 +28,7 @@ defmodule Milk.Profiles do
 
       Map.put(entrant_log, :tournament_log, tlog)
     end)
-    |> Enum.filter(fn entrant_log -> entrant_log.tournament_log != nil end)
+    |> Enum.reject(&is_nil(&1.tournament_log))
 
     # TeamMemberLog
     # |> where([tm], tm.user_id == ^user.id)
