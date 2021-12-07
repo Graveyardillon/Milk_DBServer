@@ -827,7 +827,7 @@ defmodule Milk.Tournaments do
           {:ok, tournament}
 
         {:error, error} ->
-          {:error, error.errors}
+{:error, error.errors}
 
         _ ->
           {:error, nil}
@@ -869,9 +869,9 @@ defmodule Milk.Tournaments do
   Ban a map.
   """
   @spec ban_maps(integer(), integer(), [integer()]) :: {:ok, Tournament.t()} | {:error, String.t()}
-  def ban_maps(user_id, _, _)       when not is_integer(user_id),       do: {:error, "user id should be integer"}
-  def ban_maps(_, tournament_id, _) when not is_integer(tournament_id), do: {:error, "tournament id should be integer"}
-  def ban_maps(_, _, map_id_list)   when not is_list(map_id_list),      do: {:error, "invalid map id list"}
+  def ban_maps(user_id, _,             _          ) when not is_integer(user_id),       do: {:error, "user id should be integer"}
+  def ban_maps(_,       tournament_id, _          ) when not is_integer(tournament_id), do: {:error, "tournament id should be integer"}
+  def ban_maps(_,       _,             map_id_list) when not is_list(map_id_list),      do: {:error, "invalid map id list"}
   def ban_maps(user_id, tournament_id, map_id_list) do
     tournament_id
     |> __MODULE__.get_opponent(user_id)
