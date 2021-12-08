@@ -3774,15 +3774,18 @@ defmodule Milk.Tournaments do
   """
   @spec get_map(integer()) :: Milk.Tournaments.Map.t() | MapSelection.t()
   def get_map(map_id) do
+    # NOTE: Repo.oneだとエラーが起きてしまう
     MapSelection
     |> where([ms], ms.map_id == ^map_id)
-    |> Repo.one()
+    |> Repo.all()
+    |> hd()
     |> Repo.preload(:map)
     ~> map_selection
 
     Milk.Tournaments.Map
     |> where([ms], ms.id == ^map_id)
-    |> Repo.one()
+    |> Repo.all()
+    |> hd()
     ~> map
 
     if is_nil(map_selection) do
