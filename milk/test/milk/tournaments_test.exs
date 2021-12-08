@@ -16,6 +16,7 @@ defmodule Milk.TournamentsTest do
   }
 
   alias Milk.Tournaments.{
+    Team,
     TeamInvitation,
     Tournament,
     Entrant,
@@ -2370,6 +2371,15 @@ defmodule Milk.TournamentsTest do
 
       assert team.tournament_id == tournament.id
       assert team in teams
+    end
+  end
+
+  describe "create team without members" do
+    test "works" do
+      tournament = fixture_tournament(is_team: true)
+      user = fixture_user()
+
+      assert {:ok, %Team{is_confirmed: true}} = Tournaments.create_team(tournament.id, 1, user.id, [])
     end
   end
 
