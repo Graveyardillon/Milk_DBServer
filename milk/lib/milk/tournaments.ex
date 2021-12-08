@@ -2932,6 +2932,19 @@ defmodule Milk.Tournaments do
   """
   @spec create_team(integer(), integer(), integer(), [integer()]) :: {:ok, Team.t()} | {:error, Ecto.Changeset.t()}
   def create_team(_, _, _, user_id_list) when not is_list(user_id_list), do: {:error, "user id list should be list"}
+
+  def create_team(tournament_id, size, leader_id, []) do
+    with {:ok, team} <- do_create_team(tournament_id, size, leader_id),
+         {:ok, _}    <- create_team_leader(team.id, leader_id),
+         {:ok, _}    <- verify_team_as_needed(team.id),
+         {:ok, nil}  <- initialize_team_member_states!(team),
+         team        <- __MODULE__.get_team(team.id) do
+      {:ok, team}
+    else
+      error -> error
+    end
+  end
+
   def create_team(tournament_id, size, leader_id, user_id_list) do
     with {:ok, nil}         <- validate_user_is_not_member(tournament_id, user_id_list),
          {:ok, team}        <- do_create_team(tournament_id, size, leader_id),
@@ -3034,10 +3047,10 @@ defmodule Milk.Tournaments do
     end)
   end
 
-  defp initialize_team_member_states!(%Team{id: id, tournament_id: tournament_id}) do
+  defp initialize_team_member_states!(%Team{id: team_id, tournament_id: tournament_id}) do
     tournament = __MODULE__.get_tournament(tournament_id)
 
-    id
+    team_id
     |> __MODULE__.get_team_members_by_team_id()
     |> Enum.map(fn member ->
       keyname = Rules.adapt_keyname(member.user_id, tournament_id)

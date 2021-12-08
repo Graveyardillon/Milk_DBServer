@@ -53,14 +53,14 @@ defmodule MilkWeb.TeamController do
 
     confirmed_teams = Tournaments.get_confirmed_teams(tournament_id)
 
-    with tournament when not is_nil(tournament) <- Tournaments.load_tournament(tournament_id),
+    with tournament when not is_nil(tournament) <- Tournaments.get_tournament(tournament_id),
          {:ok, nil}                             <- validate_team_size(tournament, confirmed_teams),
          {:ok, nil}                             <- validate_duplicated_request(tournament.id, leader_id),
          {:ok, nil}                             <- validate_associated_with_discord(tournament, leader_id),
          {:ok, team}                            <- Tournaments.create_team(tournament.id, size, leader_id, user_id_list) do
       render(conn, "show.json", team: team)
     else
-      nil -> render(conn, "error.json", error: "tournament is nil")
+      nil             -> render(conn, "error.json", error: "tournament is nil")
       {:error, error} -> render(conn, "error.json", error: error)
     end
   end
