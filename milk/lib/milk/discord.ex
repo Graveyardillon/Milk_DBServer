@@ -121,7 +121,7 @@ defmodule Milk.Discord do
     params = Jason.encode!(%{server_id: server_id, access_token: access_token})
 
     url
-    |> HTTPoison.post(params, "Content-Type": "application/json")
+    |> HTTPoison.post(params, "Content-Type": "application/json", timeout: 5000, recv_timeout: 10000)
     |> case do
       {:ok, response} ->
         response
@@ -156,7 +156,7 @@ defmodule Milk.Discord do
 
     params = Jason.encode!(%{server_id: server_id, access_token: access_token, description: description})
 
-    HTTPoison.post(url, params, "Content-Type": "application/json")
+    HTTPoison.post(url, params, "Content-Type": "application/json", timeout: 5000, recv_timeout: 10000)
   end
 
   ### Discord server 通知周りの関数群
@@ -172,7 +172,7 @@ defmodule Milk.Discord do
     url = "#{discord_server_url}/tournament_start"
     params = Jason.encode!(%{server_id: server_id, access_token: access_token})
 
-    HTTPoison.post(url, params, "Content-Type": "application/json")
+    HTTPoison.post(url, params, "Content-Type": "application/json", timeout: 5000, recv_timeout: 10000)
   end
 
   def send_tournament_start_notification(_) do
@@ -196,7 +196,7 @@ defmodule Milk.Discord do
     |> Jason.encode!()
     ~> params
 
-    HTTPoison.post(url, params, "Content-Type": "application/json")
+    HTTPoison.post(url, params, "Content-Type": "application/json", timeout: 5000, recv_timeout: 10000)
   end
 
   def send_tournament_add_team_notification(_, _) do
@@ -217,7 +217,7 @@ defmodule Milk.Discord do
     |> Jason.encode!()
     ~> params
 
-    HTTPoison.post(url, params, "Content-Type": "application/json")
+    HTTPoison.post(url, params, "Content-Type": "application/json", timeout: 5000, recv_timeout: 10000)
   end
 
   def send_tournament_remove_team_notification(_, _) do
@@ -243,7 +243,7 @@ defmodule Milk.Discord do
     |> Jason.encode!()
     ~> params
 
-    HTTPoison.post(url, params, "Content-Type": "application/json")
+    HTTPoison.post(url, params, "Content-Type": "application/json", timeout: 5000, recv_timeout: 10000)
   end
 
   def send_tournament_start_match_notification(_, _, _) do
@@ -270,7 +270,7 @@ defmodule Milk.Discord do
     |> Jason.encode!()
     ~> params
 
-    HTTPoison.post(url, params, "Content-Type": "application/json")
+    HTTPoison.post(url, params, "Content-Type": "application/json", timeout: 5000, recv_timeout: 10000)
   end
 
   def send_tournament_ban_map_notification(_, _, _, _) do
@@ -297,7 +297,7 @@ defmodule Milk.Discord do
     |> Jason.encode!()
     ~> params
 
-    HTTPoison.post(url, params, "Content-Type": "application/json")
+    HTTPoison.post(url, params, "Content-Type": "application/json", timeout: 5000, recv_timeout: 10000)
   end
 
   def send_tournament_choose_map_notification(_, _, _, _) do
@@ -324,7 +324,7 @@ defmodule Milk.Discord do
     |> Jason.encode!()
     ~> params
 
-    HTTPoison.post(url, params, "Content-Type": "application/json")
+    HTTPoison.post(url, params, "Content-Type": "application/json", timeout: 5000, recv_timeout: 10000)
   end
 
   def send_tournament_choose_ad_notification(_, _, _, _) do
@@ -350,7 +350,7 @@ defmodule Milk.Discord do
     |> Jason.encode!()
     ~> params
 
-    HTTPoison.post(url, params, "Content-Type": "application/json", timeout: 5000)
+    HTTPoison.post(url, params, "Content-Type": "application/json", timeout: 5000, recv_timeout: 10000)
   end
 
   def send_tournament_duplicate_claim_notification(_, _, _, _) do
@@ -384,7 +384,7 @@ defmodule Milk.Discord do
     |> Jason.encode!()
     ~> params
 
-    HTTPoison.post(url, params, "Content-Type": "application/json")
+    HTTPoison.post(url, params, "Content-Type": "application/json", timeout: 5000, recv_timeout: 10000)
   end
 
   def send_tournament_finish_match_notification(_, _, _, _, _) do
@@ -411,7 +411,7 @@ defmodule Milk.Discord do
     |> Jason.encode!()
     ~> params
 
-    HTTPoison.post(url, params, "Content-Type": "application/json")
+    HTTPoison.post(url, params, "Content-Type": "application/json", timeout: 5000, recv_timeout: 10000)
   end
 
   def send_tournament_finish_notification(_, _, _) do
@@ -435,7 +435,7 @@ defmodule Milk.Discord do
     |> Jason.encode!()
     ~> params
 
-    HTTPoison.post(url, params, "Content-Type": "application/json")
+    HTTPoison.post(url, params, "Content-Type": "application/json", timeout: 5000, recv_timeout: 10000)
   end
 
   def send_tournament_delete_notification(_) do
