@@ -46,9 +46,7 @@ defmodule Milk.Notif do
   def unchecked_notifications(user_id) do
     user_id
     |> __MODULE__.list_notifications()
-    |> Enum.filter(fn notification ->
-      !notification.is_checked
-    end)
+    |> Enum.reject(&Map.get(&1, :is_checked))
   end
 
   @doc """
@@ -86,9 +84,7 @@ defmodule Milk.Notif do
   def get_notifications_relevant_for_tournament(tournament_id) do
     tournament_id
     |> Tournaments.get_invitations_by_tournament_id()
-    |> Enum.map(fn invitation ->
-      Jason.encode!(%{invitation_id: invitation.id})
-    end)
+    |> Enum.map(&Jason.encode!(%{invitation_id: &1.id}))
     |> Enum.map(fn jason ->
       Notification
       |> where([n], n.data == ^jason)
@@ -127,16 +123,16 @@ defmodule Milk.Notif do
     |> Accounts.get_user()
     |> case do
       %User{} = user ->
-        Ecto.build_assoc(user, :notif)
+        user
+        |> Ecto.build_assoc(:notif)
         |> Notification.changeset(attrs)
         |> Repo.insert()
         |> case do
-          {:ok, notif} -> {:ok, Map.put(notif, :user, Accounts.get_user(attrs["user_id"]))}
+          {:ok, notif}    -> {:ok, Map.put(notif, :user, Accounts.get_user(attrs["user_id"]))}
           {:error, error} -> {:error, error}
         end
 
-      _ ->
-        {:error, %Ecto.Changeset{}}
+      _ -> {:error, %Ecto.Changeset{}}
     end
   end
 
@@ -152,8 +148,7 @@ defmodule Milk.Notif do
       {:error, %Ecto.Changeset{}}
 
   """
-  @spec update_notification(Notification.t(), map()) ::
-          {:ok, Notification.t()} | {:error, Ecto.Changeset.t()}
+  @spec update_notification(Notification.t(), map()) :: {:ok, Notification.t()} | {:error, Ecto.Changeset.t()}
   def update_notification(%Notification{} = notification, attrs) do
     notification
     |> Notification.update_changeset(attrs)
@@ -172,8 +167,7 @@ defmodule Milk.Notif do
       {:error, %Ecto.Changeset{}}
 
   """
-  @spec delete_notification(Notification.t()) ::
-          {:ok, Notification.t()} | {:error, Ecto.Changeset.t()}
+  @spec delete_notification(Notification.t()) :: {:ok, Notification.t()} | {:error, Ecto.Changeset.t()}
   def delete_notification(%Notification{} = notification) do
     %NotificationLog{}
     |> NotificationLog.changeset(Map.from_struct(notification))
@@ -187,19 +181,15 @@ defmodule Milk.Notif do
   """
   @spec delete_notifications_relevant_for_tournament(integer()) ::
           {:ok, nil} | {:error, Ecto.Changeset.t() | nil}
-  def delete_notifications_relevant_for_tournament(tournament_id)
-      when is_integer(tournament_id) do
+  def delete_notifications_relevant_for_tournament(tournament_id) when is_integer(tournament_id) do
     tournament_id
     |> __MODULE__.get_notifications_relevant_for_tournament()
-    |> Enum.each(fn notification ->
-      __MODULE__.delete_notification(notification)
-    end)
+    |> Enum.each(&__MODULE__.delete_notification(&1))
 
     {:ok, nil}
   end
 
-  def delete_notifications_relevant_for_tournament(_),
-    do: {:error, "should provide tournament_id in integer"}
+  def delete_notifications_relevant_for_tournament(_), do: {:error, "should provide tournament_id in integer"}
 
   @doc """
   Creates a notification log.
