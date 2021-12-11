@@ -74,6 +74,26 @@ defmodule MilkWeb.TeamControllerTest do
     end
   end
 
+  describe "teams" do
+    test "works", %{conn: conn} do
+      tournament = fixture_tournament(is_team: true)
+      fill_with_team(tournament.id)
+
+      conn = get(conn, Routes.team_path(conn, :get_teams), tournament_id: tournament.id)
+
+      assert json_response(conn, 200)["result"]
+
+      conn
+      |> json_response(200)
+      |> Map.get("data")
+      |> Enum.map(fn team ->
+        assert team["is_confirmed"]
+      end)
+      |> Enum.empty?()
+      |> refute()
+    end
+  end
+
   describe "get_teammates" do
     test "works", %{conn: conn} do
       tournament = fixture_tournament(is_team: true)
