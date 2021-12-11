@@ -3394,6 +3394,19 @@ defmodule Milk.Tournaments do
   end
 
   @doc """
+  Get unconfirmed invitations of team
+  """
+  @spec get_remaining_invitations_by_team_id(integer()) :: [TeamInvitation.t()]
+  def get_remaining_invitations_by_team_id(team_id) do
+    TeamInvitation
+    |> join(:inner, [ti], tm in TeamMember, on: ti.team_member_id == tm.id)
+    |> join(:inner, [ti, tm], t in Team, on: tm.team_id == t.id)
+    |> where([ti, tm, t], t.id == ^team_id)
+    |> where([ti, tm, t], not tm.is_invitation_confirmed)
+    |> Repo.all()
+  end
+
+  @doc """
   Get invitations by tournament id.
   """
   @spec get_invitations_by_tournament_id(integer()) :: [TeamInvitation.t()]
@@ -3733,8 +3746,7 @@ defmodule Milk.Tournaments do
   @doc """
   Create custom detail of a tournament.
   """
-  @spec create_custom_detail(map()) ::
-          {:ok, TournamentCustomDetail.t()} | {:error, Ecto.Changeset.t()}
+  @spec create_custom_detail(map()) :: {:ok, TournamentCustomDetail.t()} | {:error, Ecto.Changeset.t()}
   def create_custom_detail(attrs \\ %{}) do
     %TournamentCustomDetail{}
     |> TournamentCustomDetail.changeset(attrs)
@@ -3989,5 +4001,32 @@ defmodule Milk.Tournaments do
     ~> his
 
     mine > his
+  end
+
+  @spec resend_team_invitations(integer()) :: {:ok, nil} | {:error, String.t()}
+  def resend_team_invitations(team_id) do
+    team_id
+    |> __MODULE__.get_leader()
+    |> Map.get(:user)
+    ~> leader
+
+    title_str = "#{leader.name} からチーム招待されました"
+      |> IO.inspect()
+
+    Notification
+    |> where([n], n.title == ^title_str)
+    |> Repo.all()
+    |> Enum.each(&Repo.delete(&1))
+
+    team_id
+    |> __MODULE__.get_remaining_invitations_by_team_id()
+    |> Enum.map(fn invitation ->
+      invitation
+      |> Repo.preload(:team_member)
+      |> Repo.preload(:sender)
+      |> create_invitation_notification()
+    end)
+    |> Enum.all?(&match?({:ok, _}, &1))
+    |> Tools.boolean_to_tuple()
   end
 end

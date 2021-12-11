@@ -120,7 +120,7 @@ defmodule MilkWeb.TeamController do
   def confirm_invitation(conn, %{"invitation_id" => invitation_id}) do
     invitation_id = Tools.to_integer_as_needed(invitation_id)
 
-    with team when not is_nil(team) <- Tournaments.get_team_by_invitation_id(invitation_id),
+    with team when not is_nil(team)             <- Tournaments.get_team_by_invitation_id(invitation_id),
          tournament when not is_nil(tournament) <- Tournaments.load_tournament(team.tournament_id),
          {:ok, nil}                             <- validate_team_count(tournament),
          {:ok, nil}                             <- validate_discord_association_of_user(tournament, invitation_id),
@@ -244,6 +244,20 @@ defmodule MilkWeb.TeamController do
       json(conn, %{result: true})
     else
       render(conn, "error.json", error: "invalid size")
+    end
+  end
+
+  @doc """
+  Resend Team Invitations
+  TODO: テスト書いてない
+  """
+  def resend_team_invitations(conn, %{"team_id" => team_id}) do
+    team_id
+    |> Tools.to_integer_as_needed()
+    |> Tournaments.resend_team_invitations()
+    |> case do
+      {:ok, _} -> json(conn, %{result: true})
+      #_        -> json(conn, %{result: false})
     end
   end
 end

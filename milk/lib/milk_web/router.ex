@@ -192,6 +192,7 @@ defmodule MilkWeb.Router do
     get "/team/mates", TeamController, :get_teammates
     get "/team/confirmed_teams", TeamController, :get_confirmed_teams
     post "/team", TeamController, :create
+    post "/team/resend_invitations", TeamController, :resend_team_invitations
     post "/team/invitation_confirm", TeamController, :confirm_invitation
     post "/team/invitation_decline", TeamController, :decline_invitation
     post "/team/add_members", TeamController, :add_members
