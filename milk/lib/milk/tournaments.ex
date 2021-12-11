@@ -3113,6 +3113,28 @@ defmodule Milk.Tournaments do
   end
 
   @doc """
+  Load teams by tournament id.
+  """
+  @spec load_teams_by_tournament_id(integer()) :: [Team.t()]
+  def load_teams_by_tournament_id(tournament_id) do
+    Team
+    |> where([t], t.tournament_id == ^tournament_id)
+    |> Repo.all()
+    |> Repo.preload(:team_member)
+    |> Enum.map(fn team ->
+      team.team_member
+      |> Repo.preload(:user)
+      |> Enum.map(fn member ->
+        user = Repo.preload(member.user, :auth)
+        Map.put(member, :user, user)
+      end)
+      ~> team_members
+
+      Map.put(team, :team_member, team_members)
+    end)
+  end
+
+  @doc """
   Get team by tournament_id and user_id.
   """
   @spec get_team_by_tournament_id_and_user_id(integer(), integer()) :: Team.t() | nil

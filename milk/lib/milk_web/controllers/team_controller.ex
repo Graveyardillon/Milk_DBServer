@@ -30,6 +30,18 @@ defmodule MilkWeb.TeamController do
   defp do_show(conn, %Team{} = team), do: render(conn, "show.json", team: team)
 
   @doc """
+  Get all teams of a tournament.
+  """
+  def get_teams(conn, %{"tournament_id" => tournament_id}) do
+    tournament_id
+    |> Tools.to_integer_as_needed()
+    |> Tournaments.load_teams_by_tournament_id()
+    ~> teams
+
+    render(conn, "index.json", teams: teams)
+  end
+
+  @doc """
   Get tournament members.
   """
   def get_teammates(conn, %{"tournament_id" => tournament_id, "user_id" => user_id}) do
