@@ -2933,13 +2933,14 @@ defmodule Milk.Tournaments do
   @spec create_team(integer(), integer(), integer(), [integer()]) :: {:ok, Team.t()} | {:error, Ecto.Changeset.t()}
   def create_team(_, _, _, user_id_list) when not is_list(user_id_list), do: {:error, "user id list should be list"}
 
+  # NOTE: リーダーのみで参加したとき
   def create_team(tournament_id, size, leader_id, []) do
     with {:ok, team} <- do_create_team(tournament_id, size, leader_id),
          {:ok, _}    <- create_team_leader(team.id, leader_id),
          {:ok, _}    <- verify_team_as_needed(team.id),
          {:ok, nil}  <- initialize_team_member_states!(team),
          team        <- __MODULE__.get_team(team.id) do
-      {:ok, team}
+      {:ok, :leader_only, team}
     else
       error -> error
     end
@@ -4032,7 +4033,6 @@ defmodule Milk.Tournaments do
     ~> leader
 
     title_str = "#{leader.name} からチーム招待されました"
-      |> IO.inspect()
 
     Notification
     |> where([n], n.title == ^title_str)

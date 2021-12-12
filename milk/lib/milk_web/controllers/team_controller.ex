@@ -81,6 +81,9 @@ defmodule MilkWeb.TeamController do
          {:ok, team}                            <- Tournaments.create_team(tournament.id, size, leader_id, user_id_list) do
       render(conn, "show.json", team: team)
     else
+      {:ok, :leader_only, team} ->
+        Task.async(fn -> send_add_team_discord_notification(team) end)
+        render(conn, "show.json", team: team)
       nil             -> render(conn, "error.json", error: "tournament is nil")
       {:error, error} -> render(conn, "error.json", error: error)
     end
