@@ -1699,6 +1699,16 @@ defmodule MilkWeb.TournamentControllerTest do
           tournament_id: tournament.id
         })
 
+      assert json_response(conn, 200)["result"]
+
+      fill_with_team(tournament.id)
+
+      conn =
+        get(conn, Routes.tournament_path(conn, :is_able_to_join), %{
+          user_id: user.id,
+          tournament_id: tournament.id
+        })
+
       refute json_response(conn, 200)["result"]
     end
 
@@ -3175,8 +3185,6 @@ defmodule MilkWeb.TournamentControllerTest do
 
       conn = get(conn, Routes.tournament_path(conn, :get_match_information), %{"tournament_id" => tournament_id, "user_id" => master_id})
       assert json_response(conn, 200)["state"] == "IsFinished"
-      refute is_nil(json_response(conn, 200)["tournament"]["id"])
-      assert json_response(conn, 200)["tournament"]["master_id"] == master_id
     end
 
     test "flipban (team) (master is team leader) (until the tournament starts)", %{conn: conn} do

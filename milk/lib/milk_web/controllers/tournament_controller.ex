@@ -559,15 +559,13 @@ defmodule MilkWeb.TournamentController do
     |> Kernel.and(result)
   end
 
-  defp is_valid_capacity?(result, %Tournament{is_team: true, capacity: capacity, team: teams}, _) do
-    capacity
-    |> Kernel.>(length(teams))
-    |> Kernel.and(result)
+  defp is_valid_capacity?(result, %Tournament{is_team: true, capacity: capacity, id: tournament_id}, _) do
+    confirmed_teams = Tournaments.get_confirmed_teams(tournament_id)
+
+    (capacity > length(confirmed_teams)) and result
   end
   defp is_valid_capacity?(result, %Tournament{capacity: capacity}, entrants) do
-    capacity
-    |> Kernel.>(length(entrants))
-    |> Kernel.and(result)
+    (capacity > length(entrants)) and result
   end
 
   defp already_participated?(result, entrants, user_id) do
