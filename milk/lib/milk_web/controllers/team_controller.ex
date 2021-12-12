@@ -26,6 +26,15 @@ defmodule MilkWeb.TeamController do
     do_show(conn, team)
   end
 
+  def show(conn, %{"tournament_id" => tournament_id, "user_id" => user_id}) do
+    tournament_id = Tools.to_integer_as_needed(tournament_id)
+    user_id = Tools.to_integer_as_needed(user_id)
+
+    team = Tournaments.load_team_by_tournament_id_and_user_id(tournament_id, user_id)
+
+    do_show(conn, team)
+  end
+
   defp do_show(conn, nil),            do: render(conn, "error.json", error: nil)
   defp do_show(conn, %Team{} = team), do: render(conn, "show.json", team: team)
 

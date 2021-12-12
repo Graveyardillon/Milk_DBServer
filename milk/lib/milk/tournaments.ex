@@ -3146,6 +3146,27 @@ defmodule Milk.Tournaments do
     |> Repo.one()
   end
 
+  @spec load_team_by_tournament_id_and_user_id(integer(), integer()) :: Team.t() | nil
+  def load_team_by_tournament_id_and_user_id(tournament_id, user_id) do
+    tournament_id
+    |> __MODULE__.get_team_by_tournament_id_and_user_id(user_id)
+    |> Repo.preload(:team_member)
+    ~> team
+    |> is_nil()
+    |> unless do
+      team
+      |> Map.get(:team_member)
+      |> Repo.preload(:user)
+      |> Enum.map(fn member ->
+        user = Repo.preload(member.user, :auth)
+        Map.put(member, :user, user)
+      end)
+      ~> team_members
+
+      Map.put(team, :team_member, team_members)
+    end
+  end
+
   @doc """
   Get team members by team id.
   """
