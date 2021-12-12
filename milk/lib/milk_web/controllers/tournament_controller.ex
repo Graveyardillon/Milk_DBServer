@@ -673,6 +673,7 @@ defmodule MilkWeb.TournamentController do
          true                                            <- validate_master_id?(tournament, master_id),
          {:ok, match_list, match_list_with_fight_result} <- do_start(tournament),
          messages                                        <- Tournaments.all_states!(tournament.id) do
+      Task.async(fn -> Discord.send_tournament_start_notification(tournament.discord_server_id) end)
       render(conn, "start.json", %{match_list: match_list, match_list_with_fight_result: match_list_with_fight_result, messages: messages, rule: tournament.rule})
     else
       %Tournament{is_started: true} -> render(conn, "error.json", error: "Tournament has already been started.")

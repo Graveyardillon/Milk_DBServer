@@ -3547,7 +3547,11 @@ defmodule Milk.Tournaments do
           %TeamInvitation{} = invitation ->
             create_team_invitation_result_notification(invitation, true)
             verify_team_as_needed(team_member.team_id)
-            {:ok, team_member}
+            |> case do
+              {:ok, _}                                      -> {:ok, team_member}
+              {:error, "short of confirmed" <> _ = message} -> {:error, message, team_member}
+              error                                         -> error
+            end
           _ ->
             {:error, nil}
         end
