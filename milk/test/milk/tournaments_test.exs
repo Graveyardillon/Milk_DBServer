@@ -1,4 +1,7 @@
 defmodule Milk.TournamentsTest do
+  @moduledoc """
+  Tournamentsのテストが記述してあるモジュール
+  """
   use Milk.DataCase
   use Common.Fixtures
   use Timex
@@ -2379,7 +2382,7 @@ defmodule Milk.TournamentsTest do
       tournament = fixture_tournament(is_team: true)
       user = fixture_user()
 
-      assert {:ok, %Team{is_confirmed: true}} = Tournaments.create_team(tournament.id, 1, user.id, [])
+      assert {:ok, :leader_only, %Team{is_confirmed: true}} = Tournaments.create_team(tournament.id, 1, user.id, [])
     end
   end
 
@@ -2659,7 +2662,11 @@ defmodule Milk.TournamentsTest do
         |> hd()
         |> Map.get(:id)
         |> Tournaments.confirm_team_invitation()
-        |> elem(1)
+        |> case do
+          {:ok, team_member}       -> team_member
+          {:error, _, team_member} -> team_member
+          _                        -> raise "Invalid result of confirming invitation"
+        end
       end)
       |> Enum.map(fn invitation ->
         assert invitation.is_invitation_confirmed

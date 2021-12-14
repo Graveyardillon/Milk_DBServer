@@ -1,4 +1,7 @@
 defmodule MilkWeb.ChatRoomLogControllerTest do
+  @moduledoc """
+  Chat room logのcontrollerテスト
+  """
   use MilkWeb.ConnCase
 
   alias Milk.Chat
@@ -58,7 +61,7 @@ defmodule MilkWeb.ChatRoomLogControllerTest do
       conn = get(conn, Routes.chat_room_log_path(conn, :show, id))
 
       assert %{
-               "id" => id,
+               "id" => _,
                "count" => 42,
                "last_chat" => "some last_chat",
                "name" => "some name"
@@ -85,7 +88,7 @@ defmodule MilkWeb.ChatRoomLogControllerTest do
       conn = get(conn, Routes.chat_room_log_path(conn, :show, id))
 
       assert %{
-               "id" => id,
+               "id" => _,
                "count" => 43,
                "last_chat" => "some updated last_chat",
                "name" => "some updated name"

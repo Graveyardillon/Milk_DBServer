@@ -44,7 +44,7 @@ defmodule MilkWeb.EntrantLogControllerTest do
       conn = get(conn, Routes.entrant_log_path(conn, :show, id))
 
       assert %{
-               "id" => id,
+               "id" => _,
                "user_id" => 42
              } = json_response(conn, 200)["data"]
     end
@@ -69,7 +69,7 @@ defmodule MilkWeb.EntrantLogControllerTest do
       conn = get(conn, Routes.entrant_log_path(conn, :show, id))
 
       assert %{
-               "id" => id,
+               "id" => _,
                "user_id" => 43
              } = json_response(conn, 200)["data"]
     end

@@ -88,9 +88,9 @@ defmodule MilkWeb.EntrantControllerTest do
       conn = get(conn, Routes.entrant_path(conn, :show, id))
 
       assert %{
-               "id" => id,
-               "rank" => rank,
-               "tournament_id" => tournament_id,
+               "id" => _id,
+               "rank" => _rank,
+               "tournament_id" => _tournament_id,
                "user_id" => user_id
              } = json_response(conn, 200)["data"]
 
@@ -125,7 +125,7 @@ defmodule MilkWeb.EntrantControllerTest do
       conn = get(conn, Routes.entrant_path(conn, :show, id))
 
       assert %{
-               "id" => id,
+               "id" => _id,
                "rank" => 43
              } = json_response(conn, 200)["data"]
     end

@@ -20,7 +20,7 @@ defmodule MilkWeb.TournamentLogControllerTest do
   describe "create tournament_log" do
     test "renders tournament_log when data is valid", %{conn: conn} do
       conn = post(conn, Routes.tournament_log_path(conn, :create), data: @create_attrs)
-      assert %{"id" => id} = json_response(conn, 200)["data"]
+      assert %{"id" => _id} = json_response(conn, 200)["data"]
     end
 
     test "renders errors when data is invalid", %{conn: conn} do

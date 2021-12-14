@@ -2933,13 +2933,14 @@ defmodule Milk.Tournaments do
   @spec create_team(integer(), integer(), integer(), [integer()]) :: {:ok, Team.t()} | {:error, Ecto.Changeset.t()}
   def create_team(_, _, _, user_id_list) when not is_list(user_id_list), do: {:error, "user id list should be list"}
 
+  # NOTE: リーダーのみで参加したとき
   def create_team(tournament_id, size, leader_id, []) do
     with {:ok, team} <- do_create_team(tournament_id, size, leader_id),
          {:ok, _}    <- create_team_leader(team.id, leader_id),
          {:ok, _}    <- verify_team_as_needed(team.id),
          {:ok, nil}  <- initialize_team_member_states!(team),
          team        <- __MODULE__.get_team(team.id) do
-      {:ok, team}
+      {:ok, :leader_only, team}
     else
       error -> error
     end
@@ -3144,6 +3145,27 @@ defmodule Milk.Tournaments do
     |> where([t, tm], t.tournament_id == ^tournament_id)
     |> where([t, tm], tm.user_id == ^user_id)
     |> Repo.one()
+  end
+
+  @spec load_team_by_tournament_id_and_user_id(integer(), integer()) :: Team.t() | nil
+  def load_team_by_tournament_id_and_user_id(tournament_id, user_id) do
+    tournament_id
+    |> __MODULE__.get_team_by_tournament_id_and_user_id(user_id)
+    |> Repo.preload(:team_member)
+    ~> team
+    |> is_nil()
+    |> unless do
+      team
+      |> Map.get(:team_member)
+      |> Repo.preload(:user)
+      |> Enum.map(fn member ->
+        user = Repo.preload(member.user, :auth)
+        Map.put(member, :user, user)
+      end)
+      ~> team_members
+
+      Map.put(team, :team_member, team_members)
+    end
   end
 
   @doc """
@@ -3525,7 +3547,11 @@ defmodule Milk.Tournaments do
           %TeamInvitation{} = invitation ->
             create_team_invitation_result_notification(invitation, true)
             verify_team_as_needed(team_member.team_id)
-            {:ok, team_member}
+            |> case do
+              {:ok, _}                                      -> {:ok, team_member}
+              {:error, "short of confirmed" <> _ = message} -> {:error, message, team_member}
+              error                                         -> error
+            end
           _ ->
             {:error, nil}
         end
@@ -4011,7 +4037,6 @@ defmodule Milk.Tournaments do
     ~> leader
 
     title_str = "#{leader.name} からチーム招待されました"
-      |> IO.inspect()
 
     Notification
     |> where([n], n.title == ^title_str)

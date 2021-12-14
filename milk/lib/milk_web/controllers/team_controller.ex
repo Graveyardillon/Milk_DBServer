@@ -26,6 +26,15 @@ defmodule MilkWeb.TeamController do
     do_show(conn, team)
   end
 
+  def show(conn, %{"tournament_id" => tournament_id, "user_id" => user_id}) do
+    tournament_id = Tools.to_integer_as_needed(tournament_id)
+    user_id = Tools.to_integer_as_needed(user_id)
+
+    team = Tournaments.load_team_by_tournament_id_and_user_id(tournament_id, user_id)
+
+    do_show(conn, team)
+  end
+
   defp do_show(conn, nil),            do: render(conn, "error.json", error: nil)
   defp do_show(conn, %Team{} = team), do: render(conn, "show.json", team: team)
 
@@ -72,6 +81,9 @@ defmodule MilkWeb.TeamController do
          {:ok, team}                            <- Tournaments.create_team(tournament.id, size, leader_id, user_id_list) do
       render(conn, "show.json", team: team)
     else
+      {:ok, :leader_only, team} ->
+        Task.async(fn -> send_add_team_discord_notification(team) end)
+        render(conn, "show.json", team: team)
       nil             -> render(conn, "error.json", error: "tournament is nil")
       {:error, error} -> render(conn, "error.json", error: error)
     end
@@ -124,12 +136,15 @@ defmodule MilkWeb.TeamController do
          tournament when not is_nil(tournament) <- Tournaments.load_tournament(team.tournament_id),
          {:ok, nil}                             <- validate_team_count(tournament),
          {:ok, nil}                             <- validate_discord_association_of_user(tournament, invitation_id),
-         {:ok, invitation}                      <- Tournaments.confirm_team_invitation(invitation_id) do
-      team = Tournaments.get_team(invitation.team_id)
+         {:ok, team_member}                     <- Tournaments.confirm_team_invitation(invitation_id) do
+      team = Tournaments.get_team(team_member.team_id)
       Task.async(fn -> send_add_team_discord_notification(team) end)
 
       json(conn, %{result: true, is_confirmed: team.is_confirmed, tournament_id: team.tournament_id})
     else
+      {:error, "short of confirmed" <> _, team_member} ->
+        team = Tournaments.get_team(team_member.team_id)
+        json(conn, %{result: true, is_confirmed: team.is_confirmed, tournament_id: team.tournament_id})
       nil                                       -> render(conn, "error.json", error: "team or tournament nil")
       {:error, message} when is_binary(message) -> render(conn, "error.json", error: message)
       {:error, error}                           -> render(conn, "error.json", error: Tools.create_error_message(error))

@@ -64,7 +64,7 @@ defmodule MilkWeb.UserControllerTest do
       conn = post(conn, Routes.user_path(conn, :show), id: id)
 
       assert %{
-               "id" => id,
+               "id" => _id,
                "icon_path" => "some icon_path",
                "language" => "some language",
                "name" => "some name",

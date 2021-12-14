@@ -559,15 +559,13 @@ defmodule MilkWeb.TournamentController do
     |> Kernel.and(result)
   end
 
-  defp is_valid_capacity?(result, %Tournament{is_team: true, capacity: capacity, team: teams}, _) do
-    capacity
-    |> Kernel.>(length(teams))
-    |> Kernel.and(result)
+  defp is_valid_capacity?(result, %Tournament{is_team: true, capacity: capacity, id: tournament_id}, _) do
+    confirmed_teams = Tournaments.get_confirmed_teams(tournament_id)
+
+    (capacity > length(confirmed_teams)) and result
   end
   defp is_valid_capacity?(result, %Tournament{capacity: capacity}, entrants) do
-    capacity
-    |> Kernel.>(length(entrants))
-    |> Kernel.and(result)
+    (capacity > length(entrants)) and result
   end
 
   defp already_participated?(result, entrants, user_id) do
@@ -673,6 +671,7 @@ defmodule MilkWeb.TournamentController do
          true                                            <- validate_master_id?(tournament, master_id),
          {:ok, match_list, match_list_with_fight_result} <- do_start(tournament),
          messages                                        <- Tournaments.all_states!(tournament.id) do
+      Task.async(fn -> Discord.send_tournament_start_notification(tournament.discord_server_id) end)
       render(conn, "start.json", %{match_list: match_list, match_list_with_fight_result: match_list_with_fight_result, messages: messages, rule: tournament.rule})
     else
       %Tournament{is_started: true} -> render(conn, "error.json", error: "Tournament has already been started.")
@@ -1296,9 +1295,9 @@ defmodule MilkWeb.TournamentController do
             render(conn, "claim.json", claim: claim)
           end
         opponent_score ->
-          with  {:ok, winner_id, loser_id, _}     <- calculate_winner(id, opponent.id, score, opponent_score),
-                {:ok, nil}                        <- proceed_to_next_match(tournament, winner_id, loser_id, score, opponent_score, match_index),
-                tournament                        <- Tournaments.load_tournament(tournament_id) do
+          with  {:ok, winner_id, loser_id, winner_score, loser_score, _} <- calculate_winner(id, opponent.id, score, opponent_score),
+                {:ok, nil}                                               <- proceed_to_next_match(tournament, winner_id, loser_id, winner_score, loser_score, match_index),
+                tournament                                               <- Tournaments.load_tournament(tournament_id) do
             messages = Tournaments.all_states!(tournament_id)
             claim = %Claim{
               validated: true,
@@ -1334,20 +1333,17 @@ defmodule MilkWeb.TournamentController do
                     user_id:              user_id
                   }
                   render(conn, "claim.json", claim: claim)
-                _ ->
-                  render(conn, "error.json", error: "error on duplicated claim process")
+
+                _ -> render(conn, "error.json", error: "error on duplicated claim process")
               end
-            {:error, msg} ->
-              render(conn, "error.json", error: msg)
+
+              {:error, msg} -> render(conn, "error.json", error: msg)
             end
           end
     else
-      nil ->
-        render(conn, "error.json", error: "Invalid state")
-      false ->
-        render(conn, "error.json", error: "Invalid state")
-      {:error, msg} ->
-        render(conn, "error.json", error: msg)
+      nil           -> render(conn, "error.json", error: "Invalid state")
+      false         -> render(conn, "error.json", error: "Invalid state")
+      {:error, msg} -> render(conn, "error.json", error: msg)
     end
   end
 
@@ -1409,10 +1405,10 @@ defmodule MilkWeb.TournamentController do
     |> duplicated_claim_messages(id, opponent_id)
   end
 
-  @spec calculate_winner(integer(), integer(), integer(), integer()) :: {:ok, integer(), integer(), boolean()} | {:error, integer(), integer(), boolean()}
+  @spec calculate_winner(integer(), integer(), integer(), integer()) :: {:ok, integer(), integer(), integer(), integer(), boolean()} | {:error, integer(), integer(), boolean()}
   defp calculate_winner(id1, id2, score1, score2) when score1 == score2, do: {:error, id1, id2, false}
-  defp calculate_winner(id1, id2, score1, score2) when score1 > score2,  do: {:ok, id1, id2, true}
-  defp calculate_winner(id1, id2, score1, score2) when score1 < score2,  do: {:ok, id2, id1, true}
+  defp calculate_winner(id1, id2, score1, score2) when score1 > score2,  do: {:ok, id1, id2, score1, score2, true}
+  defp calculate_winner(id1, id2, score1, score2) when score1 < score2,  do: {:ok, id2, id1, score2, score1, true}
 
   # TODO: この辺の引数は使うものが決まっているので構造体の使用を検討
   # NOTE: この関数ではすでに勝敗が決定している前提で処理が進んでいく。
@@ -1420,7 +1416,7 @@ defmodule MilkWeb.TournamentController do
   defp proceed_to_next_match(tournament, winner_id, loser_id, score, opponent_score, match_index) when is_integer(opponent_score) do
     with {:ok, nil} <- notify_discord_on_match_finished_as_needed(tournament, winner_id, loser_id, score, opponent_score),
          {:ok, _}   <- Tournaments.delete_loser_process(tournament.id, [loser_id]),
-         {:ok, nil} <- Tournaments.store_score(tournament.id, winner_id, loser_id, opponent_score, score, match_index),
+         {:ok, nil} <- Tournaments.store_score(tournament.id, winner_id, loser_id, score, opponent_score, match_index),
          {:ok, nil} <- delete_old_info_for_next_match(tournament.id, [winner_id, loser_id]),
          {:ok, _}   <- Tournaments.change_winner_state(tournament, winner_id),
          {:ok, _}   <- Tournaments.change_loser_state(tournament, loser_id),
