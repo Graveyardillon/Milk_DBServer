@@ -52,6 +52,7 @@ defmodule Milk.Tournaments do
     Assistant,
     Entrant,
     InteractionMessage,
+    MatchInformation,
     MapSelection,
     Progress,
     Rules,
@@ -984,6 +985,148 @@ defmodule Milk.Tournaments do
       _ -> {:error, "failed to insert is_attacker_side"}
     end
   end
+
+  @doc """
+  match_infoを取得するための関数
+  TODO: パフォーマンス調整
+  """
+  def get_match_information(tournament_id, user_id) do
+    tournament = get_tournament_for_match_info(tournament_id)
+    rank = get_rank_for_match_information(tournament, user_id)
+    state = __MODULE__.state!(tournament.id, user_id)
+    score = load_score(state, tournament, user_id)
+    opponent = get_opponent_for_match_info(tournament_id, user_id, state)
+    is_leader = __MODULE__.is_leader?(tournament_id, user_id)
+    id = Progress.get_necessary_id(tournament_id, user_id)
+    is_coin_head = is_coin_head_on_match_info?(opponent, tournament, id)
+    custom_detail = __MODULE__.get_custom_detail_by_tournament_id(tournament_id)
+    is_attacker_side = Progress.is_attacker_side?(id, tournament_id)
+
+    tournament_id
+    |> __MODULE__.get_selected_map(id)
+    |> case do
+      {:ok, map}  -> map
+      {:error, _} -> nil
+    end
+    ~> map
+
+    is_team = tournament.is_team
+    rule = tournament.rule
+
+    %MatchInformation{
+      tournament:       tournament,
+      opponent:         opponent,
+      rank:             rank,
+      is_team:          is_team,
+      is_leader:        is_leader,
+      is_attacker_side: is_attacker_side,
+      score:            score,
+      state:            state,
+      map:              map,
+      rule:             rule,
+      is_coin_head:     is_coin_head,
+      custom_detail:    custom_detail
+    }
+  end
+
+  @spec get_tournament_for_match_info(integer()) :: Tournament.t() | TournamentLog.t() | nil
+  defp get_tournament_for_match_info(tournament_id) do
+    tournament_id
+    |> __MODULE__.get_tournament_including_logs()
+    |> case do
+      {:ok, %Tournament{} = tournament}        -> tournament
+      {:ok, %TournamentLog{} = tournament_log} -> Map.put(tournament_log, :id, tournament_log.tournament_id)
+      _                                        -> nil
+    end
+  end
+
+  @spec get_rank_for_match_information(Tournament.t() | nil, integer()) :: integer() | nil
+  defp get_rank_for_match_information(nil, _), do: nil
+
+  defp get_rank_for_match_information(%Tournament{is_team: true, id: tournament_id}, user_id) do
+    tournament_id
+    |> __MODULE__.get_team_by_tournament_id_and_user_id(user_id)
+    |> get_team_rank(tournament_id, user_id)
+  end
+
+  defp get_rank_for_match_information(%TournamentLog{is_team: true, id: tournament_id}, user_id) do
+    tournament_id
+    |> __MODULE__.get_team_by_tournament_id_and_user_id(user_id)
+    |> get_team_rank(tournament_id, user_id)
+  end
+
+  defp get_rank_for_match_information(%Tournament{is_team: false, id: tournament_id}, user_id) do
+    tournament_id
+    |> __MODULE__.get_rank(user_id)
+    |> case do
+      {:ok, rank} -> rank
+      {:error, _} -> nil
+    end
+  end
+
+  defp get_rank_for_match_information(%TournamentLog{is_team: false, id: tournament_id}, user_id) do
+    tournament_id
+    |> __MODULE__.get_rank(user_id)
+    |> case do
+      {:ok, rank} -> rank
+      {:error, _} -> nil
+    end
+  end
+
+  defp get_team_rank(nil, tournament_id, user_id) do
+    tournament_id
+    |> Log.get_team_log_by_tournament_id_and_user_id(user_id)
+    |> get_team_log_rank()
+  end
+
+  defp get_team_rank(team, _, _), do: team.rank
+
+  @spec get_team_log_rank(TournamentLog.t() | nil) :: integer() | nil
+  defp get_team_log_rank(nil),      do: nil
+  defp get_team_log_rank(team_log), do: team_log.rank
+
+  @spec load_score(String.t(), Tournament.t(), integer()) :: integer() | nil
+  defp load_score("IsWaitingForScoreInput", tournament, user_id) do
+    if tournament.is_team do
+      team = __MODULE__.get_team_by_tournament_id_and_user_id(tournament.id, user_id)
+      Progress.get_score(tournament.id, team.id)
+    else
+      Progress.get_score(tournament.id, user_id)
+    end
+  end
+
+  defp load_score("IsPending", tournament, user_id) do
+    if tournament.is_team do
+      team = __MODULE__.get_team_by_tournament_id_and_user_id(tournament.id, user_id)
+      Progress.get_score(tournament.id, team.id)
+    else
+      Progress.get_score(tournament.id, user_id)
+    end
+  end
+
+  defp load_score(_, _, _), do: nil
+
+  @spec get_opponent_for_match_info(integer(), integer(), String.t()) :: User.t() | Team.t() | nil
+  defp get_opponent_for_match_info(_, _, "IsAlone"), do: nil
+  defp get_opponent_for_match_info(tournament_id, user_id, _) do
+    tournament_id
+    |> __MODULE__.get_opponent(user_id)
+    |> case do
+      {:ok, opponent} when not is_nil(opponent) -> opponent
+      _                                         -> nil
+    end
+  end
+
+  @spec is_coin_head_on_match_info?(User.t() | Team.t() | nil, Tournament.t() | TournamentLog.t() | nil,  integer()) :: boolean() | nil
+  defp is_coin_head_on_match_info?(nil, _, _), do: nil
+  defp is_coin_head_on_match_info?(_, %Tournament{enabled_coin_toss: false}, _), do: nil
+  defp is_coin_head_on_match_info?(%User{id: opponent_id}, %Tournament{is_team: false, id: id}, user_id),
+    do: __MODULE__.is_head_of_coin?(id, user_id, opponent_id)
+  defp is_coin_head_on_match_info?(%Team{id: opponent_id}, %Tournament{is_team: true, id: id}, team_id),
+    do: __MODULE__.is_head_of_coin?(id, team_id, opponent_id)
+
+
+
 
   @doc """
   Deletes a tournament.
