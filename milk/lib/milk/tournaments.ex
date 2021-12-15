@@ -281,9 +281,7 @@ defmodule Milk.Tournaments do
     Assistant
     |> where([a], a.user_id == ^user_id)
     |> Repo.all()
-    |> Enum.map(fn assistant ->
-      __MODULE__.get_tournament(assistant.tournament_id)
-    end)
+    |> Enum.map(&__MODULE__.get_tournament(&1.tournament_id))
   end
 
   @doc """
@@ -498,8 +496,7 @@ defmodule Milk.Tournaments do
     |> Enum.map(&(&1.user_id))
     ~> team_members
 
-    masters ++ entrants ++ team_members
-    |> Enum.uniq()
+    Enum.uniq(masters ++ entrants ++ team_members)
   end
 
   @doc """
@@ -826,11 +823,8 @@ defmodule Milk.Tournaments do
           update_details(tournament, attrs)
           {:ok, tournament}
 
-        {:error, error} ->
-{:error, error.errors}
-
-        _ ->
-          {:error, nil}
+        {:error, error} -> {:error, error.errors}
+        _               -> {:error, nil}
       end
     else
       {:error, nil}
@@ -1442,9 +1436,8 @@ defmodule Milk.Tournaments do
   end
 
   @spec renew_match_list_with_fight_result(integer(), [integer()]) :: {:ok, nil} | {:error, String.t()}
-  defp renew_match_list_with_fight_result(tournament_id, [loser]) do
-    Progress.renew_match_list_with_fight_result(loser, tournament_id)
-  end
+  defp renew_match_list_with_fight_result(tournament_id, [loser]),
+    do: Progress.renew_match_list_with_fight_result(loser, tournament_id)
 
   @doc """
   Delete a loser in a matchlist
@@ -1506,7 +1499,7 @@ defmodule Milk.Tournaments do
   def promote_winners_by_loser!(tournament_id, match_list, loser) do
     match_list
     |> find_match(loser)
-    |> Kernel.==([])
+    |> Enum.empty?()
     |> unless do
       tournament_id
       |> __MODULE__.get_opponent(loser)
@@ -2071,41 +2064,36 @@ defmodule Milk.Tournaments do
   Get lost a player.
   """
   @spec get_lost(match_list(), integer() | [integer()]) :: match_list()
-  def get_lost(match_list, loser) do
-    Tournamex.renew_match_list_with_loser(match_list, loser)
-  end
+  def get_lost(match_list, loser),
+    do: Tournamex.renew_match_list_with_loser(match_list, loser)
 
   @doc """
   Generate a matchlist.
   """
   @spec generate_matchlist([integer()]) :: {:ok, match_list()} | {:error, String.t()}
-  def generate_matchlist(list) do
-    Tournamex.generate_matchlist(list)
-  end
+  def generate_matchlist(list),
+    do: Tournamex.generate_matchlist(list)
 
   @doc """
   Initialize fight result of match list.
   """
   @spec initialize_match_list_with_fight_result(match_list()) :: match_list_with_fight_result()
-  def initialize_match_list_with_fight_result(match_list) do
-    Tournamex.initialize_match_list_with_fight_result(match_list)
-  end
+  def initialize_match_list_with_fight_result(match_list),
+    do: Tournamex.initialize_match_list_with_fight_result(match_list)
 
   @doc """
   Initialize fight result of match list of teams.
   """
   @spec initialize_match_list_of_team_with_fight_result(match_list()) :: match_list_with_fight_result()
-  def initialize_match_list_of_team_with_fight_result(match_list) do
-    Tournamex.initialize_match_list_of_team_with_fight_result(match_list)
-  end
+  def initialize_match_list_of_team_with_fight_result(match_list),
+    do: Tournamex.initialize_match_list_of_team_with_fight_result(match_list)
 
   @doc """
   Put value on brackets.
   """
   @spec put_value_on_brackets(match_list(), integer() | String.t() | atom(), any()) :: match_list() | match_list_with_fight_result()
-  def put_value_on_brackets(match_list, key, value) do
-    Tournamex.put_value_on_brackets(match_list, key, value)
-  end
+  def put_value_on_brackets(match_list, key, value),
+    do: Tournamex.put_value_on_brackets(match_list, key, value)
 
   @doc """
   Gets a single assistant.
@@ -2195,17 +2183,14 @@ defmodule Milk.Tournaments do
 
       tournament_id
       |> get_entrants()
-      |> Enum.filter(fn entrant ->
-        match_list = Progress.get_match_list(tournament_id)
-        !has_lost?(match_list, entrant.user_id)
+      |> Enum.reject(fn entrant ->
+        tournament_id
+        |> Progress.get_match_list()
+        |> has_lost?(entrant.user_id)
       end)
-      |> Enum.map(fn entrant ->
-        Accounts.get_user(entrant.user_id)
-      end)
-      |> Enum.filter(fn user ->
-        # match_pending_listに入っていないユーザー
-        !Enum.member?(fighting_users, user)
-      end)
+      |> Enum.map(&Accounts.get_user(&1.user_id))
+      # match_pending_listに入っていないユーザー
+      |> Enum.reject(&Enum.member?(fighting_users, &1))
     end
   end
 
@@ -2325,7 +2310,7 @@ defmodule Milk.Tournaments do
     |> TournamentChatTopic.changeset(attrs)
     |> Repo.insert()
     |> case do
-      {:ok, topic} -> {:ok, Map.put(topic, :tournament_id, attrs["tournament_id"])}
+      {:ok, topic}    -> {:ok, Map.put(topic, :tournament_id, attrs["tournament_id"])}
       {:error, error} -> {:error, error}
     end
   end
@@ -2387,11 +2372,11 @@ defmodule Milk.Tournaments do
   end
 
   def force_to_promote_rank(%{"team_id" => team_id} = attrs) do
-    with {:ok, nil} <- validate_team_id(attrs),
-         {:ok, attrs} <- validate_tournament_id(attrs),
-         {:ok, nil} <- validate_tournament_started(attrs),
+    with {:ok, nil}       <- validate_team_id(attrs),
+         {:ok, attrs}     <- validate_tournament_id(attrs),
+         {:ok, nil}       <- validate_tournament_started(attrs),
          {:ok, next_rank} <- find_next_rank(attrs),
-         {:ok, team} <- __MODULE__.update_team(team_id, %{rank: next_rank}) do
+         {:ok, team}      <- __MODULE__.update_team(team_id, %{rank: next_rank}) do
       {:ok, team}
     else
       error -> error
@@ -2915,14 +2900,14 @@ defmodule Milk.Tournaments do
       match_index: match_index
     }
 
-    with {:ok, _} <- Progress.create_best_of_x_tournament_match_log(attrs),
+    with {:ok, _}                               <- Progress.create_best_of_x_tournament_match_log(attrs),
          match_list when not is_nil(match_list) <- Progress.get_match_list_with_fight_result(tournament_id),
-         match_list <- Tournamex.win_count_increment(match_list, winner_id),
-         {:ok, _} <- Progress.delete_match_list_with_fight_result(tournament_id),
-         {:ok, _} <- Progress.insert_match_list_with_fight_result(match_list, tournament_id) do
+         match_list                             <- Tournamex.win_count_increment(match_list, winner_id),
+         {:ok, _}                               <- Progress.delete_match_list_with_fight_result(tournament_id),
+         {:ok, _}                               <- Progress.insert_match_list_with_fight_result(match_list, tournament_id) do
       {:ok, nil}
     else
-      nil -> {:error, "match list is nil"}
+      nil   -> {:error, "match list is nil"}
       error -> error
     end
   end
@@ -4003,9 +3988,8 @@ defmodule Milk.Tournaments do
     end
   end
 
-  defp delete_map_selection_transaction(map_selection, multi) do
-    Multi.delete(multi, :"map_selection:#{map_selection.id}", map_selection)
-  end
+  defp delete_map_selection_transaction(map_selection, multi),
+    do: Multi.delete(multi, :"map_selection:#{map_selection.id}", map_selection)
 
   @doc """
   Update map.
@@ -4025,18 +4009,13 @@ defmodule Milk.Tournaments do
     mine_str = to_string(tournament_id + id)
     opponent_str = to_string(tournament_id + opponent_id)
 
+    generate_hash_from_str(mine_str) > generate_hash_from_str(opponent_str)
+  end
+
+  defp generate_hash_from_str(str) do
     :sha256
-    |> :crypto.hash(mine_str)
+    |> :crypto.hash(str)
     |> Base.encode16()
     |> String.downcase()
-    ~> mine
-
-    :sha256
-    |> :crypto.hash(opponent_str)
-    |> Base.encode16()
-    |> String.downcase()
-    ~> his
-
-    mine > his
   end
 end
