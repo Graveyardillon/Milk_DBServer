@@ -3078,6 +3078,32 @@ defmodule Milk.Tournaments do
     {:ok, nil}
   end
 
+  @spec resend_team_invitations(integer()) :: {:ok, nil} | {:error, String.t()}
+  def resend_team_invitations(team_id) do
+    team_id
+    |> __MODULE__.get_leader()
+    |> Map.get(:user)
+    ~> leader
+
+    title_str = "#{leader.name} からチーム招待されました"
+
+    Notification
+    |> where([n], n.title == ^title_str)
+    |> Repo.all()
+    |> Enum.each(&Repo.delete(&1))
+
+    team_id
+    |> __MODULE__.get_remaining_invitations_by_team_id()
+    |> Enum.map(fn invitation ->
+      invitation
+      |> Repo.preload(:team_member)
+      |> Repo.preload(:sender)
+      |> create_invitation_notification()
+    end)
+    |> Enum.all?(&match?({:ok, _}, &1))
+    |> Tools.boolean_to_tuple()
+  end
+
   @doc """
   Get a team.
   """
@@ -3359,13 +3385,9 @@ defmodule Milk.Tournaments do
     |> where([t, tm], t.tournament_id == ^tournament_id)
     |> preload([t, tm], :team_member)
     |> Repo.all()
-    |> Enum.uniq_by(fn team_with_member_info ->
-      team_with_member_info.id
-    end)
+    |> Enum.uniq_by(&(&1.id))
     |> Enum.any?(fn team ->
-      team
-      |> Map.get(:team_member)
-      |> Enum.any?(fn member ->
+      Enum.any?(team.team_member, fn member ->
         member.user_id == user_id
       end)
     end)
@@ -3381,9 +3403,7 @@ defmodule Milk.Tournaments do
     |> Enum.any?(fn team ->
       team.id
       |> __MODULE__.get_team_members_by_team_id()
-      |> Enum.any?(fn member ->
-        member.user_id == user_id
-      end)
+      |> Enum.any?(&(&1.user_id == user_id))
     end)
   end
 
@@ -3923,9 +3943,7 @@ defmodule Milk.Tournaments do
 
     tournament_id
     |> get_maps_by_tournament_id()
-    |> Enum.map(fn map ->
-      Map.put(map, :state, "not_selected")
-    end)
+    |> Enum.map(&Map.put(&1, :state, "not_selected"))
     ~> maps
 
     tournament_id
@@ -3951,17 +3969,11 @@ defmodule Milk.Tournaments do
     |> Repo.all()
     |> Repo.preload(:map)
     |> Enum.filter(&(&1.state == "selected"))
-    |> Enum.map(fn map_selection ->
-      map_selection
-      |> Map.get(:map)
-      |> Map.put(:state, map_selection.state)
-    end)
-    ~> maps
-    |> length()
+    |> Enum.map(&Map.put(&1.map, :state, &1.state))
     |> case do
-      1 -> {:ok, hd(maps)}
-      0 -> {:error, "not selected any maps"}
-      n -> {:error, "selected too many maps (length: #{n})"}
+      maps when maps == []        -> {:error, "not selected any maps"}
+      maps when length(maps) == 1 -> {:ok, hd(maps)}
+      n                           -> {:error, "selected too many maps (length: #{n})"}
     end
   end
 
@@ -3969,9 +3981,8 @@ defmodule Milk.Tournaments do
   Delete map selection.
   """
   @spec delete_map_selection(MapSelection.t()) :: {:ok, MapSelection.t()} | {:error, Ecto.Changeset.t()}
-  def delete_map_selection(%MapSelection{} = map_selection) do
-    Repo.delete(map_selection)
-  end
+  def delete_map_selection(%MapSelection{} = map_selection),
+    do: Repo.delete(map_selection)
 
   @doc """
   Delete map selections
@@ -4027,31 +4038,5 @@ defmodule Milk.Tournaments do
     ~> his
 
     mine > his
-  end
-
-  @spec resend_team_invitations(integer()) :: {:ok, nil} | {:error, String.t()}
-  def resend_team_invitations(team_id) do
-    team_id
-    |> __MODULE__.get_leader()
-    |> Map.get(:user)
-    ~> leader
-
-    title_str = "#{leader.name} からチーム招待されました"
-
-    Notification
-    |> where([n], n.title == ^title_str)
-    |> Repo.all()
-    |> Enum.each(&Repo.delete(&1))
-
-    team_id
-    |> __MODULE__.get_remaining_invitations_by_team_id()
-    |> Enum.map(fn invitation ->
-      invitation
-      |> Repo.preload(:team_member)
-      |> Repo.preload(:sender)
-      |> create_invitation_notification()
-    end)
-    |> Enum.all?(&match?({:ok, _}, &1))
-    |> Tools.boolean_to_tuple()
   end
 end
