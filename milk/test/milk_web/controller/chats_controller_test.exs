@@ -128,7 +128,7 @@ defmodule MilkWeb.ChatsControllerTest do
       conn = get(conn, Routes.chats_path(conn, :show, id))
 
       assert %{
-               "id" => id,
+               "id" => _,
                "index" => 43,
                "word" => "some word"
              } = json_response(conn, 200)["data"]
@@ -150,7 +150,7 @@ defmodule MilkWeb.ChatsControllerTest do
       conn = get(conn, Routes.chats_path(conn, :show, id))
 
       assert %{
-               "id" => id,
+               "id" => _,
                "index" => 43,
                "word" => "some updated word"
              } = json_response(conn, 200)["data"]

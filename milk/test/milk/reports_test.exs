@@ -19,7 +19,7 @@ defmodule Milk.ReportsTest do
         "report_types" => [0]
       }
 
-      assert {:ok, report} = Reports.create_user_report(report_attrs)
+      assert {:ok, _} = Reports.create_user_report(report_attrs)
     end
   end
 

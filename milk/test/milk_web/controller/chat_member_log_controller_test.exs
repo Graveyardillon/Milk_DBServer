@@ -40,7 +40,7 @@ defmodule MilkWeb.ChatMemberLogControllerTest do
       conn = get(conn, Routes.chat_member_log_path(conn, :show, id))
 
       assert %{
-               "id" => id,
+               "id" => _,
                "authority" => 42,
                "chat_room_id" => 42,
                "user_id" => 42
@@ -67,7 +67,7 @@ defmodule MilkWeb.ChatMemberLogControllerTest do
       conn = get(conn, Routes.chat_member_log_path(conn, :show, id))
 
       assert %{
-               "id" => id,
+               "id" => _,
                "authority" => 43,
                "chat_room_id" => 43,
                "user_id" => 43

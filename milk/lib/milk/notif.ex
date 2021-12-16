@@ -179,8 +179,7 @@ defmodule Milk.Notif do
   @doc """
   Delete notifications relevant for the tournament.
   """
-  @spec delete_notifications_relevant_for_tournament(integer()) ::
-          {:ok, nil} | {:error, Ecto.Changeset.t() | nil}
+  @spec delete_notifications_relevant_for_tournament(integer()) :: {:ok, nil} | {:error, Ecto.Changeset.t() | nil}
   def delete_notifications_relevant_for_tournament(tournament_id) when is_integer(tournament_id) do
     tournament_id
     |> __MODULE__.get_notifications_relevant_for_tournament()

@@ -40,7 +40,7 @@ defmodule MilkWeb.TeamControllerTest do
   end
 
   describe "show" do
-    test "works", %{conn: conn} do
+    test "works both /1 and /2", %{conn: conn} do
       tournament = fixture_tournament(is_team: true, type: 2, capacity: 2)
 
       tournament.id
@@ -70,7 +70,53 @@ defmodule MilkWeb.TeamControllerTest do
           assert Map.has_key?(user, "icon_path")
           assert Map.has_key?(user, "name")
         end)
+
+        leader = Tournaments.get_leader(team["id"])
+        conn = get(conn, Routes.team_path(conn, :show), tournament_id: tournament.id, user_id: leader.user_id)
+        assert json_response(conn, 200)["result"]
+        team = json_response(conn, 200)["data"]
+        assert Map.has_key?(team, "id")
+        assert Map.has_key?(team, "name")
+        assert Map.has_key?(team, "size")
+        assert Map.has_key?(team, "team_member")
+        assert Map.has_key?(team, "tournament_id")
+
+        team
+        |> Map.get("team_member")
+        |> Enum.map(fn member ->
+          assert Map.has_key?(member, "id")
+          assert member["is_invitation_confirmed"]
+          assert Map.has_key?(member, "is_leader")
+          assert Map.has_key?(member, "team_id")
+          assert Map.has_key?(member, "user")
+          assert Map.has_key?(member, "user_id")
+          user = member["user"]
+          assert Map.has_key?(user, "email")
+          assert Map.has_key?(user, "bio")
+          assert Map.has_key?(user, "icon_path")
+          assert Map.has_key?(user, "name")
+        end)
       end)
+    end
+  end
+
+  describe "teams" do
+    test "works", %{conn: conn} do
+      tournament = fixture_tournament(is_team: true)
+      fill_with_team(tournament.id)
+
+      conn = get(conn, Routes.team_path(conn, :get_teams), tournament_id: tournament.id)
+
+      assert json_response(conn, 200)["result"]
+
+      conn
+      |> json_response(200)
+      |> Map.get("data")
+      |> Enum.map(fn team ->
+        assert team["is_confirmed"]
+      end)
+      |> Enum.empty?()
+      |> refute()
     end
   end
 
