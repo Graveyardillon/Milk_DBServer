@@ -606,6 +606,7 @@ defmodule Milk.Tournaments do
         thumbnail_path: thumbnail_path,
         platform_id: platform
       }
+      |> IO.inspect()
 
     tournament_schema = Tournament.create_changeset(tournament, attrs)
 
