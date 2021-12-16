@@ -2069,6 +2069,7 @@ defmodule Milk.Tournaments do
     |> Enum.all?(&match?({:ok, _}, &1))
     |> Tools.boolean_to_tuple()
   end
+
   defp proceed_to_next_match(%Tournament{is_team: false, rule: rule, id: id}, winner_user_id) do
     id
     |> Progress.get_match_list()
