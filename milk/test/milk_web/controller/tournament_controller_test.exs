@@ -3637,7 +3637,7 @@ defmodule MilkWeb.TournamentControllerTest do
     end
   end
 
-  describe "force to defeat" do
+  describe "force to defeat (basic)" do
     setup [:create_tournament]
 
     test "works with size 4 tournament", %{conn: conn, tournament: tournament} do
@@ -3683,9 +3683,9 @@ defmodule MilkWeb.TournamentControllerTest do
         end
       end)
       |> length()
-      |> (fn len ->
-            assert len == length(entrants)
-          end).()
+      |> then(fn len ->
+        assert len == length(entrants)
+      end)
 
       # conn =
       #   post(conn, Routes.tournament_path(conn, :force_to_defeat),
@@ -3762,6 +3762,89 @@ defmodule MilkWeb.TournamentControllerTest do
       # assert json_response(conn, 200)["is_log"]
 
       # assert is_nil(Progress.get_match_list_with_fight_result(tournament.id))
+    end
+  end
+
+  describe "force to defeat (flipban)" do
+    test "works with flipban", %{conn: conn} do
+      user = fixture_user()
+      attrs = %{
+        "capacity" => 4,
+        "coin_head_field" => "マップ選択",
+        "coin_tail_field" => "a/d選択",
+        "deadline" => "2010-04-17T14:00:00Z",
+        "description" => "some description",
+        "event_date" => "2010-04-17T14:00:00Z",
+        "master_id" => user.id,
+        "name" => "some name",
+        "join" => "false",
+        "url" => "some url",
+        "platform" => 1,
+        "is_team" => "true",
+        "rule" => "flipban",
+        "team_size" => 5,
+        "type" => 2,
+        # XXX: ここあとでvalidateに追加しないと head_fieldとかもいるかも
+        "enabled_map" => "true",
+        "enabled_coin_toss" => "true"
+      }
+
+      maps = [
+        %{"name" => "map1"},
+        %{"name" => "map2"},
+        %{"name" => "map3"},
+        %{"name" => "map4"},
+        %{"name" => "map5"},
+        %{"name" => "map6"}
+      ]
+
+      conn = post(conn, Routes.tournament_path(conn, :create), tournament: attrs, file: nil, maps: maps)
+
+      assert json_response(conn, 200)["result"]
+      assert json_response(conn, 200)["data"]["rule"] == "flipban"
+      assert json_response(conn, 200)["data"]["is_team"]
+
+      master_id = json_response(conn, 200)["data"]["master_id"]
+      tournament_id = json_response(conn, 200)["data"]["id"]
+      capacity = json_response(conn, 200)["data"]["capacity"]
+
+      fill_with_team(tournament_id)
+      conn = post(conn, Routes.tournament_path(conn, :start), tournament: %{"master_id" => master_id, "tournament_id" => tournament_id})
+      assert json_response(conn, 200)["result"]
+
+      conn = get(conn, Routes.tournament_path(conn, :get_match_list), %{"tournament_id" => tournament_id})
+      assert json_response(conn, 200)["result"]
+      match_list = json_response(conn, 200)["match_list"]
+
+      match_list
+      |> List.flatten()
+      |> hd()
+      ~> team_id
+      |> Tournaments.get_leader()
+      |> Map.get(:user_id)
+      ~> user_id
+
+      conn =
+        post(conn, Routes.tournament_path(conn, :force_to_defeat),
+          tournament_id: tournament_id,
+          target_team_id: team_id
+        )
+
+      json_response(conn, 200)
+
+      conn =
+        get(conn, Routes.tournament_path(conn, :chunk_bracket_data_for_best_of_format), %{
+          "tournament_id" => tournament_id
+        })
+
+      assert json_response(conn, 200)["result"]
+
+      conn
+      |> json_response(200)
+      |> Map.get("data")
+      |> Enum.any?(fn bracket ->
+        bracket["is_loser"]
+      end)
     end
   end
 

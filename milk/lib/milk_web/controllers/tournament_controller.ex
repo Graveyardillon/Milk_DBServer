@@ -1295,7 +1295,7 @@ defmodule MilkWeb.TournamentController do
       case Progress.get_score(tournament_id, opponent.id) do
         nil ->
           with  {:ok, _tournament} <- Tournaments.waiting_for_score_input_state(tournament, user_id),
-                tournament         <- Tournaments.load_tournament(tournament_id) do
+                tournament         <- Tournaments.get_tournament(tournament_id) do
             claim = %Claim{
               validated: true,
               completed: false,
@@ -1649,12 +1649,13 @@ defmodule MilkWeb.TournamentController do
     |> case do
       {:ok, %User{} = winner} ->
         do_claim_score(conn, user_id,   tournament, -1, 0)
-        do_claim_score(conn, winner.id, tournament, 1, 0)
+        do_claim_score(conn, winner.id, tournament, 1,  0)
       {:ok, %Team{} = winner_team} ->
         leader = Tournaments.get_leader(winner_team.id)
-        do_claim_score(conn, user_id,   tournament, -1, 0)
-        do_claim_score(conn, leader.id, tournament, 1, 0)
-      _ -> json(conn, %{result: false})
+        do_claim_score(conn, user_id,        tournament, -1, 0)
+        do_claim_score(conn, leader.user_id, tournament, 1,  0)
+      _ ->
+        json(conn, %{result: false})
     end
   end
 
