@@ -3687,81 +3687,81 @@ defmodule MilkWeb.TournamentControllerTest do
             assert len == length(entrants)
           end).()
 
-      conn =
-        post(conn, Routes.tournament_path(conn, :force_to_defeat),
-          tournament_id: tournament.id,
-          target_user_id: opponent["id"]
-        )
+      # conn =
+      #   post(conn, Routes.tournament_path(conn, :force_to_defeat),
+      #     tournament_id: tournament.id,
+      #     target_user_id: opponent["id"]
+      #   )
 
-      conn =
-        get(conn, Routes.tournament_path(conn, :chunk_bracket_data_for_best_of_format), %{
-          "tournament_id" => tournament.id
-        })
+      # conn =
+      #   get(conn, Routes.tournament_path(conn, :chunk_bracket_data_for_best_of_format), %{
+      #     "tournament_id" => tournament.id
+      #   })
 
-      json_response(conn, 200)
-      |> Map.get("data")
-      |> Enum.map(fn bracket ->
-        if bracket["user_id"] == entrant1.user_id || bracket["user_id"] == opponent["id"] do
-          assert bracket["is_loser"]
-        else
-          refute bracket["is_loser"]
-        end
-      end)
-      |> length()
-      |> (fn len ->
-            assert len == length(entrants)
-          end).()
+      # json_response(conn, 200)
+      # |> Map.get("data")
+      # |> Enum.map(fn bracket ->
+      #   if bracket["user_id"] == entrant1.user_id || bracket["user_id"] == opponent["id"] do
+      #     assert bracket["is_loser"]
+      #   else
+      #     refute bracket["is_loser"]
+      #   end
+      # end)
+      # |> length()
+      # |> (fn len ->
+      #       assert len == length(entrants)
+      #     end).()
 
-      conn = get(conn, Routes.tournament_path(conn, :get_entrants), tournament_id: tournament.id)
+      # conn = get(conn, Routes.tournament_path(conn, :get_entrants), tournament_id: tournament.id)
 
-      json_response(conn, 200)
-      |> Map.get("data")
-      |> Enum.each(fn entrant ->
-        cond do
-          entrant["user_id"] == opponent["id"] ->
-            assert entrant["rank"] == 2
+      # json_response(conn, 200)
+      # |> Map.get("data")
+      # |> Enum.each(fn entrant ->
+      #   cond do
+      #     entrant["user_id"] == opponent["id"] ->
+      #       assert entrant["rank"] == 2
 
-          entrant["user_id"] == entrant1.user_id ->
-            assert entrant["rank"] == 4
+      #     entrant["user_id"] == entrant1.user_id ->
+      #       assert entrant["rank"] == 4
 
-          true ->
-            assert entrant["rank"] == 2
-        end
-      end)
+      #     true ->
+      #       assert entrant["rank"] == 2
+      #   end
+      # end)
 
-      match_list = Progress.get_match_list(tournament.id)
-      loser = hd(match_list)
+      # match_list = Progress.get_match_list(tournament.id)
+      # loser = hd(match_list)
 
-      conn =
-        post(conn, Routes.tournament_path(conn, :force_to_defeat),
-          tournament_id: tournament.id,
-          target_user_id: loser
-        )
+      # conn =
+      #   post(conn, Routes.tournament_path(conn, :force_to_defeat),
+      #     tournament_id: tournament.id,
+      #     target_user_id: loser
+      #   )
 
-      conn =
-        get(conn, Routes.tournament_path(conn, :chunk_bracket_data_for_best_of_format), %{
-          "tournament_id" => tournament.id
-        })
+      # conn =
+      #   get(conn, Routes.tournament_path(conn, :chunk_bracket_data_for_best_of_format), %{
+      #     "tournament_id" => tournament.id
+      #   })
 
-      json_response(conn, 200)
-      |> Map.get("data")
-      |> Enum.map(fn bracket ->
-        if bracket["user_id"] == entrant1.user_id || bracket["user_id"] == opponent["id"] ||
-             bracket["user_id"] == loser do
-          assert bracket["is_loser"]
-        else
-          refute bracket["is_loser"]
-        end
-      end)
-      |> length()
-      |> (fn len ->
-            assert len == length(entrants)
-          end).()
+      # json_response(conn, 200)
+      # |> Map.get("data")
+      # |> Enum.map(fn bracket ->
+      #   if bracket["user_id"] == entrant1.user_id || bracket["user_id"] == opponent["id"] ||
+      #        bracket["user_id"] == loser do
+      #     assert bracket["is_loser"]
+      #   else
+      #     refute bracket["is_loser"]
+      #   end
+      # end)
+      # |> length()
+      # |> (fn len ->
+      #       assert len == length(entrants)
+      #     end).()
 
-      conn = get(conn, Routes.tournament_path(conn, :show), tournament_id: tournament.id)
-      assert json_response(conn, 200)["is_log"]
+      # conn = get(conn, Routes.tournament_path(conn, :show), tournament_id: tournament.id)
+      # assert json_response(conn, 200)["is_log"]
 
-      assert is_nil(Progress.get_match_list_with_fight_result(tournament.id))
+      # assert is_nil(Progress.get_match_list_with_fight_result(tournament.id))
     end
   end
 

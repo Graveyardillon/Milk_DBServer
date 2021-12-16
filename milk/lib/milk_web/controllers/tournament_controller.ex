@@ -1221,14 +1221,18 @@ defmodule MilkWeb.TournamentController do
     tournament_id = Tools.to_integer_as_needed(tournament_id)
 
     tournament_id
-    |> Tournaments.load_tournament()
+    |> Tournaments.get_tournament()
+    ~> tournament
     |> Map.get(:rule)
     |> Tournaments.rule_needs_score?()
     |> if do
       json(conn, %{result: true, error: "Should provide score in the tournament rule"})
     else
-      tournament = Tournaments.load_tournament(tournament_id)
-      do_claim_score(conn, user_id, tournament, 1)
+      if claimable_state?(tournament_id, user_id) do
+        do_claim_score(conn, user_id, tournament, 1)
+      else
+        json(conn, %{result: false, error: "Invalid state"})
+      end
     end
   end
 
@@ -1240,14 +1244,18 @@ defmodule MilkWeb.TournamentController do
     tournament_id = Tools.to_integer_as_needed(tournament_id)
 
     tournament_id
-    |> Tournaments.load_tournament()
+    |> Tournaments.get_tournament()
+    ~> tournament
     |> Map.get(:rule)
     |> Tournaments.rule_needs_score?()
     |> if do
       json(conn, %{result: true, error: "Should provide score in the tournament rule"})
     else
-      tournament = Tournaments.load_tournament(tournament_id)
-      do_claim_score(conn, user_id, tournament, 0)
+      if claimable_state?(tournament_id, user_id) do
+        do_claim_score(conn, user_id, tournament, 0)
+      else
+        json(conn, %{result: false, error: "Invalid state"})
+      end
     end
   end
 
@@ -1264,8 +1272,12 @@ defmodule MilkWeb.TournamentController do
     score = Tools.to_integer_as_needed(score)
     match_index = Tools.to_integer_as_needed(match_index)
 
-    tournament = Tournaments.load_tournament(tournament_id)
-    do_claim_score(conn, user_id, tournament, score, match_index)
+    if claimable_state?(tournament_id, user_id) do
+      tournament = Tournaments.get_tournament(tournament_id)
+      do_claim_score(conn, user_id, tournament, score, match_index)
+    else
+      json(conn, %{result: false, error: "Invalid state"})
+    end
   end
 
   # bodyless clause
@@ -1276,10 +1288,9 @@ defmodule MilkWeb.TournamentController do
     tournament_id = tournament.id
     rule = tournament.rule
 
-    with  true                      <- claimable_state?(tournament_id, user_id),
-          id when not is_nil(id)    <- Progress.get_necessary_id(tournament_id, user_id),
-          {:ok, opponent}           <- Tournaments.get_opponent(tournament_id, user_id),
-          {:ok, _}                  <- Progress.insert_score(tournament_id, id, score) do
+    with id when not is_nil(id)    <- Progress.get_necessary_id(tournament_id, user_id),
+         {:ok, opponent}           <- Tournaments.get_opponent(tournament_id, user_id),
+         {:ok, _}                  <- Progress.insert_score(tournament_id, id, score) do
       Progress.get_score(tournament_id, opponent.id)
       case Progress.get_score(tournament_id, opponent.id) do
         nil ->
@@ -1423,7 +1434,7 @@ defmodule MilkWeb.TournamentController do
          {:ok, nil} <- finish_as_needed?(tournament.id, winner_id) do
       {:ok, nil}
     else
-      error -> error
+      error -> IO.inspect(error)
     end
   end
 
@@ -1614,33 +1625,70 @@ defmodule MilkWeb.TournamentController do
     tournament_id = Tools.to_integer_as_needed(tournament_id)
     target_user_id = Tools.to_integer_as_needed(target_user_id)
 
-    tournament_id
-    |> Tournaments.get_opponent(target_user_id)
-    |> case do
-      {:ok, winner} ->
-        Tournaments.promote_rank(%{"tournament_id" => tournament_id, "user_id" => winner.id})
-        Tournaments.store_score(tournament_id, winner.id, target_user_id, 0, -1, 0)
-        Tournaments.delete_loser_process(tournament_id, [target_user_id])
-        finish_as_needed?(tournament_id, winner.id)
-
-      {:wait, nil} ->
-        tournament_id
-        |> Progress.get_match_list()
-        |> Tournaments.find_match(target_user_id)
-        |> Kernel.--([target_user_id])
-        |> hd()
-        |> Enum.each(fn user_id ->
-          Tournaments.force_to_promote_rank(%{
-            "tournament_id" => tournament_id,
-            "user_id" => user_id
-          })
-        end)
-
-        Tournaments.delete_loser_process(tournament_id, [target_user_id])
-    end
-
-    json(conn, %{result: true})
+    do_force_to_defeat(conn, tournament_id, target_user_id)
   end
+
+  def force_to_defeat(conn, %{"tournament_id" => tournament_id, "target_team_id" => target_team_id}) do
+    tournament_id = Tools.to_integer_as_needed(tournament_id)
+    target_team_id = Tools.to_integer_as_needed(target_team_id)
+
+    target_team_id
+    |> Tournaments.get_leader()
+    |> Map.get(:user_id)
+    ~> leader_id
+
+    do_force_to_defeat(conn, tournament_id, leader_id)
+  end
+
+  defp do_force_to_defeat(conn, tournament_id, user_id) do
+    tournament = Tournaments.get_tournament(tournament_id)
+
+    # XXX: 仮のmatch_indexを使ってdo_claim_scoreを書いている
+    tournament_id
+    |> Tournaments.get_opponent(user_id)
+    |> case do
+      {:ok, %User{} = winner} ->
+        do_claim_score(conn, user_id,   tournament, -1, 0)
+        do_claim_score(conn, winner.id, tournament, 1, 0)
+      {:ok, %Team{} = winner_team} ->
+        leader = Tournaments.get_leader(winner_team.id)
+        do_claim_score(conn, user_id,   tournament, -1, 0)
+        do_claim_score(conn, leader.id, tournament, 1, 0)
+      _ -> json(conn, %{result: false})
+    end
+  end
+
+  # def force_to_defeat(conn, %{"tournament_id" => tournament_id, "target_user_id" => target_user_id}) do
+  #   tournament_id = Tools.to_integer_as_needed(tournament_id)
+  #   target_user_id = Tools.to_integer_as_needed(target_user_id)
+
+  #   tournament_id
+  #   |> Tournaments.get_opponent(target_user_id)
+  #   |> case do
+  #     {:ok, winner} ->
+  #       Tournaments.promote_rank(%{"tournament_id" => tournament_id, "user_id" => winner.id})
+  #       Tournaments.store_score(tournament_id, winner.id, target_user_id, 0, -1, 0)
+  #       Tournaments.delete_loser_process(tournament_id, [target_user_id])
+  #       finish_as_needed?(tournament_id, winner.id)
+
+  #     {:wait, nil} ->
+  #       tournament_id
+  #       |> Progress.get_match_list()
+  #       |> Tournaments.find_match(target_user_id)
+  #       |> Kernel.--([target_user_id])
+  #       |> hd()
+  #       |> Enum.each(fn user_id ->
+  #         Tournaments.force_to_promote_rank(%{
+  #           "tournament_id" => tournament_id,
+  #           "user_id" => user_id
+  #         })
+  #       end)
+
+  #       Tournaments.delete_loser_process(tournament_id, [target_user_id])
+  #   end
+
+  #   json(conn, %{result: true})
+  # end
 
   @doc """
   Get a tournament by url.
