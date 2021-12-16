@@ -29,54 +29,36 @@ defmodule MilkWeb.UserController do
   @doc """
   Checks if username has been taken.
   """
-  def check_username_duplication(conn, %{"name" => name}) do
-    case Accounts.check_duplication?(name) do
-      true ->
-        json(conn, %{is_unique: false})
-
-      false ->
-        json(conn, %{is_unique: true})
-    end
-  end
+  def check_username_duplication(conn, %{"name" => name}),
+    do: json(conn, %{is_unique: !Accounts.check_duplication?(name)})
 
   @doc """
   Creates a user.
   """
   def create(conn, %{"user" => user_params}) do
-    user_params
-    |> Accounts.create_user()
-    |> case do
-      {:ok, %User{} = user} -> generate_token(user)
-      x -> x
-    end
-    |> case do
-      {:ok, token, %User{} = user} ->
-        %{
-          "title" => "e-playersへようこそ！",
-          "body_text" => "もしよければコミュニティに参加してアプリの改善に力を貸してください！\nhttps://discord.gg/cfZw6EAYrv",
-          "process_id" => "COMMON",
-          "user_id" => user.id
-        }
-        |> Notif.create_notification()
-
-        render(conn, "login.json", %{user: user, token: token})
-
+    with {:ok, %User{} = user} <- Accounts.create_user(user_params),
+         {:ok, token, _}       <- generate_token(user),
+         {:ok, _}              <- create_welcome_notification(user) do
+      render(conn, "login.json", %{user: user, token: token})
+    else
+      {:error, [email: {"has already been taken", _}]} ->
+        render(conn, "error.json", error_code: 101)
+      {:error, [password: {"should be at least %{count} character(s)", _}]} ->
+        render(conn, "error.json", error_code: 102)
+      {:error, [password: {"has invalid format", _}]} ->
+        render(conn, "error.json", error_code: 103)
       {:error, error} ->
-        case error do
-          [email: {"has already been taken", _}] ->
-            render(conn, "error.json", error_code: 101)
-
-          [password: {"should be at least %{count} character(s)", _}] ->
-            render(conn, "error.json", error_code: 102)
-
-          [password: {"has invalid format", _}] ->
-            render(conn, "error.json", error_code: 103)
-
-          _ ->
-            render(conn, "error.json", error: error)
-        end
+        render(conn, "error.json", error: error)
     end
   end
+
+  defp create_welcome_notification(user),
+    do: Notif.create_notification(%{
+        "title" => "e-playersへようこそ！",
+        "body_text" => "もしよければコミュニティに参加してアプリの改善に力を貸してください！\nhttps://discord.gg/cfZw6EAYrv",
+        "process_id" => "COMMON",
+        "user_id" => user.id
+      })
 
   # NOTE: アカウント作成のためのラッパー関数
   defp create_user(email, username, service_name) do

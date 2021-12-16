@@ -162,7 +162,7 @@ defmodule Milk.Accounts do
   @doc """
   Creates a user.
   """
-  @spec create_user(map(), String.t()) :: any()
+  @spec create_user(map(), String.t()) :: {:ok, User.t()} | {:error, Ecto.Changeset.t() | nil}
   def create_user(attrs, service_name \\ "e-players") do
     attrs = put_id_for_show(attrs)
 
