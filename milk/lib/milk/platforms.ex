@@ -3,6 +3,7 @@ defmodule Milk.Platforms do
   The platforms context.
   """
 
+  import Common.Sperm
   import Ecto.Query, warn: false
 
   alias Milk.Platforms.Platform
@@ -17,8 +18,11 @@ defmodule Milk.Platforms do
     |> where([p], p.name in ^platform_names)
     |> Repo.all()
     |> Enum.map(&(&1.name))
-    |> Enum.reject(&(&1 in platform_names))
-    |> Enum.each(&create_platform(%{"name" => &1}))
+    ~> names
+
+    platform_names
+    |> Enum.reject(&(&1 in names))
+    |> Enum.each(&create_platform(%{"name" => &1}) |> IO.inspect())
   end
 
   def create_platform(attrs \\ %{}) do
