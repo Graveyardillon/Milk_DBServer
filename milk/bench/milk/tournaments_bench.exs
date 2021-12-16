@@ -1,6 +1,6 @@
 defmodule Milk.TournamentsBench do
   @moduledoc """
-  Tournamets.exの性能テスト
+  Tournaments.exの性能テスト
   """
   use Benchfella
   use Common.Fixtures
@@ -9,7 +9,7 @@ defmodule Milk.TournamentsBench do
 
   @tournament_list Enum.to_list(1..128)
 
-  setup_all       do
+  setup_all do
     result = Application.ensure_all_started(:milk)
     fixture_user()
     result
