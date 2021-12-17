@@ -11,17 +11,9 @@ defmodule MilkWeb.ChatRoomController do
   """
   def create(conn, %{"chat_room" => chat_room_params}) do
     case Chat.create_chat_room(chat_room_params) do
-      {:ok, %ChatRoom{} = chat_room} ->
-        conn
-        # |> put_status(:created)
-        # |> put_resp_header("location", Routes.chat_room_path(conn, :show, chat_room))
-        |> render("show.json", chat_room: chat_room)
-
-      {:error, error} ->
-        render(conn, "error.json", error: error)
-
-      _ ->
-        render(conn, "error.json", error: nil)
+      {:ok, %ChatRoom{} = chat_room} -> render(conn, "show.json", chat_room: chat_room)
+      {:error, error}                -> render(conn, "error.json", error: error)
+      _                              -> render(conn, "error.json", error: nil)
     end
   end
 
@@ -96,11 +88,6 @@ defmodule MilkWeb.ChatRoomController do
       end)
 
     render(conn, "chat_rooms_with_user.json", info: chat_with_user)
-    # unless length(chat_with_user) == 0 do
-    #   render(conn, "chat_rooms_with_user.json", info: chat_with_user)
-    # else
-    #   render(conn, "error.json", error: nil)
-    # end
   end
 
   def private_room(conn, %{"my_id" => my_id, "partner_id" => partner_id}) do

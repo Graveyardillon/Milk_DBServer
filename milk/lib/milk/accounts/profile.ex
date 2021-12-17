@@ -1,4 +1,7 @@
 defmodule Milk.Accounts.Profile do
+  @moduledoc """
+  Profileのスキーマ
+  """
   use Milk.Schema
 
   import Ecto.Changeset

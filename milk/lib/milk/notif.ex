@@ -205,7 +205,8 @@ defmodule Milk.Notif do
   def push_ios(%Maps.PushIos{} = push_ios) do
     badge_num = count_unchecked_notifications(push_ios.user_id)
 
-    Pigeon.APNS.Notification.new("push_notice", push_ios.device_token, topic())
+    "push_notice"
+    |> Pigeon.APNS.Notification.new(push_ios.device_token, topic())
     |> put_sound("default")
     |> put_badge(badge_num)
     |> put_category(push_ios.process_id)

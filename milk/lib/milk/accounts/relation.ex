@@ -5,6 +5,14 @@ defmodule Milk.Accounts.Relation do
 
   alias Milk.Accounts.User
 
+  @type t :: %__MODULE__{
+    followee_id: integer(),
+    follower_id: integer(),
+    # NOTE: timestamps
+    create_time: any(),
+    update_time: any()
+  }
+
   schema "relations" do
     belongs_to :followee, User
     belongs_to :follower, User

@@ -12,17 +12,9 @@ defmodule MilkWeb.DiscordController do
     Tournaments
   }
 
-  def team_name(conn, %{
-        "discord_user_id" => discord_user_id,
-        "discord_server_id" => discord_server_id
-      }) do
-    discord_user_id
-    |> Accounts.get_user_by_discord_id()
-    ~> user
-
-    discord_server_id
-    |> Tournaments.get_tournament_by_discord_server_id()
-    ~> tournament
+  def team_name(conn, %{"discord_user_id" => discord_user_id, "discord_server_id" => discord_server_id}) do
+    user = Accounts.get_user_by_discord_id(discord_user_id)
+    tournament = Tournaments.get_tournament_by_discord_server_id(discord_server_id)
 
     team = Tournaments.get_team_by_tournament_id_and_user_id(tournament.id, user.id)
 
@@ -34,7 +26,7 @@ defmodule MilkWeb.DiscordController do
     |> Tools.to_integer_as_needed()
     |> Discord.associate(discord_id)
     |> case do
-      {:ok, _} -> json(conn, %{result: true})
+      {:ok, _}        -> json(conn, %{result: true})
       {:error, error} -> render(conn, "error.json", error: error)
     end
   end
@@ -45,7 +37,7 @@ defmodule MilkWeb.DiscordController do
     |> Discord.get_discord_user_by_user_id()
     |> Discord.delete_discord_user()
     |> case do
-      {:ok, _} -> json(conn, %{result: true})
+      {:ok, _}        -> json(conn, %{result: true})
       {:error, error} -> render(conn, "error.json", error: error)
     end
   end
@@ -91,18 +83,14 @@ defmodule MilkWeb.DiscordController do
     team_id
     |> Tournaments.get_team_members_by_team_id()
     |> Enum.each(fn member ->
-      %{
+      Notif.create_notification(%{
         "user_id" => member.user_id,
         "process_id" => "DISCORD_SERVER_INVITATION",
         "icon_path" => tournament.thumbnail_path,
         "title" => "#{tournament.name}のDiscordサーバーへの招待を受け取りました",
         "body_text" => "",
-        "data" =>
-          Jason.encode!(%{
-            url: invitation_link
-          })
-      }
-      |> Notif.create_notification()
+        "data" => Jason.encode!(%{url: invitation_link})
+      })
     end)
 
     json(conn, %{result: true})
