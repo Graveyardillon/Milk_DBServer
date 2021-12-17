@@ -10,9 +10,10 @@ defmodule MilkWeb.DeviceController do
 
     case Accounts.get_device(token) do
       nil ->
-        Accounts.register_device(user_id, token)
+        user_id
+        |> Accounts.register_device(token)
         |> case do
-          {:ok, device} -> render(conn, "show.json", device: device)
+          {:ok, device}   -> render(conn, "show.json", device: device)
           {:error, error} -> render(conn, "error.json", error: error)
         end
 
@@ -26,7 +27,7 @@ defmodule MilkWeb.DeviceController do
     |> Accounts.get_device()
     |> Accounts.unregister_device()
     |> case do
-      {:ok, _} -> json(conn, %{result: true})
+      {:ok, _}    -> json(conn, %{result: true})
       {:error, _} -> json(conn, result: false)
     end
   end
