@@ -3196,8 +3196,7 @@ defmodule Milk.Tournaments do
   end
 
   defp create_team_invitation_notifications(invitations) do
-    invitations
-    |> Enum.each(fn {_, invitation} ->
+    Enum.each(invitations, fn {_, invitation} ->
       invitation
       |> Repo.preload(:team_member)
       |> Repo.preload(:sender)
@@ -3206,6 +3205,10 @@ defmodule Milk.Tournaments do
 
     {:ok, nil}
   end
+
+  @spec delete_team_invitation(TeamInvitation.t()) :: {:ok, TeamInvitation.t()} | {:error, Ecto.Changeset.t()}
+  def delete_team_invitation(invitation),
+    do: Repo.delete(invitation)
 
   @spec resend_team_invitations(integer()) :: {:ok, nil} | {:error, String.t()}
   def resend_team_invitations(team_id) do

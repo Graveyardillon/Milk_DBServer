@@ -88,7 +88,7 @@ defmodule Common.Fixtures do
       end
 
       def fill_with_team(tournament_id) do
-        tournament = Tournaments.load_tournament(tournament_id)
+        tournament = Tournaments.get_tournament(tournament_id)
 
         101..(tournament.team_size * tournament.capacity + 100)
         |> Enum.to_list()
@@ -121,7 +121,7 @@ defmodule Common.Fixtures do
       end
 
       def fill_with_entrant(tournament_id) do
-        tournament = Tournaments.load_tournament(tournament_id)
+        tournament = Tournaments.get_tournament(tournament_id)
 
         101..(tournament.capacity + 100)
         |> Enum.to_list()

@@ -7,7 +7,10 @@ defmodule MilkWeb.TeamControllerTest do
 
   import Common.Sperm
 
-  alias Milk.Tournaments
+  alias Milk.{
+    Notif,
+    Tournaments
+  }
 
   setup %{conn: conn} do
     {:ok, conn: put_req_header(conn, "accept", "application/json")}
@@ -399,6 +402,49 @@ defmodule MilkWeb.TeamControllerTest do
       |> length()
       |> Kernel.==(3)
       |> assert()
+    end
+  end
+
+  describe "resend team invitations" do
+    test "works", %{conn: conn} do
+      tournament = fixture_tournament(is_team: true, type: 2, capacity: 2)
+
+      11..(tournament.team_size * tournament.capacity * 10)
+      |> Enum.to_list()
+      |> Enum.map(&fixture_user(num: &1))
+      |> Enum.map(&Map.get(&1, :id))
+      ~> all_member_id_list
+      |> Enum.chunk_every(tournament.team_size)
+      |> Enum.map(fn [leader | members] ->
+        tournament.id
+        |> Tournaments.create_team(tournament.team_size, leader, members)
+        |> elem(1)
+      end)
+      ~> teams
+
+      all_member_id_list
+      |> Enum.map(fn user_id ->
+        user_id
+        |> Notif.list_notifications()
+        |> Enum.each(&Notif.delete_notification(&1))
+      end)
+
+      all_member_id_list
+      |> Enum.map(&Notif.list_notifications(&1))
+      |> List.flatten()
+      |> Enum.empty?()
+      |> assert()
+
+      Enum.each(teams, fn team ->
+        conn = post(conn, Routes.team_path(conn, :resend_team_invitations), team_id: team.id)
+        assert json_response(conn, 200)["result"]
+      end)
+
+      all_member_id_list
+      |> Enum.map(&Notif.list_notifications(&1))
+      |> List.flatten()
+      |> Enum.empty?()
+      |> refute()
     end
   end
 end
