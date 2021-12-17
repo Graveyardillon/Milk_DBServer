@@ -45,7 +45,7 @@ defmodule MilkWeb.Router do
     post "/user/signin_with_discord", UserController, :signin_with_discord
     post "/user/signin_with_apple", UserController, :signin_with_apple
     post "/user/login_forced", UserController, :login_forced
-    post "/user/logout", UserController, :logout
+    post "/user/signout", UserController, :logout
     post "/user/change_password", UserController, :change_password
     delete "/user/delete", UserController, :delete
 
