@@ -22,7 +22,7 @@ defmodule Milk.Platforms do
 
     platform_names
     |> Enum.reject(&(&1 in names))
-    |> Enum.each(&create_platform(%{"name" => &1}) |> IO.inspect())
+    |> Enum.each(&create_platform(%{"name" => &1}))
   end
 
   def create_platform(attrs \\ %{}) do

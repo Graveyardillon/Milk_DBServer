@@ -1434,7 +1434,7 @@ defmodule MilkWeb.TournamentController do
          {:ok, nil} <- finish_as_needed?(tournament.id, winner_id) do
       {:ok, nil}
     else
-      error -> IO.inspect(error)
+      error -> error
     end
   end
 
