@@ -3647,19 +3647,6 @@ defmodule MilkWeb.TournamentControllerTest do
       conn = post(conn, Routes.tournament_path(conn, :start), tournament: %{"master_id" => tournament.master_id, "tournament_id" => tournament.id})
 
       conn =
-        get(conn, Routes.tournament_path(conn, :chunk_bracket_data_for_best_of_format), %{
-          "tournament_id" => tournament.id
-        })
-
-      conn =
-        get(conn, Routes.tournament_path(conn, :get_opponent), %{
-          "tournament_id" => tournament.id,
-          "user_id" => entrant1.user_id
-        })
-
-      opponent = json_response(conn, 200)["opponent"]
-
-      conn =
         post(conn, Routes.tournament_path(conn, :force_to_defeat),
           tournament_id: tournament.id,
           target_user_id: entrant1.user_id
@@ -3806,7 +3793,6 @@ defmodule MilkWeb.TournamentControllerTest do
 
       master_id = json_response(conn, 200)["data"]["master_id"]
       tournament_id = json_response(conn, 200)["data"]["id"]
-      capacity = json_response(conn, 200)["data"]["capacity"]
 
       fill_with_team(tournament_id)
       conn = post(conn, Routes.tournament_path(conn, :start), tournament: %{"master_id" => master_id, "tournament_id" => tournament_id})
@@ -3822,7 +3808,6 @@ defmodule MilkWeb.TournamentControllerTest do
       ~> team_id
       |> Tournaments.get_leader()
       |> Map.get(:user_id)
-      ~> user_id
 
       conn =
         post(conn, Routes.tournament_path(conn, :force_to_defeat),
