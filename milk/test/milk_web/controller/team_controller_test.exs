@@ -12,6 +12,8 @@ defmodule MilkWeb.TeamControllerTest do
     Tournaments
   }
 
+  @moduletag timeout: 300_000
+
   setup %{conn: conn} do
     {:ok, conn: put_req_header(conn, "accept", "application/json")}
   end
