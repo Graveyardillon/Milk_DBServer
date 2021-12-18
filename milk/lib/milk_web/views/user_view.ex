@@ -5,13 +5,10 @@ defmodule MilkWeb.UserView do
   alias MilkWeb.UserView
   alias Milk.UserManager.Guardian
 
-  def render("index.json", %{users: users}) do
-    if users != [] do
-      %{data: render_many(users, UserView, "user.json"), result: true}
-    else
-      %{data: nil, result: false}
-    end
-  end
+  def render("index.json", %{users: []}),
+    do: %{data: nil, result: false}
+  def render("index.json", %{users: users}),
+    do: %{data: render_many(users, UserView, "user.json"), result: true}
 
   def render("show.json", %{user: user}) do
     if user do
@@ -59,7 +56,7 @@ defmodule MilkWeb.UserView do
       point: user.point,
       notification_number: user.notification_number,
       language: user.language,
-      email: user.auth.email,
+      #email: user.auth.email,
       bio: user.bio,
       birthday: user.birthday,
       is_birthday_private: user.is_birthday_private

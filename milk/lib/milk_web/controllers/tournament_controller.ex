@@ -21,10 +21,12 @@ defmodule MilkWeb.TournamentController do
 
   alias Milk.Accounts.User
   alias Milk.CloudStorage.Objects
+
   alias Milk.Log.{
     TeamLog,
     TournamentLog
   }
+
   alias Milk.Tournaments.{
     Claim,
     InteractionMessage,
@@ -1128,7 +1130,7 @@ defmodule MilkWeb.TournamentController do
       |> Tools.to_integer_as_needed()
       |> Tournaments.get_fighting_users()
       |> case do
-        [] -> json(conn, %{data: [], result: true})
+        []    -> json(conn, %{data: [], result: true})
         users -> render(conn, "users.json", users: users)
       end
     end
@@ -1140,7 +1142,7 @@ defmodule MilkWeb.TournamentController do
   def get_waiting_users(conn, %{"tournament_id" => tournament_id}) do
     tournament_id
     |> Tools.to_integer_as_needed()
-    |> Tournaments.load_tournament()
+    |> Tournaments.get_tournament()
     |> Map.get(:is_team)
     |> if do
       tournament_id
@@ -1155,7 +1157,7 @@ defmodule MilkWeb.TournamentController do
       |> Tools.to_integer_as_needed()
       |> Tournaments.get_waiting_users()
       |> case do
-        [] -> json(conn, %{data: [], result: true})
+        []    -> json(conn, %{data: [], result: true})
         users -> render(conn, "users.json", users: users)
       end
     end

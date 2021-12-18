@@ -23,9 +23,8 @@ defmodule MilkWeb.RelationView do
   end
 
   def render("user.json", %{users: users}) do
-    m =
-      users
-      |> Enum.map(fn user ->
+    %{
+      data: Enum.map(users, fn user ->
         %{
           id: user.id,
           icon_path: user.icon_path,
@@ -33,10 +32,10 @@ defmodule MilkWeb.RelationView do
           language: user.language,
           name: user.name,
           bio: user.bio,
-          email: user.auth.email
+          #email: user.auth.email
         }
-      end)
-
-    %{data: m, result: true}
+        end),
+      result: true
+    }
   end
 end

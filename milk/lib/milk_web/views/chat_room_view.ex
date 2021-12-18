@@ -31,7 +31,7 @@ defmodule MilkWeb.ChatRoomView do
             id: i.id,
             room_id: i.room_id,
             name: i.name,
-            email: i.email,
+            #email: i.email,
             last_chat: i.last_chat,
             count: i.count,
             is_private: i.is_private,
@@ -48,7 +48,7 @@ defmodule MilkWeb.ChatRoomView do
         id: info.id,
         room_id: info.room_id,
         name: info.name,
-        email: info.email,
+        #email: info.email,
         last_chat: info.last_chat,
         count: info.count,
         is_private: info.is_private,
@@ -58,7 +58,7 @@ defmodule MilkWeb.ChatRoomView do
   end
 
   def render("error.json", %{error: error}) do
-    if(error) do
+    if error do
       %{result: false, error: Tools.create_error_message(error), data: nil}
     else
       %{result: false, error: nil, data: nil}
