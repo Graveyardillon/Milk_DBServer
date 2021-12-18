@@ -1,4 +1,7 @@
 defmodule Milk.Platforms.Platform do
+  @moduledoc """
+  ゲームのプラットフォームに関するモジュール
+  """
   use Milk.Schema
 
   import Ecto.Changeset
