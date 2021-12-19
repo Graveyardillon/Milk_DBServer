@@ -1729,9 +1729,9 @@ defmodule MilkWeb.TournamentController do
 
     case Progress.get_score(tournament_id, user_id) do
       nil -> json(conn, %{is_win: nil, is_claimed: false})
-      0 -> json(conn, %{is_win: false, tournament_id: tournament_id, is_claimed: true})
-      1 -> json(conn, %{is_win: true, tournament_id: tournament_id, is_claimed: true})
-      _ -> json(conn, %{is_win: nil, tournament_id: tournament_id, is_claimed: true})
+      0   -> json(conn, %{is_win: false, tournament_id: tournament_id, is_claimed: true})
+      1   -> json(conn, %{is_win: true, tournament_id: tournament_id, is_claimed: true})
+      _   -> json(conn, %{is_win: nil, tournament_id: tournament_id, is_claimed: true})
     end
   end
 
@@ -1745,7 +1745,7 @@ defmodule MilkWeb.TournamentController do
     tournament_id
     |> Progress.get_score(user_id)
     |> case do
-       nil -> json(conn, %{score: nil, result: false})
+      nil   -> json(conn, %{score: nil, result: false})
       score -> json(conn, %{score: score, result: true})
     end
   end
