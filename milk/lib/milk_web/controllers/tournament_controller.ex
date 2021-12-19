@@ -1759,9 +1759,9 @@ defmodule MilkWeb.TournamentController do
     :milk
     |> Application.get_env(:environment)
     |> case do
-      :dev -> "http://localhost:4001"
+      :dev  -> "http://localhost:4001"
       :test -> "http://localhost:4001"
-      _ -> "https://webserver-dot-e-players6814.an.r.appspot.com"
+      _     -> "https://webserver-dot-e-players6814.an.r.appspot.com"
     end
     ~> origin
 
