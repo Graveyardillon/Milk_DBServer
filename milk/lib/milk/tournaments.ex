@@ -3237,10 +3237,20 @@ defmodule Milk.Tournaments do
   end
 
   @doc """
-  Get a team.
+  Get a team
   """
   @spec get_team(integer()) :: Team.t() | nil
   def get_team(team_id) do
+    Team
+    |> where([t], t.id == ^team_id)
+    |> Repo.one()
+  end
+
+  @doc """
+  Load a team.
+  """
+  @spec load_team(integer()) :: Team.t() | nil
+  def load_team(team_id) do
     Team
     |> where([t], t.id == ^team_id)
     |> Repo.one()

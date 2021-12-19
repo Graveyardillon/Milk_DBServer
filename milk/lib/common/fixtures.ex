@@ -110,7 +110,7 @@ defmodule Common.Fixtures do
             |> Enum.each(&Tournaments.confirm_team_invitation(&1.id))
           end)
 
-          Tournaments.get_team(team.id)
+          Tournaments.load_team(team.id)
         end)
       end
 
