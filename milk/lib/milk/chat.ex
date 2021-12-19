@@ -211,7 +211,7 @@ defmodule Milk.Chat do
     room_id
     |> get_chat_members_of_room()
     |> Enum.reject(&(&1.user_id == user_id))
-    |> Enum.map(&Accounts.get_user(&1.user_id))
+    |> Enum.map(&Accounts.load_user(&1.user_id))
     |> hd()
   end
 

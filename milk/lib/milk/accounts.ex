@@ -75,6 +75,16 @@ defmodule Milk.Accounts do
   @spec get_user(integer()) :: User.t() | nil
   def get_user(user_id) do
     User
+    |> where([u], u.id == ^user_id)
+    |> Repo.one()
+  end
+
+  @doc """
+  Load user.
+  """
+  @spec load_user(integer()) :: User.t() | nil
+  def load_user(user_id) do
+    User
     |> join(:inner, [u], a in Auth, on: u.id == a.user_id)
     |> where([u, a], u.id == ^user_id)
     |> Repo.one()
@@ -336,7 +346,7 @@ defmodule Milk.Accounts do
   def delete_user(id, password, email, token) do
     user = get_authorized_user(id, password, email, token)
 
-    if user && !is_binary(user) do
+    if !is_nil(user) && !is_binary(user) do
       if is_list(user.chat_member) do
         Enum.map(user.chat_member, fn x ->
           %{

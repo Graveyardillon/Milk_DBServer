@@ -118,7 +118,7 @@ defmodule Milk.MixProject do
       test: [
         "ecto.create --quiet",
         "ecto.migrate",
-        "dialyzer",
+        #"dialyzer",
         "test"
       ],
       check: [

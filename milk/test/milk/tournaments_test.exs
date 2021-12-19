@@ -225,9 +225,9 @@ defmodule Milk.TournamentsTest do
         assert t.id == tournament.id
       end)
       |> length()
-      |> (fn len ->
-            assert len == 1
-          end).()
+      |> then(fn len ->
+        assert len == 1
+      end)
     end
 
     test "get_tournaments_by_master_id/1 fails to return tournaments of a user" do
@@ -259,9 +259,9 @@ defmodule Milk.TournamentsTest do
         assert t.type == tournament.type
       end)
       |> length()
-      |> (fn len ->
-            assert len == 1
-          end).()
+      |> then(fn len ->
+        assert len == 1
+      end)
     end
 
     test "get_ongoing_tournaments_by_master_id/1 fails to return user's ongoing tournaments" do
@@ -292,27 +292,17 @@ defmodule Milk.TournamentsTest do
 
     test "get_pending_tournaments/1" do
       tournament = fixture_tournament(is_team: true, type: 2)
-
-      [num: 5]
-      |> fixture_user()
-      |> Map.get(:id)
-      ~> user
+      user_id = fixture_user(num: 5).id
 
       6..10
       |> Enum.to_list()
-      |> Enum.map(fn n ->
-        [num: n]
-        |> fixture_user()
-        |> Map.get(:id)
-      end)
+      |> Enum.map(&fixture_user(num: &1))
+      |> Enum.map(&Map.get(&1, :id))
       ~> members
 
-      tournament
-      |> Map.get(:id)
-      |> Tournaments.create_team(tournament.team_size, user, members)
-      ~> {:ok, _team}
+      Tournaments.create_team(tournament.id, tournament.team_size, user_id, members)
 
-      user
+      user_id
       |> Tournaments.get_pending_tournaments()
       |> Enum.map(fn t ->
         assert t.id == tournament.id
@@ -332,7 +322,7 @@ defmodule Milk.TournamentsTest do
         end)
       end)
 
-      user
+      user_id
       |> Tournaments.get_pending_tournaments()
       |> length()
       |> Kernel.==(0)
@@ -382,6 +372,7 @@ defmodule Milk.TournamentsTest do
   describe "create tournament" do
     test "create_tournament/1 with valid data creates a tournament" do
       tournament = fixture_tournament()
+
       assert tournament.capacity == 8
       assert is_nil(tournament.deadline)
       assert tournament.description == "some description"
@@ -569,9 +560,9 @@ defmodule Milk.TournamentsTest do
       user1.id
       |> Tournaments.home_tournament_fav()
       |> length()
-      |> (fn len ->
-            assert len == 1
-          end).()
+      |> then(fn len ->
+        assert len == 1
+      end)
     end
 
     test "home_tournament_fav/1 fails to return tournaments which is filtered by favorite users for home screen" do
@@ -580,10 +571,8 @@ defmodule Milk.TournamentsTest do
 
       tournament.master_id
       |> Tournaments.home_tournament_fav()
-      |> length()
-      |> (fn len ->
-            assert len == 0
-          end).()
+      |> Enum.empty?()
+      |> assert()
     end
 
     test "home_tournament_plan/1 returns user's tournaments" do
@@ -592,15 +581,14 @@ defmodule Milk.TournamentsTest do
 
       tournament.master_id
       |> Tournaments.home_tournament_plan()
-      |> (fn len ->
-            refute len == 0
-          end).()
+      |> Enum.empty?()
+      |> refute()
     end
 
     test "home_tournament_plan/1 fails to return user's tournaments" do
       tournament = fixture_tournament(deadline: "2010-04-17T14:00:00Z", event_date: "2010-04-17T14:00:00Z")
 
-      assert length(Tournaments.home_tournament_plan(tournament.master_id)) == 0
+      assert Tournaments.home_tournament_plan(tournament.master_id) == []
     end
 
     test "search/2 works" do
@@ -726,9 +714,9 @@ defmodule Milk.TournamentsTest do
         assert %Entrant{} = entrant
       end)
       |> length()
-      |> (fn len ->
-            assert len == length(entrants)
-          end).()
+      |> then(fn len ->
+        assert len == length(entrants)
+      end)
     end
 
     test "get_entrants/1 returns data 1 size smaller than past one after deleting an entrant", %{
@@ -753,9 +741,9 @@ defmodule Milk.TournamentsTest do
         assert %Entrant{} = entrant
       end)
       |> length()
-      |> (fn len ->
-            assert len == length(entrants) - 1
-          end).()
+      |> then(fn len ->
+        assert len == length(entrants) - 1
+      end)
     end
 
     test "get_entrant_including_logs/1 gets tournament log with a valid data", %{entrant: entrant} do
@@ -846,9 +834,7 @@ defmodule Milk.TournamentsTest do
 
       Tournaments.create_entrant(entrant_params)
 
-      Tournaments.create_entrant(entrant_params)
-      |> Kernel.==({:error, "already joined"})
-      |> assert()
+      assert {:error, "already joined"} = Tournaments.create_entrant(entrant_params)
     end
 
     test "create_entrant/1 returns a team error when the tournament requires team participation" do
@@ -860,9 +846,7 @@ defmodule Milk.TournamentsTest do
         |> Map.put("tournament_id", tournament.id)
         |> Map.put("user_id", user.id)
 
-      Tournaments.create_entrant(entrant_params)
-      |> Kernel.==({:error, "requires team"})
-      |> assert()
+      assert {:error, "requires team"} = Tournaments.create_entrant(entrant_params)
     end
 
     test "create_entrant/1 returns a multi error when it runs with same parameter at one time." do
@@ -2129,7 +2113,7 @@ defmodule Milk.TournamentsTest do
 
       Progress.delete_match_pending_list(opponent.id, tournament.id)
       users = Tournaments.get_fighting_users(tournament.id)
-      assert length(users) == 0
+      assert users == []
     end
   end
 

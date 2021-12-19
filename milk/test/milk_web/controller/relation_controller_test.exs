@@ -63,20 +63,21 @@ defmodule MilkWeb.RelationControllerTest do
     test "works", %{conn: conn, user1: user1, user2: user2} do
       conn = get(conn, Routes.relation_path(conn, :following_list), user_id: user1.id)
 
-      json_response(conn, 200)
+      conn
+      |> json_response(200)
       |> Map.get("data")
       |> Enum.map(fn user ->
         assert user["bio"] == user2.bio
-        assert user["email"] == user2.auth.email
+        #assert user["email"] == user2.auth.email
         assert user["id"] == user2.id
         assert user["id_for_show"] == user2.id_for_show
         assert user["language"] == user2.language
         assert user["name"] == user2.name
       end)
       |> length()
-      |> (fn len ->
-            assert len == 1
-          end).()
+      |> then(fn len ->
+        assert len == 1
+      end)
     end
   end
 
@@ -86,19 +87,20 @@ defmodule MilkWeb.RelationControllerTest do
     test "works", %{conn: conn, user1: user1, user2: user2} do
       conn = get(conn, Routes.relation_path(conn, :following_id_list), user_id: user1.id)
 
-      json_response(conn, 200)
-      |> (fn response ->
-            assert response["result"]
-            response
-          end).()
+      conn
+      |> json_response(200)
+      |> then(fn response ->
+        assert response["result"]
+        response
+      end)
       |> Map.get("following")
       |> Enum.map(fn id ->
         assert id == user2.id
       end)
       |> length()
-      |> (fn len ->
-            assert len == 1
-          end).()
+      |> then(fn len ->
+        assert len == 1
+      end)
     end
   end
 
@@ -108,20 +110,21 @@ defmodule MilkWeb.RelationControllerTest do
     test "works", %{conn: conn, user1: user1, user2: user2} do
       conn = get(conn, Routes.relation_path(conn, :followers_list), user_id: user2.id)
 
-      json_response(conn, 200)
+      conn
+      |> json_response(200)
       |> Map.get("data")
       |> Enum.map(fn user ->
         assert user["bio"] == user1.bio
-        assert user["email"] == user1.auth.email
+        #assert user["email"] == user1.auth.email
         assert user["id"] == user1.id
         assert user["id_for_show"] == user1.id_for_show
         assert user["language"] == user1.language
         assert user["name"] == user1.name
       end)
       |> length()
-      |> (fn len ->
-            assert len == 1
-          end).()
+      |> then(fn len ->
+        assert len == 1
+      end)
     end
   end
 
@@ -131,19 +134,20 @@ defmodule MilkWeb.RelationControllerTest do
     test "works", %{conn: conn, user1: user1, user2: user2} do
       conn = get(conn, Routes.relation_path(conn, :followers_id_list), user_id: user2.id)
 
-      json_response(conn, 200)
-      |> (fn response ->
-            assert response["result"]
-            response
-          end).()
+      conn
+      |> json_response(200)
+      |> then(fn response ->
+        assert response["result"]
+        response
+      end)
       |> Map.get("following")
       |> Enum.map(fn id ->
         assert id == user1.id
       end)
       |> length()
-      |> (fn len ->
-            assert len == 1
-          end).()
+      |> then(fn len ->
+        assert len == 1
+      end)
     end
   end
 
@@ -163,11 +167,12 @@ defmodule MilkWeb.RelationControllerTest do
       conn = get(conn, Routes.relation_path(conn, :blocked_users), user_id: user1.id)
       assert json_response(conn, 200)["result"]
 
-      json_response(conn, 200)
+      conn
+      |> json_response(200)
       |> Map.get("data")
       |> Enum.map(fn user ->
         assert user["id"] == user2.id
-        assert user["email"] == user2.auth.email
+        #assert user["email"] == user2.auth.email
         assert user["icon_path"] == user2.icon_path
         assert user["bio"] == user2.bio
         assert user["name"] == user2.name
@@ -175,9 +180,9 @@ defmodule MilkWeb.RelationControllerTest do
         assert user["language"] == user2.language
       end)
       |> length()
-      |> (fn len ->
-            assert len == 1
-          end).()
+      |> then(fn len ->
+        assert len == 1
+      end)
     end
   end
 
@@ -194,12 +199,13 @@ defmodule MilkWeb.RelationControllerTest do
 
       conn = get(conn, Routes.relation_path(conn, :blocked_users), user_id: user1.id)
 
-      json_response(conn, 200)
+      conn
+      |> json_response(200)
       |> Map.get("data")
       |> length()
-      |> (fn len ->
-            assert len == 1
-          end).()
+      |> then(fn len ->
+        assert len == 1
+      end)
 
       conn =
         post(conn, Routes.relation_path(conn, :unblock_user),
@@ -210,12 +216,11 @@ defmodule MilkWeb.RelationControllerTest do
       assert json_response(conn, 200)["result"]
       conn = get(conn, Routes.relation_path(conn, :blocked_users), user_id: user1.id)
 
-      json_response(conn, 200)
+      conn
+      |> json_response(200)
       |> Map.get("data")
-      |> length()
-      |> (fn len ->
-            assert len == 0
-          end).()
+      |> Enum.empty?()
+      |> assert()
     end
   end
 end

@@ -46,7 +46,7 @@ defmodule MilkWeb.ProfileController do
   def update(conn, %{"profile" => profile_params}) do
     profile_params
     |> Map.get("user_id")
-    |> Accounts.get_user()
+    |> Accounts.load_user()
     ~> user
     |> is_nil()
     |> unless do

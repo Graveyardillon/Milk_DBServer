@@ -23,7 +23,7 @@ defmodule MilkWeb.TournamentView do
         point: opponent.point,
         notification_number: opponent.notification_number,
         language: opponent.language,
-        email: opponent.auth.email,
+        #email: opponent.auth.email,
         bio: opponent.bio
       },
       result: !is_nil(opponent)
@@ -287,7 +287,7 @@ defmodule MilkWeb.TournamentView do
             point: user.point,
             notification_number: user.notification_number,
             language: user.language,
-            email: user.auth.email,
+            #email: user.auth.email,
             bio: user.bio
           }
         end),

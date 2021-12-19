@@ -78,6 +78,7 @@ defmodule Milk.AccountsTest do
     end
 
     test "get_user_by_email/1 gets user by given email", %{user: user} do
+      user = Accounts.load_user(user.id)
       u = Accounts.get_user_by_email(user.auth.email)
       assert u.name == user.name
       assert u.auth.email == user.auth.email
@@ -151,6 +152,7 @@ defmodule Milk.AccountsTest do
     setup [:create_user]
 
     test "update_user/2 with valid data updates the user", %{user: user} do
+      user = Accounts.load_user(user.id)
       assert {:ok, %User{} = user} = Accounts.update_user(user, @update_attrs)
       assert user.icon_path == "some updated icon_path"
       assert user.language == "some updated language"
@@ -172,8 +174,9 @@ defmodule Milk.AccountsTest do
 
     test "change_password_by_email/2 changes password", %{user: user} do
       new_password = "newPassword123"
+      user = Accounts.load_user(user.id)
       assert {:ok, _} = Accounts.change_password_by_email(user.auth.email, new_password)
-      user = Accounts.get_user(user.id)
+      user = Accounts.load_user(user.id)
       assert Argon2.verify_pass(new_password, user.auth.password)
     end
   end
@@ -182,6 +185,7 @@ defmodule Milk.AccountsTest do
     setup [:create_user]
 
     test "email_exists? returns true with created user", %{user: user} do
+      user = Accounts.load_user(user.id)
       assert Accounts.email_exists?(user.auth.email)
     end
 
@@ -213,6 +217,8 @@ defmodule Milk.AccountsTest do
       assert {:ok, %User{} = user} = Accounts.login(login_params)
       assert {:ok, token, _} = Guardian.encode_and_sign(user)
 
+      user = Accounts.load_user(user.id)
+
       assert {:ok, _} =
                Accounts.delete_user(
                  user.id,
@@ -221,7 +227,10 @@ defmodule Milk.AccountsTest do
                  token
                )
 
-      assert !Accounts.get_user(user.id)
+      user.id
+      |> Accounts.get_user()
+      |> is_nil()
+      |> assert()
     end
 
     test "delete_user/1 with invalid token returns errors", %{user: user} do
@@ -231,6 +240,7 @@ defmodule Milk.AccountsTest do
       }
 
       assert {:ok, %User{}} = Accounts.login(login_params)
+      user = Accounts.load_user(user.id)
 
       assert {:error, "That token does not exist"} = Accounts.delete_user(user.id, @user_valid_attrs["password"], user.auth.email, "a")
 
@@ -253,6 +263,7 @@ defmodule Milk.AccountsTest do
     }
 
     test "login/1 can login user by email", %{user: user} do
+      user = Accounts.load_user(user.id)
       login_params = %{
         "password" => @user_valid_attrs["password"],
         "email_or_username" => user.auth.email
@@ -289,6 +300,7 @@ defmodule Milk.AccountsTest do
     end
 
     test "login/1 can't login user by invalid password", %{user: user} do
+      user = Accounts.load_user(user.id)
       login_params = %{
         "password" => "powd",
         "email_or_username" => user.auth.email
@@ -298,11 +310,13 @@ defmodule Milk.AccountsTest do
     end
 
     test "login_forced/1 logins user", %{user: user} do
+      user = Accounts.load_user(user.id)
+
       %{"email" => user.auth.email, "password" => "S1ome password"}
       |> Accounts.login_forced()
-      |> (fn login_user ->
-            assert login_user.id == user.id
-          end).()
+      |> then(fn login_user ->
+        assert login_user.id == user.id
+      end)
     end
   end
 
@@ -321,6 +335,7 @@ defmodule Milk.AccountsTest do
     }
 
     test "logout/1 can logout user by id", %{user: user} do
+      user = Accounts.load_user(user.id)
       login_params = %{
         "password" => @user_valid_attrs["password"],
         "email_or_username" => user.auth.email
