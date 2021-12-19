@@ -3,5 +3,5 @@
   {"test/support/channel_case.ex", :unknown_function},
   {"test/support/conn_case.ex", :unknown_function},
   {"test/support/data_case.ex", :unknown_function},
-  {"lib/milk_web/controllers/tournament_controller", :has_no_local_return}
+  {"lib/milk_web/controllers/tournament_controller", :_no_return}
 ]
