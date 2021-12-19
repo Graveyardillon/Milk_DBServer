@@ -861,7 +861,7 @@ defmodule Milk.Log do
   """
   def create_team_log(team_id) when is_integer(team_id) do
     team_id
-    |> Tournaments.get_team()
+    |> Tournaments.load_team()
     ~> team
     |> Map.get(:team_member)
     |> Enum.each(fn member ->

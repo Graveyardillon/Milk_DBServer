@@ -20,7 +20,7 @@ defmodule MilkWeb.TeamController do
   def show(conn, %{"team_id" => team_id}) do
     team_id
     |> Tools.to_integer_as_needed()
-    |> Tournaments.get_team()
+    |> Tournaments.load_team()
     ~> team
 
     do_show(conn, team)
@@ -239,7 +239,7 @@ defmodule MilkWeb.TeamController do
   Add members to a team.
   """
   def add_members(conn, %{"team_id" => team_id, "user_id_list" => user_id_list}) do
-    team = Tournaments.get_team(team_id)
+    team = Tournaments.load_team(team_id)
     add_members_if_team_exists(conn, team, user_id_list)
   end
 
