@@ -318,23 +318,23 @@ defmodule MilkWeb.UserController do
   Updates user.
   """
   def update(conn, %{"id" => id, "user" => user_params, "token" => token}) do
-    case Guardian.decode_and_verify(token) do
-      {:ok, _} ->
-        id
-        |> Accounts.load_user()
-        |> Accounts.update_user(user_params)
-        |> case do
-          {:ok, %User{} = user} -> render(conn, "show.json", user: user)
-          {:error, error}       -> render(conn, "error.json", error: error)
-          _                     -> render(conn, "show.json", user: nil)
-        end
-
-      _ -> json(conn, %{msg: "Invalid token"})
+    with {:ok, _}    <- Guardian.decode_and_verify(token),
+         {:ok, user} <- update_user(id, user_params) do
+      render(conn, "show.json", user: user)
+    else
+      {:error, error} -> render(conn, "error.json", error: error)
+      _               -> render(conn, "error.json", error: nil)
     end
   end
 
   def update(conn, %{"id" => _id, "user" => _user}),
     do: json(conn, %{message: "Missing token"})
+
+  defp update_user(user_id, user_params) do
+    user_id
+    |> Accounts.load_user()
+    |> Accounts.update_user(user_params)
+  end
 
   @doc """
   Deletes a user.
