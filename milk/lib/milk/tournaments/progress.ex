@@ -48,11 +48,9 @@ defmodule Milk.Tournaments.Progress do
     host = Application.get_env(:milk, :redix_host)
     port = Application.get_env(:milk, :redix_port)
 
-    [host: host, port: port]
-    |> Redix.start_link()
-    |> case do
+    case Redix.start_link(host: host, port: port) do
       {:ok, conn} -> conn
-      error -> error
+      error       -> error
     end
   end
 
@@ -719,9 +717,8 @@ defmodule Milk.Tournaments.Progress do
     |> Repo.insert()
   end
 
-  comment("""
-  match list with fight result log.
-  """)
+
+  # NOTE: match list with fight result log.
 
   def get_match_list_with_fight_result_log(tournament_id) do
     MatchListWithFightResultLog
@@ -735,9 +732,7 @@ defmodule Milk.Tournaments.Progress do
     |> Repo.insert()
   end
 
-  comment("""
-  個人大会スタート時に使用する関数群
-  """)
+  # NOTE: 個人大会スタート時に使用する関数群
 
   @spec start_single_elimination(integer(), Tournament.t()) :: {:ok, match_list(), match_list_with_fight_result()}
   def start_single_elimination(master_id, tournament) do
@@ -815,9 +810,7 @@ defmodule Milk.Tournaments.Progress do
     {:ok, match_list}
   end
 
-  comment("""
-  チーム大会スタートに関する関数群
-  """)
+  # NOTE: チーム大会スタートに関する関数群
 
   @spec start_team_best_of_format(integer(), Tournament.t()) :: {:ok, match_list(), match_list_with_fight_result()} | {:error, String.t(), nil}
   def start_team_best_of_format(master_id, tournament) do
