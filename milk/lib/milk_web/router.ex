@@ -64,7 +64,6 @@ defmodule MilkWeb.Router do
     post "/profile", ProfileController, :get_profile
     post "/profile/update", ProfileController, :update
     post "/profile/update_icon", ProfileController, :update_icon
-    # get "/profile/get_icon", ProfileController, :get_icon
     get "/profile/records", ProfileController, :records
     get "/profile/external_services", ProfileController, :external_services
     post "/profile/external_service", ExternalServiceController, :create
@@ -122,7 +121,6 @@ defmodule MilkWeb.Router do
     get "/tournament/is_started_at_least_one", TournamentController, :is_started_at_least_one
     get "/tournament/participating", TournamentController, :participating_tournaments
     get "/tournament/get_tabs", TournamentController, :tournament_topics
-    get "/tournament/get_thumbnail", TournamentController, :get_thumbnail_image
 
     get "/tournament/get_match_list", TournamentController, :get_match_list
     get "/tournament/home", TournamentController, :home
@@ -223,9 +221,11 @@ defmodule MilkWeb.Router do
 
     get "/image/user_icon/:string", ImageController, :user_icon
     get "/image/tournament_thumbnail/:string", ImageController, :tournament_thumbnail
-
-    get "/image/path", ImageController, :get_by_path
     get "/image/get_thumbnail_by_tournament_id", ImageController, :get_thumbnail_by_tournament_id
+
+    # for web
+    get "/profile/get_icon", ProfileController, :get_icon
+    get "/tournament/get_thumbnail", TournamentController, :get_thumbnail_image
   end
 
   scope "/debug", MilkWeb do

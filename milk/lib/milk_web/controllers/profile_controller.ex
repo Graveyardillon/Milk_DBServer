@@ -107,36 +107,36 @@ defmodule MilkWeb.ProfileController do
     path
   end
 
-  # def get_icon(conn, %{"path" => path}) do
-  #   if path != "" do
-  #     :milk
-  #     |> Application.get_env(:environment)
-  #     |> case do
-  #       :dev -> get_image(path)
-  #       :test -> get_image(path)
-  #       _ -> get_image_prod(path)
-  #     end
-  #     |> case do
-  #       {:ok, file} ->
-  #         b64 = Base.encode64(file)
-  #         json(conn, %{b64: b64})
+# for web  -------------------------------------------------------------
+  def get_icon(conn, %{"path" => path}) do
+    if path != "" do
+      :milk
+      |> Application.get_env(:environment)
+      |> case do
+        :dev -> get_image(path)
+        :test -> get_image(path)
+        _ -> get_image_prod(path)
+      end
+      |> case do
+        {:ok, file} ->
+          b64 = Base.encode64(file)
+          json(conn, %{b64: b64})
 
-  #       {:error, _} ->
-  #         json(conn, %{error: "image not found"})
-  #     end
-  #   else
-  #     json(conn, %{error: "path nil"})
-  #   end
-  # end
-
-  # defp get_image(path) do
-  #   File.read("./static/image/profile_icon/#{path}")
-  # end
-
-  # defp get_image_prod(name) do
-  #   {:ok, object} = Objects.get(name)
-  #   Image.get(object.mediaLink)
-  # end
+        {:error, _} ->
+          json(conn, %{error: "image not found"})
+      end
+    else
+      json(conn, %{error: "path nil"})
+    end
+  end
+  defp get_image(path) do
+    File.read("./static/image/profile_icon/#{path}")
+  end
+  defp get_image_prod(name) do
+    {:ok, object} = Objects.get(name)
+    Image.get(object.mediaLink)
+  end
+# -------------------------------------------------------------
 
   def records(conn, %{"user_id" => user_id}) do
     records = Tournaments.get_all_tournament_records(user_id)

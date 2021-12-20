@@ -251,6 +251,15 @@ defmodule MilkWeb.TournamentController do
   Get a thumbnail image of a tournament.
   """
   def get_thumbnail_image(conn, %{"thumbnail_path" => path}) do
+    # 古い形式に対応
+    path = (String.contains? path, "./static/image/tournament_thumbnail/")
+    |> case do
+      true ->
+        path
+      false ->
+        "./static/image/tournament_thumbnail/" <> path
+    end
+
     case Application.get_env(:milk, :environment) do
       :test -> read_thumbnail(path)
       # coveralls-ignore-start
