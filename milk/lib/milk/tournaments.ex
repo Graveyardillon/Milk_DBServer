@@ -36,6 +36,7 @@ defmodule Milk.Tournaments do
     ChatMember,
     ChatRoom
   }
+  alias Milk.CloudStorage.Objects
   alias Milk.Games.Game
 
   alias Milk.Log.{
@@ -684,6 +685,7 @@ defmodule Milk.Tournaments do
     |> __MODULE__.create_custom_detail()
   end
 
+  # TODO?: マップの画像登録がどうなってるか確認
   @spec create_maps_on_create_tournament(Tournament.t(), [Milk.Tournaments.Map.t()] | map() | nil) :: {:ok, nil} | {:error, String.t() | nil}
   defp create_maps_on_create_tournament(tournament, maps) when is_list(maps) do
     maps
@@ -1154,6 +1156,12 @@ defmodule Milk.Tournaments do
     |> Repo.one()
     ~> tournament
 
+    # TODO: サムネイル、マップ画像の削除
+    delete_thumbnail(tournament)
+    if tournament.enabled_map do
+      delete_maps(id)
+    end
+
     insert_entrant_logs_on_delete(tournament)
     insert_assistant_logs_on_delete(tournament)
 
@@ -1172,6 +1180,32 @@ defmodule Milk.Tournaments do
     end)
 
     Repo.delete(tournament)
+  end
+
+  defp delete_thumbnail(%Tournament{thumbnail_path: nil}), do: {:ok, nil}
+  defp delete_thumbnail(%Tournament{thumbnail_path: thumbnail_path}) do
+    case Application.get_env(:milk, :environment) do
+      :dev  -> File.rm(thumbnail_path)
+      :test -> File.rm(thumbnail_path)
+      _     -> Objects.delete(thumbnail_path)
+    end
+  end
+
+  # HACK: ネストが多い
+  defp delete_maps(tournament_id) do
+    tournament_id
+    |> __MODULE__.get_maps_by_tournament_id()
+    |> Enum.map(&Repo.delete(&1))
+    |> Enum.map(&elem(&1, 1))
+    |> Enum.each(fn map ->
+      unless is_nil(map.icon_path) do
+        case Application.get_env(:milk, :environment) do
+          :dev  -> File.rm(map.icon_path)
+          :test -> File.rm(map.icon_path)
+          _     -> Objects.delete(map.icon_path)
+        end
+      end
+    end)
   end
 
   defp insert_entrant_logs_on_delete(%Tournament{entrant: entrants}) do
