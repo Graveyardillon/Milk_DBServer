@@ -11,10 +11,7 @@ defmodule Milk.Tournaments.Progress do
   9. a/d state
   """
   import Ecto.Query, warn: false
-  import Common.{
-    Comment,
-    Sperm
-  }
+  import Common.Sperm
 
   alias Common.Tools
   alias Milk.{
