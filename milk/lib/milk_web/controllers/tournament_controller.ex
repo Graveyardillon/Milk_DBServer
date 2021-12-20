@@ -1225,17 +1225,23 @@ defmodule MilkWeb.TournamentController do
     tournament_id
     |> Tournaments.get_tournament()
     ~> tournament
-    |> Map.get(:rule)
-    |> Tournaments.rule_needs_score?()
-    |> if do
-      json(conn, %{result: true, error: "Should provide score in the tournament rule"})
+
+    if claimable_state?(tournament_id, user_id) do
+      do_claim_score(conn, user_id, tournament, 1)
     else
-      if claimable_state?(tournament_id, user_id) do
-        do_claim_score(conn, user_id, tournament, 1)
-      else
-        json(conn, %{result: false, error: "Invalid state"})
-      end
+      json(conn, %{result: false, error: "Invalid state"})
     end
+    # |> Map.get(:rule)
+    # |> Tournaments.rule_needs_score?()
+    # |> if do
+    #   json(conn, %{result: true, error: "Should provide score in the tournament rule"})
+    # else
+    #   if claimable_state?(tournament_id, user_id) do
+    #     do_claim_score(conn, user_id, tournament, 1)
+    #   else
+    #     json(conn, %{result: false, error: "Invalid state"})
+    #   end
+    # end
   end
 
   @doc """
@@ -1248,17 +1254,23 @@ defmodule MilkWeb.TournamentController do
     tournament_id
     |> Tournaments.get_tournament()
     ~> tournament
-    |> Map.get(:rule)
-    |> Tournaments.rule_needs_score?()
-    |> if do
-      json(conn, %{result: true, error: "Should provide score in the tournament rule"})
+
+    if claimable_state?(tournament_id, user_id) do
+      do_claim_score(conn, user_id, tournament, 0)
     else
-      if claimable_state?(tournament_id, user_id) do
-        do_claim_score(conn, user_id, tournament, 0)
-      else
-        json(conn, %{result: false, error: "Invalid state"})
-      end
+      json(conn, %{result: false, error: "Invalid state"})
     end
+    # |> Map.get(:rule)
+    # |> Tournaments.rule_needs_score?()
+    # |> if do
+    #   json(conn, %{result: true, error: "Should provide score in the tournament rule"})
+    # else
+    #   if claimable_state?(tournament_id, user_id) do
+    #     do_claim_score(conn, user_id, tournament, 0)
+    #   else
+    #     json(conn, %{result: false, error: "Invalid state"})
+    #   end
+    # end
   end
 
 
