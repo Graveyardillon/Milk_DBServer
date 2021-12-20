@@ -685,6 +685,7 @@ defmodule Milk.Tournaments do
     |> __MODULE__.create_custom_detail()
   end
 
+  # TODO?: マップの画像登録がどうなってるか確認
   @spec create_maps_on_create_tournament(Tournament.t(), [Milk.Tournaments.Map.t()] | map() | nil) :: {:ok, nil} | {:error, String.t() | nil}
   defp create_maps_on_create_tournament(tournament, maps) when is_list(maps) do
     maps
