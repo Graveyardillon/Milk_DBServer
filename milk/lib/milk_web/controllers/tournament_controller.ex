@@ -132,20 +132,19 @@ defmodule MilkWeb.TournamentController do
   end
 
   defp store_thumbnail(image) do
-    uuid = SecureRandom.uuid()
-    thumbnail_path = "./static/image/tournament_thumbnail/#{uuid}.jpg"
-    FileUtils.copy(image.path, thumbnail_path)
+    filename = SecureRandom.uuid() <> ".jpg"
+    FileUtils.copy(image.path, "./static/image/tournament_thumbnail/" <> filename)
 
     case Application.get_env(:milk, :environment) do
       # coveralls-ignore-start
-      :dev -> thumbnail_path
+      :dev -> filename
       # coveralls-ignore-stop
-      :test -> thumbnail_path
+      :test -> filename
       # coveralls-ignore-start
       _ ->
-        {:ok, object} = Milk.CloudStorage.Objects.upload("./static/image/tournament_thumbnail/#{uuid}.jpg")
+        {:ok, object} = Milk.CloudStorage.Objects.upload("./static/image/tournament_thumbnail/" <> filename)
 
-        File.rm("./static/image/tournament_thumbnail/#{uuid}.jpg")
+        File.rm("./static/image/tournament_thumbnail/" <> filename)
         object.name
         # coveralls-ignore-stop
     end

@@ -64,7 +64,7 @@ defmodule MilkWeb.Router do
     post "/profile", ProfileController, :get_profile
     post "/profile/update", ProfileController, :update
     post "/profile/update_icon", ProfileController, :update_icon
-    get "/profile/get_icon", ProfileController, :get_icon
+    # get "/profile/get_icon", ProfileController, :get_icon
     get "/profile/records", ProfileController, :records
     get "/profile/external_services", ProfileController, :external_services
     post "/profile/external_service", ExternalServiceController, :create
@@ -220,6 +220,9 @@ defmodule MilkWeb.Router do
 
     post "/device/register", DeviceController, :register_token
     post "/device/unregister", DeviceController, :unregister_token
+
+    get "/image/user_icon/:string", ImageController, :user_icon
+    get "/image/tournament_thumbnail/:string", ImageController, :tournament_thumbnail
 
     get "/image/path", ImageController, :get_by_path
     get "/image/get_thumbnail_by_tournament_id", ImageController, :get_thumbnail_by_tournament_id

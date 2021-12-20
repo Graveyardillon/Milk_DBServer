@@ -19,6 +19,38 @@ defmodule MilkWeb.ImageController do
     end
   end
 
+  def user_icon(conn, params) do
+    path = "./static/image/profile_icon/" <> params["string"]
+    render_image(conn, path)
+  end
+  def tournament_thumbnail(conn, params) do
+    path = "./static/image/tournament_thumbnail/" <> params["string"]
+    render_image(conn, path)
+  end
+  def render_image(conn, path) do
+    path
+    |> load_image()
+    |> case do
+      {:ok, image} ->
+        image
+        |> ExImageInfo.info()
+        |> case do
+          {"image/png", _, _, _} ->
+            conn
+            |> put_resp_content_type("image/png")
+            |> send_resp(200, image)
+
+          _ ->
+            conn
+            |> put_resp_content_type("image/jpg")
+            |> send_resp(200, image)
+        end
+
+      {:error, error} ->
+        json(conn, %{error: error})
+    end
+  end
+
   def get_by_path(conn, %{"path" => path}) do
     path
     |> load_image()

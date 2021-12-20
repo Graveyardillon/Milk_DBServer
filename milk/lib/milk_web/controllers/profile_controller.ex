@@ -75,16 +75,17 @@ defmodule MilkWeb.ProfileController do
     user = Accounts.get_user(user_id)
 
     if !is_nil(user) do
-      uuid = SecureRandom.uuid()
-      new_path = "./static/image/profile_icon/#{uuid}.jpg"
+      filename = SecureRandom.uuid() <> ".jpg"
+      new_path = "./static/image/profile_icon/" <> filename
+
       FileUtils.copy(image.path, new_path)
 
       :milk
       |> Application.get_env(:environment)
       |> case do
-        :dev -> update_account(user, new_path)
-        :test -> update_account(user, new_path)
-        _ -> update_account_prod(user, new_path)
+        :dev -> update_account(user, filename)
+        :test -> update_account(user, filename)
+        _ -> update_account_prod(user, filename)
       end
       ~> local_path
 
@@ -106,36 +107,36 @@ defmodule MilkWeb.ProfileController do
     path
   end
 
-  def get_icon(conn, %{"path" => path}) do
-    if path != "" do
-      :milk
-      |> Application.get_env(:environment)
-      |> case do
-        :dev -> get_image(path)
-        :test -> get_image(path)
-        _ -> get_image_prod(path)
-      end
-      |> case do
-        {:ok, file} ->
-          b64 = Base.encode64(file)
-          json(conn, %{b64: b64})
+  # def get_icon(conn, %{"path" => path}) do
+  #   if path != "" do
+  #     :milk
+  #     |> Application.get_env(:environment)
+  #     |> case do
+  #       :dev -> get_image(path)
+  #       :test -> get_image(path)
+  #       _ -> get_image_prod(path)
+  #     end
+  #     |> case do
+  #       {:ok, file} ->
+  #         b64 = Base.encode64(file)
+  #         json(conn, %{b64: b64})
 
-        {:error, _} ->
-          json(conn, %{error: "image not found"})
-      end
-    else
-      json(conn, %{error: "path nil"})
-    end
-  end
+  #       {:error, _} ->
+  #         json(conn, %{error: "image not found"})
+  #     end
+  #   else
+  #     json(conn, %{error: "path nil"})
+  #   end
+  # end
 
-  defp get_image(path) do
-    File.read(path)
-  end
+  # defp get_image(path) do
+  #   File.read("./static/image/profile_icon/#{path}")
+  # end
 
-  defp get_image_prod(name) do
-    {:ok, object} = Objects.get(name)
-    Image.get(object.mediaLink)
-  end
+  # defp get_image_prod(name) do
+  #   {:ok, object} = Objects.get(name)
+  #   Image.get(object.mediaLink)
+  # end
 
   def records(conn, %{"user_id" => user_id}) do
     records = Tournaments.get_all_tournament_records(user_id)
