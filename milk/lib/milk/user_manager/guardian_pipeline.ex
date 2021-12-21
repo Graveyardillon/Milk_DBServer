@@ -69,6 +69,9 @@ defmodule Milk.UserManager.GuardianPipeline do
       String.contains?(conn.request_path, "api/chat/create_dialogue") or
       String.contains?(conn.request_path, "api/notification/create") or
       String.contains?(conn.request_path, "api/conf/send_email") or
-      String.contains?(conn.request_path, "api/conf/conf_email")
+      String.contains?(conn.request_path, "api/conf/conf_email") or
+      # FIXME: 取り置きの処理。 discordからのリクエストのときのみ、tokenを無効化したい。
+      String.contains?(conn.request_path, "api/tournament/claim_win") or
+      String.contains?(conn.request_path, "api/tournament/claim_lose")
   end
 end
