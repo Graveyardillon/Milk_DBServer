@@ -107,11 +107,9 @@ defmodule Milk.Discord do
   @doc """
   Delete discord user.
   """
-  @spec delete_discord_user(DiscordUser.t()) ::
-          {:ok, DiscordUser.t()} | {:error, Ecto.Changeset.t()}
-  def delete_discord_user(%DiscordUser{} = discord_user) do
-    Repo.delete(discord_user)
-  end
+  @spec delete_discord_user(DiscordUser.t()) :: {:ok, DiscordUser.t()} | {:error, Ecto.Changeset.t()}
+  def delete_discord_user(%DiscordUser{} = discord_user),
+    do: Repo.delete(discord_user)
 
   @spec create_invitation_link!(String.t()) :: String.t()
   def create_invitation_link!(server_id) do
@@ -121,7 +119,7 @@ defmodule Milk.Discord do
     params = Jason.encode!(%{server_id: server_id, access_token: access_token})
 
     url
-    |> HTTPoison.post(params, "Content-Type": "application/json", timeout: 5000, recv_timeout: 10000)
+    |> HTTPoison.post(params, "Content-Type": "application/json", timeout: 5000, recv_timeout: 10_000)
     |> case do
       {:ok, response} ->
         response
@@ -156,7 +154,7 @@ defmodule Milk.Discord do
 
     params = Jason.encode!(%{server_id: server_id, access_token: access_token, description: description})
 
-    HTTPoison.post(url, params, "Content-Type": "application/json", timeout: 5000, recv_timeout: 10000)
+    HTTPoison.post(url, params, "Content-Type": "application/json", timeout: 5000, recv_timeout: 10_000)
   end
 
   ### Discord server 通知周りの関数群
@@ -172,12 +170,11 @@ defmodule Milk.Discord do
     url = "#{discord_server_url}/tournament_start"
     params = Jason.encode!(%{server_id: server_id, access_token: access_token})
 
-    HTTPoison.post(url, params, "Content-Type": "application/json", timeout: 5000, recv_timeout: 10000)
+    HTTPoison.post(url, params, "Content-Type": "application/json", timeout: 5000, recv_timeout: 10_000)
   end
 
-  def send_tournament_start_notification(_) do
-    {:error, "need to provide server id in binary format."}
-  end
+  def send_tournament_start_notification(_),
+    do: {:error, "need to provide server id in binary format."}
 
   @doc """
   Send notification on added team to the server
@@ -196,12 +193,11 @@ defmodule Milk.Discord do
     |> Jason.encode!()
     ~> params
 
-    HTTPoison.post(url, params, "Content-Type": "application/json", timeout: 5000, recv_timeout: 10000)
+    HTTPoison.post(url, params, "Content-Type": "application/json", timeout: 5000, recv_timeout: 10_000)
   end
 
-  def send_tournament_add_team_notification(_, _) do
-    {:error, "need to provide server id in binary format."}
-  end
+  def send_tournament_add_team_notification(_, _),
+    do: {:error, "need to provide server id in binary format."}
 
   @spec send_tournament_remove_team_notification(String.t(), String.t()) :: {:ok, HTTPoison.Response.t()} | {:error, HTTPoison.Error.t() | String.t()}
   def send_tournament_remove_team_notification(server_id, team_name) when is_binary(server_id) do
@@ -217,12 +213,11 @@ defmodule Milk.Discord do
     |> Jason.encode!()
     ~> params
 
-    HTTPoison.post(url, params, "Content-Type": "application/json", timeout: 5000, recv_timeout: 10000)
+    HTTPoison.post(url, params, "Content-Type": "application/json", timeout: 5000, recv_timeout: 10_000)
   end
 
-  def send_tournament_remove_team_notification(_, _) do
-    {:error, "need to provide server id in binary format."}
-  end
+  def send_tournament_remove_team_notification(_, _),
+    do: {:error, "need to provide server id in binary format."}
 
   @doc """
   Send notification on start match
@@ -243,12 +238,11 @@ defmodule Milk.Discord do
     |> Jason.encode!()
     ~> params
 
-    HTTPoison.post(url, params, "Content-Type": "application/json", timeout: 5000, recv_timeout: 10000)
+    HTTPoison.post(url, params, "Content-Type": "application/json", timeout: 5000, recv_timeout: 10_000)
   end
 
-  def send_tournament_start_match_notification(_, _, _) do
-    {:error, "need to provide server id in binary format."}
-  end
+  def send_tournament_start_match_notification(_, _, _),
+    do: {:error, "need to provide server id in binary format."}
 
   @doc """
   Send notification on ban maps.
@@ -270,12 +264,11 @@ defmodule Milk.Discord do
     |> Jason.encode!()
     ~> params
 
-    HTTPoison.post(url, params, "Content-Type": "application/json", timeout: 5000, recv_timeout: 10000)
+    HTTPoison.post(url, params, "Content-Type": "application/json", timeout: 5000, recv_timeout: 10_000)
   end
 
-  def send_tournament_ban_map_notification(_, _, _, _) do
-    {:error, "need to provide server id in binary format and banned map names in list."}
-  end
+  def send_tournament_ban_map_notification(_, _, _, _),
+    do: {:error, "need to provide server id in binary format and banned map names in list."}
 
   @doc """
   Send notification on choose maps.
@@ -297,19 +290,17 @@ defmodule Milk.Discord do
     |> Jason.encode!()
     ~> params
 
-    HTTPoison.post(url, params, "Content-Type": "application/json", timeout: 5000, recv_timeout: 10000)
+    HTTPoison.post(url, params, "Content-Type": "application/json", timeout: 5000, recv_timeout: 10_000)
   end
 
-  def send_tournament_choose_map_notification(_, _, _, _) do
-    {:error, "need to provide server id in binary format."}
-  end
+  def send_tournament_choose_map_notification(_, _, _, _),
+    do: {:error, "need to provide server id in binary format."}
 
   @doc """
   Send notification on choose a/d
   """
   @spec send_tournament_choose_ad_notification(String.t(), String.t(), String.t(), boolean()) :: {:ok, HTTPoison.Response.t()} | {:error, HTTPoison.Error.t()}
-  def send_tournament_choose_ad_notification(server_id, a_name, b_name, is_attacker_side)
-      when is_binary(server_id) do
+  def send_tournament_choose_ad_notification(server_id, a_name, b_name, is_attacker_side) when is_binary(server_id) do
     discord_server_url = Application.get_env(:milk, :discord_server)
     access_token = Application.get_env(:milk, :discord_server_access_token)
 
@@ -324,12 +315,31 @@ defmodule Milk.Discord do
     |> Jason.encode!()
     ~> params
 
-    HTTPoison.post(url, params, "Content-Type": "application/json", timeout: 5000, recv_timeout: 10000)
+    HTTPoison.post(url, params, "Content-Type": "application/json", timeout: 5000, recv_timeout: 10_000)
   end
 
-  def send_tournament_choose_ad_notification(_, _, _, _) do
-    {:error, "need to provide server id in binary format."}
+  def send_tournament_choose_ad_notification(_, _, _, _),
+    do: {:error, "need to provide server id in binary format."}
+
+  def generate_win_lose_buttons(server_id, a_name, b_name) when is_binary(server_id) do
+    discord_server_url = Application.get_env(:milk, :discord_server)
+    access_token = Application.get_env(:milk, :discord_server_access_token)
+
+    url = "#{discord_server_url}/generate_win_lose_buttons"
+
+    params =
+      Jason.encode!(%{
+        server_id: server_id,
+        access_token: access_token,
+        a_name: a_name,
+        b_name: b_name
+      })
+
+    HTTPoison.post(url, params, "Content-Type": "application/json", timeout: 5000, recv_timeout: 10_000)
   end
+
+  def generate_win_lose_buttons(_, _, _),
+    do: {:error, "need to provide server id in binary format."}
 
   @doc """
   Send notification on duplication claim.
@@ -350,12 +360,11 @@ defmodule Milk.Discord do
     |> Jason.encode!()
     ~> params
 
-    HTTPoison.post(url, params, "Content-Type": "application/json", timeout: 5000, recv_timeout: 10000)
+    HTTPoison.post(url, params, "Content-Type": "application/json", timeout: 5000, recv_timeout: 10_000)
   end
 
-  def send_tournament_duplicate_claim_notification(_, _, _, _) do
-    {:error, "need to provide server id in binary format."}
-  end
+  def send_tournament_duplicate_claim_notification(_, _, _, _),
+    do: {:error, "need to provide server id in binary format."}
 
   @doc """
   Send notification on finish match.
@@ -384,12 +393,11 @@ defmodule Milk.Discord do
     |> Jason.encode!()
     ~> params
 
-    HTTPoison.post(url, params, "Content-Type": "application/json", timeout: 5000, recv_timeout: 10000)
+    HTTPoison.post(url, params, "Content-Type": "application/json", timeout: 5000, recv_timeout: 10_000)
   end
 
-  def send_tournament_finish_match_notification(_, _, _, _, _) do
-    {:error, "need to provide server id in binary format."}
-  end
+  def send_tournament_finish_match_notification(_, _, _, _, _),
+    do: {:error, "need to provide server id in binary format."}
 
   @doc """
   Sending notification on tournament finish
@@ -411,12 +419,11 @@ defmodule Milk.Discord do
     |> Jason.encode!()
     ~> params
 
-    HTTPoison.post(url, params, "Content-Type": "application/json", timeout: 5000, recv_timeout: 10000)
+    HTTPoison.post(url, params, "Content-Type": "application/json", timeout: 5000, recv_timeout: 10_000)
   end
 
-  def send_tournament_finish_notification(_, _, _) do
-    {:error, "need to provide server id in binary format."}
-  end
+  def send_tournament_finish_notification(_, _, _),
+    do: {:error, "need to provide server id in binary format."}
 
   @doc """
   Sending notification on tournament delete
@@ -435,10 +442,9 @@ defmodule Milk.Discord do
     |> Jason.encode!()
     ~> params
 
-    HTTPoison.post(url, params, "Content-Type": "application/json", timeout: 5000, recv_timeout: 10000)
+    HTTPoison.post(url, params, "Content-Type": "application/json", timeout: 5000, recv_timeout: 10_000)
   end
 
-  def send_tournament_delete_notification(_) do
-    {:error, "need to provide server id in binary format."}
-  end
+  def send_tournament_delete_notification(_),
+    do: {:error, "need to provide server id in binary format."}
 end
