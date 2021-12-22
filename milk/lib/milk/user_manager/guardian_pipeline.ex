@@ -8,7 +8,7 @@ defmodule Milk.UserManager.GuardianPipeline do
   def init(default), do: default
 
   def call(%Plug.Conn{params: %{"token" => token}} = conn, _default) do
-    unless check_guardian_routing(conn) do
+    if !check_guardian_routing(conn) do
       token
       |> Guardian.decode_and_verify()
       |> case do
