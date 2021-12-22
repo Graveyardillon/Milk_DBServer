@@ -942,12 +942,12 @@ defmodule MilkWeb.TournamentController do
     end
     ~> name
 
-    Discord.send_tournament_choose_ad_notification(
-      discord_server_id,
-      name,
-      opponent.name,
-      is_attacker_side
-    )
+    with {:ok, _} <- Discord.send_tournament_choose_ad_notification(discord_server_id, name, opponent.name, is_attacker_side),
+         {:ok, _} <- Discord.generate_win_lose_buttons(discord_server_id, name, opponent.name) do
+      {:ok, nil}
+    else
+      {:error, error} -> error
+    end
   end
 
   @doc """
@@ -1244,6 +1244,21 @@ defmodule MilkWeb.TournamentController do
     # end
   end
 
+  # NOTE: Discordからのリクエストを受け付けるので、
+  def claim_win(conn, %{"discord_id" => discord_id, "discord_server_id" => discord_server_id, "token" => "d3wJSGVPn7jRgqjY"}) do
+
+    discord_id = Tools.to_integer_as_needed(discord_id)
+
+    user = Accounts.get_user_by_discord_id(discord_id)
+    tournament = Tournaments.get_tournament_by_discord_server_id(discord_server_id)
+
+    if claimable_state?(tournament.id, user.id) do
+      do_claim_score(conn, user.id, tournament, 1)
+    else
+      json(conn, %{result: false, error: "Invalid state"})
+    end
+  end
+
   @doc """
   Claim lose of the user.
   """
@@ -1271,6 +1286,19 @@ defmodule MilkWeb.TournamentController do
     #     json(conn, %{result: false, error: "Invalid state"})
     #   end
     # end
+  end
+
+  def claim_lose(conn, %{"discord_id" => discord_id, "discord_server_id" => discord_server_id, "token" => "d3wJSGVPn7jRgqjY"}) do
+    discord_id = Tools.to_integer_as_needed(discord_id)
+
+    user = Accounts.get_user_by_discord_id(discord_id)
+    tournament = Tournaments.get_tournament_by_discord_server_id(discord_server_id)
+
+    if claimable_state?(tournament.id, user.id) do
+      do_claim_score(conn, user.id, tournament, 0)
+    else
+      json(conn, %{result: false, error: "Invalid state"})
+    end
   end
 
 
