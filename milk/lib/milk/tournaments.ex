@@ -3102,7 +3102,7 @@ defmodule Milk.Tournaments do
          {:ok, _}    <- create_team_leader(team.id, leader_id),
          {:ok, _}    <- verify_team_as_needed(team.id),
          {:ok, nil}  <- initialize_team_member_states!(team),
-         team        <- __MODULE__.get_team(team.id) do
+         team        <- __MODULE__.load_team(team.id) do
       {:ok, :leader_only, team}
     else
       error -> error

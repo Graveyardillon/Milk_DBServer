@@ -942,12 +942,13 @@ defmodule MilkWeb.TournamentController do
     end
     ~> name
 
-    with {:ok, _} <- Discord.send_tournament_choose_ad_notification(discord_server_id, name, opponent.name, is_attacker_side),
-         {:ok, _} <- Discord.generate_win_lose_buttons(discord_server_id, name, opponent.name) do
-      {:ok, nil}
-    else
-      {:error, error} -> error
-    end
+    tasks = [
+      Task.async(fn -> Discord.send_tournament_choose_ad_notification(discord_server_id, name, opponent.name, is_attacker_side) end),
+      Task.async(fn -> Discord.generate_win_lose_buttons(discord_server_id, name, opponent.name) end)
+    ]
+
+    Task.await_many(tasks, 10_000)
+    {:ok, nil}
   end
 
   @doc """
