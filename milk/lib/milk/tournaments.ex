@@ -169,7 +169,7 @@ defmodule Milk.Tournaments do
   def home_tournament_plan(user_id) do
     Tournament
     |> where([t], t.master_id == ^user_id)
-    |> date_filter()
+    #|> date_filter()
     |> Repo.all()
     |> Repo.preload(:entrant)
     |> Repo.preload(:team)

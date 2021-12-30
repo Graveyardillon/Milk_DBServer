@@ -360,11 +360,9 @@ defmodule MilkWeb.TournamentController do
     end)
   end
 
-  defp load_filtered_home(user_id, "fav"), do: Tournaments.home_tournament_fav(user_id)
-  defp load_filtered_home(user_id, "plan"), do: Tournaments.home_tournament_plan(user_id)
-
-  defp load_filtered_home(user_id, "entry"),
-    do: Tournaments.get_participating_tournaments(user_id)
+  defp load_filtered_home(user_id, "fav"),   do: Tournaments.home_tournament_fav(user_id)
+  defp load_filtered_home(user_id, "plan"),  do: Tournaments.home_tournament_plan(user_id)
+  defp load_filtered_home(user_id, "entry"), do: Tournaments.get_participating_tournaments(user_id)
 
   @doc """
   Get searched tournaments as home.
