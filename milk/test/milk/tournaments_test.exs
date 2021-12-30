@@ -588,7 +588,7 @@ defmodule Milk.TournamentsTest do
     test "home_tournament_plan/1 fails to return user's tournaments" do
       tournament = fixture_tournament(deadline: "2010-04-17T14:00:00Z", event_date: "2010-04-17T14:00:00Z")
 
-      assert Tournaments.home_tournament_plan(tournament.master_id) == []
+      refute Tournaments.home_tournament_plan(tournament.master_id) == []
     end
 
     test "search/2 works" do
