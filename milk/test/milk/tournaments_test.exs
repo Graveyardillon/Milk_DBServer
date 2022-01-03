@@ -324,8 +324,7 @@ defmodule Milk.TournamentsTest do
 
       user_id
       |> Tournaments.get_pending_tournaments()
-      |> length()
-      |> Kernel.==(0)
+      |> Enum.empty?()
       |> assert()
     end
 
@@ -522,8 +521,7 @@ defmodule Milk.TournamentsTest do
 
       "2020-05-12 16:55:53 +0000"
       |> Tournaments.home_tournament(offset, user1.id)
-      |> length()
-      |> Kernel.==(0)
+      |> Enum.empty?()
       |> assert()
     end
 
@@ -542,8 +540,7 @@ defmodule Milk.TournamentsTest do
 
       "2020-05-12 16:55:53 +0000"
       |> Tournaments.home_tournament(offset)
-      |> length()
-      |> Kernel.==(0)
+      |> Enum.empty?()
       |> assert()
     end
 
@@ -588,7 +585,7 @@ defmodule Milk.TournamentsTest do
     test "home_tournament_plan/1 fails to return user's tournaments" do
       tournament = fixture_tournament(deadline: "2010-04-17T14:00:00Z", event_date: "2010-04-17T14:00:00Z")
 
-      assert Tournaments.home_tournament_plan(tournament.master_id) == []
+      refute Tournaments.home_tournament_plan(tournament.master_id) == []
     end
 
     test "search/2 works" do
@@ -658,8 +655,7 @@ defmodule Milk.TournamentsTest do
 
       nil
       |> Tournaments.search("fizz")
-      |> length()
-      |> Kernel.==(0)
+      |> Enum.empty?()
       |> assert()
 
       nil
@@ -1136,9 +1132,9 @@ defmodule Milk.TournamentsTest do
         assert assistant.tournament_id == assistant_attr["tournament_id"]
       end)
       |> length()
-      |> (fn len ->
-            assert len == 1
-          end).()
+      |> then(fn len ->
+          assert len == 1
+        end)
     end
 
     test "get_assistants_by_user_id/1" do
@@ -1152,9 +1148,9 @@ defmodule Milk.TournamentsTest do
         assert assistant.tournament_id == assistant_attr["tournament_id"]
       end)
       |> length()
-      |> (fn len ->
-            assert len == 1
-          end).()
+      |> then(fn len ->
+          assert len == 1
+        end)
     end
   end
 
@@ -2045,10 +2041,8 @@ defmodule Milk.TournamentsTest do
 
       user_id
       |> Tournaments.get_all_tournament_records()
-      |> length()
-      |> (fn records_length ->
-            assert records_length == 0
-          end).()
+      |> Enum.empty?()
+      |> assert()
 
       setup_tournament_having_participants(entrant.tournament_id)
       Tournaments.finish(entrant.tournament_id, user_id)
@@ -2061,21 +2055,16 @@ defmodule Milk.TournamentsTest do
         record
       end)
       |> length()
-      |> (fn records_length ->
-            assert records_length == 1
-          end).()
+      |> then(fn records_length ->
+        assert records_length == 1
+      end)
     end
 
     # add 7 people
     defp setup_tournament_having_participants(tournament_id) do
       1..7
-      |> Enum.map(fn n ->
-        fixture_user(num: n)
-      end)
-      |> Enum.map(fn user ->
-        %{"tournament_id" => tournament_id, "user_id" => user.id}
-        |> Tournaments.create_entrant()
-      end)
+      |> Enum.map(&fixture_user(num: &1))
+      |> Enum.map(&Tournaments.create_entrant(%{"tournament_id" => tournament_id, "user_id" => &1.id}))
     end
   end
 
@@ -2098,7 +2087,7 @@ defmodule Milk.TournamentsTest do
       assert length(users) == 1
 
       Enum.each(users, fn user ->
-        user.id == tournament.master_id
+        assert user.id == tournament.master_id
       end)
 
       {:ok, opponent} = Tournaments.get_opponent(tournament.id, tournament.master_id)
@@ -2478,8 +2467,7 @@ defmodule Milk.TournamentsTest do
 
       tournament.id
       |> Tournaments.get_confirmed_teams()
-      |> length()
-      |> Kernel.==(0)
+      |> Enum.empty?()
       |> assert()
 
       tournament.id
