@@ -1156,7 +1156,6 @@ defmodule Milk.Tournaments do
     |> Repo.one()
     ~> tournament
 
-    # TODO: サムネイル、マップ画像の削除
     delete_thumbnail(tournament)
     if tournament.enabled_map do
       delete_maps(id)
@@ -1191,21 +1190,22 @@ defmodule Milk.Tournaments do
     end
   end
 
-  # HACK: ネストが多い
   defp delete_maps(tournament_id) do
     tournament_id
     |> __MODULE__.get_maps_by_tournament_id()
     |> Enum.map(&Repo.delete(&1))
     |> Enum.map(&elem(&1, 1))
-    |> Enum.each(fn map ->
-      unless is_nil(map.icon_path) do
-        case Application.get_env(:milk, :environment) do
-          :dev  -> File.rm(map.icon_path)
-          :test -> File.rm(map.icon_path)
-          _     -> Objects.delete(map.icon_path)
-        end
+    |> Enum.each(&delete_map_icon(&1))
+  end
+
+  defp delete_map_icon(map) do
+    unless is_nil(map.icon_path) do
+      case Application.get_env(:milk, :environment) do
+        :dev  -> File.rm(map.icon_path)
+        :test -> File.rm(map.icon_path)
+        _     -> Objects.delete(map.icon_path)
       end
-    end)
+    end
   end
 
   defp insert_entrant_logs_on_delete(%Tournament{entrant: entrants}) do

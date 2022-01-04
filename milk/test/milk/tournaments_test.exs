@@ -142,18 +142,18 @@ defmodule Milk.TournamentsTest do
     tournament =
       opts["tournament_id"]
       |> is_nil()
-      |> unless do
-        Tournaments.load_tournament(opts["tournament_id"])
-      else
+      |> if do
         fixture_tournament(is_started: true)
+      else
+        Tournaments.load_tournament(opts["tournament_id"])
       end
 
     opts["user_id"]
     |> is_nil()
-    |> unless do
-      opts["user_id"]
-    else
+    |> if do
       tournament.master_id
+    else
+      opts["user_id"]
     end
     ~> user_id
 
@@ -203,9 +203,9 @@ defmodule Milk.TournamentsTest do
       |> Enum.map(fn room ->
         room.id
         |> Tournaments.get_tournament_by_room_id()
-        |> (fn t ->
-              assert t.id == tournament.id
-            end).()
+        |> then(fn t ->
+          assert t.id == tournament.id
+        end)
       end)
     end
 
