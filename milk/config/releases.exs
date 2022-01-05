@@ -13,7 +13,7 @@ import Config
 
 config :milk, Milk.Repo,
   username: "postgres",
-  password: "postgres",
+  password: "jM3q86Yj8QYLwme6",
   database: "milkdb",
   socket_dir: "/tmp/cloudsql/" <> System.get_env("CLOUD_SQL_HOST"),
   pool_size: 10
