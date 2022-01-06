@@ -11,11 +11,11 @@ alias Milk.Accounts.{
 }
 
 file = "free-engineer"
-File.cp("./priv/repo/seeds/image/#{file}.jpg", "./static/image/profile_icon/#{file}.jpg")
+File.cp("./priv/repo/seeds/image/#{file}.jpg", "./static/image/user_icon/#{file}.jpg")
 
 user = Repo.insert! %User{
   bio: "Test user which has many tournaments.",
-  icon_path: "./static/image/profile_icon/#{file}.jpg",
+  icon_path: "./static/image/user_icon/#{file}.jpg",
   id_for_show: -1,
   name: "TestTournamentHolder"
 }

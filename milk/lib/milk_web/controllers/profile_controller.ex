@@ -76,7 +76,7 @@ defmodule MilkWeb.ProfileController do
 
     if !is_nil(user) do
       filename = SecureRandom.uuid() <> ".jpg"
-      new_path = "./static/image/profile_icon/" <> filename
+      new_path = "./static/image/user_icon/" <> filename
 
       FileUtils.copy(image.path, new_path)
 
@@ -130,7 +130,7 @@ defmodule MilkWeb.ProfileController do
     end
   end
   defp get_image(path) do
-    File.read("./static/image/profile_icon/#{path}")
+    File.read("./static/image/user_icon/#{path}")
   end
   defp get_image_prod(name) do
     {:ok, object} = Objects.get(name)

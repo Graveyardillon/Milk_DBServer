@@ -20,7 +20,7 @@ defmodule MilkWeb.ImageController do
   end
 
   def user_icon(conn, params) do
-    path = "./static/image/profile_icon/" <> params["string"]
+    path = "./static/image/user_icon/" <> params["string"]
     render_image(conn, path)
   end
   def tournament_thumbnail(conn, params) do

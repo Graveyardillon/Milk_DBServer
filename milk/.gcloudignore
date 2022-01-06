@@ -1,5 +1,5 @@
 #!include:.dockerignore
 
-static/image/profile_icon/*
+static/image/user_icon/*
 static/image/chat/*
 static/image/tournament_thumbnail/*
