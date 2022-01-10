@@ -730,6 +730,7 @@ defmodule Milk.Tournaments.Progress do
   end
 
   # NOTE: 個人大会スタート時に使用する関数群
+  # HACK
 
   @spec start_single_elimination(integer(), Tournament.t()) :: {:ok, match_list(), match_list_with_fight_result()}
   def start_single_elimination(master_id, tournament) do

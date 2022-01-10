@@ -2273,6 +2273,12 @@ defmodule Milk.Tournaments do
   def put_value_on_brackets(match_list, key, value),
     do: Tournamex.put_value_on_brackets(match_list, key, value)
 
+  @spec generate_round_robin_match_list([integer()]) :: {:ok, integer(), [any()]}
+  def generate_round_robin_match_list(id_list) do
+    {:ok, match_list} = Tournamex.RoundRobin.generate_match_list(id_list)
+    {:ok, length(match_list), match_list}
+  end
+
   @doc """
   Gets a single assistant.
   """
