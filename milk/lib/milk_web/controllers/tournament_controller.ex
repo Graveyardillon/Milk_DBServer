@@ -691,7 +691,7 @@ defmodule MilkWeb.TournamentController do
 
   defp start_team_tournament(master_id, tournament) do
     case tournament.type do
-      2 -> Progress.start_team_best_of_format(master_id, tournament)
+      2 -> Progress.start_team_flipban(master_id, tournament)
       _ -> {:error, "unsupported tournament type", nil}
     end
   end
@@ -699,7 +699,7 @@ defmodule MilkWeb.TournamentController do
   defp start_tournament(master_id, tournament) do
     case tournament.type do
       1 -> Progress.start_single_elimination(master_id, tournament)
-      2 -> Progress.start_best_of_format(master_id, tournament)
+      2 -> Progress.start_flipban(master_id, tournament)
       _ -> {:error, "unsupported tournament type", nil}
     end
   end

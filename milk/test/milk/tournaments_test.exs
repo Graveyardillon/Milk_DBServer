@@ -1529,7 +1529,7 @@ defmodule Milk.TournamentsTest do
       ~> leader_icon_path_list
 
       tournament.master_id
-      |> Progress.start_team_best_of_format(tournament)
+      |> Progress.start_team_flipban(tournament)
       ~> {:ok, match_list, _}
 
       # match_listの初期状態確認
