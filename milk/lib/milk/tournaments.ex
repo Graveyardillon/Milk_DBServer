@@ -1858,9 +1858,9 @@ defmodule Milk.Tournaments do
     |> validate_entrant_number()
   end
 
-  defp validate_entrant_number(nil), do: {:error, "count is nil"}
+  defp validate_entrant_number(nil),               do: {:error, "count is nil"}
   defp validate_entrant_number(num) when num <= 1, do: {:error, "short of participants"}
-  defp validate_entrant_number(_), do: {:ok, nil}
+  defp validate_entrant_number(_),                 do: {:ok, nil}
 
   defp do_start(%Tournament{is_started: true}), do: {:error, "tournament is already started"}
   defp do_start(tournament) do

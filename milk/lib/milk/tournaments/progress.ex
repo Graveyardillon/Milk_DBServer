@@ -732,10 +732,10 @@ defmodule Milk.Tournaments.Progress do
   # NOTE: 個人大会スタート時に使用する関数群
   # HACK
 
-  @spec start_single_elimination(integer(), Tournament.t()) :: {:ok, match_list(), match_list_with_fight_result()} | {:error, any()}
-  def start_single_elimination(master_id, tournament) do
+  @spec start_basic(integer(), Tournament.t()) :: {:ok, match_list(), match_list_with_fight_result()} | {:error, any()}
+  def start_basic(master_id, tournament) do
     case Tournaments.start(tournament.id, master_id) do
-      {:ok, _}        -> make_single_elimination_matches(tournament.id)
+      {:ok, _}        -> make_basic_matches(tournament.id)
       {:error, error} -> {:error, error}
     end
   end
@@ -750,7 +750,7 @@ defmodule Milk.Tournaments.Progress do
     end
   end
 
-  defp make_single_elimination_matches(tournament_id) do
+  defp make_basic_matches(tournament_id) do
     tournament_id
     |> Tournaments.get_entrants()
     |> Enum.map(&Map.get(&1, :user_id))

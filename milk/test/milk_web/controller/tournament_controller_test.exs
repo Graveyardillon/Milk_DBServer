@@ -55,10 +55,10 @@ defmodule MilkWeb.TournamentControllerTest do
     "master_id" => 42,
     "name" => "some name",
     "game_name" => "gm nm",
-    "type" => 1,
     "url" => "some url",
     "password" => "Password123",
-    "platform" => 1
+    "platform" => 1,
+    "rule" => "basic"
   }
 
   @create_incoming_attrs %{
@@ -264,7 +264,6 @@ defmodule MilkWeb.TournamentControllerTest do
         assert tournament["master_id"] == user.id
         assert tournament["name"] == @create_attrs["name"]
         assert tournament["platform"] == @create_attrs["platform"]
-        assert tournament["type"] == @create_attrs["type"]
         assert tournament["url"] == @create_attrs["url"]
 
         tournament["entrants"]
@@ -747,11 +746,6 @@ defmodule MilkWeb.TournamentControllerTest do
             assert data["thumbnail_path"] == tournament.thumbnail_path
             assert data["game_id"] == tournament.game_id
             assert data["game_name"] == tournament.game_name
-            # assert data["event_date"] == tournament.event_date
-            # assert data["start_recruiting"] == tournament.start_recruiting
-            # assert data["deadline"] == tournament.deadline
-            assert data["type"] == tournament.type
-            # assert data["platform"] == tournament.platform
             assert is_nil(data["password"])
             assert data["capacity"] == tournament.capacity
             assert data["master_id"] == tournament.master_id
@@ -789,7 +783,6 @@ defmodule MilkWeb.TournamentControllerTest do
             # assert data["event_date"] == tournament.event_date
             # assert data["start_recruiting"] == tournament.start_recruiting
             # assert data["deadline"] == tournament.deadline
-            assert data["type"] == tournament.type
             # assert data["platform"] == tournament.platform
             assert is_nil(data["password"])
             assert data["capacity"] == tournament.capacity
@@ -825,7 +818,6 @@ defmodule MilkWeb.TournamentControllerTest do
             # assert data["event_date"] == tournament.event_date
             # assert data["start_recruiting"] == tournament.start_recruiting
             # assert data["deadline"] == tournament.deadline
-            assert data["type"] == tournament.type
             # assert data["platform"] == tournament.platform
             assert is_nil(data["password"])
             assert data["capacity"] == tournament.capacity
@@ -881,7 +873,6 @@ defmodule MilkWeb.TournamentControllerTest do
             # assert data["event_date"] == tournament.event_date
             # assert data["start_recruiting"] == tournament.start_recruiting
             # assert data["deadline"] == tournament.deadline
-            assert data["type"] == tournament.type
             # assert data["platform"] == tournament.platform
             assert is_nil(data["password"])
             assert data["capacity"] == tournament.capacity
@@ -1956,34 +1947,34 @@ defmodule MilkWeb.TournamentControllerTest do
           end).()
     end
 
-    test "does not work (type: -1)", %{conn: conn, tournament: _tournament} do
-      create_attrs2 = %{
-        "capacity" => 42,
-        "deadline" => "2010-04-17T14:00:00Z",
-        "description" => "some description",
-        "event_date" => "2010-04-17T14:00:00Z",
-        "master_id" => 42,
-        "name" => "some name",
-        "type" => -1,
-        "join" => "true",
-        "url" => "some url",
-        "password" => "Password123",
-        "platform" => 1
-      }
+    # test "does not work (type: -1)", %{conn: conn, tournament: _tournament} do
+    #   create_attrs2 = %{
+    #     "capacity" => 42,
+    #     "deadline" => "2010-04-17T14:00:00Z",
+    #     "description" => "some description",
+    #     "event_date" => "2010-04-17T14:00:00Z",
+    #     "master_id" => 42,
+    #     "name" => "some name",
+    #     "type" => -1,
+    #     "join" => "true",
+    #     "url" => "some url",
+    #     "password" => "Password123",
+    #     "platform" => 1
+    #   }
 
-      Platforms.create_basic_platforms()
+    #   Platforms.create_basic_platforms()
 
-      {:ok, user} =
-        %{"name" => "type2name", "email" => "type2e@mail.com", "password" => "Password123"}
-        |> Accounts.create_user()
+    #   {:ok, user} =
+    #     %{"name" => "type2name", "email" => "type2e@mail.com", "password" => "Password123"}
+    #     |> Accounts.create_user()
 
-      {:ok, tournament} = Tournaments.create_tournament(%{create_attrs2 | "master_id" => user.id})
-      create_entrants(8, tournament.id)
+    #   {:ok, tournament} = Tournaments.create_tournament(%{create_attrs2 | "master_id" => user.id})
+    #   create_entrants(8, tournament.id)
 
-      conn = post(conn, Routes.tournament_path(conn, :start), tournament: %{"master_id" => tournament.master_id, "tournament_id" => tournament.id})
+    #   conn = post(conn, Routes.tournament_path(conn, :start), tournament: %{"master_id" => tournament.master_id, "tournament_id" => tournament.id})
 
-      refute json_response(conn, 200)["result"]
-    end
+    #   refute json_response(conn, 200)["result"]
+    # end
   end
 
   describe "delete loser" do
@@ -2003,19 +1994,19 @@ defmodule MilkWeb.TournamentControllerTest do
 
       json_response(conn, 200)
       |> Map.get("updated_match_list")
-      |> (fn list ->
-            old_len =
-              match_list
-              |> List.flatten()
-              |> length()
+      |> then(fn list ->
+        old_len =
+          match_list
+          |> List.flatten()
+          |> length()
 
-            new_len =
-              list
-              |> List.flatten()
-              |> length()
+        new_len =
+          list
+          |> List.flatten()
+          |> length()
 
-            assert new_len == old_len - 1
-          end).()
+        assert new_len == old_len - 1
+      end)
 
       Progress.get_single_tournament_match_logs(tournament.id, hd(losers))
       |> Enum.map(fn log ->
@@ -2023,9 +2014,9 @@ defmodule MilkWeb.TournamentControllerTest do
         assert log.tournament_id == tournament.id
       end)
       |> length()
-      |> (fn len ->
-            assert len == 1
-          end).()
+      |> then(fn len ->
+        assert len == 1
+      end)
 
       assert Progress.get_fight_result(hd(losers), tournament.id) == nil
       assert is_nil(Progress.get_match_pending_list(hd(losers), tournament.id))
@@ -4685,23 +4676,11 @@ defmodule MilkWeb.TournamentControllerTest do
 
       assert json_response(conn, 200)["result"]
 
-      json_response(conn, 200)
+      conn
+      |> json_response(200)
       |> Map.get("data")
-      |> Enum.map(fn topic_log ->
-        assert topic_log["tournament_id"] == tournament["id"]
-      end)
-      |> length()
-      |> then(fn len ->
-        assert len == 0
-      end)
-
-      # conn =
-      #   post(conn, Routes.tournament_path(conn, :finish),
-      #     tournament_id: tournament["id"],
-      #     user_id: opponent1_id
-      #   )
-
-      # assert json_response(conn, 200)["result"]
+      |> Enum.empty?()
+      |> assert()
 
       conn = get(conn, Routes.tournament_path(conn, :show), tournament_id: tournament["id"])
 
@@ -5327,25 +5306,25 @@ defmodule MilkWeb.TournamentControllerTest do
 
       conn = get(conn, Routes.tournament_path(conn, :show), tournament_id: tournament.id)
 
-      json_response(conn, 200)
-      |> (fn t ->
-            assert t["is_log"]
-            assert t["result"]
-            t
-          end).()
+      conn
+      |> json_response(200)
+      |> then(fn t ->
+        assert t["is_log"]
+        assert t["result"]
+        t
+      end)
       |> Map.get("data")
-      |> (fn t ->
-            assert t["tournament_id"] == tournament.id
-            assert t["capacity"] == tournament.capacity
-            assert t["description"] == tournament.description
-            assert t["game_id"] == tournament.game_id
-            assert t["game_name"] == tournament.game_name
-            assert t["winner_id"] == entrant1.user_id
-            assert t["master_id"] == tournament.master_id
-            assert t["name"] == tournament.name
-            assert t["url"] == tournament.url
-            assert t["type"] == tournament.type
-          end).()
+      |> then(fn t ->
+        assert t["tournament_id"] == tournament.id
+        assert t["capacity"] == tournament.capacity
+        assert t["description"] == tournament.description
+        assert t["game_id"] == tournament.game_id
+        assert t["game_name"] == tournament.game_name
+        assert t["winner_id"] == entrant1.user_id
+        assert t["master_id"] == tournament.master_id
+        assert t["name"] == tournament.name
+        assert t["url"] == tournament.url
+      end)
     end
   end
 

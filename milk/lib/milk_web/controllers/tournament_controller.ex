@@ -682,25 +682,24 @@ defmodule MilkWeb.TournamentController do
 
   defp validate_master_id?(%Tournament{master_id: mid}, master_id), do: master_id == mid
 
-  defp do_start(%Tournament{is_team: true, master_id: master_id} = tournament) do
-    start_team_tournament(master_id, tournament)
-  end
-  defp do_start(%Tournament{is_team: false, master_id: master_id} = tournament) do
-    start_tournament(master_id, tournament)
-  end
+  defp do_start(%Tournament{is_team: true, master_id: master_id} = tournament),
+    do: start_team_tournament(master_id, tournament)
+  defp do_start(%Tournament{is_team: false, master_id: master_id} = tournament),
+    do: start_tournament(master_id, tournament)
 
   defp start_team_tournament(master_id, tournament) do
-    case tournament.type do
-      2 -> Progress.start_team_flipban(master_id, tournament)
-      _ -> {:error, "unsupported tournament type", nil}
+    case tournament.rule do
+      "basic"   -> Progress.start_team_flipban(master_id, tournament)
+      "flipban" -> Progress.start_team_flipban(master_id, tournament)
+      _         -> {:error, "unsupported tournament rule", nil}
     end
   end
 
   defp start_tournament(master_id, tournament) do
-    case tournament.type do
-      1 -> Progress.start_single_elimination(master_id, tournament)
-      2 -> Progress.start_flipban(master_id, tournament)
-      _ -> {:error, "unsupported tournament type", nil}
+    case tournament.rule do
+      "basic"   -> Progress.start_basic(master_id, tournament)
+      "flipban" -> Progress.start_flipban(master_id, tournament)
+      _         -> {:error, "unsupported tournament rule", nil}
     end
   end
 
@@ -719,7 +718,7 @@ defmodule MilkWeb.TournamentController do
     tournament_id
     |> Tournaments.load_tournament()
     |> then(fn tournament ->
-      if tournament.type == 1 do
+      if tournament.rule == "basic" and !tournament.is_team do
         store_single_tournament_match_log(tournament_id, hd(loser_list))
       end
     end)

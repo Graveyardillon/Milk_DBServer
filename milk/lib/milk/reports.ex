@@ -111,7 +111,6 @@ defmodule Milk.Reports do
       |> Map.put("description", tournament.description)
       |> Map.put("event_date", tournament.event_date)
       |> Map.put("name", tournament.name)
-      |> Map.put("type", tournament.type)
       |> Map.put("url", tournament.url)
       |> Map.put("thumbnail_path", tournament.thumbnail_path)
       |> Map.put("count", tournament.count)
