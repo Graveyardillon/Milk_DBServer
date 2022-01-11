@@ -290,11 +290,11 @@ defmodule Milk.Tournaments do
   end
 
   @doc """
-  Gets single tournament by url.
+  Loads single tournament by url.
   # TODO: loadに変える
   """
-  @spec get_tournament_by_url(String.t()) :: Tournament.t()
-  def get_tournament_by_url(url) do
+  @spec load_tournament_by_url(String.t()) :: Tournament.t()
+  def load_tournament_by_url(url) do
     Tournament
     |> where([t], t.url == ^url)
     |> Repo.one()
@@ -410,10 +410,10 @@ defmodule Milk.Tournaments do
   end
 
   @doc """
-  Get tournament by url token
+  Load tournament by url token
   """
-  @spec get_tournament_by_url_token(String.t()) :: Tournament.t()
-  def get_tournament_by_url_token(token) do
+  @spec load_tournament_by_url_token(String.t()) :: Tournament.t()
+  def load_tournament_by_url_token(token) do
     Tournament
     |> where([t], t.url_token == ^token)
     |> Repo.one()

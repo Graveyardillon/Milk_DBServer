@@ -665,7 +665,7 @@ defmodule Milk.TournamentsTest do
   describe "get tournament by url" do
     test "get_tournament_by_url/1 works with valid data" do
       tournament = fixture_tournament()
-      t = Tournaments.get_tournament_by_url(tournament.url)
+      t = Tournaments.load_tournament_by_url(tournament.url)
       assert tournament.id == t.id
     end
   end

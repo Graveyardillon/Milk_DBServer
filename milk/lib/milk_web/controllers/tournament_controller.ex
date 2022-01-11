@@ -1755,7 +1755,7 @@ defmodule MilkWeb.TournamentController do
     |> hd()
     ~> token
 
-    tournament = Tournaments.get_tournament_by_url_token(token)
+    tournament = Tournaments.load_tournament_by_url_token(token)
     team = Enum.filter(tournament.team, &(&1.is_confirmed))
 
     tournament.id
@@ -2086,7 +2086,7 @@ defmodule MilkWeb.TournamentController do
     params
     |> Map.get("url")
     ~> token
-    |> Tournaments.get_tournament_by_url_token()
+    |> Tournaments.load_tournament_by_url_token()
     ~> tournament
 
     domain = Application.get_env(:milk, :domain)
