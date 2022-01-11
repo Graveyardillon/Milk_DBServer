@@ -2146,6 +2146,98 @@ defmodule MilkWeb.TournamentControllerTest do
     end
   end
 
+  describe "get rounded match list" do
+    test "works", %{conn: conn} do
+      user = fixture_user()
+      attrs = %{
+        "capacity" => 4,
+        "coin_head_field" => "マップ選択",
+        "coin_tail_field" => "a/d選択",
+        "deadline" => "2010-04-17T14:00:00Z",
+        "description" => "some description",
+        "event_date" => "2010-04-17T14:00:00Z",
+        "master_id" => user.id,
+        "name" => "some name",
+        "join" => "false",
+        "url" => "some url",
+        "platform" => 1,
+        "is_team" => "true",
+        "rule" => "flipban_roundrobin",
+        "team_size" => 5,
+        "type" => 2,
+        # XXX: ここあとでvalidateに追加しないと head_fieldとかもいるかも
+        "enabled_map" => "true",
+        "enabled_coin_toss" => "true"
+      }
+
+      maps = [
+        %{"name" => "map1"},
+        %{"name" => "map2"},
+        %{"name" => "map3"},
+        %{"name" => "map4"},
+        %{"name" => "map5"},
+        %{"name" => "map6"}
+      ]
+
+      conn = post(conn, Routes.tournament_path(conn, :create), tournament: attrs, file: nil, maps: maps)
+
+      master_id = json_response(conn, 200)["data"]["master_id"]
+      tournament_id = json_response(conn, 200)["data"]["id"]
+      capacity = json_response(conn, 200)["data"]["capacity"]
+      team_size = json_response(conn, 200)["data"]["team_size"]
+
+      10..10 + capacity * team_size - 1
+      |> Enum.to_list()
+      |> Enum.map(&fixture_user(num: &1).id)
+      |> Enum.chunk_every(team_size)
+      |> Enum.map(fn [leader_id | member_id_list] ->
+        conn = post(conn, Routes.team_path(conn, :create), %{"tournament_id" => tournament_id, "leader_id" => leader_id, "user_id_list" => member_id_list, "size" => team_size})
+        assert json_response(conn, 200)["result"]
+        [leader_id | member_id_list]
+        |> Enum.each(fn user_id ->
+          conn = get(conn, Routes.tournament_path(conn, :get_match_information), %{"tournament_id" => tournament_id, "user_id" => user_id})
+          assert json_response(conn, 200)["state"] == "IsNotStarted"
+        end)
+
+        [leader_id | member_id_list]
+      end)
+      |> Enum.map(fn [leader_id | member_id_list] ->
+        member_id_list
+        |> Enum.each(fn user_id ->
+          user_id
+          |> Tournaments.get_invitations()
+          |> Enum.each(fn invitation ->
+            conn = post(conn, Routes.team_path(conn, :confirm_invitation), %{"invitation_id" => invitation.id})
+            assert json_response(conn, 200)["result"]
+          end)
+        end)
+        [leader_id | member_id_list]
+      end)
+
+      conn = post(conn, Routes.tournament_path(conn, :start), %{"tournament" => %{"master_id" => master_id, "tournament_id" => tournament_id}})
+      assert json_response(conn, 200)["result"]
+
+      conn = get(conn, Routes.tournament_path(conn, :get_round_robin_match_list), %{"tournament_id" => tournament_id})
+      assert json_response(conn, 200)["result"]
+      match_list = json_response(conn, 200)["match_list"]
+
+      assert is_list(match_list)
+      Enum.each(match_list, fn match_list ->
+        assert is_list(match_list)
+      end)
+
+      match_list
+      |> List.flatten()
+      |> Enum.map(fn %{"match" => match, "winner_id" => winner_id} ->
+        assert is_binary(match)
+        assert is_nil(winner_id)
+      end)
+      |> then(fn matches ->
+        assert length(matches) === 3 * 2
+      end)
+    end
+  end
+
   describe "get options" do
     test "works", %{conn: conn} do
       tournament = fixture_tournament()
@@ -3571,11 +3663,11 @@ defmodule MilkWeb.TournamentControllerTest do
         assert length(messages) == team_size * capacity + 1
       end)
 
-      # TODO: flipban_roundrobinの動作確認用テスト記述
       conn = get(conn, Routes.tournament_path(conn, :get_round_robin_match_list), %{"tournament_id" => tournament_id})
       assert json_response(conn, 200)["result"]
       match_list = json_response(conn, 200)["match_list"]
-        |> IO.inspect()
+
+      # TODO: flipban_roundrobinの動作確認用テスト記述
     end
   end
 
@@ -5185,11 +5277,12 @@ defmodule MilkWeb.TournamentControllerTest do
           match_index: match_index
         )
 
-      json_response(conn, 200)
-      |> (fn data ->
-            assert data["validated"]
-            refute data["completed"]
-          end).()
+      conn
+      |> json_response(200)
+      |> then(fn data ->
+        assert data["validated"]
+        refute data["completed"]
+      end)
 
       conn =
         get(conn, Routes.tournament_path(conn, :score),
@@ -5210,11 +5303,12 @@ defmodule MilkWeb.TournamentControllerTest do
           match_index: match_index
         )
 
-      json_response(conn, 200)
-      |> (fn data ->
-            assert data["validated"]
-            refute data["completed"]
-          end).()
+      conn
+      |> json_response(200)
+      |> then(fn data ->
+        assert data["validated"]
+        refute data["completed"]
+      end)
 
       conn =
         get(conn, Routes.tournament_path(conn, :score),
@@ -5233,11 +5327,12 @@ defmodule MilkWeb.TournamentControllerTest do
           match_index: match_index
         )
 
-      json_response(conn, 200)
-      |> (fn data ->
-            assert data["validated"]
-            assert data["completed"]
-          end).()
+      conn
+      |> json_response(200)
+      |> then(fn data ->
+        assert data["validated"]
+        assert data["completed"]
+      end)
 
       match_list =
         tournament.id
@@ -5268,9 +5363,9 @@ defmodule MilkWeb.TournamentControllerTest do
       match_list
       |> List.flatten()
       |> length()
-      |> (fn len ->
-            assert len == 3
-          end).()
+      |> then(fn len ->
+        assert len == 3
+      end)
 
       match_list_with_fight_result
       |> List.flatten()
@@ -5282,9 +5377,9 @@ defmodule MilkWeb.TournamentControllerTest do
         end
       end)
       |> length()
-      |> (fn len ->
-            assert len == 4
-          end).()
+      |> then(fn len ->
+        assert len == 4
+      end)
     end
 
     test "claim_score/2 and finish", %{conn: conn} do
