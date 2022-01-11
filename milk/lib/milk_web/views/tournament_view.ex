@@ -471,10 +471,11 @@ defmodule MilkWeb.TournamentView do
     }
   end
 
-  def render("round_robin_match_list.json", %{match_list: {round, match_list}}) do
+  def render("round_robin_match_list.json", %{match_list: %{"rematch_index" => rematch_index, "current_match_index" => current_match_index, "match_list" => match_list}}) do
     %{
       result: true,
-      rematch_index: round,
+      rematch_index: rematch_index,
+      current_match_index: current_match_index,
       match_list: Enum.map(match_list, fn matches_in_round ->
         Enum.map(matches_in_round, fn {match_str, winner_id} ->
           %{

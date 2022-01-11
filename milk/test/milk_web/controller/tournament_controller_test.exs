@@ -223,9 +223,9 @@ defmodule MilkWeb.TournamentControllerTest do
         assert t["id"] == tournament.id
       end)
       |> length()
-      |> (fn len ->
-            assert len == 1
-          end).()
+      |> then(fn len ->
+        assert len == 1
+      end)
     end
   end
 
@@ -3689,7 +3689,11 @@ defmodule MilkWeb.TournamentControllerTest do
       conn = get(conn, Routes.tournament_path(conn, :get_round_robin_match_list), %{"tournament_id" => tournament_id})
       assert json_response(conn, 200)["result"]
       match_list = json_response(conn, 200)["match_list"]
+      current_match_index = json_response(conn, 200)["current_match_index"]
+      rematch_index = json_response(conn, 200)["rematch_index"]
       assert is_list(match_list)
+      assert is_integer(current_match_index)
+      assert is_integer(rematch_index)
 
       # TODO: flipban_roundrobinの動作確認用テスト記述 第一回戦以降
     end
