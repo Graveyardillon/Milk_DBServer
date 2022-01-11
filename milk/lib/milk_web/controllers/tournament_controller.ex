@@ -689,6 +689,7 @@ defmodule MilkWeb.TournamentController do
 
   defp start_team_tournament(master_id, tournament) do
     case tournament.rule do
+      # XXX: start_team_basicを用意できていないせい
       "basic"   -> Progress.start_team_flipban(master_id, tournament)
       "flipban" -> Progress.start_team_flipban(master_id, tournament)
       _         -> {:error, "unsupported tournament rule", nil}
@@ -1321,6 +1322,7 @@ defmodule MilkWeb.TournamentController do
   end
 
   # bodyless clause
+  # HACK: 大きくなってしまったのでリファクタリングが必要
   defp do_claim_score(conn, user_id, tournament, score, match_index \\ 0)
   defp do_claim_score(conn, _,       nil,        _,     _),          do: render(conn, "error.json", error: "tournament is nil")
   defp do_claim_score(conn, user_id, tournament, score, match_index) do
