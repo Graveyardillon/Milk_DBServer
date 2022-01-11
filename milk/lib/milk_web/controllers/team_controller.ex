@@ -120,7 +120,7 @@ defmodule MilkWeb.TeamController do
   def get_confirmed_teams(conn, %{"tournament_id" => tournament_id}) do
     tournament_id
     |> Tools.to_integer_as_needed()
-    |> Tournaments.get_confirmed_teams()
+    |> Tournaments.load_confirmed_teams()
     ~> teams
 
     render(conn, "index.json", teams: teams)

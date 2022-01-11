@@ -3489,6 +3489,20 @@ defmodule Milk.Tournaments do
     |> where([t, tm], t.is_confirmed)
     |> preload([t, tm], :team_member)
     |> Repo.all()
+    |> Enum.filter(fn team ->
+      Enum.all?(team.team_member, &(&1.is_invitation_confirmed))
+    end)
+    |> Enum.uniq_by(& &1.id)
+  end
+
+  @spec load_confirmed_teams(integer()) :: [Team.t()]
+  def load_confirmed_teams(tournament_id) do
+    Team
+    |> join(:inner, [t], tm in TeamMember, on: t.id == tm.team_id)
+    |> where([t, tm], t.tournament_id == ^tournament_id)
+    |> where([t, tm], t.is_confirmed)
+    |> preload([t, tm], :team_member)
+    |> Repo.all()
     |> Repo.preload(team_member: :user)
     |> Repo.preload(team_member: [user: :auth])
     |> Enum.filter(fn team ->

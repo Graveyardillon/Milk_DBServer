@@ -1856,7 +1856,7 @@ defmodule MilkWeb.TournamentController do
     ~> entrants
 
     tournament_id
-    |> Tournaments.get_confirmed_teams()
+    |> Tournaments.load_confirmed_teams()
     |> Enum.map(fn team ->
       team.id
       |> Tournaments.get_leader()
