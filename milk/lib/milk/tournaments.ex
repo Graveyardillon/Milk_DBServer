@@ -3241,9 +3241,10 @@ defmodule Milk.Tournaments do
       keyname = Rules.adapt_keyname(member.user_id, tournament_id)
 
       case tournament.rule do
-        "basic"   -> Basic.build_dfa_instance(keyname, is_team: tournament.is_team)
-        "flipban" -> FlipBan.build_dfa_instance(keyname, is_team: tournament.is_team)
-        _         -> {:error, "Invalid tournament rule"}
+        "basic"              -> Basic.build_dfa_instance(keyname, is_team: tournament.is_team)
+        "flipban"            -> FlipBan.build_dfa_instance(keyname, is_team: tournament.is_team)
+        "flipban_roundrobin" -> FlipBanRoundRobin.build_dfa_instance(keyname, is_team: tournament.is_team)
+        _                    -> {:error, "Invalid tournament rule"}
       end
     end)
     |> Enum.all?(&match?({:ok, _}, &1))
