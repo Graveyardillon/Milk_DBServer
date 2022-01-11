@@ -95,24 +95,8 @@ defmodule Milk.Tournaments do
     |> Repo.preload(:master)
     |> Repo.preload(:map)
     |> Repo.preload(:custom_detail)
-    ~> tournament
-
-    if tournament do
-      tournament
-      |> Map.get(:entrant)
-      |> Enum.map(fn entrant ->
-        entrant
-        |> Repo.preload(:user)
-        |> Map.get(:user)
-        |> Repo.preload(:auth)
-        ~> user
-
-        Map.put(entrant, :user, user)
-      end)
-      ~> entrants
-
-      Map.put(tournament, :entrant, entrants)
-    end
+    |> Repo.preload(entrant: :user)
+    |> Repo.preload(entrant: [user: :auth])
   end
 
   @doc """
@@ -307,6 +291,7 @@ defmodule Milk.Tournaments do
 
   @doc """
   Gets single tournament by url.
+  # TODO: loadに変える
   """
   @spec get_tournament_by_url(String.t()) :: Tournament.t()
   def get_tournament_by_url(url) do
@@ -318,24 +303,8 @@ defmodule Milk.Tournaments do
     |> Repo.preload(:entrant)
     |> Repo.preload(:assistant)
     |> Repo.preload(:master)
-    ~> tournament
-
-    unless is_nil(tournament) do
-      tournament
-      |> Map.get(:entrant)
-      |> Enum.map(fn entrant ->
-        entrant
-        |> Repo.preload(:user)
-        |> Map.get(:user)
-        |> Repo.preload(:auth)
-        ~> user
-
-        Map.put(entrant, :user, user)
-      end)
-      ~> entrants
-
-      Map.put(tournament, :entrant, entrants)
-    end
+    |> Repo.preload(entrant: :user)
+    |> Repo.preload(entrant: [user: :auth])
   end
 
   @doc """
@@ -3311,20 +3280,8 @@ defmodule Milk.Tournaments do
     |> where([t], t.id == ^team_id)
     |> Repo.one()
     |> Repo.preload(:team_member)
-    ~> team
-    |> is_nil()
-    |> unless do
-      team
-      |> Map.get(:team_member)
-      |> Repo.preload(:user)
-      |> Enum.map(fn member ->
-        user = Repo.preload(member.user, :auth)
-        Map.put(member, :user, user)
-      end)
-      ~> team_members
-
-      Map.put(team, :team_member, team_members)
-    end
+    |> Repo.preload(team_member: :user)
+    |> Repo.preload(team_member: [user: :auth])
   end
 
   @doc """
@@ -3346,17 +3303,8 @@ defmodule Milk.Tournaments do
     |> where([t], t.tournament_id == ^tournament_id)
     |> Repo.all()
     |> Repo.preload(:team_member)
-    |> Enum.map(fn team ->
-      team.team_member
-      |> Repo.preload(:user)
-      |> Enum.map(fn member ->
-        user = Repo.preload(member.user, :auth)
-        Map.put(member, :user, user)
-      end)
-      ~> team_members
-
-      Map.put(team, :team_member, team_members)
-    end)
+    |> Repo.preload(team_member: :user)
+    |> Repo.preload(team_member: [user: :auth])
   end
 
   @doc """
@@ -3376,20 +3324,8 @@ defmodule Milk.Tournaments do
     tournament_id
     |> __MODULE__.get_team_by_tournament_id_and_user_id(user_id)
     |> Repo.preload(:team_member)
-    ~> team
-    |> is_nil()
-    |> unless do
-      team
-      |> Map.get(:team_member)
-      |> Repo.preload(:user)
-      |> Enum.map(fn member ->
-        user = Repo.preload(member.user, :auth)
-        Map.put(member, :user, user)
-      end)
-      ~> team_members
-
-      Map.put(team, :team_member, team_members)
-    end
+    |> Repo.preload(team_member: :user)
+    |> Repo.preload(team_member: [user: :auth])
   end
 
   @doc """
@@ -3526,10 +3462,7 @@ defmodule Milk.Tournaments do
         |> hd()
         |> Map.get(:team_member)
         |> Repo.preload(:user)
-        |> Enum.map(fn member ->
-          user = Repo.preload(member.user, :auth)
-          Map.put(member, :user, user)
-        end)
+        |> Repo.preload(user: :auth)
     end
   end
 
@@ -3556,19 +3489,10 @@ defmodule Milk.Tournaments do
     |> where([t, tm], t.is_confirmed)
     |> preload([t, tm], :team_member)
     |> Repo.all()
-    |> Enum.map(fn team ->
-      team.team_member
-      |> Repo.preload(:user)
-      |> Enum.map(fn member ->
-        user = Repo.preload(member.user, :auth)
-        Map.put(member, :user, user)
-      end)
-      ~> team_members
-
-      Map.put(team, :team_member, team_members)
-    end)
-    |> Enum.filter(fn members_in_team ->
-      Enum.all?(members_in_team.team_member, & &1.is_invitation_confirmed)
+    |> Repo.preload(team_member: :user)
+    |> Repo.preload(team_member: [user: :auth])
+    |> Enum.filter(fn team ->
+      Enum.all?(team.team_member, &(&1.is_invitation_confirmed))
     end)
     |> Enum.uniq_by(& &1.id)
   end
