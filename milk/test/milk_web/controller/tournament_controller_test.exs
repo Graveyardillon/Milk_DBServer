@@ -3663,11 +3663,35 @@ defmodule MilkWeb.TournamentControllerTest do
         assert length(messages) == team_size * capacity + 1
       end)
 
+      conn = get(conn, Routes.tournament_path(conn, :get_match_information), %{"tournament_id" => tournament_id, "user_id" => master_id})
+      assert json_response(conn, 200)["result"]
+      assert json_response(conn, 200)["state"] == "IsManager"
+
+      # TODO: get_opponentの処理
+      # NOTE: 大会がスタートした直後のすべてのメンバーのstateを確認
+      all_member_id_list
+      |> Enum.map(fn [leader_id | member_id_list] ->
+        conn = get(conn, Routes.tournament_path(conn, :get_match_information), %{"tournament_id" => tournament_id, "user_id" => leader_id})
+        assert json_response(conn, 200)["result"]
+        assert json_response(conn, 200)["state"] == "ShouldFlipCoin"
+        assert json_response(conn, 200)["is_leader"]
+
+        member_id_list
+        |> Enum.map(fn member_id ->
+          conn = get(conn, Routes.tournament_path(conn, :get_match_information), %{"tournament_id" => tournament_id, "user_id" => member_id})
+          assert json_response(conn, 200)["result"]
+          assert json_response(conn, 200)["state"] == "IsMember"
+        end)
+        |> length()
+        |> then(&(assert &1 == team_size - 1))
+      end)
+
       conn = get(conn, Routes.tournament_path(conn, :get_round_robin_match_list), %{"tournament_id" => tournament_id})
       assert json_response(conn, 200)["result"]
       match_list = json_response(conn, 200)["match_list"]
+      assert is_list(match_list)
 
-      # TODO: flipban_roundrobinの動作確認用テスト記述
+      # TODO: flipban_roundrobinの動作確認用テスト記述 第一回戦以降
     end
   end
 

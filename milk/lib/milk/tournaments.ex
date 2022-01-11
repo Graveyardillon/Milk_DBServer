@@ -291,7 +291,6 @@ defmodule Milk.Tournaments do
 
   @doc """
   Loads single tournament by url.
-  # TODO: loadに変える
   """
   @spec load_tournament_by_url(String.t()) :: Tournament.t()
   def load_tournament_by_url(url) do
@@ -1709,14 +1708,28 @@ defmodule Milk.Tournaments do
     |> get_opponent_if_started(user_id)
   end
 
-  defp get_opponent_if_started(nil, _), do: {:error, "tournament is nil"}
-
+  # TODO: round-robin追加
+  defp get_opponent_if_started(nil, _),                            do: {:error, "tournament is nil"}
   defp get_opponent_if_started(%Tournament{is_started: false}, _), do: {:error, "tournament is not started"}
+
+  # XXX: is_team: falseのround robinは未対応
+  defp get_opponent_if_started(%Tournament{is_team: true, rule: "flipban_roundrobin", id: id}, user_id) do
+    id
+    |> __MODULE__.get_team_by_tournament_id_and_user_id(user_id)
+    |> case do
+      nil  -> {:error, "team is nil"}
+      team ->
+        match_list = Progress.get_match_list(id)
+          #|> IO.inspect(label: :here)
+    end
+  end
+
   defp get_opponent_if_started(%Tournament{is_team: true, id: id}, user_id) do
     id
     |> __MODULE__.get_team_by_tournament_id_and_user_id(user_id)
     |> get_opponent_team_if_started()
   end
+
   defp get_opponent_if_started(%Tournament{id: id}, user_id) do
     id
     |> Progress.get_match_list()

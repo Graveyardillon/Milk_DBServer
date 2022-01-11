@@ -795,7 +795,7 @@ defmodule MilkWeb.TournamentController do
 
     match_list = Progress.get_match_list(tournament_id)
 
-    if match_list == [] or is_nil(match_list) do
+    if elem(match_list, 1) == [] or is_nil(match_list) do
       render(conn, "error.json", error: "match list is empty or nil")
     else
       render(conn, "round_robin_match_list.json", %{match_list: match_list})

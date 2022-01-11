@@ -877,7 +877,9 @@ defmodule Milk.Tournaments.Progress do
     |> Enum.map(&Map.get(&1, :id))
     |> RoundRobin.generate_match_list()
     |> elem(1)
-    |> insert_match_list(tournament.id)
+    ~> match_list
+
+    insert_match_list({0, match_list}, tournament.id)
     #|> IO.inspect(label: :generate_team_flipban_roundrobin_matches)
 
     #{:ok, match_list, nil}
