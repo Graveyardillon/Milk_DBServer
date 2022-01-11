@@ -89,6 +89,7 @@ defmodule Milk.Tournaments do
     Tournament
     |> Repo.get(id)
     |> Repo.preload(:team)
+    |> Repo.preload(team: :team_member)
     |> Repo.preload(:entrant)
     |> Repo.preload(:assistant)
     |> Repo.preload(:master)
