@@ -693,7 +693,7 @@ defmodule MilkWeb.TournamentController do
       "basic"              -> Progress.start_team_flipban(master_id, tournament)
       "flipban"            -> Progress.start_team_flipban(master_id, tournament)
       "flipban_roundrobin" -> Progress.start_team_flipban_round_robin(tournament)
-      _         -> {:error, "unsupported tournament rule", nil}
+      _                    -> {:error, "unsupported tournament rule", nil}
     end
   end
 
@@ -784,6 +784,21 @@ defmodule MilkWeb.TournamentController do
       json(conn, %{match_list: nil, result: false})
     else
       json(conn, %{match_list: match_list, result: true})
+    end
+  end
+
+  @doc """
+  Get a match list of a tournament whose rule is round-robin.
+  """
+  def get_round_robin_match_list(conn, %{"tournament_id" => tournament_id}) do
+    tournament_id = Tools.to_integer_as_needed(tournament_id)
+
+    match_list = Progress.get_match_list(tournament_id)
+
+    if match_list == [] or is_nil(match_list) do
+      render(conn, "error.json", error: "match list is empty or nil")
+    else
+      render(conn, "round_robin_match_list.json", %{match_list: match_list})
     end
   end
 

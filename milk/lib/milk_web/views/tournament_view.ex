@@ -471,6 +471,20 @@ defmodule MilkWeb.TournamentView do
     }
   end
 
+  def render("round_robin_match_list.json", %{match_list: match_list}) do
+    %{
+      result: true,
+      match_list: Enum.map(match_list, fn matches_in_round ->
+        Enum.map(matches_in_round, fn {match_str, winner_id} ->
+          %{
+            match: match_str,
+            winner_id: winner_id
+          }
+        end)
+      end)
+    }
+  end
+
   # NOTE: フロント側で型を固定してある
   def render("maps.json", %{maps: maps}) do
     %{

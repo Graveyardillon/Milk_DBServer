@@ -879,9 +879,11 @@ defmodule Milk.Tournaments.Progress do
     ~> {:ok, match_list}
     |> elem(1)
     |> insert_match_list(tournament.id)
-    |> IO.inspect(label: :generate_team_flipban_roundrobin_matches)
+    #|> IO.inspect(label: :generate_team_flipban_roundrobin_matches)
 
-    {:ok, match_list, nil}
+    #{:ok, match_list, nil}
+    # XXX: 処理の都合でmatch_listを返さないようにしている
+    {:ok, nil, nil}
   end
 
   @doc """

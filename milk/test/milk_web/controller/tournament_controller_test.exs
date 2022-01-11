@@ -3559,7 +3559,23 @@ defmodule MilkWeb.TournamentControllerTest do
       assert json_response(conn, 200)["result"]
       assert json_response(conn, 200)["state"] == "IsNotStarted"
 
+      conn = post(conn, Routes.tournament_path(conn, :start), %{"tournament" => %{"master_id" => master_id, "tournament_id" => tournament_id}})
+      assert json_response(conn, 200)["result"]
+
+      conn
+      |> json_response(200)
+      |> Map.get("data")
+      |> Map.get("messages")
+      |> then(fn messages ->
+        # NOTE: masterの分を加算して+1
+        assert length(messages) == team_size * capacity + 1
+      end)
+
       # TODO: flipban_roundrobinの動作確認用テスト記述
+      conn = get(conn, Routes.tournament_path(conn, :get_round_robin_match_list), %{"tournament_id" => tournament_id})
+      assert json_response(conn, 200)["result"]
+      match_list = json_response(conn, 200)["match_list"]
+        |> IO.inspect()
     end
   end
 
