@@ -573,10 +573,11 @@ defmodule Milk.Tournaments do
   @spec validate_fields(map()) :: {:ok, map()} | {:error, String.t()}
   defp validate_fields(fields) do
     case fields["rule"] do
-      "flipban" -> validate_flipban_fields(fields)
-      "basic"   -> validate_basic_fields(fields)
-      nil       -> validate_basic_fields(fields)
-      _         -> {:error, "Invalid tournament rule"}
+      "flipban_roundrobin" -> validate_flipban_roundrobin_fields(fields)
+      "flipban"            -> validate_flipban_fields(fields)
+      "basic"              -> validate_basic_fields(fields)
+      nil                  -> validate_basic_fields(fields)
+      _                    -> {:error, "Invalid tournament rule"}
     end
   end
 
@@ -599,6 +600,8 @@ defmodule Milk.Tournaments do
   end
   defp validate_flipban_fields(_), do: {:error, "Short of field for flipban"}
 
+  defp validate_flipban_roundrobin_fields(map),
+    do: validate_flipban_fields(map)
 
   defp do_create_tournament(%{"master_id" => master_id, "platform" => platform, "game_id" => game_id} = attrs, thumbnail_path) do
     tournament = %Tournament{
@@ -650,9 +653,10 @@ defmodule Milk.Tournaments do
   @spec add_necessary_fields(Tournament.t(), map()) :: {:ok, nil} | {:error, String.t()}
   defp add_necessary_fields(%Tournament{rule: rule} = tournament, attrs) do
     case rule do
-      "flipban" -> add_flipban_fields(tournament, attrs)
-      "basic"   -> add_basic_fields(tournament, attrs)
-      _         -> {:error, "invalid tournament rule"}
+      "flipban_roundrobin" -> add_flipban_roundrobin_fields(tournament, attrs)
+      "flipban"            -> add_flipban_fields(tournament, attrs)
+      "basic"              -> add_basic_fields(tournament, attrs)
+      _                    -> {:error, "invalid tournament rule"}
     end
   end
 
@@ -677,6 +681,10 @@ defmodule Milk.Tournaments do
       errors -> errors
     end
   end
+
+  @spec add_flipban_roundrobin_fields(Tournament.t(), map()) :: {:ok, nil} | {:error, String.t()}
+  defp add_flipban_roundrobin_fields(tournament, attrs),
+    do: add_flipban_fields(tournament, attrs)
 
   @spec create_tournament_custom_detail_on_create_tournament(Tournament.t(), map()) :: {:ok, TournamentCustomDetail.t()} | {:error, Ecto.Changeset.t()}
   defp create_tournament_custom_detail_on_create_tournament(tournament, attrs) do

@@ -3478,7 +3478,7 @@ defmodule MilkWeb.TournamentControllerTest do
         "url" => "some url",
         "platform" => 1,
         "is_team" => "true",
-        "rule" => "flipban",
+        "rule" => "flipban_roundrobin",
         "team_size" => 5,
         "type" => 2,
         # XXX: ここあとでvalidateに追加しないと head_fieldとかもいるかも
@@ -3496,6 +3496,11 @@ defmodule MilkWeb.TournamentControllerTest do
       ]
 
       conn = post(conn, Routes.tournament_path(conn, :create), tournament: attrs, file: nil, maps: maps)
+      assert json_response(conn, 200)["result"]
+      assert json_response(conn, 200)["data"]["rule"] == "flipban_roundrobin"
+      assert json_response(conn, 200)["data"]["is_team"]
+      assert json_response(conn, 200)["data"]["enabled_map"]
+      assert json_response(conn, 200)["data"]["enabled_coin_toss"]
 
       # TODO: flipban_roundrobinの動作確認用テスト記述
     end

@@ -12,7 +12,8 @@ defmodule Milk.Tournaments.Rules do
   }
   alias Milk.Tournaments.Rules.{
     Basic,
-    FlipBan
+    FlipBan,
+    FlipBanRoundRobin
   }
 
   @spec adapt_keyname(integer(), integer()) :: String.t()
@@ -24,8 +25,9 @@ defmodule Milk.Tournaments.Rules do
   @spec initialize_state_machine(Tournament.t()) :: :ok | :error
   def initialize_state_machine(%Tournament{rule: rule, is_team: is_team}) do
     case rule do
-      "basic"   -> Basic.define_dfa!(is_team: is_team)
-      "flipban" -> FlipBan.define_dfa!(is_team: is_team)
+      "basic"              -> Basic.define_dfa!(is_team: is_team)
+      "flipban"            -> FlipBan.define_dfa!(is_team: is_team)
+      "flipban_roundrobin" -> FlipBanRoundRobin.define_dfa!(is_team: is_team)
       _         -> :error
     end
   end
@@ -41,9 +43,10 @@ defmodule Milk.Tournaments.Rules do
       keyname = __MODULE__.adapt_keyname(user.id, tournament_id)
 
       case rule do
-        "basic"   -> Basic.build_dfa_instance(keyname, is_team: is_team)
-        "flipban" -> FlipBan.build_dfa_instance(keyname, is_team: is_team)
-        _         -> raise "Invalid tournament rule"
+        "basic"              -> Basic.build_dfa_instance(keyname, is_team: is_team)
+        "flipban"            -> FlipBan.build_dfa_instance(keyname, is_team: is_team)
+        "flipban_roundrobin" -> FlipBanRoundRobin.build_dfa_instance(keyname, is_team: is_team)
+        _                    -> raise "Invalid tournament rule"
       end
     end)
     |> Enum.all?(&(&1 == "OK"))

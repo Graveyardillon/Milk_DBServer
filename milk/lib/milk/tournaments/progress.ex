@@ -36,6 +36,8 @@ defmodule Milk.Tournaments.Progress do
     SingleTournamentMatchLog
   }
 
+  alias Tournamex.RoundRobin
+
   require Logger
 
   @type match_list :: [any()] | integer()
@@ -825,7 +827,7 @@ defmodule Milk.Tournaments.Progress do
     tournament.id
     |> Tournaments.get_confirmed_teams()
     ~> teams
-    |> Enum.map(fn team -> team.id end)
+    |> Enum.map(&Map.get(&1, :id))
     |> Tournaments.generate_matchlist()
     ~> {:ok, match_list}
     |> elem(1)
@@ -858,6 +860,28 @@ defmodule Milk.Tournaments.Progress do
     |> insert_match_list_with_fight_result(tournament.id)
 
     {:ok, match_list, match_list_with_fight_result}
+  end
+
+  def start_team_flipban_round_robin(tournament) do
+    tournament.id
+    |> Tournaments.start_team_tournament(tournament.master_id)
+    |> case do
+      {:ok, _}        -> generate_team_flipban_roundrobin_matches(tournament)
+      {:error, error} -> {:error, error, nil}
+    end
+  end
+
+  defp generate_team_flipban_roundrobin_matches(tournament) do
+    tournament.id
+    |> Tournaments.get_confirmed_teams()
+    |> Enum.map(&Map.get(&1, :id))
+    |> RoundRobin.generate_match_list()
+    ~> {:ok, match_list}
+    |> elem(1)
+    |> insert_match_list(tournament.id)
+    |> IO.inspect(label: :generate_team_flipban_roundrobin_matches)
+
+    {:ok, match_list, nil}
   end
 
   @doc """
