@@ -1753,12 +1753,11 @@ defmodule MilkWeb.TournamentControllerTest do
       refute json_response(conn, 200)["result"]
       assert is_nil(json_response(conn, 200)["data"]["id"])
 
-      %{
+      Tournaments.create_entrant(%{
         "rank" => 0,
         "tournament_id" => tournament["id"],
         "user_id" => user2.id
-      }
-      |> Tournaments.create_entrant()
+      })
 
       conn = get(conn, Routes.tournament_path(conn, :is_started_at_least_one), user_id: user2.id)
       assert json_response(conn, 200)["result"]
@@ -1807,7 +1806,8 @@ defmodule MilkWeb.TournamentControllerTest do
           user_id: tournament.master_id
         )
 
-      json_response(conn, 200)
+      conn
+      |> json_response(200)
       |> Map.get("data")
       |> Enum.map(fn topic ->
         ["Group", "Notification", "Q&A"]
@@ -1825,9 +1825,9 @@ defmodule MilkWeb.TournamentControllerTest do
         end
       end)
       |> length()
-      |> (fn len ->
-            assert len == 3
-          end).()
+      |> then(fn len ->
+        assert len == 3
+      end)
     end
   end
 
@@ -1856,15 +1856,16 @@ defmodule MilkWeb.TournamentControllerTest do
           tabs: tabs
         )
 
-      json_response(conn, 200)
+      conn
+      |> json_response(200)
       |> Map.get("data")
       |> Enum.map(fn tab ->
         assert Enum.member?(tab_name_list, tab["topic_name"])
       end)
       |> length()
-      |> (fn len ->
-            assert len == 2
-          end).()
+      |> then(fn len ->
+        assert len == 2
+      end)
     end
   end
 
@@ -1881,10 +1882,10 @@ defmodule MilkWeb.TournamentControllerTest do
       assert json_response(conn, 200)["data"]["match_list"] |> is_list()
 
       assert Tournaments.get_entrants(tournament.id)
-             |> Enum.map(fn x -> x.rank end)
-             |> Enum.filter(fn x -> x == 8 end)
-             |> length()
-             |> Kernel.==(4)
+        |> Enum.map(fn x -> x.rank end)
+        |> Enum.filter(fn x -> x == 8 end)
+        |> length()
+        |> Kernel.==(4)
     end
 
     test "start a tournament with valid data (type: 2)", %{conn: conn, tournament: _tournament} do
@@ -1904,10 +1905,7 @@ defmodule MilkWeb.TournamentControllerTest do
 
       Platforms.create_basic_platforms()
 
-      {:ok, user} =
-        %{"name" => "type2name", "email" => "type2e@mail.com", "password" => "Password123"}
-        |> Accounts.create_user()
-
+      {:ok, user} = Accounts.create_user(%{"name" => "type2name", "email" => "type2e@mail.com", "password" => "Password123"})
       {:ok, tournament} = Tournaments.create_tournament(%{create_attrs2 | "master_id" => user.id})
 
       entrants = create_entrants(8, tournament.id)
@@ -1923,9 +1921,9 @@ defmodule MilkWeb.TournamentControllerTest do
         assert user_id in entrant_id_list
       end)
       |> length()
-      |> (fn len ->
-            assert len == length(entrants)
-          end).()
+      |> then(fn len ->
+          assert len == length(entrants)
+        end)
 
       tournament.id
       |> Progress.get_match_list()
@@ -1934,47 +1932,18 @@ defmodule MilkWeb.TournamentControllerTest do
         assert user_id in entrant_id_list
       end)
       |> length()
-      |> (fn len ->
-            assert len == length(entrants)
-          end).()
+      |> then(fn len ->
+        assert len == length(entrants)
+      end)
 
       tournament.id
       |> Progress.get_match_list_with_fight_result()
       |> List.flatten()
       |> length()
-      |> (fn len ->
-            assert len == length(entrants)
-          end).()
+      |> then(fn len ->
+        assert len == length(entrants)
+      end)
     end
-
-    # test "does not work (type: -1)", %{conn: conn, tournament: _tournament} do
-    #   create_attrs2 = %{
-    #     "capacity" => 42,
-    #     "deadline" => "2010-04-17T14:00:00Z",
-    #     "description" => "some description",
-    #     "event_date" => "2010-04-17T14:00:00Z",
-    #     "master_id" => 42,
-    #     "name" => "some name",
-    #     "type" => -1,
-    #     "join" => "true",
-    #     "url" => "some url",
-    #     "password" => "Password123",
-    #     "platform" => 1
-    #   }
-
-    #   Platforms.create_basic_platforms()
-
-    #   {:ok, user} =
-    #     %{"name" => "type2name", "email" => "type2e@mail.com", "password" => "Password123"}
-    #     |> Accounts.create_user()
-
-    #   {:ok, tournament} = Tournaments.create_tournament(%{create_attrs2 | "master_id" => user.id})
-    #   create_entrants(8, tournament.id)
-
-    #   conn = post(conn, Routes.tournament_path(conn, :start), tournament: %{"master_id" => tournament.master_id, "tournament_id" => tournament.id})
-
-    #   refute json_response(conn, 200)["result"]
-    # end
   end
 
   describe "delete loser" do
@@ -3492,6 +3461,43 @@ defmodule MilkWeb.TournamentControllerTest do
       state = json_response(conn, 200)["state"]
       assert state == "IsLoser" or state == "IsFinished"
       refute json_response(conn, 200)["score"]
+    end
+
+    test "flipban_roundrobin (team)", %{conn: conn} do
+      user = fixture_user()
+      attrs = %{
+        "capacity" => 4,
+        "coin_head_field" => "マップ選択",
+        "coin_tail_field" => "a/d選択",
+        "deadline" => "2010-04-17T14:00:00Z",
+        "description" => "some description",
+        "event_date" => "2010-04-17T14:00:00Z",
+        "master_id" => user.id,
+        "name" => "some name",
+        "join" => "false",
+        "url" => "some url",
+        "platform" => 1,
+        "is_team" => "true",
+        "rule" => "flipban",
+        "team_size" => 5,
+        "type" => 2,
+        # XXX: ここあとでvalidateに追加しないと head_fieldとかもいるかも
+        "enabled_map" => "true",
+        "enabled_coin_toss" => "true"
+      }
+
+      maps = [
+        %{"name" => "map1"},
+        %{"name" => "map2"},
+        %{"name" => "map3"},
+        %{"name" => "map4"},
+        %{"name" => "map5"},
+        %{"name" => "map6"}
+      ]
+
+      conn = post(conn, Routes.tournament_path(conn, :create), tournament: attrs, file: nil, maps: maps)
+
+      # TODO: flipban_roundrobinの動作確認用テスト記述
     end
   end
 
