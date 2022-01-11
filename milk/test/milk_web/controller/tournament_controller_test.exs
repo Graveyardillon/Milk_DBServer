@@ -3691,11 +3691,36 @@ defmodule MilkWeb.TournamentControllerTest do
       match_list = json_response(conn, 200)["match_list"]
       current_match_index = json_response(conn, 200)["current_match_index"]
       rematch_index = json_response(conn, 200)["rematch_index"]
-      assert is_list(match_list)
+      assert length(match_list) === 3
       assert is_integer(current_match_index)
       assert is_integer(rematch_index)
 
       # TODO: flipban_roundrobinの動作確認用テスト記述 第一回戦以降
+      match_list
+      |> Enum.map(fn match_list ->
+        Enum.map(match_list, fn %{"match" => match} ->
+          match
+          |> String.split("-")
+          |> Enum.map(&String.to_integer(&1))
+          ~> [team1_id, team2_id]
+
+          team1_id
+          |> Tournaments.get_leader()
+          |> Map.get(:user_id)
+          ~> leader1_id
+
+          team2_id
+          |> Tournaments.get_leader()
+          |> Map.get(:user_id)
+          ~> leader2_id
+
+          round_robin_fight(conn, team1_id, team2_id, leader1_id, leader2_id, tournament_id)
+        end)
+      end)
+    end
+
+    defp round_robin_fight(conn, team1_id, team2_id, leader1_id, leader2_id, tournament_id) do
+
     end
   end
 
