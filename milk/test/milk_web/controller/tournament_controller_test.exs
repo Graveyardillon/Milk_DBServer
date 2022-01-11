@@ -3069,7 +3069,7 @@ defmodule MilkWeb.TournamentControllerTest do
       |> Map.get("messages")
       |> then(fn messages ->
         # NOTE: masterの分を加算して+1
-        assert length(messages) == team_size*capacity + 1
+        assert length(messages) == team_size * capacity + 1
       end)
 
       conn = get(conn, Routes.tournament_path(conn, :get_match_information), %{"tournament_id" => tournament_id, "user_id" => master_id})
@@ -3501,6 +3501,16 @@ defmodule MilkWeb.TournamentControllerTest do
       assert json_response(conn, 200)["data"]["is_team"]
       assert json_response(conn, 200)["data"]["enabled_map"]
       assert json_response(conn, 200)["data"]["enabled_coin_toss"]
+
+      master_id = json_response(conn, 200)["data"]["master_id"]
+      tournament_id = json_response(conn, 200)["data"]["id"]
+      capacity = json_response(conn, 200)["data"]["capacity"]
+      team_size = json_response(conn, 200)["data"]["team_size"]
+
+      conn = get(conn, Routes.tournament_path(conn, :get_match_information), %{"tournament_id" => tournament_id, "user_id" => master_id})
+      assert json_response(conn, 200)["result"]
+      assert json_response(conn, 200)["state"] === "IsNotStarted"
+
 
       # TODO: flipban_roundrobinの動作確認用テスト記述
     end

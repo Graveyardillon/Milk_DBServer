@@ -66,7 +66,8 @@ defmodule Milk.Tournaments do
   }
   alias Milk.Tournaments.Rules.{
     Basic,
-    FlipBan
+    FlipBan,
+    FlipBanRoundRobin
   }
 
   require Integer
@@ -1433,9 +1434,10 @@ defmodule Milk.Tournaments do
     keyname = Rules.adapt_keyname(user_id, tournament_id)
 
     case tournament.rule do
-      "basic"   -> Basic.build_dfa_instance(keyname, is_team: tournament.is_team)
-      "flipban" -> FlipBan.build_dfa_instance(keyname, is_team: tournament.is_team)
-      _         -> raise "Invalid tournament"
+      "basic"              -> Basic.build_dfa_instance(keyname, is_team: tournament.is_team)
+      "flipban"            -> FlipBan.build_dfa_instance(keyname, is_team: tournament.is_team)
+      "flipban_roundrobin" -> FlipBanRoundRobin.build_dfa_instance(keyname, is_team: tournament.is_team)
+      _                    -> raise "Invalid tournament"
     end
 
     {:ok, nil}
@@ -1885,9 +1887,10 @@ defmodule Milk.Tournaments do
       keyname = Rules.adapt_keyname(user_id, tournament_id)
 
       case rule do
-        "basic"   -> Basic.trigger!(keyname, Basic.start_trigger())
-        "flipban" -> FlipBan.trigger!(keyname, FlipBan.start_trigger())
-        _         -> raise "Invalid tournament rule"
+        "basic"              -> Basic.trigger!(keyname, Basic.start_trigger())
+        "flipban"            -> FlipBan.trigger!(keyname, FlipBan.start_trigger())
+        "flipban_roundrobin" -> FlipBanRoundRobin.trigger!(keyname, FlipBanRoundRobin.start_trigger())
+        _                    -> raise "Invalid tournament rule"
       end
     end)
 
@@ -1929,15 +1932,17 @@ defmodule Milk.Tournaments do
 
       if member.is_leader do
         case rule do
-          "basic"   -> Basic.trigger!(keyname, Basic.start_trigger())
-          "flipban" -> FlipBan.trigger!(keyname, FlipBan.start_trigger())
-          _         -> raise "Invalid tournament rule"
+          "basic"              -> Basic.trigger!(keyname, Basic.start_trigger())
+          "flipban"            -> FlipBan.trigger!(keyname, FlipBan.start_trigger())
+          "flipban_roundrobin" -> FlipBanRoundRobin.trigger!(keyname, FlipBanRoundRobin.start_trigger())
+          _                    -> raise "Invalid tournament rule"
         end
       else
         case rule do
-          "basic"   -> Basic.trigger!(keyname, Basic.member_trigger())
-          "flipban" -> FlipBan.trigger!(keyname, FlipBan.member_trigger())
-          _         -> raise "Invalid tournament rule"
+          "basic"              -> Basic.trigger!(keyname, Basic.member_trigger())
+          "flipban"            -> FlipBan.trigger!(keyname, FlipBan.member_trigger())
+          "flipban_roundrobin" -> FlipBanRoundRobin.trigger!(keyname, FlipBanRoundRobin.member_trigger())
+          _                    -> raise "Invalid tournament rule"
         end
       end
     end)
@@ -2439,9 +2444,10 @@ defmodule Milk.Tournaments do
     keyname = Rules.adapt_keyname(user_id, tournament_id)
 
     case tournament.rule do
-      "basic"   -> Basic.build_dfa_instance(keyname, is_team: tournament.is_team)
-      "flipban" -> FlipBan.build_dfa_instance(keyname, is_team: tournament.is_team)
-      _         -> raise "Invalid tournament"
+      "basic"              -> Basic.build_dfa_instance(keyname, is_team: tournament.is_team)
+      "flipban"            -> FlipBan.build_dfa_instance(keyname, is_team: tournament.is_team)
+      "flipban_roundrobin" -> FlipBanRoundRobin.build_dfa_instance(keyname, is_team: tournament.is_team)
+      _                    -> raise "Invalid tournament"
     end
   end
 
@@ -2895,9 +2901,10 @@ defmodule Milk.Tournaments do
   defp do_state!(nil, _), do: "IsFinished"
   defp do_state!(%Tournament{rule: rule}, keyname) do
     case rule do
-      "basic"   -> Basic.state!(keyname)
-      "flipban" -> FlipBan.state!(keyname)
-      _         -> raise "Invalid tournament rule"
+      "basic"              -> Basic.state!(keyname)
+      "flipban"            -> FlipBan.state!(keyname)
+      "flipban_roundrobin" -> FlipBanRoundRobin.state!(keyname)
+      _                    -> raise "Invalid tournament rule"
     end
   end
 
@@ -3888,9 +3895,10 @@ defmodule Milk.Tournaments do
       keyname = Rules.adapt_keyname(member.user_id, tournament_id)
 
       case tournament.rule do
-        "basic"   -> Basic.build_dfa_instance(keyname, is_team: tournament.is_team)
-        "flipban" -> FlipBan.build_dfa_instance(keyname, is_team: tournament.is_team)
-        _         -> raise "Invalid tournament"
+        "basic"              -> Basic.build_dfa_instance(keyname, is_team: tournament.is_team)
+        "flipban"            -> FlipBan.build_dfa_instance(keyname, is_team: tournament.is_team)
+        "flipban_roundrobin" -> FlipBanRoundRobin.build_dfa_instance(keyname, is_team: tournament.is_team)
+        _                    -> raise "Invalid tournament"
       end
     end)
   end
