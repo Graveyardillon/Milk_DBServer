@@ -1719,8 +1719,28 @@ defmodule Milk.Tournaments do
     |> case do
       nil  -> {:error, "team is nil"}
       team ->
-        match_list = Progress.get_match_list(id)
-          #|> IO.inspect(label: :here)
+        match_list = id
+          |> Progress.get_match_list()
+          |> then(fn match_list ->
+            match_list["match_list"]
+            |> Enum.at(match_list["current_match_index"])
+            |> Enum.filter(fn {match, _} ->
+              match
+              |> String.split("-")
+              |> Enum.map(&String.to_integer(&1))
+              |> Enum.any?(&(&1 == team.id))
+            end)
+            |> Enum.map(&elem(&1, 0))
+          end)
+          |> List.first()
+          |> then(fn match ->
+            match
+            |> String.split("-")
+            |> Enum.map(&String.to_integer(&1))
+            |> Enum.reject(&(&1 == team.id))
+            |> List.first()
+          end)
+          |> do_get_opponent_team()
     end
   end
 
