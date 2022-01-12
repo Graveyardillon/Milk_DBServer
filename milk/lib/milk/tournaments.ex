@@ -1708,7 +1708,6 @@ defmodule Milk.Tournaments do
     |> get_opponent_if_started(user_id)
   end
 
-  # TODO: round-robin追加
   defp get_opponent_if_started(nil, _),                            do: {:error, "tournament is nil"}
   defp get_opponent_if_started(%Tournament{is_started: false}, _), do: {:error, "tournament is not started"}
 
@@ -1718,30 +1717,28 @@ defmodule Milk.Tournaments do
     |> __MODULE__.get_team_by_tournament_id_and_user_id(user_id)
     |> case do
       nil  -> {:error, "team is nil"}
-      team ->
-        match_list = id
-          |> Progress.get_match_list()
-          |> then(fn match_list ->
-            match_list["match_list"]
-            |> Enum.at(match_list["current_match_index"])
-            |> Enum.filter(fn {match, _} ->
-              match
-              |> String.split("-")
-              |> Enum.map(&String.to_integer(&1))
-              |> Enum.any?(&(&1 == team.id))
-            end)
-            |> Enum.map(&elem(&1, 0))
-          end)
-          |> List.first()
-          |> then(fn match ->
-            match
-            |> String.split("-")
-            |> Enum.map(&String.to_integer(&1))
-            |> Enum.reject(&(&1 == team.id))
-            |> List.first()
-          end)
-          |> do_get_opponent_team()
+      team -> get_round_robin_opponent_team(team)
     end
+  end
+
+  defp get_round_robin_opponent_team(team) do
+    match_list = Progress.get_match_list(team.tournament_id)
+
+    match_list["match_list"]
+    |> Enum.at(match_list["current_match_index"])
+    |> Enum.filter(fn {match, _} ->
+      match
+      |> String.split("-")
+      |> Enum.map(&String.to_integer(&1))
+      |> Enum.any?(&(&1 == team.id))
+    end)
+    |> Enum.map(&elem(&1, 0))
+    |> List.first()
+    |> String.split("-")
+    |> Enum.map(&String.to_integer(&1))
+    |> Enum.reject(&(&1 == team.id))
+    |> List.first()
+    |> do_get_opponent_team()
   end
 
   defp get_opponent_if_started(%Tournament{is_team: true, id: id}, user_id) do
@@ -1982,6 +1979,34 @@ defmodule Milk.Tournaments do
   @doc """
   マッチングしているユーザー同士がIsWaitingForStartになったら発火する処理
   """
+  def break_waiting_state_as_needed(%Tournament{rule: "flipban_roundrobin"} = tournament, user_id) do
+    id = Progress.get_necessary_id(tournament.id, user_id)
+    match_list = Progress.get_match_list(tournament.id)
+
+    match_list["match_list"]
+    |> Enum.at(match_list["current_match_index"])
+    |> Enum.filter(fn {match, _} ->
+      match
+      |> String.split("-")
+      |> Enum.map(&String.to_integer(&1))
+      |> Enum.any?(&(&1 == id))
+    end)
+    |> Enum.map(&elem(&1, 0))
+    |> List.first()
+    |> String.split("-")
+    |> Enum.map(&String.to_integer(&1))
+    ~> match
+    |> Enum.all?(&Progress.get_match_pending_list(&1, tournament.id))
+    |> if do
+      match
+      |> Enum.map(&break_waiting(&1, tournament))
+      |> Enum.all?(&(!is_nil(&1)))
+      |> Tools.boolean_to_tuple()
+    else
+      {:ok, nil}
+    end
+  end
+
   def break_waiting_state_as_needed(tournament, user_id) do
     id = Progress.get_necessary_id(tournament.id, user_id)
 
@@ -2010,9 +2035,10 @@ defmodule Milk.Tournaments do
     ~> keyname
 
     case rule do
-      "basic"   -> Basic.trigger!(keyname, Basic.pend_trigger())
-      "flipban" -> break_on_flipban(tournament, team_id)
-      _         -> nil
+      "basic"              -> Basic.trigger!(keyname, Basic.pend_trigger())
+      "flipban"            -> break_on_flipban(tournament, team_id)
+      "flipban_roundrobin" -> break_on_flipban_roundrobin(tournament, team_id)
+      _                    -> nil
     end
   end
 
@@ -2052,6 +2078,45 @@ defmodule Milk.Tournaments do
     id2
     |> Rules.adapt_keyname(tournament_id)
     |> FlipBan.trigger!(FlipBan.observe_ban_map_trigger())
+  end
+
+  defp break_on_flipban_roundrobin(%Tournament{id: tournament_id, is_team: true}, id) do
+    match_list = Progress.get_match_list(tournament_id)
+
+    # TODO: この実質的にfind_matchな処理は関数として別で置いておく方がいいかも？
+    match_list["match_list"]
+    |> Enum.at(match_list["current_match_index"])
+    |> Enum.filter(fn {match, _} ->
+      match
+      |> String.split("-")
+      |> Enum.map(&String.to_integer(&1))
+      |> Enum.any?(&(&1 == id))
+    end)
+    |> Enum.map(&elem(&1, 0))
+    |> List.first()
+    |> String.split("-")
+    |> Enum.map(&String.to_integer(&1))
+    ~> [id1, id2]
+
+    if __MODULE__.is_head_of_coin?(tournament_id, id1, id2) do
+      [id1, id2]
+    else
+      [id2, id1]
+    end
+    |> Enum.map(fn id ->
+      id
+      |> __MODULE__.get_leader()
+      |> Map.get(:user_id)
+    end)
+    ~> [id1, id2]
+
+    id1
+    |> Rules.adapt_keyname(tournament_id)
+    |> FlipBanRoundRobin.trigger!(FlipBanRoundRobin.ban_map_trigger())
+
+    id2
+    |> Rules.adapt_keyname(tournament_id)
+    |> FlipBanRoundRobin.trigger!(FlipBanRoundRobin.observe_ban_map_trigger())
   end
 
   @doc """

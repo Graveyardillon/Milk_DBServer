@@ -106,8 +106,9 @@ defmodule Milk.Tournaments.Rules do
     keyname = __MODULE__.adapt_keyname(user_id, tournament_id)
 
     case rule do
-      "flipban" -> FlipBan.trigger!(keyname, FlipBan.flip_trigger())
-      _         -> {:error, "Invalid tournament rule"}
+      "flipban"            -> FlipBan.trigger!(keyname, FlipBan.flip_trigger())
+      "flipban_roundrobin" -> FlipBanRoundRobin.trigger!(keyname, FlipBanRoundRobin.flip_trigger())
+      _                    -> {:error, "Invalid tournament rule"}
     end
   end
 
