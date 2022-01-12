@@ -3858,6 +3858,56 @@ defmodule MilkWeb.TournamentControllerTest do
       assert json_response(conn, 200)["state"] == "ShouldObserveChoose"
       assert json_response(conn, 200)["opponent"]["id"] == team1_id
 
+      # NOTE: マップ選択
+      map = Enum.at(map_id_list, 4)
+      conn = post(conn, Routes.tournament_path(conn, :choose_map), %{"user_id" => leader1_id, "tournament_id" => tournament_id, "map_id" => map})
+      assert json_response(conn, 200)["result"]
+
+      conn
+      |> json_response(200)
+      |> Map.get("messages")
+      |> Enum.map(fn message ->
+        assert is_binary(message["state"])
+        assert is_integer(message["user_id"])
+      end)
+      |> Enum.empty?()
+      |> refute()
+
+      conn = get(conn, Routes.tournament_path(conn, :get_match_information), %{"tournament_id" => tournament_id, "user_id" => leader1_id})
+      assert json_response(conn, 200)["is_coin_head"]
+      assert json_response(conn, 200)["state"] == "ShouldObserveA/D"
+      assert json_response(conn, 200)["opponent"]["id"] == team2_id
+
+      conn = get(conn, Routes.tournament_path(conn, :get_match_information), %{"tournament_id" => tournament_id, "user_id" => leader2_id})
+      refute json_response(conn, 200)["is_coin_head"]
+      assert json_response(conn, 200)["state"] == "ShouldChooseA/D"
+      assert json_response(conn, 200)["opponent"]["id"] == team1_id
+
+      # NOTE: A/D選択
+      conn = post(conn, Routes.tournament_path(conn, :choose_ad), %{"user_id" => leader2_id, "tournament_id" => tournament_id, "is_attacker_side" => true})
+      assert json_response(conn, 200)["result"]
+
+      conn
+      |> json_response(200)
+      |> Map.get("messages")
+      |> Enum.map(fn message ->
+        assert is_binary(message["state"])
+        assert is_integer(message["user_id"])
+      end)
+      |> Enum.empty?()
+      |> refute()
+
+      conn = get(conn, Routes.tournament_path(conn, :get_match_information), %{"tournament_id" => tournament_id, "user_id" => leader1_id})
+      assert json_response(conn, 200)["is_coin_head"]
+      assert json_response(conn, 200)["state"] == "IsPending"
+      assert json_response(conn, 200)["opponent"]["id"] == team2_id
+      refute json_response(conn, 200)["is_attacker_side"]
+
+      conn = get(conn, Routes.tournament_path(conn, :get_match_information), %{"tournament_id" => tournament_id, "user_id" => leader2_id})
+      refute json_response(conn, 200)["is_coin_head"]
+      assert json_response(conn, 200)["state"] == "IsPending"
+      assert json_response(conn, 200)["opponent"]["id"] == team1_id
+      assert json_response(conn, 200)["is_attacker_side"]
     end
   end
 

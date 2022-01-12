@@ -184,7 +184,7 @@ defmodule Milk.Tournaments.Rules do
     do_change_state_on_choose_map(rule, keyname, opponent_keyname)
   end
 
-  defp do_change_state_on_choose_map(rule, _, _) when rule != "flipban", do: {:error, "Invalid tournament rule"}
+  defp do_change_state_on_choose_map(rule, _, _) when rule === "basic", do: {:error, "Invalid tournament rule"}
   defp do_change_state_on_choose_map(_, keyname, opponent_keyname) do
     with {:ok, _} <- FlipBan.trigger!(keyname, FlipBan.observe_choose_ad_trigger()),
          {:ok, _} <- FlipBan.trigger!(opponent_keyname, FlipBan.choose_ad_trigger()) do
@@ -217,7 +217,7 @@ defmodule Milk.Tournaments.Rules do
     do_change_state_on_choose_ad(rule, keyname, opponent_keyname)
   end
 
-  defp do_change_state_on_choose_ad(rule, _, _) when rule != "flipban", do: {:error, "Invalid tournament rule"}
+  defp do_change_state_on_choose_ad(rule, _, _) when rule === "basic", do: {:error, "Invalid tournament rule"}
   defp do_change_state_on_choose_ad(_, keyname, opponent_keyname) do
     with {:ok, _} <- FlipBan.trigger!(keyname, FlipBan.pend_trigger()),
          {:ok, _} <- FlipBan.trigger!(opponent_keyname, FlipBan.pend_trigger()) do
