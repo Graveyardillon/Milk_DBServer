@@ -28,7 +28,7 @@ defmodule Milk.Tournaments.Rules do
       "basic"              -> Basic.define_dfa!(is_team: is_team)
       "flipban"            -> FlipBan.define_dfa!(is_team: is_team)
       "flipban_roundrobin" -> FlipBanRoundRobin.define_dfa!(is_team: is_team)
-      _         -> :error
+      _                    -> :error
     end
   end
 
@@ -143,7 +143,7 @@ defmodule Milk.Tournaments.Rules do
     do_change_state_on_ban(is_head, rule, keyname, opponent_keyname)
   end
 
-  defp do_change_state_on_ban(_, rule, _, _) when rule != "flipban", do: {:error, "Invalid tournament rule"}
+  defp do_change_state_on_ban(_, rule, _, _) when rule === "basic", do: {:error, "Invalid tournament rule"}
   defp do_change_state_on_ban(true, _, keyname, opponent_keyname) do
     with {:ok, _} <- FlipBan.trigger!(keyname, FlipBan.observe_ban_map_trigger()),
          {:ok, _} <- FlipBan.trigger!(opponent_keyname, FlipBan.ban_map_trigger()) do
