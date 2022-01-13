@@ -1814,7 +1814,6 @@ defmodule Milk.Tournaments do
 
   defp get_round_robin_opponent_team(team) do
     match_list = Progress.get_match_list(team.tournament_id)
-      |> IO.inspect()
 
     # TODO: find_matchで置き換え出来る部分があるかも？（未確認）
     match_list["match_list"]
@@ -2306,6 +2305,50 @@ defmodule Milk.Tournaments do
       {:ok, nil}
     else
       error -> error
+    end
+  end
+
+  def rematch_round_robin_as_needed(%{"match_list" => match_list, "current_match_index" => current_match_index, "rematch_index" => rematch_index}, tournament_id) do
+    if length(match_list) === current_match_index do
+      tournament_id
+      |> __MODULE__.get_confirmed_teams()
+      ~> teams
+      |> Enum.map(&RoundRobin.count_win(match_list, &1.id))
+      |> IO.inspect(label: :count_win)
+      ~> win_numbers
+
+      max_win_count = Enum.max(win_numbers)
+
+      win_numbers
+      |> Enum.filter(&(&1 == max_win_count))
+      |> length()
+      |> case do
+        1 -> {:ok, nil}
+        _ -> regenerate_round_robin_match_list(teams, max_win_count, rematch_index)
+      end
+    else
+      {:ok, nil}
+    end
+
+    # debug
+    Progress.get_match_list(tournament_id)
+    |> IO.inspect(label: :asdf)
+
+    {:ok, nil}
+  end
+
+  defp regenerate_round_robin_match_list(teams, max_win_count, rematch_index) do
+    teams
+    |> List.first()
+    |> Map.get(:tournament_id)
+    ~> tournament_id
+
+    teams
+    |> Enum.map(&Map.get(&1, :id))
+    |> __MODULE__.generate_round_robin_match_list()
+    |> case do
+      {:ok, _, match_list} -> Progress.insert_match_list(%{"rematch_index" => rematch_index + 1, "current_match_index" => 0, "match_list" => match_list}, tournament_id)
+      _                    -> {:error, "Failed regenerating round robin match list"}
     end
   end
 

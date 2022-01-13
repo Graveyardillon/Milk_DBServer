@@ -880,7 +880,6 @@ defmodule Milk.Tournaments.Progress do
     ~> match_list
 
     insert_match_list(%{"rematch_index" => 0, "current_match_index" => 0, "match_list" => match_list}, tournament.id)
-    #|> IO.inspect(label: :generate_team_flipban_roundrobin_matches)
 
     #{:ok, match_list, nil}
     # XXX: 処理の都合でmatch_listを返さないようにしている

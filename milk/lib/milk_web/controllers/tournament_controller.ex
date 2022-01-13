@@ -1689,12 +1689,14 @@ defmodule MilkWeb.TournamentController do
 
   @spec finish_as_needed_on_roundrobin(integer(), integer()) :: {:ok, nil} | {:error, String.t()}
   defp finish_as_needed_on_roundrobin(tournament_id, _winner_id) do
-    tournament_id
-    |> Progress.get_match_list()
-    ~> match_list
-    |> RoundRobin.is_current_matches_finished_all?()
-    |> if do
+    # NOTE: current_match_indexの数字を上げる
+    # NOTE: 同点のユーザーが存在する場合は、、新しい表を生成して新しいマッチを開始する
+    match_list = Progress.get_match_list(tournament_id)
+
+    if RoundRobin.is_current_matches_finished_all?(match_list) do
       Tournaments.increase_current_match_index(match_list, tournament_id)
+      match_list = Progress.get_match_list(tournament_id)
+      Tournaments.rematch_round_robin_as_needed(match_list, tournament_id)
     else
       {:ok, nil}
     end
