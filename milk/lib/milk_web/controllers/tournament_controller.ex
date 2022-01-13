@@ -37,6 +37,7 @@ defmodule MilkWeb.TournamentController do
   }
 
   alias Milk.Media.Image
+  alias Tournamex.RoundRobin
 
   alias Common.{
     Tools,
@@ -1687,8 +1688,16 @@ defmodule MilkWeb.TournamentController do
   end
 
   @spec finish_as_needed_on_roundrobin(integer(), integer()) :: {:ok, nil} | {:error, String.t()}
-  defp finish_as_needed_on_roundrobin(_tournament_id, _winner_id) do
-    {:ok, nil}
+  defp finish_as_needed_on_roundrobin(tournament_id, _winner_id) do
+    tournament_id
+    |> Progress.get_match_list()
+    ~> match_list
+    |> RoundRobin.is_current_matches_finished_all?()
+    |> if do
+      Tournaments.increase_current_match_index(match_list, tournament_id)
+    else
+      {:ok, nil}
+    end
   end
 
   @doc """

@@ -1597,7 +1597,6 @@ defmodule Milk.Tournaments do
       match_list = RoundRobin.insert_winner_id(entire_match_list, winner_id, match)
       Map.put(entire_match_list, "match_list", match_list)
     end)
-    |> IO.inspect()
     |> Progress.insert_match_list(tournament_id)
   end
 
@@ -1815,22 +1814,31 @@ defmodule Milk.Tournaments do
 
   defp get_round_robin_opponent_team(team) do
     match_list = Progress.get_match_list(team.tournament_id)
+      |> IO.inspect()
 
+    # TODO: find_matchで置き換え出来る部分があるかも？（未確認）
     match_list["match_list"]
     |> Enum.at(match_list["current_match_index"])
-    |> Enum.filter(fn {match, _} ->
+    ~> match
+    |> is_nil()
+    |> if do
+      {:error, "invalid current match index"}
+    else
       match
+      |> Enum.filter(fn {match, _} ->
+        match
+        |> String.split("-")
+        |> Enum.map(&String.to_integer(&1))
+        |> Enum.any?(&(&1 == team.id))
+      end)
+      |> Enum.map(&elem(&1, 0))
+      |> List.first()
       |> String.split("-")
       |> Enum.map(&String.to_integer(&1))
-      |> Enum.any?(&(&1 == team.id))
-    end)
-    |> Enum.map(&elem(&1, 0))
-    |> List.first()
-    |> String.split("-")
-    |> Enum.map(&String.to_integer(&1))
-    |> Enum.reject(&(&1 == team.id))
-    |> List.first()
-    |> do_get_opponent_team()
+      |> Enum.reject(&(&1 == team.id))
+      |> List.first()
+      |> do_get_opponent_team()
+    end
   end
 
   @spec get_opponent_user([any()], integer()) :: {:ok, User.t()} | {:wait, nil} | {:error, String.t()}
@@ -2284,6 +2292,20 @@ defmodule Milk.Tournaments do
       "flipban"            -> FlipBan.trigger!(keyname, FlipBan.alone_trigger())
       "flipban_roundrobin" -> raise "here"
       _                    -> {:error, "Invalid tournament rule"}
+    end
+  end
+
+  @doc """
+  match_listのcurrent_match_indexをインクリメント
+  """
+  def increase_current_match_index(match_list, tournament_id) do
+    match_list = Map.put(match_list, "current_match_index", match_list["current_match_index"] + 1)
+
+    with {:ok, nil} <- Progress.delete_match_list(tournament_id),
+         {:ok, nil} <- Progress.insert_match_list(match_list, tournament_id) do
+      {:ok, nil}
+    else
+      error -> error
     end
   end
 
