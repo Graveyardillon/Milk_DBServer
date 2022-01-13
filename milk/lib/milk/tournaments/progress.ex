@@ -133,7 +133,7 @@ defmodule Milk.Tournaments.Progress do
       {:ok, nil}
     else
       {:error, %Redix.Error{message: message}} -> {:error, message}
-      e                                        -> {:error, "Could not renew match list"}
+      _                                        -> {:error, "Could not renew match list"}
     end
   end
 

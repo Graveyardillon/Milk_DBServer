@@ -3694,10 +3694,8 @@ defmodule MilkWeb.TournamentControllerTest do
       assert is_integer(current_match_index)
       assert is_integer(rematch_index)
 
-      # 一回戦の分を動作確認するためにhdしている
       match_list
-      |> hd()
-      |> then(fn match_list ->
+      |> Enum.map(fn match_list ->
         Enum.map(match_list, fn %{"match" => match} ->
           match
           |> String.split("-")
@@ -3717,30 +3715,6 @@ defmodule MilkWeb.TournamentControllerTest do
           round_robin_fight(conn, team1_id, team2_id, leader1_id, leader2_id, tournament_id)
         end)
       end)
-
-      # TODO: flipban_roundrobinの動作確認用テスト記述 第一回戦以降
-      # match_list
-      # |> Enum.map(fn match_list ->
-      #   Enum.map(match_list, fn %{"match" => match} ->
-      #     match
-      #     |> String.split("-")
-      #     |> Enum.map(&String.to_integer(&1))
-      #     |> IO.inspect(label: :after_split)
-      #     ~> [team1_id, team2_id]
-
-      #     team1_id
-      #     |> Tournaments.get_leader()
-      #     |> Map.get(:user_id)
-      #     ~> leader1_id
-
-      #     team2_id
-      #     |> Tournaments.get_leader()
-      #     |> Map.get(:user_id)
-      #     ~> leader2_id
-
-      #     round_robin_fight(conn, team1_id, team2_id, leader1_id, leader2_id, tournament_id)
-      #   end)
-      # end)
     end
 
     defp round_robin_fight(conn, team1_id, team2_id, leader1_id, leader2_id, tournament_id) do
@@ -3944,11 +3918,11 @@ defmodule MilkWeb.TournamentControllerTest do
 
       conn = get(conn, Routes.tournament_path(conn, :get_match_information), %{"tournament_id" => tournament_id, "user_id" => leader1_id})
       state = json_response(conn, 200)["state"]
-      assert state == "IsAlone" or state == "ShouldFlipCoin" or state == "IsFinished"
+      assert state == "ShouldFlipCoin" or state == "IsFinished"
       refute json_response(conn, 200)["score"]
       conn = get(conn, Routes.tournament_path(conn, :get_match_information), %{"tournament_id" => tournament_id, "user_id" => leader2_id})
       state = json_response(conn, 200)["state"]
-      assert state == "IsLoser" or state == "IsFinished"
+      assert state == "ShouldFlipCoin" or state == "IsFinished"
       refute json_response(conn, 200)["score"]
     end
   end
