@@ -3908,6 +3908,48 @@ defmodule MilkWeb.TournamentControllerTest do
       assert json_response(conn, 200)["state"] == "IsPending"
       assert json_response(conn, 200)["opponent"]["id"] == team1_id
       assert json_response(conn, 200)["is_attacker_side"]
+
+      # NOTE: スコア報告
+      # match_indexが適当
+      conn = post(conn, Routes.tournament_path(conn, :claim_score), %{"tournament_id" => tournament_id, "user_id" => leader1_id, "score" => 13, "match_index" => 0})
+      assert json_response(conn, 200)["validated"]
+      refute json_response(conn, 200)["completed"]
+      refute json_response(conn, 200)["is_finished"]
+
+      # NOTE: 勝敗報告がお互いに完了するまではstateは動かないので、messagesもempty
+      conn
+      |> json_response(200)
+      |> Map.get("messages")
+      |> Enum.empty?()
+      |> assert()
+
+      conn = get(conn, Routes.tournament_path(conn, :get_match_information), %{"tournament_id" => tournament_id, "user_id" => leader1_id})
+      assert json_response(conn, 200)["state"] == "IsWaitingForScoreInput"
+      assert json_response(conn, 200)["score"] == 13
+
+      # match_indexが適当
+      conn = post(conn, Routes.tournament_path(conn, :claim_score), %{"tournament_id" => tournament_id, "user_id" => leader2_id, "score" => 8, "match_index" => 0})
+      assert json_response(conn, 200)["validated"]
+      assert json_response(conn, 200)["completed"]
+
+      conn
+      |> json_response(200)
+      |> Map.get("messages")
+      |> Enum.map(fn message ->
+        assert is_binary(message["state"])
+        assert is_integer(message["user_id"])
+      end)
+      |> Enum.empty?()
+      |> refute()
+
+      conn = get(conn, Routes.tournament_path(conn, :get_match_information), %{"tournament_id" => tournament_id, "user_id" => leader1_id})
+      state = json_response(conn, 200)["state"]
+      assert state == "IsAlone" or state == "ShouldFlipCoin" or state == "IsFinished"
+      refute json_response(conn, 200)["score"]
+      conn = get(conn, Routes.tournament_path(conn, :get_match_information), %{"tournament_id" => tournament_id, "user_id" => leader2_id})
+      state = json_response(conn, 200)["state"]
+      assert state == "IsLoser" or state == "IsFinished"
+      refute json_response(conn, 200)["score"]
     end
   end
 

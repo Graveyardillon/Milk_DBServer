@@ -1482,6 +1482,20 @@ defmodule MilkWeb.TournamentController do
   # TODO: この辺の引数は使うものが決まっているので構造体の使用を検討
   # NOTE: この関数ではすでに勝敗が決定している前提で処理が進んでいく。
   @spec proceed_to_next_match(Tournament.t(), integer(), integer(), integer(), integer(), integer()) :: {:ok, nil} | {:error, String.t()}
+  defp proceed_to_next_match(%Tournament{rule: "flipban_roundrobin"} = tournament, winner_id, loser_id, score, opponent_score, match_index) when is_integer(opponent_score) do
+    with {:ok, nil} <- notify_discord_on_match_finished_as_needed(tournament, winner_id, loser_id, score, opponent_score),
+         {:ok, _}   <- Tournaments.delete_loser_process(tournament.id, [loser_id]),
+         {:ok, nil} <- Tournaments.store_score_on_round_robin(tournament.id, winner_id, loser_id, score, opponent_score, match_index),
+         {:ok, nil} <- delete_old_info_for_next_match(tournament.id, [winner_id, loser_id]),
+         {:ok, _}   <- Tournaments.change_winner_state(tournament, winner_id),
+         {:ok, _}   <- Tournaments.change_loser_state(tournament, loser_id),
+         {:ok, nil} <- finish_as_needed_on_roundrobin(tournament.id, winner_id) do
+      {:ok, nil}
+    else
+      error -> error
+    end
+  end
+
   defp proceed_to_next_match(tournament, winner_id, loser_id, score, opponent_score, match_index) when is_integer(opponent_score) do
     with {:ok, nil} <- notify_discord_on_match_finished_as_needed(tournament, winner_id, loser_id, score, opponent_score),
          {:ok, _}   <- Tournaments.delete_loser_process(tournament.id, [loser_id]),
@@ -1670,6 +1684,11 @@ defmodule MilkWeb.TournamentController do
     |> inspect(charlists: false)
     |> then(&(%{"tournament_id" => tournament_id, "match_list_with_fight_result_str" => &1}))
     |> Progress.create_match_list_with_fight_result_log()
+  end
+
+  @spec finish_as_needed_on_roundrobin(integer(), integer()) :: {:ok, nil} | {:error, String.t()}
+  defp finish_as_needed_on_roundrobin(_tournament_id, _winner_id) do
+    {:ok, nil}
   end
 
   @doc """

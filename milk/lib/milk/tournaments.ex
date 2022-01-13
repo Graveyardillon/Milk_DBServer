@@ -1539,13 +1539,33 @@ defmodule Milk.Tournaments do
   """
   @spec delete_loser_process(integer(), [integer()]) :: {:ok, [any()]} | {:error, String.t()}
   def delete_loser_process(tournament_id, loser_list) when is_list(loser_list) and length(loser_list) == 1 do
-    match_list = Progress.get_match_list(tournament_id)
+    tournament_id
+    |> __MODULE__.get_tournament()
+    |> do_delete_loser_process(loser_list)
+  end
+
+  defp do_delete_loser_process(%Tournament{rule: "flipban_roundrobin"} = tournament, loser_list) do
+    match_list = Progress.get_match_list(tournament.id)
     loser = hd(loser_list)
 
-    with {:ok, _}                               <- delete_old_match_info(tournament_id, match_list, loser),
-         {:ok, _}                               <- renew_match_list(tournament_id, match_list, loser_list),
-         {:ok, _}                               <- renew_match_list_with_fight_result(tournament_id, loser_list),
-         match_list when not is_nil(match_list) <- Progress.get_match_list(tournament_id) do
+    with {:ok, _}                               <- delete_old_match_info(tournament.id, match_list, loser),
+         {:ok, _}                               <- renew_match_list(tournament.id, match_list, loser_list),
+         match_list when not is_nil(match_list) <- Progress.get_match_list(tournament.id) do
+      {:ok, match_list}
+    else
+      nil -> {:error, "match list is nil"}
+      error -> error
+    end
+  end
+
+  defp do_delete_loser_process(tournament, loser_list) do
+    match_list = Progress.get_match_list(tournament.id)
+    loser = hd(loser_list)
+
+    with {:ok, _}                               <- delete_old_match_info(tournament.id, match_list, loser),
+         {:ok, _}                               <- renew_match_list(tournament.id, match_list, loser_list),
+         {:ok, _}                               <- renew_match_list_with_fight_result(tournament.id, loser_list),
+         match_list when not is_nil(match_list) <- Progress.get_match_list(tournament.id) do
       {:ok, match_list}
     else
       nil -> {:error, "match list is nil"}
@@ -1555,7 +1575,7 @@ defmodule Milk.Tournaments do
 
   defp delete_old_match_info(tournament_id, match_list, loser) do
     match_list
-    |> find_match(loser)
+    |> __MODULE__.find_match(loser)
     |> Enum.filter(&is_integer(&1))
     |> Enum.map(fn user_id ->
       with {:ok, _} <- Progress.delete_match_pending_list(user_id, tournament_id),
@@ -1598,7 +1618,13 @@ defmodule Milk.Tournaments do
   Delete a loser in a matchlist
   """
   @spec delete_loser(match_list(), integer() | [integer()]) :: [any()]
-  def delete_loser(match_list, loser), do: Tournamex.delete_loser(match_list, loser)
+  def delete_loser(%{"match_list" => _match_list, "current_match_index" => _current_match_index} = match_list, _loser) do
+    match_list
+  end
+
+  def delete_loser(match_list, loser) do
+    Tournamex.delete_loser(match_list, loser)
+  end
 
   @doc """
   Promote winners
@@ -1607,7 +1633,7 @@ defmodule Milk.Tournaments do
   def promote_winners_by_loser!(tournament_id, match_list, losers) when is_list(losers) do
     Enum.map(losers, fn loser ->
       match_list
-      |> find_match(loser)
+      |> __MODULE__.find_match(loser)
       |> case do
         [] -> {:error, nil}
 
@@ -1653,7 +1679,7 @@ defmodule Milk.Tournaments do
 
   def promote_winners_by_loser!(tournament_id, match_list, loser) do
     match_list
-    |> find_match(loser)
+    |> __MODULE__.find_match(loser)
     |> Enum.empty?()
     |> unless do
       tournament_id
@@ -1673,7 +1699,23 @@ defmodule Milk.Tournaments do
   def find_match(v, _) when is_integer(v), do: []
 
   @spec find_match(match_list(), integer(), [any()]) :: [any()]
-  def find_match(match_list, id, result \\ []) when is_list(match_list) do
+  def find_match(match_list, id, result \\ [])
+  def find_match(%{"match_list" => match_list, "current_match_index" => current_match_index}, id, _) do
+    match_list
+    |> Enum.at(current_match_index)
+    |> Enum.filter(fn {match, _} ->
+      match
+      |> String.split("-")
+      |> Enum.map(&String.to_integer(&1))
+      |> Enum.any?(&(&1 == id))
+    end)
+    |> Enum.map(&elem(&1, 0))
+    |> List.first()
+    |> String.split("-")
+    |> Enum.map(&String.to_integer(&1))
+  end
+
+  def find_match(match_list, id, result) when is_list(match_list) do
     Enum.reduce(match_list, result, fn x, acc ->
       y = pick_user_id_as_needed(x)
 
@@ -2056,7 +2098,7 @@ defmodule Milk.Tournaments do
   defp break_on_flipban(%Tournament{id: tournament_id, is_team: true}, id) do
     tournament_id
     |> Progress.get_match_list()
-    |> find_match(id)
+    |> __MODULE__.find_match(id)
     ~> [id1, id2]
 
     if __MODULE__.is_head_of_coin?(tournament_id, id1, id2) do
@@ -2151,8 +2193,10 @@ defmodule Milk.Tournaments do
     keyname = Rules.adapt_keyname(user_id, tournament.id)
 
     case tournament.rule do
-      "basic"   -> Basic.trigger!(keyname, Basic.waiting_for_score_input_trigger())
-      "flipban" -> FlipBan.trigger!(keyname, FlipBan.waiting_for_score_input_trigger())
+      "basic"              -> Basic.trigger!(keyname, Basic.waiting_for_score_input_trigger())
+      "flipban"            -> FlipBan.trigger!(keyname, FlipBan.waiting_for_score_input_trigger())
+      "flipban_roundrobin" -> FlipBanRoundRobin.trigger!(keyname, FlipBanRoundRobin.waiting_for_score_input_trigger())
+      _                    -> raise "Invalid tournament rule"
     end
     {:ok, tournament}
   end
@@ -2166,7 +2210,7 @@ defmodule Milk.Tournaments do
 
     id
     |> Progress.get_match_list()
-    |> find_match(winner_team_id)
+    |> __MODULE__.find_match(winner_team_id)
     |> Enum.map(fn team_id ->
       team_id
       |> __MODULE__.get_leader()
@@ -2175,9 +2219,10 @@ defmodule Milk.Tournaments do
       ~> keyname
 
       case rule do
-        "basic"   -> Basic.trigger!(keyname, Basic.next_trigger())
-        "flipban" -> FlipBan.trigger!(keyname, FlipBan.next_trigger())
-        _         -> {:error, "Invalid tournament rule"}
+        "basic"              -> Basic.trigger!(keyname, Basic.next_trigger())
+        "flipban"            -> FlipBan.trigger!(keyname, FlipBan.next_trigger())
+        "flipban_roundrobin" -> FlipBanRoundRobin.trigger!(keyname, FlipBanRoundRobin.next_trigger())
+        _                    -> {:error, "Invalid tournament rule"}
       end
     end)
     |> Enum.all?(&match?({:ok, _}, &1))
@@ -2187,7 +2232,7 @@ defmodule Milk.Tournaments do
   defp proceed_to_next_match(%Tournament{is_team: false, rule: rule, id: id}, winner_user_id) do
     id
     |> Progress.get_match_list()
-    |> find_match(winner_user_id)
+    |> __MODULE__.find_match(winner_user_id)
     |> Enum.map(fn user_id ->
       keyname = Rules.adapt_keyname(user_id, id)
 
@@ -2206,9 +2251,10 @@ defmodule Milk.Tournaments do
     keyname = Rules.adapt_keyname(winner_id, id)
 
     case rule do
-      "basic"   -> Basic.trigger!(keyname, Basic.alone_trigger())
-      "flipban" -> FlipBan.trigger!(keyname, FlipBan.alone_trigger())
-      _         -> {:error, "Invalid tournament rule"}
+      "basic"              -> Basic.trigger!(keyname, Basic.alone_trigger())
+      "flipban"            -> FlipBan.trigger!(keyname, FlipBan.alone_trigger())
+      "flipban_roundrobin" -> raise "here"
+      _                    -> {:error, "Invalid tournament rule"}
     end
   end
 
@@ -2231,9 +2277,10 @@ defmodule Milk.Tournaments do
 
   defp do_change_loser_state(keyname, rule) do
     case rule do
-      "basic"   -> Basic.trigger!(keyname, Basic.lose_trigger())
-      "flipban" -> FlipBan.trigger!(keyname, FlipBan.lose_trigger())
-      _         -> {:error, "Invalid tournament rule"}
+      "basic"              -> Basic.trigger!(keyname, Basic.lose_trigger())
+      "flipban"            -> FlipBan.trigger!(keyname, FlipBan.lose_trigger())
+      "flipban_roundrobin" -> FlipBanRoundRobin.trigger!(keyname, FlipBanRoundRobin.lose_trigger())
+      _                    -> {:error, "Invalid tournament rule"}
     end
   end
 
@@ -2786,7 +2833,7 @@ defmodule Milk.Tournaments do
 
   defp update_team_rank(match_list, team_id, _tournament_id) do
     match_list
-    |> find_match(team_id)
+    |> __MODULE__.find_match(team_id)
     |> get_opponent_team(team_id)
     |> case do
       {:ok, opponent} ->
@@ -3149,7 +3196,7 @@ defmodule Milk.Tournaments do
 
       Map.put(entrant_log, :tournament_log, tlog)
     end)
-    |> Enum.filter(fn entrant_log -> entrant_log.tournament_log != nil end)
+    |> Enum.reject(&is_nil(&1.tournament_log))
   end
 
   @doc """
@@ -3176,6 +3223,12 @@ defmodule Milk.Tournaments do
       nil   -> {:error, "match list is nil"}
       error -> error
     end
+  end
+
+  @spec store_score_on_round_robin(integer(), integer(), integer(), integer(), integer(), integer()) :: {:ok, nil}
+  def store_score_on_round_robin(_tournament_id, _winner_id, _loser_id, _winner_score, _loser_score, _match_index) do
+    # TODO: 処理の記述を省いたので、あとからログを残すために書く必要がある
+    {:ok, nil}
   end
 
   @doc """

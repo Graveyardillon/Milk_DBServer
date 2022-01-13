@@ -125,7 +125,7 @@ defmodule Milk.Tournaments.Progress do
          {:ok, _}                                    <- Redix.command(conn, ["SELECT", 1]),
          {:ok, value}                                <- Redix.command(conn, ["GET", tournament_id]),
          {match_list, _} when not is_nil(match_list) <- Code.eval_string(value),
-         match_list                                  <- Tournamex.delete_loser(match_list, loser),
+         match_list                                  <- Tournaments.delete_loser(match_list, loser),
          bin                                         <- inspect(match_list, charlists: false),
          {:ok, _}                                    <- Redix.command(conn, ["DEL", tournament_id]),
          {:ok, _}                                    <- Redix.command(conn, ["SET", tournament_id, bin]),
@@ -133,7 +133,7 @@ defmodule Milk.Tournaments.Progress do
       {:ok, nil}
     else
       {:error, %Redix.Error{message: message}} -> {:error, message}
-      _                                        -> {:error, "Could not renew match list"}
+      e                                        -> {:error, "Could not renew match list"}
     end
   end
 
