@@ -36,6 +36,7 @@ defmodule Milk.Tournaments do
     ChatMember,
     ChatRoom
   }
+  alias Milk.CloudStorage.Objects
   alias Milk.Games.Game
 
   alias Milk.Log.{
@@ -168,7 +169,7 @@ defmodule Milk.Tournaments do
   def home_tournament_plan(user_id) do
     Tournament
     |> where([t], t.master_id == ^user_id)
-    |> date_filter()
+    #|> date_filter()
     |> Repo.all()
     |> Repo.preload(:entrant)
     |> Repo.preload(:team)
@@ -684,6 +685,7 @@ defmodule Milk.Tournaments do
     |> __MODULE__.create_custom_detail()
   end
 
+  # TODO?: マップの画像登録がどうなってるか確認
   @spec create_maps_on_create_tournament(Tournament.t(), [Milk.Tournaments.Map.t()] | map() | nil) :: {:ok, nil} | {:error, String.t() | nil}
   defp create_maps_on_create_tournament(tournament, maps) when is_list(maps) do
     maps
@@ -1154,6 +1156,11 @@ defmodule Milk.Tournaments do
     |> Repo.one()
     ~> tournament
 
+    delete_thumbnail(tournament)
+    if tournament.enabled_map do
+      delete_maps(id)
+    end
+
     insert_entrant_logs_on_delete(tournament)
     insert_assistant_logs_on_delete(tournament)
 
@@ -1172,6 +1179,33 @@ defmodule Milk.Tournaments do
     end)
 
     Repo.delete(tournament)
+  end
+
+  defp delete_thumbnail(%Tournament{thumbnail_path: nil}), do: {:ok, nil}
+  defp delete_thumbnail(%Tournament{thumbnail_path: thumbnail_path}) do
+    case Application.get_env(:milk, :environment) do
+      :dev  -> File.rm(thumbnail_path)
+      :test -> File.rm(thumbnail_path)
+      _     -> Objects.delete(thumbnail_path)
+    end
+  end
+
+  defp delete_maps(tournament_id) do
+    tournament_id
+    |> __MODULE__.get_maps_by_tournament_id()
+    |> Enum.map(&Repo.delete(&1))
+    |> Enum.map(&elem(&1, 1))
+    |> Enum.each(&delete_map_icon(&1))
+  end
+
+  defp delete_map_icon(map) do
+    unless is_nil(map.icon_path) do
+      case Application.get_env(:milk, :environment) do
+        :dev  -> File.rm(map.icon_path)
+        :test -> File.rm(map.icon_path)
+        _     -> Objects.delete(map.icon_path)
+      end
+    end
   end
 
   defp insert_entrant_logs_on_delete(%Tournament{entrant: entrants}) do
@@ -3068,7 +3102,7 @@ defmodule Milk.Tournaments do
          {:ok, _}    <- create_team_leader(team.id, leader_id),
          {:ok, _}    <- verify_team_as_needed(team.id),
          {:ok, nil}  <- initialize_team_member_states!(team),
-         team        <- __MODULE__.get_team(team.id) do
+         team        <- __MODULE__.load_team(team.id) do
       {:ok, :leader_only, team}
     else
       error -> error

@@ -368,11 +368,9 @@ defmodule MilkWeb.TournamentController do
     end)
   end
 
-  defp load_filtered_home(user_id, "fav"), do: Tournaments.home_tournament_fav(user_id)
-  defp load_filtered_home(user_id, "plan"), do: Tournaments.home_tournament_plan(user_id)
-
-  defp load_filtered_home(user_id, "entry"),
-    do: Tournaments.get_participating_tournaments(user_id)
+  defp load_filtered_home(user_id, "fav"),   do: Tournaments.home_tournament_fav(user_id)
+  defp load_filtered_home(user_id, "plan"),  do: Tournaments.home_tournament_plan(user_id)
+  defp load_filtered_home(user_id, "entry"), do: Tournaments.get_participating_tournaments(user_id)
 
   @doc """
   Get searched tournaments as home.
@@ -950,12 +948,13 @@ defmodule MilkWeb.TournamentController do
     end
     ~> name
 
-    Discord.send_tournament_choose_ad_notification(
-      discord_server_id,
-      name,
-      opponent.name,
-      is_attacker_side
-    )
+    tasks = [
+      Task.async(fn -> Discord.send_tournament_choose_ad_notification(discord_server_id, name, opponent.name, is_attacker_side) end),
+      Task.async(fn -> Discord.generate_win_lose_buttons(discord_server_id, name, opponent.name) end)
+    ]
+
+    Task.await_many(tasks, 10_000)
+    {:ok, nil}
   end
 
   @doc """
@@ -1233,16 +1232,37 @@ defmodule MilkWeb.TournamentController do
     tournament_id
     |> Tournaments.get_tournament()
     ~> tournament
-    |> Map.get(:rule)
-    |> Tournaments.rule_needs_score?()
-    |> if do
-      json(conn, %{result: true, error: "Should provide score in the tournament rule"})
+
+    if claimable_state?(tournament_id, user_id) do
+      do_claim_score(conn, user_id, tournament, 1)
     else
-      if claimable_state?(tournament_id, user_id) do
-        do_claim_score(conn, user_id, tournament, 1)
-      else
-        json(conn, %{result: false, error: "Invalid state"})
-      end
+      json(conn, %{result: false, error: "Invalid state"})
+    end
+    # |> Map.get(:rule)
+    # |> Tournaments.rule_needs_score?()
+    # |> if do
+    #   json(conn, %{result: true, error: "Should provide score in the tournament rule"})
+    # else
+    #   if claimable_state?(tournament_id, user_id) do
+    #     do_claim_score(conn, user_id, tournament, 1)
+    #   else
+    #     json(conn, %{result: false, error: "Invalid state"})
+    #   end
+    # end
+  end
+
+  # NOTE: Discordからのリクエストを受け付けるので、
+  def claim_win(conn, %{"discord_id" => discord_id, "discord_server_id" => discord_server_id, "token" => "d3wJSGVPn7jRgqjY"}) do
+
+    discord_id = Tools.to_integer_as_needed(discord_id)
+
+    user = Accounts.get_user_by_discord_id(discord_id)
+    tournament = Tournaments.get_tournament_by_discord_server_id(discord_server_id)
+
+    if claimable_state?(tournament.id, user.id) do
+      do_claim_score(conn, user.id, tournament, 1)
+    else
+      json(conn, %{result: false, error: "Invalid state"})
     end
   end
 
@@ -1256,16 +1276,35 @@ defmodule MilkWeb.TournamentController do
     tournament_id
     |> Tournaments.get_tournament()
     ~> tournament
-    |> Map.get(:rule)
-    |> Tournaments.rule_needs_score?()
-    |> if do
-      json(conn, %{result: true, error: "Should provide score in the tournament rule"})
+
+    if claimable_state?(tournament_id, user_id) do
+      do_claim_score(conn, user_id, tournament, 0)
     else
-      if claimable_state?(tournament_id, user_id) do
-        do_claim_score(conn, user_id, tournament, 0)
-      else
-        json(conn, %{result: false, error: "Invalid state"})
-      end
+      json(conn, %{result: false, error: "Invalid state"})
+    end
+    # |> Map.get(:rule)
+    # |> Tournaments.rule_needs_score?()
+    # |> if do
+    #   json(conn, %{result: true, error: "Should provide score in the tournament rule"})
+    # else
+    #   if claimable_state?(tournament_id, user_id) do
+    #     do_claim_score(conn, user_id, tournament, 0)
+    #   else
+    #     json(conn, %{result: false, error: "Invalid state"})
+    #   end
+    # end
+  end
+
+  def claim_lose(conn, %{"discord_id" => discord_id, "discord_server_id" => discord_server_id, "token" => "d3wJSGVPn7jRgqjY"}) do
+    discord_id = Tools.to_integer_as_needed(discord_id)
+
+    user = Accounts.get_user_by_discord_id(discord_id)
+    tournament = Tournaments.get_tournament_by_discord_server_id(discord_server_id)
+
+    if claimable_state?(tournament.id, user.id) do
+      do_claim_score(conn, user.id, tournament, 0)
+    else
+      json(conn, %{result: false, error: "Invalid state"})
     end
   end
 
@@ -1570,30 +1609,26 @@ defmodule MilkWeb.TournamentController do
     opponent = Accounts.get_user(opponent_id)
 
     [user_id, opponent_id]
-    |> Enum.map(fn user_id ->
-      Accounts.get_devices_by_user_id(user_id)
-    end)
+    |> Enum.map(&Accounts.get_devices_by_user_id(&1))
     |> List.flatten()
     |> Enum.each(fn device ->
       body_text = "#{user.name}と#{opponent.name}の報告が同じスコアになってしまっています！"
 
-      %{
+      Notif.create_notification(%{
         "title" => "重複した勝敗報告が起きています",
         "body_text" => body_text,
         "process_id" => "DUPLICATE_CLAIM",
         "user_id" => device.user_id,
         "data" => ""
-      }
-      |> Notif.create_notification()
+      })
 
-      %Maps.PushIos{
+      Milk.Notif.push_ios(%Maps.PushIos{
         user_id: device.user_id,
         device_token: device.token,
         process_id: "DUPLICATRE_CLAIM",
         title: "重複した勝敗報告が起きています",
         message: body_text
-      }
-      |> Milk.Notif.push_ios()
+      })
     end)
 
     {:ok, nil}
@@ -1945,16 +1980,16 @@ defmodule MilkWeb.TournamentController do
     |>  Tournaments.finish(user_id)
     |> case do
       {:ok, _} -> true
-      _ -> false
+      _        -> false
     end
     ~> result
 
     tournament_id
     |> Progress.get_match_list_with_fight_result()
     |> inspect(charlists: false)
-    |> (fn str ->
-          %{"tournament_id" => tournament_id, "match_list_with_fight_result_str" => str}
-        end).()
+    |> then(fn str ->
+      %{"tournament_id" => tournament_id, "match_list_with_fight_result_str" => str}
+    end)
     |> Progress.create_match_list_with_fight_result_log()
 
     Progress.delete_match_list(tournament_id)
@@ -2005,10 +2040,10 @@ defmodule MilkWeb.TournamentController do
   大会パスワードの認証を行う
   """
   def verify_password(conn, %{"tournament_id" => tournament_id, "password" => password}) do
-    result =
-      tournament_id
-      |> Tools.to_integer_as_needed()
-      |> Tournaments.verify?(password)
+    tournament_id
+    |> Tools.to_integer_as_needed()
+    |> Tournaments.verify?(password)
+    ~> result
 
     json(conn, %{result: result})
   end
@@ -2050,11 +2085,8 @@ defmodule MilkWeb.TournamentController do
     params
     |> Map.get("os_name")
     |> case do
-      "iOS" ->
-        "e-players://e-players/tournament/#{token}"
-
-      _ ->
-        "#{domain}/tournament/information?tournament_id=#{tournament.id}"
+      "iOS" -> "e-players://e-players/tournament/#{token}"
+      _     -> "#{domain}/tournament/information?tournament_id=#{tournament.id}"
     end
     ~> redirect_url
 

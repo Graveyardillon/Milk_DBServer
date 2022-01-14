@@ -33,8 +33,7 @@ defmodule MilkWeb.EntrantController do
   defp action_history(entrant) do
     {:ok, tournament} = Tournaments.get_tournament_including_logs(entrant.tournament_id)
 
-    %{"user_id" => entrant.user_id, "game_name" => tournament.game_name, "score" => 5}
-    |> Accounts.gain_score()
+    Accounts.gain_score(%{"user_id" => entrant.user_id, "game_name" => tournament.game_name, "score" => 5})
   end
 
   @doc """
@@ -54,18 +53,12 @@ defmodule MilkWeb.EntrantController do
   Update an entrant.
   """
   def update(conn, %{"id" => id, "entrant" => entrant_params}) do
-    entrant = Tournaments.get_entrant(id)
-
-    if entrant do
-      case Tournaments.update_entrant(entrant, entrant_params) do
-        {:ok, %Entrant{} = entrant} ->
-          render(conn, "show.json", entrant: entrant)
-
-        {:error, error} ->
-          render(conn, "error.json", error: error)
-      end
+    with entrant when not is_nil(entrant) <- Tournaments.get_entrant(id),
+         {:ok, entrant}                   <- Tournaments.update_entrant(entrant, entrant_params) do
+      render(conn, "show.json", entrant: entrant)
     else
-      render(conn, "error.json", error: nil)
+      {:error, error} -> render(conn, "error.json", error: error)
+      nil             -> render(conn, "error.json", error: nil)
     end
   end
 
@@ -74,11 +67,8 @@ defmodule MilkWeb.EntrantController do
   """
   def delete(conn, %{"tournament_id" => tournament_id, "user_id" => user_id}) do
     case Tournaments.delete_entrant(tournament_id, user_id) do
-      {:ok, entrant} ->
-        render(conn, "show.json", entrant: entrant)
-
-      {:error, error} ->
-        json(conn, %{error: error, result: false})
+      {:ok, entrant}  -> render(conn, "show.json", entrant: entrant)
+      {:error, error} -> json(conn, %{error: error, result: false})
     end
   end
 
@@ -93,20 +83,19 @@ defmodule MilkWeb.EntrantController do
     |> Tournaments.get_tournament()
     |> get_rank_by_tournament(user_id)
     |> case do
-      {:ok, rank} -> render(conn, "rank.json", rank: rank)
+      {:ok, rank}     -> render(conn, "rank.json", rank: rank)
       {:error, error} -> render(conn, "error.json", error: error)
     end
   end
 
-  defp get_rank_by_tournament(%Tournament{} = tournament, user_id) do
-    if tournament.is_team do
-      tournament.id
-      |> Tournaments.get_team_by_tournament_id_and_user_id(user_id)
-      |> get_rank_by_team()
-    else
-      Tournaments.get_rank(tournament.id, user_id)
-    end
+  defp get_rank_by_tournament(%Tournament{is_team: true, id: tournament_id}, user_id) do
+    tournament_id
+    |> Tournaments.get_team_by_tournament_id_and_user_id(user_id)
+    |> get_rank_by_team()
   end
+
+  defp get_rank_by_tournament(%Tournament{is_team: false, id: tournament_id}, user_id),
+    do: Tournaments.get_rank(tournament_id, user_id)
 
   defp get_rank_by_tournament(nil, _), do: {:error, "tournament is nil"}
 
@@ -118,7 +107,7 @@ defmodule MilkWeb.EntrantController do
   """
   def promote(conn, attrs) do
     case Tournaments.promote_rank(attrs) do
-      {:ok, entrant} -> render(conn, "rank.json", rank: entrant.rank)
+      {:ok, entrant}  -> render(conn, "rank.json", rank: entrant.rank)
       {:error, error} -> render(conn, "error.json", error: error)
     end
   end

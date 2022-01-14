@@ -22,7 +22,7 @@ config :logger, level: :info
 
 config :milk, Milk.Repo,
   username: "postgres",
-  password: "postgres",
+  password: "jM3q86Yj8QYLwme6",
   database: "milkdb",
   socket_dir: "/tmp/cloudsql/e-players6814:asia-northeast1:milkdb",
   show_sensitive_data_on_connection_error: true,
