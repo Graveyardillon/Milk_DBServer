@@ -33,6 +33,7 @@ defmodule Milk.Tournaments.Progress do
   alias Milk.Tournaments.Progress.{
     BestOfXTournamentMatchLog,
     MatchListWithFightResultLog,
+    RoundRobinLog,
     SingleTournamentMatchLog
   }
 
@@ -716,6 +717,13 @@ defmodule Milk.Tournaments.Progress do
     |> Repo.insert()
   end
 
+  # NOTE: round robin log
+  @spec create_round_robin_log(map()) :: {:ok, RoundrobinLog.t()} | {:error, Ecto.Changeset.t() | String.t()}
+  def create_round_robin_log(attrs \\ %{}) do
+    %RoundRobinLog{}
+    |> RoundRobinLog.changeset(attrs)
+    |> Repo.insert()
+  end
 
   # NOTE: match list with fight result log.
 

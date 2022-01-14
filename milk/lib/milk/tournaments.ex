@@ -2324,18 +2324,17 @@ defmodule Milk.Tournaments do
       |> length()
       |> case do
         1 -> {:ok, nil}
-        _ -> regenerate_round_robin_match_list(teams, max_win_count, rematch_index)
+        _ ->
+          store_round_robin_log(match_list, tournament_id)
+          regenerate_round_robin_match_list(teams, max_win_count, rematch_index)
       end
     else
       {:ok, nil}
     end
-
-    # debug
-    Progress.get_match_list(tournament_id)
-    |> IO.inspect(label: :asdf)
-
-    {:ok, nil}
   end
+
+  defp store_round_robin_log(%{"match_list" => match_list, "rematch_index" => rematch_index}, tournament_id),
+    do: Progress.create_round_robin_log(%{"match_list_str" => inspect(match_list), "rematch_index" => rematch_index, "tournament_id" => tournament_id})
 
   defp regenerate_round_robin_match_list(teams, max_win_count, rematch_index) do
     teams
@@ -2343,6 +2342,7 @@ defmodule Milk.Tournaments do
     |> Map.get(:tournament_id)
     ~> tournament_id
 
+    # TODO: チーム数絞り込みの処理を入れるのを忘れている
     teams
     |> Enum.map(&Map.get(&1, :id))
     |> __MODULE__.generate_round_robin_match_list()
@@ -2363,6 +2363,7 @@ defmodule Milk.Tournaments do
     |> Rules.adapt_keyname(id)
     |> do_change_loser_state(rule)
   end
+
   def change_loser_state(%Tournament{rule: rule, is_team: false, id: id}, loser_id) do
     loser_id
     |> Rules.adapt_keyname(id)

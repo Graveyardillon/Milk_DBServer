@@ -1,10 +1,16 @@
-defmodule Milk.Tournaments.RoundRobinLog do
+defmodule Milk.Tournaments.Progress.RoundRobinLog do
   @moduledoc """
   Round Robinルールで使用するログデータ
   """
   use Milk.Schema
 
   import Ecto.Changeset
+
+  @type t :: %__MODULE__{
+    tournament_id: integer(),
+    match_list_str: String.t(),
+    rematch_index: integer()
+  }
 
   schema "round_robin_log" do
     field :tournament_id, :integer
