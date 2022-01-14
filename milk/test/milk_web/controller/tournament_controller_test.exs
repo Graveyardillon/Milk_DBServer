@@ -3666,7 +3666,6 @@ defmodule MilkWeb.TournamentControllerTest do
       assert json_response(conn, 200)["result"]
       assert json_response(conn, 200)["state"] == "IsManager"
 
-      # TODO: get_opponentの処理
       # NOTE: 大会がスタートした直後のすべてのメンバーのstateを確認
       all_member_id_list
       |> Enum.map(fn [leader_id | member_id_list] ->
@@ -3701,6 +3700,174 @@ defmodule MilkWeb.TournamentControllerTest do
           |> String.split("-")
           |> Enum.map(&String.to_integer(&1))
           ~> [team1_id, team2_id]
+
+          team1_id
+          |> Tournaments.get_leader()
+          |> Map.get(:user_id)
+          ~> leader1_id
+
+          team2_id
+          |> Tournaments.get_leader()
+          |> Map.get(:user_id)
+          ~> leader2_id
+
+          round_robin_fight(conn, team1_id, team2_id, leader1_id, leader2_id, tournament_id)
+        end)
+      end)
+
+      conn = get(conn, Routes.tournament_path(conn, :get_match_information), %{"tournament_id" => tournament_id, "user_id" => master_id})
+      assert json_response(conn, 200)["result"]
+      assert json_response(conn, 200)["state"] === "IsFinished"
+    end
+
+    test "flipban_roundrobin (team) (rematch)", %{conn: conn} do
+      user = fixture_user()
+      attrs = %{
+        "capacity" => 4,
+        "coin_head_field" => "マップ選択",
+        "coin_tail_field" => "a/d選択",
+        "deadline" => "2010-04-17T14:00:00Z",
+        "description" => "some description",
+        "event_date" => "2010-04-17T14:00:00Z",
+        "master_id" => user.id,
+        "name" => "some name",
+        "join" => "false",
+        "url" => "some url",
+        "platform" => 1,
+        "is_team" => "true",
+        "rule" => "flipban_roundrobin",
+        "team_size" => 5,
+        "type" => 2,
+        # XXX: ここあとでvalidateに追加しないと head_fieldとかもいるかも
+        "enabled_map" => "true",
+        "enabled_coin_toss" => "true"
+      }
+
+      maps = [
+        %{"name" => "map1"},
+        %{"name" => "map2"},
+        %{"name" => "map3"},
+        %{"name" => "map4"},
+        %{"name" => "map5"},
+        %{"name" => "map6"}
+      ]
+
+      conn = post(conn, Routes.tournament_path(conn, :create), tournament: attrs, file: nil, maps: maps)
+      assert json_response(conn, 200)["result"]
+      assert json_response(conn, 200)["data"]["rule"] == "flipban_roundrobin"
+      assert json_response(conn, 200)["data"]["is_team"]
+      assert json_response(conn, 200)["data"]["enabled_map"]
+      assert json_response(conn, 200)["data"]["enabled_coin_toss"]
+
+      master_id = json_response(conn, 200)["data"]["master_id"]
+      tournament_id = json_response(conn, 200)["data"]["id"]
+      capacity = json_response(conn, 200)["data"]["capacity"]
+      team_size = json_response(conn, 200)["data"]["team_size"]
+
+      conn = get(conn, Routes.tournament_path(conn, :get_match_information), %{"tournament_id" => tournament_id, "user_id" => master_id})
+      assert json_response(conn, 200)["result"]
+      assert json_response(conn, 200)["state"] === "IsNotStarted"
+
+      10..10 + capacity * team_size - 1
+      |> Enum.to_list()
+      |> Enum.map(&fixture_user(num: &1).id)
+      |> Enum.chunk_every(team_size)
+      |> Enum.map(fn [leader_id | member_id_list] ->
+        conn = post(conn, Routes.team_path(conn, :create), %{"tournament_id" => tournament_id, "leader_id" => leader_id, "user_id_list" => member_id_list, "size" => team_size})
+        assert json_response(conn, 200)["result"]
+        [leader_id | member_id_list]
+        |> Enum.each(fn user_id ->
+          conn = get(conn, Routes.tournament_path(conn, :get_match_information), %{"tournament_id" => tournament_id, "user_id" => user_id})
+          assert json_response(conn, 200)["state"] == "IsNotStarted"
+        end)
+
+        [leader_id | member_id_list]
+      end)
+      |> Enum.map(fn [leader_id | member_id_list] ->
+        member_id_list
+        |> Enum.each(fn user_id ->
+          user_id
+          |> Tournaments.get_invitations()
+          |> Enum.each(fn invitation ->
+            conn = post(conn, Routes.team_path(conn, :confirm_invitation), %{"invitation_id" => invitation.id})
+            assert json_response(conn, 200)["result"]
+          end)
+        end)
+        [leader_id | member_id_list]
+      end)
+      ~> all_member_id_list
+
+      conn = get(conn, Routes.team_path(conn, :get_confirmed_teams), %{"tournament_id" => tournament_id})
+
+      # NOTE: チームメンバーの人数を確認
+      conn
+      |> json_response(200)
+      |> Map.get("data")
+      |> Enum.map(fn team ->
+        team["team_member"]
+        |> Enum.each(fn member ->
+          assert member["is_invitation_confirmed"]
+        end)
+      end)
+      |> length()
+      |> then(&(assert &1 == capacity))
+
+      conn = get(conn, Routes.tournament_path(conn, :get_match_information), %{"tournament_id" => tournament_id, "user_id" => master_id})
+      assert json_response(conn, 200)["result"]
+      assert json_response(conn, 200)["state"] == "IsNotStarted"
+
+      conn = post(conn, Routes.tournament_path(conn, :start), %{"tournament" => %{"master_id" => master_id, "tournament_id" => tournament_id}})
+      assert json_response(conn, 200)["result"]
+
+      conn
+      |> json_response(200)
+      |> Map.get("data")
+      |> Map.get("messages")
+      |> then(fn messages ->
+        # NOTE: masterの分を加算して+1
+        assert length(messages) == team_size * capacity + 1
+      end)
+
+      conn = get(conn, Routes.tournament_path(conn, :get_match_information), %{"tournament_id" => tournament_id, "user_id" => master_id})
+      assert json_response(conn, 200)["result"]
+      assert json_response(conn, 200)["state"] == "IsManager"
+
+      # NOTE: 大会がスタートした直後のすべてのメンバーのstateを確認
+      all_member_id_list
+      |> Enum.map(fn [leader_id | member_id_list] ->
+        conn = get(conn, Routes.tournament_path(conn, :get_match_information), %{"tournament_id" => tournament_id, "user_id" => leader_id})
+        assert json_response(conn, 200)["result"]
+        assert json_response(conn, 200)["state"] == "ShouldFlipCoin"
+        assert json_response(conn, 200)["is_leader"]
+
+        member_id_list
+        |> Enum.map(fn member_id ->
+          conn = get(conn, Routes.tournament_path(conn, :get_match_information), %{"tournament_id" => tournament_id, "user_id" => member_id})
+          assert json_response(conn, 200)["result"]
+          assert json_response(conn, 200)["state"] == "IsMember"
+        end)
+        |> length()
+        |> then(&(assert &1 == team_size - 1))
+      end)
+
+      conn = get(conn, Routes.tournament_path(conn, :get_round_robin_match_list), %{"tournament_id" => tournament_id})
+      assert json_response(conn, 200)["result"]
+      match_list = json_response(conn, 200)["match_list"]
+      current_match_index = json_response(conn, 200)["current_match_index"]
+      rematch_index = json_response(conn, 200)["rematch_index"]
+      assert length(match_list) === 3
+      assert is_integer(current_match_index)
+      assert is_integer(rematch_index)
+
+      match_list
+      |> Enum.map(fn match_list ->
+        Enum.map(match_list, fn %{"match" => match} ->
+          # NOTE: コイントスの関係で、勝者をここで操作するのが難しい
+          # TODO: rematchの部分のテストが結局書けていないので書く必要あり
+          match
+          |> String.split("-")
+          |> Enum.map(&String.to_integer(&1))
+          ~> [team2_id, team1_id]
 
           team1_id
           |> Tournaments.get_leader()

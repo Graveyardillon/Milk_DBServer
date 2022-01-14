@@ -1223,8 +1223,9 @@ defmodule Milk.Tournaments do
       keyname = Rules.adapt_keyname(user_id, tournament_id)
 
       case rule do
-        "basic"   -> Basic.destroy_dfa_instance(keyname)
-        "flipban" -> FlipBan.destroy_dfa_instance(keyname)
+        "basic"              -> Basic.destroy_dfa_instance(keyname)
+        "flipban"            -> FlipBan.destroy_dfa_instance(keyname)
+        "flipban_roundrobin" -> FlipBanRoundRobin.destroy_dfa_instance(keyname)
       end
     end)
   end

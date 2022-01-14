@@ -1504,7 +1504,7 @@ defmodule MilkWeb.TournamentController do
          {:ok, nil} <- delete_old_info_for_next_match(tournament.id, [winner_id, loser_id]),
          {:ok, _}   <- Tournaments.change_winner_state(tournament, winner_id),
          {:ok, _}   <- Tournaments.change_loser_state(tournament, loser_id),
-         {:ok, nil} <- finish_as_needed?(tournament.id, winner_id) do
+         {:ok, nil} <- finish_as_needed(tournament.id, winner_id) do
       {:ok, nil}
     else
       error -> error
@@ -1658,8 +1658,8 @@ defmodule MilkWeb.TournamentController do
     {:ok, nil}
   end
 
-  @spec finish_as_needed?(integer(), integer()) :: {:ok, nil} | {:error, String.t()}
-  defp finish_as_needed?(tournament_id, winner_id) do
+  @spec finish_as_needed(integer(), integer()) :: {:ok, nil} | {:error, String.t()}
+  defp finish_as_needed(tournament_id, winner_id) do
     with match_list when is_integer(match_list) <- Progress.get_match_list(tournament_id),
          tournament when not is_nil(tournament) <- Tournaments.get_tournament(tournament_id),
          {:ok, nil}                             <- notify_discord_on_deleting_tournament_as_needed(tournament),
@@ -1688,17 +1688,25 @@ defmodule MilkWeb.TournamentController do
   end
 
   @spec finish_as_needed_on_roundrobin(integer(), integer()) :: {:ok, nil} | {:error, String.t()}
-  defp finish_as_needed_on_roundrobin(tournament_id, _winner_id) do
+  defp finish_as_needed_on_roundrobin(tournament_id, winner_id) do
     # NOTE: current_match_indexの数字を上げる
     # NOTE: 同点のユーザーが存在する場合は、、新しい表を生成して新しいマッチを開始する
-    match_list = Progress.get_match_list(tournament_id)
-
-    if RoundRobin.is_current_matches_finished_all?(match_list) do
-      Tournaments.increase_current_match_index(match_list, tournament_id)
-      match_list = Progress.get_match_list(tournament_id)
-      Tournaments.rematch_round_robin_as_needed(match_list, tournament_id)
-    else
+    with match_list when not is_nil(match_list) <- Progress.get_match_list(tournament_id),
+         true                                  <- RoundRobin.is_current_matches_finished_all?(match_list),
+         {:ok, nil}                             <- Tournaments.increase_current_match_index(match_list, tournament_id),
+         match_list when not is_nil(match_list) <- Progress.get_match_list(tournament_id),
+         {:ok, nil}                             <- Tournaments.rematch_round_robin_as_needed(match_list, tournament_id),
+         true                                   <- length(match_list["match_list"]) === match_list["current_match_index"],
+         {:ok, _}                               <- Tournaments.finish(tournament_id, winner_id),
+         {:ok, nil}                             <- Progress.delete_match_list(tournament_id),
+         {:ok, nil}                             <- Progress.delete_match_pending_list_of_tournament(tournament_id),
+         {:ok, nil}                             <- Progress.delete_fight_result_of_tournament(tournament_id),
+         {:ok, nil}                             <- Progress.delete_duplicate_users_all(tournament_id) do
       {:ok, nil}
+    else
+      false           -> {:ok, nil}
+      {:error, error} -> {:error, error}
+      _               -> {:error, "unexpected error"}
     end
   end
 
@@ -1754,7 +1762,7 @@ defmodule MilkWeb.TournamentController do
   #       Tournaments.promote_rank(%{"tournament_id" => tournament_id, "user_id" => winner.id})
   #       Tournaments.store_score(tournament_id, winner.id, target_user_id, 0, -1, 0)
   #       Tournaments.delete_loser_process(tournament_id, [target_user_id])
-  #       finish_as_needed?(tournament_id, winner.id)
+  #       finish_as_needed(tournament_id, winner.id)
 
   #     {:wait, nil} ->
   #       tournament_id
