@@ -1749,7 +1749,7 @@ defmodule Milk.Tournaments do
       y = pick_user_id_as_needed(x)
 
       case y do
-        y when is_list(y)                -> find_match(y, id, acc)
+        y when is_list(y)                -> __MODULE__.find_match(y, id, acc)
         y when is_integer(y) and y == id -> acc ++ match_list
         y when is_integer(y)             -> acc
       end
@@ -2091,7 +2091,7 @@ defmodule Milk.Tournaments do
 
     tournament.id
     |> Progress.get_match_list()
-    |> find_match(id)
+    |> __MODULE__.find_match(id)
     ~> match
     |> Enum.all?(&Progress.get_match_pending_list(&1, tournament.id))
     |> if do
@@ -2163,19 +2163,7 @@ defmodule Milk.Tournaments do
     match_list = Progress.get_match_list(tournament_id)
 
     # TODO: この実質的にfind_matchな処理は関数として別で置いておく方がいいかも？
-    match_list["match_list"]
-    |> Enum.at(match_list["current_match_index"])
-    |> Enum.filter(fn {match, _} ->
-      match
-      |> String.split("-")
-      |> Enum.map(&String.to_integer(&1))
-      |> Enum.any?(&(&1 == id))
-    end)
-    |> Enum.map(&elem(&1, 0))
-    |> List.first()
-    |> String.split("-")
-    |> Enum.map(&String.to_integer(&1))
-    ~> [id1, id2]
+    [id1, id2] = __MODULE__.find_match(match_list, id)
 
     if __MODULE__.is_head_of_coin?(tournament_id, id1, id2) do
       [id1, id2]
