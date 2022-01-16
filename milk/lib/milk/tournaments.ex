@@ -2246,7 +2246,8 @@ defmodule Milk.Tournaments do
       case rule do
         "basic"              -> Basic.trigger!(keyname, Basic.next_trigger())
         "flipban"            -> FlipBan.trigger!(keyname, FlipBan.next_trigger())
-        "flipban_roundrobin" -> FlipBanRoundRobin.trigger!(keyname, FlipBanRoundRobin.next_trigger())
+        #"flipban_roundrobin" -> FlipBanRoundRobin.trigger!(keyname, FlipBanRoundRobin.next_trigger())
+        "flipban_roundrobin" -> FlipBanRoundRobin.trigger!(keyname, FlipBanRoundRobin.waiting_for_next_match_trigger())
         _                    -> {:error, "Invalid tournament rule"}
       end
     end)
@@ -2284,6 +2285,39 @@ defmodule Milk.Tournaments do
   end
 
   @doc """
+  isWaitingForNextMatchのユーザーたちを次のラウンドに進める
+  """
+  @spec break_waiting_for_next_match(map(), integer()) :: {:ok, nil}
+  def break_waiting_for_next_match(%{"match_list" => match_list}, tournament_id) do
+    tournament = __MODULE__.get_tournament(tournament_id)
+    match_list
+    |> List.flatten()
+    |> Enum.map(fn {match, _} ->
+      match
+      |> String.split("-")
+      |> Enum.map(&String.to_integer(&1))
+    end)
+    |> List.flatten()
+    |> Enum.uniq()
+    |> Enum.map(fn id ->
+      if tournament.is_team do
+        id
+        |> __MODULE__.get_leader()
+        |> Map.get(:user_id)
+      else
+        id
+      end
+    end)
+    |> Enum.map(fn user_id ->
+      user_id
+      |> Rules.adapt_keyname(tournament_id)
+      |> FlipBanRoundRobin.trigger!(FlipBanRoundRobin.next_trigger())
+    end)
+    |> Enum.all?(&match?({:ok, _}, &1))
+    |> Tools.boolean_to_tuple()
+  end
+
+  @doc """
   match_listのcurrent_match_indexをインクリメント
   """
   def increase_current_match_index(match_list, tournament_id) do
@@ -2303,7 +2337,6 @@ defmodule Milk.Tournaments do
       |> __MODULE__.get_confirmed_teams()
       ~> teams
       |> Enum.map(&RoundRobin.count_win(match_list, &1.id))
-      |> IO.inspect(label: :count_win)
       ~> win_numbers
 
       max_win_count = Enum.max(win_numbers)

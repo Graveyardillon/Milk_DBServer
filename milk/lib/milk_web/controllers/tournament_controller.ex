@@ -1692,8 +1692,9 @@ defmodule MilkWeb.TournamentController do
     # NOTE: current_match_indexの数字を上げる
     # NOTE: 同点のユーザーが存在する場合は、、新しい表を生成して新しいマッチを開始する
     with match_list when not is_nil(match_list) <- Progress.get_match_list(tournament_id),
-         true                                  <- RoundRobin.is_current_matches_finished_all?(match_list),
+         true                                   <- RoundRobin.is_current_matches_finished_all?(match_list),
          {:ok, nil}                             <- Tournaments.increase_current_match_index(match_list, tournament_id),
+         {:ok, nil}                             <- Tournaments.break_waiting_for_next_match(match_list, tournament_id),
          match_list when not is_nil(match_list) <- Progress.get_match_list(tournament_id),
          {:ok, nil}                             <- Tournaments.rematch_round_robin_as_needed(match_list, tournament_id),
          true                                   <- length(match_list["match_list"]) === match_list["current_match_index"],

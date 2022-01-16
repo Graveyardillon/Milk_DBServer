@@ -4085,11 +4085,11 @@ defmodule MilkWeb.TournamentControllerTest do
 
       conn = get(conn, Routes.tournament_path(conn, :get_match_information), %{"tournament_id" => tournament_id, "user_id" => leader1_id})
       state = json_response(conn, 200)["state"]
-      assert state == "ShouldFlipCoin" or state == "IsFinished"
+      assert state === "IsWaitingForNextMatch" or state === "ShouldFlipCoin" or state === "IsFinished"
       refute json_response(conn, 200)["score"]
       conn = get(conn, Routes.tournament_path(conn, :get_match_information), %{"tournament_id" => tournament_id, "user_id" => leader2_id})
       state = json_response(conn, 200)["state"]
-      assert state == "ShouldFlipCoin" or state == "IsFinished"
+      assert state === "IsWaitingForNextMatch" or state === "IsFinished" or state === "ShouldFlipCoin"
       refute json_response(conn, 200)["score"]
     end
   end
