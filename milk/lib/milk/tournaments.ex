@@ -2160,10 +2160,10 @@ defmodule Milk.Tournaments do
   end
 
   defp break_on_flipban_roundrobin(%Tournament{id: tournament_id, is_team: true}, id) do
-    match_list = Progress.get_match_list(tournament_id)
-
-    # TODO: この実質的にfind_matchな処理は関数として別で置いておく方がいいかも？
-    [id1, id2] = __MODULE__.find_match(match_list, id)
+    tournament_id
+    |> Progress.get_match_list()
+    |> __MODULE__.find_match(id)
+    ~> [id1, id2]
 
     if __MODULE__.is_head_of_coin?(tournament_id, id1, id2) do
       [id1, id2]
