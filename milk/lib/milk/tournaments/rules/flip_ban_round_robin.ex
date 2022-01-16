@@ -48,6 +48,8 @@ defmodule Milk.Tournaments.Rules.FlipBanRoundRobin do
     Predefined.on!(machine_name, @db_index, waiting_for_score_input_trigger(), is_pending(),                 is_waiting_for_score_input())
     Predefined.on!(machine_name, @db_index, lose_trigger(),                    is_pending(),                 is_loser())
     Predefined.on!(machine_name, @db_index, lose_trigger(),                    is_waiting_for_score_input(), is_loser())
+    Predefined.on!(machine_name, @db_index, waiting_for_next_match_trigger(),  is_pending(),                 is_waiting_for_next_match())
+    Predefined.on!(machine_name, @db_index, waiting_for_next_match_trigger(),  is_waiting_for_score_input(), is_waiting_for_next_match())
     Predefined.on!(machine_name, @db_index, next_trigger(),                    is_waiting_for_score_input(), should_flip_coin())
     Predefined.on!(machine_name, @db_index, next_trigger(),                    is_pending(),                 should_flip_coin())
 
@@ -158,6 +160,9 @@ defmodule Milk.Tournaments.Rules.FlipBanRoundRobin do
   @spec is_waiting_for_score_input() :: String.t()
   def is_waiting_for_score_input(), do: "IsWaitingForScoreInput"
 
+  @spec is_waiting_for_next_match() :: String.t()
+  def is_waiting_for_next_match(), do: "IsWaitingForNextMatch"
+
   @spec is_loser() :: String.t()
   def is_loser(), do: "IsLoser"
 
@@ -208,6 +213,9 @@ defmodule Milk.Tournaments.Rules.FlipBanRoundRobin do
 
   @spec waiting_for_score_input_trigger() :: String.t()
   def waiting_for_score_input_trigger(), do: "waiting_for_score_input"
+
+  @spec waiting_for_next_match_trigger() :: String.t()
+  def waiting_for_next_match_trigger(), do: "waiting_for_next_match"
 
   @spec lose_trigger() :: String.t()
   def lose_trigger(), do: "lose"
