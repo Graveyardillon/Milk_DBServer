@@ -1552,7 +1552,6 @@ defmodule Milk.Tournaments do
     loser = hd(loser_list)
 
     with {:ok, _}                               <- delete_old_match_info(tournament.id, match_list, loser),
-         #{:ok, _}                               <- renew_match_list(tournament.id, match_list, loser_list),
          {:ok, nil}                             <- renew_round_robin_match_list(tournament.id, match_list, loser),
          match_list when not is_nil(match_list) <- Progress.get_match_list(tournament.id) do
       {:ok, match_list}
@@ -1596,9 +1595,59 @@ defmodule Milk.Tournaments do
       ~> winner_id
 
       match_list = RoundRobin.insert_winner_id(entire_match_list, winner_id, match)
-      Map.put(entire_match_list, "match_list", match_list)
+      new_match_list = Map.put(entire_match_list, "match_list", match_list)
+
+      promote_round_robin_winner(new_match_list, winner_id, tournament_id)
+
+      new_match_list
     end)
     |> Progress.insert_match_list(tournament_id)
+  end
+
+  defp promote_round_robin_winner(match_list, winner_id, tournament_id) do
+    tournament_id
+    |> __MODULE__.get_tournament()
+    |> Map.get(:is_team)
+    |> if do
+      promote_round_robin_rank(match_list, winner_id, tournament_id)
+    else
+      promote_round_robin_team_rank(match_list, winner_id, tournament_id)
+    end
+  end
+
+  defp promote_round_robin_rank(match_list, winner_id, tournament_id) do
+    tournament_id
+    |> __MODULE__.get_entrants()
+    |> Enum.map(fn entrant ->
+      win_count = RoundRobin.count_win(match_list, entrant.user_id)
+      {entrant, win_count}
+    end)
+    |> Enum.sort_by(&elem(&1, 1))
+    |> Enum.reverse()
+    ~> entrants_with_win_count
+
+    entrants_with_win_count
+    |> Enum.each(fn {entrant, _} ->
+      __MODULE__.update_entrant(entrant, %{rank: Enum.find_index(entrants_with_win_count, &(elem(&1, 0).id == winner_id))})
+    end)
+  end
+
+  @spec promote_round_robin_team_rank([any()], integer(), integer()) :: :ok
+  defp promote_round_robin_team_rank(match_list, winner_id, tournament_id) do
+    tournament_id
+    |> __MODULE__.get_confirmed_teams()
+    |> Enum.map(fn team ->
+      win_count = RoundRobin.count_win(match_list, team.id)
+      {team, win_count}
+    end)
+    |> Enum.sort_by(&elem(&1, 1))
+    |> Enum.reverse()
+    ~> teams_with_win_count
+
+    teams_with_win_count
+    |> Enum.each(fn {team, _} ->
+      __MODULE__.update_team(team, %{rank: Enum.find_index(teams_with_win_count, &(elem(&1, 0).id == winner_id))})
+    end)
   end
 
   defp delete_old_match_info(tournament_id, match_list, loser) do
@@ -1647,7 +1696,6 @@ defmodule Milk.Tournaments do
   """
   @spec delete_loser(match_list(), integer() | [integer()]) :: [any()]
   def delete_loser(%{"match_list" => _match_list, "current_match_index" => _current_match_index} = match_list, _loser) do
-
     match_list
   end
 
@@ -2246,7 +2294,6 @@ defmodule Milk.Tournaments do
       case rule do
         "basic"              -> Basic.trigger!(keyname, Basic.next_trigger())
         "flipban"            -> FlipBan.trigger!(keyname, FlipBan.next_trigger())
-        #"flipban_roundrobin" -> FlipBanRoundRobin.trigger!(keyname, FlipBanRoundRobin.next_trigger())
         "flipban_roundrobin" -> FlipBanRoundRobin.trigger!(keyname, FlipBanRoundRobin.waiting_for_next_match_trigger())
         _                    -> {:error, "Invalid tournament rule"}
       end
@@ -2397,7 +2444,8 @@ defmodule Milk.Tournaments do
     case rule do
       "basic"              -> Basic.trigger!(keyname, Basic.lose_trigger())
       "flipban"            -> FlipBan.trigger!(keyname, FlipBan.lose_trigger())
-      "flipban_roundrobin" -> FlipBanRoundRobin.trigger!(keyname, FlipBanRoundRobin.next_trigger())
+      #"flipban_roundrobin" -> FlipBanRoundRobin.trigger!(keyname, FlipBanRoundRobin.next_trigger())
+      "flipban_roundrobin" -> FlipBanRoundRobin.trigger!(keyname, FlipBanRoundRobin.waiting_for_next_match_trigger())
       _                    -> {:error, "Invalid tournament rule"}
     end
   end
@@ -3096,6 +3144,16 @@ defmodule Milk.Tournaments do
   @doc """
   Initialize rank of teams.
   """
+  @spec initialize_team_rank(integer()) :: any()
+  def initialize_team_rank(tournament_id) do
+    teams =  __MODULE__.get_confirmed_teams(tournament_id)
+
+    teams
+    |> Enum.map(&__MODULE__.update_team(&1, %{rank: length(teams)}))
+    |> Enum.all?(&match?({:ok, _}, &1))
+    |> Tools.boolean_to_tuple()
+  end
+
   @spec initialize_team_rank(any(), integer()) :: any()
   def initialize_team_rank(match_list, number_of_entrant) do
     __MODULE__.initialize_team_rank(match_list, number_of_entrant, 1)
@@ -3107,8 +3165,8 @@ defmodule Milk.Tournaments do
     final = if number_of_entrant < count, do: number_of_entrant, else: count
 
     team_id
-    |> get_team()
-    |> update_team(%{rank: final})
+    |> __MODULE__.get_team()
+    |> __MODULE__.update_team(%{rank: final})
     |> elem(1)
   end
 
