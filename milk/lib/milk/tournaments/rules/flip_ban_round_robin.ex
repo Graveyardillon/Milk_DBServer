@@ -50,6 +50,7 @@ defmodule Milk.Tournaments.Rules.FlipBanRoundRobin do
     Predefined.on!(machine_name, @db_index, lose_trigger(),                    is_waiting_for_score_input(), is_loser())
     Predefined.on!(machine_name, @db_index, waiting_for_next_match_trigger(),  is_pending(),                 is_waiting_for_next_match())
     Predefined.on!(machine_name, @db_index, waiting_for_next_match_trigger(),  is_waiting_for_score_input(), is_waiting_for_next_match())
+    Predefined.on!(machine_name, @db_index, waiting_for_next_match_trigger(),  is_waiting_for_next_match(), is_waiting_for_next_match())
     Predefined.on!(machine_name, @db_index, next_trigger(),                    is_waiting_for_score_input(), should_flip_coin())
     Predefined.on!(machine_name, @db_index, next_trigger(),                    is_pending(),                 should_flip_coin())
     Predefined.on!(machine_name, @db_index, next_trigger(),                    is_waiting_for_next_match(),  should_flip_coin())

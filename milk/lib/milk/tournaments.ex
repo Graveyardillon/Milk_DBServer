@@ -2246,7 +2246,6 @@ defmodule Milk.Tournaments do
       case rule do
         "basic"              -> Basic.trigger!(keyname, Basic.next_trigger())
         "flipban"            -> FlipBan.trigger!(keyname, FlipBan.next_trigger())
-        #"flipban_roundrobin" -> FlipBanRoundRobin.trigger!(keyname, FlipBanRoundRobin.next_trigger())
         "flipban_roundrobin" -> FlipBanRoundRobin.trigger!(keyname, FlipBanRoundRobin.waiting_for_next_match_trigger())
         _                    -> {:error, "Invalid tournament rule"}
       end
@@ -2397,7 +2396,8 @@ defmodule Milk.Tournaments do
     case rule do
       "basic"              -> Basic.trigger!(keyname, Basic.lose_trigger())
       "flipban"            -> FlipBan.trigger!(keyname, FlipBan.lose_trigger())
-      "flipban_roundrobin" -> FlipBanRoundRobin.trigger!(keyname, FlipBanRoundRobin.next_trigger())
+      #"flipban_roundrobin" -> FlipBanRoundRobin.trigger!(keyname, FlipBanRoundRobin.next_trigger())
+      "flipban_roundrobin" -> FlipBanRoundRobin.trigger!(keyname, FlipBanRoundRobin.waiting_for_next_match_trigger())
       _                    -> {:error, "Invalid tournament rule"}
     end
   end
