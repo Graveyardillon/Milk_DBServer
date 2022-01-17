@@ -14,7 +14,7 @@ defmodule Milk.Tournaments.MatchInfoBench do
     tournament = fixture_tournament(is_team: true)
     fill_with_team(tournament.id)
 
-    Progress.start_team_best_of_format(tournament.master_id, tournament)
+    Progress.start_team_flipban(tournament.master_id, tournament)
     result
   end
   teardown_all _, do: Application.stop(:milk)

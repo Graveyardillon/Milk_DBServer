@@ -1,7 +1,6 @@
-defmodule Milk.Tournaments.Rules.FlipBan do
+defmodule Milk.Tournaments.Rules.FlipBanRoundRobin do
   @moduledoc """
-  コイントス＆マップBANルールにおける処理が記述してあるモジュール
-  モジュール自身の関数を参照することが多く、記述量が増加する割に情報量は増えないので__MODULE__の記述は省略している。
+  総当り戦での、コイントス等付きオートマトン
   """
   @behaviour Milk.Tournaments.Rules.Rule
 
@@ -11,8 +10,8 @@ defmodule Milk.Tournaments.Rules.FlipBan do
   @db_index Rule.db_index()
 
   @impl Rule
-  def machine_name(true),  do: "flipban_team"
-  def machine_name(false), do: "flipban"
+  def machine_name(true),  do: "flipban_roundrobin_team"
+  def machine_name(false), do: "flipban_roundrobin"
 
   @impl Rule
   def define_dfa!(opts \\ []) do
@@ -24,7 +23,6 @@ defmodule Milk.Tournaments.Rules.FlipBan do
     |> do_define_dfa!(opts)
   end
 
-  @spec do_define_dfa!(boolean(), Rule.opts()) :: :ok
   defp do_define_dfa!(true, _), do: :ok
   defp do_define_dfa!(false, opts) do
     is_team = Keyword.get(opts, :is_team, true)
@@ -50,11 +48,11 @@ defmodule Milk.Tournaments.Rules.FlipBan do
     Predefined.on!(machine_name, @db_index, waiting_for_score_input_trigger(), is_pending(),                 is_waiting_for_score_input())
     Predefined.on!(machine_name, @db_index, lose_trigger(),                    is_pending(),                 is_loser())
     Predefined.on!(machine_name, @db_index, lose_trigger(),                    is_waiting_for_score_input(), is_loser())
-    Predefined.on!(machine_name, @db_index, alone_trigger(),                   is_pending(),                 is_alone())
-    Predefined.on!(machine_name, @db_index, alone_trigger(),                   is_waiting_for_score_input(), is_alone())
+    Predefined.on!(machine_name, @db_index, waiting_for_next_match_trigger(),  is_pending(),                 is_waiting_for_next_match())
+    Predefined.on!(machine_name, @db_index, waiting_for_next_match_trigger(),  is_waiting_for_score_input(), is_waiting_for_next_match())
     Predefined.on!(machine_name, @db_index, next_trigger(),                    is_waiting_for_score_input(), should_flip_coin())
-    Predefined.on!(machine_name, @db_index, next_trigger(),                    is_alone(),                   should_flip_coin())
     Predefined.on!(machine_name, @db_index, next_trigger(),                    is_pending(),                 should_flip_coin())
+    Predefined.on!(machine_name, @db_index, next_trigger(),                    is_waiting_for_next_match(),  should_flip_coin())
 
     opts
     |> list_states()
@@ -62,7 +60,6 @@ defmodule Milk.Tournaments.Rules.FlipBan do
     |> Enum.each(fn state ->
       Predefined.on!(machine_name, @db_index, finish_trigger(), state, is_finished())
       Predefined.on!(machine_name, @db_index, next_trigger(),   state, should_flip_coin())
-      Predefined.on!(machine_name, @db_index, alone_trigger(),  state, is_alone())
       Predefined.on!(machine_name, @db_index, lose_trigger(),   state, is_loser())
     end)
   end
@@ -112,7 +109,6 @@ defmodule Milk.Tournaments.Rules.FlipBan do
       should_observe_ad(),
       is_pending(),
       is_loser(),
-      is_alone(),
       is_finished()
     ]
   end
@@ -165,11 +161,11 @@ defmodule Milk.Tournaments.Rules.FlipBan do
   @spec is_waiting_for_score_input() :: String.t()
   def is_waiting_for_score_input(), do: "IsWaitingForScoreInput"
 
+  @spec is_waiting_for_next_match() :: String.t()
+  def is_waiting_for_next_match(), do: "IsWaitingForNextMatch"
+
   @spec is_loser() :: String.t()
   def is_loser(), do: "IsLoser"
-
-  @spec is_alone() :: String.t()
-  def is_alone(), do: "IsAlone"
 
   @spec is_finished() :: String.t()
   def is_finished(), do: "IsFinished"
@@ -219,11 +215,11 @@ defmodule Milk.Tournaments.Rules.FlipBan do
   @spec waiting_for_score_input_trigger() :: String.t()
   def waiting_for_score_input_trigger(), do: "waiting_for_score_input"
 
+  @spec waiting_for_next_match_trigger() :: String.t()
+  def waiting_for_next_match_trigger(), do: "waiting_for_next_match"
+
   @spec lose_trigger() :: String.t()
   def lose_trigger(), do: "lose"
-
-  @spec alone_trigger() :: String.t()
-  def alone_trigger(), do: "alone"
 
   @spec next_trigger() :: String.t()
   def next_trigger(), do: "next"

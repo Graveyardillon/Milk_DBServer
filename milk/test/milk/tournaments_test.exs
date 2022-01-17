@@ -174,7 +174,6 @@ defmodule Milk.TournamentsTest do
       assert t.capacity == tournament.capacity
       assert t.description == tournament.description
       assert t.name == tournament.name
-      assert t.type == tournament.type
       assert t.url == tournament.url
       assert t.count == 0
       assert t.entrant == []
@@ -256,7 +255,6 @@ defmodule Milk.TournamentsTest do
         assert t.platform_id == tournament.platform_id
         assert t.thumbnail_path == tournament.thumbnail_path
         assert t.url == tournament.url
-        assert t.type == tournament.type
       end)
       |> length()
       |> then(fn len ->
@@ -377,7 +375,6 @@ defmodule Milk.TournamentsTest do
       assert tournament.description == "some description"
       assert is_nil(tournament.event_date)
       assert tournament.name == "some name"
-      assert tournament.type == 1
       assert tournament.url == "some url"
     end
 
@@ -466,7 +463,6 @@ defmodule Milk.TournamentsTest do
       assert tournament.description == "some updated description"
       assert tournament.event_date == "2011-05-18T15:01:01Z"
       assert tournament.name == "some updated name"
-      assert tournament.type == 43
       assert tournament.url == "some updated url"
     end
 
@@ -669,7 +665,7 @@ defmodule Milk.TournamentsTest do
   describe "get tournament by url" do
     test "get_tournament_by_url/1 works with valid data" do
       tournament = fixture_tournament()
-      t = Tournaments.get_tournament_by_url(tournament.url)
+      t = Tournaments.load_tournament_by_url(tournament.url)
       assert tournament.id == t.id
     end
   end
@@ -1529,7 +1525,7 @@ defmodule Milk.TournamentsTest do
       ~> leader_icon_path_list
 
       tournament.master_id
-      |> Progress.start_team_best_of_format(tournament)
+      |> Progress.start_team_flipban(tournament)
       ~> {:ok, match_list, _}
 
       # match_listの初期状態確認

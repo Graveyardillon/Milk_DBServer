@@ -40,7 +40,6 @@ defmodule Milk.ReportsTest do
       assert report.capacity == tournament.capacity
       assert report.description == tournament.description
       assert report.name == tournament.name
-      assert report.type == tournament.type
       assert report.url == tournament.url
       # assert report.thumbnail_path == tournament.thumbnail_path
       assert report.count == tournament.count
