@@ -889,6 +889,9 @@ defmodule Milk.Tournaments.Progress do
 
     insert_match_list(%{"rematch_index" => 0, "current_match_index" => 0, "match_list" => match_list}, tournament.id)
 
+    # TODO: ランク初期化の処理
+    Tournaments.initialize_team_rank(tournament.id)
+
     #{:ok, match_list, nil}
     # XXX: 処理の都合でmatch_listを返さないようにしている
     {:ok, nil, nil}

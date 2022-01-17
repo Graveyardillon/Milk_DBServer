@@ -1647,7 +1647,6 @@ defmodule Milk.Tournaments do
   """
   @spec delete_loser(match_list(), integer() | [integer()]) :: [any()]
   def delete_loser(%{"match_list" => _match_list, "current_match_index" => _current_match_index} = match_list, _loser) do
-
     match_list
   end
 
@@ -3096,6 +3095,16 @@ defmodule Milk.Tournaments do
   @doc """
   Initialize rank of teams.
   """
+  @spec initialize_team_rank(integer()) :: any()
+  def initialize_team_rank(tournament_id) do
+    teams =  __MODULE__.get_confirmed_teams(tournament_id)
+
+    teams
+    |> Enum.map(&__MODULE__.update_team(&1, %{rank: length(teams)}))
+    |> Enum.all?(&match?({:ok, _}, &1))
+    |> Tools.boolean_to_tuple()
+  end
+
   @spec initialize_team_rank(any(), integer()) :: any()
   def initialize_team_rank(match_list, number_of_entrant) do
     __MODULE__.initialize_team_rank(match_list, number_of_entrant, 1)
@@ -3107,8 +3116,8 @@ defmodule Milk.Tournaments do
     final = if number_of_entrant < count, do: number_of_entrant, else: count
 
     team_id
-    |> get_team()
-    |> update_team(%{rank: final})
+    |> __MODULE__.get_team()
+    |> __MODULE__.update_team(%{rank: final})
     |> elem(1)
   end
 
