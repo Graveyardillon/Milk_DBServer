@@ -531,15 +531,6 @@ defmodule Milk.Tournaments.Progress do
     end
   end
 
-  # TODO: 大会がスタートしたタイミングで参加者（チーム）分のオートマトンを初期化する
-  # TODO: どのオートマトンを使うのかはルールに応じて変更する
-  # TODO: それからはアクションが起こるたびにオートマトンに対して入力を追加する
-
-  # NOTE: 大会ルールに基づいてオートマトンを生成する関数
-  @spec define_state_machine(Tournament.t()) :: any()
-  def define_state_machine(_tournament) do
-  end
-
   # 8. ban order
   # 0 -> 1 -> 2 -> 3 -> 4
   def init_ban_order(tournament_id, id) do
@@ -889,7 +880,6 @@ defmodule Milk.Tournaments.Progress do
 
     insert_match_list(%{"rematch_index" => 0, "current_match_index" => 0, "match_list" => match_list}, tournament.id)
 
-    # TODO: ランク初期化の処理
     Tournaments.initialize_team_rank(tournament.id)
 
     #{:ok, match_list, nil}

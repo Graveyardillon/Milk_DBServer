@@ -511,7 +511,6 @@ defmodule Milk.Tournaments do
 
   @doc """
   Create tournament.
-  TODO: チーム用のvalidate記述
   """
   @spec create_tournament(map(), String.t() | nil) :: {:ok, Tournament.t()} | {:error, Ecto.Changeset.t()}
   def create_tournament(attrs, thumbnail_path \\ "") do
@@ -571,8 +570,7 @@ defmodule Milk.Tournaments do
   end
   defp validate_flipban_fields(_), do: {:error, "Short of field for flipban"}
 
-  defp validate_flipban_roundrobin_fields(map),
-    do: validate_flipban_fields(map)
+  defp validate_flipban_roundrobin_fields(map), do: validate_flipban_fields(map)
 
   defp do_create_tournament(%{"master_id" => master_id, "platform" => platform, "game_id" => game_id} = attrs, thumbnail_path) do
     tournament = %Tournament{
@@ -1864,7 +1862,6 @@ defmodule Milk.Tournaments do
   defp get_round_robin_opponent_team(team) do
     match_list = Progress.get_match_list(team.tournament_id)
 
-    # TODO: find_matchで置き換え出来る部分があるかも？（未確認）
     match_list["match_list"]
     |> Enum.at(match_list["current_match_index"])
     ~> match
@@ -2365,7 +2362,7 @@ defmodule Milk.Tournaments do
   end
 
   @doc """
-  match_listのcurrent_match_indexをインクリメント
+  match_listのcurrent_match_indexをインクリメントする処理
   """
   def increase_current_match_index(match_list, tournament_id) do
     match_list = Map.put(match_list, "current_match_index", match_list["current_match_index"] + 1)
@@ -2444,7 +2441,6 @@ defmodule Milk.Tournaments do
     case rule do
       "basic"              -> Basic.trigger!(keyname, Basic.lose_trigger())
       "flipban"            -> FlipBan.trigger!(keyname, FlipBan.lose_trigger())
-      #"flipban_roundrobin" -> FlipBanRoundRobin.trigger!(keyname, FlipBanRoundRobin.next_trigger())
       "flipban_roundrobin" -> FlipBanRoundRobin.trigger!(keyname, FlipBanRoundRobin.waiting_for_next_match_trigger())
       _                    -> {:error, "Invalid tournament rule"}
     end
@@ -3200,7 +3196,7 @@ defmodule Milk.Tournaments do
 
   @doc """
   大会に参加しているすべてのユーザーのstateを返す。
-  TODO: Deprecatedかも？処理を見直して不必要そうだったら削除する
+  TODO: Deprecatedかも？ 処理を見直して不必要そうだったら削除する
   """
   @spec all_states!(integer()) :: [InteractionMessage.t()]
   def all_states!(tournament_id) do
