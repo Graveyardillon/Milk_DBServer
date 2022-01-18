@@ -571,8 +571,7 @@ defmodule Milk.Tournaments do
   end
   defp validate_flipban_fields(_), do: {:error, "Short of field for flipban"}
 
-  defp validate_flipban_roundrobin_fields(map),
-    do: validate_flipban_fields(map)
+  defp validate_flipban_roundrobin_fields(map), do: validate_flipban_fields(map)
 
   defp do_create_tournament(%{"master_id" => master_id, "platform" => platform, "game_id" => game_id} = attrs, thumbnail_path) do
     tournament = %Tournament{
@@ -2444,7 +2443,6 @@ defmodule Milk.Tournaments do
     case rule do
       "basic"              -> Basic.trigger!(keyname, Basic.lose_trigger())
       "flipban"            -> FlipBan.trigger!(keyname, FlipBan.lose_trigger())
-      #"flipban_roundrobin" -> FlipBanRoundRobin.trigger!(keyname, FlipBanRoundRobin.next_trigger())
       "flipban_roundrobin" -> FlipBanRoundRobin.trigger!(keyname, FlipBanRoundRobin.waiting_for_next_match_trigger())
       _                    -> {:error, "Invalid tournament rule"}
     end
