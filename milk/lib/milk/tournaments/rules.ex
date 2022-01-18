@@ -126,7 +126,6 @@ defmodule Milk.Tournaments.Rules do
     id = Progress.get_necessary_id(tournament_id, user_id)
     is_head = Tournaments.is_head_of_coin?(tournament_id, id, opponent_id)
 
-    # TODO: match_listの中身をteam_idからleader_idに変えたら不要になる処理
     if is_team do
       opponent_id
       |> Tournaments.get_leader()
@@ -168,7 +167,6 @@ defmodule Milk.Tournaments.Rules do
   """
   @spec change_state_on_choose_map(Tournament.t(), integer(), integer()) :: {:ok, nil} | {:error, String.t()}
   def change_state_on_choose_map(%Tournament{rule: rule, is_team: is_team, id: tournament_id}, user_id, opponent_id) do
-    # TODO: match_listの中身をteam_idからleader_idに変えたら不要になる処理
     if is_team do
       opponent_id
       |> Tournaments.get_leader()
