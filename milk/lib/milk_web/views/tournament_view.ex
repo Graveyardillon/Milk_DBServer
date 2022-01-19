@@ -4,6 +4,7 @@ defmodule MilkWeb.TournamentView do
   alias MilkWeb.{
     TeamView,
     TournamentView,
+    TournamentTagView,
     UserView
   }
 
@@ -275,6 +276,7 @@ defmodule MilkWeb.TournamentView do
       is_started: tournament.is_started,
       is_team: tournament.is_team,
       rule: tournament.rule,
+      tags: render_many(tournament.tags, TournamentTagView, "tag.json", as: :tag),
       entrants:
         Enum.map(tournament.entrants, fn user ->
           %{

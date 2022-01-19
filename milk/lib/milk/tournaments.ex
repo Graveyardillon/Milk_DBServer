@@ -127,6 +127,7 @@ defmodule Milk.Tournaments do
     |> Repo.preload(:entrant)
     |> Repo.preload(:team)
     |> Repo.preload(:custom_detail)
+    |> Repo.preload(:tags)
   end
 
   @doc """

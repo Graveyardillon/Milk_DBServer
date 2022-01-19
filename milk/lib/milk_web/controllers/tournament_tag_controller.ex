@@ -39,6 +39,5 @@ defmodule MilkWeb.TournamentTagController do
         end
     end
 
-
   end
 end
