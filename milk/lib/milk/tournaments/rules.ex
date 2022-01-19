@@ -12,7 +12,8 @@ defmodule Milk.Tournaments.Rules do
   }
   alias Milk.Tournaments.Rules.{
     Basic,
-    FlipBan
+    FlipBan,
+    FlipBanRoundRobin
   }
 
   @spec adapt_keyname(integer(), integer()) :: String.t()
@@ -24,9 +25,10 @@ defmodule Milk.Tournaments.Rules do
   @spec initialize_state_machine(Tournament.t()) :: :ok | :error
   def initialize_state_machine(%Tournament{rule: rule, is_team: is_team}) do
     case rule do
-      "basic"   -> Basic.define_dfa!(is_team: is_team)
-      "flipban" -> FlipBan.define_dfa!(is_team: is_team)
-      _         -> :error
+      "basic"              -> Basic.define_dfa!(is_team: is_team)
+      "flipban"            -> FlipBan.define_dfa!(is_team: is_team)
+      "flipban_roundrobin" -> FlipBanRoundRobin.define_dfa!(is_team: is_team)
+      _                    -> :error
     end
   end
 
@@ -41,9 +43,10 @@ defmodule Milk.Tournaments.Rules do
       keyname = __MODULE__.adapt_keyname(user.id, tournament_id)
 
       case rule do
-        "basic"   -> Basic.build_dfa_instance(keyname, is_team: is_team)
-        "flipban" -> FlipBan.build_dfa_instance(keyname, is_team: is_team)
-        _         -> raise "Invalid tournament rule"
+        "basic"              -> Basic.build_dfa_instance(keyname, is_team: is_team)
+        "flipban"            -> FlipBan.build_dfa_instance(keyname, is_team: is_team)
+        "flipban_roundrobin" -> FlipBanRoundRobin.build_dfa_instance(keyname, is_team: is_team)
+        _                    -> raise "Invalid tournament rule"
       end
     end)
     |> Enum.all?(&(&1 == "OK"))
@@ -70,9 +73,10 @@ defmodule Milk.Tournaments.Rules do
       keyname = __MODULE__.adapt_keyname(master_id, tournament_id)
 
       case rule do
-        "basic"   -> Basic.trigger!(keyname, Basic.manager_trigger())
-        "flipban" -> FlipBan.trigger!(keyname, FlipBan.manager_trigger())
-        _         -> {:error, "Invalid tournament rule"}
+        "basic"              -> Basic.trigger!(keyname, Basic.manager_trigger())
+        "flipban"            -> FlipBan.trigger!(keyname, FlipBan.manager_trigger())
+        "flipban_roundrobin" -> FlipBan.trigger!(keyname, FlipBan.manager_trigger())
+        _                    -> {:error, "Invalid tournament rule"}
       end
     end
   end
@@ -102,8 +106,9 @@ defmodule Milk.Tournaments.Rules do
     keyname = __MODULE__.adapt_keyname(user_id, tournament_id)
 
     case rule do
-      "flipban" -> FlipBan.trigger!(keyname, FlipBan.flip_trigger())
-      _         -> {:error, "Invalid tournament rule"}
+      "flipban"            -> FlipBan.trigger!(keyname, FlipBan.flip_trigger())
+      "flipban_roundrobin" -> FlipBanRoundRobin.trigger!(keyname, FlipBanRoundRobin.flip_trigger())
+      _                    -> {:error, "Invalid tournament rule"}
     end
   end
 
@@ -121,7 +126,6 @@ defmodule Milk.Tournaments.Rules do
     id = Progress.get_necessary_id(tournament_id, user_id)
     is_head = Tournaments.is_head_of_coin?(tournament_id, id, opponent_id)
 
-    # TODO: match_listの中身をteam_idからleader_idに変えたら不要になる処理
     if is_team do
       opponent_id
       |> Tournaments.get_leader()
@@ -138,7 +142,7 @@ defmodule Milk.Tournaments.Rules do
     do_change_state_on_ban(is_head, rule, keyname, opponent_keyname)
   end
 
-  defp do_change_state_on_ban(_, rule, _, _) when rule != "flipban", do: {:error, "Invalid tournament rule"}
+  defp do_change_state_on_ban(_, rule, _, _) when rule === "basic", do: {:error, "Invalid tournament rule"}
   defp do_change_state_on_ban(true, _, keyname, opponent_keyname) do
     with {:ok, _} <- FlipBan.trigger!(keyname, FlipBan.observe_ban_map_trigger()),
          {:ok, _} <- FlipBan.trigger!(opponent_keyname, FlipBan.ban_map_trigger()) do
@@ -163,7 +167,6 @@ defmodule Milk.Tournaments.Rules do
   """
   @spec change_state_on_choose_map(Tournament.t(), integer(), integer()) :: {:ok, nil} | {:error, String.t()}
   def change_state_on_choose_map(%Tournament{rule: rule, is_team: is_team, id: tournament_id}, user_id, opponent_id) do
-    # TODO: match_listの中身をteam_idからleader_idに変えたら不要になる処理
     if is_team do
       opponent_id
       |> Tournaments.get_leader()
@@ -179,7 +182,7 @@ defmodule Milk.Tournaments.Rules do
     do_change_state_on_choose_map(rule, keyname, opponent_keyname)
   end
 
-  defp do_change_state_on_choose_map(rule, _, _) when rule != "flipban", do: {:error, "Invalid tournament rule"}
+  defp do_change_state_on_choose_map(rule, _, _) when rule === "basic", do: {:error, "Invalid tournament rule"}
   defp do_change_state_on_choose_map(_, keyname, opponent_keyname) do
     with {:ok, _} <- FlipBan.trigger!(keyname, FlipBan.observe_choose_ad_trigger()),
          {:ok, _} <- FlipBan.trigger!(opponent_keyname, FlipBan.choose_ad_trigger()) do
@@ -212,7 +215,7 @@ defmodule Milk.Tournaments.Rules do
     do_change_state_on_choose_ad(rule, keyname, opponent_keyname)
   end
 
-  defp do_change_state_on_choose_ad(rule, _, _) when rule != "flipban", do: {:error, "Invalid tournament rule"}
+  defp do_change_state_on_choose_ad(rule, _, _) when rule === "basic", do: {:error, "Invalid tournament rule"}
   defp do_change_state_on_choose_ad(_, keyname, opponent_keyname) do
     with {:ok, _} <- FlipBan.trigger!(keyname, FlipBan.pend_trigger()),
          {:ok, _} <- FlipBan.trigger!(opponent_keyname, FlipBan.pend_trigger()) do

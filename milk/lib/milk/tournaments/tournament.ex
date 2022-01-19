@@ -10,6 +10,8 @@ defmodule Milk.Tournaments.Tournament do
   alias Milk.Tournaments.{
     Entrant,
     Assistant,
+    Tag,
+    TagRelations,
     Team,
     TournamentChatTopic,
     TournamentCustomDetail
@@ -36,7 +38,6 @@ defmodule Milk.Tournaments.Tournament do
           start_recruiting: any(),
           team_size: integer() | nil,
           thumbnail_path: String.t() | nil,
-          type: integer(),
           url: String.t() | nil,
           url_token: String.t() | nil,
           # NOTE: timestamps
@@ -62,7 +63,6 @@ defmodule Milk.Tournaments.Tournament do
     field :start_recruiting, EctoDate
     field :team_size, :integer, default: nil
     field :thumbnail_path, :string
-    field :type, :integer
     field :url, :string
     field :url_token, :string
 
@@ -73,6 +73,7 @@ defmodule Milk.Tournaments.Tournament do
     has_many :entrant, Entrant
     has_many :assistant, Assistant
     has_many :tournament_chat_topics, TournamentChatTopic
+    many_to_many :tags, Tag, join_through: TagRelations
     has_many :team, Team
     has_many :map, Milk.Tournaments.Map
     has_one :custom_detail, TournamentCustomDetail
@@ -103,12 +104,11 @@ defmodule Milk.Tournaments.Tournament do
       :start_recruiting,
       :team_size,
       :thumbnail_path,
-      :type,
       :url,
       :url_token
     ])
     |> generate_rule_if_empty()
-    |> validate_required([:name, :capacity, :type, :master_id, :is_team, :rule])
+    |> validate_required([:name, :capacity, :master_id, :is_team, :rule])
     |> foreign_key_constraint(:platform_id)
     |> foreign_key_constraint(:game_id)
     |> foreign_key_constraint(:master_id)
@@ -130,7 +130,6 @@ defmodule Milk.Tournaments.Tournament do
       :game_name,
       :thumbnail_path,
       :password,
-      :type,
       :rule,
       :url,
       :url_token,

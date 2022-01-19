@@ -14,4 +14,4 @@ Tournament
 |> Repo.one()
 ~> tournament
 
-Progress.start_team_best_of_format(tournament.master_id, tournament)
+Progress.start_team_flipban(tournament.master_id, tournament)

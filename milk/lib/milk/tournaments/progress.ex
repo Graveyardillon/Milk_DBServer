@@ -33,8 +33,11 @@ defmodule Milk.Tournaments.Progress do
   alias Milk.Tournaments.Progress.{
     BestOfXTournamentMatchLog,
     MatchListWithFightResultLog,
+    RoundRobinLog,
     SingleTournamentMatchLog
   }
+
+  alias Tournamex.RoundRobin
 
   require Logger
 
@@ -77,7 +80,7 @@ defmodule Milk.Tournaments.Progress do
       {:ok, nil}
     else
       {:error, %Redix.Error{message: message}} -> {:error, message}
-      _ -> {:error, "Could not insert match list"}
+      _                                        -> {:error, "Could not insert match list"}
     end
   end
 
@@ -106,7 +109,7 @@ defmodule Milk.Tournaments.Progress do
       {:ok, nil}
     else
       {:error, %Redix.Error{message: message}} -> {:error, message}
-      _ -> {:error, "Could not delete match list"}
+      _                                        -> {:error, "Could not delete match list"}
     end
   end
 
@@ -123,7 +126,7 @@ defmodule Milk.Tournaments.Progress do
          {:ok, _}                                    <- Redix.command(conn, ["SELECT", 1]),
          {:ok, value}                                <- Redix.command(conn, ["GET", tournament_id]),
          {match_list, _} when not is_nil(match_list) <- Code.eval_string(value),
-         match_list                                  <- Tournamex.delete_loser(match_list, loser),
+         match_list                                  <- Tournaments.delete_loser(match_list, loser),
          bin                                         <- inspect(match_list, charlists: false),
          {:ok, _}                                    <- Redix.command(conn, ["DEL", tournament_id]),
          {:ok, _}                                    <- Redix.command(conn, ["SET", tournament_id, bin]),
@@ -131,7 +134,7 @@ defmodule Milk.Tournaments.Progress do
       {:ok, nil}
     else
       {:error, %Redix.Error{message: message}} -> {:error, message}
-      _ -> {:error, "Could not renew match list"}
+      _                                        -> {:error, "Could not renew match list"}
     end
   end
 
@@ -162,7 +165,7 @@ defmodule Milk.Tournaments.Progress do
       {:ok, nil}
     else
       {:error, %Redix.Error{message: message}} -> {:error, message}
-      _ -> {:error, "Could not insert match list with fight result"}
+      _                                        -> {:error, "Could not insert match list with fight result"}
     end
   end
 
@@ -229,7 +232,7 @@ defmodule Milk.Tournaments.Progress do
       {:ok, nil}
     else
       {:error, %Redix.Error{message: message}} -> {:error, message}
-      _ -> {:error, "Could not renew match list with fight result"}
+      _                                        -> {:error, "Could not renew match list with fight result"}
     end
   end
 
@@ -373,7 +376,7 @@ defmodule Milk.Tournaments.Progress do
       {:ok, nil}
     else
       {:error, %Redix.Error{message: message}} -> {:error, message}
-      _ -> {:error, "Could not delete fight result"}
+      _                                        -> {:error, "Could not delete fight result"}
     end
   end
 
@@ -387,7 +390,7 @@ defmodule Milk.Tournaments.Progress do
       {:ok, nil}
     else
       {:error, %Redix.Error{message: message}} -> {:error, message}
-      _ -> {:error, "Could not delete fight result of tournament"}
+      _                                        -> {:error, "Could not delete fight result of tournament"}
     end
   end
 
@@ -526,15 +529,6 @@ defmodule Milk.Tournaments.Progress do
       {:error, %Redix.Error{message: message}} -> {:error, message}
       _ -> {:error, "Could not delete score"}
     end
-  end
-
-  # TODO: 大会がスタートしたタイミングで参加者（チーム）分のオートマトンを初期化する
-  # TODO: どのオートマトンを使うのかはルールに応じて変更する
-  # TODO: それからはアクションが起こるたびにオートマトンに対して入力を追加する
-
-  # NOTE: 大会ルールに基づいてオートマトンを生成する関数
-  @spec define_state_machine(Tournament.t()) :: any()
-  def define_state_machine(_tournament) do
   end
 
   # 8. ban order
@@ -714,6 +708,13 @@ defmodule Milk.Tournaments.Progress do
     |> Repo.insert()
   end
 
+  # NOTE: round robin log
+  @spec create_round_robin_log(map()) :: {:ok, RoundrobinLog.t()} | {:error, Ecto.Changeset.t() | String.t()}
+  def create_round_robin_log(attrs \\ %{}) do
+    %RoundRobinLog{}
+    |> RoundRobinLog.changeset(attrs)
+    |> Repo.insert()
+  end
 
   # NOTE: match list with fight result log.
 
@@ -730,24 +731,30 @@ defmodule Milk.Tournaments.Progress do
   end
 
   # NOTE: 個人大会スタート時に使用する関数群
+  # HACK
 
-  @spec start_single_elimination(integer(), Tournament.t()) :: {:ok, match_list(), match_list_with_fight_result()}
-  def start_single_elimination(master_id, tournament) do
-    Tournaments.start(tournament.id, master_id)
-    make_single_elimination_matches(tournament.id)
+  @spec start_basic(integer(), Tournament.t()) :: {:ok, match_list(), match_list_with_fight_result()} | {:error, any()}
+  def start_basic(master_id, tournament) do
+    case Tournaments.start(tournament.id, master_id) do
+      {:ok, _}        -> make_basic_matches(tournament.id)
+      {:error, error} -> {:error, error}
+    end
   end
 
-  @spec start_best_of_format(integer(), Tournament.t()) :: {:ok, match_list(), nil}
-  def start_best_of_format(master_id, tournament) do
-    Tournaments.start(tournament.id, master_id)
-    {:ok, match_list} = make_best_of_format_matches(tournament)
-    {:ok, match_list, nil}
+  @spec start_flipban(integer(), Tournament.t()) :: {:ok, match_list(), nil}
+  def start_flipban(master_id, tournament) do
+    with {:ok, _} <- Tournaments.start(tournament.id, master_id),
+         {:ok, match_list} <- make_flipban_matches(tournament) do
+      {:ok, match_list, nil}
+    else
+      error -> error
+    end
   end
 
-  defp make_single_elimination_matches(tournament_id) do
+  defp make_basic_matches(tournament_id) do
     tournament_id
     |> Tournaments.get_entrants()
-    |> Enum.map(fn x -> x.user_id end)
+    |> Enum.map(&Map.get(&1, :user_id))
     |> Tournaments.generate_matchlist()
     ~> {:ok, match_list}
 
@@ -756,11 +763,11 @@ defmodule Milk.Tournaments.Progress do
 
     Tournaments.initialize_rank(match_list, count, tournament_id)
     insert_match_list(match_list, tournament_id)
-    list_with_fight_result = match_list_with_fight_result(match_list)
+    match_list_with_fight_result = Tournamex.initialize_match_list_with_fight_result(match_list)
 
-    list_with_fight_result
+    match_list_with_fight_result
     |> List.flatten()
-    |> Enum.reduce(list_with_fight_result, fn x, acc ->
+    |> Enum.reduce(match_list_with_fight_result, fn x, acc ->
       user = Accounts.get_user(x["user_id"])
 
       acc
@@ -770,14 +777,10 @@ defmodule Milk.Tournaments.Progress do
     end)
     |> insert_match_list_with_fight_result(tournament_id)
 
-    {:ok, match_list, list_with_fight_result}
+    {:ok, match_list, match_list_with_fight_result}
   end
 
-  defp match_list_with_fight_result(match_list) do
-    Tournaments.initialize_match_list_with_fight_result(match_list)
-  end
-
-  defp make_best_of_format_matches(tournament) do
+  defp make_flipban_matches(tournament) do
     tournament.id
     |> Tournaments.get_entrants()
     |> Enum.map(&(&1.user_id))
@@ -789,7 +792,7 @@ defmodule Milk.Tournaments.Progress do
     count = tournament.count
     Tournaments.initialize_rank(match_list, count, tournament.id)
 
-    match_list_with_fight_result = match_list_with_fight_result(match_list)
+    match_list_with_fight_result = Tournamex.initialize_match_list_with_fight_result(match_list)
 
     match_list_with_fight_result
     |> List.flatten()
@@ -809,21 +812,21 @@ defmodule Milk.Tournaments.Progress do
 
   # NOTE: チーム大会スタートに関する関数群
 
-  @spec start_team_best_of_format(integer(), Tournament.t()) :: {:ok, match_list(), match_list_with_fight_result()} | {:error, String.t(), nil}
-  def start_team_best_of_format(master_id, tournament) do
+  @spec start_team_flipban(integer(), Tournament.t()) :: {:ok, match_list(), match_list_with_fight_result()} | {:error, String.t(), nil}
+  def start_team_flipban(master_id, tournament) do
     tournament.id
     |> Tournaments.start_team_tournament(master_id)
     |> case do
-      {:ok, _} -> generate_team_best_of_format_matches(tournament)
+      {:ok, _}        -> generate_team_flipban_matches(tournament)
       {:error, error} -> {:error, error, nil}
     end
   end
 
-  defp generate_team_best_of_format_matches(tournament) do
+  defp generate_team_flipban_matches(tournament) do
     tournament.id
     |> Tournaments.get_confirmed_teams()
     ~> teams
-    |> Enum.map(fn team -> team.id end)
+    |> Enum.map(&Map.get(&1, :id))
     |> Tournaments.generate_matchlist()
     ~> {:ok, match_list}
     |> elem(1)
@@ -856,6 +859,32 @@ defmodule Milk.Tournaments.Progress do
     |> insert_match_list_with_fight_result(tournament.id)
 
     {:ok, match_list, match_list_with_fight_result}
+  end
+
+  def start_team_flipban_round_robin(tournament) do
+    tournament.id
+    |> Tournaments.start_team_tournament(tournament.master_id)
+    |> case do
+      {:ok, _}        -> generate_team_flipban_roundrobin_matches(tournament)
+      {:error, error} -> {:error, error, nil}
+    end
+  end
+
+  defp generate_team_flipban_roundrobin_matches(tournament) do
+    tournament.id
+    |> Tournaments.get_confirmed_teams()
+    |> Enum.map(&Map.get(&1, :id))
+    |> RoundRobin.generate_match_list()
+    |> elem(1)
+    ~> match_list
+
+    insert_match_list(%{"rematch_index" => 0, "current_match_index" => 0, "match_list" => match_list}, tournament.id)
+
+    Tournaments.initialize_team_rank(tournament.id)
+
+    #{:ok, match_list, nil}
+    # XXX: 処理の都合でmatch_listを返さないようにしている
+    {:ok, nil, nil}
   end
 
   @doc """

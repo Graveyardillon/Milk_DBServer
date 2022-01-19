@@ -14,7 +14,8 @@ defmodule MilkWeb.ChatsController do
   alias Milk.CloudStorage.Objects
 
   @doc """
-  TODO: 認証
+  チャットをすべて取得する
+  # TODO: getリクエストだけど認証があったほうが良さそう それかpostにしちゃうか
   """
   def get_all_chats(conn, %{"room_id" => room_id}) do
     room_id

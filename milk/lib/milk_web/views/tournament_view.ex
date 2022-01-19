@@ -4,6 +4,7 @@ defmodule MilkWeb.TournamentView do
   alias MilkWeb.{
     TeamView,
     TournamentView,
+    TournamentTagView,
     UserView
   }
 
@@ -93,7 +94,6 @@ defmodule MilkWeb.TournamentView do
       event_date: tournament.event_date,
       start_recruiting: tournament.start_recruiting,
       deadline: tournament.deadline,
-      type: tournament.type,
       platform: tournament.platform_id,
       capacity: tournament.capacity,
       has_password: !is_nil(tournament.password),
@@ -129,7 +129,6 @@ defmodule MilkWeb.TournamentView do
         start_recruiting: tournament.start_recruiting,
         deadline: tournament.deadline,
         discord_server_id: tournament.discord_server_id,
-        type: tournament.type,
         platform: tournament.platform_id,
         capacity: tournament.capacity,
         # password: tournament.password,
@@ -265,7 +264,6 @@ defmodule MilkWeb.TournamentView do
       event_date: tournament.event_date,
       start_recruiting: tournament.start_recruiting,
       deadline: tournament.deadline,
-      type: tournament.type,
       platform: tournament.platform_id,
       capacity: tournament.capacity,
       # password: tournament.password,
@@ -278,6 +276,7 @@ defmodule MilkWeb.TournamentView do
       is_started: tournament.is_started,
       is_team: tournament.is_team,
       rule: tournament.rule,
+      tags: render_many(tournament.tags, TournamentTagView, "tag.json", as: :tag),
       entrants:
         Enum.map(tournament.entrants, fn user ->
           %{
@@ -323,7 +322,6 @@ defmodule MilkWeb.TournamentView do
         event_date: tournament.event_date,
         start_recruiting: tournament.start_recruiting,
         deadline: tournament.deadline,
-        type: tournament.type,
         platform: tournament.platform_id,
         capacity: tournament.capacity,
         password: tournament.password,
@@ -472,6 +470,22 @@ defmodule MilkWeb.TournamentView do
             coin_tail_field: match_info.custom_detail.coin_tail_field
           }
         end
+    }
+  end
+
+  def render("round_robin_match_list.json", %{match_list: %{"rematch_index" => rematch_index, "current_match_index" => current_match_index, "match_list" => match_list}}) do
+    %{
+      result: true,
+      rematch_index: rematch_index,
+      current_match_index: current_match_index,
+      match_list: Enum.map(match_list, fn matches_in_round ->
+        Enum.map(matches_in_round, fn {match_str, winner_id} ->
+          %{
+            match: match_str,
+            winner_id: winner_id
+          }
+        end)
+      end)
     }
   end
 

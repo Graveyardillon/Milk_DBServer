@@ -123,6 +123,7 @@ defmodule MilkWeb.Router do
     get "/tournament/get_tabs", TournamentController, :tournament_topics
 
     get "/tournament/get_match_list", TournamentController, :get_match_list
+    get "/tournament/get_round_robin_match_list", TournamentController, :get_round_robin_match_list
     get "/tournament/home", TournamentController, :home
     get "/tournament/home/search", TournamentController, :search
     get "/tournament/masters", TournamentController, :get_game_masters
@@ -173,6 +174,11 @@ defmodule MilkWeb.Router do
     post "/tournament/choose_map", TournamentController, :choose_map
     post "/tournament/choose_ad", TournamentController, :choose_ad
     put "/tournament/update", TournamentController, :update
+
+    post "/tournament/tag/create", TournamentTagController, :create
+    delete "/tournament/tag/delete", TournamentTagController, :delete
+    get "/tournament/tag", TournamentTagController, :list
+    post "/tournament/set_tags", TournamentTagController, :set_tags
 
     get "/tournament_log/index", TournamentLogController, :index
     post "/tournament_log/add", TournamentLogController, :create
