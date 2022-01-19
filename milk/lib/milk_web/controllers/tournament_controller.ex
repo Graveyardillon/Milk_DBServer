@@ -1331,8 +1331,8 @@ defmodule MilkWeb.TournamentController do
       Progress.get_score(tournament_id, opponent.id)
       case Progress.get_score(tournament_id, opponent.id) do
         nil ->
-          with  {:ok, _tournament} <- Tournaments.waiting_for_score_input_state(tournament, user_id),
-                tournament         <- Tournaments.get_tournament(tournament_id) do
+          with  {:ok, _}   <- Tournaments.waiting_for_score_input_state(tournament, user_id),
+                tournament <- Tournaments.get_tournament(tournament_id) do
             claim = %Claim{
               validated: true,
               completed: false,
@@ -1346,12 +1346,11 @@ defmodule MilkWeb.TournamentController do
           with  {:ok, winner_id, loser_id, winner_score, loser_score, _} <- calculate_winner(id, opponent.id, score, opponent_score),
                 {:ok, nil}                                               <- proceed_to_next_match(tournament, winner_id, loser_id, winner_score, loser_score, match_index),
                 tournament                                               <- Tournaments.load_tournament(tournament_id) do
-            messages = Tournaments.all_states!(tournament_id)
             claim = %Claim{
               validated: true,
               completed: true,
               is_finished: is_nil(tournament),
-              interaction_messages: messages,
+              interaction_messages: Tournaments.all_states!(tournament_id),
               rule: rule
             }
             render(conn, "claim.json", claim: claim)
@@ -1362,6 +1361,16 @@ defmodule MilkWeb.TournamentController do
                 completed:   false,
                 is_finished: false,
                 interaction_messages: [],
+                rule: rule
+              }
+              render(conn, "claim.json", claim: claim)
+            {:ok, :regenerated} ->
+              tournament = Tournaments.get_tournament(tournament_id)
+              claim = %Claim{
+                validated: true,
+                completed: true,
+                is_finished: is_nil(tournament),
+                interaction_messages: Tournaments.all_states!(tournament_id),
                 rule: rule
               }
               render(conn, "claim.json", claim: claim)
@@ -1471,7 +1480,8 @@ defmodule MilkWeb.TournamentController do
          {:ok, nil} <- finish_as_needed_on_roundrobin(tournament.id, winner_id) do
       {:ok, nil}
     else
-      error -> error
+      {:ok, :regenerated} -> {:ok, :regenerated}
+      error               -> error
     end
   end
 
@@ -1684,7 +1694,7 @@ defmodule MilkWeb.TournamentController do
       {:ok, nil}
     else
       false               -> {:ok, nil}
-      {:ok, :regenerated} -> {:ok, nil}
+      {:ok, :regenerated} -> {:ok, :regenerated}
       {:error, error}     -> {:error, error}
       _                   -> {:error, "unexpected error"}
     end
