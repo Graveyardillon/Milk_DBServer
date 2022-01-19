@@ -177,6 +177,11 @@ defmodule MilkWeb.Router do
     post "/tournament/choose_ad", TournamentController, :choose_ad
     put "/tournament/update", TournamentController, :update
 
+    post "/tournament/tag/create", TournamentTagController, :create
+    delete "/tournament/tag/delete", TournamentTagController, :delete
+    get "/tournament/tag", TournamentTagController, :list
+    post "/tournament/set_tags", TournamentTagController, :set_tags
+
     get "/tournament_log/index", TournamentLogController, :index
     post "/tournament_log/add", TournamentLogController, :create
 

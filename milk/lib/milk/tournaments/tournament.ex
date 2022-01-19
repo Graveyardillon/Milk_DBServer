@@ -10,6 +10,8 @@ defmodule Milk.Tournaments.Tournament do
   alias Milk.Tournaments.{
     Entrant,
     Assistant,
+    Tag,
+    TagRelations,
     Team,
     TournamentChatTopic,
     TournamentCustomDetail
@@ -71,6 +73,7 @@ defmodule Milk.Tournaments.Tournament do
     has_many :entrant, Entrant
     has_many :assistant, Assistant
     has_many :tournament_chat_topics, TournamentChatTopic
+    many_to_many :tags, Tag, join_through: TagRelations
     has_many :team, Team
     has_many :map, Milk.Tournaments.Map
     has_one :custom_detail, TournamentCustomDetail
