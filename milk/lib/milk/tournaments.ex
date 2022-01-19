@@ -1543,6 +1543,7 @@ defmodule Milk.Tournaments do
     tournament_id
     |> __MODULE__.get_tournament()
     |> do_delete_loser_process(loser_list)
+    |> IO.inspect(label: :delete_loser_process)
   end
 
   defp do_delete_loser_process(%Tournament{rule: "flipban_roundrobin"} = tournament, loser_list) do
@@ -1607,9 +1608,9 @@ defmodule Milk.Tournaments do
     |> __MODULE__.get_tournament()
     |> Map.get(:is_team)
     |> if do
-      promote_round_robin_rank(match_list, winner_id, tournament_id)
-    else
       promote_round_robin_team_rank(match_list, winner_id, tournament_id)
+    else
+      promote_round_robin_rank(match_list, winner_id, tournament_id)
     end
   end
 
@@ -1617,7 +1618,7 @@ defmodule Milk.Tournaments do
     tournament_id
     |> __MODULE__.get_entrants()
     |> Enum.map(fn entrant ->
-      win_count = RoundRobin.count_win(match_list, entrant.user_id)
+      win_count = RoundRobin.count_win(match_list["match_list"], entrant.user_id)
       {entrant, win_count}
     end)
     |> Enum.sort_by(&elem(&1, 1))
@@ -1625,8 +1626,11 @@ defmodule Milk.Tournaments do
     ~> entrants_with_win_count
 
     entrants_with_win_count
+    |> Enum.filter(fn {entrant, _} ->
+      entrant.id == winner_id
+    end)
     |> Enum.each(fn {entrant, _} ->
-      __MODULE__.update_entrant(entrant, %{rank: Enum.find_index(entrants_with_win_count, &(elem(&1, 0).id == winner_id))})
+      __MODULE__.update_entrant(entrant, %{rank: Enum.find_index(entrants_with_win_count, &(elem(&1, 0).id == winner_id)) + 1})
     end)
   end
 
@@ -1635,16 +1639,24 @@ defmodule Milk.Tournaments do
     tournament_id
     |> __MODULE__.get_confirmed_teams()
     |> Enum.map(fn team ->
-      win_count = RoundRobin.count_win(match_list, team.id)
+      win_count = RoundRobin.count_win(match_list["match_list"], team.id)
       {team, win_count}
     end)
     |> Enum.sort_by(&elem(&1, 1))
     |> Enum.reverse()
     ~> teams_with_win_count
+    |> Enum.each(fn {team, _} ->
+      IO.inspect(team.id, label: :team_id)
+    end)
+    IO.inspect(winner_id, label: :winner_id)
 
     teams_with_win_count
+    # |> Enum.filter(fn {team, _} ->
+    #   team.id == winner_id
+    # end)
     |> Enum.each(fn {team, _} ->
-      __MODULE__.update_team(team, %{rank: Enum.find_index(teams_with_win_count, &(elem(&1, 0).id == winner_id))})
+      __MODULE__.update_team(team, %{rank: Enum.find_index(teams_with_win_count, &(elem(&1, 0).id == team.id)) + 1})
+      |> IO.inspect(label: :update_team)
     end)
   end
 
