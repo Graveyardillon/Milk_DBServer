@@ -2373,7 +2373,7 @@ defmodule Milk.Tournaments do
     end
   end
 
-  def rematch_round_robin_as_needed(%{"match_list" => match_list, "current_match_index" => current_match_index, "rematch_index" => rematch_index}, tournament_id) do
+  def rematch_round_robin_as_needed(%{"match_list" => match_list, "current_match_index" => current_match_index, "rematch_index" => rematch_index} = entire_match_list, tournament_id) do
     if length(match_list) === current_match_index do
       tournament_id
       |> __MODULE__.get_confirmed_teams()
@@ -2388,7 +2388,7 @@ defmodule Milk.Tournaments do
       |> length()
       |> case do
         1 -> {:ok, nil}
-        _ -> regenerate_round_robin_match_list(match_list, teams, max_win_count, rematch_index)
+        _ -> regenerate_round_robin_match_list(entire_match_list, teams, max_win_count, rematch_index)
       end
     else
       {:ok, nil}
@@ -2398,13 +2398,13 @@ defmodule Milk.Tournaments do
   defp store_round_robin_log(%{"match_list" => match_list, "rematch_index" => rematch_index}, tournament_id),
     do: Progress.create_round_robin_log(%{"match_list_str" => inspect(match_list), "rematch_index" => rematch_index, "tournament_id" => tournament_id})
 
-  defp regenerate_round_robin_match_list(match_list, teams, max_win_count, rematch_index) do
+  defp regenerate_round_robin_match_list(%{"match_list" => match_list} = entire_match_list, teams, max_win_count, rematch_index) do
     teams
     |> List.first()
     |> Map.get(:tournament_id)
     ~> tournament_id
 
-    store_round_robin_log(match_list, tournament_id)
+    store_round_robin_log(entire_match_list, tournament_id)
 
     teams
     |> Enum.filter(fn team ->

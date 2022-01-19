@@ -1,4 +1,7 @@
 defmodule Milk.UserManager.GuardianPipeline do
+  @moduledoc """
+  ルーティングでの認証周りとか
+  """
   use MilkWeb, :controller
 
   import Plug.Conn
@@ -72,6 +75,7 @@ defmodule Milk.UserManager.GuardianPipeline do
       String.contains?(conn.request_path, "api/conf/conf_email") or
       # FIXME: 取り置きの処理。 discordからのリクエストのときのみ、tokenを無効化したい。
       String.contains?(conn.request_path, "api/tournament/claim_win") or
-      String.contains?(conn.request_path, "api/tournament/claim_lose")
+      String.contains?(conn.request_path, "api/tournament/claim_lose") or
+      String.contains?(conn.request_path, "api/tournament/regenerate_round_robin")
   end
 end

@@ -2072,6 +2072,21 @@ defmodule MilkWeb.TournamentController do
     json(conn, %{result: true, data: brackets, count: count})
   end
 
+  @doc """
+  マッチリストの再生性を手動で試みるための関数
+  TODO: テストは書いてない
+  """
+  def rematch_round_robin_as_needed(conn, %{"tournament_id" => tournament_id}) do
+    tournament_id
+    |> Tools.to_integer_as_needed()
+    |> Progress.get_match_list
+    |> Tournaments.rematch_round_robin_as_needed(tournament_id)
+    |> case do
+      {:ok, nil}          -> json(conn, %{msg: "did not rematch"})
+      {:ok, :regenerated} -> json(conn, %{msg: "regenerated"})
+      _                   -> json(conn, %{msg: "error"})
+    end
+  end
 
   @doc """
   大会パスワードの認証を行う
