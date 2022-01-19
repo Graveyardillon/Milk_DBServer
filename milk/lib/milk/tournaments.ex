@@ -2412,9 +2412,13 @@ defmodule Milk.Tournaments do
     end)
     |> Enum.map(&Map.get(&1, :id))
     |> __MODULE__.generate_round_robin_match_list()
-    |> case do
-      {:ok, _, match_list} -> Progress.insert_match_list(%{"rematch_index" => rematch_index + 1, "current_match_index" => 0, "match_list" => match_list}, tournament_id)
-      _                    -> {:error, "Failed regenerating round robin match list"}
+    ~> generate_round_robin_match_list_result
+
+    with {:ok, _, match_list} <- generate_round_robin_match_list_result,
+         {:ok, nil}           <- Progress.insert_match_list(%{"rematch_index" => rematch_index + 1, "current_match_index" => 0, "match_list" => match_list}, tournament_id) do
+      {:ok, :regenerated}
+    else
+      _ -> {:error, "Failed regenerating round robin match list"}
     end
   end
 

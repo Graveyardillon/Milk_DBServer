@@ -1247,17 +1247,6 @@ defmodule MilkWeb.TournamentController do
     else
       json(conn, %{result: false, error: "Invalid state"})
     end
-    # |> Map.get(:rule)
-    # |> Tournaments.rule_needs_score?()
-    # |> if do
-    #   json(conn, %{result: true, error: "Should provide score in the tournament rule"})
-    # else
-    #   if claimable_state?(tournament_id, user_id) do
-    #     do_claim_score(conn, user_id, tournament, 1)
-    #   else
-    #     json(conn, %{result: false, error: "Invalid state"})
-    #   end
-    # end
   end
 
   # NOTE: Discordからのリクエストを受け付けるので、
@@ -1291,17 +1280,6 @@ defmodule MilkWeb.TournamentController do
     else
       json(conn, %{result: false, error: "Invalid state"})
     end
-    # |> Map.get(:rule)
-    # |> Tournaments.rule_needs_score?()
-    # |> if do
-    #   json(conn, %{result: true, error: "Should provide score in the tournament rule"})
-    # else
-    #   if claimable_state?(tournament_id, user_id) do
-    #     do_claim_score(conn, user_id, tournament, 0)
-    #   else
-    #     json(conn, %{result: false, error: "Invalid state"})
-    #   end
-    # end
   end
 
   def claim_lose(conn, %{"discord_id" => discord_id, "discord_server_id" => discord_server_id, "token" => "d3wJSGVPn7jRgqjY"}) do
@@ -1705,9 +1683,10 @@ defmodule MilkWeb.TournamentController do
          {:ok, nil}                             <- Progress.delete_duplicate_users_all(tournament_id) do
       {:ok, nil}
     else
-      false           -> {:ok, nil}
-      {:error, error} -> {:error, error}
-      _               -> {:error, "unexpected error"}
+      false               -> {:ok, nil}
+      {:ok, :regenerated} -> {:ok, nil}
+      {:error, error}     -> {:error, error}
+      _                   -> {:error, "unexpected error"}
     end
   end
 
