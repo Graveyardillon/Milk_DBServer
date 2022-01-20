@@ -20,7 +20,6 @@ mix.exsにたくさん赤線が出てしまうとき（Can't continue due to err
 ```
 rm -r deps _build .elixir_ls && mix deps.get
 ```
-
 ### MacOS
 
 `/etc/sysctl.conf`を作成する。
@@ -29,6 +28,12 @@ rm -r deps _build .elixir_ls && mix deps.get
 ulimit -S -n 2048 # or whatever number you choose
 ```
 を実行する。
+
+### create_time, update_timeがinserted_at, updated_atになってしまうとき
+スキーマファイルの
+`use Ecto.Schema`を`use Milk.Schema`にしましょう。
+
+
 
 ## excoveralls
 ```
