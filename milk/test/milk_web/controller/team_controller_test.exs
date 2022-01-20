@@ -340,6 +340,15 @@ defmodule MilkWeb.TeamControllerTest do
       |> length()
       |> Kernel.==(1)
       |> assert()
+
+      conn = get(conn, Routes.team_path(conn, :get_confirmed_teams_without_members), tournament_id: tournament.id)
+
+      conn
+      |> json_response(200)
+      |> Map.get("data")
+      |> length()
+      |> Kernel.==(1)
+      |> assert()
     end
   end
 
