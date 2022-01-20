@@ -30,10 +30,10 @@ defmodule MilkWeb.TournamentTagController do
 
   def set_tags(conn, %{"tournament_id" => id, "tag_ids" => tag_ids}) do
     case Tournaments.get_tournament(id) do
-      nil -> json(conn, %{result: false, error: "tournament not found"})
+      nil ->
+        json(conn, %{result: false, error: "tournament not found"})
       tournament ->
-        TournamentTag.update_relation(tournament, tag_ids)
-        |> case do
+        case TournamentTag.update_relation(tournament, tag_ids) do
           {:ok, result} -> json(conn, %{result: true})
           {:error, error} -> json(conn, %{result: false})
         end

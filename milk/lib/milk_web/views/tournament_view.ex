@@ -5,7 +5,9 @@ defmodule MilkWeb.TournamentView do
     TeamView,
     TournamentView,
     TournamentTagView,
-    UserView
+    UserView,
+    EntrantView,
+    TeamView,
   }
 
   def render("users.json", %{users: users}) do
@@ -536,6 +538,83 @@ defmodule MilkWeb.TournamentView do
         }
       end),
       user_id: claim.user_id
+    }
+  end
+
+
+  # MARK: WEBBETA
+
+  def render("cards.json", %{tournaments: tournaments}) do
+    render_many(tournaments, TournamentView, "card.json")
+  end
+  def render("card.json", %{tournament: tournament}) do
+    %{
+      id: tournament.id,
+      name: tournament.name,
+      thumbnail_path: tournament.thumbnail_path,
+      game_id: tournament.game_id,
+      game_name: tournament.game_name,
+      event_date: tournament.event_date,
+      start_recruiting: tournament.start_recruiting,
+      deadline: tournament.deadline,
+      platform: tournament.platform_id,
+      capacity: tournament.capacity,
+      has_password: !is_nil(tournament.password),
+      description: tournament.description,
+      master_id: tournament.master_id,
+      url: tournament.url,
+      create_time: tournament.create_time,
+      update_time: tournament.update_time,
+      is_started: tournament.is_started,
+      is_team: tournament.is_team,
+      rule: tournament.rule,
+      tags: render_many(tournament.tags, TournamentTagView, "tag.json", as: :tag)
+      # TODO: add 参加人数 or 参加チーム 数情報
+    }
+  end
+
+  def render("info.json", %{tournament: tournament}) do
+    %{
+      id: tournament.id,
+      name: tournament.name,
+      thumbnail_path: tournament.thumbnail_path,
+      game_id: tournament.game_id,
+      game_name: tournament.game_name,
+      custom_detail: %{
+        coin_head_field: tournament.custom_detail.coin_head_field,
+        coin_tail_field: tournament.custom_detail.coin_tail_field
+      },
+      event_date: tournament.event_date,
+      enabled_coin_toss: tournament.enabled_coin_toss,
+      enabled_map: tournament.enabled_map,
+      start_recruiting: tournament.start_recruiting,
+      deadline: tournament.deadline,
+      discord_server_id: tournament.discord_server_id,
+      platform: tournament.platform_id,
+      capacity: tournament.capacity,
+      has_password: !is_nil(tournament.password),
+      description: tournament.description,
+      master_id: tournament.master_id,
+      url: tournament.url,
+      create_time: tournament.create_time,
+      update_time: tournament.update_time,
+      is_started: tournament.is_started,
+      is_team: tournament.is_team,
+      team_size: tournament.team_size,
+      rule: tournament.rule,
+      entrants: render_many(tournament.entrant, EntrantView, "entrant.json", as: :entrant),
+      teams: render_many(tournament.team, TeamView, "team.json", as: :team),
+      maps: render_many(tournament.map, TournamentView, "map.json", as: :map)
+    }
+  end
+
+  def render("map.json", %{map: map}) do
+    %{
+      id: map.id,
+      name: map.name,
+      # state: map.state,
+      icon_path: map.icon_path,
+      tournament_id: map.tournament_id #TODO: remove
     }
   end
 end

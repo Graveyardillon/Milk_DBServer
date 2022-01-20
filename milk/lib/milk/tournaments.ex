@@ -4494,4 +4494,56 @@ defmodule Milk.Tournaments do
     |> Base.encode16()
     |> String.downcase()
   end
+
+
+
+
+  # MARK: WEBBETA
+  def preloader_card(struct \\ %Tournament{}) do
+    struct
+    |> Repo.preload(:entrant)
+    |> Repo.preload(:team)
+    |> Repo.preload(:custom_detail)
+    |> Repo.preload(:tags)
+  end
+
+  def preloader_info(struct \\ %Tournament{}) do
+    struct
+    |> Repo.preload(:tags)
+    |> Repo.preload(team: [team_member: :user])
+    |> Repo.preload(:entrant)
+    |> Repo.preload(:assistant)
+    |> Repo.preload(:master)
+    |> Repo.preload(:map)
+    |> Repo.preload(:custom_detail)
+    |> Repo.preload(entrant: [user: :auth])
+  end
+
+  def browse(date_offset, offset, user_id \\ nil) do
+    user_id
+    |> Relations.blocked_users()
+    |> Enum.map(& &1.blocked_user_id)
+    ~> blocked_user_id_list
+
+    Timex.now()
+    |> Timex.add(Timex.Duration.from_days(1))
+    |> Timex.to_datetime()
+
+    Tournament
+    |> where([t], t.deadline > ^date_offset and t.create_time < ^date_offset)
+    |> where([t], not (t.master_id in ^blocked_user_id_list))
+    |> order_by([t], asc: :event_date)
+    |> offset(^offset)
+    |> limit(5)
+    |> Repo.all()
+    |> preloader_card()
+  end
+
+  def get_info(id) do
+    id
+    |> get_tournament()
+    |> preloader_info()
+    |> IO.inspect()
+  end
+
 end

@@ -1,7 +1,10 @@
 defmodule MilkWeb.TeamView do
   use MilkWeb, :view
 
-  alias MilkWeb.TeamView
+  alias MilkWeb.{
+    TeamView,
+    UserView
+  }
 
   def render("index.json", %{teams: teams}) do
     %{
@@ -24,26 +27,21 @@ defmodule MilkWeb.TeamView do
       name: team.name,
       size: team.size,
       tournament_id: team.tournament_id,
-      team_member:
-        Enum.map(team.team_member, fn member ->
-          %{
-            id: member.id,
-            user_id: member.user_id,
-            user: %{
-              bio: member.user.bio,
-              email: member.user.auth.email,
-              icon_path: member.user.icon_path,
-              id: member.user.id,
-              name: member.user.name
-            },
-            team_id: member.team_id,
-            is_leader: member.is_leader,
-            is_invitation_confirmed: member.is_invitation_confirmed
-          }
-        end)
+      team_member: render_many(team.team_member, TeamView, "member.json", as: :member)
     }
   end
 
+  def render("member.json", %{member: member}) do
+    %{
+      id: member.id,
+      user: render_one(member.user, UserView, "user.json", as: :user),
+      team_id: member.team_id,
+      is_leader: member.is_leader,
+      is_invitation_confirmed: member.is_invitation_confirmed
+    }
+  end
+
+  # TODO: Remove
   # NOTE: フロント側で型を固定してある
   def render("members.json", %{members: members}) do
     %{

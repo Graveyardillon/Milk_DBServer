@@ -234,6 +234,13 @@ defmodule MilkWeb.Router do
     get "/tournament/get_thumbnail", TournamentController, :get_thumbnail_image
   end
 
+  # MARK: WEBBETA
+  scope "/api", MilkWeb do
+    pipe_through :api
+    get "/tournament/browse", WebbetaTournamentController, :browse
+    get "/tournament/info", WebbetaTournamentController, :info
+  end
+
   scope "/debug", MilkWeb do
     # FIXME: 見た感じ使われてなさそうだったけど、一応残しておいた
     get "/tournament/image", TournamentController, :image

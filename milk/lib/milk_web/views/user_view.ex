@@ -58,8 +58,8 @@ defmodule MilkWeb.UserView do
       language: user.language,
       #email: user.auth.email,
       bio: user.bio,
-      birthday: user.birthday,
-      is_birthday_private: user.is_birthday_private
+      # birthday: user.birthday,
+      # is_birthday_private: user.is_birthday_private
     }
   end
 end

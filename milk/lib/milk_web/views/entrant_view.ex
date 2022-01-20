@@ -2,7 +2,10 @@ defmodule MilkWeb.EntrantView do
   use MilkWeb, :view
 
   alias Common.Tools
-  alias MilkWeb.EntrantView
+  alias MilkWeb.{
+    EntrantView,
+    UserView
+  }
 
   def render("index.json", %{entrant: entrant}) do
     %{data: render_many(entrant, EntrantView, "entrant.json")}
@@ -17,8 +20,9 @@ defmodule MilkWeb.EntrantView do
       id: entrant.id,
       rank: entrant.rank,
       create_time: entrant.create_time,
-      tournament_id: entrant.tournament_id,
-      user_id: entrant.user_id,
+      tournament_id: entrant.tournament_id, # TODO: remove
+      user_id: entrant.user_id, # TODO: remove
+      user: render_one(entrant, UserView, "user.json", as: :user),
       update_time: entrant.update_time
     }
   end
