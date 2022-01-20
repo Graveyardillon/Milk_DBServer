@@ -50,6 +50,14 @@ defmodule MilkWeb.EntrantController do
   end
 
   @doc """
+  Shows an entrants. Not checking is tournament exist or not.
+  """
+  def entrants(conn, %{"tournament_id" => id}) do
+    entrants = Tournaments.get_entrants(id)
+    render(conn, "entrants.json", entrants: entrants)
+  end
+
+  @doc """
   Update an entrant.
   """
   def update(conn, %{"id" => id, "entrant" => entrant_params}) do

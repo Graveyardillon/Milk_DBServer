@@ -1243,6 +1243,7 @@ defmodule Milk.Tournaments do
     Entrant
     |> where([e], e.tournament_id == ^tournament_id)
     |> Repo.all()
+    |> Repo.preload(:user)
   end
 
   @spec is_participant?(integer(), integer()) :: boolean()

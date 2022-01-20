@@ -7,8 +7,8 @@ defmodule MilkWeb.EntrantView do
     UserView
   }
 
-  def render("index.json", %{entrant: entrant}) do
-    %{data: render_many(entrant, EntrantView, "entrant.json")}
+  def render("entrants.json", %{entrants: entrants}) do
+    render_many(entrants, EntrantView, "entrant.json")
   end
 
   def render("show.json", %{entrant: entrant}) do

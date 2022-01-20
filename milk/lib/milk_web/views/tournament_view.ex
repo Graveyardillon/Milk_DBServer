@@ -614,7 +614,7 @@ defmodule MilkWeb.TournamentView do
       name: map.name,
       # state: map.state,
       icon_path: map.icon_path,
-      tournament_id: map.tournament_id #TODO: remove
+      # tournament_id: map.tournament_id #TODO: remove
     }
   end
 end
