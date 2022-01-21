@@ -183,7 +183,7 @@ defmodule MilkWeb.Router do
     get "/tournament_log/index", TournamentLogController, :index
     post "/tournament_log/add", TournamentLogController, :create
 
-    get "/entrants", EntrantController, :entrants
+    get "/entrant/list", EntrantController, :entrants
     get "/entrant/rank", EntrantController, :show_rank
     resources "/entrant", EntrantController, except: [:new, :edit, :delete]
     # FIXME: GETのパラメータの渡し方を統一したい
