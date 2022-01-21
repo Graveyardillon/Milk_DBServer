@@ -544,10 +544,10 @@ defmodule MilkWeb.TournamentView do
 
   # MARK: WEBBETA
 
-  def render("cards.json", %{tournaments: tournaments}) do
-    render_many(tournaments, TournamentView, "card.json")
+  def render("list_info.json", %{tournaments: tournaments}) do
+    render_many(tournaments, TournamentView, "info.json")
   end
-  def render("card.json", %{tournament: tournament}) do
+  def render("info.json", %{tournament: tournament}) do
     %{
       id: tournament.id,
       name: tournament.name,
@@ -573,7 +573,7 @@ defmodule MilkWeb.TournamentView do
     }
   end
 
-  def render("info.json", %{tournament: tournament}) do
+  def render("detailed_info.json", %{tournament: tournament}) do
     %{
       id: tournament.id,
       name: tournament.name,

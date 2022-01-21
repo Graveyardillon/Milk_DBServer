@@ -4500,7 +4500,7 @@ defmodule Milk.Tournaments do
 
 
   # MARK: WEBBETA
-  def preloader_card(struct \\ %Tournament{}) do
+  def preloader_basic(struct \\ %Tournament{}) do
     struct
     |> Repo.preload(:entrant)
     |> Repo.preload(:team)
@@ -4508,7 +4508,7 @@ defmodule Milk.Tournaments do
     |> Repo.preload(:tags)
   end
 
-  def preloader_info(struct \\ %Tournament{}) do
+  def preloader_detail(struct \\ %Tournament{}) do
     struct
     |> Repo.preload(:tags)
     |> Repo.preload(team: [team_member: :user])
@@ -4537,14 +4537,19 @@ defmodule Milk.Tournaments do
     |> offset(^offset)
     |> limit(5)
     |> Repo.all()
-    |> preloader_card()
+    |> preloader_basic()
   end
 
   def get_info(id) do
     id
     |> get_tournament()
-    |> preloader_info()
-    |> IO.inspect()
+    |> preloader_basic()
+  end
+
+  def get_detailed_info(id) do
+    id
+    |> get_tournament()
+    |> preloader_detail()
   end
 
 end

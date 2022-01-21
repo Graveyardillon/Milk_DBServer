@@ -240,6 +240,7 @@ defmodule MilkWeb.Router do
     pipe_through :api
     get "/tournament/browse", WebbetaTournamentController, :browse
     get "/tournament/info", WebbetaTournamentController, :info
+    get "/tournament/detailed_info", WebbetaTournamentController, :detailed_info
   end
 
   scope "/debug", MilkWeb do
