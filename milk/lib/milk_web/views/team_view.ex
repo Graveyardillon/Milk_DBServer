@@ -44,6 +44,20 @@ defmodule MilkWeb.TeamView do
     }
   end
 
+  def render("teams.json", %{teams: teams}) do
+    %{
+      result: true,
+      data: Enum.map(teams, fn team ->
+        %{
+          id: team.id,
+          is_confirmed: team.is_confirmed,
+          name: team.name,
+          tournament_id: team.tournament_id
+        }
+      end)
+    }
+  end
+
   # NOTE: フロント側で型を固定してある
   def render("members.json", %{members: members}) do
     %{

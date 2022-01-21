@@ -2611,7 +2611,7 @@ defmodule Milk.Tournaments do
     |> Map.get(:is_team)
     |> if do
       tournament_id
-      |> get_confirmed_teams()
+      |> __MODULE__.get_confirmed_teams()
       |> Enum.reject(fn team ->
         team.id
         |> Progress.get_match_pending_list(tournament_id)
@@ -2619,7 +2619,7 @@ defmodule Milk.Tournaments do
       end)
     else
       tournament_id
-      |> get_entrants()
+      |> __MODULE__.get_entrants()
       |> Enum.reject(fn entrant ->
         entrant.user_id
         |> Progress.get_match_pending_list(tournament_id)
@@ -2644,7 +2644,7 @@ defmodule Milk.Tournaments do
       fighting_users = get_fighting_users(tournament_id)
 
       tournament_id
-      |> get_confirmed_teams()
+      |> __MODULE__.get_confirmed_teams()
       |> Enum.filter(fn team ->
         tournament_id
         |> Progress.get_match_list()

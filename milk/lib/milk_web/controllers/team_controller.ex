@@ -126,6 +126,15 @@ defmodule MilkWeb.TeamController do
     render(conn, "index.json", teams: teams)
   end
 
+  def get_confirmed_teams_without_members(conn, %{"tournament_id" => tournament_id}) do
+    tournament_id
+    |> Tools.to_integer_as_needed()
+    |> Tournaments.get_confirmed_teams()
+    ~> teams
+
+    render(conn, "teams.json", teams: teams)
+  end
+
   @doc """
   Confirm invitation of team
   """
