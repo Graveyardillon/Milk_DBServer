@@ -23,6 +23,10 @@ defmodule MilkWeb.WebbetaTournamentController do
     Tournament
   }
 
+  def browse(conn, %{"date_offset" => date_offset, "offset" => offset}) do
+    tournaments = Tournaments.browse(date_offset, offset)
+    render(conn, "list_info.json", tournaments: tournaments)
+  end
   def browse(conn, %{"user_id" => user_id, "date_offset" => date_offset, "offset" => offset}) do
     tournaments = Tournaments.browse(date_offset, offset, user_id)
     render(conn, "list_info.json", tournaments: tournaments)
