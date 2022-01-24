@@ -32,6 +32,13 @@ defmodule MilkWeb.WebbetaTournamentController do
     render(conn, "list_info.json", tournaments: tournaments)
   end
 
+  def browse_filter(conn, %{"tags" => tag_ids, "offset" => offset}) do
+
+    tournaments = Tournaments.browse_filter_tag(tag_ids, offset)
+    render(conn, "list_info.json", tournaments: tournaments)
+  end
+
+
 
   def info(conn, %{"id" => id}) do
     with %Tournament{} = tournament <- Tournaments.get_info(id) do

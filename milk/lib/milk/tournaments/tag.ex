@@ -10,7 +10,6 @@ defmodule Milk.Tournaments.Tag do
   schema "tournament_tags" do
     field :name, :string
 
-    # has_many :relations, TagRelations
     many_to_many :tournaments, Tournament, join_through: TagRelations
 
     timestamps()

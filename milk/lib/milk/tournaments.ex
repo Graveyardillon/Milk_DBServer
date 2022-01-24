@@ -57,6 +57,8 @@ defmodule Milk.Tournaments do
     MapSelection,
     Progress,
     Rules,
+    Tag,
+    TagRelations,
     Team,
     TeamInvitation,
     TeamMember,
@@ -4538,6 +4540,31 @@ defmodule Milk.Tournaments do
     |> limit(5)
     |> Repo.all()
     |> preloader_basic()
+  end
+
+  def browse_filter_tag(tag_ids, offset) do
+    # NOTE: Looks cleaner without the pipeline.
+    # Repo.all(
+      #   from t in Tournament,
+      #   preload: [:tags],
+      #   join: tag in assoc(t, :tags),
+      #   group_by: t.id,
+      #   having: fragment("? <@ array_agg(?)", ^tag_ids, tag.id),
+      #   order_by: [asc: :event_date],
+      #   offset: ^offset,
+      #   limit: 5
+      # )
+
+    # NOTE: about <@ operator : https://www.postgresql.org/docs/9.1/functions-array.html
+    Tournament
+    |> preload(:tags)
+    |> join(:inner, [t], tag in assoc(t, :tags))
+    |> group_by([t, tr], [t.id])
+    |> having([t, tr], fragment("? <@ array_agg(?)", ^tag_ids, tr.id))
+    |> order_by([t], asc: :event_date)
+    |> offset(^offset)
+    |> limit(5)
+    |> Repo.all()
   end
 
   def get_info(id) do
