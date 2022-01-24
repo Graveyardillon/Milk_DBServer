@@ -4557,7 +4557,6 @@ defmodule Milk.Tournaments do
 
     # NOTE: about <@ operator : https://www.postgresql.org/docs/9.1/functions-array.html
     Tournament
-    |> preload(:tags)
     |> join(:inner, [t], tag in assoc(t, :tags))
     |> group_by([t, tr], [t.id])
     |> having([t, tr], fragment("? <@ array_agg(?)", ^tag_ids, tr.id))
@@ -4565,6 +4564,7 @@ defmodule Milk.Tournaments do
     |> offset(^offset)
     |> limit(5)
     |> Repo.all()
+    |> preloader_basic()
   end
 
   def get_info(id) do
