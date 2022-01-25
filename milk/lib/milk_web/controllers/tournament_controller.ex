@@ -1255,17 +1255,6 @@ defmodule MilkWeb.TournamentController do
     else
       json(conn, %{result: false, error: "Invalid state"})
     end
-    # |> Map.get(:rule)
-    # |> Tournaments.rule_needs_score?()
-    # |> if do
-    #   json(conn, %{result: true, error: "Should provide score in the tournament rule"})
-    # else
-    #   if claimable_state?(tournament_id, user_id) do
-    #     do_claim_score(conn, user_id, tournament, 1)
-    #   else
-    #     json(conn, %{result: false, error: "Invalid state"})
-    #   end
-    # end
   end
 
   # NOTE: Discordからのリクエストを受け付けるので、
@@ -1299,17 +1288,6 @@ defmodule MilkWeb.TournamentController do
     else
       json(conn, %{result: false, error: "Invalid state"})
     end
-    # |> Map.get(:rule)
-    # |> Tournaments.rule_needs_score?()
-    # |> if do
-    #   json(conn, %{result: true, error: "Should provide score in the tournament rule"})
-    # else
-    #   if claimable_state?(tournament_id, user_id) do
-    #     do_claim_score(conn, user_id, tournament, 0)
-    #   else
-    #     json(conn, %{result: false, error: "Invalid state"})
-    #   end
-    # end
   end
 
   def claim_lose(conn, %{"discord_id" => discord_id, "discord_server_id" => discord_server_id, "token" => "d3wJSGVPn7jRgqjY"}) do
@@ -1361,8 +1339,8 @@ defmodule MilkWeb.TournamentController do
       Progress.get_score(tournament_id, opponent.id)
       case Progress.get_score(tournament_id, opponent.id) do
         nil ->
-          with  {:ok, _tournament} <- Tournaments.waiting_for_score_input_state(tournament, user_id),
-                tournament         <- Tournaments.get_tournament(tournament_id) do
+          with  {:ok, _}   <- Tournaments.waiting_for_score_input_state(tournament, user_id),
+                tournament <- Tournaments.get_tournament(tournament_id) do
             claim = %Claim{
               validated: true,
               completed: false,
@@ -1376,12 +1354,11 @@ defmodule MilkWeb.TournamentController do
           with  {:ok, winner_id, loser_id, winner_score, loser_score, _} <- calculate_winner(id, opponent.id, score, opponent_score),
                 {:ok, nil}                                               <- proceed_to_next_match(tournament, winner_id, loser_id, winner_score, loser_score, match_index),
                 tournament                                               <- Tournaments.load_tournament(tournament_id) do
-            messages = Tournaments.all_states!(tournament_id)
             claim = %Claim{
               validated: true,
               completed: true,
               is_finished: is_nil(tournament),
-              interaction_messages: messages,
+              interaction_messages: Tournaments.all_states!(tournament_id),
               rule: rule
             }
             render(conn, "claim.json", claim: claim)
@@ -1392,6 +1369,16 @@ defmodule MilkWeb.TournamentController do
                 completed:   false,
                 is_finished: false,
                 interaction_messages: [],
+                rule: rule
+              }
+              render(conn, "claim.json", claim: claim)
+            {:ok, :regenerated} ->
+              tournament = Tournaments.get_tournament(tournament_id)
+              claim = %Claim{
+                validated: true,
+                completed: true,
+                is_finished: is_nil(tournament),
+                interaction_messages: Tournaments.all_states!(tournament_id),
                 rule: rule
               }
               render(conn, "claim.json", claim: claim)
@@ -1501,7 +1488,8 @@ defmodule MilkWeb.TournamentController do
          {:ok, nil} <- finish_as_needed_on_roundrobin(tournament.id, winner_id) do
       {:ok, nil}
     else
-      error -> error
+      {:ok, :regenerated} -> {:ok, :regenerated}
+      error               -> error
     end
   end
 
@@ -1713,9 +1701,10 @@ defmodule MilkWeb.TournamentController do
          {:ok, nil}                             <- Progress.delete_duplicate_users_all(tournament_id) do
       {:ok, nil}
     else
-      false           -> {:ok, nil}
-      {:error, error} -> {:error, error}
-      _               -> {:error, "unexpected error"}
+      false               -> {:ok, nil}
+      {:ok, :regenerated} -> {:ok, :regenerated}
+      {:error, error}     -> {:error, error}
+      _                   -> {:error, "unexpected error"}
     end
   end
 
@@ -2091,6 +2080,21 @@ defmodule MilkWeb.TournamentController do
     json(conn, %{result: true, data: brackets, count: count})
   end
 
+  @doc """
+  マッチリストの再生性を手動で試みるための関数
+  TODO: テストは書いてない
+  """
+  def rematch_round_robin_as_needed(conn, %{"tournament_id" => tournament_id}) do
+    tournament_id
+    |> Tools.to_integer_as_needed()
+    |> Progress.get_match_list
+    |> Tournaments.rematch_round_robin_as_needed(tournament_id)
+    |> case do
+      {:ok, nil}          -> json(conn, %{msg: "did not rematch"})
+      {:ok, :regenerated} -> json(conn, %{msg: "regenerated"})
+      _                   -> json(conn, %{msg: "error"})
+    end
+  end
 
   @doc """
   大会パスワードの認証を行う
