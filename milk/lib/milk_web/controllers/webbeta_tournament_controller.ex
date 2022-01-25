@@ -32,21 +32,18 @@ defmodule MilkWeb.WebbetaTournamentController do
     render(conn, "list_info.json", tournaments: tournaments)
   end
 
-  def browse_filter(conn, %{"tags" => tag_ids, "offset" => offset}) do
-
-    tournaments = Tournaments.browse_filter_tag(tag_ids, offset)
+  @doc """
+    params:
+      offset: int
+      tag_ids: array of tag_id
+      date_from: date
+      date_to : date
+      rule: basic | flipban | flipban_roundrobin
+  """
+  def browse_filter(conn, params) do
+    tournaments = Tournaments.browse_filter(params)
     render(conn, "list_info.json", tournaments: tournaments)
   end
-
-  # def browse_filter(conn, params) do
-  #   tag_ids = params["tag_ids"]
-  #   offset = params["offset"]
-  #   date_from = params["date_from"]
-  #   date_to = params["date_to"]
-
-  # end
-
-
 
   def info(conn, %{"id" => id}) do
     with %Tournament{} = tournament <- Tournaments.get_info(id) do

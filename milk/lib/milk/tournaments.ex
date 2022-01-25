@@ -4537,32 +4537,59 @@ defmodule Milk.Tournaments do
     Tournament
     |> where([t], t.deadline > ^date_offset and t.create_time < ^date_offset)
     |> where([t], not (t.master_id in ^blocked_user_id_list))
-    |> order_by([t], asc: :event_date)
+    |> order_by([t], desc: :event_date)
     |> offset(^offset)
     |> limit(5)
     |> Repo.all()
     |> preloader_basic()
   end
 
-  def browse_filter_tag(tag_ids, offset) do
-    # NOTE: Looks cleaner without the pipeline.
-    # Repo.all(
-      #   from t in Tournament,
-      #   preload: [:tags],
-      #   join: tag in assoc(t, :tags),
-      #   group_by: t.id,
-      #   having: fragment("? <@ array_agg(?)", ^tag_ids, tag.id),
-      #   order_by: [asc: :event_date],
-      #   offset: ^offset,
-      #   limit: 5
-      # )
+  # Note: No longer needed
+  # def browse_filter_tag(tag_ids, offset) do
+  #     Tournament
+  #     |> join(:inner, [t], tag in assoc(t, :tags))
+  #     |> group_by([t, tr], [t.id])
+  #     |> having([t, tr], fragment("? <@ array_agg(?)", ^tag_ids, tr.id))
+  #     |> order_by([t], desc: :event_date)
+  #     |> offset(^offset)
+  #     |> limit(5)
+  #     |> Repo.all()
+  #     |> preloader_basic()
+  #   end
 
-    # NOTE: about <@ operator : https://www.postgresql.org/docs/9.1/functions-array.html
-    Tournament
-    |> join(:inner, [t], tag in assoc(t, :tags))
-    |> group_by([t, tr], [t.id])
-    |> having([t, tr], fragment("? <@ array_agg(?)", ^tag_ids, tr.id))
-    |> order_by([t], asc: :event_date)
+  def browse_filter(params) do
+    offset = params["offset"] # int
+    tag_ids = params["tag_ids"] # array of tag_id
+    date_from = params["date_from"] # date
+    date_to = params["date_to"] # date
+    rule = params["rule"] # basic | flipban | flipban_roundrobin
+
+    tournament = Tournament
+
+    if tag_ids do
+      tournament
+      |> join(:inner, [t], tag in assoc(t, :tags))
+      |> group_by([t, tr], [t.id])
+      |> having([t, tr], fragment("? <@ array_agg(?)", ^tag_ids, tr.id)) # NOTE: about <@ operator https://www.postgresql.org/docs/14/functions-array.html
+    else tournament
+    end ~> tournament
+
+    if rule do
+      tournament |> where([t], t.rule == ^rule)
+    else tournament
+    end ~> tournament
+
+    if date_from do
+      tournament |> where([t], t.event_date > ^date_from)
+    else tournament
+    end ~> tournament
+
+    if date_to do
+      tournament |> where([t], t.event_date < ^date_to)
+    else tournament
+    end ~> tournament
+
+    |> order_by([t], desc: :event_date)
     |> offset(^offset)
     |> limit(5)
     |> Repo.all()
