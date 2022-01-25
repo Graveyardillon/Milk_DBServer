@@ -16,7 +16,7 @@ defmodule MilkWeb.RelationController do
   @doc """
   Follow a user.
   """
-  def create(conn, %{"relation" => params}) do
+  def follow(conn, %{"relation" => params}) do
     case Relations.create_relation(params) do
       {:ok, _relation} -> json(conn, %{result: true})
       {:error, error}  -> json(conn, %{result: false, error: error})
@@ -26,7 +26,7 @@ defmodule MilkWeb.RelationController do
   @doc """
   Unfollow a user.
   """
-  def delete(conn, %{"relation" => params}) do
+  def unfollow(conn, %{"relation" => params}) do
     case Relations.delete_relation_by_ids(params) do
       {:ok, _relation} -> json(conn, %{result: true})
       {:error, error}  -> json(conn, %{result: false, error: error})
@@ -54,12 +54,11 @@ defmodule MilkWeb.RelationController do
   """
   def followers_list(conn, %{"user_id" => user_id}) do
     users = Relations.get_followers_list(user_id)
-    render(conn, "user.json", users: users)
+    render(conn, "users.json", users: users)
   end
 
   @doc """
   Get a list of followers' id.
-  FIXME: renderを変えたほうが良さそう
   """
   def followers_id_list(conn, %{"user_id" => user_id}) do
     users = Relations.get_followers_id_list(user_id)
@@ -77,7 +76,7 @@ defmodule MilkWeb.RelationController do
     |> Enum.map(&Accounts.get_user(&1.blocked_user_id))
     ~> users
 
-    render(conn, "user.json", users: users)
+    render(conn, "users.json", users: users)
   end
 
   @doc """

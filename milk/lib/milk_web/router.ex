@@ -75,8 +75,8 @@ defmodule MilkWeb.Router do
     get "/relation/followers_list", RelationController, :followers_list
     get "/relation/followers_id_list", RelationController, :followers_id_list
     get "/relation/blocked_users", RelationController, :blocked_users
-    post "/relation/follow", RelationController, :create
-    post "/relation/unfollow", RelationController, :delete
+    post "/relation/follow", RelationController, :follow
+    post "/relation/unfollow", RelationController, :unfollow
     post "/relation/block_user", RelationController, :block_user
     post "/relation/unblock_user", RelationController, :unblock_user
 
