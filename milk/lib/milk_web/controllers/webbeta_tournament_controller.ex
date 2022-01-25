@@ -35,7 +35,7 @@ defmodule MilkWeb.WebbetaTournamentController do
   @doc """
     params:
       offset: int
-      tag_ids: array of tag_id
+      tags: array of tag_id
       date_from: date
       date_to : date
       rule: basic | flipban | flipban_roundrobin

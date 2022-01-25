@@ -4559,18 +4559,18 @@ defmodule Milk.Tournaments do
 
   def browse_filter(params) do
     offset = params["offset"] # int
-    tag_ids = params["tag_ids"] # array of tag_id
+    tags = params["tags"] # array of tag_id
     date_from = params["date_from"] # date
     date_to = params["date_to"] # date
     rule = params["rule"] # basic | flipban | flipban_roundrobin
 
     tournament = Tournament
 
-    if tag_ids do
+    if tags do
       tournament
       |> join(:inner, [t], tag in assoc(t, :tags))
       |> group_by([t, tr], [t.id])
-      |> having([t, tr], fragment("? <@ array_agg(?)", ^tag_ids, tr.id)) # NOTE: about <@ operator https://www.postgresql.org/docs/14/functions-array.html
+      |> having([t, tr], fragment("? <@ array_agg(?)", ^tags, tr.id)) # NOTE: about <@ operator https://www.postgresql.org/docs/14/functions-array.html
     else tournament
     end ~> tournament
 
