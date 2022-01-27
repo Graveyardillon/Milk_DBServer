@@ -683,16 +683,16 @@ defmodule MilkWeb.TournamentController do
 
   defp validate_master_id?(%Tournament{master_id: mid}, master_id), do: master_id == mid
 
-  defp do_start(%Tournament{is_team: true, master_id: master_id} = tournament),
-    do: start_team_tournament(master_id, tournament)
+  defp do_start(%Tournament{is_team: true} = tournament),
+    do: start_team_tournament(tournament)
   defp do_start(%Tournament{is_team: false, master_id: master_id} = tournament),
     do: start_tournament(master_id, tournament)
 
-  defp start_team_tournament(master_id, tournament) do
+  defp start_team_tournament(tournament) do
     case tournament.rule do
       # XXX: start_team_basicを用意できていないせい
-      "basic"              -> Progress.start_team_flipban(master_id, tournament)
-      "flipban"            -> Progress.start_team_flipban(master_id, tournament)
+      "basic"              -> Progress.start_team_flipban(tournament)
+      "flipban"            -> Progress.start_team_flipban(tournament)
       "flipban_roundrobin" -> Progress.start_team_flipban_round_robin(tournament)
       _                    -> {:error, "unsupported tournament rule", nil}
     end

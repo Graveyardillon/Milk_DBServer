@@ -812,10 +812,10 @@ defmodule Milk.Tournaments.Progress do
 
   # NOTE: チーム大会スタートに関する関数群
 
-  @spec start_team_flipban(integer(), Tournament.t()) :: {:ok, match_list(), match_list_with_fight_result()} | {:error, String.t(), nil}
-  def start_team_flipban(master_id, tournament) do
+  @spec start_team_flipban(Tournament.t()) :: {:ok, match_list(), match_list_with_fight_result()} | {:error, String.t(), nil}
+  def start_team_flipban(tournament) do
     tournament.id
-    |> Tournaments.start_team_tournament(master_id)
+    |> Tournaments.start_team_tournament(tournament.master_id)
     |> case do
       {:ok, _}        -> generate_team_flipban_matches(tournament)
       {:error, error} -> {:error, error, nil}
@@ -828,8 +828,8 @@ defmodule Milk.Tournaments.Progress do
     ~> teams
     |> Enum.map(&Map.get(&1, :id))
     |> Tournaments.generate_matchlist()
-    ~> {:ok, match_list}
     |> elem(1)
+    ~> match_list
     |> insert_match_list(tournament.id)
 
     count = length(teams)
@@ -864,6 +864,8 @@ defmodule Milk.Tournaments.Progress do
   def start_team_flipban_round_robin(%Tournament{id: tournament_id, master_id: master_id} = tournament) do
     with {:ok, _}          <- Tournaments.start_team_tournament(tournament_id, master_id),
          {:ok, match_list} <- generate_team_flipban_roundrobin_matches(tournament),
+         match_list        <-%{"rematch_index" => 0, "current_match_index" => 0, "match_list" => match_list},
+         {:ok, nil}        <- __MODULE__.insert_match_list(match_list, tournament_id),
          {:ok, _}          <- Tournaments.set_proper_round_robin_rank(match_list) do
       {:ok, nil, nil}
     else
@@ -876,14 +878,6 @@ defmodule Milk.Tournaments.Progress do
     |> Tournaments.get_confirmed_teams()
     |> Enum.map(&Map.get(&1, :id))
     |> RoundRobin.generate_match_list()
-    |> elem(1)
-    ~> match_list
-
-    insert_match_list(%{"rematch_index" => 0, "current_match_index" => 0, "match_list" => match_list}, tournament.id)
-
-    Tournaments.initialize_team_rank(tournament.id)
-
-    {:ok, match_list}
   end
 
   @doc """
