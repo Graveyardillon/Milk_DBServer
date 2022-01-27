@@ -1,4 +1,4 @@
-defmodule Milk.Tournaments.Progress.TeamRoundRobinWinCountLog do
+defmodule Milk.Tournaments.Progress.TeamWinCountLog do
   @moduledoc """
   総当たり戦のときのチーム勝利数ログを管理するテーブル
   """
@@ -7,7 +7,7 @@ defmodule Milk.Tournaments.Progress.TeamRoundRobinWinCountLog do
 
   import Ecto.Changeset
 
-  schema "team_round_robin_win_count_log" do
+  schema "team_win_count_log" do
     field :team_id, :integer
     field :win_count, :integer
 

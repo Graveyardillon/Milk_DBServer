@@ -1,10 +1,17 @@
 defmodule Milk.Tournaments.Team do
+  @moduledoc """
+  チームのスキーマ
+  """
   use Milk.Schema
 
   import Ecto.Changeset
 
-  alias Milk.Tournaments.Tournament
-  alias Milk.Tournaments.TeamMember
+  alias Milk.Tournaments.{
+    Tournament,
+    TeamMember
+  }
+  alias Milk.Tournaments.Progress.TeamWinCount
+
 
   @type t :: %__MODULE__{
           icon_path: String.t() | nil,
@@ -27,6 +34,7 @@ defmodule Milk.Tournaments.Team do
 
     belongs_to :tournament, Tournament
     has_many :team_member, TeamMember
+    has_one :win_count, TeamWinCount
 
     timestamps()
   end

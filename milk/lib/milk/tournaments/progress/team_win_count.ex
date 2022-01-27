@@ -1,4 +1,4 @@
-defmodule Milk.Tournaments.Progress.TeamRoundRobinWinCount do
+defmodule Milk.Tournaments.Progress.TeamWinCount do
   @moduledoc """
   総当たり戦のときのチーム勝利数を管理するテーブル
   """
@@ -16,7 +16,7 @@ defmodule Milk.Tournaments.Progress.TeamRoundRobinWinCount do
     update_time: any()
   }
 
-  schema "team_round_robin_win_count" do
+  schema "team_win_count" do
     field :win_count, :integer, default: 0
     belongs_to :team, Team
 

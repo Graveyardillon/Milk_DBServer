@@ -34,7 +34,8 @@ defmodule Milk.Tournaments.Progress do
     BestOfXTournamentMatchLog,
     MatchListWithFightResultLog,
     RoundRobinLog,
-    SingleTournamentMatchLog
+    SingleTournamentMatchLog,
+    TeamWinCount
   }
 
   alias Tournamex.RoundRobin
@@ -915,4 +916,23 @@ defmodule Milk.Tournaments.Progress do
 
   defp get_team_log_id(%TeamLog{team_id: id}), do: id
   defp get_team_log_id(_), do: nil
+
+  def create_team_win_count(attrs) do
+    %TeamWinCount{}
+    |> TeamWinCount.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  def get_team_win_count_by_team_id(team_id) do
+    TeamWinCount
+    |> where([twc], twc.team_id == ^team_id)
+    |> Repo.one()
+  end
+
+  def update_team_win_count_by_team_id(team_id, attrs) do
+    team_id
+    |> __MODULE__.get_team_win_count_by_team_id()
+    |> TeamWinCount.changeset(attrs)
+    |> Repo.update()
+  end
 end
