@@ -163,12 +163,6 @@ defmodule MilkWeb.TournamentController do
         followers = Relations.get_followers(master_id)
         tournament = Map.put(tournament, :followers, followers)
 
-        Accounts.gain_score(%{
-          "user_id" => master_id,
-          "game_name" => game_name,
-          "score" => 7
-        })
-
         add_queue_tournament_start_push_notice(tournament)
         discord_process_on_create(tournament)
 
@@ -203,16 +197,12 @@ defmodule MilkWeb.TournamentController do
   """
   def show(conn, %{"user_id" => user_id, "tournament_id" => tournament_id}) do
     tournament_id = Tools.to_integer_as_needed(tournament_id)
+    user_id = Tools.to_integer_as_needed(user_id)
 
     tournament_id
     |> Tournaments.get_tournament_including_logs()
     |> case do
       {:ok, %Tournament{} = tournament} ->
-        unless is_nil(user_id) do
-          user_id = Tools.to_integer_as_needed(user_id)
-
-          Accounts.gain_score(%{"user_id" => user_id, "game_name" => tournament.game_name, "score" => 1})
-        end
 
         team = Enum.filter(tournament.team, fn team -> team.is_confirmed end)
 
@@ -229,12 +219,6 @@ defmodule MilkWeb.TournamentController do
         render(conn, "tournament_info.json", tournament: tournament)
 
       {:ok, %TournamentLog{} = tournament_log} ->
-        unless is_nil(user_id) do
-          user_id = Tools.to_integer_as_needed(user_id)
-
-          Accounts.gain_score(%{"user_id" => user_id, "game_name" => tournament_log.game_name, "score" => 1})
-        end
-
         entrants = Log.get_entrant_logs_by_tournament_id(tournament_log.tournament_id)
         tournament_log = Map.put(tournament_log, :entrants, entrants)
 

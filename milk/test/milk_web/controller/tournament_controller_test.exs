@@ -21,8 +21,6 @@ defmodule MilkWeb.TournamentControllerTest do
     Repo,
     Tournaments
   }
-
-  alias Milk.Accounts.ActionHistory
   alias Milk.Tournaments.Progress
 
   require Logger
@@ -272,19 +270,6 @@ defmodule MilkWeb.TournamentControllerTest do
         end)
         |> Enum.empty?()
         |> assert()
-      end)
-
-      ActionHistory
-      |> where([ah], ah.user_id == ^tournament["master_id"])
-      |> Repo.all()
-      |> Enum.map(fn action_history ->
-        assert action_history.game_name == tournament["game_name"]
-        assert action_history.user_id == tournament["master_id"]
-        assert action_history.gain == 7
-      end)
-      |> length()
-      |> then(fn len ->
-        assert len == 1
       end)
     end
 
@@ -825,19 +810,6 @@ defmodule MilkWeb.TournamentControllerTest do
             assert data["url"] == tournament.url
             assert data["is_started"] == tournament.is_started
           end).()
-
-      ActionHistory
-      |> where([ah], ah.user_id == ^tournament.master_id)
-      |> Repo.all()
-      |> Enum.map(fn action_history ->
-        assert action_history.game_name == tournament.game_name
-        assert action_history.user_id == tournament.master_id
-        assert action_history.gain == 1
-      end)
-      |> length()
-      |> (fn len ->
-            assert len == 1
-          end).()
     end
 
     test "get tournament log with user_id", %{conn: conn, tournament: tournament} do
@@ -878,31 +850,6 @@ defmodule MilkWeb.TournamentControllerTest do
             assert data["capacity"] == tournament.capacity
             assert data["master_id"] == tournament.master_id
             assert data["url"] == tournament.url
-          end).()
-
-      ActionHistory
-      |> where([ah], ah.user_id == ^tournament.master_id)
-      |> Repo.all()
-      |> Enum.map(fn action_history ->
-        assert action_history.game_name == tournament.game_name
-        assert action_history.user_id == tournament.master_id
-        assert action_history.gain == 1
-      end)
-      |> length()
-      |> (fn len ->
-            assert len == 1
-          end).()
-    end
-
-    test "cannot get action history", %{conn: conn, tournament: tournament} do
-      get(conn, Routes.tournament_path(conn, :show), %{"tournament_id" => tournament.id})
-
-      ActionHistory
-      |> where([ah], ah.user_id == ^tournament.master_id)
-      |> Repo.all()
-      |> length()
-      |> (fn len ->
-            assert len == 0
           end).()
     end
   end
