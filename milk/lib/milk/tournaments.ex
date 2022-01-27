@@ -2373,27 +2373,29 @@ defmodule Milk.Tournaments do
     end
   end
 
-  def rematch_round_robin_as_needed(%{"match_list" => match_list, "current_match_index" => current_match_index, "rematch_index" => rematch_index} = entire_match_list, tournament_id) do
-    if length(match_list) === current_match_index do
-      tournament_id
-      |> __MODULE__.get_confirmed_teams()
-      ~> teams
-      |> Enum.map(&RoundRobin.count_win(match_list, &1.id))
-      ~> win_numbers
+  @doc """
+  1位で同点のユーザーが存在する場合は、、新しい表を生成して新しいマッチを開始する処理
+  """
+  @spec rematch_round_robin_as_needed(map(), integer()) :: {:ok, nil | :regenerated} | {:error, String.t()}
+  def rematch_round_robin_as_needed(%{"match_list" => match_list, "current_match_index" => current_match_index, "rematch_index" => rematch_index} = entire_match_list, tournament_id) when length(match_list) === current_match_index do
+    tournament_id
+    |> __MODULE__.get_confirmed_teams()
+    ~> teams
+    |> Enum.map(&RoundRobin.count_win(match_list, &1.id))
+    ~> win_numbers
 
-      max_win_count = Enum.max(win_numbers)
+    max_win_count = Enum.max(win_numbers)
 
-      win_numbers
-      |> Enum.filter(&(&1 == max_win_count))
-      |> length()
-      |> case do
-        1 -> {:ok, nil}
-        _ -> regenerate_round_robin_match_list(entire_match_list, teams, max_win_count, rematch_index)
-      end
-    else
-      {:ok, nil}
+    win_numbers
+    |> Enum.filter(&(&1 == max_win_count))
+    |> length()
+    |> case do
+      1 -> {:ok, nil}
+      _ -> regenerate_round_robin_match_list(entire_match_list, teams, max_win_count, rematch_index)
     end
   end
+
+  def rematch_round_robin_as_needed(_, _), do: {:ok, nil}
 
   defp store_round_robin_log(%{"match_list" => match_list, "rematch_index" => rematch_index}, tournament_id),
     do: Progress.create_round_robin_log(%{"match_list_str" => inspect(match_list), "rematch_index" => rematch_index, "tournament_id" => tournament_id})
