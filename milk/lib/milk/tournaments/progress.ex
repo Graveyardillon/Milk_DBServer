@@ -866,7 +866,7 @@ defmodule Milk.Tournaments.Progress do
          {:ok, match_list} <- generate_team_flipban_roundrobin_matches(tournament),
          match_list        <-%{"rematch_index" => 0, "current_match_index" => 0, "match_list" => match_list},
          {:ok, nil}        <- __MODULE__.insert_match_list(match_list, tournament_id),
-         {:ok, _}          <- Tournaments.set_proper_round_robin_rank(match_list) do
+         {:ok, _}          <- Tournaments.set_proper_round_robin_team_rank(match_list, tournament_id) do
       {:ok, nil, nil}
     else
       {:error, error} -> {:error, error, nil}

@@ -3619,7 +3619,7 @@ defmodule MilkWeb.TournamentControllerTest do
         assert json_response(conn, 200)["result"]
         assert json_response(conn, 200)["state"] == "ShouldFlipCoin"
         assert json_response(conn, 200)["is_leader"]
-        assert json_response(conn, 200)["rank"] == capacity
+        assert json_response(conn, 200)["rank"] == 1
 
         member_id_list
         |> Enum.map(fn member_id ->

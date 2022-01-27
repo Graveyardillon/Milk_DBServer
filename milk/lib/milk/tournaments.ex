@@ -1631,19 +1631,7 @@ defmodule Milk.Tournaments do
 
   @spec promote_round_robin_team_rank([any()], integer()) :: :ok
   defp promote_round_robin_team_rank(match_list, tournament_id) do
-    tournament_id
-    |> __MODULE__.get_confirmed_teams()
-    |> Enum.map(fn team ->
-      win_count = RoundRobin.count_win(match_list["match_list"], team.id)
-      {team, win_count}
-    end)
-    |> Enum.sort_by(&elem(&1, 1))
-    |> Enum.reverse()
-    ~> teams_with_win_count
-
-    Enum.each(teams_with_win_count, fn {team, _} ->
-      __MODULE__.update_team(team, %{rank: Enum.find_index(teams_with_win_count, &(elem(&1, 0).id == team.id)) + 1})
-    end)
+    __MODULE__.set_proper_round_robin_team_rank(match_list, tournament_id)
   end
 
   defp delete_old_match_info(tournament_id, match_list, loser) do
@@ -3179,15 +3167,42 @@ defmodule Milk.Tournaments do
   @doc """
   総当たり戦時のランクを適切なものにする
   rematch後にまだいるやつらは順位が高いはずだから、そいつらの順位を上げたあとにそれ以外のやつらの順位を操作する
+  TODO: チーム用であることを明記
   """
-  def set_proper_round_robin_rank(%{"match_list" => match_list, "rematch_index" => 0}) do
+  def set_proper_round_robin_team_rank(%{"match_list" => match_list, "rematch_index" => 0}, tournament_id) do
+    tournament_id
+    |> __MODULE__.get_confirmed_teams()
+    |> Enum.map(fn team ->
+      win_count = RoundRobin.count_win(match_list, team.id)
+      Map.put(team, :win_count, win_count)
+    end)
+    |> Enum.sort(&(&1.win_count >= &2.win_count))
+    ~> sorted_teams
 
-    {:ok, nil}
+    sorted_teams
+    |> Enum.map(fn team ->
+       __MODULE__.update_team(team, %{rank: calculate_round_robin_rank(team.id, sorted_teams)})
+    end)
+    |> Enum.all?(&match?({:ok, _}, &1))
+    |> Tools.boolean_to_tuple()
   end
 
   # TODO: rematchが複数回行われてもいいようにする
-  def set_proper_round_robin_rank(%{"match_list" => match_list, "rematch_index" => rematch_index}) do
+  def set_proper_round_robin_team_rank(%{"match_list" => match_list, "rematch_index" => rematch_index}, tournament_id) do
 
+  end
+
+  defp calculate_round_robin_rank(id, sorted_teams, last_win_count \\ 0, rank \\ 1, count \\ 1)
+  defp calculate_round_robin_rank(_, [], _, _, _), do: nil
+  defp calculate_round_robin_rank(id, [%Team{id: team_id} | _], _, rank, _) when id == team_id, do: rank
+  defp calculate_round_robin_rank(id, sorted_teams, last_win_count, rank, count) do
+    [team | sorted_teams] = sorted_teams
+
+    rank = if last_win_count != team.win_count, do: count, else: rank
+    last_win_count = team.win_count
+    count = count + 1
+
+    calculate_round_robin_rank(id, sorted_teams, last_win_count, rank, count)
   end
 
   @doc """
