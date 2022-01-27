@@ -830,7 +830,7 @@ defmodule Milk.Tournaments.Progress do
     |> Tournaments.generate_matchlist()
     |> elem(1)
     ~> match_list
-    |> insert_match_list(tournament.id)
+    |> __MODULE__.insert_match_list(tournament.id)
 
     count = length(teams)
     Tournaments.initialize_team_rank(match_list, count)

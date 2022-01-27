@@ -18,7 +18,6 @@ defmodule MilkWeb.TournamentControllerTest do
     Notif,
     Platforms,
     Relations,
-    Repo,
     Tournaments
   }
   alias Milk.Tournaments.Progress
@@ -249,7 +248,7 @@ defmodule MilkWeb.TournamentControllerTest do
 
       conn = post(conn, Routes.tournament_path(conn, :show, %{"tournament_id" => id}))
 
-      assert tournament = json_response(conn, 200)["data"]
+      assert json_response(conn, 200)["data"]
       refute json_response(conn, 200)["is_log"]
 
       json_response(conn, 200)

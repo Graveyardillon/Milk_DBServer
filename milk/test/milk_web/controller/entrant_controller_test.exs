@@ -5,7 +5,6 @@ defmodule MilkWeb.EntrantControllerTest do
 
   alias Milk.{
     Accounts,
-    Repo,
     Tournaments
   }
 
@@ -92,7 +91,7 @@ defmodule MilkWeb.EntrantControllerTest do
                "id" => _id,
                "rank" => _rank,
                "tournament_id" => _tournament_id,
-               "user_id" => user_id
+               "user_id" => _
              } = json_response(conn, 200)["data"]
     end
 

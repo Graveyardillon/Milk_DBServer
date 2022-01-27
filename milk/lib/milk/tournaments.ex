@@ -3179,13 +3179,13 @@ defmodule Milk.Tournaments do
   @doc """
   総当たり戦時のランクを適切なものにする
   rematch後にまだいるやつらは順位が高いはずだから、そいつらの順位を上げたあとにそれ以外のやつらの順位を操作する
-  TODO: rematchが複数回行われてもいいようにする
   """
   def set_proper_round_robin_rank(%{"match_list" => match_list, "rematch_index" => 0}) do
 
     {:ok, nil}
   end
 
+  # TODO: rematchが複数回行われてもいいようにする
   def set_proper_round_robin_rank(%{"match_list" => match_list, "rematch_index" => rematch_index}) do
 
   end
