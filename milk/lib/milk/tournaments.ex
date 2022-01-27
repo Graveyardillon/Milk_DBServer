@@ -3177,6 +3177,14 @@ defmodule Milk.Tournaments do
   end
 
   @doc """
+  総当たり戦時のランクを初期化する
+  全員1位にする
+  """
+  def set_proper_round_robin_rank(match_list) do
+    {:ok, nil}
+  end
+
+  @doc """
   Checks tournament state.
   """
   @spec state!(integer(), integer()) :: String.t()

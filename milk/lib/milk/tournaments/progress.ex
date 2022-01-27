@@ -861,11 +861,12 @@ defmodule Milk.Tournaments.Progress do
     {:ok, match_list, match_list_with_fight_result}
   end
 
-  def start_team_flipban_round_robin(tournament) do
-    tournament.id
-    |> Tournaments.start_team_tournament(tournament.master_id)
-    |> case do
-      {:ok, _}        -> generate_team_flipban_roundrobin_matches(tournament)
+  def start_team_flipban_round_robin(%Tournament{id: tournament_id, master_id: master_id} = tournament) do
+    with {:ok, _}          <- Tournaments.start_team_tournament(tournament_id, master_id),
+         {:ok, match_list} <- generate_team_flipban_roundrobin_matches(tournament),
+         {:ok, _}          <- Tournaments.set_proper_round_robin_rank(match_list) do
+      {:ok, nil, nil}
+    else
       {:error, error} -> {:error, error, nil}
     end
   end
@@ -882,9 +883,7 @@ defmodule Milk.Tournaments.Progress do
 
     Tournaments.initialize_team_rank(tournament.id)
 
-    #{:ok, match_list, nil}
-    # XXX: 処理の都合でmatch_listを返さないようにしている
-    {:ok, nil, nil}
+    {:ok, match_list}
   end
 
   @doc """
