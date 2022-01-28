@@ -3216,7 +3216,7 @@ defmodule Milk.Tournaments do
     |> __MODULE__.get_confirmed_teams()
     |> Repo.preload(:win_count)
     |> Enum.map(fn team ->
-      win_count = team.win_count + RoundRobin.count_win(match_list, team.id)
+      win_count = team.win_count.win_count + RoundRobin.count_win(match_list, team.id)
       Map.put(team, :win_count, win_count)
     end)
     |> Enum.sort(&(&1.win_count >= &2.win_count))
