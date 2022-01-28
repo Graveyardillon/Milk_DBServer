@@ -1864,11 +1864,16 @@ defmodule Milk.Tournaments do
       end)
       |> Enum.map(&elem(&1, 0))
       |> List.first()
-      |> String.split("-")
-      |> Enum.map(&String.to_integer(&1))
-      |> Enum.reject(&(&1 == team.id))
-      |> List.first()
-      |> do_get_opponent_team()
+      |> case do
+        nil -> {:error, "opponent does not exist"}
+        match ->
+          match
+          |> String.split("-")
+          |> Enum.map(&String.to_integer(&1))
+          |> Enum.reject(&(&1 == team.id))
+          |> List.first()
+          |> do_get_opponent_team()
+      end
     end
   end
 
@@ -2410,6 +2415,7 @@ defmodule Milk.Tournaments do
     |> Map.get(:tournament_id)
     ~> tournament_id
 
+    __MODULE__.set_proper_round_robin_team_rank(entire_match_list, tournament_id)
     store_round_robin_log(entire_match_list, tournament_id)
 
     teams
@@ -2417,10 +2423,12 @@ defmodule Milk.Tournaments do
       RoundRobin.count_win(match_list, team.id) === max_win_count
     end)
     |> Enum.map(&Map.get(&1, :id))
+    ~> win_teams
     |> __MODULE__.generate_round_robin_match_list()
     ~> generate_round_robin_match_list_result
 
     with {:ok, _, match_list} <- generate_round_robin_match_list_result,
+         {:ok, nil}           <- change_member_states_on_regenerate_round_robin_match_list(win_teams, tournament_id),
          new_match_list       <- %{"rematch_index" => rematch_index + 1, "current_match_index" => 0, "match_list" => match_list},
          {:ok, nil}           <- __MODULE__.set_proper_round_robin_team_rank(new_match_list, tournament_id),
          {:ok, nil}           <- Progress.insert_match_list(new_match_list, tournament_id) do
@@ -2428,6 +2436,23 @@ defmodule Milk.Tournaments do
     else
       _ -> {:error, "Failed regenerating round robin match list"}
     end
+  end
+
+  defp change_member_states_on_regenerate_round_robin_match_list(win_team_id_list, tournament_id) do
+    tournament_id
+    |> __MODULE__.get_confirmed_teams()
+    |> Enum.map(&__MODULE__.get_leader(&1.id))
+    |> Enum.map(fn leader ->
+      if leader.team_id in win_team_id_list do
+        {:ok, nil}
+      else
+        leader.user_id
+        |> Rules.adapt_keyname(tournament_id)
+        |> FlipBanRoundRobin.trigger!(FlipBanRoundRobin.lose_trigger())
+      end
+    end)
+    |> Enum.all?(&match?({:ok, _}, &1))
+    |> Tools.boolean_to_tuple()
   end
 
   @doc """
@@ -3216,8 +3241,8 @@ defmodule Milk.Tournaments do
     |> __MODULE__.get_confirmed_teams()
     |> Repo.preload(:win_count)
     |> Enum.map(fn team ->
-      win_count = team.win_count.win_count + RoundRobin.count_win(match_list, team.id)
-      Map.put(team, :win_count, win_count)
+      wc = team.win_count.win_count + RoundRobin.count_win(match_list, team.id)
+      Map.put(team, :win_count, wc)
     end)
     |> Enum.sort(&(&1.win_count >= &2.win_count))
     ~> sorted_teams
@@ -3236,16 +3261,15 @@ defmodule Milk.Tournaments do
   end
 
   defp calculate_round_robin_rank(id, sorted_teams, last_win_count \\ 0, rank \\ 1, count \\ 1)
-  defp calculate_round_robin_rank(_, [], _, _, _), do: nil
-  defp calculate_round_robin_rank(id, [%Team{id: team_id} | _], _, rank, _) when id == team_id, do: rank
-  defp calculate_round_robin_rank(id, sorted_teams, last_win_count, rank, count) do
-    [team | sorted_teams] = sorted_teams
 
+  defp calculate_round_robin_rank(_, [], _, _, _),                                                                                         do: nil
+  defp calculate_round_robin_rank(id, [%Team{id: team_id, win_count: wc} | _], last_win_count, _, count) when id == team_id and last_win_count != wc, do: count
+  defp calculate_round_robin_rank(id, [%Team{id: team_id, win_count: wc} | _], last_win_count, rank, _)  when id == team_id and last_win_count == wc, do: rank
+
+  defp calculate_round_robin_rank(id, [team | sorted_teams], last_win_count, rank, count) do
     rank = if last_win_count != team.win_count, do: count, else: rank
-    last_win_count = team.win_count
-    count = count + 1
 
-    calculate_round_robin_rank(id, sorted_teams, last_win_count, rank, count)
+    calculate_round_robin_rank(id, sorted_teams, team.win_count, rank, count + 1)
   end
 
   @doc """
