@@ -21,7 +21,6 @@ defmodule Milk.Accounts do
   alias Milk.Discord.User, as: DiscordUser
 
   alias Milk.Accounts.{
-    ActionHistory,
     Auth,
     Device,
     ExternalService,
@@ -549,28 +548,6 @@ defmodule Milk.Accounts do
     else
       {:error, "user does not exist"}
     end
-  end
-
-  @doc """
-  Create an action history.
-  """
-  @spec create_action_history(map()) :: {:ok, ActionHistory.t()} | {:error, Ecto.Changeset.t()}
-  def create_action_history(attrs) do
-    %ActionHistory{}
-    |> ActionHistory.changeset(attrs)
-    |> Repo.insert()
-  end
-
-  @doc """
-  Gain 5 score.
-  レコメンドシステム用にスコアを取得する関数
-  """
-  def gain_score(%{"user_id" => user_id, "game_name" => game_name, "score" => gain}) do
-    __MODULE__.create_action_history(%{
-      "user_id" => user_id,
-      "game_name" => game_name,
-      "gain" => gain
-    })
   end
 
   @doc """

@@ -21,19 +21,9 @@ defmodule MilkWeb.EntrantController do
     entrant_params
     |> Tournaments.create_entrant()
     |> case do
-      {:ok, %Entrant{} = entrant} ->
-        action_history(entrant)
-        render(conn, "show.json", entrant: entrant)
-
-      {:error, error} ->
-        render(conn, "error.json", error: error)
+      {:ok, %Entrant{} = entrant} -> render(conn, "show.json", entrant: entrant)
+      {:error, error}             -> render(conn, "error.json", error: error)
     end
-  end
-
-  defp action_history(entrant) do
-    {:ok, tournament} = Tournaments.get_tournament_including_logs(entrant.tournament_id)
-
-    Accounts.gain_score(%{"user_id" => entrant.user_id, "game_name" => tournament.game_name, "score" => 5})
   end
 
   @doc """

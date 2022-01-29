@@ -163,12 +163,6 @@ defmodule MilkWeb.TournamentController do
         followers = Relations.get_followers(master_id)
         tournament = Map.put(tournament, :followers, followers)
 
-        Accounts.gain_score(%{
-          "user_id" => master_id,
-          "game_name" => game_name,
-          "score" => 7
-        })
-
         add_queue_tournament_start_push_notice(tournament)
         discord_process_on_create(tournament)
 
@@ -203,16 +197,12 @@ defmodule MilkWeb.TournamentController do
   """
   def show(conn, %{"user_id" => user_id, "tournament_id" => tournament_id}) do
     tournament_id = Tools.to_integer_as_needed(tournament_id)
+    user_id = Tools.to_integer_as_needed(user_id)
 
     tournament_id
     |> Tournaments.get_tournament_including_logs()
     |> case do
       {:ok, %Tournament{} = tournament} ->
-        unless is_nil(user_id) do
-          user_id = Tools.to_integer_as_needed(user_id)
-
-          Accounts.gain_score(%{"user_id" => user_id, "game_name" => tournament.game_name, "score" => 1})
-        end
 
         team = Enum.filter(tournament.team, fn team -> team.is_confirmed end)
 
@@ -229,12 +219,6 @@ defmodule MilkWeb.TournamentController do
         render(conn, "tournament_info.json", tournament: tournament)
 
       {:ok, %TournamentLog{} = tournament_log} ->
-        unless is_nil(user_id) do
-          user_id = Tools.to_integer_as_needed(user_id)
-
-          Accounts.gain_score(%{"user_id" => user_id, "game_name" => tournament_log.game_name, "score" => 1})
-        end
-
         entrants = Log.get_entrant_logs_by_tournament_id(tournament_log.tournament_id)
         tournament_log = Map.put(tournament_log, :entrants, entrants)
 
@@ -683,16 +667,16 @@ defmodule MilkWeb.TournamentController do
 
   defp validate_master_id?(%Tournament{master_id: mid}, master_id), do: master_id == mid
 
-  defp do_start(%Tournament{is_team: true, master_id: master_id} = tournament),
-    do: start_team_tournament(master_id, tournament)
+  defp do_start(%Tournament{is_team: true} = tournament),
+    do: start_team_tournament(tournament)
   defp do_start(%Tournament{is_team: false, master_id: master_id} = tournament),
     do: start_tournament(master_id, tournament)
 
-  defp start_team_tournament(master_id, tournament) do
+  defp start_team_tournament(tournament) do
     case tournament.rule do
       # XXX: start_team_basicを用意できていないせい
-      "basic"              -> Progress.start_team_flipban(master_id, tournament)
-      "flipban"            -> Progress.start_team_flipban(master_id, tournament)
+      "basic"              -> Progress.start_team_flipban(tournament)
+      "flipban"            -> Progress.start_team_flipban(tournament)
       "flipban_roundrobin" -> Progress.start_team_flipban_round_robin(tournament)
       _                    -> {:error, "unsupported tournament rule", nil}
     end
@@ -1678,7 +1662,7 @@ defmodule MilkWeb.TournamentController do
   @spec finish_as_needed_on_roundrobin(integer(), integer()) :: {:ok, nil} | {:error, String.t()}
   defp finish_as_needed_on_roundrobin(tournament_id, winner_id) do
     # NOTE: current_match_indexの数字を上げる
-    # NOTE: 同点のユーザーが存在する場合は、、新しい表を生成して新しいマッチを開始する
+    # NOTE: 1位で同点のユーザーが存在する場合は、、新しい表を生成して新しいマッチを開始する
     with match_list when not is_nil(match_list) <- Progress.get_match_list(tournament_id),
          true                                   <- RoundRobin.is_current_matches_finished_all?(match_list),
          {:ok, nil}                             <- Tournaments.increase_current_match_index(match_list, tournament_id),

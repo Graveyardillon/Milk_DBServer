@@ -34,7 +34,8 @@ defmodule Milk.Tournaments.Progress do
     BestOfXTournamentMatchLog,
     MatchListWithFightResultLog,
     RoundRobinLog,
-    SingleTournamentMatchLog
+    SingleTournamentMatchLog,
+    TeamWinCount
   }
 
   alias Tournamex.RoundRobin
@@ -812,10 +813,10 @@ defmodule Milk.Tournaments.Progress do
 
   # NOTE: チーム大会スタートに関する関数群
 
-  @spec start_team_flipban(integer(), Tournament.t()) :: {:ok, match_list(), match_list_with_fight_result()} | {:error, String.t(), nil}
-  def start_team_flipban(master_id, tournament) do
+  @spec start_team_flipban(Tournament.t()) :: {:ok, match_list(), match_list_with_fight_result()} | {:error, String.t(), nil}
+  def start_team_flipban(tournament) do
     tournament.id
-    |> Tournaments.start_team_tournament(master_id)
+    |> Tournaments.start_team_tournament(tournament.master_id)
     |> case do
       {:ok, _}        -> generate_team_flipban_matches(tournament)
       {:error, error} -> {:error, error, nil}
@@ -828,9 +829,9 @@ defmodule Milk.Tournaments.Progress do
     ~> teams
     |> Enum.map(&Map.get(&1, :id))
     |> Tournaments.generate_matchlist()
-    ~> {:ok, match_list}
     |> elem(1)
-    |> insert_match_list(tournament.id)
+    ~> match_list
+    |> __MODULE__.insert_match_list(tournament.id)
 
     count = length(teams)
     Tournaments.initialize_team_rank(match_list, count)
@@ -861,11 +862,14 @@ defmodule Milk.Tournaments.Progress do
     {:ok, match_list, match_list_with_fight_result}
   end
 
-  def start_team_flipban_round_robin(tournament) do
-    tournament.id
-    |> Tournaments.start_team_tournament(tournament.master_id)
-    |> case do
-      {:ok, _}        -> generate_team_flipban_roundrobin_matches(tournament)
+  def start_team_flipban_round_robin(%Tournament{id: tournament_id, master_id: master_id} = tournament) do
+    with {:ok, _}          <- Tournaments.start_team_tournament(tournament_id, master_id),
+         {:ok, match_list} <- generate_team_flipban_roundrobin_matches(tournament),
+         match_list        <- %{"rematch_index" => 0, "current_match_index" => 0, "match_list" => match_list},
+         {:ok, nil}        <- __MODULE__.insert_match_list(match_list, tournament_id),
+         {:ok, _}          <- Tournaments.set_proper_round_robin_team_rank(match_list, tournament_id) do
+      {:ok, nil, nil}
+    else
       {:error, error} -> {:error, error, nil}
     end
   end
@@ -875,16 +879,6 @@ defmodule Milk.Tournaments.Progress do
     |> Tournaments.get_confirmed_teams()
     |> Enum.map(&Map.get(&1, :id))
     |> RoundRobin.generate_match_list()
-    |> elem(1)
-    ~> match_list
-
-    insert_match_list(%{"rematch_index" => 0, "current_match_index" => 0, "match_list" => match_list}, tournament.id)
-
-    Tournaments.initialize_team_rank(tournament.id)
-
-    #{:ok, match_list, nil}
-    # XXX: 処理の都合でmatch_listを返さないようにしている
-    {:ok, nil, nil}
   end
 
   @doc """
@@ -922,4 +916,23 @@ defmodule Milk.Tournaments.Progress do
 
   defp get_team_log_id(%TeamLog{team_id: id}), do: id
   defp get_team_log_id(_), do: nil
+
+  def create_team_win_count(attrs) do
+    %TeamWinCount{}
+    |> TeamWinCount.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  def get_team_win_count_by_team_id(team_id) do
+    TeamWinCount
+    |> where([twc], twc.team_id == ^team_id)
+    |> Repo.one()
+  end
+
+  def update_team_win_count_by_team_id(team_id, attrs) do
+    team_id
+    |> __MODULE__.get_team_win_count_by_team_id()
+    |> TeamWinCount.changeset(attrs)
+    |> Repo.update()
+  end
 end
