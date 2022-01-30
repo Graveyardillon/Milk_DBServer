@@ -520,6 +520,7 @@ defmodule MilkWeb.TournamentController do
     result
     |> is_valid_deadline?(tournament)
     |> is_valid_capacity?(tournament, entrants)
+    |> already_started?(tournament)
     |> already_participated?(entrants, user_id)
     |> already_participated_as_team?(tournament, user_id)
     |> is_valid_event_date?(tournament, user_id)
@@ -551,6 +552,10 @@ defmodule MilkWeb.TournamentController do
   end
   defp is_valid_capacity?(result, %Tournament{capacity: capacity}, entrants) do
     (capacity > length(entrants)) and result
+  end
+
+  defp already_started?(result, tournament) do
+    result and !tournament.is_started
   end
 
   defp already_participated?(result, entrants, user_id) do
