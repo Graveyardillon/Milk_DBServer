@@ -1859,6 +1859,7 @@ defmodule Milk.Tournaments do
       |> Enum.filter(fn {match, _} ->
         match
         |> String.split("-")
+        #|> IO.inspect()
         |> Enum.map(&String.to_integer(&1))
         |> Enum.any?(&(&1 == team.id))
       end)

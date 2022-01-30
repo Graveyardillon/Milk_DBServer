@@ -130,6 +130,7 @@ defmodule Common.Tools do
   String to integer if possible.
   """
   @spec to_integer_as_needed(String.t() | integer()) :: integer()
+  def to_integer_as_needed(""),   do: nil
   def to_integer_as_needed(data) when is_binary(data), do: String.to_integer(data)
   def to_integer_as_needed(data), do: data
 end
