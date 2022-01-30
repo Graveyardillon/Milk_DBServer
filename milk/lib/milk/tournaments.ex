@@ -3235,7 +3235,7 @@ defmodule Milk.Tournaments do
     |> Tools.boolean_to_tuple()
   end
 
-  def set_proper_round_robin_team_rank(%{"match_list" => match_list, "rematch_index" => rematch_index}, tournament_id) do
+  def set_proper_round_robin_team_rank(%{"match_list" => match_list, "rematch_index" => _rematch_index}, tournament_id) do
     # NOTE:
     tournament_id
     |> __MODULE__.get_confirmed_teams()

@@ -159,7 +159,7 @@ defmodule MilkWeb.TournamentController do
     |> Map.put("maps", maps)
     |> Tournaments.create_tournament(thumbnail_path)
     |> case do
-      {:ok, %Tournament{master_id: master_id, game_name: game_name} = tournament} ->
+      {:ok, %Tournament{master_id: master_id} = tournament} ->
         followers = Relations.get_followers(master_id)
         tournament = Map.put(tournament, :followers, followers)
 
@@ -195,9 +195,8 @@ defmodule MilkWeb.TournamentController do
   @doc """
   Show tournament information.
   """
-  def show(conn, %{"user_id" => user_id, "tournament_id" => tournament_id}) do
+  def show(conn, %{"tournament_id" => tournament_id}) do
     tournament_id = Tools.to_integer_as_needed(tournament_id)
-    user_id = Tools.to_integer_as_needed(user_id)
 
     tournament_id
     |> Tournaments.get_tournament_including_logs()
