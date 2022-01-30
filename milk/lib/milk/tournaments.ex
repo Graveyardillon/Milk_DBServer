@@ -2040,6 +2040,7 @@ defmodule Milk.Tournaments do
   defp validate_team_number(num) when num <= 1, do: {:error, "short of teams"}
   defp validate_team_number(_), do: {:ok, nil}
 
+  # TODO: ここで一人の人を除外する処理を入れる
   defp start_team_states!(%Tournament{id: tournament_id, rule: rule}) do
     tournament_id
     |> __MODULE__.get_confirmed_team_members_by_tournament_id()
@@ -2370,6 +2371,7 @@ defmodule Milk.Tournaments do
 
   @doc """
   match_listのcurrent_match_indexをインクリメントする処理
+  TODO: ここで一人の人を除外する処理を入れる
   """
   def increase_current_match_index(match_list, tournament_id) do
     match_list = Map.put(match_list, "current_match_index", match_list["current_match_index"] + 1)

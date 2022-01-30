@@ -881,6 +881,15 @@ defmodule Milk.Tournaments.Progress do
     |> RoundRobin.generate_match_list()
   end
 
+  # NOTE: 一人の人を除外する処理
+  def change_states_in_match_list_of_round_robin(tournament_id, id) do
+    %{"match_list" => match_list, "current_match_index" => current_match_index} = __MODULE__.get_match_list(tournament_id)
+
+    match_list
+    |> Enum.at(current_match_index)
+
+  end
+
   @doc """
   Get necessary id for tournament progress.
   """
@@ -935,4 +944,15 @@ defmodule Milk.Tournaments.Progress do
     |> TeamWinCount.changeset(attrs)
     |> Repo.update()
   end
+
+  @doc """
+  RoundRobinのmatch_strから数字を切り出す関数
+  """
+  def cut_out_numbers_from_match_str_of_round_robin(match_str) when is_binary(match_str) do
+    match_str
+    |> String.split("-")
+    |> Enum.reject(&is_nil(&1))
+    |> Enum.map(&String.to_integer(&1))
+  end
+  def cut_out_numbers_from_match_str_of_round_robin(_), do: nil
 end
