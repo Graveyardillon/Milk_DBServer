@@ -27,6 +27,7 @@ defmodule Milk.Tournaments.Progress do
   }
 
   alias Milk.Tournaments.{
+    Rules,
     Team,
     Tournament
   }
@@ -37,6 +38,7 @@ defmodule Milk.Tournaments.Progress do
     SingleTournamentMatchLog,
     TeamWinCount
   }
+  alias Milk.Tournaments.Rules.FlipBanRoundRobin
 
   alias Tournamex.RoundRobin
 
@@ -867,6 +869,7 @@ defmodule Milk.Tournaments.Progress do
          {:ok, match_list} <- generate_team_flipban_roundrobin_matches(tournament),
          match_list        <- %{"rematch_index" => 0, "current_match_index" => 0, "match_list" => match_list},
          {:ok, nil}        <- __MODULE__.insert_match_list(match_list, tournament_id),
+         {:ok, _}          <- __MODULE__.change_states_in_match_list_of_round_robin(tournament),
          {:ok, _}          <- Tournaments.set_proper_round_robin_team_rank(match_list, tournament_id) do
       {:ok, nil, nil}
     else
@@ -882,12 +885,40 @@ defmodule Milk.Tournaments.Progress do
   end
 
   # NOTE: 一人の人を除外する処理
-  def change_states_in_match_list_of_round_robin(tournament_id, id) do
-    %{"match_list" => match_list, "current_match_index" => current_match_index} = __MODULE__.get_match_list(tournament_id)
+  def change_states_in_match_list_of_round_robin(tournament) do
+    %{"match_list" => match_list, "current_match_index" => current_match_index} = __MODULE__.get_match_list(tournament.id)
 
-    match_list
-    |> Enum.at(current_match_index)
+    match = Enum.at(match_list, current_match_index)
 
+    if is_nil(match) do
+      {:ok, nil}
+    else
+      match
+      |> Enum.map(fn {match, _} ->
+        match
+        |> __MODULE__.cut_out_numbers_from_match_str_of_round_robin()
+        |> case do
+          [_, _] -> {:ok, nil}
+          [num]  -> do_change_states_in_match_list_of_round_robin(tournament, num)
+          _      -> raise "Invalid match str"
+        end
+      end)
+      |> Enum.all?(&match?({:ok, _}, &1))
+      |> Tools.boolean_to_tuple()
+    end
+  end
+
+  defp do_change_states_in_match_list_of_round_robin(%Tournament{is_team: true, id: tournament_id, rule: rule}, team_id) do
+    team_id
+    |> Tournaments.get_leader()
+    |> Map.get(:user_id)
+    |> Rules.adapt_keyname(tournament_id)
+    ~> keyname
+
+    case rule do
+      "flipban_roundrobin" -> FlipBanRoundRobin.trigger!(keyname, FlipBanRoundRobin.waiting_for_next_match_trigger())
+      _                    -> {:error, "Invalid State"}
+    end
   end
 
   @doc """
@@ -952,6 +983,7 @@ defmodule Milk.Tournaments.Progress do
     match_str
     |> String.split("-")
     |> Enum.reject(&is_nil(&1))
+    |> Enum.reject(&(&1 == ""))
     |> Enum.map(&String.to_integer(&1))
   end
   def cut_out_numbers_from_match_str_of_round_robin(_), do: nil

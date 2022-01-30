@@ -113,6 +113,7 @@ defmodule Milk.Tournaments.Rules.FlipBan do
       is_pending(),
       is_loser(),
       is_alone(),
+      is_waiting_for_score_input(),
       is_finished()
     ]
   end
