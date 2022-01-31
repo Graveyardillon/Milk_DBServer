@@ -986,5 +986,5 @@ defmodule Milk.Tournaments.Progress do
     |> Enum.reject(&(&1 == ""))
     |> Enum.map(&String.to_integer(&1))
   end
-  def cut_out_numbers_from_match_str_of_round_robin(_), do: nil
+  def cut_out_numbers_from_match_str_of_round_robin(_), do: []
 end
