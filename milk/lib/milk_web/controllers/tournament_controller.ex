@@ -1237,9 +1237,8 @@ defmodule MilkWeb.TournamentController do
     end
   end
 
-  # NOTE: Discordからのリクエストを受け付けるので、
+  # NOTE: Discordからのリクエストを受け付けるためのもの
   def claim_win(conn, %{"discord_id" => discord_id, "discord_server_id" => discord_server_id, "token" => "d3wJSGVPn7jRgqjY"}) do
-
     discord_id = Tools.to_integer_as_needed(discord_id)
 
     user = Accounts.get_user_by_discord_id(discord_id)
@@ -2061,13 +2060,13 @@ defmodule MilkWeb.TournamentController do
   end
 
   @doc """
-  マッチリストの再生性を手動で試みるための関数
-  TODO: テストは書いてない
+  マッチリストの再生成を手動で試みるための関数
+  DEBUG用関数
   """
   def rematch_round_robin_as_needed(conn, %{"tournament_id" => tournament_id}) do
     tournament_id
     |> Tools.to_integer_as_needed()
-    |> Progress.get_match_list
+    |> Progress.get_match_list()
     |> Tournaments.rematch_round_robin_as_needed(tournament_id)
     |> case do
       {:ok, nil}          -> json(conn, %{msg: "did not rematch"})

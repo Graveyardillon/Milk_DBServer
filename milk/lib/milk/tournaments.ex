@@ -2382,7 +2382,6 @@ defmodule Milk.Tournaments do
 
   @doc """
   match_listのcurrent_match_indexをインクリメントする処理
-  TODO: ここで一人の人を除外する処理を入れる
   """
   def increase_current_match_index(match_list, tournament_id) do
     match_list = Map.put(match_list, "current_match_index", match_list["current_match_index"] + 1)

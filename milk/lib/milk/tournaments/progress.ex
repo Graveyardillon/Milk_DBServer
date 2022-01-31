@@ -44,7 +44,7 @@ defmodule Milk.Tournaments.Progress do
 
   require Logger
 
-  @type match_list :: [any()] | integer()
+  @type match_list :: [any()] | integer() | map()
   @type match_list_with_fight_result :: [any()] | map()
 
   defp conn() do
