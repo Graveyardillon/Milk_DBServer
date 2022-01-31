@@ -227,9 +227,6 @@ defmodule MilkWeb.TournamentController do
         render(conn, "error.json", error: nil)
     end
   end
-  def show(conn, %{"tournament_id" => tournament_id}) do
-    show(conn, %{"user_id" => nil, "tournament_id" => tournament_id})
-  end
 
   # NOTE: web版で必要になっているから置いてあるが、必要なくなったら消す
   @doc """
@@ -1668,8 +1665,8 @@ defmodule MilkWeb.TournamentController do
     # NOTE: 1位で同点のユーザーが存在する場合は、、新しい表を生成して新しいマッチを開始する
     with match_list when not is_nil(match_list) <- Progress.get_match_list(tournament_id),
          true                                   <- RoundRobin.is_current_matches_finished_all?(match_list),
-         {:ok, nil}                             <- Tournaments.increase_current_match_index(match_list, tournament_id),
          {:ok, nil}                             <- Tournaments.break_waiting_for_next_match(match_list, tournament_id),
+         {:ok, nil}                             <- Tournaments.increase_current_match_index(match_list, tournament_id),
          match_list when not is_nil(match_list) <- Progress.get_match_list(tournament_id),
          {:ok, nil}                             <- Tournaments.rematch_round_robin_as_needed(match_list, tournament_id),
          true                                   <- length(match_list["match_list"]) === match_list["current_match_index"],
