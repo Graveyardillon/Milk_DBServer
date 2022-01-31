@@ -8,6 +8,8 @@ defmodule Milk.Profiles do
 
   alias Milk.Log.{
     EntrantLog,
+    TeamMemberLog,
+    TeamLog,
     TournamentLog
   }
 
@@ -29,28 +31,29 @@ defmodule Milk.Profiles do
       Map.put(entrant_log, :tournament_log, tlog)
     end)
     |> Enum.reject(&is_nil(&1.tournament_log))
+    ~> records
 
-    # TeamMemberLog
-    # |> where([tm], tm.user_id == ^user.id)
-    # |> Repo.all()
-    # |> Enum.map(fn member ->
-    #   TeamLog
-    #   |> where([t], t.id == ^member.team_id)
-    #   |> Repo.one()
-    #   ~> team_log
-    #   |> is_nil()
-    #   |> unless do
-    #     TournamentLog
-    #     |> where([tl], tl.tournament_id == ^team_log.tournament_id)
-    #     |> Repo.one()
-    #     ~> tlog
+    TeamMemberLog
+    |> where([tm], tm.user_id == ^user.id)
+    |> Repo.all()
+    |> Enum.map(fn member ->
+      TeamLog
+      |> where([t], t.id == ^member.team_id)
+      |> Repo.one()
+      ~> team_log
+      |> is_nil()
+      |> unless do
+        TournamentLog
+        |> where([tl], tl.tournament_id == ^team_log.tournament_id)
+        |> Repo.one()
+        ~> tlog
 
-    #     Map.put(team_log, :tournament_log, tlog)
-    #   end
-    # end)
-    # |> Enum.filter(fn log -> !is_nil(log) end)
-    # |> Enum.concat(records)
-    # |> Enum.uniq()
+        Map.put(team_log, :tournament_log, tlog)
+      end
+    end)
+    |> Enum.filter(fn log -> !is_nil(log) end)
+    |> Enum.concat(records)
+    |> Enum.uniq()
   end
 
   def update_recordlist(%User{} = user, record_list) do

@@ -26,7 +26,6 @@ defmodule MilkWeb.ProfileController do
     |> Accounts.get_user()
     ~> user
     |> if do
-      # games = Profiles.get_game_list(user)
       records = Profiles.get_records(user)
 
       external_services = Accounts.get_external_services(user_id)
