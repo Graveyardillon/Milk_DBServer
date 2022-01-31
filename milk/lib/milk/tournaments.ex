@@ -1579,15 +1579,17 @@ defmodule Milk.Tournaments do
     |> Enum.at(current_match_index)
     |> Enum.filter(fn {match, _} ->
       match
-      |> String.split("-")
-      |> Enum.map(&String.to_integer(&1))
+      |> Progress.cut_out_numbers_from_match_str_of_round_robin()
+      # |> String.split("-")
+      # |> Enum.map(&String.to_integer(&1))
       |> Enum.any?(&(&1 == loser))
     end)
     |> List.first()
     |> then(fn {match, _} ->
       match
-      |> String.split("-")
-      |> Enum.map(&String.to_integer(&1))
+      |> Progress.cut_out_numbers_from_match_str_of_round_robin()
+      # |> String.split("-")
+      # |> Enum.map(&String.to_integer(&1))
       |> Enum.reject(&(&1 == loser))
       |> hd()
       ~> winner_id
@@ -1766,14 +1768,16 @@ defmodule Milk.Tournaments do
     |> Enum.at(current_match_index)
     |> Enum.filter(fn {match, _} ->
       match
-      |> String.split("-")
-      |> Enum.map(&String.to_integer(&1))
+      # |> String.split("-")
+      # |> Enum.map(&String.to_integer(&1))
+      |> Progress.cut_out_numbers_from_match_str_of_round_robin()
       |> Enum.any?(&(&1 == id))
     end)
     |> Enum.map(&elem(&1, 0))
     |> List.first()
-    |> String.split("-")
-    |> Enum.map(&String.to_integer(&1))
+    |> Progress.cut_out_numbers_from_match_str_of_round_robin()
+    # |> String.split("-")
+    # |> Enum.map(&String.to_integer(&1))
   end
 
   def find_match(match_list, id, result) when is_list(match_list) do
@@ -1858,8 +1862,9 @@ defmodule Milk.Tournaments do
       match
       |> Enum.filter(fn {match, _} ->
         match
-        |> String.split("-")
-        |> Enum.map(&String.to_integer(&1))
+        # |> String.split("-")
+        # |> Enum.map(&Tools.to_integer_as_needed(&1))
+        |> Progress.cut_out_numbers_from_match_str_of_round_robin()
         |> Enum.any?(&(&1 == team.id))
       end)
       |> Enum.map(&elem(&1, 0))
@@ -1868,8 +1873,9 @@ defmodule Milk.Tournaments do
         nil -> {:error, "opponent does not exist"}
         match ->
           match
-          |> String.split("-")
-          |> Enum.map(&String.to_integer(&1))
+          # |> String.split("-")
+          # |> Enum.map(&Tools.to_integer_as_needed(&1))
+          |> Progress.cut_out_numbers_from_match_str_of_round_robin()
           |> Enum.reject(&(&1 == team.id))
           |> List.first()
           |> do_get_opponent_team()
@@ -2108,6 +2114,7 @@ defmodule Milk.Tournaments do
 
   @doc """
   マッチングしているユーザー同士がIsWaitingForStartになったら発火する処理
+  TODO: 奇数人だとエラーを吐くので、それに対応
   """
   def break_waiting_state_as_needed(%Tournament{rule: "flipban_roundrobin"} = tournament, user_id) do
     id = Progress.get_necessary_id(tournament.id, user_id)
@@ -2116,15 +2123,19 @@ defmodule Milk.Tournaments do
     match_list["match_list"]
     |> Enum.at(match_list["current_match_index"])
     |> Enum.filter(fn {match, _} ->
+      # match
+      # |> String.split("-")
+      # |> Enum.map(&String.to_integer(&1))
+      # |> Enum.any?(&(&1 == id))
       match
-      |> String.split("-")
-      |> Enum.map(&String.to_integer(&1))
+      |> Progress.cut_out_numbers_from_match_str_of_round_robin()
       |> Enum.any?(&(&1 == id))
     end)
     |> Enum.map(&elem(&1, 0))
     |> List.first()
-    |> String.split("-")
-    |> Enum.map(&String.to_integer(&1))
+    |> Progress.cut_out_numbers_from_match_str_of_round_robin()
+    # |> String.split("-")
+    # |> Enum.map(&String.to_integer(&1))
     ~> match
     |> Enum.all?(&Progress.get_match_pending_list(&1, tournament.id))
     |> if do
@@ -2345,8 +2356,9 @@ defmodule Milk.Tournaments do
     |> List.flatten()
     |> Enum.map(fn {match, _} ->
       match
-      |> String.split("-")
-      |> Enum.map(&String.to_integer(&1))
+      # |> String.split("-")
+      # |> Enum.map(&String.to_integer(&1))
+      |> Progress.cut_out_numbers_from_match_str_of_round_robin()
     end)
     |> List.flatten()
     |> Enum.uniq()
@@ -2374,8 +2386,10 @@ defmodule Milk.Tournaments do
   def increase_current_match_index(match_list, tournament_id) do
     match_list = Map.put(match_list, "current_match_index", match_list["current_match_index"] + 1)
 
-    with {:ok, nil} <- Progress.delete_match_list(tournament_id),
-         {:ok, nil} <- Progress.insert_match_list(match_list, tournament_id) do
+    with {:ok, nil}                             <- Progress.delete_match_list(tournament_id),
+         {:ok, nil}                             <- Progress.insert_match_list(match_list, tournament_id),
+         tournament when not is_nil(tournament) <- __MODULE__.get_tournament(tournament_id),
+         {:ok, _}                               <- Progress.change_states_in_match_list_of_round_robin(tournament) do
       {:ok, nil}
     else
       error -> error
@@ -3235,7 +3249,7 @@ defmodule Milk.Tournaments do
     |> Tools.boolean_to_tuple()
   end
 
-  def set_proper_round_robin_team_rank(%{"match_list" => match_list, "rematch_index" => rematch_index}, tournament_id) do
+  def set_proper_round_robin_team_rank(%{"match_list" => match_list, "rematch_index" => _rematch_index}, tournament_id) do
     # NOTE:
     tournament_id
     |> __MODULE__.get_confirmed_teams()

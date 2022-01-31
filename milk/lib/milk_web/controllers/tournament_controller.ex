@@ -159,7 +159,7 @@ defmodule MilkWeb.TournamentController do
     |> Map.put("maps", maps)
     |> Tournaments.create_tournament(thumbnail_path)
     |> case do
-      {:ok, %Tournament{master_id: master_id, game_name: game_name} = tournament} ->
+      {:ok, %Tournament{master_id: master_id} = tournament} ->
         followers = Relations.get_followers(master_id)
         tournament = Map.put(tournament, :followers, followers)
 
@@ -195,9 +195,8 @@ defmodule MilkWeb.TournamentController do
   @doc """
   Show tournament information.
   """
-  def show(conn, %{"user_id" => user_id, "tournament_id" => tournament_id}) do
+  def show(conn, %{"tournament_id" => tournament_id}) do
     tournament_id = Tools.to_integer_as_needed(tournament_id)
-    user_id = Tools.to_integer_as_needed(user_id)
 
     tournament_id
     |> Tournaments.get_tournament_including_logs()
@@ -227,9 +226,6 @@ defmodule MilkWeb.TournamentController do
       _ ->
         render(conn, "error.json", error: nil)
     end
-  end
-  def show(conn, %{"tournament_id" => tournament_id}) do
-    show(conn, %{"user_id" => nil, "tournament_id" => tournament_id})
   end
 
   # NOTE: web版で必要になっているから置いてあるが、必要なくなったら消す
@@ -520,6 +516,7 @@ defmodule MilkWeb.TournamentController do
     result
     |> is_valid_deadline?(tournament)
     |> is_valid_capacity?(tournament, entrants)
+    |> already_started?(tournament)
     |> already_participated?(entrants, user_id)
     |> already_participated_as_team?(tournament, user_id)
     |> is_valid_event_date?(tournament, user_id)
@@ -551,6 +548,10 @@ defmodule MilkWeb.TournamentController do
   end
   defp is_valid_capacity?(result, %Tournament{capacity: capacity}, entrants) do
     (capacity > length(entrants)) and result
+  end
+
+  defp already_started?(result, tournament) do
+    result and !tournament.is_started
   end
 
   defp already_participated?(result, entrants, user_id) do
@@ -1233,9 +1234,8 @@ defmodule MilkWeb.TournamentController do
     end
   end
 
-  # NOTE: Discordからのリクエストを受け付けるので、
+  # NOTE: Discordからのリクエストを受け付けるためのもの
   def claim_win(conn, %{"discord_id" => discord_id, "discord_server_id" => discord_server_id, "token" => "d3wJSGVPn7jRgqjY"}) do
-
     discord_id = Tools.to_integer_as_needed(discord_id)
 
     user = Accounts.get_user_by_discord_id(discord_id)
@@ -1665,8 +1665,8 @@ defmodule MilkWeb.TournamentController do
     # NOTE: 1位で同点のユーザーが存在する場合は、、新しい表を生成して新しいマッチを開始する
     with match_list when not is_nil(match_list) <- Progress.get_match_list(tournament_id),
          true                                   <- RoundRobin.is_current_matches_finished_all?(match_list),
-         {:ok, nil}                             <- Tournaments.increase_current_match_index(match_list, tournament_id),
          {:ok, nil}                             <- Tournaments.break_waiting_for_next_match(match_list, tournament_id),
+         {:ok, nil}                             <- Tournaments.increase_current_match_index(match_list, tournament_id),
          match_list when not is_nil(match_list) <- Progress.get_match_list(tournament_id),
          {:ok, nil}                             <- Tournaments.rematch_round_robin_as_needed(match_list, tournament_id),
          true                                   <- length(match_list["match_list"]) === match_list["current_match_index"],
@@ -2057,13 +2057,13 @@ defmodule MilkWeb.TournamentController do
   end
 
   @doc """
-  マッチリストの再生性を手動で試みるための関数
-  TODO: テストは書いてない
+  マッチリストの再生成を手動で試みるための関数
+  DEBUG用関数
   """
   def rematch_round_robin_as_needed(conn, %{"tournament_id" => tournament_id}) do
     tournament_id
     |> Tools.to_integer_as_needed()
-    |> Progress.get_match_list
+    |> Progress.get_match_list()
     |> Tournaments.rematch_round_robin_as_needed(tournament_id)
     |> case do
       {:ok, nil}          -> json(conn, %{msg: "did not rematch"})

@@ -3,10 +3,7 @@ defmodule MilkWeb.EntrantController do
 
   alias Common.Tools
 
-  alias Milk.{
-    Accounts,
-    Tournaments
-  }
+  alias Milk.Tournaments
 
   alias Milk.Tournaments.{
     Entrant,

@@ -385,4 +385,13 @@ defmodule Milk.Tournaments.ProgressTest do
           end).()
     end
   end
+
+  describe "cut put numbers from match str of round robin" do
+    test "just works" do
+      assert Progress.cut_out_numbers_from_match_str_of_round_robin("10-20") === [10, 20]
+      assert Progress.cut_out_numbers_from_match_str_of_round_robin("-20") === [20]
+      assert Progress.cut_out_numbers_from_match_str_of_round_robin("20-") === [20]
+      assert Progress.cut_out_numbers_from_match_str_of_round_robin("") == []
+    end
+  end
 end

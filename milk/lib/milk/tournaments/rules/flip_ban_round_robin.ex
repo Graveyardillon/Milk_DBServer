@@ -48,9 +48,9 @@ defmodule Milk.Tournaments.Rules.FlipBanRoundRobin do
     Predefined.on!(machine_name, @db_index, waiting_for_score_input_trigger(), is_pending(),                 is_waiting_for_score_input())
     Predefined.on!(machine_name, @db_index, lose_trigger(),                    is_pending(),                 is_loser())
     Predefined.on!(machine_name, @db_index, lose_trigger(),                    is_waiting_for_score_input(), is_loser())
-    Predefined.on!(machine_name, @db_index, waiting_for_next_match_trigger(),  is_pending(),                 is_waiting_for_next_match())
-    Predefined.on!(machine_name, @db_index, waiting_for_next_match_trigger(),  is_waiting_for_score_input(), is_waiting_for_next_match())
-    Predefined.on!(machine_name, @db_index, waiting_for_next_match_trigger(),  is_waiting_for_next_match(), is_waiting_for_next_match())
+    # Predefined.on!(machine_name, @db_index, waiting_for_next_match_trigger(),  is_pending(),                 is_waiting_for_next_match())
+    # Predefined.on!(machine_name, @db_index, waiting_for_next_match_trigger(),  is_waiting_for_score_input(), is_waiting_for_next_match())
+    # Predefined.on!(machine_name, @db_index, waiting_for_next_match_trigger(),  is_waiting_for_next_match(), is_waiting_for_next_match())
     Predefined.on!(machine_name, @db_index, next_trigger(),                    is_waiting_for_score_input(), should_flip_coin())
     Predefined.on!(machine_name, @db_index, next_trigger(),                    is_pending(),                 should_flip_coin())
     Predefined.on!(machine_name, @db_index, next_trigger(),                    is_waiting_for_next_match(),  should_flip_coin())
@@ -59,9 +59,10 @@ defmodule Milk.Tournaments.Rules.FlipBanRoundRobin do
     |> list_states()
     |> Enum.reject(&(&1 == is_finished()))
     |> Enum.each(fn state ->
-      Predefined.on!(machine_name, @db_index, finish_trigger(), state, is_finished())
-      Predefined.on!(machine_name, @db_index, next_trigger(),   state, should_flip_coin())
-      Predefined.on!(machine_name, @db_index, lose_trigger(),   state, is_loser())
+      Predefined.on!(machine_name, @db_index, finish_trigger(),                 state, is_finished())
+      Predefined.on!(machine_name, @db_index, next_trigger(),                   state, should_flip_coin())
+      Predefined.on!(machine_name, @db_index, lose_trigger(),                   state, is_loser())
+      Predefined.on!(machine_name, @db_index, waiting_for_next_match_trigger(), state, is_waiting_for_next_match())
     end)
   end
 
@@ -110,6 +111,8 @@ defmodule Milk.Tournaments.Rules.FlipBanRoundRobin do
       should_observe_ad(),
       is_pending(),
       is_loser(),
+      is_waiting_for_score_input(),
+      is_waiting_for_next_match(),
       is_finished()
     ]
   end
