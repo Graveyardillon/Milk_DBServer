@@ -10,8 +10,8 @@ defmodule Milk.Tournaments.Rules.FlipBanRoundRobin do
   @db_index Rule.db_index()
 
   @impl Rule
-  def machine_name(true),  do: "flipban_roundrobin_team"
-  def machine_name(false), do: "flipban_roundrobin"
+  def machine_name(true),  do: "flipban_roundrobin_team" <> "-" <> "ver.1.0.0"
+  def machine_name(false), do: "flipban_roundrobin" <> "-" <> "ver.1.0.0"
 
   @impl Rule
   def define_dfa!(opts \\ []) do

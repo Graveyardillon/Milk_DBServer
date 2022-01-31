@@ -75,7 +75,7 @@ defmodule Milk.Tournaments do
   require Integer
   require Logger
 
-  @type match_list :: [any()] | integer()
+  @type match_list :: [any()] | integer() | map()
   @type match_list_with_fight_result :: [any()] | map()
 
   @doc """
@@ -1580,16 +1580,12 @@ defmodule Milk.Tournaments do
     |> Enum.filter(fn {match, _} ->
       match
       |> Progress.cut_out_numbers_from_match_str_of_round_robin()
-      # |> String.split("-")
-      # |> Enum.map(&String.to_integer(&1))
       |> Enum.any?(&(&1 == loser))
     end)
     |> List.first()
     |> then(fn {match, _} ->
       match
       |> Progress.cut_out_numbers_from_match_str_of_round_robin()
-      # |> String.split("-")
-      # |> Enum.map(&String.to_integer(&1))
       |> Enum.reject(&(&1 == loser))
       |> hd()
       ~> winner_id
@@ -1631,7 +1627,7 @@ defmodule Milk.Tournaments do
     end)
   end
 
-  @spec promote_round_robin_team_rank([any()], integer()) :: :ok
+  @spec promote_round_robin_team_rank(match_list(), integer()) :: {:ok, nil}
   defp promote_round_robin_team_rank(match_list, tournament_id) do
     __MODULE__.set_proper_round_robin_team_rank(match_list, tournament_id)
   end
@@ -2441,18 +2437,20 @@ defmodule Milk.Tournaments do
     |> __MODULE__.generate_round_robin_match_list()
     ~> generate_round_robin_match_list_result
 
-    with {:ok, _, match_list} <- generate_round_robin_match_list_result,
-         {:ok, nil}           <- change_member_states_on_regenerate_round_robin_match_list(win_teams, tournament_id),
-         new_match_list       <- %{"rematch_index" => rematch_index + 1, "current_match_index" => 0, "match_list" => match_list},
-         {:ok, nil}           <- __MODULE__.set_proper_round_robin_team_rank(new_match_list, tournament_id),
-         {:ok, nil}           <- Progress.insert_match_list(new_match_list, tournament_id) do
+    with {:ok, _, match_list}                   <- generate_round_robin_match_list_result,
+         {:ok, nil}                             <- change_leader_states_on_regenerate_round_robin_match_list(win_teams, tournament_id),
+         new_match_list                         <- %{"rematch_index" => rematch_index + 1, "current_match_index" => 0, "match_list" => match_list},
+         {:ok, nil}                             <- __MODULE__.set_proper_round_robin_team_rank(new_match_list, tournament_id),
+         {:ok, nil}                             <- Progress.insert_match_list(new_match_list, tournament_id),
+         tournament when not is_nil(tournament) <- __MODULE__.get_tournament(tournament_id),
+         {:ok, nil}                             <- Progress.change_states_in_match_list_of_round_robin(tournament) do
       {:ok, :regenerated}
     else
       _ -> {:error, "Failed regenerating round robin match list"}
     end
   end
 
-  defp change_member_states_on_regenerate_round_robin_match_list(win_team_id_list, tournament_id) do
+  defp change_leader_states_on_regenerate_round_robin_match_list(win_team_id_list, tournament_id) do
     tournament_id
     |> __MODULE__.get_confirmed_teams()
     |> Enum.map(&__MODULE__.get_leader(&1.id))
