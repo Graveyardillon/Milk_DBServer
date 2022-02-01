@@ -888,12 +888,12 @@ defmodule Milk.Tournaments.Progress do
   def change_states_in_match_list_of_round_robin(tournament) do
     %{"match_list" => match_list, "current_match_index" => current_match_index} = __MODULE__.get_match_list(tournament.id)
 
-    match = Enum.at(match_list, current_match_index)
+    matches = Enum.at(match_list, current_match_index)
 
-    if is_nil(match) do
+    if is_nil(matches) do
       {:ok, nil}
     else
-      match
+      matches
       |> Enum.map(fn {match, _} ->
         match
         |> __MODULE__.cut_out_numbers_from_match_str_of_round_robin()
