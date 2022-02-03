@@ -967,7 +967,7 @@ defmodule Milk.Tournaments do
 
   @doc """
   match_infoを取得するための関数
-  TODO: パフォーマンス調整
+  TODO: パフォーマンス調整 処理を複数のプロセスに分散させようと、Taskを使ったが上手くいかなかった
   """
   def get_match_information(tournament_id, user_id) do
     tournament = get_tournament_for_match_info(tournament_id)
