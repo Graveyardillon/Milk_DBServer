@@ -33,7 +33,9 @@ defmodule Milk.Tournaments.EntriesTest do
         %{title: "RiotID 5", field: "lakjsdf#984"}
       ]
 
-      assert {:ok, _} = Entries.create_entry(entry_information_list, tournament.id)
+      user = fixture_user()
+
+      assert {:ok, _} = Entries.create_entry(entry_information_list, tournament.id, user.id)
     end
   end
 end

@@ -26,10 +26,10 @@ defmodule Milk.Tournaments.Entries do
     |> Tools.boolean_to_tuple()
   end
 
-  @spec create_entry([map()], integer()) :: {:ok, nil} | {:error, String.t()}
-  def create_entry(entry_information_list, tournament_id) do
+  @spec create_entry([map()], integer(), integer()) :: {:ok, nil} | {:error, String.t()}
+  def create_entry(entry_information_list, tournament_id, user_id) do
     %Entry{}
-    |> Entry.changeset(%{tournament_id: tournament_id})
+    |> Entry.changeset(%{tournament_id: tournament_id, user_id: user_id})
     |> Repo.insert()
     ~> {:ok, entry}
 
