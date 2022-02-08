@@ -115,6 +115,7 @@ defmodule MilkWeb.Router do
     get "/tournament/data_for_ios", TournamentController, :get_started_match_information
     get "/tournament/match_info", TournamentController, :get_match_information
 
+    get "/tournament/entry_template", EntryController, :get_template
     post "/tournament/entry_template", EntryController, :create_template
 
     get "/tournament/get_participating_tournaments",

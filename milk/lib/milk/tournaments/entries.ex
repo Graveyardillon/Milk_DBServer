@@ -45,6 +45,12 @@ defmodule Milk.Tournaments.Entries do
     |> Tools.boolean_to_tuple()
   end
 
+  def get_entry_template(tournament_id) do
+    EntryTemplate
+    |> where([et], et.tournament_id == ^tournament_id)
+    |> Repo.all()
+  end
+
   @spec get_entries(integer()) :: [Entry.t()]
   def get_entries(tournament_id) do
     Entry
