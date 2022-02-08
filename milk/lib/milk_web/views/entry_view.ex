@@ -14,6 +14,20 @@ defmodule MilkWeb.EntryView do
     }
   end
 
+  def render("entry_information_list.json", %{entry_information: entry_information}) do
+    %{
+      result: true,
+      entry_information: render_many(entry_information, __MODULE__, "entry_information.json", as: :entry_information)
+    }
+  end
+
+  def render("entry_information.json", %{entry_information: entry_information}) do
+    %{
+      title: entry_information.title,
+      field: entry_information.field
+    }
+  end
+
   def render("error.json", %{error: error}) do
     if error do
       %{result: false, error: error, data: nil}

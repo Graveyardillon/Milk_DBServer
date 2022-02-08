@@ -58,10 +58,11 @@ defmodule Milk.Tournaments.Entries do
     |> Repo.all()
   end
 
-  @spec get_entry_information(integer()) :: [EntryInformation.t()]
-  def get_entry_information(entry_id) do
+  @spec get_entry_information_by_user_id(integer()) :: [EntryInformation.t()]
+  def get_entry_information_by_user_id(user_id) do
     EntryInformation
-    |> where([ei], ei.entry_id == ^entry_id)
+    |> join(:inner, [ei], e in Entry, on: e.id == ei.entry_id)
+    |> where([ei, e], e.user_id == ^user_id)
     |> Repo.all()
   end
 end

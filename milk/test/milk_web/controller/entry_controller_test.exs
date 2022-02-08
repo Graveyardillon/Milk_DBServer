@@ -40,6 +40,7 @@ defmodule MilkWeb.EntryControllerTest do
       teams
       |> hd()
       |> Map.get(:id)
+      ~> team_id
       |> Tournaments.get_leader()
       |> Map.get(:user_id)
       ~> leader_id
@@ -58,6 +59,16 @@ defmodule MilkWeb.EntryControllerTest do
       })
 
       assert json_response(conn, 200)["result"]
+
+      conn = get(conn, Routes.entry_path(conn, :get_entry_information), %{"team_id" => team_id})
+
+      conn
+      |> json_response(200)
+      |> Map.get("entry_information")
+      |> Enum.each(fn info ->
+        assert is_binary(info["title"])
+        assert is_binary(info["field"])
+      end)
     end
   end
 end
