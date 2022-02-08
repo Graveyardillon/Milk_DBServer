@@ -36,4 +36,8 @@ defmodule MilkWeb.EntryController do
       {:ok, _} -> json(conn, %{result: true})
     end
   end
+
+  def has_entry_info(conn, %{"tournament_id" => tournament_id}) do
+    json(conn, %{result: Entries.has_entry_info?(tournament_id)})
+  end
 end

@@ -117,6 +117,7 @@ defmodule MilkWeb.Router do
 
     get "/tournament/entry_template", EntryController, :get_template
     get "/tournament/entry_info", EntryController, :get_entry_information
+    get "/tournament/has_entry_info", EntryController, :has_entry_info
     post "/tournament/entry_info", EntryController, :create_entry_information
     post "/tournament/entry_template", EntryController, :create_template
 

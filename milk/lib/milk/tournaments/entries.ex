@@ -65,4 +65,11 @@ defmodule Milk.Tournaments.Entries do
     |> where([ei, e], e.user_id == ^user_id)
     |> Repo.all()
   end
+
+  @spec has_entry_info?(integer()) :: boolean()
+  def has_entry_info?(tournament_id) do
+    EntryTemplate
+    |> where([et], et.tournament_id == ^tournament_id)
+    |> Repo.exists?()
+  end
 end
