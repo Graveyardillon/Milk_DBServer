@@ -18,6 +18,14 @@ defmodule Milk.Tournaments.Entries do
     |> Repo.insert()
   end
 
+  @spec create_entry_templates([map()]) :: {:ok, nil} | {:error, nil}
+  def create_entry_templates(entry_templates) when is_list(entry_templates) do
+    entry_templates
+    |> Enum.map(&__MODULE__.create_entry_template(&1))
+    |> Enum.all?(&match?({:ok, _}, &1))
+    |> Tools.boolean_to_tuple()
+  end
+
   @spec create_entry([map()], integer()) :: {:ok, nil} | {:error, String.t()}
   def create_entry(entry_information_list, tournament_id) do
     %Entry{}
