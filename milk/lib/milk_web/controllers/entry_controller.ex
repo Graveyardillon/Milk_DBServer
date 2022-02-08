@@ -17,4 +17,10 @@ defmodule MilkWeb.EntryController do
 
     render(conn, "templates.json", templates: template)
   end
+
+  def create_entry_information(conn, %{"tournament_id" => tournament_id, "user_id" => user_id, "entry_information" => entry_information}) when is_list(entry_information) do
+    case Entries.create_entry(entry_information, tournament_id, user_id) do
+      {:ok, _} -> json(conn, %{result: true})
+    end
+  end
 end

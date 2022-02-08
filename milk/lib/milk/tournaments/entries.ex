@@ -35,7 +35,7 @@ defmodule Milk.Tournaments.Entries do
 
     entry_information_list
     |> Enum.map(fn entry_information ->
-      entry_information = Map.put(entry_information, :entry_id, entry.id)
+      entry_information = Map.put(entry_information, "entry_id", entry.id)
 
       %EntryInformation{}
       |> EntryInformation.changeset(entry_information)
