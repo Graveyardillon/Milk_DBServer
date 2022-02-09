@@ -4336,12 +4336,8 @@ defmodule Milk.Tournaments do
     |> __MODULE__.get_team()
     |> __MODULE__.delete_team()
     |> case do
-      {:ok, team} ->
-        team = Repo.preload(team, :team_member)
-        {:ok, team}
-
-      {:error, error} ->
-        {:error, error}
+      {:ok, team}     -> {:ok, Repo.preload(team, :team_member)}
+      {:error, error} -> {:error, error}
     end
   end
 
@@ -4361,12 +4357,8 @@ defmodule Milk.Tournaments do
     team
     |> Repo.delete()
     |> case do
-      {:ok, team} ->
-        team = Repo.preload(team, :team_member)
-        {:ok, team}
-
-      {:error, error} ->
-        {:error, error}
+      {:ok, team}     -> {:ok, Repo.preload(team, :team_member)}
+      {:error, error} -> {:error, error}
     end
   end
 
