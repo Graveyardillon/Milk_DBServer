@@ -113,10 +113,8 @@ defmodule MilkWeb.TournamentController do
   @doc """
   Create a tournament.
   """
-  def create(conn, %{"tournament" => attrs, "file" => file, "maps" => maps}),
-    do: __MODULE__.create(conn, %{"tournament" => attrs, "image" => file, "maps" => maps})
-  def create(conn, %{"tournament" => attrs, "file" => file}),
-    do: __MODULE__.create(conn, %{"tournament" => attrs, "image" => file, "maps" => []})
+  def create(conn, %{"tournament" => attrs, "file" => file, "maps" => maps}), do: __MODULE__.create(conn, %{"tournament" => attrs, "image" => file, "maps" => maps})
+  def create(conn, %{"tournament" => attrs, "file" => file}),                 do: __MODULE__.create(conn, %{"tournament" => attrs, "image" => file, "maps" => []})
   # NOTE: サムネイル画像がない場合の大会作成処理
   def create(conn, %{"tournament" => attrs, "image" => image, "maps" => maps}) when image == "" or is_nil(image) do
     attrs = Tools.parse_json_string_as_needed!(attrs)
@@ -171,6 +169,7 @@ defmodule MilkWeb.TournamentController do
       {:error, error} -> render(conn, "error.json", error: error)
     end
   end
+
   defp do_create(conn, attrs, thumbnail_path, maps) do
     attrs
     |> Map.put("enabled_coin_toss", attrs["enabled_coin_toss"])
