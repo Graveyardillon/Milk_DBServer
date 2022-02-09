@@ -1512,7 +1512,7 @@ defmodule Milk.Tournaments do
     with tournament when not is_nil(tournament) <- __MODULE__.get_tournament(entrant.tournament_id),
          {:ok, _}                               <- decrease_entrant_count(tournament),
          {:ok, _}                               <- Repo.delete(entrant),
-         {:ok, _}                               <- Entries.delete_entry_information_by_user_id(entrant.user_id) do
+         {:ok, _}                               <- Entries.delete_entries_by_user_id(entrant.user_id) do
       {:ok, entrant}
     else
       {:error, error} -> {:error, error}
@@ -4322,7 +4322,7 @@ defmodule Milk.Tournaments do
   def delete_team(%Team{} = team) do
     with leader      <- __MODULE__.get_leader(team.id),
          {:ok, team} <- Repo.delete(team),
-         {:ok, _}    <- Entries.delete_entry_information_by_user_id(leader.user_id) do
+         {:ok, _}    <- Entries.delete_entries_by_user_id(leader.user_id) do
       {:ok, team}
     else
       nil             -> {:error, "team leader is nil"}
