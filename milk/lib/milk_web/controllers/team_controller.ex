@@ -75,7 +75,7 @@ defmodule MilkWeb.TeamController do
     confirmed_teams = Tournaments.get_confirmed_teams(tournament_id)
 
     with tournament when not is_nil(tournament) <- Tournaments.get_tournament(tournament_id),
-         {:ok, nil}                             <- validate_team_size(tournament, confirmed_teams),
+         {:ok, nil}                             <- validate_capacity(tournament, confirmed_teams),
          {:ok, nil}                             <- validate_duplicated_request(tournament.id, leader_id),
          {:ok, nil}                             <- validate_associated_with_discord(tournament, leader_id),
          {:ok, team}                            <- Tournaments.create_team(tournament.id, size, leader_id, user_id_list) do
@@ -89,10 +89,10 @@ defmodule MilkWeb.TeamController do
     end
   end
 
-  defp validate_team_size(nil, _), do: {:error, "tournament is nil"}
-  defp validate_team_size(%Tournament{capacity: capacity}, teams) when capacity > length(teams), do: {:ok, nil}
-  defp validate_team_size(%Tournament{capacity: capacity}, teams) when capacity <= length(teams), do: {:error, "over tournament size"}
-  defp validate_team_size(_, _), do: {:error, "unexpected error on creating tournament"}
+  defp validate_capacity(nil, _), do: {:error, "tournament is nil"}
+  defp validate_capacity(%Tournament{capacity: capacity}, teams) when capacity > length(teams), do: {:ok, nil}
+  defp validate_capacity(%Tournament{capacity: capacity}, teams) when capacity <= length(teams), do: {:error, "over tournament size"}
+  defp validate_capacity(_, _), do: {:error, "unexpected error on creating tournament"}
 
   defp validate_duplicated_request(tournament_id, leader_id) do
     tournament_id
