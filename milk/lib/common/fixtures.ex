@@ -21,6 +21,7 @@ defmodule Common.Fixtures do
         create_attrs = %{
           "capacity" => 8,
           "deadline" => "2010-04-17T14:00:00Z",
+          "start_recruiting" => "2010-04-17T14:00:00",
           "description" => "some description",
           "event_date" => "2010-04-17T14:00:00Z",
           "name" => "some name",
@@ -34,7 +35,9 @@ defmodule Common.Fixtures do
 
         num = Keyword.get(opts, :num, 0)
         deadline = Keyword.get(opts, :deadline, create_attrs["deadline"])
+        start_recruiting = Keyword.get(opts, :start_recruiting, create_attrs["start_recruiting"])
         capacity = Keyword.get(opts, :capacity, create_attrs["capacity"])
+        event_date = Keyword.get(opts, :event_date, create_attrs["event_date"])
         is_started = Keyword.get(opts, :is_started, false)
         is_team = Keyword.get(opts, :is_team, false)
         team_size = if is_team, do: Keyword.get(opts, :team_size, 5)
@@ -45,8 +48,6 @@ defmodule Common.Fixtures do
         coin_tail_field = Keyword.get(opts, :coin_tail_field)
         maps = Keyword.get(opts, :maps)
         rule = Keyword.get(opts, :rule)
-        deadline = Keyword.get(opts, :deadline)
-        event_date = Keyword.get(opts, :event_date)
 
         opts[:master_id]
         |> is_nil()
@@ -78,7 +79,7 @@ defmodule Common.Fixtures do
         |> Map.put("coin_tail_field", coin_tail_field)
         |> Map.put("maps", maps)
         |> Map.put("rule", rule)
-        |> Map.put("deadline", deadline)
+        |> Map.put("start_recruiting", start_recruiting)
         |> Map.put("event_date", event_date)
         |> Tournaments.create_tournament()
         |> elem(1)

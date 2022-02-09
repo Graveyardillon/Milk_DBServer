@@ -508,12 +508,13 @@ defmodule MilkWeb.TournamentController do
     tournament_id = Tools.to_integer_as_needed(tournament_id)
     user_id = Tools.to_integer_as_needed(user_id)
 
-    tournament = Tournaments.load_tournament(tournament_id)
+    tournament = Tournaments.get_tournament(tournament_id)
     entrants = Tournaments.get_entrants(tournament_id)
     result = true
 
     result
     |> is_valid_deadline?(tournament)
+    |> is_valid_start_recruitment_date?(tournament)
     |> is_valid_capacity?(tournament, entrants)
     |> already_started?(tournament)
     |> already_participated?(entrants, user_id)
@@ -537,6 +538,15 @@ defmodule MilkWeb.TournamentController do
     |> elem(1)
     |> DateTime.compare(Timex.now())
     |> Kernel.!=(:lt)
+    |> Kernel.and(result)
+  end
+
+  defp is_valid_start_recruitment_date?(result, %Tournament{start_recruiting: start_recruiting}) do
+    start_recruiting
+    |> Milk.EctoDate.dump()
+    |> elem(1)
+    |> DateTime.compare(Timex.now())
+    |> Kernel.!=(:gt)
     |> Kernel.and(result)
   end
 
@@ -690,7 +700,7 @@ defmodule MilkWeb.TournamentController do
     end
   end
 
-  @doc """
+  @dotournc """
   Delete losers of a loser list.
   """
   def delete_loser(conn, %{"tournament" => %{"tournament_id" => tournament_id, "loser_list" => loser}}) when is_binary(loser) or is_integer(loser) do

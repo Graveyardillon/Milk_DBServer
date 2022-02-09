@@ -1649,7 +1649,7 @@ defmodule MilkWeb.TournamentControllerTest do
     end
 
     test "team (confirmed)", %{conn: conn} do
-      tournament = fixture_tournament(num: 2, is_team: true, type: 2)
+      tournament = fixture_tournament(num: 2, is_team: true, daedline: "2100-04-17T14:00:00Z")
 
       tournament.id
       |> fill_with_team()
@@ -1667,6 +1667,30 @@ defmodule MilkWeb.TournamentControllerTest do
       refute json_response(conn, 200)["result"]
       assert json_response(conn, 200)["has_requested_as_team"]
       assert json_response(conn, 200)["has_confirmed_as_team"]
+    end
+
+    test "recruitment duration", %{conn: conn} do
+      invalid_deadline_tournament = fixture_tournament(num: 2, deadline: "2000-04-17T14:00:00Z")
+
+      user = fixture_user(num: 10)
+
+      conn =
+        get(conn, Routes.tournament_path(conn, :is_able_to_join), %{
+          user_id: user.id,
+          tournament_id: invalid_deadline_tournament.id
+        })
+
+      refute json_response(conn, 200)["result"]
+
+      invalid_start_recruitment_tournament = fixture_tournament(num: 3, start_recruiting: "2100-04-17T14:00:00Z")
+
+      conn =
+        get(conn, Routes.tournament_path(conn, :is_able_to_join), %{
+          user_id: user.id,
+          tournament_id: invalid_start_recruitment_tournament.id
+        })
+
+      refute json_response(conn, 200)["result"]
     end
   end
 
