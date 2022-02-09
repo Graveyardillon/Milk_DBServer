@@ -52,6 +52,7 @@ defmodule Milk.Tournaments do
   alias Milk.Tournaments.{
     Assistant,
     Entrant,
+    Entries,
     InteractionMessage,
     MatchInformation,
     MapSelection,
@@ -1493,7 +1494,7 @@ defmodule Milk.Tournaments do
       |> where([e], e.user_id == ^user_id)
       |> Repo.one()
       ~> entrant
-      |> delete_entrant()
+      |> __MODULE__.delete_entrant()
 
       tournament_id
       |> get_tabs_including_logs_by_tourament_id()
@@ -1508,15 +1509,21 @@ defmodule Milk.Tournaments do
   @spec delete_entrant(Entrant.t()) :: {:ok, Entrant.t()} | {:error, Ecto.Changeset.t()}
   def delete_entrant(nil), do: {:error, "entrant is nil"}
   def delete_entrant(%Entrant{} = entrant) do
-    tournament = __MODULE__.get_tournament(entrant.tournament_id)
+    with tournament when not is_nil(tournament) <- __MODULE__.get_tournament(entrant.tournament_id),
+         {:ok, _}                               <- decrease_entrant_count(tournament),
+         {:ok, _}                               <- Repo.delete(entrant),
+         {:ok, _}                               <- Entries.delete_entry_information_by_user_id(entrant.user_id) do
+      {:ok, entrant}
+    else
+      {:error, error} -> {:error, error}
+      _               -> {:error, nil}
+    end
+  end
 
+  defp decrease_entrant_count(tournament) do
     tournament
     |> Tournament.changeset(%{count: tournament.count - 1})
     |> Repo.update()
-    |> case do
-      {:ok, _}        -> Repo.delete(entrant)
-      {:error, error} -> {:error, error}
-    end
   end
 
   @doc """
@@ -4312,7 +4319,17 @@ defmodule Milk.Tournaments do
   """
   @spec delete_team(Team.t() | integer()) :: {:ok, Team.t()} | {:error, Ecto.Changeset.t()}
   def delete_team(nil),            do: {:error, "team is nil"}
-  def delete_team(%Team{} = team), do: Repo.delete(team)
+  def delete_team(%Team{} = team) do
+    with leader      <- __MODULE__.get_leader(team.id),
+         {:ok, team} <- Repo.delete(team),
+         {:ok, _}    <- Entries.delete_entry_information_by_user_id(leader.user_id) do
+      {:ok, team}
+    else
+      nil             -> {:error, "team leader is nil"}
+      {:error, error} -> {:error, error}
+      _               -> {:error, nil}
+    end
+  end
 
   def delete_team(team_id) do
     team_id

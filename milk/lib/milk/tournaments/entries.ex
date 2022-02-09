@@ -72,4 +72,13 @@ defmodule Milk.Tournaments.Entries do
     |> where([et], et.tournament_id == ^tournament_id)
     |> Repo.exists?()
   end
+
+  @spec delete_entry_information_by_user_id(integer()) :: {:ok, nil} | {:error, nil}
+  def delete_entry_information_by_user_id(user_id) do
+    user_id
+    |> __MODULE__.get_entry_information_by_user_id()
+    |> Enum.map(&Repo.delete(&1))
+    |> Enum.all?(&match?({:ok, _}, &1))
+    |> Tools.boolean_to_tuple()
+  end
 end
