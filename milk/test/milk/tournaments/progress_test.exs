@@ -6,6 +6,8 @@ defmodule Milk.Tournaments.ProgressTest do
   use Common.Fixtures
   use Timex
 
+  import Common.Sperm
+
   alias Milk.{
     Accounts,
     Tournaments

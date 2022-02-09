@@ -25,12 +25,12 @@ defmodule Milk.Tournaments.EntriesTest do
       end)
 
       entry_information_list = [
-        %{title: "お名前",    field: "name one"},
-        %{title: "RiotID 1", field: "asdf#12312"},
-        %{title: "RiotID 2", field: "asdfas#123"},
-        %{title: "RiotID 3", field: "asdfff#5654"},
-        %{title: "RiotID 4", field: "aslkjlj#098"},
-        %{title: "RiotID 5", field: "lakjsdf#984"}
+        %{"title" => "お名前",    "field" => "name one"},
+        %{"title" => "RiotID 1", "field" => "asdf#12312"},
+        %{"title" => "RiotID 2", "field" => "asdfas#123"},
+        %{"title" => "RiotID 3", "field" => "asdfff#5654"},
+        %{"title" => "RiotID 4", "field" => "aslkjlj#098"},
+        %{"title" => "RiotID 5", "field" => "lakjsdf#984"}
       ]
 
       user = fixture_user()
