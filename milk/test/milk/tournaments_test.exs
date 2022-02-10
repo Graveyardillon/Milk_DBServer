@@ -371,9 +371,7 @@ defmodule Milk.TournamentsTest do
       tournament = fixture_tournament()
 
       assert tournament.capacity == 8
-      assert is_nil(tournament.deadline)
       assert tournament.description == "some description"
-      assert is_nil(tournament.event_date)
       assert tournament.name == "some name"
       assert tournament.url == "some url"
     end
