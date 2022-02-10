@@ -700,7 +700,7 @@ defmodule MilkWeb.TournamentController do
     end
   end
 
-  @dotournc """
+  @doc """
   Delete losers of a loser list.
   """
   def delete_loser(conn, %{"tournament" => %{"tournament_id" => tournament_id, "loser_list" => loser}}) when is_binary(loser) or is_integer(loser) do
