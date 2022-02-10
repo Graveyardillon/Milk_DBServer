@@ -1336,12 +1336,12 @@ defmodule Milk.Tournaments do
   defp validate_tournament_id(_), do: {:error, "invalid attrs"}
 
   @spec put_tournament_into_attrs(Tournament.t() | nil, map()) :: {:ok, map()} | {:error, String.t()}
-  defp put_tournament_into_attrs(nil, _), do: {:error, "undefined tournament"}
+  defp put_tournament_into_attrs(nil, _),            do: {:error, "undefined tournament"}
   defp put_tournament_into_attrs(tournament, attrs), do: {:ok, Map.put(attrs, "tournament", tournament)}
 
   @spec validate_not_team_tournament(map()) :: {:ok, nil} | {:error, String.t()}
   defp validate_not_team_tournament(%{"tournament" => %Tournament{is_team: true}}), do: {:error, "requires team"}
-  defp validate_not_team_tournament(_), do: {:ok, nil}
+  defp validate_not_team_tournament(_),                                             do: {:ok, nil}
 
   @spec validate_not_participated_yet(map()) :: {:ok, nil} | {:error, String.t()}
   defp validate_not_participated_yet(%{"tournament_id" => tournament_id, "user_id" => user_id}) do
@@ -1427,7 +1427,7 @@ defmodule Milk.Tournaments do
   defp user_exists?(_), do: {:error, "invalid attrs"}
 
   defp tournament_exists?({:ok, attrs}) do
-    tournament = load_tournament(attrs["tournament_id"])
+    tournament = __MODULE__.load_tournament(attrs["tournament_id"])
 
     if tournament do
       attrs = Map.put(attrs, "tournament", tournament)

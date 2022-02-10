@@ -360,7 +360,7 @@ defmodule MilkWeb.TournamentController do
   Update a tournament.
   """
   def update(conn, %{"tournament_id" => id, "tournament" => tournament_params}) do
-    tournament = Tournaments.load_tournament(id)
+    tournament = Tournaments.get_tournament(id)
 
     if tournament do
       case tournament_params["join"] do
@@ -396,7 +396,7 @@ defmodule MilkWeb.TournamentController do
   def delete(conn, %{"tournament_id" => tournament_id}) do
     tournament_id
     |> Tools.to_integer_as_needed()
-    |> Tournaments.load_tournament()
+    |> Tournaments.get_tournament()
     |> Tournaments.delete_tournament()
     |> case do
       {:ok, %Tournament{} = tournament} ->
@@ -631,7 +631,7 @@ defmodule MilkWeb.TournamentController do
   Update tournament topics.
   """
   def tournament_update_topics(conn, %{"tournament_id" => tournament_id, "tabs" => tabs}) do
-    tournament = Tournaments.load_tournament(tournament_id)
+    tournament = Tournaments.get_tournament(tournament_id)
 
     if tournament do
       current_tabs = Tournaments.get_tabs_including_logs_by_tourament_id(tournament_id)
@@ -700,7 +700,7 @@ defmodule MilkWeb.TournamentController do
     end
   end
 
-  @dotournc """
+  @doc """
   Delete losers of a loser list.
   """
   def delete_loser(conn, %{"tournament" => %{"tournament_id" => tournament_id, "loser_list" => loser}}) when is_binary(loser) or is_integer(loser) do
@@ -713,7 +713,7 @@ defmodule MilkWeb.TournamentController do
     loser_list = Enum.map(loser_list, &Tools.to_integer_as_needed(&1))
 
     tournament_id
-    |> Tournaments.load_tournament()
+    |> Tournaments.get_tournament()
     |> then(fn tournament ->
       if tournament.rule == "basic" and !tournament.is_team do
         store_single_tournament_match_log(tournament_id, hd(loser_list))
@@ -966,7 +966,7 @@ defmodule MilkWeb.TournamentController do
   def start_match(conn, %{"user_id" => user_id, "tournament_id" => tournament_id}) do
     user_id = Tools.to_integer_as_needed(user_id)
     tournament_id = Tools.to_integer_as_needed(tournament_id)
-    tournament = Tournaments.load_tournament(tournament_id)
+    tournament = Tournaments.get_tournament(tournament_id)
 
     with {:ok, _}   <- Tournaments.start_match(tournament, user_id),
          {:ok, _}   <- do_start_match(tournament, user_id),
@@ -1125,7 +1125,7 @@ defmodule MilkWeb.TournamentController do
   def get_fighting_users(conn, %{"tournament_id" => tournament_id}) do
     tournament_id
     |> Tools.to_integer_as_needed()
-    |> Tournaments.load_tournament()
+    |> Tournaments.get_tournament()
     |> Map.get(:is_team)
     |> if do
       tournament_id
@@ -1338,7 +1338,7 @@ defmodule MilkWeb.TournamentController do
         opponent_score ->
           with  {:ok, winner_id, loser_id, winner_score, loser_score, _} <- calculate_winner(id, opponent.id, score, opponent_score),
                 {:ok, nil}                                               <- proceed_to_next_match(tournament, winner_id, loser_id, winner_score, loser_score, match_index),
-                tournament                                               <- Tournaments.load_tournament(tournament_id) do
+                tournament                                               <- Tournaments.get_tournament(tournament_id) do
             claim = %Claim{
               validated: true,
               completed: true,
@@ -1595,7 +1595,7 @@ defmodule MilkWeb.TournamentController do
     tournament_id = Tools.to_integer_as_needed(tournament_id)
     user_id = Tools.to_integer_as_needed(user_id)
 
-    with tournament when not is_nil(tournament) <- Tournaments.load_tournament(tournament_id),
+    with tournament when not is_nil(tournament) <- Tournaments.get_tournament(tournament_id),
          {:ok, nil}                             <- Tournaments.flip_coin(user_id, tournament_id),
          {:ok, nil}                             <- Progress.insert_match_pending_list_table(user_id, tournament_id),
          {:ok, _}                               <- Tournaments.break_waiting_state_as_needed(tournament, user_id),
