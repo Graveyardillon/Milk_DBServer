@@ -114,6 +114,7 @@ defmodule MilkWeb.Router do
     get "/tournament/waiting_users", TournamentController, :get_waiting_users
     get "/tournament/data_for_ios", TournamentController, :get_started_match_information
     get "/tournament/match_info", TournamentController, :get_match_information
+    get "/tournament/count_tournament_per_month", TournamentController, :count_tournament_per_month
 
     get "/tournament/entry_template", EntryController, :get_template
     get "/tournament/entry_info", EntryController, :get_entry_information
