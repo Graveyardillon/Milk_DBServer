@@ -119,7 +119,7 @@ defmodule Milk.Tournaments do
     |> Timex.to_datetime()
 
     Tournament
-    |> where([t], t.deadline > ^date_offset and t.create_time < ^date_offset)
+    #|> where([t], t.deadline > ^date_offset and t.create_time < ^date_offset)
     |> where([t], not (t.master_id in ^blocked_user_id_list))
     |> order_by([t], asc: :event_date)
     |> offset(^offset)
@@ -508,6 +508,36 @@ defmodule Milk.Tournaments do
     ~> team_members
 
     masters ++ assistants ++ entrants ++ team_members
+  end
+
+  @doc """
+  その月に開催された大会の数を返す関数
+  """
+  @spec count_tournament_per_month() :: integer()
+  def count_tournament_per_month() do
+    # NOTE: event_dateが今月, もしくはログとして作成されたのが今月のもの
+
+    Timex.now()
+    |> Timex.beginning_of_month()
+    ~> beginning_of_month
+
+    Timex.now()
+    |> Timex.end_of_month()
+    ~> end_of_month
+
+    Tournament
+    |> where([t], ^beginning_of_month < t.event_date and t.event_date < ^end_of_month)
+    |> select([t], count(t.id))
+    |> Repo.one()
+    ~> tournament_count
+
+    TournamentLog
+    |> where([t], ^beginning_of_month < t.create_time and t.create_time < ^end_of_month)
+    |> select([t], count(t.id))
+    |> Repo.one()
+    ~> tournament_log_count
+
+    tournament_count + tournament_log_count
   end
 
   @doc """

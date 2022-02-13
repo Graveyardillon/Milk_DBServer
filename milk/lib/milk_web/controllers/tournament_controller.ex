@@ -111,6 +111,13 @@ defmodule MilkWeb.TournamentController do
   end
 
   @doc """
+  その月に開催された大会数を取得
+  """
+  def count_tournament_per_month(conn, _params) do
+    json(conn, %{tournament_counnt_per_month: Tournaments.count_tournament_per_month()})
+  end
+
+  @doc """
   Create a tournament.
   """
   def create(conn, %{"tournament" => attrs, "file" => file, "maps" => maps}), do: __MODULE__.create(conn, %{"tournament" => attrs, "image" => file, "maps" => maps})
