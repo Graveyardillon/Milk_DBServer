@@ -1652,7 +1652,7 @@ defmodule MilkWeb.TournamentController do
          tournament when not is_nil(tournament) <- Tournaments.get_tournament(tournament_id),
          {:ok, nil}                             <- notify_discord_on_deleting_tournament_as_needed(tournament),
          {:ok, _}                               <- Tournaments.finish(tournament_id, winner_id),
-         {:ok, _}                               <- create_match_list_with_fight_result_log_on_finish(tournament_id),
+         #{:ok, _}                               <- create_match_list_with_fight_result_log_on_finish(tournament_id),
          {:ok, nil}                             <- Progress.delete_match_list(tournament_id),
          {:ok, nil}                             <- Progress.delete_match_list_with_fight_result(tournament_id),
          {:ok, nil}                             <- Progress.delete_match_pending_list_of_tournament(tournament_id),
@@ -2021,21 +2021,28 @@ defmodule MilkWeb.TournamentController do
     end
     ~> result
 
-    tournament_id
-    |> Progress.get_match_list_with_fight_result()
-    |> inspect(charlists: false)
-    |> then(fn str ->
-      %{"tournament_id" => tournament_id, "match_list_with_fight_result_str" => str}
-    end)
-    |> Progress.create_match_list_with_fight_result_log()
-
-    Progress.delete_match_list(tournament_id)
-    Progress.delete_match_list_with_fight_result(tournament_id)
-    Progress.delete_match_pending_list_of_tournament(tournament_id)
-    Progress.delete_fight_result_of_tournament(tournament_id)
-    Progress.delete_duplicate_users_all(tournament_id)
+    # tournament_id
+    # |> Progress.get_match_list_with_fight_result()
+    # |> inspect(charlists: false)
+    # |> then(fn str ->
+    #   %{"tournament_id" => tournament_id, "match_list_with_fight_result_str" => str}
+    # end)
+    # |> Progress.create_match_list_with_fight_result_log()
 
     json(conn, %{result: result})
+  end
+
+  @doc """
+  結果を入力してfinish
+  """
+  def finish_with_result(conn, %{"tournament_id" => tournament_id, "team_id_list" => team_id_list}) do
+    tournament_id = Tools.to_integer_as_needed(tournament_id)
+    team_id_list = Enum.map(team_id_list, &Tools.to_integer_as_needed(&1))
+
+    case Tournaments.finish_with_team_result(tournament_id, team_id_list) do
+      {:ok, _} -> json(conn, %{result: true})
+      _        -> json(conn, %{result: false})
+    end
   end
 
   @doc """

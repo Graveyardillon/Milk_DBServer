@@ -1175,6 +1175,21 @@ defmodule Milk.Tournaments do
     # NOTE: オートマトン全削除
     remove_state_machines_on_delete(tournament)
 
+    tournament.id
+    |> Progress.get_match_list_with_fight_result()
+    |> inspect(charlists: false)
+    |> then(fn str ->
+      %{"tournament_id" => tournament.id, "match_list_with_fight_result_str" => str}
+    end)
+    |> Progress.create_match_list_with_fight_result_log()
+
+    # NOTE: 大会用のredisデータを削除
+    Progress.delete_match_list(tournament.id)
+    Progress.delete_match_list_with_fight_result(tournament.id)
+    Progress.delete_match_pending_list_of_tournament(tournament.id)
+    Progress.delete_fight_result_of_tournament(tournament.id)
+    Progress.delete_duplicate_users_all(tournament.id)
+
     # NOTE: 不要になったchat_roomをすべて削除
     tournament.id
     |> __MODULE__.get_tabs_by_tournament_id()
@@ -2609,6 +2624,36 @@ defmodule Milk.Tournaments do
     |> Map.put(:winner_id, winner_user_id)
     |> Tools.atom_map_to_string_map()
     |> Log.create_tournament_log()
+  end
+
+  @doc """
+  結果を入力してfinish
+  TODO: テストコード
+  """
+  @spec finish_with_team_result(integer(), [integer()]) :: {:ok, Tournament.t()} | {:error, Ecto.Changeset.t() | String.t() | nil}
+  def finish_with_team_result(tournament_id, team_id_list) do
+    # NOTE: ソートされたteam_id_listに基づいてfinish
+    # NOTE: rankを編集、finish関数呼び出し
+
+    with {:ok, _} <- edit_ranks_on_finish_with_team_result(team_id_list),
+         leader when not is_nil(leader) <- __MODULE__.get_leader(hd(team_id_list)),
+         {:ok, tournament} <- __MODULE__.finish(tournament_id, leader.user_id) do
+      {:ok, tournament}
+    else
+      {:error, error} -> {:error, error}
+      nil             -> {:error, "leader is nil"}
+      _               -> {:error, nil}
+    end
+  end
+
+  defp edit_ranks_on_finish_with_team_result(team_id_list) do
+    team_id_list
+    |> Enum.with_index(fn element, index -> {element, index} end)
+    |> Enum.map(fn {team, index} ->
+      __MODULE__.update_team(team, %{rank: index})
+    end)
+    |> Enum.all?(&match?({:ok, _}, &1))
+    |> Tools.boolean_to_tuple()
   end
 
   @doc """
