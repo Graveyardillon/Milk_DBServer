@@ -2648,7 +2648,7 @@ defmodule Milk.Tournaments do
 
   defp edit_ranks_on_finish_with_team_result(team_id_list) do
     team_id_list
-    |> Enum.with_index(fn element, index -> {element, index} end)
+    |> Enum.with_index(fn element, index -> {element, index + 1} end)
     |> Enum.map(fn {team, index} ->
       __MODULE__.update_team(team, %{rank: index})
     end)
