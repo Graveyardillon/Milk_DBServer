@@ -1667,14 +1667,6 @@ defmodule MilkWeb.TournamentController do
     end
   end
 
-  defp create_match_list_with_fight_result_log_on_finish(tournament_id) do
-    tournament_id
-    |> Progress.get_match_list_with_fight_result()
-    |> inspect(charlists: false)
-    |> then(&(%{"tournament_id" => tournament_id, "match_list_with_fight_result_str" => &1}))
-    |> Progress.create_match_list_with_fight_result_log()
-  end
-
   @spec finish_as_needed_on_roundrobin(integer(), integer()) :: {:ok, nil} | {:error, String.t()}
   defp finish_as_needed_on_roundrobin(tournament_id, winner_id) do
     # NOTE: current_match_indexの数字を上げる
@@ -2034,6 +2026,7 @@ defmodule MilkWeb.TournamentController do
 
   @doc """
   結果を入力してfinish
+  TODO: テスト記述
   """
   def finish_with_result(conn, %{"tournament_id" => tournament_id, "team_id_list" => team_id_list}) do
     tournament_id = Tools.to_integer_as_needed(tournament_id)
