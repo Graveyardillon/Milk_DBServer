@@ -14,5 +14,6 @@ defmodule Milk.Tournaments.Entries.Template do
     template
     |> cast(attrs, [:title, :tournament_id])
     |> validate_required([:title])
+    |> foreign_key_constraint(:tournament_id)
   end
 end
