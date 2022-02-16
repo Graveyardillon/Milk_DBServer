@@ -179,6 +179,7 @@ defmodule MilkWeb.Router do
     post "/tournament/flip_coin", TournamentController, :flip_coin
     post "/tournament/defeat", TournamentController, :force_to_defeat
     post "/tournament/finish", TournamentController, :finish
+    post "/tournament/finish_with_result", TournamentController, :finish_with_result
     post "/tournament/ban_maps", TournamentController, :ban_maps
     post "/tournament/choose_map", TournamentController, :choose_map
     post "/tournament/choose_ad", TournamentController, :choose_ad

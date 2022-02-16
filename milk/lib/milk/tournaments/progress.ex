@@ -188,11 +188,11 @@ defmodule Milk.Tournaments.Progress do
   @spec get_match_list_with_fight_result_including_log(integer()) :: match_list()
   def get_match_list_with_fight_result_including_log(tournament_id) do
     tournament_id
-    |> get_match_list_with_fight_result()
+    |> __MODULE__.get_match_list_with_fight_result()
     |> case do
       nil ->
         tournament_id
-        |> get_match_list_with_fight_result_log()
+        |> __MODULE__.get_match_list_with_fight_result_log()
         # TODO: nilだったときのエラーハンドリング
         |> Map.get(:match_list_with_fight_result_str)
         |> Code.eval_string()
