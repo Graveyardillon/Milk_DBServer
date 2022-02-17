@@ -29,5 +29,7 @@ defmodule Milk.Tournaments.Entry do
     entry
     |> cast(attrs, [:tournament_id, :user_id])
     |> validate_required([:tournament_id, :user_id])
+    |> foreign_key_constraint(:tournament_id)
+    |> foreign_key_constraint(:user_id)
   end
 end
