@@ -5,6 +5,7 @@ defmodule Milk.Repo.Migrations.RulesFreeforallRoundTable do
     create table(:tournaments_rules_freeforall_round_table) do
       add :tournament_id, references(:tournaments, on_delete: :delete_all)
       add :name, :string
+      add :round_index, :integer
 
       timestamps()
     end

@@ -10,6 +10,7 @@ defmodule Milk.Tournaments.Rules.FreeForAll.Round.Table do
 
   schema "tournaments_rules_freeforall_round_table" do
     field :name, :string
+    field :round_index, :integer
 
     belongs_to :tournament, Tournament
 
@@ -19,7 +20,7 @@ defmodule Milk.Tournaments.Rules.FreeForAll.Round.Table do
   @doc false
   def changeset(attrs, table) do
     table
-    |> cast(attrs, [:name, :tournament_id])
+    |> cast(attrs, [:name, :round_index, :tournament_id])
     |> foreign_key_constraint(:tournament_id)
   end
 end
