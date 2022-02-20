@@ -12,6 +12,7 @@ defmodule Milk.Tournaments.Rules.FreeForAll.Information do
     round_number: :integer,
     match_number: :integer,
     round_capacity: :integer,
+    tournament_id: :integer,
     # NOTE: timestamps
     create_time: any(),
     update_time: any()
