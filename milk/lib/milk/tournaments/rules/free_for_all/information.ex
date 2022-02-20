@@ -8,6 +8,15 @@ defmodule Milk.Tournaments.Rules.FreeForAll.Information do
 
   alias Milk.Tournaments.Tournament
 
+  @type t :: %__MODULE__{
+    round_number: :integer,
+    match_number: :integer,
+    round_capacity: :integer,
+    # NOTE: timestamps
+    create_time: any(),
+    update_time: any()
+  }
+
   schema "tournaments_rules_freeforall_information" do
     field :round_number, :integer
     field :match_number, :integer
@@ -19,7 +28,7 @@ defmodule Milk.Tournaments.Rules.FreeForAll.Information do
   end
 
   @doc false
-  def changeset(attrs, information) do
+  def changeset(information, attrs) do
     information
     |> cast(attrs, [:round_number, :match_number, :round_capacity, :tournament_id])
     |> foreign_key_constraint(:tournament_id)
