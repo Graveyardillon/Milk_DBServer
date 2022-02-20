@@ -50,9 +50,10 @@ defmodule Common.Tools do
   @doc """
   targetより小さい範囲で最大の、multiplierの倍数を発見する関数
   """
-  @spec get_closest_num_of_multiple(integer(), integer()) :: integer()
-  def get_closest_num_of_multiple(_, 0),               do: 0
-  def get_closest_num_of_multiple(target, multiplier), do: multiplier * floor(target / multiplier)
+  @spec get_closest_num_of_multiple(any(), any()) :: integer()
+  def get_closest_num_of_multiple(target, 0)          when is_integer(target), do: 0
+  def get_closest_num_of_multiple(target, multiplier) when is_integer(target), do: multiplier * floor(target / multiplier)
+  def get_closest_num_of_multiple(_, _), do: 0
 
   @doc """
   Get hostname

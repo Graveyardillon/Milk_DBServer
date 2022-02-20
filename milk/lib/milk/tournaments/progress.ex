@@ -712,7 +712,7 @@ defmodule Milk.Tournaments.Progress do
   end
 
   # NOTE: round robin log
-  @spec create_round_robin_log(map()) :: {:ok, RoundrobinLog.t()} | {:error, Ecto.Changeset.t() | String.t()}
+  @spec create_round_robin_log(map()) :: {:ok, RoundRobinLog.t()} | {:error, Ecto.Changeset.t() | String.t()}
   def create_round_robin_log(attrs \\ %{}) do
     %RoundRobinLog{}
     |> RoundRobinLog.changeset(attrs)

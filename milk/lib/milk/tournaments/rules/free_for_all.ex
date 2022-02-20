@@ -3,13 +3,15 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
   FreeForAllに関する記述
   """
   import Ecto.Query, warn: false
+  import Common.Sperm
 
+  alias Common.Tools
   alias Milk.Tournaments.Rules.FreeForAll.Information
-  alias Milk.Tournaments.Tournament
-  alias Milk.{
-    Repo,
-    Tournaments
+  alias Milk.Tournaments.{
+    Team,
+    Tournament
   }
+  alias Milk.Repo
 
   @behaviour Milk.Tournaments.Rules.Rule
 
@@ -186,10 +188,23 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
   end
 
   def truncate_excess_members(%Tournament{is_team: true, id: tournament_id}) do
-    teams = Tournaments.get_teams_by_tournament_id(tournament_id)
-
     %Information{round_number: round_number} = __MODULE__.get_freeforall_information_by_tournament_id(tournament_id)
 
+    tournament_id
+    |> get_teams_desc_by_confirmation_date()
+    ~> teams
+    |> length()
+    |> Tools.get_closest_num_of_multiple(round_number)
+    ~> remaining_members_num
 
+    Enum.slice(teams, 0..remaining_members_num - 1)
+  end
+
+  @spec get_teams_desc_by_confirmation_date(integer()) :: [Team.t()]
+  defp get_teams_desc_by_confirmation_date(tournament_id) do
+    Team
+    |> where([t], t.tournament_id == ^tournament_id)
+    |> order_by([t], desc: :confirmation_date)
+    |> Repo.all()
   end
 end

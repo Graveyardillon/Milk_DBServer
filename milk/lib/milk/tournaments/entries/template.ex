@@ -2,6 +2,14 @@ defmodule Milk.Tournaments.Entries.Template do
   use Milk.Schema
   import Ecto.Changeset
 
+  @type t :: %__MODULE__{
+    title: :string,
+    tournament_id: :integer,
+    # NOTE: timestamps
+    create_time: any(),
+    update_time: any()
+  }
+
   schema "entry_templates" do
     field :title, :string
     field :tournament_id, :id

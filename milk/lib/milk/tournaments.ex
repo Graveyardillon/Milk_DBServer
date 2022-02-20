@@ -4241,7 +4241,7 @@ defmodule Milk.Tournaments do
     |> join(:inner, [tm], ti in TeamInvitation, on: tm.id == ti.team_member_id)
     |> where([tm, ti], ti.id == ^team_invitation_id)
     |> Repo.one()
-    |> TeamMember.changeset(%{"is_invitation_confirmed" => true})
+    |> TeamMember.changeset(%{"is_invitation_confirmed" => true, "confirmation_date" => Timex.now()})
     |> Repo.update()
     |> case do
       {:ok, team_member} ->
