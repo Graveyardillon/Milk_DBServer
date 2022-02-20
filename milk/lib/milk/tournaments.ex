@@ -68,7 +68,8 @@ defmodule Milk.Tournaments do
   alias Milk.Tournaments.Rules.{
     Basic,
     FlipBan,
-    FlipBanRoundRobin
+    FlipBanRoundRobin,
+    FreeForAll
   }
 
   alias Tournamex.RoundRobin
@@ -574,6 +575,7 @@ defmodule Milk.Tournaments do
   @spec validate_fields(map()) :: {:ok, map()} | {:error, String.t()}
   defp validate_fields(fields) do
     case fields["rule"] do
+      "freeforall"         -> validate_freeforall_fields(fields)
       "flipban_roundrobin" -> validate_flipban_roundrobin_fields(fields)
       "flipban"            -> validate_flipban_fields(fields)
       "basic"              -> validate_basic_fields(fields)
@@ -627,6 +629,12 @@ defmodule Milk.Tournaments do
     end
   end
 
+  defp validate_freeforall_fields(%{"round_number" => round_number, "match_number" => match_number, "round_capacity" => round_capacity})
+    when is_integer(round_number) and is_integer(match_number) and is_integer(round_capacity) and
+    round_number > 0 and match_number > 0 and round_capacity > 0,
+    do: {:ok, nil}
+  defp validate_freeforall_fields(_), do: {:error, "Invalid FreeforAll Fields"}
+
   @spec join_chat_topics_on_create_tournament(Tournament.t()) :: {:ok, nil} | {:error, String.t() | nil}
   defp join_chat_topics_on_create_tournament(tournament) do
     tournament.id
@@ -653,6 +661,7 @@ defmodule Milk.Tournaments do
   @spec add_necessary_fields(Tournament.t(), map()) :: {:ok, nil} | {:error, String.t()}
   defp add_necessary_fields(%Tournament{rule: rule} = tournament, attrs) do
     case rule do
+      "freeforall"         -> add_freeforall_fields(tournament, attrs)
       "flipban_roundrobin" -> add_flipban_roundrobin_fields(tournament, attrs)
       "flipban"            -> add_flipban_fields(tournament, attrs)
       "basic"              -> add_basic_fields(tournament, attrs)
@@ -685,6 +694,17 @@ defmodule Milk.Tournaments do
   @spec add_flipban_roundrobin_fields(Tournament.t(), map()) :: {:ok, nil} | {:error, String.t()}
   defp add_flipban_roundrobin_fields(tournament, attrs),
     do: add_flipban_fields(tournament, attrs)
+
+  @spec add_freeforall_fields(Tournament.t(), map()) :: {:ok, nil} | {:error, String.t()}
+  defp add_freeforall_fields(tournament, attrs) do
+    with :ok <- Rules.initialize_state_machine(tournament),
+         {:ok, _} <- create_freeforall_information_on_create_tournament(tournament, attrs) do
+      {:ok, nil}
+    else
+      :error -> {:error, "failed to initialize state machine"}
+      errors -> errors
+    end
+  end
 
   @spec create_tournament_custom_detail_on_create_tournament(Tournament.t(), map()) :: {:ok, TournamentCustomDetail.t()} | {:error, Ecto.Changeset.t()}
   defp create_tournament_custom_detail_on_create_tournament(tournament, attrs) do
@@ -723,6 +743,17 @@ defmodule Milk.Tournaments do
       |> Map.put("tournament_id", tournament_id)
       |> Milk.Tournaments.Map.changeset()
     end)
+  end
+
+  defp create_freeforall_information_on_create_tournament(tournament, %{round_number: round_number, match_number: match_number, round_capacity: round_capacity}),
+    do: create_freeforall_information_on_create_tournament(tournament, %{"round_number" => round_number, "match_number" => match_number, "round_capacity" => round_capacity})
+  defp create_freeforall_information_on_create_tournament(tournament, %{"round_number" => round_number, "match_number" => match_number, "round_capacity" => round_capacity}) do
+    FreeForAll.create_freeforall_information(%{
+      round_number: round_number,
+      match_number: match_number,
+      round_capacity: round_capacity,
+      tournament_id: tournament.id
+    })
   end
 
   @spec put_token_as_needed(map()) :: map()

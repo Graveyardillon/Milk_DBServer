@@ -21,6 +21,7 @@ defmodule MilkWeb.TournamentControllerTest do
     Tournaments
   }
   alias Milk.Tournaments.Progress
+  alias Milk.Tournaments.Rules.FreeForAll
 
   require Logger
 
@@ -712,6 +713,35 @@ defmodule MilkWeb.TournamentControllerTest do
 
       conn = post(conn, Routes.tournament_path(conn, :create), tournament: attrs, file: "")
       refute json_response(conn, 200)["result"]
+    end
+  end
+
+  describe "create freeforall tournament" do
+    test "individual works", %{conn: conn} do
+      user = fixture_user()
+      attrs = %{
+        "capacity" => 4,
+        "coin_head_field" => "map選択",
+        "coin_tail_field" => "a/d選択",
+        "deadline" => "2050-04-17T14:00:00Z",
+        "description" => "some description",
+        "event_date" => "2050-04-17T14:00:00Z",
+        "master_id" => user.id,
+        "name" => "some name",
+        "type" => 1,
+        "url" => "some url",
+        "platform" => 1,
+        "rule" => "freeforall",
+        "round_number" => 3,
+        "match_number" => 1,
+        "round_capacity" => 8
+      }
+
+      conn = post(conn, Routes.tournament_path(conn, :create), tournament: attrs, file: "")
+      assert json_response(conn, 200)["result"]
+      tournament_id = json_response(conn, 200)["data"]["id"]
+
+      assert FreeForAll.get_freeforall_information_by_tournament_id(tournament_id)
     end
   end
 

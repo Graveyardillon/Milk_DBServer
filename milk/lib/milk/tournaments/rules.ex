@@ -13,7 +13,8 @@ defmodule Milk.Tournaments.Rules do
   alias Milk.Tournaments.Rules.{
     Basic,
     FlipBan,
-    FlipBanRoundRobin
+    FlipBanRoundRobin,
+    FreeForAll
   }
 
   @spec adapt_keyname(integer(), integer()) :: String.t()
@@ -28,6 +29,7 @@ defmodule Milk.Tournaments.Rules do
       "basic"              -> Basic.define_dfa!(is_team: is_team)
       "flipban"            -> FlipBan.define_dfa!(is_team: is_team)
       "flipban_roundrobin" -> FlipBanRoundRobin.define_dfa!(is_team: is_team)
+      "freeforall"         -> FreeForAll.define_dfa!(is_team: is_team)
       _                    -> :error
     end
   end
@@ -46,6 +48,7 @@ defmodule Milk.Tournaments.Rules do
         "basic"              -> Basic.build_dfa_instance(keyname, is_team: is_team)
         "flipban"            -> FlipBan.build_dfa_instance(keyname, is_team: is_team)
         "flipban_roundrobin" -> FlipBanRoundRobin.build_dfa_instance(keyname, is_team: is_team)
+        "freeforall"         -> FreeForAll.build_dfa_instance(keyname, is_team: is_team)
         _                    -> raise "Invalid tournament rule"
       end
     end)
@@ -76,6 +79,7 @@ defmodule Milk.Tournaments.Rules do
         "basic"              -> Basic.trigger!(keyname, Basic.manager_trigger())
         "flipban"            -> FlipBan.trigger!(keyname, FlipBan.manager_trigger())
         "flipban_roundrobin" -> FlipBan.trigger!(keyname, FlipBan.manager_trigger())
+        "freeforall"         -> FreeForAll.trigger!(keyname, FreeForAll.manager_trigger())
         _                    -> {:error, "Invalid tournament rule"}
       end
     end
