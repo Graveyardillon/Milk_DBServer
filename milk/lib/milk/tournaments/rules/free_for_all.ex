@@ -5,7 +5,11 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
   import Ecto.Query, warn: false
 
   alias Milk.Tournaments.Rules.FreeForAll.Information
-  alias Milk.Repo
+  alias Milk.Tournaments.Tournament
+  alias Milk.{
+    Repo,
+    Tournaments
+  }
 
   @behaviour Milk.Tournaments.Rules.Rule
 
@@ -179,5 +183,13 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
     Information
     |> where([i], i.tournament_id == ^tournament_id)
     |> Repo.one()
+  end
+
+  def truncate_excess_members(%Tournament{is_team: true, id: tournament_id}) do
+    teams = Tournaments.get_teams_by_tournament_id(tournament_id)
+
+    %Information{round_number: round_number} = __MODULE__.get_freeforall_information_by_tournament_id(tournament_id)
+
+
   end
 end

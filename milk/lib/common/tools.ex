@@ -48,6 +48,13 @@ defmodule Common.Tools do
   end
 
   @doc """
+  targetより小さい範囲で最大の、multiplierの倍数を発見する関数
+  """
+  @spec get_closest_num_of_multiple(integer(), integer()) :: integer()
+  def get_closest_num_of_multiple(_, 0),               do: 0
+  def get_closest_num_of_multiple(target, multiplier), do: multiplier * floor(target / multiplier)
+
+  @doc """
   Get hostname
   """
   def get_hostname() do
