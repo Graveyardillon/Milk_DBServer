@@ -11,6 +11,7 @@ defmodule Milk.Tournaments.Rules.FreeForAll.Round.Table do
   @type t :: %__MODULE__{
     name: :string,
     round_index: :integer,
+    tournament_id: :integer,
     # NOTE: timestamps
     create_time: any(),
     update_time: any()

@@ -252,7 +252,6 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
     ~> tables
 
     assign_teams(teams, tables)
-    |> IO.inspect()
 
     {:ok, nil}
   end
@@ -288,5 +287,17 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
     %Table{}
     |> Table.changeset(attrs)
     |> Repo.insert()
+  end
+
+  def get_tables_by_tournament_id(tournament_id) do
+    Table
+    |> where([t], t.tournament_id == ^tournament_id)
+    |> Repo.all()
+  end
+
+  def get_round_team_information(table_id) do
+    TeamInformation
+    |> where([t], t.table_id == ^table_id)
+    |> Repo.all()
   end
 end

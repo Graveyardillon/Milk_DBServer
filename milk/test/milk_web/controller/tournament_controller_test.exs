@@ -1959,6 +1959,14 @@ defmodule MilkWeb.TournamentControllerTest do
 
       conn = post(conn, Routes.tournament_path(conn, :start), tournament: %{"master_id" => tournament.master_id, "tournament_id" => tournament.id})
       assert json_response(conn, 200)["result"]
+
+      tournament.id
+      |> FreeForAll.get_tables_by_tournament_id()
+      |> Enum.map(fn table ->
+        assert FreeForAll.get_round_team_information(table.id)
+      end)
+      |> Enum.empty?()
+      |> refute()
     end
   end
 
