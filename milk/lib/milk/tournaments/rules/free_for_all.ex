@@ -188,16 +188,28 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
   end
 
   def truncate_excess_members(%Tournament{is_team: true, id: tournament_id}) do
-    %Information{round_number: round_number} = __MODULE__.get_freeforall_information_by_tournament_id(tournament_id)
+    # NOTE: チームから、
 
-    tournament_id
-    |> get_teams_desc_by_confirmation_date()
-    ~> teams
+    with information when not is_nil(information) <- __MODULE__.get_freeforall_information_by_tournament_id(tournament_id),
+         teams                                    <- get_teams_desc_by_confirmation_date(tournament_id),
+         {:ok, remaining_members_num}             <- get_closest_num_of_multiple(teams, information) do
+      {:ok, nil}
+    else
+      nil             -> {:error, "round information is nil"}
+      {:error, error} -> {:error, error}
+    end
+
+    #Enum.slice(teams, 0..remaining_members_num - 1)
+  end
+
+  defp get_closest_num_of_multiple([], _), do: {:error, "teams is empty list"}
+  defp get_closest_num_of_multiple(teams, %Information{round_number: round_number}) do
+    teams
     |> length()
     |> Tools.get_closest_num_of_multiple(round_number)
     ~> remaining_members_num
 
-    Enum.slice(teams, 0..remaining_members_num - 1)
+    {:ok, remaining_members_num}
   end
 
   @spec get_teams_desc_by_confirmation_date(integer()) :: [Team.t()]
@@ -205,6 +217,13 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
     Team
     |> where([t], t.tournament_id == ^tournament_id)
     |> order_by([t], desc: :confirmation_date)
+    |> order_by([t], asc: fragment("? NULLS LAST", t.confirmation_date))
     |> Repo.all()
+  end
+
+  defmacro nulls_last(field) do
+    quote do
+      fragment("? NULLS LAST", unquote(field))
+    end
   end
 end
