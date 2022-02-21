@@ -7,7 +7,7 @@ defmodule Milk.Tournaments.Rules.FreeForAll.Round.TeamInformation do
   alias Milk.Tournaments.Rules.FreeForAll.Round.Table
   alias Milk.Tournaments.Team
 
-  schema "tournaments_rules_freeforall_round_table" do
+  schema "tournaments_rules_freeforall_round_teaminformation" do
     belongs_to :table, Table
     belongs_to :team, Team
 
@@ -15,7 +15,7 @@ defmodule Milk.Tournaments.Rules.FreeForAll.Round.TeamInformation do
   end
 
   @doc false
-  def changeset(attrs, information) do
+  def changeset(information, attrs) do
     information
     |> cast(attrs, [:table_id, :team_id])
     |> foreign_key_constraint(:table_id)

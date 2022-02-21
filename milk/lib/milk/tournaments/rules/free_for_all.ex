@@ -7,11 +7,18 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
 
   alias Common.Tools
   alias Milk.Tournaments.Rules.FreeForAll.Information
+  alias Milk.Tournaments.Rules.FreeForAll.Round.{
+    Table,
+    TeamInformation
+  }
   alias Milk.Tournaments.{
     Team,
     Tournament
   }
-  alias Milk.Repo
+  alias Milk.{
+    Repo,
+    Tournaments
+  }
 
   @behaviour Milk.Tournaments.Rules.Rule
 
@@ -227,9 +234,59 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
     |> Repo.all()
   end
 
-  defmacro nulls_last(field) do
-    quote do
-      fragment("? NULLS LAST", unquote(field))
-    end
+  def generate_round_tables(%Tournament{is_team: true, id: tournament_id}, round_index) do
+    # 参加人数割るround_capacityの数だけ対戦カードを作る（繰り上げ）
+    teams = Tournaments.get_confirmed_teams(tournament_id)
+    information = __MODULE__.get_freeforall_information_by_tournament_id(tournament_id)
+
+    tables_num = ceil(length(teams) / information.round_capacity)
+
+    1..tables_num
+    |> Enum.to_list()
+    |> Enum.map(fn n ->
+      __MODULE__.create_round_table(%{name: "テーブル#{n}", round_index: round_index, tournament_id: tournament_id})
+    end)
+    |> Enum.reduce([], fn {:ok, table}, acc ->
+      [table | acc]
+    end)
+    ~> tables
+
+    assign_teams(teams, tables)
+    |> IO.inspect()
+
+    {:ok, nil}
+  end
+
+  def generate_round_tables(%Tournament{is_team: false}, round_index) do
+    # 参加人数割るround_capacityの数だけ対戦カードを作る（繰り上げ）
+  end
+
+  defp assign_teams(teams, tables) do
+    teams
+    |> Enum.shuffle()
+    |> do_assign_teams(tables)
+  end
+
+  defp do_assign_teams(teams, tables, count \\ 0)
+  defp do_assign_teams([], _, _), do: {:ok, nil}
+  defp do_assign_teams(teams, tables, count) do
+    [team | remaining_teams] = teams
+    table = Enum.at(tables, rem(count, length(tables)))
+
+    %TeamInformation{}
+    |> TeamInformation.changeset(%{table_id: table.id, team_id: team.id})
+    |> Repo.insert()
+
+    do_assign_teams(remaining_teams, tables, count + 1)
+  end
+
+  defp assign_entrants() do
+
+  end
+
+  def create_round_table(attrs \\ %{}) do
+    %Table{}
+    |> Table.changeset(attrs)
+    |> Repo.insert()
   end
 end
