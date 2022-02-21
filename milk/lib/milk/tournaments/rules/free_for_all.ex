@@ -209,7 +209,7 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
 
   defp delete_surplus_teams(teams, remaining_teams_num) when length(teams) > remaining_teams_num do
     teams
-    |> Enum.slice(remaining_teams_num - 1..length(teams))
+    |> Enum.slice(remaining_teams_num..length(teams))
     |> Enum.map(&Repo.delete(&1))
     |> Enum.all?(&match?({:ok, _}, &1))
     |> Tools.boolean_to_tuple()

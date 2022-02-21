@@ -631,7 +631,7 @@ defmodule Milk.Tournaments do
 
   defp validate_freeforall_fields(%{"round_number" => round_number, "match_number" => match_number, "round_capacity" => round_capacity, "capacity" => capacity})
     when is_integer(round_number) and is_integer(match_number) and is_integer(round_capacity) and
-    round_number > 0 and match_number > 0 and round_capacity > 0 and capacity > round_capacity,
+    round_number > 0 and match_number > 0 and round_capacity > 0 and capacity > round_capacity and capacity > round_number,
     do: {:ok, nil}
   defp validate_freeforall_fields(_), do: {:error, "Invalid FreeforAll Fields"}
 
