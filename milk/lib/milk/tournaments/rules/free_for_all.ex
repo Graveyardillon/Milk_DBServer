@@ -188,18 +188,24 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
   end
 
   def truncate_excess_members(%Tournament{is_team: true, id: tournament_id}) do
-    # NOTE: チームから、
-
     with information when not is_nil(information) <- __MODULE__.get_freeforall_information_by_tournament_id(tournament_id),
          teams                                    <- get_teams_desc_by_confirmation_date(tournament_id),
-         {:ok, remaining_members_num}             <- get_closest_num_of_multiple(teams, information) do
+         {:ok, remaining_teams_num}               <- get_closest_num_of_multiple(teams, information),
+         {:ok, nil}                               <- delete_surplus_teams(teams, remaining_teams_num) do
       {:ok, nil}
     else
       nil             -> {:error, "round information is nil"}
       {:error, error} -> {:error, error}
+      _               -> {:error, "error on truncate excess members"}
     end
+  end
 
-    #Enum.slice(teams, 0..remaining_members_num - 1)
+  defp delete_surplus_teams(teams, remaining_teams_num) when length(teams) > remaining_teams_num do
+    teams
+    |> Enum.slice(remaining_teams_num - 1..length(teams))
+    |> Enum.map(&Repo.delete(&1))
+    |> Enum.all?(&match?({:ok, _}, &1))
+    |> Tools.boolean_to_tuple()
   end
 
   defp get_closest_num_of_multiple([], _), do: {:error, "teams is empty list"}

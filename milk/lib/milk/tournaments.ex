@@ -629,9 +629,9 @@ defmodule Milk.Tournaments do
     end
   end
 
-  defp validate_freeforall_fields(%{"round_number" => round_number, "match_number" => match_number, "round_capacity" => round_capacity})
+  defp validate_freeforall_fields(%{"round_number" => round_number, "match_number" => match_number, "round_capacity" => round_capacity, "capacity" => capacity})
     when is_integer(round_number) and is_integer(match_number) and is_integer(round_capacity) and
-    round_number > 0 and match_number > 0 and round_capacity > 0,
+    round_number > 0 and match_number > 0 and round_capacity > 0 and capacity > round_capacity,
     do: {:ok, nil}
   defp validate_freeforall_fields(_), do: {:error, "Invalid FreeforAll Fields"}
 
@@ -1483,6 +1483,7 @@ defmodule Milk.Tournaments do
       "basic"              -> Basic.build_dfa_instance(keyname, is_team: tournament.is_team)
       "flipban"            -> FlipBan.build_dfa_instance(keyname, is_team: tournament.is_team)
       "flipban_roundrobin" -> FlipBanRoundRobin.build_dfa_instance(keyname, is_team: tournament.is_team)
+      "freeforall"         -> FreeForAll.build_dfa_instance(keyname, is_team: tournament.is_team)
       _                    -> raise "Invalid tournament"
     end
 
@@ -2883,6 +2884,7 @@ defmodule Milk.Tournaments do
       "basic"              -> Basic.build_dfa_instance(keyname, is_team: tournament.is_team)
       "flipban"            -> FlipBan.build_dfa_instance(keyname, is_team: tournament.is_team)
       "flipban_roundrobin" -> FlipBanRoundRobin.build_dfa_instance(keyname, is_team: tournament.is_team)
+      "freeforall"         -> FreeForAll.build_dfa_instance(keyname, is_team: tournament.is_team)
       _                    -> raise "Invalid tournament"
     end
   end
@@ -3415,6 +3417,7 @@ defmodule Milk.Tournaments do
       "basic"              -> Basic.state!(keyname)
       "flipban"            -> FlipBan.state!(keyname)
       "flipban_roundrobin" -> FlipBanRoundRobin.state!(keyname)
+      "freeforall"         -> FreeForAll.state!(keyname)
       _                    -> raise "Invalid tournament rule"
     end
   end
@@ -4385,6 +4388,7 @@ defmodule Milk.Tournaments do
         "basic"              -> Basic.build_dfa_instance(keyname, is_team: tournament.is_team)
         "flipban"            -> FlipBan.build_dfa_instance(keyname, is_team: tournament.is_team)
         "flipban_roundrobin" -> FlipBanRoundRobin.build_dfa_instance(keyname, is_team: tournament.is_team)
+        "freeforall"         -> FreeForAll.build_dfa_instance(keyname, is_team: tournament.is_team)
         _                    -> raise "Invalid tournament"
       end
     end)

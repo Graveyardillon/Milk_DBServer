@@ -695,15 +695,16 @@ defmodule MilkWeb.TournamentController do
       "basic"              -> Progress.start_team_flipban(tournament)
       "flipban"            -> Progress.start_team_flipban(tournament)
       "flipban_roundrobin" -> Progress.start_team_flipban_round_robin(tournament)
+      "freeforall"         -> Progress.start_free_for_all(tournament)
       _                    -> {:error, "unsupported tournament rule", nil}
     end
   end
 
   defp start_tournament(master_id, tournament) do
     case tournament.rule do
-      "basic"   -> Progress.start_basic(master_id, tournament)
-      "flipban" -> Progress.start_flipban(master_id, tournament)
-      _         -> {:error, "unsupported tournament rule", nil}
+      "basic"      -> Progress.start_basic(master_id, tournament)
+      "flipban"    -> Progress.start_flipban(master_id, tournament)
+      _            -> {:error, "unsupported tournament rule", nil}
     end
   end
 

@@ -38,7 +38,10 @@ defmodule Milk.Tournaments.Progress do
     SingleTournamentMatchLog,
     TeamWinCount
   }
-  alias Milk.Tournaments.Rules.FlipBanRoundRobin
+  alias Milk.Tournaments.Rules.{
+    FlipBanRoundRobin,
+    FreeForAll
+  }
 
   alias Tournamex.RoundRobin
 
@@ -882,6 +885,16 @@ defmodule Milk.Tournaments.Progress do
     |> Tournaments.get_confirmed_teams()
     |> Enum.map(&Map.get(&1, :id))
     |> RoundRobin.generate_match_list()
+  end
+
+  @spec start_free_for_all(Tournament.t()) :: {:ok, nil, nil} | {:error, String.t() | nil}
+  def start_free_for_all(tournament) do
+    with {:ok, nil} <- FreeForAll.truncate_excess_members(tournament) do
+      {:ok, nil, nil}
+    else
+      {:error, error} -> {:error, error}
+      _               -> {:error, "error on prepare for start"}
+    end
   end
 
   # NOTE: 一人の人を除外する処理
