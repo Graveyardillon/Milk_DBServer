@@ -12,7 +12,8 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
   }
   alias Milk.Tournaments.Rules.FreeForAll.Round.{
     Table,
-    TeamInformation
+    TeamInformation,
+    TeamMatchInformation
   }
   alias Milk.Tournaments.{
     Team,
@@ -315,6 +316,12 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
   def get_round_team_information(table_id) do
     TeamInformation
     |> where([t], t.table_id == ^table_id)
+    |> Repo.all()
+  end
+
+  def get_team_match_information(round_team_information_id) do
+    TeamMatchInformation
+    |> where([t], t.round_id == ^round_team_information_id)
     |> Repo.all()
   end
 end

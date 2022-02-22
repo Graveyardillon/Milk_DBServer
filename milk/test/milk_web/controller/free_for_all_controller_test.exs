@@ -29,9 +29,27 @@ defmodule MilkWeb.FreeForAllControllerTest do
       |> json_response(200)
       |> Map.get("data")
       |> Enum.map(fn table ->
+        assert table["id"]
         assert table["name"]
         assert table["round_index"]
         assert table["tournament_id"] == tournament.id
+
+        conn = get(conn, Routes.free_for_all_path(conn, :get_round_team_information), table_id: table["id"])
+        assert json_response(conn, 200)["result"]
+
+        conn
+        |> json_response(200)
+        |> Map.get("data")
+        |> Enum.map(fn round ->
+          assert round["table_id"] == table["id"]
+          assert round["team_id"]
+          assert round["id"]
+
+          conn = get(conn, Routes.free_for_all_path(conn, :get_team_match_information), round_information_id: round["id"])
+          assert json_response(conn, 200)["result"]
+        end)
+        |> Enum.empty?()
+        |> refute()
       end)
       |> length()
       |> then(fn len ->
