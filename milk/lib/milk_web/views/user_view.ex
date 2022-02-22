@@ -2,17 +2,16 @@ defmodule MilkWeb.UserView do
   use MilkWeb, :view
 
   alias Common.Tools
-  alias MilkWeb.UserView
   alias Milk.UserManager.Guardian
 
   def render("index.json", %{users: []}),
     do: %{data: nil, result: false}
   def render("index.json", %{users: users}),
-    do: %{data: render_many(users, UserView, "user.json"), result: true}
+    do: %{data: render_many(users, __MODULE__, "user.json"), result: true}
 
   def render("show.json", %{user: user}) do
     if user do
-      %{data: render_one(user, UserView, "user.json"), result: true}
+      %{data: render_one(user, __MODULE__, "user.json"), result: true}
     else
       %{data: nil, result: false}
     end
@@ -20,7 +19,7 @@ defmodule MilkWeb.UserView do
 
   def render("login.json", %{user: user, token: token}) do
     if user do
-      %{data: render_one(user, UserView, "user.json"), result: true, token: token}
+      %{data: render_one(user, __MODULE__, "user.json"), result: true, token: token}
     else
       %{data: nil, result: false}
     end
@@ -30,7 +29,7 @@ defmodule MilkWeb.UserView do
     if user do
       case Guardian.signin_forced(user) do
         {:ok, token, _} ->
-          %{data: render_one(user, UserView, "user.json"), result: true, token: token}
+          %{data: render_one(user, __MODULE__, "user.json"), result: true, token: token}
 
         {:error, _error} ->
           %{result: false, error: "can't get token", data: nil}

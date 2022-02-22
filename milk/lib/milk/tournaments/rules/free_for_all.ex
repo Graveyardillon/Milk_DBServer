@@ -299,6 +299,13 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
     |> Repo.insert()
   end
 
+  def load_tables_by_tournament_id(tournament_id) do
+    tournament_id
+    |> __MODULE__.get_tables_by_tournament_id()
+    |> Repo.preload(:information)
+  end
+
+  @spec get_tables_by_tournament_id(integer()) :: Table.t() | nil
   def get_tables_by_tournament_id(tournament_id) do
     Table
     |> where([t], t.tournament_id == ^tournament_id)

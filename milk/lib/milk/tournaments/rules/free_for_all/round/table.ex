@@ -7,6 +7,7 @@ defmodule Milk.Tournaments.Rules.FreeForAll.Round.Table do
   import Ecto.Changeset
 
   alias Milk.Tournaments.Tournament
+  alias Milk.Tournaments.Rules.FreeForAll.Round.Information
 
   @type t :: %__MODULE__{
     name: :string,
@@ -22,6 +23,8 @@ defmodule Milk.Tournaments.Rules.FreeForAll.Round.Table do
     field :round_index, :integer
 
     belongs_to :tournament, Tournament
+
+    has_many :information, Information
 
     timestamps()
   end

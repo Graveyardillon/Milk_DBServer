@@ -234,6 +234,8 @@ defmodule MilkWeb.Router do
 
     get "/image/path", ImageController, :get_by_path
     get "/image/get_thumbnail_by_tournament_id", ImageController, :get_thumbnail_by_tournament_id
+
+    get "/tournament/tables", FreeForAllController, :get_tables
   end
 
   scope "/debug", MilkWeb do

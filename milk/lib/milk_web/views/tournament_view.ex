@@ -130,7 +130,6 @@ defmodule MilkWeb.TournamentView do
         discord_server_id: tournament.discord_server_id,
         platform: tournament.platform_id,
         capacity: tournament.capacity,
-        # password: tournament.password,
         has_password: !is_nil(tournament.password),
         description: tournament.description,
         master_id: tournament.master_id,
