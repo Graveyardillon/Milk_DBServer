@@ -926,7 +926,6 @@ defmodule Milk.Tournaments.Progress do
   defp do_change_states_in_match_list_of_round_robin(%Tournament{is_team: true, id: tournament_id, rule: rule}, team_id) do
     team_id
     |> Tournaments.get_leader()
-    |> Map.get(:user_id)
     |> Rules.adapt_keyname(tournament_id)
     ~> keyname
 

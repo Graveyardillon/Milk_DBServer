@@ -6,7 +6,10 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
   import Common.Sperm
 
   alias Common.Tools
-  alias Milk.Tournaments.Rules.FreeForAll.Information
+  alias Milk.Tournaments.Rules.FreeForAll.{
+    Information,
+    TeamStatus
+  }
   alias Milk.Tournaments.Rules.FreeForAll.Round.{
     Table,
     TeamInformation
@@ -214,6 +217,7 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
     |> Enum.all?(&match?({:ok, _}, &1))
     |> Tools.boolean_to_tuple()
   end
+  defp delete_surplus_teams(_, _), do: {:error, "invalid remaining teams number"}
 
   defp get_closest_num_of_multiple([], _), do: {:error, "teams is empty list"}
   defp get_closest_num_of_multiple(teams, %Information{round_number: round_number}) do
@@ -281,6 +285,12 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
 
   defp assign_entrants() do
 
+  end
+
+  def create_team_status(attrs \\ %{}) do
+    %TeamStatus{}
+    |> TeamStatus.changeset(attrs)
+    |> Repo.insert()
   end
 
   def create_round_table(attrs \\ %{}) do

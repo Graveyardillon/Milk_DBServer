@@ -20,7 +20,7 @@ defmodule Milk.Tournaments.Rules.FreeForAll.Status do
   end
 
   @doc false
-  def changeset(attrs, status) do
+  def changeset(status, attrs) do
     status
     |> cast(attrs, [:current_round_index, :current_match_index, :tournament_id, :user_id])
     |> foreign_key_constraint(:tournament_id)

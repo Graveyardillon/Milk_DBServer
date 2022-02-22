@@ -11,6 +11,16 @@ defmodule Milk.Tournaments.Rules.FreeForAll.TeamStatus do
     Tournament
   }
 
+  @type t :: %__MODULE__{
+    current_round_index: :integer,
+    current_match_index: :integer,
+    tournament_id: :integer,
+    team_id: :integer,
+    # NOTE: timestamps
+    create_time: any(),
+    update_time: any()
+  }
+
   schema "tournaments_rules_freeforall_teamstatus" do
     field :current_round_index, :integer, default: 0
     field :current_match_index, :integer, default: 0
@@ -22,7 +32,7 @@ defmodule Milk.Tournaments.Rules.FreeForAll.TeamStatus do
   end
 
   @doc false
-  def changeset(attrs, status) do
+  def changeset(status, attrs) do
     status
     |> cast(attrs, [:current_round_index, :current_match_index, :tournament_id, :team_id])
     |> foreign_key_constraint(:tournament_id)
