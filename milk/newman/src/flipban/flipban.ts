@@ -49,7 +49,6 @@ const tournamentJson: CreateTournament = {
     rule:                   "flipban",
     start_recruiting:       "2049-04-17T14:00:00Z",
     team_size:              argv.team_size,
-    type:                   argv.type
 }
 
 const newmanJson: NewmanJson = {

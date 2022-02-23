@@ -57,8 +57,8 @@ interface CreateTournament {
     description:            string
     discord_server_id?:     string
     enabled_discord_server: boolean
-    enabled_coin_toss:      boolean
-    enabled_map:            boolean
+    enabled_coin_toss?:     boolean
+    enabled_map?:           boolean
     event_date:             string
     game_id?:               number
     game_name:              string
@@ -67,14 +67,16 @@ interface CreateTournament {
     map_rule?:              string
     maps?:                  Map[]
     master_id:              number
+    match_number?:          number
     name:                   string
     password?:              string
     platform_id:            number
+    round_capacity?:        number
+    round_number?:          number
     rule:                   string
     start_recruiting:       string
     team_size?:             number
     thumbnail_image?:       string
-    type:                   number
     url?:                   string
 }
 
