@@ -891,7 +891,8 @@ defmodule Milk.Tournaments.Progress do
   def start_free_for_all(tournament) do
     # 不必要なチームを除外したら対戦カードを生成していく
     with {:ok, nil} <- FreeForAll.truncate_excess_members(tournament),
-         {:ok, nil} <- FreeForAll.generate_round_tables(tournament, 0) do
+         {:ok, nil} <- FreeForAll.generate_round_tables(tournament, 0),
+         {:ok, _}   <- Tournaments.start(tournament) do
       {:ok, nil, nil}
     else
       {:error, error} -> {:error, error}
