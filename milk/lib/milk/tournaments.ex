@@ -1898,6 +1898,10 @@ defmodule Milk.Tournaments do
   defp get_opponent_if_started(nil, _),                            do: {:error, "tournament is nil"}
   defp get_opponent_if_started(%Tournament{is_started: false}, _), do: {:error, "tournament is not started"}
 
+  defp get_opponent_if_started(%Tournament{rule: "freeforall"}, _) do
+    {:ok, nil}
+  end
+
   # XXX: is_team: falseのround robinは未対応
   defp get_opponent_if_started(%Tournament{is_team: true, rule: "flipban_roundrobin", id: id}, user_id) do
     id

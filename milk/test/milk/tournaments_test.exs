@@ -949,11 +949,8 @@ defmodule Milk.TournamentsTest do
       assert {:error, "tournament is already started"} = Tournaments.start(tournament)
     end
 
-    test "start/2 with only one entrant returns too few entrants error.", %{
-      tournament: tournament
-    } do
-      assert {:error, "short of participants"} ==
-               Tournaments.start(tournament)
+    test "start/2 with only one entrant returns too few entrants error.", %{tournament: tournament} do
+      assert {:error, "short of participants"} == Tournaments.start(tournament)
     end
 
     test "generate_matchlist/1 with valid data works fine", %{tournament: _tournament} do
