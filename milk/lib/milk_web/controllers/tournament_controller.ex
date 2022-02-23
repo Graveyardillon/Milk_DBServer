@@ -1970,7 +1970,6 @@ defmodule MilkWeb.TournamentController do
     |> started_tournament()
     |> case do
       nil        -> render(conn, "error.json", error: "tournament is nil")
-      %Tournament{rule: "freeforall"} -> json(conn, )
       tournament -> render(conn, "match_info.json", match_info: do_get_match_information(tournament.id, user_id))
     end
   end
