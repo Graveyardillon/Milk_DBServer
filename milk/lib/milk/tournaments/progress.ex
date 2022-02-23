@@ -741,7 +741,7 @@ defmodule Milk.Tournaments.Progress do
 
   @spec start_basic(integer(), Tournament.t()) :: {:ok, match_list(), match_list_with_fight_result()} | {:error, any()}
   def start_basic(master_id, tournament) do
-    case Tournaments.start(tournament.id, master_id) do
+    case Tournaments.start(tournament) do
       {:ok, _}        -> make_basic_matches(tournament.id)
       {:error, error} -> {:error, error}
     end
@@ -749,7 +749,7 @@ defmodule Milk.Tournaments.Progress do
 
   @spec start_flipban(integer(), Tournament.t()) :: {:ok, match_list(), nil}
   def start_flipban(master_id, tournament) do
-    with {:ok, _} <- Tournaments.start(tournament.id, master_id),
+    with {:ok, _} <- Tournaments.start(tournament),
          {:ok, match_list} <- make_flipban_matches(tournament) do
       {:ok, match_list, nil}
     else
@@ -820,8 +820,8 @@ defmodule Milk.Tournaments.Progress do
 
   @spec start_team_flipban(Tournament.t()) :: {:ok, match_list(), match_list_with_fight_result()} | {:error, String.t(), nil}
   def start_team_flipban(tournament) do
-    tournament.id
-    |> Tournaments.start_team_tournament(tournament.master_id)
+    tournament
+    |> Tournaments.start_team_tournament()
     |> case do
       {:ok, _}        -> generate_team_flipban_matches(tournament)
       {:error, error} -> {:error, error, nil}
@@ -867,8 +867,8 @@ defmodule Milk.Tournaments.Progress do
     {:ok, match_list, match_list_with_fight_result}
   end
 
-  def start_team_flipban_round_robin(%Tournament{id: tournament_id, master_id: master_id} = tournament) do
-    with {:ok, _}          <- Tournaments.start_team_tournament(tournament_id, master_id),
+  def start_team_flipban_round_robin(%Tournament{id: tournament_id} = tournament) do
+    with {:ok, _}          <- Tournaments.start_team_tournament(tournament),
          {:ok, match_list} <- generate_team_flipban_roundrobin_matches(tournament),
          match_list        <- %{"rematch_index" => 0, "current_match_index" => 0, "match_list" => match_list},
          {:ok, nil}        <- __MODULE__.insert_match_list(match_list, tournament_id),

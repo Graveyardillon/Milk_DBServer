@@ -2028,10 +2028,9 @@ defmodule Milk.Tournaments do
   3. start tournament
   4. initialize a state machine of participants
   """
-  @spec start(integer(), integer()) :: {:ok, Tournament.t()} | {:error, Ecto.Changeset.t()} | {:error, String.t()}
-  def start(tournament_id, master_id) when is_nil(master_id) or is_nil(tournament_id), do: {:error, "master_id or tournament_id is nil"}
-  def start(tournament_id, master_id) do
-    with {:ok, %Tournament{} = tournament} <- load_tournament_on_start(tournament_id, master_id),
+  @spec start(integer()) :: {:ok, Tournament.t()} | {:error, Ecto.Changeset.t()} | {:error, String.t()}
+  def start(tournament) do
+    with {:ok, %Tournament{} = tournament} <- load_tournament_on_start(tournament.id, tournament.master_id),
          {:ok, nil}                        <- validate_entrant_number(tournament),
          {:ok, tournament}                 <- do_start(tournament),
          {:ok, tournament}                 <- Rules.start_master_states!(tournament),
@@ -2097,10 +2096,9 @@ defmodule Milk.Tournaments do
   @doc """
   Start a team tournament.
   """
-  @spec start_team_tournament(integer(), integer()) :: {:ok, Tournament.t()} | {:error, Ecto.Changeset.t()} | {:error, String.t()}
-  def start_team_tournament(tournament_id, master_id) when is_nil(tournament_id) or is_nil(master_id), do: {:error, "master_id or tournament_id is nil"}
-  def start_team_tournament(tournament_id, master_id) do
-    with {:ok, %Tournament{} = tournament} <- load_tournament_on_start(tournament_id, master_id),
+  @spec start_team_tournament(Tournament.t()) :: {:ok, Tournament.t()} | {:error, Ecto.Changeset.t()} | {:error, String.t()}
+  def start_team_tournament(tournament) do
+    with {:ok, %Tournament{} = tournament} <- load_tournament_on_start(tournament.id, tournament.master_id),
          {:ok, nil}                        <- validate_team_number(tournament),
          {:ok, tournament}                 <- do_start(tournament),
          {:ok, nil}                        <- initialize_team_win_counts(tournament.team),

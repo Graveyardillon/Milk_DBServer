@@ -45,7 +45,7 @@ end)
   |> Tournaments.create_entrant()
 end)
 
-Tournaments.start(tournament.id, tournament.master_id)
+Tournaments.start(tournament)
 {:ok, match_list} =
   Tournaments.get_entrants(tournament.id)
   |> Enum.map(fn x -> x.user_id end)
