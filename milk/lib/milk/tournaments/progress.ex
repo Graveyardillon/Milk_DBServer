@@ -821,7 +821,7 @@ defmodule Milk.Tournaments.Progress do
   @spec start_team_flipban(Tournament.t()) :: {:ok, match_list(), match_list_with_fight_result()} | {:error, String.t(), nil}
   def start_team_flipban(tournament) do
     tournament
-    |> Tournaments.start_team_tournament()
+    |> Tournaments.start()
     |> case do
       {:ok, _}        -> generate_team_flipban_matches(tournament)
       {:error, error} -> {:error, error, nil}
@@ -868,7 +868,7 @@ defmodule Milk.Tournaments.Progress do
   end
 
   def start_team_flipban_round_robin(%Tournament{id: tournament_id} = tournament) do
-    with {:ok, _}          <- Tournaments.start_team_tournament(tournament),
+    with {:ok, _}          <- Tournaments.start(tournament),
          {:ok, match_list} <- generate_team_flipban_roundrobin_matches(tournament),
          match_list        <- %{"rematch_index" => 0, "current_match_index" => 0, "match_list" => match_list},
          {:ok, nil}        <- __MODULE__.insert_match_list(match_list, tournament_id),

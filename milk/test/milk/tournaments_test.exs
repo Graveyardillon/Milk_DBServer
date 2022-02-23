@@ -944,9 +944,9 @@ defmodule Milk.TournamentsTest do
       user = fixture_user()
       fixture_entrant(%{"tournament_id" => tournament.id, "user_id" => user.id})
       assert {:ok, _tournament} = Tournaments.start(tournament)
+      tournament = Tournaments.get_tournament(tournament.id)
 
-      assert {:error, "tournament is already started"} ==
-               Tournaments.start(tournament)
+      assert {:error, "tournament is already started"} = Tournaments.start(tournament)
     end
 
     test "start/2 with only one entrant returns too few entrants error.", %{

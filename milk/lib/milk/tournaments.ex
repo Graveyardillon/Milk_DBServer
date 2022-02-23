@@ -2028,33 +2028,29 @@ defmodule Milk.Tournaments do
   3. start tournament
   4. initialize a state machine of participants
   """
-  @spec start(integer()) :: {:ok, Tournament.t()} | {:error, Ecto.Changeset.t()} | {:error, String.t()}
-  def start(tournament) do
-    with {:ok, %Tournament{} = tournament} <- load_tournament_on_start(tournament.id, tournament.master_id),
-         {:ok, nil}                        <- validate_entrant_number(tournament),
-         {:ok, tournament}                 <- do_start(tournament),
-         {:ok, tournament}                 <- Rules.start_master_states!(tournament),
-         {:ok, tournament}                 <- start_entrant_states!(tournament) do
+  @spec start(Tournament.t()) :: {:ok, Tournament.t()} | {:error, Ecto.Changeset.t()} | {:error, String.t()}
+  def start(%Tournament{is_team: false} = tournament) do
+    with {:ok, nil}        <- validate_entrant_number(tournament),
+         {:ok, tournament} <- do_start(tournament),
+         {:ok, tournament} <- Rules.start_master_states!(tournament),
+         {:ok, tournament} <- start_entrant_states!(tournament) do
       {:ok, tournament}
     else
       error -> error
     end
   end
 
-  @spec load_tournament_on_start(integer(), integer()) :: {:ok, Tournament.t()} | {:error, String.t()}
-  defp load_tournament_on_start(tournament_id, master_id) when is_nil(master_id) or is_nil(tournament_id), do: {:error, "master_id or tournament_id is nil"}
-  defp load_tournament_on_start(tournament_id, master_id) do
-    Tournament
-    |> where([t], t.master_id == ^master_id)
-    |> where([t], t.id == ^tournament_id)
-    |> Repo.one()
-    |> Repo.preload(:team)
-    |> load_tournament_on_start()
+  def start(%Tournament{is_team: true} = tournament) do
+    with {:ok, teams}      <- validate_team_number(tournament),
+         {:ok, tournament} <- do_start(tournament),
+         {:ok, nil}        <- initialize_team_win_counts(teams),
+         {:ok, tournament} <- Rules.start_master_states!(tournament),
+         {:ok, nil}        <- start_team_states!(tournament) do
+      {:ok, tournament}
+    else
+      error -> error
+    end
   end
-
-  @spec load_tournament_on_start(Tournament.t() | nil) :: {:ok, Tournament.t()} | {:error, String.t()}
-  defp load_tournament_on_start(nil), do: {:error, "cannot find tournament"}
-  defp load_tournament_on_start(tournament), do: {:ok, tournament}
 
   @spec validate_entrant_number(Tournament.t() | nil | integer()) :: {:ok, nil} | {:error, String.t()}
   defp validate_entrant_number(%Tournament{} = tournament) do
@@ -2093,32 +2089,14 @@ defmodule Milk.Tournaments do
     {:ok, tournament}
   end
 
-  @doc """
-  Start a team tournament.
-  """
-  @spec start_team_tournament(Tournament.t()) :: {:ok, Tournament.t()} | {:error, Ecto.Changeset.t()} | {:error, String.t()}
-  def start_team_tournament(tournament) do
-    with {:ok, %Tournament{} = tournament} <- load_tournament_on_start(tournament.id, tournament.master_id),
-         {:ok, nil}                        <- validate_team_number(tournament),
-         {:ok, tournament}                 <- do_start(tournament),
-         {:ok, nil}                        <- initialize_team_win_counts(tournament.team),
-         {:ok, tournament}                 <- Rules.start_master_states!(tournament),
-         {:ok, nil}                        <- start_team_states!(tournament) do
-      {:ok, tournament}
-    else
-      error -> error
-    end
-  end
-
   defp validate_team_number(%Tournament{} = tournament) do
     tournament.id
     |> __MODULE__.get_confirmed_teams()
-    |> length()
     |> validate_team_number()
   end
 
-  defp validate_team_number(num) when num <= 1, do: {:error, "short of teams"}
-  defp validate_team_number(_), do: {:ok, nil}
+  defp validate_team_number(teams) when length(teams) <= 1, do: {:error, "short of teams"}
+  defp validate_team_number(teams), do: {:ok, teams}
 
   defp start_team_states!(%Tournament{id: tournament_id, rule: rule}) do
     tournament_id
