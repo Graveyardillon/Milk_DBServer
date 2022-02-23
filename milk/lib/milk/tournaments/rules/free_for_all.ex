@@ -232,7 +232,8 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
     |> Enum.all?(&match?({:ok, _}, &1))
     |> Tools.boolean_to_tuple()
   end
-  defp delete_surplus_teams(_, _), do: {:error, "invalid remaining teams number"}
+  #defp delete_surplus_teams(_, _), do: {:error, "invalid remaining teams number"}
+  defp delete_surplus_teams(_, _), do: {:ok, nil}
 
   defp delete_surplus_entrants(entrants, remaining_entrants_num) when length(entrants) > remaining_entrants_num do
     entrants
@@ -241,7 +242,8 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
     |> Enum.all?(&match?({:ok, _}, &1))
     |> Tools.boolean_to_tuple()
   end
-  defp delete_surplus_entrants(_, _), do: {:error, "invalid remaining entrants number"}
+  #defp delete_surplus_entrants(_, _), do: {:error, "invalid remaining entrants number"}
+  defp delete_surplus_entrants(_, _), do: {:ok, nil}
 
   defp get_closest_num_of_multiple([], _), do: {:error, "empty list is given on getting closest num of multiple"}
   defp get_closest_num_of_multiple(list, %Information{round_number: round_number}) do
