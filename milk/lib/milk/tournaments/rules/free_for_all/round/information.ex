@@ -17,7 +17,7 @@ defmodule Milk.Tournaments.Rules.FreeForAll.Round.Information do
   end
 
   @doc false
-  def changeset(attrs, information) do
+  def changeset(information, attrs) do
     information
     |> cast(attrs, [:table_id, :user_id])
     |> foreign_key_constraint(:table_id)

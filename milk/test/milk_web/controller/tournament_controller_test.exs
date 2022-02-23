@@ -1945,7 +1945,7 @@ defmodule MilkWeb.TournamentControllerTest do
       end)
     end
 
-    test "start a free for all tournament", %{conn: conn} do
+    test "start a free for all tournament (team)", %{conn: conn} do
       tournament = fixture_tournament(
         rule: "freeforall",
         num: 20,
@@ -1957,6 +1957,31 @@ defmodule MilkWeb.TournamentControllerTest do
       )
 
       fill_with_team(tournament.id)
+
+      conn = post(conn, Routes.tournament_path(conn, :start), tournament: %{"master_id" => tournament.master_id, "tournament_id" => tournament.id})
+      assert json_response(conn, 200)["result"]
+
+      tournament.id
+      |> FreeForAll.get_tables_by_tournament_id()
+      |> Enum.map(fn table ->
+        assert FreeForAll.get_round_team_information(table.id)
+      end)
+      |> Enum.empty?()
+      |> refute()
+    end
+
+    test "start a free for all tournament (individual)", %{conn: conn} do
+      tournament = fixture_tournament(
+        rule: "freeforall",
+        num: 20,
+        round_number: 3,
+        match_number: 1,
+        round_capacity: 3,
+        is_team: false,
+        capacity: 4
+      )
+
+      fill_with_entrant(tournament.id)
 
       conn = post(conn, Routes.tournament_path(conn, :start), tournament: %{"master_id" => tournament.master_id, "tournament_id" => tournament.id})
       assert json_response(conn, 200)["result"]
@@ -1986,7 +2011,8 @@ defmodule MilkWeb.TournamentControllerTest do
 
       conn = post(conn, Routes.tournament_path(conn, :delete_loser), tournament: %{tournament_id: tournament.id, loser_list: losers})
 
-      json_response(conn, 200)
+      conn
+      |> json_response(200)
       |> Map.get("updated_match_list")
       |> then(fn list ->
         old_len =
@@ -2002,7 +2028,8 @@ defmodule MilkWeb.TournamentControllerTest do
         assert new_len == old_len - 1
       end)
 
-      Progress.get_single_tournament_match_logs(tournament.id, hd(losers))
+      tournament.id
+      |> Progress.get_single_tournament_match_logs(hd(losers))
       |> Enum.map(fn log ->
         assert log.loser_id == hd(losers)
         assert log.tournament_id == tournament.id

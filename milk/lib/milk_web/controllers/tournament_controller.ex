@@ -704,6 +704,7 @@ defmodule MilkWeb.TournamentController do
     case tournament.rule do
       "basic"      -> Progress.start_basic(master_id, tournament)
       "flipban"    -> Progress.start_flipban(master_id, tournament)
+      "freeforall" -> Progress.start_free_for_all(tournament)
       _            -> {:error, "unsupported tournament rule", nil}
     end
   end

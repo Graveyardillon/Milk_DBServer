@@ -15,6 +15,7 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
     TeamInformation,
     TeamMatchInformation
   }
+  alias Milk.Tournaments.Rules.FreeForAll.Round.Information, as: RoundInformation
   alias Milk.Tournaments.{
     Team,
     Tournament
@@ -211,6 +212,19 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
     end
   end
 
+  def truncate_excess_members(%Tournament{is_team: false, id: tournament_id}) do
+    with information when not is_nil(information) <- __MODULE__.get_freeforall_information_by_tournament_id(tournament_id),
+         entrants                                 <- Tournaments.get_entrants(tournament_id),
+         {:ok, remaining_entrants_num}            <- get_closest_num_of_multiple(entrants, information),
+         {:ok, nil}                               <- delete_surplus_entrants(entrants, remaining_entrants_num) do
+      {:ok, nil}
+    else
+      nil             -> {:error, "round information is nil"}
+      {:error, error} -> {:error, error}
+      _               -> {:error, "error on truncate excess members"}
+    end
+  end
+
   defp delete_surplus_teams(teams, remaining_teams_num) when length(teams) > remaining_teams_num do
     teams
     |> Enum.slice(remaining_teams_num..length(teams))
@@ -220,9 +234,18 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
   end
   defp delete_surplus_teams(_, _), do: {:error, "invalid remaining teams number"}
 
-  defp get_closest_num_of_multiple([], _), do: {:error, "teams is empty list"}
-  defp get_closest_num_of_multiple(teams, %Information{round_number: round_number}) do
-    teams
+  defp delete_surplus_entrants(entrants, remaining_entrants_num) when length(entrants) > remaining_entrants_num do
+    entrants
+    |> Enum.slice(remaining_entrants_num..length(entrants))
+    |> Enum.map(&Repo.delete(&1))
+    |> Enum.all?(&match?({:ok, _}, &1))
+    |> Tools.boolean_to_tuple()
+  end
+  defp delete_surplus_entrants(_, _), do: {:error, "invalid remaining entrants number"}
+
+  defp get_closest_num_of_multiple([], _), do: {:error, "empty list is given on getting closest num of multiple"}
+  defp get_closest_num_of_multiple(list, %Information{round_number: round_number}) do
+    list
     |> length()
     |> Tools.get_closest_num_of_multiple(round_number)
     ~> remaining_members_num
@@ -261,8 +284,26 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
     {:ok, nil}
   end
 
-  def generate_round_tables(%Tournament{is_team: false}, round_index) do
+  def generate_round_tables(%Tournament{is_team: false, id: tournament_id}, round_index) do
     # 参加人数割るround_capacityの数だけ対戦カードを作る（繰り上げ）
+    entrants = Tournaments.get_entrants(tournament_id)
+    information = __MODULE__.get_freeforall_information_by_tournament_id(tournament_id)
+
+    tables_num = ceil(length(entrants) / information.round_capacity)
+
+    1..tables_num
+    |> Enum.to_list()
+    |> Enum.map(fn n ->
+      __MODULE__.create_round_table(%{name: "テーブル#{n}", round_index: round_index, tournament_id: tournament_id})
+    end)
+    |> Enum.reduce([], fn {:ok, table}, acc ->
+      [table | acc]
+    end)
+    ~> tables
+
+    assign_entrants(entrants, tables)
+
+    {:ok, nil}
   end
 
   defp assign_teams(teams, tables) do
@@ -284,8 +325,23 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
     do_assign_teams(remaining_teams, tables, count + 1)
   end
 
-  defp assign_entrants() do
+  defp assign_entrants(entrants, tables) do
+    entrants
+    |> Enum.shuffle()
+    |> do_assign_entrants(tables)
+  end
 
+  defp do_assign_entrants(entrants, tables, count \\ 0)
+  defp do_assign_entrants([], _, _), do: {:ok, nil}
+  defp do_assign_entrants(entrants, tables, count) do
+    [entrant | remaining_entrants] = entrants
+    table = Enum.at(tables, rem(count, length(tables)))
+
+    %RoundInformation{}
+    |> RoundInformation.changeset(%{table_id: table.id, user_id: entrant.user_id})
+    |> Repo.insert()
+
+    do_assign_entrants(remaining_entrants, tables, count + 1)
   end
 
   def create_team_status(attrs \\ %{}) do
