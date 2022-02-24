@@ -199,6 +199,9 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
     |> Repo.one()
   end
 
+  @doc """
+  不要なメンバーを取り除くための関数
+  """
   def truncate_excess_members(%Tournament{is_team: true, id: tournament_id}) do
     with information when not is_nil(information) <- __MODULE__.get_freeforall_information_by_tournament_id(tournament_id),
          teams                                    <- get_teams_desc_by_confirmation_date(tournament_id),
