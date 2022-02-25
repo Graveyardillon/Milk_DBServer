@@ -389,4 +389,10 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
     |> Status.changeset(attrs)
     |> Repo.insert()
   end
+
+  def get_status_by_tournament_id(tournament_id) do
+    Status
+    |> where([s], s.tournament_id == ^tournament_id)
+    |> Repo.one()
+  end
 end

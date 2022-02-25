@@ -44,4 +44,13 @@ defmodule MilkWeb.FreeForAllController do
 
     render(conn, "team_match_information.json", team_match_information: match_information_list)
   end
+
+  def get_current_status(conn, %{"tournament_id" => tournament_id}) do
+    tournament_id
+    |> Tools.to_integer_as_needed()
+    |> FreeForAll.get_status_by_tournament_id()
+    ~> status
+
+    render(conn, "status.json", status: status)
+  end
 end

@@ -72,4 +72,13 @@ defmodule MilkWeb.FreeForAllView do
       result: true
     }
   end
+
+  def render("status.json", %{status: status}) do
+    %{
+      data: %{
+        current_match_index: status.current_match_index,
+        tournament_id: status.tournament_id
+      }
+    }
+  end
 end
