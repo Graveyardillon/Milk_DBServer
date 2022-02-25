@@ -8,6 +8,7 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
   alias Common.Tools
   alias Milk.Tournaments.Rules.FreeForAll.{
     Information,
+    Status,
     TeamStatus
   }
   alias Milk.Tournaments.Rules.FreeForAll.Round.{
@@ -349,9 +350,31 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
     do_assign_entrants(remaining_entrants, tables, count + 1)
   end
 
+  def initialize_status(%Tournament{is_team: true, id: tournament_id}) do
+    tournament_id
+    |> Tournaments.get_confirmed_teams()
+    |> Enum.map(&__MODULE__.create_team_status(%{team_id: &1.id, tournament_id: tournament_id}))
+    |> Enum.all?(&match?({:ok, _}, &1))
+    |> Tools.boolean_to_tuple()
+  end
+
+  def initialize_status(%Tournament{is_team: false, id: tournament_id}) do
+    tournament_id
+    |> Tournaments.get_entrants()
+    |> Enum.map(&__MODULE__.create_status(%{user_id: &1.user_id, tournament_id: tournament_id}))
+    |> Enum.all?(&match?({:ok, _}, &1))
+    |> Tools.boolean_to_tuple()
+  end
+
   def create_team_status(attrs \\ %{}) do
     %TeamStatus{}
     |> TeamStatus.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  def create_status(attrs \\ %{}) do
+    %Status{}
+    |> Status.changeset(attrs)
     |> Repo.insert()
   end
 

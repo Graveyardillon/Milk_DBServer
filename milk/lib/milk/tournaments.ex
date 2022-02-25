@@ -2114,6 +2114,7 @@ defmodule Milk.Tournaments do
           "basic"              -> Basic.trigger!(keyname, Basic.start_trigger())
           "flipban"            -> FlipBan.trigger!(keyname, FlipBan.start_trigger())
           "flipban_roundrobin" -> FlipBanRoundRobin.trigger!(keyname, FlipBanRoundRobin.start_trigger())
+          "freeforall"         -> FreeForAll.trigger!(keyname, FreeForAll.start_trigger())
           _                    -> raise "Invalid tournament rule"
         end
       else
@@ -2121,6 +2122,7 @@ defmodule Milk.Tournaments do
           "basic"              -> Basic.trigger!(keyname, Basic.member_trigger())
           "flipban"            -> FlipBan.trigger!(keyname, FlipBan.member_trigger())
           "flipban_roundrobin" -> FlipBanRoundRobin.trigger!(keyname, FlipBanRoundRobin.member_trigger())
+          "freeforall"         -> FreeForAll.trigger!(keyname, FreeForAll.member_trigger())
           _                    -> raise "Invalid tournament rule"
         end
       end

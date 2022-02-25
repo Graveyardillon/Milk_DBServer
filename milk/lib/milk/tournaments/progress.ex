@@ -740,7 +740,7 @@ defmodule Milk.Tournaments.Progress do
   # HACK
 
   @spec start_basic(integer(), Tournament.t()) :: {:ok, match_list(), match_list_with_fight_result()} | {:error, any()}
-  def start_basic(master_id, tournament) do
+  def start_basic(_master_id, tournament) do
     case Tournaments.start(tournament) do
       {:ok, _}        -> make_basic_matches(tournament.id)
       {:error, error} -> {:error, error}
@@ -748,7 +748,7 @@ defmodule Milk.Tournaments.Progress do
   end
 
   @spec start_flipban(integer(), Tournament.t()) :: {:ok, match_list(), nil}
-  def start_flipban(master_id, tournament) do
+  def start_flipban(_master_id, tournament) do
     with {:ok, _} <- Tournaments.start(tournament),
          {:ok, match_list} <- make_flipban_matches(tournament) do
       {:ok, match_list, nil}
@@ -892,7 +892,8 @@ defmodule Milk.Tournaments.Progress do
     # 不必要なチームを除外したら対戦カードを生成していく
     with {:ok, nil} <- FreeForAll.truncate_excess_members(tournament),
          {:ok, nil} <- FreeForAll.generate_round_tables(tournament, 0),
-         {:ok, _}   <- Tournaments.start(tournament) do
+         {:ok, _}   <- Tournaments.start(tournament),
+         {:ok, _}   <- FreeForAll.initialize_status(tournament) do
       {:ok, nil, nil}
     else
       {:error, error} -> {:error, error}

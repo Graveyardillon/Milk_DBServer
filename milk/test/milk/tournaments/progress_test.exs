@@ -51,7 +51,7 @@ defmodule Milk.Tournaments.ProgressTest do
     create_entrants(num, tournament_id, result ++ [entrant], current - 1)
   end
 
-  defp start(master_id, tournament_id) do
+  defp start(_master_id, tournament_id) do
     tournament = Tournaments.get_tournament(tournament_id)
     Tournaments.start(tournament)
 
