@@ -13,6 +13,8 @@ defmodule Milk.Tournaments.Rules.FreeForAll.Round.Table do
     name: :string,
     round_index: :integer,
     tournament_id: :integer,
+    is_finished: :boolean,
+    current_match_index: :integer,
     # NOTE: timestamps
     create_time: any(),
     update_time: any()
@@ -21,6 +23,8 @@ defmodule Milk.Tournaments.Rules.FreeForAll.Round.Table do
   schema "tournaments_rules_freeforall_round_table" do
     field :name, :string
     field :round_index, :integer
+    field :is_finished, :boolean
+    field :current_match_index, :integer, default: 0
 
     belongs_to :tournament, Tournament
 
@@ -32,7 +36,7 @@ defmodule Milk.Tournaments.Rules.FreeForAll.Round.Table do
   @doc false
   def changeset(table, attrs) do
     table
-    |> cast(attrs, [:name, :round_index, :tournament_id])
+    |> cast(attrs, [:name, :round_index, :tournament_id, :is_finished, :current_match_index])
     |> foreign_key_constraint(:tournament_id)
   end
 end

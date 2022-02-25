@@ -11,7 +11,8 @@ defmodule MilkWeb.FreeForAllView do
           id: table.id,
           name: table.name,
           round_index: table.round_index,
-          tournament_id: table.tournament_id
+          tournament_id: table.tournament_id,
+          is_finished: table.is_finished,
         }
       end),
       result: true
