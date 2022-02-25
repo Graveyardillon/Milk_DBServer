@@ -18,6 +18,15 @@ defmodule MilkWeb.FreeForAllController do
     render(conn, "tables.json", tables: tables)
   end
 
+  def get_round_information(conn, %{"table_id" => table_id}) do
+    table_id
+    |> Tools.to_integer_as_needed()
+    |> FreeForAll.get_round_information()
+    ~> information_list
+
+    render(conn, "round_information.json", %{information: information_list})
+  end
+
   def get_round_team_information(conn, %{"table_id" => table_id}) do
     table_id
     |> Tools.to_integer_as_needed()

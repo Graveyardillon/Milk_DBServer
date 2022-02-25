@@ -374,6 +374,12 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
     |> Repo.all()
   end
 
+  def get_round_information(table_id) do
+    RoundInformation
+    |> where([t], t.table_id == ^table_id)
+    |> Repo.all()
+  end
+
   def get_round_team_information(table_id) do
     TeamInformation
     |> where([t], t.table_id == ^table_id)

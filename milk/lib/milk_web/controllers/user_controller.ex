@@ -26,6 +26,11 @@ defmodule MilkWeb.UserController do
     json(conn, %{result: true, num: num})
   end
 
+  def get_name(conn, %{"user_id" => user_id}) do
+    user = Accounts.get_user(user_id)
+    json(conn, %{result: true, name: user.name})
+  end
+
   @doc """
   Checks if username has been taken.
   """
