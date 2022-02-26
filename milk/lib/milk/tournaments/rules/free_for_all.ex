@@ -393,14 +393,14 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
   def increase_current_match_index(table_id) do
     table = __MODULE__.get_table(table_id)
 
-    __MODULE__.update_round_table(table, %{current_match_index: table.current_match_index})
+    __MODULE__.update_round_table(table, %{current_match_index: table.current_match_index + 1})
   end
 
   def finish_table_as_needed(table_id) do
     table = __MODULE__.get_table(table_id)
     information = __MODULE__.get_freeforall_information_by_tournament_id(table.tournament_id)
 
-    if table.current_match_index === information.match_number do
+    if table.current_match_index == information.match_number do
       __MODULE__.update_round_table(table, %{is_finished: true})
     else
       {:ok, nil}
