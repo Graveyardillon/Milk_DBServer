@@ -355,10 +355,31 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
     |> Enum.map(fn %{score: score, team_id: team_id} ->
       table_id
       |> __MODULE__.get_round_information()
+      |> Enum.filter(&(&1.team_id == team_id))
       |> Enum.map(fn round_information ->
         __MODULE__.create_team_match_information(%{
           round_id: round_information.id,
           team_id: team_id,
+          score: score
+        })
+      end)
+      |> Enum.all?(&match?({:ok, _}, &1))
+      |> Tools.boolean_to_tuple()
+    end)
+    |> Enum.all?(&match?({:ok, _}, &1))
+    |> Tools.boolean_to_tuple()
+  end
+
+  def claim_scores(%Tournament{is_team: false}, table_id, scores) do
+    scores
+    |> Enum.map(fn %{"score" => score, "user_id" => user_id} ->
+      table_id
+      |> __MODULE__.get_round_information()
+      |> Enum.filter(&(&1.user_id == user_id))
+      |> Enum.map(fn round_information ->
+        __MODULE__.create_match_information(%{
+          round_id: round_information.id,
+          user_id: user_id,
           score: score
         })
       end)
@@ -423,6 +444,12 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
     TeamInformation
     |> where([t], t.table_id == ^table_id)
     |> Repo.all()
+  end
+
+  def create_match_information(attrs \\ %{}) do
+    %MatchInformation{}
+    |> MatchInformation.changeset(attrs)
+    |> Repo.insert()
   end
 
   def create_team_match_information(attrs \\ %{}) do
