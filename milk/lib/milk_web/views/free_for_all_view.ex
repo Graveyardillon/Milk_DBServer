@@ -61,6 +61,18 @@ defmodule MilkWeb.FreeForAllView do
     }
   end
 
+  def render("match_information.json", %{match_information: match_information}) do
+    %{
+      data: Enum.map(match_information, fn info ->
+        %{
+          score: info.score,
+          round_id: info.round_id
+        }
+      end),
+      result: true
+    }
+  end
+
   def render("team_match_information.json", %{team_match_information: team_match_information}) do
     %{
       data: Enum.map(team_match_information, fn team_info ->

@@ -8,6 +8,7 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
   alias Common.Tools
   alias Milk.Tournaments.Rules.FreeForAll.Information
   alias Milk.Tournaments.Rules.FreeForAll.Round.{
+    MatchInformation,
     Table,
     TeamInformation,
     TeamMatchInformation
@@ -347,10 +348,54 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
     do_assign_entrants(remaining_entrants, tables, count + 1)
   end
 
+  def claim_scores(%Tournament{is_team: true}, table_id, scores) do
+    # そのテーブルに属している人たちのスコアをmatch_informationに登録する
+
+    scores
+    |> Enum.map(fn %{score: score, team_id: team_id} ->
+      table_id
+      |> __MODULE__.get_round_information()
+      |> Enum.map(fn round_information ->
+        __MODULE__.create_team_match_information(%{
+          round_id: round_information.id,
+          team_id: team_id,
+          score: score
+        })
+      end)
+      |> Enum.all?(&match?({:ok, _}, &1))
+      |> Tools.boolean_to_tuple()
+    end)
+    |> Enum.all?(&match?({:ok, _}, &1))
+    |> Tools.boolean_to_tuple()
+  end
+
+  def increase_current_match_index(table_id) do
+    table = __MODULE__.get_table(table_id)
+
+    __MODULE__.update_round_table(table, %{current_match_index: table.current_match_index})
+  end
+
+  def finish_table_as_needed(table_id) do
+    table = __MODULE__.get_table(table_id)
+    information = __MODULE__.get_freeforall_information_by_tournament_id(table.tournament_id)
+
+    if table.current_match_index === information.match_number do
+      __MODULE__.update_round_table(table, %{is_finished: true})
+    else
+      {:ok, nil}
+    end
+  end
+
   def create_round_table(attrs \\ %{}) do
     %Table{}
     |> Table.changeset(attrs)
     |> Repo.insert()
+  end
+
+  def update_round_table(table, attrs \\ %{}) do
+    table
+    |> Table.changeset(attrs)
+    |> Repo.update()
   end
 
   def load_tables_by_tournament_id(tournament_id) do
@@ -358,6 +403,8 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
     |> __MODULE__.get_tables_by_tournament_id()
     |> Repo.preload(:information)
   end
+
+  def get_table(table_id), do: Repo.get!(Table, table_id)
 
   @spec get_tables_by_tournament_id(integer()) :: Table.t() | nil
   def get_tables_by_tournament_id(tournament_id) do
@@ -378,9 +425,21 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
     |> Repo.all()
   end
 
+  def create_team_match_information(attrs \\ %{}) do
+    %TeamMatchInformation{}
+    |> TeamMatchInformation.changeset(attrs)
+    |> Repo.insert()
+  end
+
   def get_team_match_information(round_team_information_id) do
     TeamMatchInformation
     |> where([t], t.round_id == ^round_team_information_id)
+    |> Repo.all()
+  end
+
+  def get_match_information(round_information_id) do
+    MatchInformation
+    |> where([t], t.round_id == ^round_information_id)
     |> Repo.all()
   end
 
