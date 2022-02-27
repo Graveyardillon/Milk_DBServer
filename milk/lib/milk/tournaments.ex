@@ -1301,6 +1301,7 @@ defmodule Milk.Tournaments do
         "basic"              -> Basic.destroy_dfa_instance(keyname)
         "flipban"            -> FlipBan.destroy_dfa_instance(keyname)
         "flipban_roundrobin" -> FlipBanRoundRobin.destroy_dfa_instance(keyname)
+        "freeforall"         -> FreeForAll.destroy_dfa_instance(keyname)
       end
     end)
   end

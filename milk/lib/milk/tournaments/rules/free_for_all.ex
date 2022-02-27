@@ -266,7 +266,7 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
     |> Repo.all()
   end
 
-  def generate_round_tables(%Tournament{is_team: true, id: tournament_id}, round_index) do
+  def initialize_round_tables(%Tournament{is_team: true, id: tournament_id}, round_index) do
     # 参加人数割るround_capacityの数だけ対戦カードを作る（繰り上げ）
     teams = Tournaments.get_confirmed_teams(tournament_id)
     information = __MODULE__.get_freeforall_information_by_tournament_id(tournament_id)
@@ -288,7 +288,7 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
     {:ok, nil}
   end
 
-  def generate_round_tables(%Tournament{is_team: false, id: tournament_id}, round_index) do
+  def initialize_round_tables(%Tournament{is_team: false, id: tournament_id}, round_index) do
     # 参加人数割るround_capacityの数だけ対戦カードを作る（繰り上げ）
     entrants = Tournaments.get_entrants(tournament_id)
     information = __MODULE__.get_freeforall_information_by_tournament_id(tournament_id)
@@ -350,9 +350,8 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
 
   def claim_scores(%Tournament{is_team: true}, table_id, scores) do
     # そのテーブルに属している人たちのスコアをmatch_informationに登録する
-
     scores
-    |> Enum.map(fn %{score: score, team_id: team_id} ->
+    |> Enum.map(fn %{"score" => score, "team_id" => team_id} ->
       table_id
       |> __MODULE__.get_round_information()
       |> Enum.filter(&(&1.team_id == team_id))
@@ -407,15 +406,117 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
     end
   end
 
-  def proceed_to_next_match_as_needed() do
+  def proceed_to_next_round_as_needed(tournament) do
     # すべてのテーブルがfinishedになっていたら起こる
     # 次のテーブルを生成
+    tables = __MODULE__.get_tables_by_tournament_id(tournament.id)
+
+    with true                                     <- check_all_tables_finished?(tables),
+         status when not is_nil(status)           <- __MODULE__.get_status_by_tournament_id(tournament.id),
+         information when not is_nil(information) <- __MODULE__.get_freeforall_information_by_tournament_id(tournament.id),
+         {:ok, _}                                 <- finish_tournament_as_needed(tables, tournament, information, status),
+         {:ok, status}                            <- __MODULE__.update_status(status, %{current_round_index: status.current_round_index + 1}),
+         {:ok, _}                                 <- generate_round_tables(status, tables, tournament) do
+      {:ok, nil}
+    else
+      false               -> {:ok, "tables are not finished all"}
+      nil                 -> {:error, "status or information is nil"}
+      {:error, error}     -> {:error, error}
+      {:ok, :finished, _} -> {:ok, "not finished"}
+    end
   end
 
-  defp finish_tournament_as_needed() do
+  defp check_all_tables_finished?(tables) do
+    Enum.all?(tables, &(&1.is_finished))
+  end
+
+  defp generate_round_tables(status, tables, %Tournament{is_team: false, id: tournament_id}) do
+    # NOTE: とりあえずround_number - round_index個のテーブルを作ることとしておきます
+    information = __MODULE__.get_freeforall_information_by_tournament_id(tournament_id)
+
+    tables
+    |> Enum.map(fn table ->
+      table.id
+      |> __MODULE__.get_round_information()
+      |> Enum.map(fn round ->
+        round.id
+        |> __MODULE__.get_match_information()
+        |> Enum.map(&(&1.score))
+        |> Enum.sum()
+        ~> score_sum
+
+        %{user_id: round.user_id, score_sum: score_sum}
+      end)
+    end)
+    |> List.flatten()
+    |> Enum.sort(fn %{score_sum: score_sum1}, %{score_sum: score_sum2} ->
+      score_sum1 >= score_sum2
+    end)
+    ~> score_tables
+
+    1..information.round_number - status.current_round_index
+    |> Enum.to_list()
+    |> Enum.map(fn n ->
+      # lengthだとエラーが出たのでEnum.count
+      n = n + Enum.count(tables)
+      {:ok, table} = __MODULE__.create_round_table(%{name: "テーブル#{n}", round_index: status.current_round_index, tournament_id: tournament_id})
+      table
+    end)
+    ~> tables
+
+    extract_users_from_score_tables(score_tables, tables)
+
+    {:ok, nil}
+  end
+
+  defp extract_users_from_score_tables(score_tables, tables, count \\ 0)
+  defp extract_users_from_score_tables([], _, _), do: {:ok, nil}
+  defp extract_users_from_score_tables(score_tables, tables, count) do
+    [score_table | remaining_score_tables] = score_tables
+    table = Enum.at(tables, rem(count, length(tables)))
+
+    %RoundInformation{}
+    |> RoundInformation.changeset(%{table_id: table.id, user_id: score_table.user_id})
+    |> Repo.insert()
+
+    extract_users_from_score_tables(remaining_score_tables, tables, count + 1)
+  end
+
+  defp extract_winner_id(tables) do
+    tables
+    |> Enum.map(fn table ->
+      table.id
+      |> __MODULE__.get_round_information()
+      |> Enum.map(fn round ->
+        round.id
+        |> __MODULE__.get_match_information()
+        |> Enum.map(&(&1.score))
+        |> Enum.sum()
+        ~> score_sum
+
+        %{user_id: round.user_id, score_sum: score_sum}
+      end)
+    end)
+    |> List.flatten()
+    |> Enum.sort(fn %{score_sum: score_sum1}, %{score_sum: score_sum2} ->
+      score_sum1 >= score_sum2
+    end)
+    |> hd()
+    |> Map.get(:user_id)
+  end
+
+  defp finish_tournament_as_needed(tables, tournament, %Information{round_number: round_number}, %Status{current_round_index: current_round_index}) when round_number <= current_round_index + 1 do
+    winner_id = extract_winner_id(tables)
+      |> IO.inspect(label: :here!)
     # すべてのテーブルがfinishedで、すべてのテーブルのmatch_indexがmatch_numberになっていたらfinish
-
+    tournament.id
+    |> Tournaments.finish(winner_id)
+    |> case do
+      {:ok, tournament} -> {:ok, :finished, tournament}
+      {:error, error}   -> {:error, error}
+    end
   end
+  defp finish_tournament_as_needed(_, _, _, _), do: {:ok, nil}
 
   def create_round_table(attrs \\ %{}) do
     %Table{}
@@ -484,6 +585,12 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
     %Status{}
     |> Status.changeset(attrs)
     |> Repo.insert()
+  end
+
+  def update_status(status, attrs \\ %{}) do
+    status
+    |> Status.changeset(attrs)
+    |> Repo.update()
   end
 
   def get_status_by_tournament_id(tournament_id) do
