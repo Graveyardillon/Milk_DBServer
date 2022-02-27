@@ -92,10 +92,10 @@ defmodule MilkWeb.FreeForAllControllerTest do
 
       master_id = json_response(conn, 200)["data"]["master_id"]
       tournament_id = json_response(conn, 200)["data"]["id"]
-      capacity = json_response(conn, 200)["data"]["capacity"]
-      team_size = json_response(conn, 200)["data"]["team_size"]
+      _capacity = json_response(conn, 200)["data"]["capacity"]
+      _team_size = json_response(conn, 200)["data"]["team_size"]
 
-      entrants = fill_with_entrant(tournament_id)
+      _entrants = fill_with_entrant(tournament_id)
 
       conn = get(conn, Routes.tournament_path(conn, :get_match_information), %{"tournament_id" => tournament_id, "user_id" => master_id})
       assert json_response(conn, 200)["result"]
