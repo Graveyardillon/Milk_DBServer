@@ -5,6 +5,14 @@ defmodule Milk.Tournaments.Rules.FreeForAll.Status do
 
   alias Milk.Tournaments.Tournament
 
+  @type t :: %__MODULE__{
+    current_round_index: :integer,
+    tournament_id: :integer,
+    # NOTE: timestamps
+    create_time: any(),
+    update_time: any()
+  }
+
   schema "tournaments_rules_freeforall_status" do
     field :current_round_index, :integer, default: 0
 

@@ -454,7 +454,9 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
     end)
     ~> score_tables
 
-    1..information.round_number - status.current_round_index
+    table_num = information.round_number - status.current_round_index
+
+    1..table_num
     |> Enum.to_list()
     |> Enum.map(fn n ->
       # lengthだとエラーが出たのでEnum.count
@@ -464,7 +466,9 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
     end)
     ~> tables
 
-    extract_users_from_score_tables(score_tables, tables)
+    score_tables
+    |> Enum.slice(0..table_num * information.round_capacity - 1)
+    |> extract_users_from_score_tables(tables)
 
     {:ok, nil}
   end
@@ -505,18 +509,20 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
     |> Map.get(:user_id)
   end
 
-  defp finish_tournament_as_needed(tables, tournament, %Information{round_number: round_number}, %Status{current_round_index: current_round_index}) when round_number <= current_round_index + 1 do
-    winner_id = extract_winner_id(tables)
-      |> IO.inspect(label: :here!)
-    # すべてのテーブルがfinishedで、すべてのテーブルのmatch_indexがmatch_numberになっていたらfinish
-    tournament.id
-    |> Tournaments.finish(winner_id)
-    |> case do
-      {:ok, tournament} -> {:ok, :finished, tournament}
-      {:error, error}   -> {:error, error}
+  defp finish_tournament_as_needed(tables, tournament, %Information{round_number: round_number}, %Status{current_round_index: current_round_index}) do
+    if round_number <= current_round_index + 1 do
+      winner_id = extract_winner_id(tables)
+      # すべてのテーブルがfinishedで、すべてのテーブルのmatch_indexがmatch_numberになっていたらfinish
+      tournament.id
+      |> Tournaments.finish(winner_id)
+      |> case do
+        {:ok, tournament} -> {:ok, :finished, tournament}
+        {:error, error}   -> {:error, error}
+      end
+    else
+      {:ok, nil}
     end
   end
-  defp finish_tournament_as_needed(_, _, _, _), do: {:ok, nil}
 
   def create_round_table(attrs \\ %{}) do
     %Table{}
