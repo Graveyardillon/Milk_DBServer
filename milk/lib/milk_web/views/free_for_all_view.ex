@@ -4,6 +4,18 @@ defmodule MilkWeb.FreeForAllView do
   """
   use MilkWeb, :view
 
+  def render("information.json", %{information: information}) do
+    %{
+      data: %{
+        round_number: information.round_number,
+        match_number: information.match_number,
+        round_capacity: information.round_capacity,
+        tournament_id: information.tournament_id
+      },
+      result: true
+    }
+  end
+
   def render("tables.json", %{tables: tables}) do
     %{
       data: Enum.map(tables, fn table ->

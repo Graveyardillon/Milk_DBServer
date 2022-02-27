@@ -407,6 +407,16 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
     end
   end
 
+  def proceed_to_next_match_as_needed() do
+    # すべてのテーブルがfinishedになっていたら起こる
+    # 次のテーブルを生成
+  end
+
+  defp finish_tournament_as_needed() do
+    # すべてのテーブルがfinishedで、すべてのテーブルのmatch_indexがmatch_numberになっていたらfinish
+
+  end
+
   def create_round_table(attrs \\ %{}) do
     %Table{}
     |> Table.changeset(attrs)

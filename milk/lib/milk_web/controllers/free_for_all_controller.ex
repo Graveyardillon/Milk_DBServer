@@ -10,6 +10,15 @@ defmodule MilkWeb.FreeForAllController do
   alias Milk.Tournaments.Rules.FreeForAll
   alias Milk.Tournaments
 
+  def get_information(conn, %{"tournament_id" => tournament_id}) do
+    tournament_id
+    |> Tools.to_integer_as_needed()
+    |> FreeForAll.get_freeforall_information_by_tournament_id()
+    ~> information
+
+    render(conn, "information.json", information: information)
+  end
+
   def get_tables(conn, %{"tournament_id" => tournament_id}) do
     tournament_id
     |> Tools.to_integer_as_needed()
