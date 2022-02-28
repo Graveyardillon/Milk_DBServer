@@ -8,6 +8,14 @@ defmodule Common.ToolsTest do
 
   alias Common.Tools
 
+  describe "get_closest_num_of_multiple" do
+    test "works" do
+      assert Tools.get_closest_num_of_multiple(50, 8) === 48
+      assert Tools.get_closest_num_of_multiple(24, 3) === 24
+      assert Tools.get_closest_num_of_multiple(0, 0)  === 0
+    end
+  end
+
   describe "get_hostname" do
     test "get_hostname works" do
       refute is_nil(Tools.get_hostname())

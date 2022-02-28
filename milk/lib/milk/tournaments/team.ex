@@ -14,6 +14,7 @@ defmodule Milk.Tournaments.Team do
 
 
   @type t :: %__MODULE__{
+          confirmation_date: any(),
           icon_path: String.t() | nil,
           is_confirmed: boolean(),
           name: String.t(),
@@ -26,6 +27,7 @@ defmodule Milk.Tournaments.Team do
         }
 
   schema "teams" do
+    field :confirmation_date, EctoDate
     field :icon_path, :string
     field :is_confirmed, :boolean, default: false
     field :name, :string
@@ -42,7 +44,7 @@ defmodule Milk.Tournaments.Team do
   @doc false
   def changeset(team, attrs) do
     team
-    |> cast(attrs, [:name, :size, :tournament_id, :icon_path, :is_confirmed, :rank])
+    |> cast(attrs, [:confirmation_date, :name, :size, :tournament_id, :icon_path, :is_confirmed, :rank])
     |> validate_required([:name, :size, :tournament_id])
   end
 end

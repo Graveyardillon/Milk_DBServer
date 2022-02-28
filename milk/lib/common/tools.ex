@@ -32,9 +32,9 @@ defmodule Common.Tools do
   @spec boolean_to_tuple(boolean()) :: {:ok, nil} | {:error, nil}
   def boolean_to_tuple(boolean), do: __MODULE__.boolean_to_tuple(boolean, nil)
 
-  @spec boolean_to_tuple(boolean(), String.t() | nil) :: {:ok, nil} | {:error, String.t() | nil}
-  def boolean_to_tuple(true, _), do: {:ok, nil}
-  def boolean_to_tuple(false, message), do: {:ok, message}
+  @spec boolean_to_tuple(boolean(), any()) :: {:ok, nil} | {:error, String.t() | nil}
+  def boolean_to_tuple(true, _),        do: {:ok, nil}
+  def boolean_to_tuple(false, message), do: {:error, message}
 
   @doc """
   Create error message
@@ -46,6 +46,14 @@ defmodule Common.Tools do
       to_string(key) <> " " <> elem(value, 0) <> ", " <> acc
     end)
   end
+
+  @doc """
+  targetより小さい範囲で最大の、multiplierの倍数を発見する関数
+  """
+  @spec get_closest_num_of_multiple(any(), any()) :: integer()
+  def get_closest_num_of_multiple(target, 0)          when is_integer(target), do: 0
+  def get_closest_num_of_multiple(target, multiplier) when is_integer(target), do: multiplier * floor(target / multiplier)
+  def get_closest_num_of_multiple(_, _), do: 0
 
   @doc """
   Get hostname

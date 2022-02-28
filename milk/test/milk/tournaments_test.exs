@@ -943,25 +943,14 @@ defmodule Milk.TournamentsTest do
       fixture_entrant(%{"tournament_id" => tournament.id})
       user = fixture_user()
       fixture_entrant(%{"tournament_id" => tournament.id, "user_id" => user.id})
-      assert {:ok, _tournament} = Tournaments.start(tournament.id, tournament.master_id)
+      assert {:ok, _tournament} = Tournaments.start(tournament)
+      tournament = Tournaments.get_tournament(tournament.id)
 
-      assert {:error, "tournament is already started"} ==
-               Tournaments.start(tournament.id, tournament.master_id)
+      assert {:error, "tournament is already started"} = Tournaments.start(tournament)
     end
 
-    test "start/2 with only one entrant returns too few entrants error.", %{
-      tournament: tournament
-    } do
-      assert {:error, "short of participants"} ==
-               Tournaments.start(tournament.id, tournament.master_id)
-    end
-
-    test "start/2 with nil returns master_id or tournament_id is nil error", %{
-      tournament: _tournament
-    } do
-      assert {:error, "master_id or tournament_id is nil"} == Tournaments.start(nil, nil)
-      assert {:error, "master_id or tournament_id is nil"} == Tournaments.start(1, nil)
-      assert {:error, "master_id or tournament_id is nil"} == Tournaments.start(nil, 1)
+    test "start/2 with only one entrant returns too few entrants error.", %{tournament: tournament} do
+      assert {:error, "short of participants"} == Tournaments.start(tournament)
     end
 
     test "generate_matchlist/1 with valid data works fine", %{tournament: _tournament} do
@@ -1033,8 +1022,9 @@ defmodule Milk.TournamentsTest do
     end
   end
 
-  defp start(master_id, tournament_id) do
-    Tournaments.start(tournament_id, master_id)
+  defp start(_master_id, tournament_id) do
+    tournament = Tournaments.get_tournament(tournament_id)
+    Tournaments.start(tournament)
 
     {:ok, match_list} =
       Tournaments.get_entrants(tournament_id)
@@ -2147,7 +2137,7 @@ defmodule Milk.TournamentsTest do
     test "just works with predefined data (size 4 tournament)" do
       tournament = fixture_tournament(is_started: false)
       create_entrants(4, tournament.id)
-      Tournaments.start(tournament.id, tournament.master_id)
+      Tournaments.start(tournament)
 
       {:ok, match_list} =
         tournament.id
@@ -2244,7 +2234,7 @@ defmodule Milk.TournamentsTest do
     test "works" do
       tournament = fixture_tournament(is_started: false, capacity: 10)
       create_entrants(9, tournament.id)
-      Tournaments.start(tournament.id, tournament.master_id)
+      Tournaments.start(tournament)
 
       {:ok, match_list} =
         tournament.id

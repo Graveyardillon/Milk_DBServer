@@ -48,6 +48,9 @@ defmodule Common.Fixtures do
         coin_tail_field = Keyword.get(opts, :coin_tail_field)
         maps = Keyword.get(opts, :maps)
         rule = Keyword.get(opts, :rule)
+        round_number = Keyword.get(opts, :round_number)
+        match_number = Keyword.get(opts, :match_number)
+        round_capacity = Keyword.get(opts, :round_capacity)
 
         opts[:master_id]
         |> is_nil()
@@ -81,6 +84,9 @@ defmodule Common.Fixtures do
         |> Map.put("rule", rule)
         |> Map.put("start_recruiting", start_recruiting)
         |> Map.put("event_date", event_date)
+        |> Map.put("round_number", round_number)
+        |> Map.put("match_number", match_number)
+        |> Map.put("round_capacity", round_capacity)
         |> Tournaments.create_tournament()
         |> elem(1)
         ~> tournament

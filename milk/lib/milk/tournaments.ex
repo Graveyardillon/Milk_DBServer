@@ -68,7 +68,8 @@ defmodule Milk.Tournaments do
   alias Milk.Tournaments.Rules.{
     Basic,
     FlipBan,
-    FlipBanRoundRobin
+    FlipBanRoundRobin,
+    FreeForAll
   }
 
   alias Tournamex.RoundRobin
@@ -574,6 +575,7 @@ defmodule Milk.Tournaments do
   @spec validate_fields(map()) :: {:ok, map()} | {:error, String.t()}
   defp validate_fields(fields) do
     case fields["rule"] do
+      "freeforall"         -> validate_freeforall_fields(fields)
       "flipban_roundrobin" -> validate_flipban_roundrobin_fields(fields)
       "flipban"            -> validate_flipban_fields(fields)
       "basic"              -> validate_basic_fields(fields)
@@ -627,6 +629,12 @@ defmodule Milk.Tournaments do
     end
   end
 
+  defp validate_freeforall_fields(%{"round_number" => round_number, "match_number" => match_number, "round_capacity" => round_capacity, "capacity" => capacity})
+    when is_integer(round_number) and is_integer(match_number) and is_integer(round_capacity) and
+    round_number > 0 and match_number > 0 and round_capacity > 0 and capacity > round_capacity and capacity > round_number,
+    do: {:ok, nil}
+  defp validate_freeforall_fields(_), do: {:error, "Invalid FreeforAll Fields"}
+
   @spec join_chat_topics_on_create_tournament(Tournament.t()) :: {:ok, nil} | {:error, String.t() | nil}
   defp join_chat_topics_on_create_tournament(tournament) do
     tournament.id
@@ -653,6 +661,7 @@ defmodule Milk.Tournaments do
   @spec add_necessary_fields(Tournament.t(), map()) :: {:ok, nil} | {:error, String.t()}
   defp add_necessary_fields(%Tournament{rule: rule} = tournament, attrs) do
     case rule do
+      "freeforall"         -> add_freeforall_fields(tournament, attrs)
       "flipban_roundrobin" -> add_flipban_roundrobin_fields(tournament, attrs)
       "flipban"            -> add_flipban_fields(tournament, attrs)
       "basic"              -> add_basic_fields(tournament, attrs)
@@ -685,6 +694,17 @@ defmodule Milk.Tournaments do
   @spec add_flipban_roundrobin_fields(Tournament.t(), map()) :: {:ok, nil} | {:error, String.t()}
   defp add_flipban_roundrobin_fields(tournament, attrs),
     do: add_flipban_fields(tournament, attrs)
+
+  @spec add_freeforall_fields(Tournament.t(), map()) :: {:ok, nil} | {:error, String.t()}
+  defp add_freeforall_fields(tournament, attrs) do
+    with :ok <- Rules.initialize_state_machine(tournament),
+         {:ok, _} <- create_freeforall_information_on_create_tournament(tournament, attrs) do
+      {:ok, nil}
+    else
+      :error -> {:error, "failed to initialize state machine"}
+      errors -> errors
+    end
+  end
 
   @spec create_tournament_custom_detail_on_create_tournament(Tournament.t(), map()) :: {:ok, TournamentCustomDetail.t()} | {:error, Ecto.Changeset.t()}
   defp create_tournament_custom_detail_on_create_tournament(tournament, attrs) do
@@ -723,6 +743,17 @@ defmodule Milk.Tournaments do
       |> Map.put("tournament_id", tournament_id)
       |> Milk.Tournaments.Map.changeset()
     end)
+  end
+
+  defp create_freeforall_information_on_create_tournament(tournament, %{round_number: round_number, match_number: match_number, round_capacity: round_capacity}),
+    do: create_freeforall_information_on_create_tournament(tournament, %{"round_number" => round_number, "match_number" => match_number, "round_capacity" => round_capacity})
+  defp create_freeforall_information_on_create_tournament(tournament, %{"round_number" => round_number, "match_number" => match_number, "round_capacity" => round_capacity}) do
+    FreeForAll.create_freeforall_information(%{
+      round_number: round_number,
+      match_number: match_number,
+      round_capacity: round_capacity,
+      tournament_id: tournament.id
+    })
   end
 
   @spec put_token_as_needed(map()) :: map()
@@ -1270,6 +1301,7 @@ defmodule Milk.Tournaments do
         "basic"              -> Basic.destroy_dfa_instance(keyname)
         "flipban"            -> FlipBan.destroy_dfa_instance(keyname)
         "flipban_roundrobin" -> FlipBanRoundRobin.destroy_dfa_instance(keyname)
+        "freeforall"         -> FreeForAll.destroy_dfa_instance(keyname)
       end
     end)
   end
@@ -1452,6 +1484,7 @@ defmodule Milk.Tournaments do
       "basic"              -> Basic.build_dfa_instance(keyname, is_team: tournament.is_team)
       "flipban"            -> FlipBan.build_dfa_instance(keyname, is_team: tournament.is_team)
       "flipban_roundrobin" -> FlipBanRoundRobin.build_dfa_instance(keyname, is_team: tournament.is_team)
+      "freeforall"         -> FreeForAll.build_dfa_instance(keyname, is_team: tournament.is_team)
       _                    -> raise "Invalid tournament"
     end
 
@@ -1697,7 +1730,7 @@ defmodule Milk.Tournaments do
       end
     end)
     |> Enum.all?(&match?({:ok, _}, &1))
-    |> Tools.boolean_to_tuple()
+    |> Tools.boolean_to_tuple("error on delete old match info")
   end
 
   @spec renew_match_list(integer(), match_list(), [integer()]) :: {:ok, nil}
@@ -1866,6 +1899,10 @@ defmodule Milk.Tournaments do
   defp get_opponent_if_started(nil, _),                            do: {:error, "tournament is nil"}
   defp get_opponent_if_started(%Tournament{is_started: false}, _), do: {:error, "tournament is not started"}
 
+  defp get_opponent_if_started(%Tournament{rule: "freeforall"}, _) do
+    {:ok, nil}
+  end
+
   # XXX: is_team: falseのround robinは未対応
   defp get_opponent_if_started(%Tournament{is_team: true, rule: "flipban_roundrobin", id: id}, user_id) do
     id
@@ -1910,8 +1947,6 @@ defmodule Milk.Tournaments do
       match
       |> Enum.filter(fn {match, _} ->
         match
-        # |> String.split("-")
-        # |> Enum.map(&Tools.to_integer_as_needed(&1))
         |> Progress.cut_out_numbers_from_match_str_of_round_robin()
         |> Enum.any?(&(&1 == team.id))
       end)
@@ -1921,8 +1956,6 @@ defmodule Milk.Tournaments do
         nil -> {:error, "opponent does not exist"}
         match ->
           match
-          # |> String.split("-")
-          # |> Enum.map(&Tools.to_integer_as_needed(&1))
           |> Progress.cut_out_numbers_from_match_str_of_round_robin()
           |> Enum.reject(&(&1 == team.id))
           |> List.first()
@@ -2000,34 +2033,29 @@ defmodule Milk.Tournaments do
   3. start tournament
   4. initialize a state machine of participants
   """
-  @spec start(integer(), integer()) :: {:ok, Tournament.t()} | {:error, Ecto.Changeset.t()} | {:error, String.t()}
-  def start(tournament_id, master_id) when is_nil(master_id) or is_nil(tournament_id), do: {:error, "master_id or tournament_id is nil"}
-  def start(tournament_id, master_id) do
-    with {:ok, %Tournament{} = tournament} <- load_tournament_on_start(tournament_id, master_id),
-         {:ok, nil}                        <- validate_entrant_number(tournament),
-         {:ok, tournament}                 <- do_start(tournament),
-         {:ok, tournament}                 <- Rules.start_master_states!(tournament),
-         {:ok, tournament}                 <- start_entrant_states!(tournament) do
+  @spec start(Tournament.t()) :: {:ok, Tournament.t()} | {:error, Ecto.Changeset.t()} | {:error, String.t()}
+  def start(%Tournament{is_team: false} = tournament) do
+    with {:ok, nil}        <- validate_entrant_number(tournament),
+         {:ok, tournament} <- do_start(tournament),
+         {:ok, tournament} <- Rules.start_master_states!(tournament),
+         {:ok, tournament} <- start_entrant_states!(tournament) do
       {:ok, tournament}
     else
       error -> error
     end
   end
 
-  @spec load_tournament_on_start(integer(), integer()) :: {:ok, Tournament.t()} | {:error, String.t()}
-  defp load_tournament_on_start(tournament_id, master_id) when is_nil(master_id) or is_nil(tournament_id), do: {:error, "master_id or tournament_id is nil"}
-  defp load_tournament_on_start(tournament_id, master_id) do
-    Tournament
-    |> where([t], t.master_id == ^master_id)
-    |> where([t], t.id == ^tournament_id)
-    |> Repo.one()
-    |> Repo.preload(:team)
-    |> load_tournament_on_start()
+  def start(%Tournament{is_team: true} = tournament) do
+    with {:ok, teams}      <- validate_team_number(tournament),
+         {:ok, tournament} <- do_start(tournament),
+         {:ok, nil}        <- initialize_team_win_counts(teams),
+         {:ok, tournament} <- Rules.start_master_states!(tournament),
+         {:ok, nil}        <- start_team_states!(tournament) do
+      {:ok, tournament}
+    else
+      error -> error
+    end
   end
-
-  @spec load_tournament_on_start(Tournament.t() | nil) :: {:ok, Tournament.t()} | {:error, String.t()}
-  defp load_tournament_on_start(nil), do: {:error, "cannot find tournament"}
-  defp load_tournament_on_start(tournament), do: {:ok, tournament}
 
   @spec validate_entrant_number(Tournament.t() | nil | integer()) :: {:ok, nil} | {:error, String.t()}
   defp validate_entrant_number(%Tournament{} = tournament) do
@@ -2059,6 +2087,7 @@ defmodule Milk.Tournaments do
         "basic"              -> Basic.trigger!(keyname, Basic.start_trigger())
         "flipban"            -> FlipBan.trigger!(keyname, FlipBan.start_trigger())
         "flipban_roundrobin" -> FlipBanRoundRobin.trigger!(keyname, FlipBanRoundRobin.start_trigger())
+        "freeforall"         -> FreeForAll.trigger!(keyname, FreeForAll.start_trigger())
         _                    -> raise "Invalid tournament rule"
       end
     end)
@@ -2066,33 +2095,14 @@ defmodule Milk.Tournaments do
     {:ok, tournament}
   end
 
-  @doc """
-  Start a team tournament.
-  """
-  @spec start_team_tournament(integer(), integer()) :: {:ok, Tournament.t()} | {:error, Ecto.Changeset.t()} | {:error, String.t()}
-  def start_team_tournament(tournament_id, master_id) when is_nil(tournament_id) or is_nil(master_id), do: {:error, "master_id or tournament_id is nil"}
-  def start_team_tournament(tournament_id, master_id) do
-    with {:ok, %Tournament{} = tournament} <- load_tournament_on_start(tournament_id, master_id),
-         {:ok, nil}                        <- validate_team_number(tournament),
-         {:ok, tournament}                 <- do_start(tournament),
-         {:ok, nil}                        <- initialize_team_win_counts(tournament.team),
-         {:ok, tournament}                 <- Rules.start_master_states!(tournament),
-         {:ok, nil}                        <- start_team_states!(tournament) do
-      {:ok, tournament}
-    else
-      error -> error
-    end
-  end
-
   defp validate_team_number(%Tournament{} = tournament) do
     tournament.id
     |> __MODULE__.get_confirmed_teams()
-    |> length()
     |> validate_team_number()
   end
 
-  defp validate_team_number(num) when num <= 1, do: {:error, "short of teams"}
-  defp validate_team_number(_), do: {:ok, nil}
+  defp validate_team_number(teams) when length(teams) <= 1, do: {:error, "short of teams"}
+  defp validate_team_number(teams), do: {:ok, teams}
 
   defp start_team_states!(%Tournament{id: tournament_id, rule: rule}) do
     tournament_id
@@ -2105,6 +2115,7 @@ defmodule Milk.Tournaments do
           "basic"              -> Basic.trigger!(keyname, Basic.start_trigger())
           "flipban"            -> FlipBan.trigger!(keyname, FlipBan.start_trigger())
           "flipban_roundrobin" -> FlipBanRoundRobin.trigger!(keyname, FlipBanRoundRobin.start_trigger())
+          "freeforall"         -> FreeForAll.trigger!(keyname, FreeForAll.start_trigger())
           _                    -> raise "Invalid tournament rule"
         end
       else
@@ -2112,12 +2123,13 @@ defmodule Milk.Tournaments do
           "basic"              -> Basic.trigger!(keyname, Basic.member_trigger())
           "flipban"            -> FlipBan.trigger!(keyname, FlipBan.member_trigger())
           "flipban_roundrobin" -> FlipBanRoundRobin.trigger!(keyname, FlipBanRoundRobin.member_trigger())
+          "freeforall"         -> FreeForAll.trigger!(keyname, FreeForAll.member_trigger())
           _                    -> raise "Invalid tournament rule"
         end
       end
     end)
     |> Enum.all?(&match?({:ok, _}, &1))
-    |> Tools.boolean_to_tuple()
+    |> Tools.boolean_to_tuple("error on start team states")
   end
 
   defp initialize_team_win_counts(teams) do
@@ -2130,7 +2142,7 @@ defmodule Milk.Tournaments do
       })
     end)
     |> Enum.all?(&match?({:ok, _}, &1))
-    |> Tools.boolean_to_tuple()
+    |> Tools.boolean_to_tuple("error on initialize team win counts")
   end
 
   @doc """
@@ -2162,7 +2174,7 @@ defmodule Milk.Tournaments do
 
   @doc """
   マッチングしているユーザー同士がIsWaitingForStartになったら発火する処理
-  TODO: 奇数人だとエラーを吐くので、それに対応
+  TODO: 奇数人だとエラーを吐くので、それに対応 -> 確認
   """
   def break_waiting_state_as_needed(%Tournament{rule: "flipban_roundrobin"} = tournament, user_id) do
     id = Progress.get_necessary_id(tournament.id, user_id)
@@ -2171,10 +2183,6 @@ defmodule Milk.Tournaments do
     match_list["match_list"]
     |> Enum.at(match_list["current_match_index"])
     |> Enum.filter(fn {match, _} ->
-      # match
-      # |> String.split("-")
-      # |> Enum.map(&String.to_integer(&1))
-      # |> Enum.any?(&(&1 == id))
       match
       |> Progress.cut_out_numbers_from_match_str_of_round_robin()
       |> Enum.any?(&(&1 == id))
@@ -2182,15 +2190,13 @@ defmodule Milk.Tournaments do
     |> Enum.map(&elem(&1, 0))
     |> List.first()
     |> Progress.cut_out_numbers_from_match_str_of_round_robin()
-    # |> String.split("-")
-    # |> Enum.map(&String.to_integer(&1))
     ~> match
     |> Enum.all?(&Progress.get_match_pending_list(&1, tournament.id))
     |> if do
       match
       |> Enum.map(&break_waiting(&1, tournament))
       |> Enum.all?(&(!is_nil(&1)))
-      |> Tools.boolean_to_tuple()
+      |> Tools.boolean_to_tuple("error on break waiting state as needed")
     else
       {:ok, nil}
     end
@@ -2208,7 +2214,7 @@ defmodule Milk.Tournaments do
       match
       |> Enum.map(&break_waiting(&1, tournament))
       |> Enum.all?(&(!is_nil(&1)))
-      |> Tools.boolean_to_tuple()
+      |> Tools.boolean_to_tuple("error on break waiting state as needed")
     else
       {:ok, nil}
     end
@@ -2362,7 +2368,7 @@ defmodule Milk.Tournaments do
       end
     end)
     |> Enum.all?(&match?({:ok, _}, &1))
-    |> Tools.boolean_to_tuple()
+    |> Tools.boolean_to_tuple("error on proceed to next match")
   end
 
   defp proceed_to_next_match(%Tournament{is_team: false, rule: rule, id: id}, winner_user_id) do
@@ -2379,7 +2385,7 @@ defmodule Milk.Tournaments do
       end
     end)
     |> Enum.all?(&match?({:ok, _}, &1))
-    |> Tools.boolean_to_tuple()
+    |> Tools.boolean_to_tuple("error on proceed to next match")
   end
 
   @spec wait_for_next_match(Tournament.t(), integer()) :: {:ok, any()} | {:error, String.t()}
@@ -2425,7 +2431,7 @@ defmodule Milk.Tournaments do
       |> FlipBanRoundRobin.trigger!(FlipBanRoundRobin.next_trigger())
     end)
     |> Enum.all?(&match?({:ok, _}, &1))
-    |> Tools.boolean_to_tuple()
+    |> Tools.boolean_to_tuple("error on break waiting for next match")
   end
 
   @doc """
@@ -2516,7 +2522,7 @@ defmodule Milk.Tournaments do
       end
     end)
     |> Enum.all?(&match?({:ok, _}, &1))
-    |> Tools.boolean_to_tuple()
+    |> Tools.boolean_to_tuple("error on change leader states on regenerate round robin match list")
   end
 
   @doc """
@@ -2567,14 +2573,14 @@ defmodule Milk.Tournaments do
     tournament_id
     |> __MODULE__.get_entrants()
     |> Enum.all?(&({:ok, nil} == finish_entrant(&1)))
-    |> Tools.boolean_to_tuple()
+    |> Tools.boolean_to_tuple("error on finish participants")
   end
 
   defp finish_participants(%Tournament{is_team: true, id: tournament_id}) do
     tournament_id
     |> __MODULE__.get_teams_by_tournament_id()
     |> Enum.all?(&({:ok, nil} == finish_team(&1)))
-    |> Tools.boolean_to_tuple()
+    |> Tools.boolean_to_tuple("error on finish participants")
   end
 
   defp finish_entrant(%Entrant{} = entrant) do
@@ -2653,7 +2659,7 @@ defmodule Milk.Tournaments do
       __MODULE__.update_team(team, %{rank: index})
     end)
     |> Enum.all?(&match?({:ok, _}, &1))
-    |> Tools.boolean_to_tuple()
+    |> Tools.boolean_to_tuple("error on edit ranks on finish with team result")
   end
 
   @doc """
@@ -2852,6 +2858,7 @@ defmodule Milk.Tournaments do
       "basic"              -> Basic.build_dfa_instance(keyname, is_team: tournament.is_team)
       "flipban"            -> FlipBan.build_dfa_instance(keyname, is_team: tournament.is_team)
       "flipban_roundrobin" -> FlipBanRoundRobin.build_dfa_instance(keyname, is_team: tournament.is_team)
+      "freeforall"         -> FreeForAll.build_dfa_instance(keyname, is_team: tournament.is_team)
       _                    -> raise "Invalid tournament"
     end
   end
@@ -3276,7 +3283,7 @@ defmodule Milk.Tournaments do
     teams
     |> Enum.map(&__MODULE__.update_team(&1, %{rank: length(teams)}))
     |> Enum.all?(&match?({:ok, _}, &1))
-    |> Tools.boolean_to_tuple()
+    |> Tools.boolean_to_tuple("error on initialize team rank")
   end
 
   @spec initialize_team_rank(any(), integer()) :: any()
@@ -3326,7 +3333,7 @@ defmodule Milk.Tournaments do
       end
     end)
     |> Enum.all?(&match?({:ok, _}, &1))
-    |> Tools.boolean_to_tuple()
+    |> Tools.boolean_to_tuple("error on set proper round robin team rank")
   end
 
   def set_proper_round_robin_team_rank(%{"match_list" => match_list, "rematch_index" => _rematch_index}, tournament_id) do
@@ -3351,7 +3358,7 @@ defmodule Milk.Tournaments do
       end
     end)
     |> Enum.all?(&match?({:ok, _}, &1))
-    |> Tools.boolean_to_tuple()
+    |> Tools.boolean_to_tuple("error on set proper round robin team rank")
   end
 
   defp calculate_round_robin_rank(id, sorted_teams, last_win_count \\ 0, rank \\ 1, count \\ 1)
@@ -3384,6 +3391,7 @@ defmodule Milk.Tournaments do
       "basic"              -> Basic.state!(keyname)
       "flipban"            -> FlipBan.state!(keyname)
       "flipban_roundrobin" -> FlipBanRoundRobin.state!(keyname)
+      "freeforall"         -> FreeForAll.state!(keyname)
       _                    -> raise "Invalid tournament rule"
     end
   end
@@ -3604,26 +3612,30 @@ defmodule Milk.Tournaments do
   def create_team(_, _, _, user_id_list) when not is_list(user_id_list), do: {:error, "user id list should be list"}
 
   # NOTE: リーダーのみで参加したとき
-  def create_team(tournament_id, size, leader_id, []) do
-    with {:ok, team} <- do_create_team(tournament_id, size, leader_id),
-         {:ok, _}    <- create_team_leader(team.id, leader_id),
-         {:ok, _}    <- verify_team_as_needed(team.id),
-         {:ok, nil}  <- initialize_team_member_states!(team),
-         team        <- __MODULE__.load_team(team.id) do
+  def create_team(tournament_id, size, leader_user_id, []) do
+    with {:ok, team}                            <- do_create_team(tournament_id, size, leader_user_id),
+         {:ok, _}                               <- create_team_leader(team.id, leader_user_id),
+         {:ok, _}                               <- verify_team_as_needed(team.id),
+         tournament when not is_nil(tournament) <- __MODULE__.get_tournament(team.tournament_id),
+         {:ok, nil}                             <- initialize_leader_state!(tournament, leader_user_id),
+         team                                   <- __MODULE__.load_team(team.id) do
       {:ok, :leader_only, team}
     else
-      error -> error
+      nil             -> {:error, "tournament is nil"}
+      {:error, error} -> {:error, error}
+      error           -> error
     end
   end
 
-  def create_team(tournament_id, size, leader_id, user_id_list) do
-    with {:ok, nil}         <- validate_user_is_not_member(tournament_id, user_id_list),
-         {:ok, team}        <- do_create_team(tournament_id, size, leader_id),
-         {:ok, _}           <- create_team_leader(team.id, leader_id),
-         {:ok, members}     <- __MODULE__.create_team_members(team.id, user_id_list),
-         {:ok, invitations} <- __MODULE__.create_team_invitations(members, leader_id),
-         {:ok, _}           <- create_team_invitation_notifications(invitations),
-         {:ok, nil}         <- initialize_team_member_states!(team) do
+  def create_team(tournament_id, size, leader_user_id, user_id_list) do
+    with {:ok, nil}                             <- validate_user_is_not_member(tournament_id, user_id_list),
+         {:ok, team}                            <- do_create_team(tournament_id, size, leader_user_id),
+         {:ok, _}                               <- create_team_leader(team.id, leader_user_id),
+         {:ok, members}                         <- __MODULE__.create_team_members(team.id, user_id_list),
+         {:ok, invitations}                     <- __MODULE__.create_team_invitations(members, leader_user_id),
+         {:ok, _}                               <- create_team_invitation_notifications(invitations),
+         tournament when not is_nil(tournament) <- __MODULE__.get_tournament(tournament_id),
+         {:ok, nil}                             <- initialize_leader_state!(tournament, leader_user_id) do
       {:ok, Map.put(team, :team_member, members)}
     else
       error -> error
@@ -3640,9 +3652,9 @@ defmodule Milk.Tournaments do
       |> where([t, tm], tm.user_id == ^user_id)
       |> where([t, tm], tm.is_invitation_confirmed)
       |> Repo.all()
-      |> Kernel.==([])
+      |> Enum.empty?()
     end)
-    |> Tools.boolean_to_tuple()
+    |> Tools.boolean_to_tuple("error on validate user is not a member")
   end
 
   @spec do_create_team(integer(), integer(), integer()) :: {:ok, Team.t()} | {:error, Ecto.Changeset.t()}
@@ -3687,7 +3699,7 @@ defmodule Milk.Tournaments do
         ~> result
         {:ok, result}
       {:error, _, changeset, _} -> {:error, changeset.errors}
-      {:error, _} -> {:error, nil}
+      {:error, _}               -> {:error, nil}
     end
   end
 
@@ -3718,23 +3730,23 @@ defmodule Milk.Tournaments do
     end)
   end
 
-  defp initialize_team_member_states!(%Team{id: team_id, tournament_id: tournament_id}) do
-    tournament = __MODULE__.get_tournament(tournament_id)
+  defp initialize_leader_state!(%Tournament{master_id: master_id}, leader_user_id) when master_id == leader_user_id do
+    {:ok, nil}
+  end
 
-    team_id
-    |> __MODULE__.get_team_members_by_team_id()
-    |> Enum.map(fn member ->
-      keyname = Rules.adapt_keyname(member.user_id, tournament_id)
+  defp initialize_leader_state!(%Tournament{id: tournament_id, is_team: is_team, rule: rule}, leader_user_id) do
+    keyname = Rules.adapt_keyname(leader_user_id, tournament_id)
 
-      case tournament.rule do
-        "basic"              -> Basic.build_dfa_instance(keyname, is_team: tournament.is_team)
-        "flipban"            -> FlipBan.build_dfa_instance(keyname, is_team: tournament.is_team)
-        "flipban_roundrobin" -> FlipBanRoundRobin.build_dfa_instance(keyname, is_team: tournament.is_team)
-        _                    -> {:error, "Invalid tournament rule"}
-      end
-    end)
-    |> Enum.all?(&match?({:ok, _}, &1))
-    |> Tools.boolean_to_tuple()
+    case rule do
+      "basic"              -> Basic.build_dfa_instance(keyname, is_team: is_team)
+      "flipban"            -> FlipBan.build_dfa_instance(keyname, is_team: is_team)
+      "flipban_roundrobin" -> FlipBanRoundRobin.build_dfa_instance(keyname, is_team: is_team)
+      "freeforall"         -> FreeForAll.build_dfa_instance(keyname, is_team: is_team)
+      _                    -> raise "Invalid tournament rule"
+    end
+    ~> result
+
+    if result == "OK", do: {:ok, nil}, else: {:error, result}
   end
 
   defp create_team_invitation_notifications(invitations) do
@@ -3775,7 +3787,7 @@ defmodule Milk.Tournaments do
       |> create_invitation_notification()
     end)
     |> Enum.all?(&match?({:ok, _}, &1))
-    |> Tools.boolean_to_tuple()
+    |> Tools.boolean_to_tuple("error on resend team invitations")
   end
 
   @doc """
@@ -4183,7 +4195,9 @@ defmodule Milk.Tournaments do
       {:error, error}     -> {:error, error}
     end
 
-    for device <- Accounts.get_devices_by_user_id(invitation.team_member.user_id) do
+    invitation.team_member.user_id
+    |> Accounts.get_devices_by_user_id()
+    |> Enum.map(fn device ->
       %Maps.PushIos{
         user_id: invitation.team_member.user_id,
         device_token: device.token,
@@ -4193,7 +4207,9 @@ defmodule Milk.Tournaments do
         params: %{"invitation_id" => invitation.id}
       }
       |> Milk.Notif.push_ios()
-    end
+    end)
+
+    {:ok, nil}
   end
 
   defp push_invitation_notification(%Notification{} = _) do
@@ -4210,7 +4226,7 @@ defmodule Milk.Tournaments do
     |> join(:inner, [tm], ti in TeamInvitation, on: tm.id == ti.team_member_id)
     |> where([tm, ti], ti.id == ^team_invitation_id)
     |> Repo.one()
-    |> TeamMember.changeset(%{"is_invitation_confirmed" => true})
+    |> TeamMember.changeset(%{"is_invitation_confirmed" => true, "confirmation_date" => Timex.now()})
     |> Repo.update()
     |> case do
       {:ok, team_member} ->
@@ -4293,34 +4309,37 @@ defmodule Milk.Tournaments do
   end
 
   defp verify_team_as_needed(team_id) do
+    confirmed_count = get_confirmed_count(team_id)
+    team = Repo.get(Team, team_id)
+
+    with {:ok, _} <- do_verify_team(confirmed_count, team),
+         {:ok, _} <- take_members_into_chat(team),
+         {:ok, _} <- initialize_member_states!(team),
+         {:ok, _} <- invite_members_to_discord_as_needed(team) do
+      {:ok, team}
+    else
+      {:ok, :not_verified, _} -> {:ok, team}
+      {:error, error}         -> {:error, error}
+      _                       -> {:error, "unexpected error on verify team"}
+    end
+  end
+
+  defp get_confirmed_count(team_id) do
     TeamMember
     |> where([tm], tm.team_id == ^team_id)
     |> where([tm], tm.is_invitation_confirmed)
     |> Repo.aggregate(:count)
-    ~> confirmed_count
-
-    team = Repo.get(Team, team_id)
-
-    if confirmed_count >= team.size do
-      Team
-      |> where([t], t.id == ^team_id)
-      |> Repo.one()
-      |> Team.changeset(%{"is_confirmed" => true})
-      |> Repo.update()
-    else
-      {:error, "short of confirmed count: #{confirmed_count}"}
-    end
-    |> case do
-      {:ok, team} ->
-        take_members_into_chat(team)
-        initialize_member_states!(team)
-        invite_members_to_discord_as_needed(team)
-        {:ok, team}
-
-      {:error, error} ->
-        {:error, error}
-    end
   end
+
+  defp do_verify_team(confirmed_count, %Team{id: team_id, size: size}) when confirmed_count >= size do
+    Team
+    |> where([t], t.id == ^team_id)
+    |> Repo.one()
+    |> Team.changeset(%{"is_confirmed" => true})
+    |> Repo.update()
+  end
+  defp do_verify_team(confirmed_count, %Team{}), do: {:ok, :not_verified, "short of confirmed count: #{confirmed_count}"}
+  defp do_verify_team(_,               _),       do: {:error, "invalid team"}
 
   defp take_members_into_chat(team) do
     TeamMember
@@ -4340,6 +4359,8 @@ defmodule Milk.Tournaments do
         |> Chat.create_chat_member()
       end)
     end)
+
+    {:ok, nil}
   end
 
   defp initialize_member_states!(%Team{id: team_id, tournament_id: tournament_id}) do
@@ -4347,16 +4368,20 @@ defmodule Milk.Tournaments do
 
     team_id
     |> __MODULE__.get_team_members_by_team_id()
-    |> Enum.each(fn member ->
+    |> Enum.reject(&(&1.is_leader))
+    |> Enum.map(fn member ->
       keyname = Rules.adapt_keyname(member.user_id, tournament_id)
 
       case tournament.rule do
         "basic"              -> Basic.build_dfa_instance(keyname, is_team: tournament.is_team)
         "flipban"            -> FlipBan.build_dfa_instance(keyname, is_team: tournament.is_team)
         "flipban_roundrobin" -> FlipBanRoundRobin.build_dfa_instance(keyname, is_team: tournament.is_team)
+        "freeforall"         -> FreeForAll.build_dfa_instance(keyname, is_team: tournament.is_team)
         _                    -> raise "Invalid tournament"
       end
     end)
+    |> Enum.all?(&match?("OK", &1))
+    |> Tools.boolean_to_tuple("error on initialize member states")
   end
 
   defp invite_members_to_discord_as_needed(team) do
@@ -4365,14 +4390,13 @@ defmodule Milk.Tournaments do
     invite_members_to_discord(team, tournament)
   end
 
-  defp invite_members_to_discord(_,    %Tournament{discord_server_id: nil}), do: nil
+  defp invite_members_to_discord(_,    %Tournament{discord_server_id: nil}), do: {:ok, nil}
   defp invite_members_to_discord(team, tournament) do
     url = Discord.create_invitation_link!(tournament.discord_server_id)
 
-    team
-    |> Map.get(:id)
+    team.id
     |> get_team_members_by_team_id()
-    |> Enum.each(fn member ->
+    |> Enum.map(fn member ->
       %{
         "user_id" => member.user_id,
         "process_id" => "DISCORD_SERVER_INVITATION",
@@ -4387,6 +4411,8 @@ defmodule Milk.Tournaments do
         {:error, error}     -> {:error, error}
       end
     end)
+    |> Enum.all?(&match?({:ok, _}, &1))
+    |> Tools.boolean_to_tuple()
   end
 
   @doc """

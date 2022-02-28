@@ -65,7 +65,7 @@ defmodule MilkWeb.ProfileControllerTest do
       |> Tournaments.create_entrant()
 
       setup_tournament_having_participants(tournament.id)
-      Tournaments.start(tournament.id, user.id)
+      Tournaments.start(tournament)
       Tournaments.finish(tournament.id, user.id)
 
       get(conn, Routes.profile_path(conn, :records), %{"user_id" => user.id})

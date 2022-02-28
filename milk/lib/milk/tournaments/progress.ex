@@ -38,7 +38,10 @@ defmodule Milk.Tournaments.Progress do
     SingleTournamentMatchLog,
     TeamWinCount
   }
-  alias Milk.Tournaments.Rules.FlipBanRoundRobin
+  alias Milk.Tournaments.Rules.{
+    FlipBanRoundRobin,
+    FreeForAll
+  }
 
   alias Tournamex.RoundRobin
 
@@ -712,7 +715,7 @@ defmodule Milk.Tournaments.Progress do
   end
 
   # NOTE: round robin log
-  @spec create_round_robin_log(map()) :: {:ok, RoundrobinLog.t()} | {:error, Ecto.Changeset.t() | String.t()}
+  @spec create_round_robin_log(map()) :: {:ok, RoundRobinLog.t()} | {:error, Ecto.Changeset.t() | String.t()}
   def create_round_robin_log(attrs \\ %{}) do
     %RoundRobinLog{}
     |> RoundRobinLog.changeset(attrs)
@@ -737,16 +740,16 @@ defmodule Milk.Tournaments.Progress do
   # HACK
 
   @spec start_basic(integer(), Tournament.t()) :: {:ok, match_list(), match_list_with_fight_result()} | {:error, any()}
-  def start_basic(master_id, tournament) do
-    case Tournaments.start(tournament.id, master_id) do
+  def start_basic(_master_id, tournament) do
+    case Tournaments.start(tournament) do
       {:ok, _}        -> make_basic_matches(tournament.id)
       {:error, error} -> {:error, error}
     end
   end
 
   @spec start_flipban(integer(), Tournament.t()) :: {:ok, match_list(), nil}
-  def start_flipban(master_id, tournament) do
-    with {:ok, _} <- Tournaments.start(tournament.id, master_id),
+  def start_flipban(_master_id, tournament) do
+    with {:ok, _} <- Tournaments.start(tournament),
          {:ok, match_list} <- make_flipban_matches(tournament) do
       {:ok, match_list, nil}
     else
@@ -817,8 +820,8 @@ defmodule Milk.Tournaments.Progress do
 
   @spec start_team_flipban(Tournament.t()) :: {:ok, match_list(), match_list_with_fight_result()} | {:error, String.t(), nil}
   def start_team_flipban(tournament) do
-    tournament.id
-    |> Tournaments.start_team_tournament(tournament.master_id)
+    tournament
+    |> Tournaments.start()
     |> case do
       {:ok, _}        -> generate_team_flipban_matches(tournament)
       {:error, error} -> {:error, error, nil}
@@ -864,8 +867,8 @@ defmodule Milk.Tournaments.Progress do
     {:ok, match_list, match_list_with_fight_result}
   end
 
-  def start_team_flipban_round_robin(%Tournament{id: tournament_id, master_id: master_id} = tournament) do
-    with {:ok, _}          <- Tournaments.start_team_tournament(tournament_id, master_id),
+  def start_team_flipban_round_robin(%Tournament{id: tournament_id} = tournament) do
+    with {:ok, _}          <- Tournaments.start(tournament),
          {:ok, match_list} <- generate_team_flipban_roundrobin_matches(tournament),
          match_list        <- %{"rematch_index" => 0, "current_match_index" => 0, "match_list" => match_list},
          {:ok, nil}        <- __MODULE__.insert_match_list(match_list, tournament_id),
@@ -882,6 +885,20 @@ defmodule Milk.Tournaments.Progress do
     |> Tournaments.get_confirmed_teams()
     |> Enum.map(&Map.get(&1, :id))
     |> RoundRobin.generate_match_list()
+  end
+
+  @spec start_free_for_all(Tournament.t()) :: {:ok, nil, nil} | {:error, String.t() | nil}
+  def start_free_for_all(tournament) do
+    # 不必要なチームを除外したら対戦カードを生成していく
+    with {:ok, nil} <- FreeForAll.truncate_excess_members(tournament),
+         {:ok, nil} <- FreeForAll.initialize_round_tables(tournament, 0),
+         {:ok, _}   <- Tournaments.start(tournament),
+         {:ok, _}   <- FreeForAll.create_status(%{tournament_id: tournament.id, current_match_index: 0}) do
+      {:ok, nil, nil}
+    else
+      {:error, error} -> {:error, error}
+      _               -> {:error, "error on prepare for start"}
+    end
   end
 
   # NOTE: 一人の人を除外する処理

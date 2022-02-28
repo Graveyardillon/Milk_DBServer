@@ -6,59 +6,48 @@ import { Urls } from '../utils/urls'
 
 const argv = yargs(process.argv.slice(2))
     .options({
-        coin_head_field:        { type: 'string',  default: 'マップ選択' },
-        coin_tail_field:        { type: 'string',  default: 'A/D選択' },
         enabled_discord_server: { type: 'boolean', default: false },
-        enabled_coin_toss:      { type: 'boolean', default: true },
-        enabled_map:            { type: 'boolean', default: true },
-        capacity:               { type: 'number',  default: 4 },
-        game_name:              { type: 'string',  default: 'VALORANT' },
-        is_team:                { type: 'boolean', default: true },
+        capacity:               { type: 'number',  default: 12 },
+        game_name:              { type: 'string',  default: 'TFT' },
+        is_team:                { type: 'boolean', default: false },
         master_id:              { type: 'number',  default: 1 },
         name:                   { type: 'string',  default: 'FlipBan Team Tournament' },
         platform_id:            { type: 'number',  default: 1 },
         team_size:              { type: 'number',  default: 5 },
-        type:                   { type: 'number',  default: 2 },
+        round_number:           { type: 'number',  default: 3 },
+        match_number:           { type: 'number',  default: 2 },
+        round_capacity:         { type: 'number',  default: 4 }
     })
     .argv
 
+
     const tournamentJson: CreateTournament = {
         capacity:               argv.capacity,
-        coin_head_field:        argv.coin_head_field,
-        coin_tail_field:        argv.coin_tail_field,
         deadline:               "2050-04-17T14:00:00Z",
         description:            "asdf",
         enabled_discord_server: parseBool(argv.enabled_discord_server) || false,
-        enabled_coin_toss:      parseBool(argv.enabled_coin_toss) || true,
-        enabled_map:            parseBool(argv.enabled_map) || true,
         event_date:             "2050-04-17T14:00:00Z",
         game_name:              argv.game_name,
         is_team:                argv.is_team,
         join:                   false,
-        maps:                   [
-            { name: "アイスボックス", icon: undefined },
-            { name: "アセント",      icon: undefined },
-            { name: "バインド",      icon: undefined },
-            { name: "ヘイブン",      icon: undefined },
-            { name: "ブリーズ",      icon: undefined },
-            { name: "スプリット",    icon: undefined },
-            { name: "フラクチャー",   icon: undefined}
-        ],
         master_id:              argv.master_id,
         name:                   argv.name,
         platform_id:            argv.platform_id,
-        rule:                   "flipban_roundrobin",
+        rule:                   "freeforall",
         start_recruiting:       "2049-04-17T14:00:00Z",
         team_size:              argv.team_size,
+        round_number:           argv.round_number,
+        match_number:           argv.match_number,
+        round_capacity:         argv.round_capacity
     }
-    
+
     const newmanJson: NewmanJson = {
         info: {
-            name: 'Flip tournament request'
+            name: 'Free for all tournament request'
         },
         item: [
             {
-                name: 'Flip tournament',
+                name: 'Free for all tournament',
                 request: {
                     url: Urls.createTournament,
                     method: 'POST',
@@ -72,8 +61,8 @@ const argv = yargs(process.argv.slice(2))
                         mode: 'formdata',
                         formdata: [
                             {
-                                key:     "tournament",
-                                type:    "text",
+                                key: 'tournament',
+                                type: 'text',
                                 enabled: true,
                                 value:   JSON.stringify(tournamentJson)
                             },
@@ -82,12 +71,6 @@ const argv = yargs(process.argv.slice(2))
                                 type:    "text",
                                 enabled: true,
                                 value:   ""
-                            },
-                            {
-                                key:     "maps",
-                                type:    "text",
-                                enabled: true,
-                                value:   JSON.stringify(tournamentJson.maps)
                             }
                         ]
                     }
@@ -95,7 +78,7 @@ const argv = yargs(process.argv.slice(2))
             }
         ]
     }
-    
+
     newman.run({
         collection: newmanJson,
         reporters: 'cli'

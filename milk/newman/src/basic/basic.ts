@@ -35,7 +35,6 @@ const tournamentJson: CreateTournament = {
     platform_id:            argv.platform_id,
     rule:                   "basic",
     start_recruiting:       "2049-04-17T14:00:00Z",
-    type:                   argv.type
 }
 
 const newmanJson: NewmanJson = {
