@@ -75,6 +75,7 @@ defmodule MilkWeb.FreeForAllController do
 
   def claim_scores(conn, %{"tournament_id" => tournament_id, "table_id" => table_id, "scores" => scores}) do
     tournament_id = Tools.to_integer_as_needed(tournament_id)
+    table_id = Tools.to_integer_as_needed(table_id)
     tournament = Tournaments.get_tournament(tournament_id)
 
     with {:ok, _} <- FreeForAll.claim_scores(tournament, table_id, scores),
