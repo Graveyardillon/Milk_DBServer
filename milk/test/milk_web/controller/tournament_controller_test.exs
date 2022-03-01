@@ -436,6 +436,34 @@ defmodule MilkWeb.TournamentControllerTest do
 
       assert json_response(conn, 200)["data"]["enabled_map"]
     end
+
+    test "renders error when not enabled point multiplier although they are given", %{conn: conn} do
+      user = fixture_user()
+      attrs = %{
+        "capacity" => 8,
+        "deadline" => "2010-04-17T14:00:00Z",
+        "description" => "some description",
+        "event_date" => "2010-04-17T14:00:00Z",
+        "master_id" => user.id,
+        "name" => "some name",
+        "type" => 1,
+        "join" => "false",
+        "url" => "some url",
+        "platform" => 1,
+        "rule" => "freeforall",
+        "round_number" => 2,
+        "match_number" => 1,
+        "round_capacity" => 3,
+        "is_team" => "false",
+        "point_multiplier_categories" => [
+          %{"name" => "キルポ", "multiplier" => 10},
+          %{"name" => "ダメージ", "multiplier" => 0.5}
+        ]
+      }
+
+      conn = post(conn, Routes.tournament_path(conn, :create), tournament: attrs, file: "")
+      refute json_response(conn, 200)["result"]
+    end
   end
 
   describe "create basic tournament" do
