@@ -107,7 +107,7 @@ defmodule Milk.Tournaments do
   Returns the list of tournament for home screen.
   """
   @spec home_tournament(any(), integer(), integer() | nil) :: [Tournament.t()]
-  def home_tournament(date_offset, offset, user_id \\ nil) do
+  def home_tournament(_date_offset, offset, user_id \\ nil) do
     offset = Tools.to_integer_as_needed(offset)
 
     user_id
@@ -745,16 +745,29 @@ defmodule Milk.Tournaments do
     end)
   end
 
-  defp create_freeforall_information_on_create_tournament(tournament, %{round_number: round_number, match_number: match_number, round_capacity: round_capacity}),
-    do: create_freeforall_information_on_create_tournament(tournament, %{"round_number" => round_number, "match_number" => match_number, "round_capacity" => round_capacity})
-  defp create_freeforall_information_on_create_tournament(tournament, %{"round_number" => round_number, "match_number" => match_number, "round_capacity" => round_capacity}) do
-    FreeForAll.create_freeforall_information(%{
-      round_number: round_number,
-      match_number: match_number,
-      round_capacity: round_capacity,
-      tournament_id: tournament.id
-    })
+  defp create_freeforall_information_on_create_tournament(tournament, map) do
+    map
+    |> Tools.atom_map_to_string_map()
+    |> Map.put("tournament_id", tournament.id)
+    ~> map
+
+    with {:ok, _} <- FreeForAll.create_freeforall_information(map),
+         {:ok, _} <- create_point_multiplier_categories(map) do
+      {:ok, nil}
+    else
+      {:error, error} -> {:error, error}
+      _               -> {:error, "error on create free for all information on create tournament"}
+    end
   end
+
+  defp create_point_multiplier_categories(%{"enable_point_multiplier" => true, "point_multiplier_categories" => categories}) when is_list(categories) do
+    categories
+    |> Enum.map(&FreeForAll.create_point_multiplier_category(&1))
+    |> Enum.all?(&match?({:ok, _}, &1))
+    |> Tools.boolean_to_tuple("error on create point multiplier categories")
+  end
+  defp create_point_multiplier_categories(%{"point_multiplier_categories" => categories}) when is_list(categories), do: {:error, "Need to enable point multiplier"}
+  defp create_point_multiplier_categories(_), do: {:ok, nil}
 
   @spec put_token_as_needed(map()) :: map()
   defp put_token_as_needed(%{"url" => url} = attrs) when not is_nil(url) do

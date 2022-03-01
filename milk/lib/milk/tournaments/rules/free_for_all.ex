@@ -14,7 +14,10 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
     TeamMatchInformation
   }
   alias Milk.Tournaments.Rules.FreeForAll.Round.Information, as: RoundInformation
-  alias Milk.Tournaments.Rules.FreeForAll.Status
+  alias Milk.Tournaments.Rules.FreeForAll.{
+    PointMultiplierCategory,
+    Status
+  }
   alias Milk.Tournaments.{
     Team,
     Tournament
@@ -603,5 +606,11 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
     Status
     |> where([s], s.tournament_id == ^tournament_id)
     |> Repo.one()
+  end
+
+  def create_point_multiplier_category(attrs \\ %{}) do
+    %PointMultiplierCategory{}
+    |> PointMultiplierCategory.changeset(attrs)
+    |> Repo.insert()
   end
 end

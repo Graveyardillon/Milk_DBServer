@@ -63,7 +63,7 @@ defmodule MilkWeb.FreeForAllControllerTest do
   end
 
   describe "state machine" do
-    test "freeforall (team)", %{conn: conn} do
+    test "freeforall (individual)", %{conn: conn} do
       user = fixture_user()
       attrs = %{
         "capacity" => 8,
@@ -81,7 +81,6 @@ defmodule MilkWeb.FreeForAllControllerTest do
         "match_number" => 1,
         "round_capacity" => 3,
         "is_team" => "false",
-        "team_size" => 5
       }
 
       conn = post(conn, Routes.tournament_path(conn, :create), tournament: attrs, file: "")
@@ -149,6 +148,35 @@ defmodule MilkWeb.FreeForAllControllerTest do
       end)
 
       refute Tournaments.get_tournament(tournament_id)
+    end
+
+    test "freeforall (individual) (enable point multiplier)", %{conn: conn} do
+      user = fixture_user()
+      attrs = %{
+        "capacity" => 8,
+        "deadline" => "2010-04-17T14:00:00Z",
+        "description" => "some description",
+        "event_date" => "2010-04-17T14:00:00Z",
+        "master_id" => user.id,
+        "name" => "some name",
+        "type" => 1,
+        "join" => "false",
+        "url" => "some url",
+        "platform" => 1,
+        "rule" => "freeforall",
+        "round_number" => 2,
+        "match_number" => 1,
+        "round_capacity" => 3,
+        "is_team" => "false",
+        "enable_point_multiplier" => true,
+        "point_multiplier_categories" => [
+          %{"name" => "キルポ", "multiplier" => 10},
+          %{"name" => "ダメージ", "multiplier" => 0.5}
+        ]
+      }
+
+      conn = post(conn, Routes.tournament_path(conn, :create), tournament: attrs, file: "")
+      assert json_response(conn, 200)["result"]
     end
   end
 end
