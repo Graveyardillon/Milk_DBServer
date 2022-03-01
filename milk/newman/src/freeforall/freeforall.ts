@@ -11,7 +11,7 @@ const argv = yargs(process.argv.slice(2))
         game_name:              { type: 'string',  default: 'TFT' },
         is_team:                { type: 'boolean', default: false },
         master_id:              { type: 'number',  default: 1 },
-        name:                   { type: 'string',  default: 'FlipBan Team Tournament' },
+        name:                   { type: 'string',  default: 'FreeForAll Team Tournament' },
         platform_id:            { type: 'number',  default: 1 },
         team_size:              { type: 'number',  default: 5 },
         round_number:           { type: 'number',  default: 3 },
