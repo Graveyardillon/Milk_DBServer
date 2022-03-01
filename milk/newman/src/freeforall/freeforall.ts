@@ -20,7 +20,6 @@ const argv = yargs(process.argv.slice(2))
     })
     .argv
 
-
     const tournamentJson: CreateTournament = {
         capacity:               argv.capacity,
         deadline:               "2050-04-17T14:00:00Z",
