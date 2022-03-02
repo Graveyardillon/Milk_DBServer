@@ -19,6 +19,15 @@ defmodule MilkWeb.FreeForAllController do
     render(conn, "information.json", information: information)
   end
 
+  def get_categories(conn, %{"tournament_id" => tournament_id}) do
+    tournament_id
+    |> Tools.to_integer_as_needed()
+    |> FreeForAll.get_categories()
+    ~> categories
+
+    render(conn, "categories.json", categories: categories)
+  end
+
   def get_tables(conn, %{"tournament_id" => tournament_id}) do
     tournament_id
     |> Tools.to_integer_as_needed()
@@ -53,6 +62,15 @@ defmodule MilkWeb.FreeForAllController do
     ~> match_information_list
 
     render(conn, "match_information.json", match_information: match_information_list)
+  end
+
+  def load_match_information(conn, %{"round_information_id" => round_information_id}) do
+    round_information_id
+    |> Tools.to_integer_as_needed()
+    |> FreeForAll.load_match_information()
+    ~> match_information_list
+
+    render(conn, "load_match_information.json", match_information: match_information_list)
   end
 
   def get_team_match_information(conn, %{"round_information_id" => round_information_id}) do

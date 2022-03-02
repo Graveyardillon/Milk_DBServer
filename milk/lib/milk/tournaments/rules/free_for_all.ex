@@ -527,6 +527,12 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
     end
   end
 
+  def get_categories(tournament_id) do
+    PointMultiplierCategory
+    |> where([c], c.tournament_id == ^tournament_id)
+    |> Repo.all()
+  end
+
   def create_round_table(attrs \\ %{}) do
     %Table{}
     |> Table.changeset(attrs)
@@ -588,6 +594,12 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
     MatchInformation
     |> where([t], t.round_id == ^round_information_id)
     |> Repo.all()
+  end
+
+  def load_match_information(round_information_id) do
+    round_information_id
+    |> __MODULE__.get_match_information()
+    |> Repo.preload(:point_multipliers)
   end
 
   def create_status(attrs \\ %{}) do

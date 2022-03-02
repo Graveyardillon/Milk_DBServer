@@ -10,6 +10,7 @@ defmodule MilkWeb.FreeForAllView do
         round_number: information.round_number,
         match_number: information.match_number,
         round_capacity: information.round_capacity,
+        enable_point_multiplier: information.enable_point_multiplier,
         tournament_id: information.tournament_id
       },
       result: true
@@ -73,6 +74,18 @@ defmodule MilkWeb.FreeForAllView do
     }
   end
 
+  def render("categories.json", %{categories: categories}) do
+    %{
+      data: Enum.map(categories, fn category ->
+        %{
+          name: category.name,
+          multiplier: category.multiplier
+        }
+      end),
+      result: true
+    }
+  end
+
   def render("match_information.json", %{match_information: match_information}) do
     %{
       data: Enum.map(match_information, fn info ->
@@ -91,6 +104,24 @@ defmodule MilkWeb.FreeForAllView do
         %{
           score: team_info.score,
           round_id: team_info.round_id
+        }
+      end),
+      result: true
+    }
+  end
+
+  def render("load_match_information.json", %{match_information: match_information}) do
+    %{
+      data: Enum.map(match_information, fn info ->
+        %{
+          score: info.score,
+          point_multipliers: Enum.map(info.point_multipliers, fn point_multiplier ->
+            %{
+              category_id: point_multiplier.category_id,
+              point: point_multiplier.point,
+            }
+          end),
+          round_id: info.round_id
         }
       end),
       result: true
