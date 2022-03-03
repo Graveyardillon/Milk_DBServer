@@ -144,4 +144,19 @@ defmodule MilkWeb.FreeForAllView do
       }
     }
   end
+
+  # NOTE: finishしている前提
+  def render("finished.json", %{messages: messages, name: name}) do
+    %{
+      result: true,
+      messages: Enum.map(messages, fn message ->
+        %{
+          state: message.state,
+          user_id: message.user_id
+        }
+      end),
+      is_finished: true,
+      name: name
+    }
+  end
 end

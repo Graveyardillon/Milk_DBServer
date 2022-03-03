@@ -15,7 +15,7 @@ const argv = yargs(process.argv.slice(2))
         platform_id:             { type: 'number',  default: 1 },
         team_size:               { type: 'number',  default: 5 },
         round_number:            { type: 'number',  default: 3 },
-        match_number:            { type: 'number',  default: 20 },
+        match_number:            { type: 'number',  default: 2 },
         round_capacity:          { type: 'number',  default: 4 },
         enable_point_multiplier: { type: 'boolean', default: false}
     })

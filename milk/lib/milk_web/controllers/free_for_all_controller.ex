@@ -117,7 +117,11 @@ defmodule MilkWeb.FreeForAllController do
          {:ok, _} <- FreeForAll.increase_current_match_index(table_id),
          {:ok, _} <- FreeForAll.finish_table_as_needed(table_id),
          {:ok, _} <- FreeForAll.proceed_to_next_round_as_needed(tournament) do
-      json(conn, %{result: true})
+        if is_nil(Tournaments.get_tournament(tournament_id)) do
+          render(conn, "finished.json", %{messages: Tournaments.all_states!(tournament_id), name: tournament.name})
+        else
+          json(conn, %{result: true})
+        end
     else
       {:error, error} -> json(conn, %{result: false, error: error})
       _               -> json(conn, %{result: true})
