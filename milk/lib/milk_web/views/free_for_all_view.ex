@@ -124,6 +124,7 @@ defmodule MilkWeb.FreeForAllView do
           score: info.score,
           point_multipliers: Enum.map(info.point_multipliers, fn point_multiplier ->
             %{
+              id: point_multiplier.id,
               category_id: point_multiplier.category_id,
               point: point_multiplier.point,
             }
