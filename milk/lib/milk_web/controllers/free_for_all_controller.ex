@@ -106,4 +106,21 @@ defmodule MilkWeb.FreeForAllController do
       _               -> json(conn, %{result: true})
     end
   end
+
+  def claim_scores(conn, %{"tournament_id" => tournament_id, "table_id" => table_id, "scores_with_categories" => scores_with_categories}) do
+    tournament_id = Tools.to_integer_as_needed(tournament_id)
+    table_id = Tools.to_integer_as_needed(table_id)
+    tournament = Tournaments.get_tournament(tournament_id)
+
+    # NOTE: カテゴリidと一緒にスコアを送信 [%{"scores" => [%{"category_id" => 1, "score" => 1}], "match_information_id" => 1}]
+    with {:ok, _} <- FreeForAll.claim_scores_with_categories(tournament, table_id, scores_with_categories),
+         {:ok, _} <- FreeForAll.increase_current_match_index(table_id),
+         {:ok, _} <- FreeForAll.finish_table_as_needed(table_id),
+         {:ok, _} <- FreeForAll.proceed_to_next_round_as_needed(tournament) do
+      json(conn, %{result: true})
+    else
+      {:error, error} -> json(conn, %{result: false, error: error})
+      _               -> json(conn, %{result: true})
+    end
+  end
 end

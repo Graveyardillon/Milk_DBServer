@@ -26,6 +26,7 @@ defmodule MilkWeb.FreeForAllView do
           round_index: table.round_index,
           tournament_id: table.tournament_id,
           is_finished: table.is_finished,
+          current_match_index: table.current_match_index
         }
       end),
       result: true
@@ -44,7 +45,9 @@ defmodule MilkWeb.FreeForAllView do
       id: table.id,
       name: table.name,
       round_index: table.round_index,
-      tournament_id: table.tournament_id
+      tournament_id: table.tournament_id,
+      is_finished: table.is_finished,
+      current_match_index: table.current_match_index
     }
   end
 
@@ -78,6 +81,7 @@ defmodule MilkWeb.FreeForAllView do
     %{
       data: Enum.map(categories, fn category ->
         %{
+          id: category.id,
           name: category.name,
           multiplier: category.multiplier
         }
@@ -90,6 +94,7 @@ defmodule MilkWeb.FreeForAllView do
     %{
       data: Enum.map(match_information, fn info ->
         %{
+          id: info.id,
           score: info.score,
           round_id: info.round_id
         }
@@ -102,6 +107,7 @@ defmodule MilkWeb.FreeForAllView do
     %{
       data: Enum.map(team_match_information, fn team_info ->
         %{
+          id: team_info.id,
           score: team_info.score,
           round_id: team_info.round_id
         }
@@ -114,6 +120,7 @@ defmodule MilkWeb.FreeForAllView do
     %{
       data: Enum.map(match_information, fn info ->
         %{
+          id: info.id,
           score: info.score,
           point_multipliers: Enum.map(info.point_multipliers, fn point_multiplier ->
             %{

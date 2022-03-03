@@ -14,6 +14,8 @@ defmodule Milk.Tournaments.Rules.FreeForAll.Round.PointMultiplier do
 
     belongs_to :match_information, MatchInformation
     belongs_to :category, Category
+
+    timestamps()
   end
 
   @doc false

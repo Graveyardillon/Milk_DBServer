@@ -11,7 +11,8 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
     MatchInformation,
     Table,
     TeamInformation,
-    TeamMatchInformation
+    TeamMatchInformation,
+    PointMultiplier
   }
   alias Milk.Tournaments.Rules.FreeForAll.Round.Information, as: RoundInformation
   alias Milk.Tournaments.Rules.FreeForAll.{
@@ -392,6 +393,43 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
     |> Tools.boolean_to_tuple()
   end
 
+  # TODO: カテゴリに基づいたスコアを算出し、match_informationを登録してからカテゴリごとのポイントを登録
+  def claim_scores_with_categories(%Tournament{is_team: false}, table_id, scores_with_categories) do
+    scores_with_categories
+    |> Enum.map(fn scores ->
+      scores
+      |> Enum.map(fn %{"category_id" => category_id, "score" => score, "user_id" => user_id} ->
+        category = __MODULE__.get_point_multiplier_category(category_id)
+        score = calculate_score_with_category(category, score)
+
+        table_id
+        |> __MODULE__.get_round_information()
+        |> Enum.filter(&(&1.user_id == user_id))
+        |> Enum.map(fn round_information ->
+          with {:ok, match_information} <- __MODULE__.create_match_information(%{round_id: round_information.id, user_id: user_id, score: score}) |> IO.inspect(),
+                {:ok, _}                 <- __MODULE__.create_point_multiplier(%{category_id: category_id, point: score, match_information_id: match_information.id}) |> IO.inspect() do
+            {:ok, nil}
+          else
+            _ -> {:error, nil}
+          end
+        end)
+        |> Enum.all?(&match?({:ok, _}, &1))
+        |> Tools.boolean_to_tuple()
+        |> IO.inspect(label: :here)
+      end)
+      |> Enum.all?(&match?({:ok, _}, &1))
+      |> Tools.boolean_to_tuple()
+      |> IO.inspect(label: :here2)
+    end)
+    |> Enum.all?(&match?({:ok, _}, &1))
+    |> Tools.boolean_to_tuple("error on registering scores with categories")
+    |> IO.inspect()
+  end
+
+  defp calculate_score_with_category(%PointMultiplierCategory{multiplier: multiplier}, score) do
+    round(score * multiplier)
+  end
+
   def increase_current_match_index(table_id) do
     table = __MODULE__.get_table(table_id)
 
@@ -624,5 +662,15 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
     %PointMultiplierCategory{}
     |> PointMultiplierCategory.changeset(attrs)
     |> Repo.insert()
+  end
+
+  def create_point_multiplier(attrs \\ %{}) do
+    %PointMultiplier{}
+    |> PointMultiplier.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  def get_point_multiplier_category(category_id) do
+    Repo.get(PointMultiplierCategory, category_id)
   end
 end
