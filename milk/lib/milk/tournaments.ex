@@ -760,6 +760,9 @@ defmodule Milk.Tournaments do
     end
   end
 
+  defp create_point_multiplier_categories(tournament_id, %{"enable_point_multiplier" => "true", "point_multiplier_categories" => categories}) when is_list(categories) do
+    create_point_multiplier_categories(tournament_id, %{"enable_point_multiplier" => true, "point_multiplier_categories" => categories})
+  end
   defp create_point_multiplier_categories(tournament_id, %{"enable_point_multiplier" => true, "point_multiplier_categories" => categories}) when is_list(categories) do
     categories
     |> Enum.map(fn category ->

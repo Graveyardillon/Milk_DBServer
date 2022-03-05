@@ -1,5 +1,6 @@
 const newman = require('newman')
 const yargs = require('yargs/yargs')
+
 import { NewmanJson, CreateTournament } from '../utils/interfaces'
 import { parseBool } from '../utils/functions'
 import { Urls } from '../utils/urls'
@@ -9,7 +10,7 @@ const argv = yargs(process.argv.slice(2))
         enabled_discord_server:  { type: 'boolean', default: false },
         capacity:                { type: 'number',  default: 12 },
         game_name:               { type: 'string',  default: 'TFT' },
-        is_team:                 { type: 'boolean', default: false },
+        is_team:                 { type: 'boolean', default: true },
         master_id:               { type: 'number',  default: 1 },
         name:                    { type: 'string',  default: 'FreeForAll Team Tournament' },
         platform_id:             { type: 'number',  default: 1 },
@@ -47,9 +48,11 @@ const tournamentJson: CreateTournament = {
     round_number:                argv.round_number,
     match_number:                argv.match_number,
     round_capacity:              argv.round_capacity,
-    enable_point_multiplier:     parseBool(argv.enable_point_multiplier),
+    enable_point_multiplier:     argv.enable_point_multiplier,
     point_multiplier_categories: pointMultiplierCategories
 }
+
+console.log('tournament json', tournamentJson)
 
 const newmanJson: NewmanJson = {
     info: {
