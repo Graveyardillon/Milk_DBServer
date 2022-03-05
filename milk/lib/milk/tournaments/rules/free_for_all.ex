@@ -443,7 +443,9 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
 
   def finish_table_as_needed(table_id) do
     table = __MODULE__.get_table(table_id)
+      # |> IO.inspect(label: :table)
     information = __MODULE__.get_freeforall_information_by_tournament_id(table.tournament_id)
+      # |> IO.inspect(label: :information)
 
     if table.current_match_index == information.match_number do
       __MODULE__.update_round_table(table, %{is_finished: true})
@@ -587,7 +589,30 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
     extract_users_from_score_tables(remaining_score_tables, tables, count + 1)
   end
 
-  defp extract_winner_id(tables) do
+  defp extract_winner_id(%Tournament{is_team: true}, tables) do
+    tables
+    |> Enum.map(fn table ->
+      table.id
+      |> __MODULE__.get_round_team_information()
+      |> Enum.map(fn round ->
+        round.id
+        |> __MODULE__.get_match_information()
+        |> Enum.map(&(&1.score))
+        |> Enum.sum()
+        ~> score_sum
+
+        %{team_id: round.team_id, score_sum: score_sum}
+      end)
+    end)
+    |> List.flatten()
+    |> Enum.sort(fn %{score_sum: score_sum1}, %{score_sum: score_sum2} ->
+      score_sum1 >= score_sum2
+    end)
+    |> hd()
+    |> Map.get(:team_id)
+  end
+
+  defp extract_winner_id(%Tournament{is_team: false}, tables) do
     tables
     |> Enum.map(fn table ->
       table.id
@@ -612,7 +637,7 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
 
   defp finish_tournament_as_needed(tables, tournament, %Information{round_number: round_number}, %Status{current_round_index: current_round_index}) do
     if round_number <= current_round_index + 1 do
-      winner_id = extract_winner_id(tables)
+      winner_id = extract_winner_id(tournament, tables)
       # すべてのテーブルがfinishedで、すべてのテーブルのmatch_indexがmatch_numberになっていたらfinish
       tournament.id
       |> Tournaments.finish(winner_id)
