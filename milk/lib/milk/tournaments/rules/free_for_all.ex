@@ -15,6 +15,7 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
     PointMultiplier
   }
   alias Milk.Tournaments.Rules.FreeForAll.Round.Information, as: RoundInformation
+  alias Milk.Tournaments.Rules.FreeForAll.Round.TeamInformation, as: RoundTeamInformation
   alias Milk.Tournaments.Rules.FreeForAll.{
     PointMultiplierCategory,
     Status
@@ -393,7 +394,6 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
     |> Tools.boolean_to_tuple()
   end
 
-  # TODO: カテゴリに基づいたスコアを算出し、match_informationを登録してからカテゴリごとのポイントを登録
   def claim_scores_with_categories(%Tournament{is_team: false}, table_id, scores_with_categories) do
     scores_with_categories
     |> Enum.map(fn %{"user_id" => user_id, "scores" => scores} ->
@@ -476,6 +476,47 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
     Enum.all?(tables, &(&1.is_finished))
   end
 
+  defp generate_round_tables(status, tables, %Tournament{is_team: true, id: tournament_id}) do
+    information = __MODULE__.get_freeforall_information_by_tournament_id(tournament_id)
+
+    tables
+    |> Enum.map(fn table ->
+      table.id
+      |> __MODULE__.get_round_team_information()
+      |> Enum.map(fn round ->
+        round.id
+        |> __MODULE__.get_team_match_information()
+        |> Enum.map(&(&1.score))
+        |> Enum.sum()
+        ~> score_sum
+
+        %{team_id: round.team_id, score_sum: score_sum}
+      end)
+    end)
+    |> List.flatten()
+    |> Enum.sort(fn %{score_sum: score_sum1}, %{score_sum: score_sum2} ->
+      score_sum1 >= score_sum2
+    end)
+    ~> score_tables
+
+    table_num = information.round_number - status.current_round_index
+
+    1..table_num
+    |> Enum.to_list()
+    |> Enum.map(fn n ->
+      n = n + Enum.count(tables)
+      {:ok, table} = __MODULE__.create_round_table(%{name: "テーブル#{n}", round_index: status.current_round_index, tournament_id: tournament_id})
+      table
+    end)
+    ~> tables
+
+    score_tables
+    |> Enum.slice(0..table_num * information.round_capacity - 1)
+    |> extract_teams_from_score_tables(tables)
+
+    {:ok, nil}
+  end
+
   defp generate_round_tables(status, tables, %Tournament{is_team: false, id: tournament_id}) do
     # NOTE: とりあえずround_number - round_index個のテーブルを作ることとしておきます
     information = __MODULE__.get_freeforall_information_by_tournament_id(tournament_id)
@@ -517,6 +558,20 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
     |> extract_users_from_score_tables(tables)
 
     {:ok, nil}
+  end
+
+  defp extract_teams_from_score_tables(score_tables, tables, count \\ 0)
+  defp extract_teams_from_score_tables([], _, _), do: {:ok, nil}
+  defp extract_teams_from_score_tables(score_tables, tables, count) do
+    [score_table | remaining_score_tables] = score_tables
+
+    table = Enum.at(tables, rem(count, length(tables)))
+
+    %RoundTeamInformation{}
+    |> RoundTeamInformation.changeset(%{table_id: table.id, team_id: score_table.team_id})
+    |> Repo.insert()
+
+    extract_teams_from_score_tables(remaining_score_tables, tables, count + 1)
   end
 
   defp extract_users_from_score_tables(score_tables, tables, count \\ 0)
