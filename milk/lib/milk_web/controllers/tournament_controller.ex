@@ -1126,6 +1126,18 @@ defmodule MilkWeb.TournamentController do
   end
 
   @doc """
+  リーダー情報を取得
+  """
+  def get_leader_info(conn, %{"team_id" => team_id}) do
+    team_id
+    |> Tools.to_integer_as_needed()
+    |> Tournaments.load_leader()
+    ~> leader
+
+    render(conn, "leader.json", user: leader.user)
+  end
+
+  @doc """
   Get fighting users.
   """
   def get_fighting_users(conn, %{"tournament_id" => tournament_id}) do

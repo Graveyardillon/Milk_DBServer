@@ -2418,6 +2418,21 @@ defmodule MilkWeb.TournamentControllerTest do
     end
   end
 
+  describe "get leader info" do
+    test "works", %{conn: conn} do
+      tournament = fixture_tournament(is_team: true, capacity: 4)
+
+      tournament.id
+      |> fill_with_team()
+      |> Enum.map(fn team ->
+        conn = get(conn, Routes.tournament_path(conn, :get_leader_info), team_id: team.id)
+        assert json_response(conn, 200)["result"]
+      end)
+      |> Enum.empty?()
+      |> refute()
+    end
+  end
+
   describe "get fighting users" do
     setup [:create_tournament]
 
