@@ -852,7 +852,7 @@ defmodule Milk.Tournaments.Progress do
 
       # leaderの情報を記載したいため、そのデータを入れる
       team.id
-      |> Tournaments.get_leader()
+      |> Tournaments.load_leader()
       |> Map.get(:user)
       ~> user
 

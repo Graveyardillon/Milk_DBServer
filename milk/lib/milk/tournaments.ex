@@ -1188,9 +1188,6 @@ defmodule Milk.Tournaments do
   defp is_coin_head_on_match_info?(%Team{id: opponent_id}, %Tournament{is_team: true, id: id}, team_id),
     do: __MODULE__.is_head_of_coin?(id, team_id, opponent_id)
 
-
-
-
   @doc """
   Deletes a tournament.
 
@@ -3789,7 +3786,7 @@ defmodule Milk.Tournaments do
   @spec resend_team_invitations(integer()) :: {:ok, nil} | {:error, String.t()}
   def resend_team_invitations(team_id) do
     team_id
-    |> __MODULE__.get_leader()
+    |> __MODULE__.load_leader()
     |> Map.get(:user)
     ~> leader
 
@@ -3942,6 +3939,11 @@ defmodule Milk.Tournaments do
     |> where([tm], tm.team_id == ^team_id)
     |> where([tm], tm.is_leader)
     |> Repo.one()
+  end
+
+  def load_leader(team_id) do
+    team_id
+    |> __MODULE__.get_leader()
     |> Repo.preload(:user)
   end
 
