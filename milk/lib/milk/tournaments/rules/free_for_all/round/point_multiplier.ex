@@ -1,6 +1,6 @@
 defmodule Milk.Tournaments.Rules.FreeForAll.Round.PointMultiplier do
   @moduledoc """
-  キルポイントとかのスコアを実際に記録kしておくためのやつ
+  キルポイントとかのスコアを実際に記録しておくためのやつ
   """
   use Milk.Schema
 

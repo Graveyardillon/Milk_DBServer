@@ -85,10 +85,28 @@ defmodule MilkWeb.FreeForAllController do
   def load_team_match_information(conn, %{"round_information_id" => round_information_id}) do
     round_information_id
     |> Tools.to_integer_as_needed()
-    |> FreeForAll.get_team_match_information()
+    |> FreeForAll.load_team_match_information()
     ~> match_information_list
 
     render(conn, "load_match_information.json", match_information: match_information_list)
+  end
+
+  def get_member_match_information(conn, %{"team_match_information_id" => team_match_information_id}) do
+    team_match_information_id
+    |> Tools.to_integer_as_needed()
+    |> FreeForAll.get_member_match_information_list()
+    ~> match_information_list
+
+    render(conn, "member_match_information.json", match_information: match_information_list)
+  end
+
+  def load_member_match_information(conn, %{"team_match_information_id" => team_match_information_id}) do
+    team_match_information_id
+    |> Tools.to_integer_as_needed()
+    |> FreeForAll.load_member_match_information_list()
+    ~> match_information_list
+
+    render(conn, "load_member_match_information.json", match_information: match_information_list)
   end
 
   def get_current_status(conn, %{"tournament_id" => tournament_id}) do
@@ -134,6 +152,26 @@ defmodule MilkWeb.FreeForAllController do
     else
       {:error, error} -> json(conn, %{result: false, error: error})
       _               -> json(conn, %{result: true})
+    end
+  end
+
+  def claim_member_scores(conn, %{"team_match_information_id" => team_match_information_id, "scores" => scores}) do
+    team_match_information_id
+    |> Tools.to_integer_as_needed()
+    |> FreeForAll.claim_member_scores(scores)
+    |> case do
+      {:ok, _} -> json(conn, %{result: true})
+      _        -> json(conn, %{result: false})
+    end
+  end
+
+  def claim_member_scores(conn, %{"team_match_information_id" => team_match_information_id, "scores_with_categories" => scores}) do
+    team_match_information_id
+    |> Tools.to_integer_as_needed()
+    |> FreeForAll.claim_member_scores(scores)
+    |> case do
+      {:ok, _} -> json(conn, %{result: true})
+      _        -> json(conn, %{result: false})
     end
   end
 end

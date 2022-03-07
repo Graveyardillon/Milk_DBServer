@@ -247,6 +247,7 @@ defmodule MilkWeb.Router do
     get "/tournament/ffa_team_match_information", FreeForAllController, :get_team_match_information
     get "/tournament/ffa_load_team_match_information", FreeForAllController, :load_team_match_information
     post "/tournament/ffa_claim_scores", FreeForAllController, :claim_scores
+    post "/tournament/ffa_claim_member_scores", FreeForAllController, :claim_member_scores
   end
 
   scope "/debug", MilkWeb do

@@ -6,7 +6,10 @@ defmodule Milk.Tournaments.Rules.FreeForAll.Round.TeamMatchInformation do
 
   import Ecto.Changeset
 
-  alias Milk.Tournaments.Rules.FreeForAll.Round.Information
+  alias Milk.Tournaments.Rules.FreeForAll.Round.{
+    Information,
+    TeamPointMultiplier
+  }
 
   @type t :: %__MODULE__{
     score: :integer | nil,
@@ -20,6 +23,8 @@ defmodule Milk.Tournaments.Rules.FreeForAll.Round.TeamMatchInformation do
     field :score, :integer
 
     belongs_to :round, Information
+
+    has_many :point_multipliers, TeamPointMultiplier
 
     timestamps()
   end
