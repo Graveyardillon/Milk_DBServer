@@ -405,7 +405,7 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
   """
   def claim_scores_with_categories(%Tournament{is_team: true}, table_id, scores_with_categories) do
     scores_with_categories
-    |> Enum.map(fn %{"team_id" => team_id, "scores" => scores} ->
+    |> Enum.map(fn %{"team_id" => team_id, "scores" => scores, "member_scores" => member_scores} ->
       # NOTE: カテゴリに基づいたスコアを算出
       scores
       |> Enum.map(fn score_map ->
@@ -422,19 +422,49 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
       ~> score_sum
 
       table_id
-      |> __MODULE__.get_round_information()
+      |> __MODULE__.get_round_team_information()
       |> Enum.filter(&(&1.team_id == team_id))
       |> hd()
       ~> round_information
 
-      {:ok, match_information} = __MODULE__.create_team_match_information(%{round_id: round_information.id, team_id: team_id, score: score_sum})
+      {:ok, team_match_information} = __MODULE__.create_team_match_information(%{round_id: round_information.id, team_id: team_id, score: score_sum})
 
       calced_scores
       |> Enum.map(fn %{"category" => category, "score" => score} ->
-        __MODULE__.create_team_point_multiplier(%{category_id: category.id, point: score, match_information_id: match_information.id})
+        __MODULE__.create_team_point_multiplier(%{category_id: category.id, point: score, match_information_id: team_match_information.id})
       end)
       |> Enum.all?(&match?({:ok, _}, &1))
       |> Tools.boolean_to_tuple()
+
+      # NOTE: メンバーのスコア登録に関する記述
+      member_scores
+      |> Enum.map(fn %{"user_id" => user_id, "scores" => scores} ->
+        scores
+        |> Enum.map(fn score_map ->
+          category = __MODULE__.get_point_multiplier_category(score_map["category_id"])
+          calced_score = calculate_score_with_category(category, score_map["score"])
+
+          score_map
+          |> Map.put("category", category)
+          |> Map.put("calced_score", calced_score)
+        end)
+        ~> calced_scores
+        |> Enum.map(&(&1["calced_score"]))
+        |> Enum.sum()
+        ~> score_sum
+
+        {:ok, member_match_information} = __MODULE__.create_member_match_information(%{user_id: user_id, score: score_sum, team_match_information_id: team_match_information.id})
+
+        calced_scores
+        |> Enum.map(fn %{"category" => category, "score" => score} ->
+          __MODULE__.create_member_point_multiplier(%{category_id: category.id, point: score, member_match_information_id: member_match_information.id})
+        end)
+        |> Enum.all?(&match?({:ok, _}, &1))
+        |> Tools.boolean_to_tuple()
+      end)
+      |> Enum.all?(&match?({:ok, _}, &1))
+      |> Tools.boolean_to_tuple()
+      |> IO.inspect()
     end)
     |> Enum.all?(&match?({:ok, _}, &1))
     |> Tools.boolean_to_tuple("error on registering scores with categories")
@@ -707,40 +737,6 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
     end)
     |> Enum.all?(&match?({:ok, _}, &1))
     |> Tools.boolean_to_tuple()
-  end
-
-  def claim_member_scores_with_categories(team_match_information_id, scores) do
-    scores
-    |> Enum.map(fn %{"user_id" => user_id, "scores" => scores} ->
-      scores
-      |> Enum.map(fn score_map ->
-        category = __MODULE__.get_point_multiplier_category(score_map["category_id"])
-        calced_score = calculate_score_with_category(category, score_map["score"])
-
-        score_map
-        |> Map.put("category", category)
-        |> Map.put("calced_score", calced_score)
-      end)
-      ~> calced_scores
-      |> Enum.map(&(&1["calced_score"]))
-      |> Enum.sum()
-      ~> score_sum
-
-      {:ok, match_information} = __MODULE__.create_member_match_information(%{
-          score: score_sum,
-          user_id: user_id,
-          team_match_information_id: team_match_information_id
-        })
-
-      calced_scores
-      |> Enum.map(fn %{"category" => category, "score" => score} ->
-        __MODULE__.create_member_point_multiplier(%{category_id: category.id, point: score, member_match_information_id: match_information.id})
-      end)
-      |> Enum.all?(&match?({:ok, _}, &1))
-      |> Tools.boolean_to_tuple()
-    end)
-    |> Enum.all?(&match?({:ok, _}, &1))
-    |> Tools.boolean_to_tuple("error on registering scores with categories")
   end
 
   def get_categories(tournament_id) do

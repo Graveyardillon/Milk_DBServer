@@ -154,24 +154,4 @@ defmodule MilkWeb.FreeForAllController do
       _               -> json(conn, %{result: true})
     end
   end
-
-  def claim_member_scores(conn, %{"team_match_information_id" => team_match_information_id, "scores" => scores}) do
-    team_match_information_id
-    |> Tools.to_integer_as_needed()
-    |> FreeForAll.claim_member_scores(scores)
-    |> case do
-      {:ok, _} -> json(conn, %{result: true})
-      _        -> json(conn, %{result: false})
-    end
-  end
-
-  def claim_member_scores(conn, %{"team_match_information_id" => team_match_information_id, "scores_with_categories" => scores}) do
-    team_match_information_id
-    |> Tools.to_integer_as_needed()
-    |> FreeForAll.claim_member_scores(scores)
-    |> case do
-      {:ok, _} -> json(conn, %{result: true})
-      _        -> json(conn, %{result: false})
-    end
-  end
 end

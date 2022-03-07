@@ -9,7 +9,7 @@ defmodule Milk.Tournaments.Rules.FreeForAll.Round.MemberPointMultiplier do
   alias Milk.Tournaments.Rules.FreeForAll.Round.MemberMatchInformation
   alias Milk.Tournaments.Rules.FreeForAll.PointMultiplierCategory, as: Category
 
-  schema "tournaments_rules_freeforall_round_teampointmultipliers" do
+  schema "tournaments_rules_freeforall_round_memberpointmultipliers" do
     field :point, :integer
 
     belongs_to :member_match_information, MemberMatchInformation
