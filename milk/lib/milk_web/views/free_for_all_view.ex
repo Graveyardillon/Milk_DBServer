@@ -145,9 +145,10 @@ defmodule MilkWeb.FreeForAllView do
             %{
               id: point_multiplier.id,
               category_id: point_multiplier.category_id,
-              point: point_multiplier.point
+              point: point_multiplier.point,
             }
           end),
+          user_id: info.user_id,
           team_match_information_id: info.team_match_information_id
         }
       end),
