@@ -86,6 +86,7 @@ defmodule MilkWeb.FreeForAllController do
     round_information_id
     |> Tools.to_integer_as_needed()
     |> FreeForAll.load_team_match_information()
+    |> IO.inspect(label: :lllord)
     ~> match_information_list
 
     render(conn, "load_match_information.json", match_information: match_information_list)

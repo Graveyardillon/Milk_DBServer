@@ -431,7 +431,7 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
 
       calced_scores
       |> Enum.map(fn %{"category" => category, "score" => score} ->
-        __MODULE__.create_team_point_multiplier(%{category_id: category.id, point: score, match_information_id: team_match_information.id})
+        __MODULE__.create_team_point_multiplier(%{category_id: category.id, point: score, team_match_information_id: team_match_information.id})
       end)
       |> Enum.all?(&match?({:ok, _}, &1))
       |> Tools.boolean_to_tuple()
