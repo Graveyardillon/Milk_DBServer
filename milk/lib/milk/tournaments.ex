@@ -107,7 +107,7 @@ defmodule Milk.Tournaments do
   Returns the list of tournament for home screen.
   """
   @spec home_tournament(any(), integer(), integer() | nil) :: [Tournament.t()]
-  def home_tournament(date_offset, offset, user_id \\ nil) do
+  def home_tournament(_date_offset, offset, user_id \\ nil) do
     offset = Tools.to_integer_as_needed(offset)
 
     user_id
@@ -745,16 +745,38 @@ defmodule Milk.Tournaments do
     end)
   end
 
-  defp create_freeforall_information_on_create_tournament(tournament, %{round_number: round_number, match_number: match_number, round_capacity: round_capacity}),
-    do: create_freeforall_information_on_create_tournament(tournament, %{"round_number" => round_number, "match_number" => match_number, "round_capacity" => round_capacity})
-  defp create_freeforall_information_on_create_tournament(tournament, %{"round_number" => round_number, "match_number" => match_number, "round_capacity" => round_capacity}) do
-    FreeForAll.create_freeforall_information(%{
-      round_number: round_number,
-      match_number: match_number,
-      round_capacity: round_capacity,
-      tournament_id: tournament.id
-    })
+  defp create_freeforall_information_on_create_tournament(tournament, map) do
+    map
+    |> Tools.atom_map_to_string_map()
+    |> Map.put("tournament_id", tournament.id)
+    ~> map
+
+    with {:ok, _} <- FreeForAll.create_freeforall_information(map),
+         {:ok, _} <- create_point_multiplier_categories(tournament.id, map) do
+      {:ok, nil}
+    else
+      {:error, error} -> {:error, error}
+      _               -> {:error, "error on create free for all information on create tournament"}
+    end
   end
+
+  defp create_point_multiplier_categories(tournament_id, %{"enable_point_multiplier" => "true", "point_multiplier_categories" => categories}) when is_list(categories) do
+    create_point_multiplier_categories(tournament_id, %{"enable_point_multiplier" => true, "point_multiplier_categories" => categories})
+  end
+  defp create_point_multiplier_categories(tournament_id, %{"enable_point_multiplier" => true, "point_multiplier_categories" => categories}) when is_list(categories) do
+    categories
+    |> Enum.map(fn category ->
+      category
+      |> Tools.atom_map_to_string_map()
+      |> Map.put("tournament_id", tournament_id)
+      |> FreeForAll.create_point_multiplier_category()
+    end)
+    |> Enum.map(&(&1))
+    |> Enum.all?(&match?({:ok, _}, &1))
+    |> Tools.boolean_to_tuple("error on create point multiplier categories")
+  end
+  defp create_point_multiplier_categories(_, %{"point_multiplier_categories" => categories}) when is_list(categories), do: {:error, "Need to enable point multiplier"}
+  defp create_point_multiplier_categories(_, _), do: {:ok, nil}
 
   @spec put_token_as_needed(map()) :: map()
   defp put_token_as_needed(%{"url" => url} = attrs) when not is_nil(url) do
@@ -1165,9 +1187,6 @@ defmodule Milk.Tournaments do
     do: __MODULE__.is_head_of_coin?(id, user_id, opponent_id)
   defp is_coin_head_on_match_info?(%Team{id: opponent_id}, %Tournament{is_team: true, id: id}, team_id),
     do: __MODULE__.is_head_of_coin?(id, team_id, opponent_id)
-
-
-
 
   @doc """
   Deletes a tournament.
@@ -3767,7 +3786,7 @@ defmodule Milk.Tournaments do
   @spec resend_team_invitations(integer()) :: {:ok, nil} | {:error, String.t()}
   def resend_team_invitations(team_id) do
     team_id
-    |> __MODULE__.get_leader()
+    |> __MODULE__.load_leader()
     |> Map.get(:user)
     ~> leader
 
@@ -3920,6 +3939,11 @@ defmodule Milk.Tournaments do
     |> where([tm], tm.team_id == ^team_id)
     |> where([tm], tm.is_leader)
     |> Repo.one()
+  end
+
+  def load_leader(team_id) do
+    team_id
+    |> __MODULE__.get_leader()
     |> Repo.preload(:user)
   end
 

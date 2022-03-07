@@ -8,6 +8,13 @@ defmodule Common.ToolsTest do
 
   alias Common.Tools
 
+  describe "atom map to string map" do
+    test "works" do
+      assert Tools.atom_map_to_string_map(%{a: 1}) == %{"a" => 1}
+      assert Tools.atom_map_to_string_map(%{"a" => 1}) == %{"a" => 1}
+    end
+  end
+
   describe "get_closest_num_of_multiple" do
     test "works" do
       assert Tools.get_closest_num_of_multiple(50, 8) === 48

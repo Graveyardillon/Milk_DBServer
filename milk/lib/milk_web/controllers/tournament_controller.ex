@@ -1083,10 +1083,10 @@ defmodule MilkWeb.TournamentController do
     |> Progress.get_match_list()
     |> do_get_opponent(tournament_id, user_id)
     |> case do
-      {:ok, opponent} -> render(conn, "opponent.json", opponent: opponent)
-      {:wait, _} -> json(conn, %{result: false, opponent: nil, wait: true})
+      {:ok, opponent}                   -> render(conn, "opponent.json", opponent: opponent)
+      {:wait, _}                        -> json(conn, %{result: false, opponent: nil, wait: true})
       {:error, "match list is integer"} -> json(conn, %{result: false})
-      _ -> render(conn, "error.json", error: nil)
+      _                                 -> render(conn, "error.json", error: nil)
     end
   end
 
@@ -1100,18 +1100,15 @@ defmodule MilkWeb.TournamentController do
     |> case do
       {:ok, opponent} ->
         opponent.id
-        |> Tournaments.get_leader()
+        |> Tournaments.load_leader()
         |> Map.get(:user)
         ~> leader
 
         render(conn, "opponent_team.json", opponent: opponent, leader: leader)
 
-      {:wait, nil} ->
-        json(conn, %{result: false, opponent: nil, wait: true})
-      {:error, "match list is integer"} ->
-        json(conn, %{result: false})
-      _ ->
-        render(conn, "error.json", error: nil)
+      {:wait, nil}                      -> json(conn, %{result: false, opponent: nil, wait: true})
+      {:error, "match list is integer"} -> json(conn, %{result: false})
+      _                                 -> render(conn, "error.json", error: nil)
     end
   end
 
@@ -1121,11 +1118,23 @@ defmodule MilkWeb.TournamentController do
   defp do_get_team_opponent(match_list, _, _) when is_integer(match_list), do: {:error, "match list is integer"}
   defp do_get_team_opponent(_, tournament_id, team_id) do
     team_id
-    |> Tournaments.get_leader()
+    |> Tournaments.load_leader()
     |> Map.get(:user_id)
     ~> leader_id
 
     Tournaments.get_opponent(tournament_id, leader_id)
+  end
+
+  @doc """
+  リーダー情報を取得
+  """
+  def get_leader_info(conn, %{"team_id" => team_id}) do
+    team_id
+    |> Tools.to_integer_as_needed()
+    |> Tournaments.load_leader()
+    ~> leader
+
+    render(conn, "leader.json", user: leader.user)
   end
 
   @doc """
@@ -1881,7 +1890,7 @@ defmodule MilkWeb.TournamentController do
     |> Tournaments.load_confirmed_teams()
     |> Enum.map(fn team ->
       team.id
-      |> Tournaments.get_leader()
+      |> Tournaments.load_leader()
       |> Map.get(:user)
       ~> user
 

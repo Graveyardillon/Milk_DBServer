@@ -765,7 +765,7 @@ defmodule Milk.TournamentsTest do
       |> fill_with_team()
       |> Enum.map(fn team ->
         team.id
-        |> Tournaments.get_leader()
+        |> Tournaments.load_leader()
         |> Map.get(:user)
       end)
       |> hd()
@@ -1486,7 +1486,7 @@ defmodule Milk.TournamentsTest do
       ~> teams
       |> Enum.map(fn team ->
         team.id
-        |> Tournaments.get_leader()
+        |> Tournaments.load_leader()
         |> Map.get(:user)
       end)
       ~> leaders
@@ -2408,10 +2408,26 @@ defmodule Milk.TournamentsTest do
       |> hd()
       |> Map.get(:id)
       |> Tournaments.get_leader()
-      |> (fn member ->
-            assert member.user_id == leader
-            refute is_nil(member.user.name)
-          end).()
+      |> then(fn member ->
+        assert member.user_id == leader
+      end)
+    end
+  end
+
+  describe "load_leader" do
+    test "works" do
+      {tournament, users} = setup_team(5)
+      [leader | _users] = users
+
+      tournament.id
+      |> Tournaments.get_teams_by_tournament_id()
+      |> hd()
+      |> Map.get(:id)
+      |> Tournaments.load_leader()
+      |> then(fn member ->
+        assert member.user_id == leader
+        refute is_nil(member.user.name)
+      end)
     end
   end
 

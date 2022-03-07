@@ -115,6 +115,7 @@ defmodule MilkWeb.Router do
     get "/tournament/data_for_ios", TournamentController, :get_started_match_information
     get "/tournament/match_info", TournamentController, :get_match_information
     get "/tournament/count_tournament_per_month", TournamentController, :count_tournament_per_month
+    get "/tournament/leader_info", TournamentController, :get_leader_info
 
     get "/tournament/entry_template", EntryController, :get_template
     get "/tournament/entry_info", EntryController, :get_entry_information
@@ -235,13 +236,17 @@ defmodule MilkWeb.Router do
     get "/image/path", ImageController, :get_by_path
     get "/image/get_thumbnail_by_tournament_id", ImageController, :get_thumbnail_by_tournament_id
 
+    get "/tournament/ffa_categories", FreeForAllController, :get_categories
     get "/tournament/ffa_information", FreeForAllController, :get_information
     get "/tournament/ffa_current_status", FreeForAllController, :get_current_status
     get "/tournament/ffa_tables", FreeForAllController, :get_tables
     get "/tournament/ffa_round_information", FreeForAllController, :get_round_information
     get "/tournament/ffa_round_team_information", FreeForAllController, :get_round_team_information
     get "/tournament/ffa_match_information", FreeForAllController, :get_match_information
+    get "/tournament/ffa_load_match_information", FreeForAllController, :load_match_information
     get "/tournament/ffa_team_match_information", FreeForAllController, :get_team_match_information
+    get "/tournament/ffa_load_team_match_information", FreeForAllController, :load_team_match_information
+    get "/tournament/ffa_load_member_match_information", FreeForAllController, :load_member_match_information
     post "/tournament/ffa_claim_scores", FreeForAllController, :claim_scores
   end
 

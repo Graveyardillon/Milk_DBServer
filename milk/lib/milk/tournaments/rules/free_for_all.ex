@@ -11,10 +11,18 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
     MatchInformation,
     Table,
     TeamInformation,
-    TeamMatchInformation
+    TeamMatchInformation,
+    PointMultiplier,
+    TeamPointMultiplier,
+    MemberPointMultiplier,
+    MemberMatchInformation
   }
   alias Milk.Tournaments.Rules.FreeForAll.Round.Information, as: RoundInformation
-  alias Milk.Tournaments.Rules.FreeForAll.Status
+  alias Milk.Tournaments.Rules.FreeForAll.Round.TeamInformation, as: RoundTeamInformation
+  alias Milk.Tournaments.Rules.FreeForAll.{
+    PointMultiplierCategory,
+    Status
+  }
   alias Milk.Tournaments.{
     Team,
     Tournament
@@ -348,6 +356,9 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
     do_assign_entrants(remaining_entrants, tables, count + 1)
   end
 
+  @doc """
+  カテゴリを使用しない場合のスコア報告
+  """
   def claim_scores(%Tournament{is_team: true}, table_id, scores) do
     # そのテーブルに属している人たちのスコアをmatch_informationに登録する
     scores
@@ -389,6 +400,117 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
     |> Tools.boolean_to_tuple()
   end
 
+  @doc """
+  カテゴリを使用する場合のスコア報告
+  """
+  def claim_scores_with_categories(%Tournament{is_team: true}, table_id, scores_with_categories) do
+    scores_with_categories
+    |> Enum.map(fn %{"team_id" => team_id, "scores" => scores, "member_scores" => member_scores} ->
+      # NOTE: カテゴリに基づいたスコアを算出
+      scores
+      |> Enum.map(fn score_map ->
+        category = __MODULE__.get_point_multiplier_category(score_map["category_id"])
+        calced_score = calculate_score_with_category(category, score_map["score"])
+
+        score_map
+        |> Map.put("category", category)
+        |> Map.put("calced_score", calced_score)
+      end)
+      ~> calced_scores
+      |> Enum.map(&(&1["calced_score"]))
+      |> Enum.sum()
+      ~> score_sum
+
+      table_id
+      |> __MODULE__.get_round_team_information()
+      |> Enum.filter(&(&1.team_id == team_id))
+      |> hd()
+      ~> round_information
+
+      {:ok, team_match_information} = __MODULE__.create_team_match_information(%{round_id: round_information.id, team_id: team_id, score: score_sum})
+
+      calced_scores
+      |> Enum.map(fn %{"category" => category, "score" => score} ->
+        __MODULE__.create_team_point_multiplier(%{category_id: category.id, point: score, team_match_information_id: team_match_information.id})
+      end)
+      |> Enum.all?(&match?({:ok, _}, &1))
+      |> Tools.boolean_to_tuple()
+
+      # NOTE: メンバーのスコア登録に関する記述
+      member_scores
+      |> Enum.map(fn %{"user_id" => user_id, "scores" => scores} ->
+        scores
+        |> Enum.map(fn score_map ->
+          category = __MODULE__.get_point_multiplier_category(score_map["category_id"])
+          calced_score = calculate_score_with_category(category, score_map["score"])
+
+          score_map
+          |> Map.put("category", category)
+          |> Map.put("calced_score", calced_score)
+        end)
+        ~> calced_scores
+        |> Enum.map(&(&1["calced_score"]))
+        |> Enum.sum()
+        ~> score_sum
+
+        {:ok, member_match_information} = __MODULE__.create_member_match_information(%{user_id: user_id, score: score_sum, team_match_information_id: team_match_information.id})
+
+        calced_scores
+        |> Enum.map(fn %{"category" => category, "score" => score} ->
+          __MODULE__.create_member_point_multiplier(%{category_id: category.id, point: score, member_match_information_id: member_match_information.id})
+        end)
+        |> Enum.all?(&match?({:ok, _}, &1))
+        |> Tools.boolean_to_tuple()
+      end)
+      |> Enum.all?(&match?({:ok, _}, &1))
+      |> Tools.boolean_to_tuple()
+      |> IO.inspect()
+    end)
+    |> Enum.all?(&match?({:ok, _}, &1))
+    |> Tools.boolean_to_tuple("error on registering scores with categories")
+  end
+
+  def claim_scores_with_categories(%Tournament{is_team: false}, table_id, scores_with_categories) do
+    scores_with_categories
+    |> Enum.map(fn %{"user_id" => user_id, "scores" => scores} ->
+      # NOTE: カテゴリに基づいたスコアを算出
+      scores
+      |> Enum.map(fn score_map ->
+        category = __MODULE__.get_point_multiplier_category(score_map["category_id"])
+        calced_score = calculate_score_with_category(category, score_map["score"])
+
+        score_map
+        |> Map.put("category", category)
+        |> Map.put("calced_score", calced_score)
+      end)
+      ~> calced_scores
+      |> Enum.map(&(&1["calced_score"]))
+      |> Enum.sum()
+      ~> score_sum
+
+      table_id
+      |> __MODULE__.get_round_information()
+      |> Enum.filter(&(&1.user_id == user_id))
+      |> hd()
+      ~> round_information
+
+      {:ok, match_information} = __MODULE__.create_match_information(%{round_id: round_information.id, user_id: user_id, score: score_sum})
+
+      calced_scores
+      |> Enum.map(fn %{"category" => category, "score" => score} ->
+        __MODULE__.create_point_multiplier(%{category_id: category.id, point: score, match_information_id: match_information.id})
+      end)
+      |> Enum.all?(&match?({:ok, _}, &1))
+      |> Tools.boolean_to_tuple()
+    end)
+    |> Enum.all?(&match?({:ok, _}, &1))
+    |> Tools.boolean_to_tuple("error on registering scores with categories")
+  end
+
+  defp calculate_score_with_category(%PointMultiplierCategory{multiplier: multiplier}, score) do
+    round(score * multiplier)
+  end
+
   def increase_current_match_index(table_id) do
     table = __MODULE__.get_table(table_id)
 
@@ -397,7 +519,9 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
 
   def finish_table_as_needed(table_id) do
     table = __MODULE__.get_table(table_id)
+      # |> IO.inspect(label: :table)
     information = __MODULE__.get_freeforall_information_by_tournament_id(table.tournament_id)
+      # |> IO.inspect(label: :information)
 
     if table.current_match_index == information.match_number do
       __MODULE__.update_round_table(table, %{is_finished: true})
@@ -428,6 +552,47 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
 
   defp check_all_tables_finished?(tables) do
     Enum.all?(tables, &(&1.is_finished))
+  end
+
+  defp generate_round_tables(status, tables, %Tournament{is_team: true, id: tournament_id}) do
+    information = __MODULE__.get_freeforall_information_by_tournament_id(tournament_id)
+
+    tables
+    |> Enum.map(fn table ->
+      table.id
+      |> __MODULE__.get_round_team_information()
+      |> Enum.map(fn round ->
+        round.id
+        |> __MODULE__.get_team_match_information()
+        |> Enum.map(&(&1.score))
+        |> Enum.sum()
+        ~> score_sum
+
+        %{team_id: round.team_id, score_sum: score_sum}
+      end)
+    end)
+    |> List.flatten()
+    |> Enum.sort(fn %{score_sum: score_sum1}, %{score_sum: score_sum2} ->
+      score_sum1 >= score_sum2
+    end)
+    ~> score_tables
+
+    table_num = information.round_number - status.current_round_index
+
+    1..table_num
+    |> Enum.to_list()
+    |> Enum.map(fn n ->
+      n = n + Enum.count(tables)
+      {:ok, table} = __MODULE__.create_round_table(%{name: "テーブル#{n}", round_index: status.current_round_index, tournament_id: tournament_id})
+      table
+    end)
+    ~> tables
+
+    score_tables
+    |> Enum.slice(0..table_num * information.round_capacity - 1)
+    |> extract_teams_from_score_tables(tables)
+
+    {:ok, nil}
   end
 
   defp generate_round_tables(status, tables, %Tournament{is_team: false, id: tournament_id}) do
@@ -473,6 +638,20 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
     {:ok, nil}
   end
 
+  defp extract_teams_from_score_tables(score_tables, tables, count \\ 0)
+  defp extract_teams_from_score_tables([], _, _), do: {:ok, nil}
+  defp extract_teams_from_score_tables(score_tables, tables, count) do
+    [score_table | remaining_score_tables] = score_tables
+
+    table = Enum.at(tables, rem(count, length(tables)))
+
+    %RoundTeamInformation{}
+    |> RoundTeamInformation.changeset(%{table_id: table.id, team_id: score_table.team_id})
+    |> Repo.insert()
+
+    extract_teams_from_score_tables(remaining_score_tables, tables, count + 1)
+  end
+
   defp extract_users_from_score_tables(score_tables, tables, count \\ 0)
   defp extract_users_from_score_tables([], _, _), do: {:ok, nil}
   defp extract_users_from_score_tables(score_tables, tables, count) do
@@ -486,7 +665,30 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
     extract_users_from_score_tables(remaining_score_tables, tables, count + 1)
   end
 
-  defp extract_winner_id(tables) do
+  defp extract_winner_id(%Tournament{is_team: true}, tables) do
+    tables
+    |> Enum.map(fn table ->
+      table.id
+      |> __MODULE__.get_round_team_information()
+      |> Enum.map(fn round ->
+        round.id
+        |> __MODULE__.get_match_information()
+        |> Enum.map(&(&1.score))
+        |> Enum.sum()
+        ~> score_sum
+
+        %{team_id: round.team_id, score_sum: score_sum}
+      end)
+    end)
+    |> List.flatten()
+    |> Enum.sort(fn %{score_sum: score_sum1}, %{score_sum: score_sum2} ->
+      score_sum1 >= score_sum2
+    end)
+    |> hd()
+    |> Map.get(:team_id)
+  end
+
+  defp extract_winner_id(%Tournament{is_team: false}, tables) do
     tables
     |> Enum.map(fn table ->
       table.id
@@ -511,7 +713,7 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
 
   defp finish_tournament_as_needed(tables, tournament, %Information{round_number: round_number}, %Status{current_round_index: current_round_index}) do
     if round_number <= current_round_index + 1 do
-      winner_id = extract_winner_id(tables)
+      winner_id = extract_winner_id(tournament, tables)
       # すべてのテーブルがfinishedで、すべてのテーブルのmatch_indexがmatch_numberになっていたらfinish
       tournament.id
       |> Tournaments.finish(winner_id)
@@ -522,6 +724,25 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
     else
       {:ok, nil}
     end
+  end
+
+  def claim_member_scores(team_match_information_id, scores) do
+    scores
+    |> Enum.map(fn %{"score" => score, "user_id" => user_id} ->
+      __MODULE__.create_member_match_information(%{
+        score: score,
+        user_id: user_id,
+        team_match_information_id: team_match_information_id
+      })
+    end)
+    |> Enum.all?(&match?({:ok, _}, &1))
+    |> Tools.boolean_to_tuple()
+  end
+
+  def get_categories(tournament_id) do
+    PointMultiplierCategory
+    |> where([c], c.tournament_id == ^tournament_id)
+    |> Repo.all()
   end
 
   def create_round_table(attrs \\ %{}) do
@@ -581,10 +802,22 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
     |> Repo.all()
   end
 
+  def load_team_match_information(round_team_information_id) do
+    round_team_information_id
+    |> __MODULE__.get_team_match_information()
+    |> Repo.preload(:point_multipliers)
+  end
+
   def get_match_information(round_information_id) do
     MatchInformation
     |> where([t], t.round_id == ^round_information_id)
     |> Repo.all()
+  end
+
+  def load_match_information(round_information_id) do
+    round_information_id
+    |> __MODULE__.get_match_information()
+    |> Repo.preload(:point_multipliers)
   end
 
   def create_status(attrs \\ %{}) do
@@ -603,5 +836,51 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
     Status
     |> where([s], s.tournament_id == ^tournament_id)
     |> Repo.one()
+  end
+
+  def create_point_multiplier_category(attrs \\ %{}) do
+    %PointMultiplierCategory{}
+    |> PointMultiplierCategory.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  def create_point_multiplier(attrs \\ %{}) do
+    %PointMultiplier{}
+    |> PointMultiplier.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  def create_team_point_multiplier(attrs \\ %{}) do
+    %TeamPointMultiplier{}
+    |> TeamPointMultiplier.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  def create_member_point_multiplier(attrs \\ %{}) do
+    %MemberPointMultiplier{}
+    |> MemberPointMultiplier.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  def get_point_multiplier_category(category_id) do
+    Repo.get(PointMultiplierCategory, category_id)
+  end
+
+  def create_member_match_information(attrs \\ %{}) do
+    %MemberMatchInformation{}
+    |> MemberMatchInformation.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  def get_member_match_information_list(team_match_information_id) do
+    MemberMatchInformation
+    |> where([i], i.team_match_information_id == ^team_match_information_id)
+    |> Repo.all()
+  end
+
+  def load_member_match_information_list(team_match_information_id) do
+    team_match_information_id
+    |> __MODULE__.get_member_match_information_list()
+    |> Repo.preload(:point_multipliers)
   end
 end

@@ -5,7 +5,7 @@ import { NewmanJson, CreateEntrant, Item } from '../utils/interfaces'
 const argv = yargs(process.argv.slice(2))
     .options({
         tournament_id:     { type: 'number',  default: 1},
-        master_as_entrant: { type: 'boolean', default: false }
+        master_as_entrant: { type: 'boolean', default: false },
     })
     .argv
 
