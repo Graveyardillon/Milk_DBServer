@@ -1,6 +1,6 @@
 const newman = require('newman')
 const yargs = require('yargs/yargs')
-import { NewmanJson, CreateEntrant, Item, ConfirmInvitation } from '../utils/interfaces'
+import { NewmanJson, CreateEntrant, Item } from '../utils/interfaces'
 
 const argv = yargs(process.argv.slice(2))
     .options({
