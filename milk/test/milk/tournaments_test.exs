@@ -2313,7 +2313,7 @@ defmodule Milk.TournamentsTest do
       |> Tournaments.get_teams_by_tournament_id()
       |> hd()
       |> Map.get(:id)
-      |> Tournaments.get_team_members_by_team_id()
+      |> Tournaments.load_team_members_by_team_id()
       |> Enum.map(fn member ->
         if member.is_leader do
           assert member.user_id == leader
@@ -2343,7 +2343,7 @@ defmodule Milk.TournamentsTest do
     end
   end
 
-  describe "get_team_members_by_team_id" do
+  describe "load_team_members_by_team_id" do
     test "works" do
       {tournament, users} = setup_team(5)
 
@@ -2351,7 +2351,7 @@ defmodule Milk.TournamentsTest do
       |> Tournaments.get_teams_by_tournament_id()
       |> hd()
       |> Map.get(:id)
-      |> Tournaments.get_team_members_by_team_id()
+      |> Tournaments.load_team_members_by_team_id()
       |> Enum.map(fn member ->
         assert member.user_id in users
       end)
@@ -2375,7 +2375,7 @@ defmodule Milk.TournamentsTest do
       |> Tournaments.get_teams_by_tournament_id()
       |> hd()
       |> Map.get(:id)
-      |> Tournaments.get_team_members_by_team_id()
+      |> Tournaments.load_team_members_by_team_id()
       |> Enum.each(fn member ->
         Tournaments.create_team_invitation(member.id, leader)
       end)
@@ -2476,7 +2476,7 @@ defmodule Milk.TournamentsTest do
       ~> team
 
       team.id
-      |> Tournaments.get_team_members_by_team_id()
+      |> Tournaments.load_team_members_by_team_id()
       |> Enum.each(fn member ->
         Tournaments.create_team_invitation(member.id, leader)
       end)
@@ -2549,7 +2549,7 @@ defmodule Milk.TournamentsTest do
 
       team
       |> Map.get(:id)
-      |> Tournaments.get_team_members_by_team_id()
+      |> Tournaments.load_team_members_by_team_id()
       |> Enum.each(fn member ->
         leader = Tournaments.get_leader(member.team_id)
 
@@ -2594,7 +2594,7 @@ defmodule Milk.TournamentsTest do
         |> hd()
 
       team.id
-      |> Tournaments.get_team_members_by_team_id()
+      |> Tournaments.load_team_members_by_team_id()
       |> Enum.each(fn member ->
         member.id
         |> Tournaments.create_team_invitation(leader)
@@ -2622,7 +2622,7 @@ defmodule Milk.TournamentsTest do
       |> refute()
 
       team.id
-      |> Tournaments.get_team_members_by_team_id()
+      |> Tournaments.load_team_members_by_team_id()
       |> Enum.each(fn member ->
         Tournaments.create_team_invitation(member.id, leader)
       end)

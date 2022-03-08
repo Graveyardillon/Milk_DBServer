@@ -271,7 +271,7 @@ defmodule MilkWeb.UserController do
     |> Enum.map(fn team ->
       team
       |> Map.get(:id)
-      |> Tournaments.get_team_members_by_team_id()
+      |> Tournaments.load_team_members_by_team_id()
       |> Enum.map(&Map.get(&1, :user))
       |> List.flatten()
       |> Enum.uniq()

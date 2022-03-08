@@ -3879,8 +3879,8 @@ defmodule Milk.Tournaments do
   @doc """
   Get team members by team id.
   """
-  @spec get_team_members_by_team_id(integer()) :: [TeamMember.t()]
-  def get_team_members_by_team_id(team_id) do
+  @spec load_team_members_by_team_id(integer()) :: [TeamMember.t()]
+  def load_team_members_by_team_id(team_id) do
     TeamMember
     |> where([tm], tm.team_id == ^team_id)
     |> Repo.all()
@@ -4091,7 +4091,7 @@ defmodule Milk.Tournaments do
     |> __MODULE__.get_confirmed_teams()
     |> Enum.any?(fn team ->
       team.id
-      |> __MODULE__.get_team_members_by_team_id()
+      |> __MODULE__.load_team_members_by_team_id()
       |> Enum.any?(&(&1.user_id == user_id))
     end)
   end
@@ -4221,7 +4221,7 @@ defmodule Milk.Tournaments do
 
     invitation.team_member.user_id
     |> Accounts.get_devices_by_user_id()
-    |> Enum.map(fn device ->
+    |> Enum.each(fn device ->
       %Maps.PushIos{
         user_id: invitation.team_member.user_id,
         device_token: device.token,
@@ -4391,7 +4391,7 @@ defmodule Milk.Tournaments do
     tournament = __MODULE__.get_tournament(tournament_id)
 
     team_id
-    |> __MODULE__.get_team_members_by_team_id()
+    |> __MODULE__.load_team_members_by_team_id()
     |> Enum.reject(&(&1.is_leader))
     |> Enum.map(fn member ->
       keyname = Rules.adapt_keyname(member.user_id, tournament_id)
@@ -4419,7 +4419,7 @@ defmodule Milk.Tournaments do
     url = Discord.create_invitation_link!(tournament.discord_server_id)
 
     team.id
-    |> get_team_members_by_team_id()
+    |> __MODULE__.load_team_members_by_team_id()
     |> Enum.map(fn member ->
       %{
         "user_id" => member.user_id,

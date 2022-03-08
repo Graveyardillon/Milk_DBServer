@@ -947,7 +947,7 @@ defmodule MilkWeb.TournamentControllerTest do
       |> Tournaments.get_teams_by_tournament_id()
       |> hd()
       |> Map.get(:id)
-      |> Tournaments.get_team_members_by_team_id()
+      |> Tournaments.load_team_members_by_team_id()
       |> Enum.each(fn member ->
         Tournaments.create_team_invitation(member.id, leader)
       end)
@@ -4936,7 +4936,7 @@ defmodule MilkWeb.TournamentControllerTest do
         )
 
       opponent_id
-      |> Tournaments.get_team_members_by_team_id()
+      |> Tournaments.load_team_members_by_team_id()
       |> Enum.filter(fn member ->
         !member.is_leader
       end)

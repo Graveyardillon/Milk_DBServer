@@ -63,7 +63,7 @@ defmodule Milk.DiscordTest do
       |> Enum.map(fn team ->
         team
         |> Map.get(:id)
-        |> Tournaments.get_team_members_by_team_id()
+        |> Tournaments.load_team_members_by_team_id()
         |> Enum.each(fn member ->
           leader = Tournaments.get_leader(member.team_id)
 

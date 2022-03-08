@@ -108,7 +108,7 @@ end)
 end)
 |> Enum.map(fn {team, leader} ->
   team.id
-  |> Tournaments.get_team_members_by_team_id()
+  |> Tournaments.load_team_members_by_team_id()
   |> Enum.map(fn member ->
     member.id
     |> Tournaments.create_team_invitation(leader)

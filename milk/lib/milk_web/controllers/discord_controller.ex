@@ -81,7 +81,7 @@ defmodule MilkWeb.DiscordController do
     invitation_link = Discord.create_invitation_link!(tournament.discord_server_id)
 
     team_id
-    |> Tournaments.get_team_members_by_team_id()
+    |> Tournaments.load_team_members_by_team_id()
     |> Enum.each(fn member ->
       Notif.create_notification(%{
         "user_id" => member.user_id,
