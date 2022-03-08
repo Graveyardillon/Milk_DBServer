@@ -17,6 +17,8 @@ defmodule MilkWeb.UserController do
   alias Milk.Apple.User, as: AppleUser
   alias Milk.UserManager.Guardian
 
+  alias Milk.MessageGenerator.User, as: UserMessageGenerator
+
   @doc """
   Get user number.
   """
@@ -55,8 +57,8 @@ defmodule MilkWeb.UserController do
 
   defp create_welcome_notification(user),
     do: Notif.create_notification(%{
-        "title" => "e-playersへようこそ！",
-        "body_text" => "もしよければコミュニティに参加してアプリの改善に力を貸してください！\nhttps://discord.gg/cfZw6EAYrv",
+        "title" => UserMessageGenerator.welcome_to_eplayers(user.language),
+        "body_text" => UserMessageGenerator.why_dont_you_join_us(user.language),
         "process_id" => "COMMON",
         "user_id" => user.id
       })
