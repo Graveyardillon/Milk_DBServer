@@ -49,37 +49,37 @@ interface CreateTeam {
 }
 
 interface CreateTournament {
-    assistants?:                 number[]
-    capacity:                    number
-    coin_head_field?:            string
-    coin_tail_field?:            string
-    deadline:                    string
-    description:                 string
-    discord_server_id?:          string
-    enable_point_multiplier?:    boolean
-    enabled_discord_server:      boolean
-    enabled_coin_toss?:          boolean
-    enabled_map?:                boolean
-    event_date:                  string
-    game_id?:                    number
-    game_name:                   string
-    is_team:                     boolean
-    join:                        false
-    map_rule?:                   string
-    maps?:                       Map[]
-    master_id:                   number
-    match_number?:               number
-    name:                        string
-    password?:                   string
-    platform_id:                 number
-    point_multiplier_categories: {name: string, multiplier: number}[]
-    round_capacity?:             number
-    round_number?:               number
-    rule:                        string
-    start_recruiting:            string
-    team_size?:                  number
-    thumbnail_image?:            string
-    url?:                        string
+    assistants?:                  number[]
+    capacity:                     number
+    coin_head_field?:             string
+    coin_tail_field?:             string
+    deadline:                     string
+    description:                  string
+    discord_server_id?:           string
+    enable_point_multiplier?:     boolean
+    enabled_discord_server:       boolean
+    enabled_coin_toss?:           boolean
+    enabled_map?:                 boolean
+    event_date:                   string
+    game_id?:                     number
+    game_name:                    string
+    is_team:                      boolean
+    join:                         false
+    map_rule?:                    string
+    maps?:                        Map[]
+    master_id:                    number
+    match_number?:                number
+    name:                         string
+    password?:                    string
+    platform_id:                  number
+    point_multiplier_categories?: {name: string, multiplier: number}[]
+    round_capacity?:              number
+    round_number?:                number
+    rule:                         string
+    start_recruiting:             string
+    team_size?:                   number
+    thumbnail_image?:             string
+    url?:                         string
 }
 
 interface ConfirmInvitation {
