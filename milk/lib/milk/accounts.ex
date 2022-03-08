@@ -235,6 +235,13 @@ defmodule Milk.Accounts do
       iex> update_user(user, %{field: bad_value})
       {:error, error}
   """
+  # FIXME: 命名
+  def update_user_light(%User{} = user, attrs) do
+    user
+    |> User.changeset(attrs)
+    |> Repo.update()
+  end
+
   @spec update_user(User.t(), map()) :: any()
   def update_user(%User{} = user, attrs) do
     Multi.new()

@@ -256,6 +256,20 @@ defmodule MilkWeb.UserController do
   end
 
   @doc """
+  ユーザーの言語設定を変更
+  """
+  def change_language(conn, %{"user_id" => user_id, "language" => language}) do
+    user_id
+    |> Tools.to_integer_as_needed()
+    |> Accounts.get_user()
+    |> Accounts.update_user_light(%{language: language})
+    |> case do
+      {:ok, _}    -> json(conn, %{result: true})
+      {:error, _} -> json(conn, %{result: false})
+    end
+  end
+
+  @doc """
   Gets users in touch.
   """
   def users_in_touch(conn, %{"user_id" => id}) do
