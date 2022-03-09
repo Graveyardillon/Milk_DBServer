@@ -2148,7 +2148,7 @@ defmodule MilkWeb.TournamentController do
     params
     |> Map.get("os_name")
     |> case do
-      "iOS" -> "e-players://e-players/tournament/#{token}"
+      #"iOS" -> "e-players://e-players/tournament/#{token}"
       _     -> "#{domain}/tournament/information?tournament_id=#{tournament.id}"
     end
     ~> redirect_url
