@@ -3634,11 +3634,11 @@ defmodule Milk.Tournaments do
 
   # NOTE: リーダーのみで参加したとき
   def create_team(tournament_id, size, leader_user_id, []) do
-    with {:ok, team}                            <- do_create_team(tournament_id, size, leader_user_id) |> IO.inspect(label: :create_team),
-         {:ok, _}                               <- create_team_leader(team.id, leader_user_id) |> IO.inspect(label: :team_leader),
-         {:ok, _}                               <- verify_team_as_needed(team.id) |> IO.inspect(label: :verify_team_as_needed),
+    with {:ok, team}                            <- do_create_team(tournament_id, size, leader_user_id),
+         {:ok, _}                               <- create_team_leader(team.id, leader_user_id),
+         {:ok, _}                               <- verify_team_as_needed(team.id),
          tournament when not is_nil(tournament) <- __MODULE__.get_tournament(team.tournament_id),
-         {:ok, nil}                             <- initialize_leader_state!(tournament, leader_user_id) |> IO.inspect(label: :state),
+         {:ok, nil}                             <- initialize_leader_state!(tournament, leader_user_id),
          team                                   <- __MODULE__.load_team(team.id) do
       {:ok, :leader_only, team}
     else
@@ -3649,14 +3649,14 @@ defmodule Milk.Tournaments do
   end
 
   def create_team(tournament_id, size, leader_user_id, user_id_list) do
-    with {:ok, nil}                             <- validate_user_is_not_member(tournament_id, user_id_list) |> IO.inspect(label: :not_member),
+    with {:ok, nil}                             <- validate_user_is_not_member(tournament_id, user_id_list),
          {:ok, team}                            <- do_create_team(tournament_id, size, leader_user_id),
          {:ok, _}                               <- create_team_leader(team.id, leader_user_id),
-         {:ok, members}                         <- __MODULE__.create_team_members(team.id, user_id_list) |> IO.inspect(label: :create_team_members),
-         {:ok, invitations}                     <- __MODULE__.create_team_invitations(members, leader_user_id) |> IO.inspect(label: :send_invitations),
+         {:ok, members}                         <- __MODULE__.create_team_members(team.id, user_id_list),
+         {:ok, invitations}                     <- __MODULE__.create_team_invitations(members, leader_user_id),
          {:ok, _}                               <- create_team_invitation_notifications(invitations),
          tournament when not is_nil(tournament) <- __MODULE__.get_tournament(tournament_id),
-         {:ok, nil}                             <- initialize_leader_state!(tournament, leader_user_id) |> IO.inspect(label: :state) do
+         {:ok, nil}                             <- initialize_leader_state!(tournament, leader_user_id) do
       {:ok, Map.put(team, :team_member, members)}
     else
       error -> error
@@ -3757,9 +3757,6 @@ defmodule Milk.Tournaments do
 
   defp initialize_leader_state!(%Tournament{id: tournament_id, is_team: is_team, rule: rule}, leader_user_id) do
     keyname = Rules.adapt_keyname(leader_user_id, tournament_id)
-    tournament_id
-    |> __MODULE__.state!(leader_user_id)
-    |> IO.inspect()
 
     case rule do
       "basic"              -> Basic.build_dfa_instance(keyname, is_team: is_team)
@@ -4483,7 +4480,6 @@ defmodule Milk.Tournaments do
 
     team_id
     |> __MODULE__.get_team_members_by_team_id()
-    |> IO.inspect(label: :mmbers)
     |> Enum.map(fn member ->
       keyname = Rules.adapt_keyname(member.user_id, tournament_id)
 

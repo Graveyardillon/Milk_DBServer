@@ -464,7 +464,6 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
       end)
       |> Enum.all?(&match?({:ok, _}, &1))
       |> Tools.boolean_to_tuple()
-      |> IO.inspect()
     end)
     |> Enum.all?(&match?({:ok, _}, &1))
     |> Tools.boolean_to_tuple("error on registering scores with categories")
@@ -519,9 +518,7 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
 
   def finish_table_as_needed(table_id) do
     table = __MODULE__.get_table(table_id)
-      # |> IO.inspect(label: :table)
     information = __MODULE__.get_freeforall_information_by_tournament_id(table.tournament_id)
-      # |> IO.inspect(label: :information)
 
     if table.current_match_index == information.match_number do
       __MODULE__.update_round_table(table, %{is_finished: true})
