@@ -2662,9 +2662,9 @@ defmodule Milk.Tournaments do
     # NOTE: ソートされたteam_id_listに基づいてfinish
     # NOTE: rankを編集、finish関数呼び出し
 
-    with {:ok, _} <- edit_ranks_on_finish_with_team_result(team_id_list),
+    with {:ok, _}                       <- edit_ranks_on_finish_with_team_result(team_id_list),
          leader when not is_nil(leader) <- __MODULE__.get_leader(hd(team_id_list)),
-         {:ok, tournament} <- __MODULE__.finish(tournament_id, leader.user_id) do
+         {:ok, tournament}              <- __MODULE__.finish(tournament_id, leader.user_id) do
       {:ok, tournament}
     else
       {:error, error} -> {:error, error}
