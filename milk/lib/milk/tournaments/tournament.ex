@@ -28,6 +28,7 @@ defmodule Milk.Tournaments.Tournament do
           game_name: String.t() | nil,
           is_started: boolean(),
           is_team: boolean(),
+          language: String.t() | nil,
           master_id: integer(),
           name: String.t(),
           password: String.t() | nil,
@@ -55,6 +56,7 @@ defmodule Milk.Tournaments.Tournament do
     field :game_name, :string
     field :is_started, :boolean, default: false
     field :is_team, :boolean, default: false
+    field :language, :string, default: "english"
     field :name, :string
     field :password, :string
     field :rule, :string, default: "basic"
@@ -94,6 +96,7 @@ defmodule Milk.Tournaments.Tournament do
       :game_name,
       :is_started,
       :is_team,
+      :language,
       :master_id,
       :password,
       :platform_id,
@@ -125,6 +128,7 @@ defmodule Milk.Tournaments.Tournament do
       :deadline,
       :discord_server_id,
       :game_name,
+      :language,
       :thumbnail_path,
       :password,
       :rule,

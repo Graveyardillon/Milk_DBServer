@@ -17,6 +17,8 @@ defmodule MilkWeb.UserController do
   alias Milk.Apple.User, as: AppleUser
   alias Milk.UserManager.Guardian
 
+  alias Milk.MessageGenerator.User, as: UserMessageGenerator
+
   @doc """
   Get user number.
   """
@@ -55,8 +57,8 @@ defmodule MilkWeb.UserController do
 
   defp create_welcome_notification(user),
     do: Notif.create_notification(%{
-        "title" => "e-playersへようこそ！",
-        "body_text" => "もしよければコミュニティに参加してアプリの改善に力を貸してください！\nhttps://discord.gg/cfZw6EAYrv",
+        "title" => UserMessageGenerator.welcome_to_eplayers(user.language),
+        "body_text" => UserMessageGenerator.why_dont_you_join_us(user.language),
         "process_id" => "COMMON",
         "user_id" => user.id
       })
@@ -254,6 +256,20 @@ defmodule MilkWeb.UserController do
   end
 
   @doc """
+  ユーザーの言語設定を変更
+  """
+  def change_language(conn, %{"user_id" => user_id, "language" => language}) do
+    user_id
+    |> Tools.to_integer_as_needed()
+    |> Accounts.get_user()
+    |> Accounts.update_user_light(%{language: language})
+    |> case do
+      {:ok, _}    -> json(conn, %{result: true})
+      {:error, _} -> json(conn, %{result: false})
+    end
+  end
+
+  @doc """
   Gets users in touch.
   """
   def users_in_touch(conn, %{"user_id" => id}) do
@@ -271,7 +287,7 @@ defmodule MilkWeb.UserController do
     |> Enum.map(fn team ->
       team
       |> Map.get(:id)
-      |> Tournaments.get_team_members_by_team_id()
+      |> Tournaments.load_team_members_by_team_id()
       |> Enum.map(&Map.get(&1, :user))
       |> List.flatten()
       |> Enum.uniq()

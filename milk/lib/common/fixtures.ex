@@ -110,7 +110,7 @@ defmodule Common.Fixtures do
         end)
         |> Enum.map(fn team ->
           team.id
-          |> Tournaments.get_team_members_by_team_id()
+          |> Tournaments.load_team_members_by_team_id()
           |> Enum.each(fn member ->
             member.user_id
             |> Tournaments.get_invitations()

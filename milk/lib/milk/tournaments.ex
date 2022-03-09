@@ -47,6 +47,8 @@ defmodule Milk.Tournaments do
     TournamentLog
   }
 
+  alias Milk.MessageGenerator.Tournament, as: TournamentMessageGenerator
+
   alias Milk.Notif.Notification
 
   alias Milk.Tournaments.{
@@ -3790,7 +3792,7 @@ defmodule Milk.Tournaments do
     |> Map.get(:user)
     ~> leader
 
-    title_str = "#{leader.name} からチーム招待されました"
+    title_str = TournamentMessageGenerator.got_invitation_from(leader.name, leader.language)
 
     Notification
     |> where([n], n.title == ^title_str)
@@ -3879,8 +3881,8 @@ defmodule Milk.Tournaments do
   @doc """
   Get team members by team id.
   """
-  @spec get_team_members_by_team_id(integer()) :: [TeamMember.t()]
-  def get_team_members_by_team_id(team_id) do
+  @spec load_team_members_by_team_id(integer()) :: [TeamMember.t()]
+  def load_team_members_by_team_id(team_id) do
     TeamMember
     |> where([tm], tm.team_id == ^team_id)
     |> Repo.all()
@@ -4091,7 +4093,7 @@ defmodule Milk.Tournaments do
     |> __MODULE__.get_confirmed_teams()
     |> Enum.any?(fn team ->
       team.id
-      |> __MODULE__.get_team_members_by_team_id()
+      |> __MODULE__.load_team_members_by_team_id()
       |> Enum.any?(&(&1.user_id == user_id))
     end)
   end
@@ -4206,7 +4208,7 @@ defmodule Milk.Tournaments do
       "user_id" => invitation.team_member.user_id,
       "process_id" => "TEAM_INVITE",
       "icon_path" => invitation.sender.icon_path,
-      "title" => "#{invitation.sender.name} からチーム招待されました",
+      "title" => TournamentMessageGenerator.got_invitation_from(invitation.sender.name, invitation.sender.language),
       "body_text" => "",
       "data" =>
         Jason.encode!(%{
@@ -4221,13 +4223,13 @@ defmodule Milk.Tournaments do
 
     invitation.team_member.user_id
     |> Accounts.get_devices_by_user_id()
-    |> Enum.map(fn device ->
+    |> Enum.each(fn device ->
       %Maps.PushIos{
         user_id: invitation.team_member.user_id,
         device_token: device.token,
         process_id: "TEAM_INVITE",
         title: "",
-        message: "#{invitation.sender.name} からチーム招待されました",
+        message: TournamentMessageGenerator.got_invitation_from(invitation.sender.name, invitation.sender.language),
         params: %{"invitation_id" => invitation.id}
       }
       |> Milk.Notif.push_ios()
@@ -4259,7 +4261,8 @@ defmodule Milk.Tournaments do
         |> case do
           %TeamInvitation{} = invitation ->
             create_team_invitation_result_notification(invitation, true)
-            verify_team_as_needed(team_member.team_id)
+            team_member.team_id
+            |> verify_team_as_needed()
             |> case do
               {:ok, _}                                      -> {:ok, team_member}
               {:error, "short of confirmed" <> _ = message} -> {:error, message, team_member}
@@ -4283,7 +4286,7 @@ defmodule Milk.Tournaments do
           "user_id" => invitation.sender.id,
           "process_id" => "TEAM_INVITE_RESULT",
           "icon_path" => invitation.team_member.user.icon_path,
-          "title" => "#{invitation.team_member.user.name} がチームに参加しました",
+          "title" => TournamentMessageGenerator.joined_team(invitation.team_member.user.name, invitation.team_member.user.language),
           "body_text" => "",
           "data" =>
             Jason.encode!(%{
@@ -4298,7 +4301,7 @@ defmodule Milk.Tournaments do
             device_token: device.token,
             process_id: "TEAM_INVITE_RESULT",
             title: "",
-            message: "#{invitation.team_member.user.name} がチームに参加しました",
+            message: TournamentMessageGenerator.joined_team(invitation.team_member.user.name, invitation.team_member.language),
             params: %{"invitation_id" => invitation.id}
           }
           |> Milk.Notif.push_ios()
@@ -4309,7 +4312,7 @@ defmodule Milk.Tournaments do
           "user_id" => invitation.sender.id,
           "process_id" => "TEAM_INVITE_RESULT",
           "icon_path" => invitation.team_member.user.icon_path,
-          "title" => "#{invitation.team_member.user.name} がチームへの招待を辞退しました",
+          "title" => TournamentMessageGenerator.reject_team_invitation(invitation.team_member.user.name, invitation.team_member.user.language),
           "body_text" => "",
           "data" =>
             Jason.encode!(%{
@@ -4324,7 +4327,7 @@ defmodule Milk.Tournaments do
             device_token: device.token,
             process_id: "TEAM_INVITE_RESULT",
             title: "",
-            message: "#{invitation.team_member.user.name} がチームへの招待を辞退しました",
+            message: TournamentMessageGenerator.reject_team_invitation(invitation.team_member.user.name, invitation.team_member.user.language),
             params: %{"invitation_id" => invitation.id}
           }
           |> Milk.Notif.push_ios()
@@ -4391,7 +4394,7 @@ defmodule Milk.Tournaments do
     tournament = __MODULE__.get_tournament(tournament_id)
 
     team_id
-    |> __MODULE__.get_team_members_by_team_id()
+    |> __MODULE__.load_team_members_by_team_id()
     |> Enum.reject(&(&1.is_leader))
     |> Enum.map(fn member ->
       keyname = Rules.adapt_keyname(member.user_id, tournament_id)
@@ -4419,13 +4422,13 @@ defmodule Milk.Tournaments do
     url = Discord.create_invitation_link!(tournament.discord_server_id)
 
     team.id
-    |> get_team_members_by_team_id()
+    |> __MODULE__.load_team_members_by_team_id()
     |> Enum.map(fn member ->
       %{
         "user_id" => member.user_id,
         "process_id" => "DISCORD_SERVER_INVITATION",
         "icon_path" => tournament.thumbnail_path,
-        "title" => "#{tournament.name}のDiscordサーバーへの招待を受け取りました",
+        "title" => TournamentMessageGenerator.received_discord_server_invitation_of(member.user.name, member.user.language),
         "body_text" => "",
         "data" => Jason.encode!(%{url: url})
       }

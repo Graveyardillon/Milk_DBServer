@@ -41,7 +41,7 @@ defmodule Milk.Discord do
   @spec all_team_members_associated?(integer()) :: boolean()
   def all_team_members_associated?(team_id) do
     team_id
-    |> Tournaments.get_team_members_by_team_id()
+    |> Tournaments.load_team_members_by_team_id()
     |> Enum.all?(fn member ->
       member
       |> Map.get(:user_id)
