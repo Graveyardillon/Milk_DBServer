@@ -3634,11 +3634,11 @@ defmodule Milk.Tournaments do
 
   # NOTE: リーダーのみで参加したとき
   def create_team(tournament_id, size, leader_user_id, []) do
-    with {:ok, team}                            <- do_create_team(tournament_id, size, leader_user_id),
-         {:ok, _}                               <- create_team_leader(team.id, leader_user_id),
-         {:ok, _}                               <- verify_team_as_needed(team.id),
+    with {:ok, team}                            <- do_create_team(tournament_id, size, leader_user_id) |> IO.inspect(label: :create_team),
+         {:ok, _}                               <- create_team_leader(team.id, leader_user_id) |> IO.inspect(label: :team_leader),
+         {:ok, _}                               <- verify_team_as_needed(team.id) |> IO.inspect(label: :verify_team_as_needed),
          tournament when not is_nil(tournament) <- __MODULE__.get_tournament(team.tournament_id),
-         {:ok, nil}                             <- initialize_leader_state!(tournament, leader_user_id),
+         {:ok, nil}                             <- initialize_leader_state!(tournament, leader_user_id) |> IO.inspect(label: :state),
          team                                   <- __MODULE__.load_team(team.id) do
       {:ok, :leader_only, team}
     else
@@ -3649,14 +3649,14 @@ defmodule Milk.Tournaments do
   end
 
   def create_team(tournament_id, size, leader_user_id, user_id_list) do
-    with {:ok, nil}                             <- validate_user_is_not_member(tournament_id, user_id_list),
+    with {:ok, nil}                             <- validate_user_is_not_member(tournament_id, user_id_list) |> IO.inspect(label: :not_member),
          {:ok, team}                            <- do_create_team(tournament_id, size, leader_user_id),
          {:ok, _}                               <- create_team_leader(team.id, leader_user_id),
-         {:ok, members}                         <- __MODULE__.create_team_members(team.id, user_id_list),
-         {:ok, invitations}                     <- __MODULE__.create_team_invitations(members, leader_user_id),
+         {:ok, members}                         <- __MODULE__.create_team_members(team.id, user_id_list) |> IO.inspect(label: :create_team_members),
+         {:ok, invitations}                     <- __MODULE__.create_team_invitations(members, leader_user_id) |> IO.inspect(label: :send_invitations),
          {:ok, _}                               <- create_team_invitation_notifications(invitations),
          tournament when not is_nil(tournament) <- __MODULE__.get_tournament(tournament_id),
-         {:ok, nil}                             <- initialize_leader_state!(tournament, leader_user_id) do
+         {:ok, nil}                             <- initialize_leader_state!(tournament, leader_user_id) |> IO.inspect(label: :state) do
       {:ok, Map.put(team, :team_member, members)}
     else
       error -> error
@@ -3757,6 +3757,9 @@ defmodule Milk.Tournaments do
 
   defp initialize_leader_state!(%Tournament{id: tournament_id, is_team: is_team, rule: rule}, leader_user_id) do
     keyname = Rules.adapt_keyname(leader_user_id, tournament_id)
+    tournament_id
+    |> __MODULE__.state!(leader_user_id)
+    |> IO.inspect()
 
     case rule do
       "basic"              -> Basic.build_dfa_instance(keyname, is_team: is_team)
@@ -3881,11 +3884,16 @@ defmodule Milk.Tournaments do
   @doc """
   Get team members by team id.
   """
-  @spec load_team_members_by_team_id(integer()) :: [TeamMember.t()]
-  def load_team_members_by_team_id(team_id) do
+  def get_team_members_by_team_id(team_id) do
     TeamMember
     |> where([tm], tm.team_id == ^team_id)
     |> Repo.all()
+  end
+
+  @spec load_team_members_by_team_id(integer()) :: [TeamMember.t()]
+  def load_team_members_by_team_id(team_id) do
+    team_id
+    |> __MODULE__.get_team_members_by_team_id()
     |> Repo.preload(:user)
   end
 
@@ -4449,6 +4457,7 @@ defmodule Milk.Tournaments do
   def delete_team(nil),            do: {:error, "team is nil"}
   def delete_team(%Team{} = team) do
     with leader      <- __MODULE__.get_leader(team.id),
+         {:ok, _}    <- delete_team_member_states(team.id, team.tournament_id),
          {:ok, team} <- Repo.delete(team),
          {:ok, _}    <- Entries.delete_entries_by_user_id(leader.user_id) do
       {:ok, team}
@@ -4467,6 +4476,29 @@ defmodule Milk.Tournaments do
       {:ok, team}     -> {:ok, Repo.preload(team, :team_member)}
       {:error, error} -> {:error, error}
     end
+  end
+
+  defp delete_team_member_states(team_id, tournament_id) do
+    tournament = __MODULE__.get_tournament(tournament_id)
+
+    team_id
+    |> __MODULE__.get_team_members_by_team_id()
+    |> IO.inspect(label: :mmbers)
+    |> Enum.map(fn member ->
+      keyname = Rules.adapt_keyname(member.user_id, tournament_id)
+
+      case tournament.rule do
+        "basic"              -> Basic.destroy_dfa_instance(keyname)
+        "flipban"            -> FlipBan.destroy_dfa_instance(keyname)
+        "flipban_roundrobin" -> FlipBanRoundRobin.destroy_dfa_instance(keyname)
+        "freeforall"         -> FreeForAll.destroy_dfa_instance(keyname)
+      end
+      ~> result
+
+      if result == 1, do: {:ok, nil}, else: {:error, "failed to destroy instances"}
+    end)
+    |> Enum.all?(&match?({:ok, _}, &1))
+    |> Tools.boolean_to_tuple()
   end
 
   @doc """
