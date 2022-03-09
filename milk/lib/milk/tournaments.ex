@@ -2662,9 +2662,9 @@ defmodule Milk.Tournaments do
     # NOTE: ソートされたteam_id_listに基づいてfinish
     # NOTE: rankを編集、finish関数呼び出し
 
-    with {:ok, _} <- edit_ranks_on_finish_with_team_result(team_id_list),
+    with {:ok, _}                       <- edit_ranks_on_finish_with_team_result(team_id_list),
          leader when not is_nil(leader) <- __MODULE__.get_leader(hd(team_id_list)),
-         {:ok, tournament} <- __MODULE__.finish(tournament_id, leader.user_id) do
+         {:ok, tournament}              <- __MODULE__.finish(tournament_id, leader.user_id) do
       {:ok, tournament}
     else
       {:error, error} -> {:error, error}
@@ -3881,11 +3881,16 @@ defmodule Milk.Tournaments do
   @doc """
   Get team members by team id.
   """
-  @spec load_team_members_by_team_id(integer()) :: [TeamMember.t()]
-  def load_team_members_by_team_id(team_id) do
+  def get_team_members_by_team_id(team_id) do
     TeamMember
     |> where([tm], tm.team_id == ^team_id)
     |> Repo.all()
+  end
+
+  @spec load_team_members_by_team_id(integer()) :: [TeamMember.t()]
+  def load_team_members_by_team_id(team_id) do
+    team_id
+    |> __MODULE__.get_team_members_by_team_id()
     |> Repo.preload(:user)
   end
 
@@ -4449,6 +4454,7 @@ defmodule Milk.Tournaments do
   def delete_team(nil),            do: {:error, "team is nil"}
   def delete_team(%Team{} = team) do
     with leader      <- __MODULE__.get_leader(team.id),
+         {:ok, _}    <- delete_team_member_states(team.id, team.tournament_id),
          {:ok, team} <- Repo.delete(team),
          {:ok, _}    <- Entries.delete_entries_by_user_id(leader.user_id) do
       {:ok, team}
@@ -4467,6 +4473,28 @@ defmodule Milk.Tournaments do
       {:ok, team}     -> {:ok, Repo.preload(team, :team_member)}
       {:error, error} -> {:error, error}
     end
+  end
+
+  defp delete_team_member_states(team_id, tournament_id) do
+    tournament = __MODULE__.get_tournament(tournament_id)
+
+    team_id
+    |> __MODULE__.get_team_members_by_team_id()
+    |> Enum.map(fn member ->
+      keyname = Rules.adapt_keyname(member.user_id, tournament_id)
+
+      case tournament.rule do
+        "basic"              -> Basic.destroy_dfa_instance(keyname)
+        "flipban"            -> FlipBan.destroy_dfa_instance(keyname)
+        "flipban_roundrobin" -> FlipBanRoundRobin.destroy_dfa_instance(keyname)
+        "freeforall"         -> FreeForAll.destroy_dfa_instance(keyname)
+      end
+      ~> result
+
+      if result == 1, do: {:ok, nil}, else: {:error, "failed to destroy instances"}
+    end)
+    |> Enum.all?(&match?({:ok, _}, &1))
+    |> Tools.boolean_to_tuple()
   end
 
   @doc """

@@ -2666,7 +2666,8 @@ defmodule Milk.TournamentsTest do
 
   describe "delete_team" do
     test "works" do
-      {tournament, _users} = setup_team(5)
+      tournament = fixture_tournament(is_team: true)
+      fill_with_team(tournament.id)
 
       tournament.id
       |> Tournaments.get_teams_by_tournament_id()
