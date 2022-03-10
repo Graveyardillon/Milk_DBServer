@@ -7,6 +7,7 @@ defmodule Milk.Tournaments.Rules do
   alias Common.Tools
   alias Milk.Tournaments
   alias Milk.Tournaments.{
+    Assistant,
     Progress,
     Tournament
   }

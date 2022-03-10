@@ -89,19 +89,16 @@ defmodule MilkWeb.UserController do
     end
     |> case do
       {:ok, :already, %User{} = user} -> pass_obtained_user(user)
-      {:ok, %User{} = user} -> create_user_with_discord(user, discord_id)
-      errors -> errors
+      {:ok, %User{} = user}           -> create_user_with_discord(user, discord_id)
+      errors                          -> errors
     end
     |> case do
       {:ok, %User{} = user} -> generate_token(user)
-      errors -> errors
+      errors                -> errors
     end
     |> case do
-      {:ok, token, %User{} = user} ->
-        render(conn, "login.json", %{user: user, token: token})
-
-      {:error, error} ->
-        render(conn, "error.json", error: error)
+      {:ok, token, %User{} = user} -> render(conn, "login.json", %{user: user, token: token})
+      {:error, error}              -> render(conn, "error.json", error: error)
     end
   end
 
