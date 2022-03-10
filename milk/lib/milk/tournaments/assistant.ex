@@ -24,6 +24,6 @@ defmodule Milk.Tournaments.Assistant do
   @doc false
   def changeset(assistant, attrs) do
     assistant
-    |> cast(attrs, [])
+    |> cast(attrs, [:user_id, :tournament_id])
   end
 end

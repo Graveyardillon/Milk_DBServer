@@ -549,9 +549,11 @@ defmodule Milk.Tournaments do
   @spec create_tournament(map(), String.t() | nil) :: {:ok, Tournament.t()} | {:error, Ecto.Changeset.t()}
   def create_tournament(attrs, thumbnail_path \\ "") do
     attrs = modify_necessary_fields(attrs)
+      |> IO.inspect()
 
     with {:ok, _}          <- validate_fields(attrs),
          {:ok, tournament} <- do_create_tournament(attrs, thumbnail_path),
+         {:ok, _}          <- create_assistants_as_needed(attrs, tournament),
          {:ok, nil}        <- join_chat_topics_on_create_tournament(tournament),
          {:ok, _}          <- add_necessary_fields(tournament, attrs),
          {:ok, nil}        <- Rules.initialize_master_states(tournament) do
@@ -1482,6 +1484,21 @@ defmodule Milk.Tournaments do
     end
   end
 
+  defp create_assistants_as_needed(%{"assistants" => nil}, _), do: {:ok, nil}
+  defp create_assistants_as_needed(%{"assistants" => []}, _),  do: {:ok, nil}
+  defp create_assistants_as_needed(%{"assistants" => assistant_id_list}, %Tournament{id: tournament_id}) do
+    assistant_id_list
+    |> Enum.map(fn assistant_id ->
+      %{user_id: assistant_id, tournament_id: tournament_id}
+      |> IO.inspect(label: :before_create_assistant)
+      |> __MODULE__.create_assistant()
+      |> IO.inspect(label: :after_create_assistant)
+    end)
+    |> Enum.all?(&match?({:ok, _}, &1))
+    |> Tools.boolean_to_tuple()
+  end
+  defp create_assistants_as_needed(_, _), do: {:ok, nil}
+
   @spec join_chat_topics_on_create_entrant(Entrant.t()) :: {:ok, nil}
   defp join_chat_topics_on_create_entrant(%Entrant{user_id: user_id, tournament_id: tournament_id}) do
     tournament_id
@@ -2039,9 +2056,9 @@ defmodule Milk.Tournaments do
   def has_lost?(match_list, user_id, result \\ true) when is_list(match_list) do
     Enum.reduce(match_list, result, fn x, acc ->
       case x do
-        x when is_list(x) -> has_lost?(x, user_id, acc)
+        x when is_list(x)   -> has_lost?(x, user_id, acc)
         x when x == user_id -> false
-        _ -> acc
+        _                   -> acc
       end
     end)
   end
@@ -2097,7 +2114,6 @@ defmodule Milk.Tournaments do
     |> Repo.update()
   end
 
-  @spec start_entrant_states!(Tournament.t()) :: {:ok, Tournament.t()}
   defp start_entrant_states!(%Tournament{id: id, rule: rule} = tournament) do
     id
     |> __MODULE__.get_entrants()
@@ -3996,6 +4012,12 @@ defmodule Milk.Tournaments do
     |> Log.get_team_member_logs()
     |> Enum.filter(& &1.is_leader)
     |> Enum.all?(&(&1.user_id == user_id))
+  end
+
+  def create_assistant(attrs \\ %{}) do
+    %Assistant{}
+    |> Assistant.changeset(attrs)
+    |> Repo.insert()
   end
 
   @doc """
