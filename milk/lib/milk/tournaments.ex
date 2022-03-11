@@ -1489,10 +1489,7 @@ defmodule Milk.Tournaments do
   defp create_assistants_as_needed(%{"assistants" => assistant_id_list}, %Tournament{id: tournament_id}) do
     assistant_id_list
     |> Enum.map(fn assistant_id ->
-      %{user_id: assistant_id, tournament_id: tournament_id}
-      |> IO.inspect(label: :before_create_assistant)
-      |> __MODULE__.create_assistant()
-      |> IO.inspect(label: :after_create_assistant)
+      __MODULE__.create_assistant(%{user_id: assistant_id, tournament_id: tournament_id})
     end)
     |> Enum.all?(&match?({:ok, _}, &1))
     |> Tools.boolean_to_tuple()
