@@ -215,7 +215,8 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
   @doc """
   不要なメンバーを取り除くための関数
   """
-  def truncate_excess_members(%Tournament{is_team: true, id: tournament_id}) do
+  def truncate_excess_members(_, %Information{is_truncation_enabled: true}), do: {:ok, nil}
+  def truncate_excess_members(%Tournament{is_team: true, id: tournament_id}, _) do
     with information when not is_nil(information) <- __MODULE__.get_freeforall_information_by_tournament_id(tournament_id),
          teams                                    <- get_teams_desc_by_confirmation_date(tournament_id),
          {:ok, remaining_teams_num}               <- get_closest_num_of_multiple(teams, information),
@@ -228,7 +229,7 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
     end
   end
 
-  def truncate_excess_members(%Tournament{is_team: false, id: tournament_id}) do
+  def truncate_excess_members(%Tournament{is_team: false, id: tournament_id}, _) do
     with information when not is_nil(information) <- __MODULE__.get_freeforall_information_by_tournament_id(tournament_id),
          entrants                                 <- Tournaments.get_entrants(tournament_id),
          {:ok, remaining_entrants_num}            <- get_closest_num_of_multiple(entrants, information),

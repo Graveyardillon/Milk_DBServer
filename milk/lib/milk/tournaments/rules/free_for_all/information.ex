@@ -14,6 +14,7 @@ defmodule Milk.Tournaments.Rules.FreeForAll.Information do
     match_number: :integer,
     round_capacity: :integer,
     tournament_id: :integer,
+    is_truncation_enabled: :boolean,
     # NOTE: timestamps
     create_time: any(),
     update_time: any()
@@ -24,6 +25,7 @@ defmodule Milk.Tournaments.Rules.FreeForAll.Information do
     field :match_number, :integer
     field :round_capacity, :integer
     field :enable_point_multiplier, :boolean, default: false
+    field :is_truncation_enabled, :boolean, default: false
 
     belongs_to :tournament, Tournament
 
@@ -33,7 +35,7 @@ defmodule Milk.Tournaments.Rules.FreeForAll.Information do
   @doc false
   def changeset(information, attrs) do
     information
-    |> cast(attrs, [:round_number, :match_number, :round_capacity, :enable_point_multiplier, :tournament_id])
+    |> cast(attrs, [:round_number, :match_number, :round_capacity, :enable_point_multiplier, :tournament_id, :is_truncation_enabled])
     |> foreign_key_constraint(:tournament_id)
   end
 end
