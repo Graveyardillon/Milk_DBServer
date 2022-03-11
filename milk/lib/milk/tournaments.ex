@@ -549,7 +549,6 @@ defmodule Milk.Tournaments do
   @spec create_tournament(map(), String.t() | nil) :: {:ok, Tournament.t()} | {:error, Ecto.Changeset.t()}
   def create_tournament(attrs, thumbnail_path \\ "") do
     attrs = modify_necessary_fields(attrs)
-      |> IO.inspect()
 
     with {:ok, _}          <- validate_fields(attrs),
          {:ok, tournament} <- do_create_tournament(attrs, thumbnail_path),
@@ -1488,12 +1487,7 @@ defmodule Milk.Tournaments do
   defp create_assistants_as_needed(%{"assistants" => []}, _),  do: {:ok, nil}
   defp create_assistants_as_needed(%{"assistants" => assistant_id_list}, %Tournament{id: tournament_id}) do
     assistant_id_list
-    |> Enum.map(fn assistant_id ->
-      %{user_id: assistant_id, tournament_id: tournament_id}
-      |> IO.inspect(label: :before_create_assistant)
-      |> __MODULE__.create_assistant()
-      |> IO.inspect(label: :after_create_assistant)
-    end)
+    |> Enum.map(&__MODULE__.create_assistant(%{user_id: &1, tournament_id: tournament_id}))
     |> Enum.all?(&match?({:ok, _}, &1))
     |> Tools.boolean_to_tuple()
   end
@@ -4284,10 +4278,13 @@ defmodule Milk.Tournaments do
     |> case do
       {:ok, team_member} ->
         team_invitation_id
-        |> get_team_invitation()
+        |> __MODULE__.get_team_invitation()
         |> case do
           %TeamInvitation{} = invitation ->
-            create_team_invitation_result_notification(invitation, true)
+            invitation
+            |> Repo.preload(:sender)
+            |> create_team_invitation_result_notification(true)
+
             team_member.team_id
             |> verify_team_as_needed()
             |> case do
@@ -4328,7 +4325,7 @@ defmodule Milk.Tournaments do
             device_token: device.token,
             process_id: "TEAM_INVITE_RESULT",
             title: "",
-            message: TournamentMessageGenerator.joined_team(invitation.team_member.user.name, invitation.team_member.language),
+            message: TournamentMessageGenerator.joined_team(invitation.team_member.user.name, invitation.team_member.user.language),
             params: %{"invitation_id" => invitation.id}
           }
           |> Milk.Notif.push_ios()
