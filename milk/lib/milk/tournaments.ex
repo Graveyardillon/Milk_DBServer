@@ -4278,10 +4278,13 @@ defmodule Milk.Tournaments do
     |> case do
       {:ok, team_member} ->
         team_invitation_id
-        |> get_team_invitation()
+        |> __MODULE__.get_team_invitation()
         |> case do
           %TeamInvitation{} = invitation ->
-            create_team_invitation_result_notification(invitation, true)
+            invitation
+            |> Repo.preload(:sender)
+            |> create_team_invitation_result_notification(true)
+
             team_member.team_id
             |> verify_team_as_needed()
             |> case do
@@ -4322,7 +4325,7 @@ defmodule Milk.Tournaments do
             device_token: device.token,
             process_id: "TEAM_INVITE_RESULT",
             title: "",
-            message: TournamentMessageGenerator.joined_team(invitation.team_member.user.name, invitation.team_member.language),
+            message: TournamentMessageGenerator.joined_team(invitation.team_member.user.name, invitation.team_member.user.language),
             params: %{"invitation_id" => invitation.id}
           }
           |> Milk.Notif.push_ios()
