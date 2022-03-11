@@ -165,4 +165,13 @@ defmodule MilkWeb.FreeForAllController do
       {:error, _} -> json(conn, %{result: false})
     end
   end
+
+  def update_categories(conn, %{"categories" => categories}) do
+    categories
+    |> FreeForAll.update_categories()
+    |> case do
+      {:ok, _}    -> json(conn, %{result: true})
+      {:error, _} -> json(conn, %{result: false})
+    end
+  end
 end

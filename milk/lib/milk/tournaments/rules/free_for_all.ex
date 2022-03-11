@@ -742,10 +742,33 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
     |> Tools.boolean_to_tuple()
   end
 
+  def get_category(category_id) do
+    PointMultiplierCategory
+    |> where([c], c.id == ^category_id)
+    |> Repo.one()
+  end
+
   def get_categories(tournament_id) do
     PointMultiplierCategory
     |> where([c], c.tournament_id == ^tournament_id)
     |> Repo.all()
+  end
+
+  def update_category(category, attrs \\ %{}) do
+    category
+    |> PointMultiplierCategory.changeset(attrs)
+    |> Repo.update()
+  end
+
+  def update_categories(categories) do
+    categories
+    |> Enum.map(fn %{"id" => category_id} = category_attr ->
+      category_id
+      |> __MODULE__.get_category()
+      |> __MODULE__.update_category(category_attr)
+    end)
+    |> Enum.all?(&match?({:ok, _}, &1))
+    |> Tools.boolean_to_tuple()
   end
 
   def create_round_table(attrs \\ %{}) do
