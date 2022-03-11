@@ -549,7 +549,6 @@ defmodule Milk.Tournaments do
   @spec create_tournament(map(), String.t() | nil) :: {:ok, Tournament.t()} | {:error, Ecto.Changeset.t()}
   def create_tournament(attrs, thumbnail_path \\ "") do
     attrs = modify_necessary_fields(attrs)
-      |> IO.inspect()
 
     with {:ok, _}          <- validate_fields(attrs),
          {:ok, tournament} <- do_create_tournament(attrs, thumbnail_path),
@@ -1488,9 +1487,7 @@ defmodule Milk.Tournaments do
   defp create_assistants_as_needed(%{"assistants" => []}, _),  do: {:ok, nil}
   defp create_assistants_as_needed(%{"assistants" => assistant_id_list}, %Tournament{id: tournament_id}) do
     assistant_id_list
-    |> Enum.map(fn assistant_id ->
-      __MODULE__.create_assistant(%{user_id: assistant_id, tournament_id: tournament_id})
-    end)
+    |> Enum.map(&__MODULE__.create_assistant(%{user_id: &1, tournament_id: tournament_id}))
     |> Enum.all?(&match?({:ok, _}, &1))
     |> Tools.boolean_to_tuple()
   end
