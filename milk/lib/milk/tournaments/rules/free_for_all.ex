@@ -206,6 +206,12 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
     |> Repo.one()
   end
 
+  def update_freeforall_information(information, attrs \\ %{}) do
+    information
+    |> Information.changeset(attrs)
+    |> Repo.update()
+  end
+
   @doc """
   不要なメンバーを取り除くための関数
   """

@@ -154,4 +154,15 @@ defmodule MilkWeb.FreeForAllController do
       _               -> json(conn, %{result: true})
     end
   end
+
+  def update_information(conn, %{"tournament_id" => tournament_id, "information" => information}) do
+    tournament_id
+    |> Tools.to_integer_as_needed()
+    |> FreeForAll.get_freeforall_information_by_tournament_id()
+    |> FreeForAll.update_freeforall_information(information)
+    |> case do
+      {:ok, _}    -> json(conn, %{result: true})
+      {:error, _} -> json(conn, %{result: false})
+    end
+  end
 end
