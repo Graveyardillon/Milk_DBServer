@@ -890,10 +890,11 @@ defmodule Milk.Tournaments.Progress do
   @spec start_free_for_all(Tournament.t()) :: {:ok, nil, nil} | {:error, String.t() | nil}
   def start_free_for_all(tournament) do
     # 不必要なチームを除外したら対戦カードを生成していく
-    with {:ok, nil} <- FreeForAll.truncate_excess_members(tournament),
-         {:ok, nil} <- FreeForAll.initialize_round_tables(tournament, 0),
-         {:ok, _}   <- Tournaments.start(tournament),
-         {:ok, _}   <- FreeForAll.create_status(%{tournament_id: tournament.id, current_match_index: 0}) do
+    with ffa_info when not is_nil(ffa_info) <- FreeForAll.get_freeforall_information_by_tournament_id(tournament.id),
+         {:ok, nil}                         <- FreeForAll.truncate_excess_members(tournament, ffa_info),
+         {:ok, nil}                         <- FreeForAll.initialize_round_tables(tournament, 0),
+         {:ok, _}                           <- Tournaments.start(tournament),
+         {:ok, _}                           <- FreeForAll.create_status(%{tournament_id: tournament.id, current_match_index: 0}) do
       {:ok, nil, nil}
     else
       {:error, error} -> {:error, error}

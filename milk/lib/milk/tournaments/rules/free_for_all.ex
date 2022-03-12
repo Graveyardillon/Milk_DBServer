@@ -215,7 +215,8 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
   @doc """
   不要なメンバーを取り除くための関数
   """
-  def truncate_excess_members(%Tournament{is_team: true, id: tournament_id}) do
+  def truncate_excess_members(_, %Information{is_truncation_enabled: false}), do: {:ok, nil}
+  def truncate_excess_members(%Tournament{is_team: true, id: tournament_id}, _) do
     with information when not is_nil(information) <- __MODULE__.get_freeforall_information_by_tournament_id(tournament_id),
          teams                                    <- get_teams_desc_by_confirmation_date(tournament_id),
          {:ok, remaining_teams_num}               <- get_closest_num_of_multiple(teams, information),
@@ -228,7 +229,7 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
     end
   end
 
-  def truncate_excess_members(%Tournament{is_team: false, id: tournament_id}) do
+  def truncate_excess_members(%Tournament{is_team: false, id: tournament_id}, _) do
     with information when not is_nil(information) <- __MODULE__.get_freeforall_information_by_tournament_id(tournament_id),
          entrants                                 <- Tournaments.get_entrants(tournament_id),
          {:ok, remaining_entrants_num}            <- get_closest_num_of_multiple(entrants, information),
@@ -368,16 +369,24 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
   def claim_scores(%Tournament{is_team: true}, table_id, scores) do
     # そのテーブルに属している人たちのスコアをmatch_informationに登録する
     scores
-    |> Enum.map(fn %{"score" => score, "team_id" => team_id} ->
+    |> Enum.map(fn %{"score" => score, "team_id" => team_id, "member_scores" => member_scores} ->
       table_id
-      |> __MODULE__.get_round_information()
+      |> __MODULE__.get_round_team_information()
       |> Enum.filter(&(&1.team_id == team_id))
-      |> Enum.map(fn round_information ->
-        __MODULE__.create_team_match_information(%{
+      |> hd()
+      ~> round_information
+
+
+      {:ok, team_match_information} = __MODULE__.create_team_match_information(%{
           round_id: round_information.id,
           team_id: team_id,
           score: score
         })
+
+      member_scores
+      |> IO.inspect(label: :memscores)
+      |> Enum.map(fn %{"user_id" => user_id, "score" => score} ->
+        __MODULE__.create_member_match_information(%{user_id: user_id, score: score, team_match_information_id: team_match_information.id})
       end)
       |> Enum.all?(&match?({:ok, _}, &1))
       |> Tools.boolean_to_tuple()

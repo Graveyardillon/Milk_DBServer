@@ -778,6 +778,7 @@ defmodule Milk.Tournaments do
     |> Enum.all?(&match?({:ok, _}, &1))
     |> Tools.boolean_to_tuple("error on create point multiplier categories")
   end
+  defp create_point_multiplier_categories(_, %{"point_multiplier_categories" => []}), do: {:ok, nil}
   defp create_point_multiplier_categories(_, %{"point_multiplier_categories" => categories}) when is_list(categories), do: {:error, "Need to enable point multiplier"}
   defp create_point_multiplier_categories(_, _), do: {:ok, nil}
 

@@ -128,7 +128,9 @@ defmodule MilkWeb.FreeForAllView do
       data: Enum.map(match_information, fn info ->
         %{
           id: info.id,
-          score: info.score
+          score: info.score,
+          user_id: info.user_id,
+          team_match_information_id: info.team_match_information_id
         }
       end),
       result: true

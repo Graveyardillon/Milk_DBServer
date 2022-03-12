@@ -247,6 +247,7 @@ defmodule MilkWeb.Router do
     get "/tournament/ffa_load_match_information", FreeForAllController, :load_match_information
     get "/tournament/ffa_team_match_information", FreeForAllController, :get_team_match_information
     get "/tournament/ffa_load_team_match_information", FreeForAllController, :load_team_match_information
+    get "/tournament/ffa_get_member_match_information", FreeForAllController, :get_member_match_information
     get "/tournament/ffa_load_member_match_information", FreeForAllController, :load_member_match_information
     post "/tournament/ffa_update_information", FreeForAllController, :update_information
     post "/tournament/ffa_update_categories", FreeForAllController, :update_categories
