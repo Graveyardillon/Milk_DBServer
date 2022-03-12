@@ -230,7 +230,7 @@ defmodule MilkWeb.FreeForAllControllerTest do
           {element, index}
         end)
         |> Enum.map(fn {team, index} ->
-          %{"score" => index, "team_id" => team["team_id"]}
+          %{"score" => index, "team_id" => team["team_id"], "member_scores" => []}
         end)
         ~> scores
 
@@ -254,7 +254,7 @@ defmodule MilkWeb.FreeForAllControllerTest do
           {element, index}
         end)
         |> Enum.map(fn {team, index} ->
-          %{"score" => index, "team_id" => team["team_id"]}
+          %{"score" => index, "team_id" => team["team_id"], "member_scores" => []}
         end)
         ~> scores
 
