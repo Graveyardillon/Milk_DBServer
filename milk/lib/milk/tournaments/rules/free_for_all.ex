@@ -369,16 +369,24 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
   def claim_scores(%Tournament{is_team: true}, table_id, scores) do
     # そのテーブルに属している人たちのスコアをmatch_informationに登録する
     scores
-    |> Enum.map(fn %{"score" => score, "team_id" => team_id} ->
+    |> Enum.map(fn %{"score" => score, "team_id" => team_id, "member_scores" => member_scores} ->
       table_id
       |> __MODULE__.get_round_team_information()
       |> Enum.filter(&(&1.team_id == team_id))
-      |> Enum.map(fn round_information ->
-        __MODULE__.create_team_match_information(%{
+      |> hd()
+      ~> round_information
+
+
+      {:ok, team_match_information} = __MODULE__.create_team_match_information(%{
           round_id: round_information.id,
           team_id: team_id,
           score: score
         })
+
+      member_scores
+      |> IO.inspect(label: :memscores)
+      |> Enum.map(fn %{"user_id" => user_id, "score" => score} ->
+        __MODULE__.create_member_match_information(%{user_id: user_id, score: score, team_match_information_id: team_match_information.id})
       end)
       |> Enum.all?(&match?({:ok, _}, &1))
       |> Tools.boolean_to_tuple()
