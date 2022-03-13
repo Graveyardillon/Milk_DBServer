@@ -15,19 +15,38 @@ defmodule MilkWeb.FreeForAllController do
     tournament_id
     |> Tools.to_integer_as_needed()
     |> FreeForAll.get_freeforall_information_by_tournament_id()
+    |> get_freeforall_information_log_as_needed(tournament_id)
     ~> information
 
     render(conn, "information.json", information: information)
   end
 
+  defp get_freeforall_information_log_as_needed(nil, tournament_id) do
+    tournament_id
+    |> Log.get_tournament_log_by_tournament_id()
+    |> Map.get(:id)
+    |> FreeForAll.get_freeforall_information_log_by_tournament_log_id()
+  end
+  defp get_freeforall_information_log_as_needed(tournament, _), do: tournament
+
   def get_categories(conn, %{"tournament_id" => tournament_id}) do
     tournament_id
     |> Tools.to_integer_as_needed()
     |> FreeForAll.get_categories()
+    |> get_categories_log_as_needed(tournament_id)
     ~> categories
 
     render(conn, "categories.json", categories: categories)
   end
+
+  defp get_categories_log_as_needed(nil, tournament_id), do: get_categories_log_as_needed([], tournament_id)
+  defp get_categories_log_as_needed([], tournament_id) do
+    tournament_id
+    |> Log.get_tournament_log_by_tournament_id()
+    |> Map.get(:id)
+    |> FreeForAll.get_categories_log_by_tournament_log_id()
+  end
+  defp get_categories_log_as_needed(categories, _), do: categories
 
   def get_tables(conn, %{"tournament_id" => tournament_id}) do
     tournament_id
@@ -180,7 +199,11 @@ defmodule MilkWeb.FreeForAllController do
     |> FreeForAll.get_status_by_tournament_id()
     ~> status
 
-    render(conn, "status.json", status: status)
+    if is_nil(status) do
+      json(conn, %{result: false})
+    else
+      render(conn, "status.json", status: status)
+    end
   end
 
   def claim_scores(conn, %{"tournament_id" => tournament_id, "table_id" => table_id, "scores" => scores}) do

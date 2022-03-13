@@ -199,6 +199,7 @@ defmodule MilkWeb.TournamentView do
   def render("tournament_log.json", %{tournament_log: tournament_log}) do
     %{
       data: %{
+        id: tournament_log.id,
         capacity: tournament_log.capacity,
         deadline: tournament_log.deadline,
         description: tournament_log.description,
@@ -209,7 +210,9 @@ defmodule MilkWeb.TournamentView do
         winner_id: tournament_log.winner_id,
         master_id: tournament_log.master_id,
         name: tournament_log.name,
+        is_team: tournament_log.is_team,
         url: tournament_log.url,
+        rule: tournament_log.rule,
         type: tournament_log.type,
         thumbnail_path: tournament_log.thumbnail_path,
         entrants:

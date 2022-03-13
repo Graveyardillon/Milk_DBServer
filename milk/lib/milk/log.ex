@@ -9,6 +9,7 @@ defmodule Milk.Log do
   alias Common.Tools
 
   alias Milk.{
+    Accounts,
     Repo,
     Tournaments
   }
@@ -898,6 +899,10 @@ defmodule Milk.Log do
     TeamMemberLog
     |> where([t], t.team_id == ^team_id)
     |> Repo.all()
+    |> Enum.map(fn team_member_log ->
+      user = Accounts.get_user(team_member_log.user_id)
+      Map.put(team_member_log, :user, Repo.preload(user, :auth))
+    end)
     ~> team_member_logs
 
     TeamLog

@@ -8,8 +8,11 @@ defmodule MilkWeb.TeamController do
   alias Milk.{
     Accounts,
     Discord,
+    Log,
     Tournaments
   }
+
+  alias Milk.Log.TeamLog
 
   alias Milk.Tournaments.{
     Team,
@@ -21,6 +24,7 @@ defmodule MilkWeb.TeamController do
     team_id
     |> Tools.to_integer_as_needed()
     |> Tournaments.load_team()
+    |> load_team_log_as_needed(team_id)
     ~> team
 
     do_show(conn, team)
@@ -35,8 +39,12 @@ defmodule MilkWeb.TeamController do
     do_show(conn, team)
   end
 
-  defp do_show(conn, nil),            do: render(conn, "error.json", error: nil)
-  defp do_show(conn, %Team{} = team), do: render(conn, "show.json", team: team)
+  defp load_team_log_as_needed(nil, team_id), do: Log.get_team_log_by_team_id(team_id)
+  defp load_team_log_as_needed(team, _), do: team
+
+  defp do_show(conn, nil),               do: render(conn, "error.json", error: nil)
+  defp do_show(conn, %Team{} = team),    do: render(conn, "show.json", team: team)
+  defp do_show(conn, %TeamLog{} = team), do: render(conn, "show.json", team: team)
 
   @doc """
   Get all teams of a tournament.

@@ -754,6 +754,12 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
     |> Repo.one()
   end
 
+  def get_freeforall_information_log_by_tournament_log_id(tournament_log_id) do
+    InformationLog
+    |> where([i], i.tournament_id == ^tournament_log_id)
+    |> Repo.one()
+  end
+
   def update_freeforall_information(information, attrs \\ %{}) do
     information
     |> Information.changeset(attrs)
@@ -775,6 +781,12 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
   def get_categories(tournament_id) do
     PointMultiplierCategory
     |> where([c], c.tournament_id == ^tournament_id)
+    |> Repo.all()
+  end
+
+  def get_categories_log_by_tournament_log_id(tournament_log_id) do
+    CategoryLog
+    |> where([c], c.tournament_id == ^tournament_log_id)
     |> Repo.all()
   end
 
