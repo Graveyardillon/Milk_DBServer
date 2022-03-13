@@ -2809,11 +2809,9 @@ defmodule Milk.Tournaments do
     |> FreeForAll.get_categories()
     |> Enum.map(fn category ->
       category
-      |> IO.inspect()
       |> Map.from_struct()
       |> Map.put(:tournament_id, tournament_log.id)
       |> FreeForAll.create_point_multiplier_category_log()
-      |> IO.inspect(label: :asf)
       |> elem(1)
       |> Map.put(:old_category_id, category.id)
     end)

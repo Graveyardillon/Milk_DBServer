@@ -7,12 +7,15 @@ defmodule Milk.Tournaments.Rules.FreeForAllLog.Round.MemberMatchInformation do
   import Ecto.Changeset
 
   alias Milk.Tournaments.Rules.FreeForAllLog.Round.TeamMatchInformation
+  alias Milk.Tournaments.Rules.FreeForAllLog.Round.MemberPointMultiplier
 
   schema "tournaments_rules_freeforalllog_round_membermatchinformation" do
     field :score, :integer
     field :user_id, :integer
 
     belongs_to :team_match_information, TeamMatchInformation
+
+    has_many :point_multipliers, MemberPointMultiplier
 
     timestamps()
   end

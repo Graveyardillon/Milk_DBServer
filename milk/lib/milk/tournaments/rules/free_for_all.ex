@@ -822,6 +822,12 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
     |> Repo.all()
   end
 
+  def get_table_logs_by_tournament_log_id(tournament_log_id) do
+    TableLog
+    |> where([t], t.tournament_id == ^tournament_log_id)
+    |> Repo.all()
+  end
+
   def create_table_log(attrs \\ %{}) do
     %TableLog{}
     |> TableLog.changeset(attrs)
@@ -831,6 +837,12 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
   def get_round_information(table_id) do
     RoundInformation
     |> where([t], t.table_id == ^table_id)
+    |> Repo.all()
+  end
+
+  def get_round_information_logs_by_table_log_id(table_log_id) do
+    RoundInformationLog
+    |> where([t], t.table_id == ^table_log_id)
     |> Repo.all()
   end
 
@@ -852,6 +864,12 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
     |> Repo.all()
   end
 
+  def get_team_round_information_logs_by_table_log_id(table_log_id) do
+    TeamRoundInformationLog
+    |> where([t], t.table_id == ^table_log_id)
+    |> Repo.all()
+  end
+
   def create_match_information(attrs \\ %{}) do
     %MatchInformation{}
     |> MatchInformation.changeset(attrs)
@@ -870,15 +888,39 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
     |> Repo.all()
   end
 
+  def get_team_match_information_logs_by_round_information_log_id(round_information_log_id) do
+    TeamMatchInformationLog
+    |> where([t], t.round_id == ^round_information_log_id)
+    |> Repo.all()
+  end
+
   def load_team_match_information(round_team_information_id) do
     round_team_information_id
     |> __MODULE__.get_team_match_information()
     |> Repo.preload(:point_multipliers)
   end
 
+  def load_team_match_information_logs_by_round_information_log_id(round_information_log_id) do
+    round_information_log_id
+    |> __MODULE__.get_team_match_information_logs_by_round_information_log_id()
+    |> Repo.preload(:point_multipliers)
+  end
+
   def get_match_information(round_information_id) do
     MatchInformation
     |> where([t], t.round_id == ^round_information_id)
+    |> Repo.all()
+  end
+
+  def get_match_information_logs_by_round_information_log_id(round_information_log_id) do
+    MatchInformationLog
+    |> where([t], t.round_id == ^round_information_log_id)
+    |> Repo.all()
+  end
+
+  def load_match_information_logs_by_round_information_log_id(round_information_log_id) do
+    round_information_log_id
+    |> __MODULE__.get_match_information_logs_by_round_information_log_id()
     |> Repo.all()
   end
 
@@ -988,9 +1030,21 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
     |> Repo.all()
   end
 
+  def get_member_match_information_logs_as_needed(team_match_information_log_id) do
+    MemberMatchInformationLog
+    |> where([i], i.team_match_information_id == ^team_match_information_log_id)
+    |> Repo.all()
+  end
+
   def load_member_match_information_list(team_match_information_id) do
     team_match_information_id
     |> __MODULE__.get_member_match_information_list()
+    |> Repo.preload(:point_multipliers)
+  end
+
+  def load_member_match_information_logs_as_needed(info_id) do
+    info_id
+    |> __MODULE__.get_member_match_information_logs_as_needed()
     |> Repo.preload(:point_multipliers)
   end
 end

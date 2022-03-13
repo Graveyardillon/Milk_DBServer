@@ -265,6 +265,31 @@ defmodule MilkWeb.FreeForAllControllerTest do
       |> refute()
 
       refute Tournaments.get_tournament(tournament_id)
+
+      conn = get(conn, Routes.free_for_all_path(conn, :get_tables), tournament_id: tournament_id)
+
+      conn
+      |> json_response(200)
+      |> Map.get("data")
+      |> Enum.map(fn table ->
+        conn = get(conn, Routes.free_for_all_path(conn, :get_round_team_information), table_id: table["id"])
+        conn
+        |> json_response(200)
+        |> Map.get("data")
+        |> Enum.map(fn round_info ->
+          conn = get(conn, Routes.free_for_all_path(conn, :load_team_match_information), round_information_id: round_info["id"])
+
+          conn
+          |> json_response(200)
+          |> Map.get("data")
+          |> Enum.empty?()
+          |> refute()
+        end)
+        |> Enum.empty?()
+        |> refute()
+      end)
+      |> Enum.empty?()
+      |> refute()
     end
   end
 end
