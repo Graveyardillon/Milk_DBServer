@@ -31,6 +31,8 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
     Repo,
     Tournaments
   }
+  alias Milk.Tournaments.Rules.FreeForAllLog.Information, as: InformationLog
+  alias Milk.Tournaments.Rules.FreeForAllLog.Round.Table, as: TableLog
 
   @behaviour Milk.Tournaments.Rules.Rule
 
@@ -191,26 +193,6 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
   # 関数群
   # =========================================================
   #
-
-  @spec create_freeforall_information(map()) :: {:ok, Information.t()} | {:error, Ecto.Changeset.t()}
-  def create_freeforall_information(attrs \\ %{}) do
-    %Information{}
-    |> Information.changeset(attrs)
-    |> Repo.insert()
-  end
-
-  @spec get_freeforall_information_by_tournament_id(integer()) :: Information.t() | nil
-  def get_freeforall_information_by_tournament_id(tournament_id) do
-    Information
-    |> where([i], i.tournament_id == ^tournament_id)
-    |> Repo.one()
-  end
-
-  def update_freeforall_information(information, attrs \\ %{}) do
-    information
-    |> Information.changeset(attrs)
-    |> Repo.update()
-  end
 
   @doc """
   不要なメンバーを取り除くための関数
@@ -723,20 +705,19 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
     |> Map.get(:user_id)
   end
 
-  defp finish_tournament_as_needed(tables, tournament, %Information{round_number: round_number}, %Status{current_round_index: current_round_index}) do
-    if round_number <= current_round_index + 1 do
-      winner_id = extract_winner_id(tournament, tables)
-      # すべてのテーブルがfinishedで、すべてのテーブルのmatch_indexがmatch_numberになっていたらfinish
-      tournament.id
-      |> Tournaments.finish(winner_id)
-      |> case do
-        {:ok, tournament} -> {:ok, :finished, tournament}
-        {:error, error}   -> {:error, error}
-      end
-    else
-      {:ok, nil}
+  # FIXME: dialyzerの赤線が引かれるが、ifにするとネストが深くなってしまうのでこの書き方にした。
+  defp finish_tournament_as_needed(tables, tournament, %Information{round_number: round_number}, %Status{current_round_index: current_round_index}) when round_number <= current_round_index + 1 do
+    winner_id = extract_winner_id(tournament, tables)
+    # すべてのテーブルがfinishedで、すべてのテーブルのmatch_indexがmatch_numberになっていたらfinish
+
+    tournament.id
+    |> Tournaments.finish(winner_id)
+    |> case do
+      {:ok, _}        -> {:ok, :finished, tournament}
+      {:error, error} -> {:error, error}
     end
   end
+  defp finish_tournament_as_needed(_, _, _, _), do: {:ok, nil}
 
   def claim_member_scores(team_match_information_id, scores) do
     scores
@@ -749,6 +730,32 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
     end)
     |> Enum.all?(&match?({:ok, _}, &1))
     |> Tools.boolean_to_tuple()
+  end
+
+  @spec create_freeforall_information(map()) :: {:ok, Information.t()} | {:error, Ecto.Changeset.t()}
+  def create_freeforall_information(attrs \\ %{}) do
+    %Information{}
+    |> Information.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  @spec get_freeforall_information_by_tournament_id(integer()) :: Information.t() | nil
+  def get_freeforall_information_by_tournament_id(tournament_id) do
+    Information
+    |> where([i], i.tournament_id == ^tournament_id)
+    |> Repo.one()
+  end
+
+  def update_freeforall_information(information, attrs \\ %{}) do
+    information
+    |> Information.changeset(attrs)
+    |> Repo.update()
+  end
+
+  def create_freeforall_information_log(attrs \\ %{}) do
+    %InformationLog{}
+    |> InformationLog.changeset(attrs)
+    |> Repo.insert()
   end
 
   def get_category(category_id) do
@@ -805,6 +812,12 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
     Table
     |> where([t], t.tournament_id == ^tournament_id)
     |> Repo.all()
+  end
+
+  def create_table_log(attrs \\ %{}) do
+    %TableLog{}
+    |> TableLog.changeset(attrs)
+    |> Repo.insert()
   end
 
   def get_round_information(table_id) do

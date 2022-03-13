@@ -2647,12 +2647,27 @@ defmodule Milk.Tournaments do
   end
 
   defp do_finish(%Tournament{} = tournament, winner_user_id) do
-    with {:ok, _}          <- create_tournament_log_on_finish(tournament, winner_user_id),
+    with {:ok, _}          <- create_logs_on_finish(tournament, winner_user_id),
          {:ok, tournament} <- __MODULE__.delete_tournament(tournament) do
       {:ok, tournament}
     else
       error -> error
     end
+  end
+
+  defp create_logs_on_finish(%Tournament{rule: "freeforall"} = tournament, winner_user_id) do
+    with {:ok, tournament_log}      <- create_tournament_log_on_finish(tournament, winner_user_id),
+         {:ok, ffa_information_log} <- create_ffa_information_log(tournament, tournament_log),
+         {:ok, tables}              <- create_ffa_tables_log(tournament, tournament_log) do
+      {:ok, nil}
+    else
+      {:error, error} -> {:error, error}
+      _               -> {:error, "unexpected error on create logs on finish"}
+    end
+  end
+
+  defp create_logs_on_finish(tournament, winner_user_id) do
+    create_tournament_log_on_finish(tournament, winner_user_id)
   end
 
   defp create_tournament_log_on_finish(tournament, winner_user_id) do
@@ -2662,6 +2677,26 @@ defmodule Milk.Tournaments do
     |> Map.put(:winner_id, winner_user_id)
     |> Tools.atom_map_to_string_map()
     |> Log.create_tournament_log()
+  end
+
+  defp create_ffa_information_log(tournament, tournament_log) do
+    tournament.id
+    |> FreeForAll.get_freeforall_information_by_tournament_id()
+    |> Map.from_struct()
+    |> Map.put(:tournament_id, tournament_log.id)
+    |> FreeForAll.create_freeforall_information_log()
+  end
+
+  defp create_ffa_tables_log(tournament, tournament_log) do
+    tournament.id
+    |> FreeForAll.get_tables_by_tournament_id()
+    |> Enum.map(fn table ->
+      table
+      |> Map.from_struct()
+      |> Map.put(:tournament_id, tournament_log.id)
+      |> FreeForAll.create_table_log()
+    end)
+    |> Tools.reduce_ok_list()
   end
 
   @doc """
