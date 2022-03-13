@@ -2810,6 +2810,9 @@ defmodule Milk.Tournaments do
       |> FreeForAll.create_point_multiplier_category_log()
       |> elem(1)
       |> Map.put(:old_category_id, category.id)
+      ~> category
+
+      {:ok, category}
     end)
     |> Tools.reduce_ok_list("error on create point categories")
   end

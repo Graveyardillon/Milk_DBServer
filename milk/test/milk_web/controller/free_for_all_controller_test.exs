@@ -293,5 +293,120 @@ defmodule MilkWeb.FreeForAllControllerTest do
       |> Enum.empty?()
       |> refute()
     end
+
+    test "freeforall (team) (enable point multiplier)", %{conn: conn} do
+      user = fixture_user()
+      attrs = %{
+        "capacity" => 8,
+        "deadline" => "2010-04-17T14:00:00Z",
+        "description" => "some description",
+        "event_date" => "2010-04-17T14:00:00Z",
+        "master_id" => user.id,
+        "name" => "some name",
+        "type" => 1,
+        "url" => "some url",
+        "platform" => 1,
+        "rule" => "freeforall",
+        "round_number" => 2,
+        "match_number" => 1,
+        "round_capacity" => 3,
+        "is_team" => "true",
+        "enable_point_multiplier" => true,
+        "point_multiplier_categories" => [
+          %{"name" => "キルポ", "multiplier" => 10},
+          %{"name" => "ダメージ", "multiplier" => 0.5}
+        ],
+        "team_size" => 4
+      }
+
+      conn = post(conn, Routes.tournament_path(conn, :create), tournament: attrs, file: "")
+      assert json_response(conn, 200)["result"]
+
+      assert json_response(conn, 200)["data"]["rule"] === "freeforall"
+      assert json_response(conn, 200)["data"]["is_team"]
+
+      master_id = json_response(conn, 200)["data"]["master_id"]
+      tournament_id = json_response(conn, 200)["data"]["id"]
+
+      fill_with_team(tournament_id)
+
+      conn = get(conn, Routes.tournament_path(conn, :get_match_information), %{"tournament_id" => tournament_id, "user_id" => master_id})
+      assert json_response(conn, 200)["result"]
+      assert json_response(conn, 200)["state"] == "IsNotStarted"
+
+      conn = post(conn, Routes.tournament_path(conn, :start), %{"tournament" => %{"master_id" => master_id, "tournament_id" => tournament_id}})
+      assert json_response(conn, 200)["result"]
+
+      conn = get(conn, Routes.free_for_all_path(conn, :get_categories), tournament_id: tournament_id)
+      categories = json_response(conn, 200)["data"]
+
+      conn = get(conn, Routes.free_for_all_path(conn, :get_tables), tournament_id: tournament_id)
+
+      conn
+      |> json_response(200)
+      |> Map.get("data")
+      |> Enum.map(fn table ->
+        conn = get(conn, Routes.free_for_all_path(conn, :get_round_team_information), table_id: table["id"])
+        conn
+        |> json_response(200)
+        |> Map.get("data")
+        |> Enum.with_index(fn element, index ->
+          {element, index}
+        end)
+        |> Enum.map(fn {team, index} ->
+          %{
+            "scores" => Enum.map(categories, fn category ->
+              %{
+                "score" => index,
+                "category_id" => category["id"]
+              }
+            end),
+            "team_id" => team["team_id"],
+            "member_scores" => []
+          }
+        end)
+        ~> scores
+
+        conn = post(conn, Routes.free_for_all_path(conn, :claim_scores), %{"tournament_id" => tournament_id, "scores_with_categories" => scores, "table_id" => table["id"]})
+        assert json_response(conn, 200)["result"]
+      end)
+      |> Enum.empty?()
+      |> refute()
+
+      conn = get(conn, Routes.free_for_all_path(conn, :get_tables), tournament_id: tournament_id)
+
+      conn
+      |> json_response(200)
+      |> Map.get("data")
+      |> Enum.map(fn table ->
+        conn = get(conn, Routes.free_for_all_path(conn, :get_round_team_information), table_id: table["id"])
+        conn
+        |> json_response(200)
+        |> Map.get("data")
+        |> Enum.with_index(fn element, index ->
+          {element, index}
+        end)
+        |> Enum.map(fn {team, index} ->
+          %{
+            "scores" => Enum.map(categories, fn category ->
+              %{
+                "score" => index,
+                "category_id" => category["id"]
+              }
+            end),
+            "team_id" => team["team_id"],
+            "member_scores" => []
+          }
+        end)
+        ~> scores
+
+        conn = post(conn, Routes.free_for_all_path(conn, :claim_scores), %{"tournament_id" => tournament_id, "scores_with_categories" => scores, "table_id" => table["id"]})
+        assert json_response(conn, 200)["result"]
+      end)
+      |> Enum.empty?()
+      |> refute()
+
+      refute Tournaments.get_tournament(tournament_id)
+    end
   end
 end
