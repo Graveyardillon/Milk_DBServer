@@ -2657,8 +2657,9 @@ defmodule Milk.Tournaments do
 
   defp create_logs_on_finish(%Tournament{rule: "freeforall"} = tournament, winner_user_id) do
     with {:ok, tournament_log}      <- create_tournament_log_on_finish(tournament, winner_user_id),
-         {:ok, ffa_information_log} <- create_ffa_information_log(tournament, tournament_log),
-         {:ok, tables}              <- create_ffa_tables_log(tournament, tournament_log) do
+         {:ok, ffa_information_log} <- create_ffa_information_log(tournament_log),
+         {:ok, categories}          <- create_ffa_point_categories_log(tournament_log),
+         {:ok, tables}              <- create_ffa_tables_log(tournament_log, categories) do
       {:ok, nil}
     else
       {:error, error} -> {:error, error}
@@ -2679,25 +2680,146 @@ defmodule Milk.Tournaments do
     |> Log.create_tournament_log()
   end
 
-  defp create_ffa_information_log(tournament, tournament_log) do
-    tournament.id
+  defp create_ffa_information_log(tournament_log) do
+    tournament_log.tournament_id
     |> FreeForAll.get_freeforall_information_by_tournament_id()
     |> Map.from_struct()
     |> Map.put(:tournament_id, tournament_log.id)
     |> FreeForAll.create_freeforall_information_log()
   end
 
-  defp create_ffa_tables_log(tournament, tournament_log) do
-    tournament.id
+  defp create_ffa_tables_log(tournament_log, categories) do
+    tournament_log.tournament_id
     |> FreeForAll.get_tables_by_tournament_id()
     |> Enum.map(fn table ->
       table
       |> Map.from_struct()
       |> Map.put(:tournament_id, tournament_log.id)
       |> FreeForAll.create_table_log()
+      ~> {:ok, table_log}
+
+      create_ffa_round_information_log(table, table_log, tournament_log, categories)
     end)
-    |> Tools.reduce_ok_list()
+    |> Tools.reduce_ok_list("error on create ffa tables log")
   end
+
+  defp create_ffa_round_information_log(table, table_log, %TournamentLog{is_team: true} = tournament_log, categories) do
+    table.id
+    |> FreeForAll.get_round_team_information()
+    |> Enum.map(fn round_team_info ->
+      round_team_info
+      |> Map.from_struct()
+      |> Map.put(:table_id, table_log.id)
+      |> FreeForAll.create_team_round_information_log()
+      ~> {:ok, team_round_information_log}
+
+      create_ffa_match_information_log(round_team_info, team_round_information_log, tournament_log, categories)
+    end)
+    |> Tools.reduce_ok_list("error on create ffa round information log")
+  end
+
+  defp create_ffa_round_information_log(table, table_log, %TournamentLog{is_team: false} = tournament_log, categories) do
+    table.id
+    |> FreeForAll.get_round_information()
+    |> Enum.map(fn round_info ->
+      round_info
+      |> Map.from_struct()
+      |> Map.put(:table_id, table_log.id)
+      |> FreeForAll.create_round_information_log()
+      ~> {:ok, round_information_log}
+
+      create_ffa_match_information_log(round_info, round_information_log, tournament_log, categories)
+    end)
+    |> Tools.reduce_ok_list("error on create ffa round information log")
+  end
+
+  defp create_ffa_match_information_log(round_info, round_info_log, %TournamentLog{is_team: true}, categories) do
+    round_info.id
+    |> FreeForAll.load_team_match_information()
+    |> Enum.map(fn team_match_info ->
+      team_match_info
+      |> Map.from_struct()
+      |> Map.put(:round_id, round_info_log.id)
+      |> FreeForAll.create_team_match_information_log()
+      ~> {:ok, team_match_info_log}
+
+      team_match_info.point_multipliers
+      |> Enum.each(fn point_multiplier ->
+        category = Enum.find(categories, fn category -> category.old_category_id == point_multiplier.category_id end)
+
+        point_multiplier
+        |> Map.from_struct()
+        |> Map.put(:team_match_information_id, team_match_info_log.id)
+        |> Map.put(:category_id, category.id)
+        |> FreeForAll.create_team_point_multiplier_log()
+      end)
+
+      team_match_info.id
+      |> FreeForAll.load_member_match_information_list()
+      |> Enum.map(fn member_match_info ->
+        member_match_info
+        |> Map.from_struct()
+        |> Map.put(:team_match_information_id, team_match_info_log.id)
+        |> FreeForAll.create_member_match_information_log()
+        ~> {:ok, member_match_info_log}
+
+        member_match_info.point_multipliers
+        |> Enum.map(fn point_multiplier ->
+          category = Enum.find(categories, fn category -> category.old_category_id == point_multiplier.category_id end)
+
+          point_multiplier
+          |> Map.from_struct()
+          |> Map.put(:member_match_information_id, member_match_info_log.id)
+          |> Map.put(:category_id, category.id)
+          |> FreeForAll.create_member_point_multiplier_log()
+        end)
+      end)
+      |> Tools.reduce_ok_list("error on create match information log")
+    end)
+    |> Tools.reduce_ok_list("error on create match information log")
+  end
+
+  defp create_ffa_match_information_log(round_info, round_info_log, %TournamentLog{is_team: false}, categories) do
+    round_info.id
+    |> FreeForAll.load_match_information()
+    |> Enum.map(fn match_info ->
+      match_info
+      |> Map.from_struct()
+      |> Map.put(:round_id, round_info_log.id)
+      |> FreeForAll.create_match_information_log()
+      ~> {:ok, match_info_log}
+
+      match_info.point_multipliers
+      |> Enum.map(fn point_multiplier ->
+        category = Enum.find(categories, fn category -> category.old_category_id == point_multiplier.category_id end)
+
+        point_multiplier
+        |> Map.from_struct()
+        |> Map.put(:match_information_id, match_info_log.id)
+        |> Map.put(:category_id, category.id)
+        |> FreeForAll.create_point_multiplier_log()
+      end)
+      |> Tools.reduce_ok_list("error on create match information log")
+    end)
+    |> Tools.reduce_ok_list("error on create match information log")
+  end
+
+  defp create_ffa_point_categories_log(tournament_log) do
+    tournament_log.tournament_id
+    |> FreeForAll.get_categories()
+    |> Enum.map(fn category ->
+      category
+      |> IO.inspect()
+      |> Map.from_struct()
+      |> Map.put(:tournament_id, tournament_log.id)
+      |> FreeForAll.create_point_multiplier_category_log()
+      |> IO.inspect(label: :asf)
+      |> elem(1)
+      |> Map.put(:old_category_id, category.id)
+    end)
+    |> Tools.reduce_ok_list("error on create point categories")
+  end
+
 
   @doc """
   結果を入力してfinish

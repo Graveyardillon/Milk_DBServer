@@ -18,7 +18,7 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
     MemberMatchInformation
   }
   alias Milk.Tournaments.Rules.FreeForAll.Round.Information, as: RoundInformation
-  alias Milk.Tournaments.Rules.FreeForAll.Round.TeamInformation, as: RoundTeamInformation
+  alias Milk.Tournaments.Rules.FreeForAll.Round.TeamInformation, as: TeamRoundInformation
   alias Milk.Tournaments.Rules.FreeForAll.{
     PointMultiplierCategory,
     Status
@@ -33,6 +33,15 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
   }
   alias Milk.Tournaments.Rules.FreeForAllLog.Information, as: InformationLog
   alias Milk.Tournaments.Rules.FreeForAllLog.Round.Table, as: TableLog
+  alias Milk.Tournaments.Rules.FreeForAllLog.PointMultiplierCategory, as: CategoryLog
+  alias Milk.Tournaments.Rules.FreeForAllLog.Round.Information, as: RoundInformationLog
+  alias Milk.Tournaments.Rules.FreeForAllLog.Round.TeamInformation, as: TeamRoundInformationLog
+  alias Milk.Tournaments.Rules.FreeForAllLog.Round.MatchInformation, as: MatchInformationLog
+  alias Milk.Tournaments.Rules.FreeForAllLog.Round.TeamMatchInformation, as: TeamMatchInformationLog
+  alias Milk.Tournaments.Rules.FreeForAllLog.Round.MemberMatchInformation, as: MemberMatchInformationLog
+  alias Milk.Tournaments.Rules.FreeForAllLog.Round.MemberPointMultiplier, as: MemberPointMultiplierLog
+  alias Milk.Tournaments.Rules.FreeForAllLog.Round.PointMultiplier, as: PointMultiplierLog
+  alias Milk.Tournaments.Rules.FreeForAllLog.Round.TeamPointMultiplier, as: TeamPointMultiplierLog
 
   @behaviour Milk.Tournaments.Rules.Rule
 
@@ -366,7 +375,6 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
         })
 
       member_scores
-      |> IO.inspect(label: :memscores)
       |> Enum.map(fn %{"user_id" => user_id, "score" => score} ->
         __MODULE__.create_member_match_information(%{user_id: user_id, score: score, team_match_information_id: team_match_information.id})
       end)
@@ -639,8 +647,8 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
 
     table = Enum.at(tables, rem(count, length(tables)))
 
-    %RoundTeamInformation{}
-    |> RoundTeamInformation.changeset(%{table_id: table.id, team_id: score_table.team_id})
+    %TeamRoundInformation{}
+    |> TeamRoundInformation.changeset(%{table_id: table.id, team_id: score_table.team_id})
     |> Repo.insert()
 
     extract_teams_from_score_tables(remaining_score_tables, tables, count + 1)
@@ -826,6 +834,18 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
     |> Repo.all()
   end
 
+  def create_round_information_log(attrs \\ %{}) do
+    %RoundInformationLog{}
+    |> RoundInformationLog.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  def create_team_round_information_log(attrs \\ %{}) do
+    %TeamRoundInformationLog{}
+    |> TeamRoundInformationLog.changeset(attrs)
+    |> Repo.insert()
+  end
+
   def get_round_team_information(table_id) do
     TeamInformation
     |> where([t], t.table_id == ^table_id)
@@ -868,6 +888,18 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
     |> Repo.preload(:point_multipliers)
   end
 
+  def create_match_information_log(attrs \\ %{}) do
+    %MatchInformationLog{}
+    |> MatchInformationLog.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  def create_team_match_information_log(attrs \\ %{}) do
+    %TeamMatchInformationLog{}
+    |> TeamMatchInformationLog.changeset(attrs)
+    |> Repo.insert()
+  end
+
   def create_status(attrs \\ %{}) do
     %Status{}
     |> Status.changeset(attrs)
@@ -892,9 +924,21 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
     |> Repo.insert()
   end
 
+  def create_point_multiplier_category_log(attrs \\ %{}) do
+    %CategoryLog{}
+    |> CategoryLog.changeset(attrs)
+    |> Repo.insert()
+  end
+
   def create_point_multiplier(attrs \\ %{}) do
     %PointMultiplier{}
     |> PointMultiplier.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  def create_point_multiplier_log(attrs \\ %{}) do
+    %PointMultiplierLog{}
+    |> PointMultiplierLog.changeset(attrs)
     |> Repo.insert()
   end
 
@@ -904,9 +948,21 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
     |> Repo.insert()
   end
 
+  def create_team_point_multiplier_log(attrs \\ %{}) do
+    %TeamPointMultiplierLog{}
+    |> TeamPointMultiplierLog.changeset(attrs)
+    |> Repo.insert()
+  end
+
   def create_member_point_multiplier(attrs \\ %{}) do
     %MemberPointMultiplier{}
     |> MemberPointMultiplier.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  def create_member_point_multiplier_log(attrs \\ %{}) do
+    %MemberPointMultiplierLog{}
+    |> MemberPointMultiplierLog.changeset(attrs)
     |> Repo.insert()
   end
 
@@ -917,6 +973,12 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
   def create_member_match_information(attrs \\ %{}) do
     %MemberMatchInformation{}
     |> MemberMatchInformation.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  def create_member_match_information_log(attrs \\ %{}) do
+    %MemberMatchInformationLog{}
+    |> MemberMatchInformationLog.changeset(attrs)
     |> Repo.insert()
   end
 
