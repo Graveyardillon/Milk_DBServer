@@ -2769,6 +2769,7 @@ defmodule Milk.Tournaments do
           |> Map.put(:category_id, category.id)
           |> FreeForAll.create_member_point_multiplier_log()
         end)
+        |> Tools.reduce_ok_list("error on member ffa")
       end)
       |> Tools.reduce_ok_list("error on create match information log")
     end)
