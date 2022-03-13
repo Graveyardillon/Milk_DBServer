@@ -908,7 +908,11 @@ defmodule Milk.Log do
     TeamLog
     |> where([t], t.team_id == ^team_id)
     |> Repo.one()
-    |> Map.put(:team_member, team_member_logs)
+    ~> team_log
+
+    unless is_nil(team_log) do
+      Map.put(team_log, :team_member, team_member_logs)
+    end
   end
 
   @doc """
