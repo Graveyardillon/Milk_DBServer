@@ -211,6 +211,7 @@ defmodule MilkWeb.TournamentView do
         master_id: tournament_log.master_id,
         name: tournament_log.name,
         is_team: tournament_log.is_team,
+        team_size: tournament_log.team_size,
         url: tournament_log.url,
         rule: tournament_log.rule,
         type: tournament_log.type,

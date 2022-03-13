@@ -968,4 +968,14 @@ defmodule Milk.Log do
     |> where([tm], tm.team_id == ^team_id)
     |> Repo.all()
   end
+
+  def load_team_member_logs(team_id) do
+    team_id
+    |> __MODULE__.get_team_member_logs()
+    |> Enum.map(fn member ->
+      user = Accounts.get_user(member.user_id)
+      Map.put(member, :user, Repo.preload(user, :auth))
+    end)
+    |> IO.inspect()
+  end
 end

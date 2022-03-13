@@ -1920,13 +1920,15 @@ defmodule MilkWeb.TournamentController do
     tournament_id
     |> Log.get_team_logs_by_tournament_id()
     |> Enum.map(fn team_log ->
-      team_log
-      |> Map.get(:team_id)
-      |> Tournaments.get_leader()
+      team_log.team_id
+      |> Tournaments.load_leader_from_log()
       |> Map.get(:user)
       ~> user
 
+      team_members = Log.load_team_member_logs(team_log.team_id)
+
       team_log
+      |> Map.put(:team_member, team_members)
       |> Map.put(:name, user.name)
       |> Map.put(:icon_path, user.icon_path)
     end)

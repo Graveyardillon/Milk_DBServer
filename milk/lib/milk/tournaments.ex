@@ -43,6 +43,7 @@ defmodule Milk.Tournaments do
     AssistantLog,
     EntrantLog,
     TeamLog,
+    TeamMemberLog,
     TournamentChatTopicLog,
     TournamentLog
   }
@@ -4115,6 +4116,22 @@ defmodule Milk.Tournaments do
     team_id
     |> __MODULE__.get_leader()
     |> Repo.preload(:user)
+  end
+
+  def get_leader_from_log(team_id) do
+    TeamMemberLog
+    |> where([tml], tml.team_id == ^team_id)
+    |> where([tml], tml.is_leader)
+    |> Repo.one()
+  end
+
+  def load_leader_from_log(team_id) do
+    team_id
+    |> __MODULE__.get_leader_from_log()
+    ~> log
+
+    user = Accounts.get_user(log.user_id)
+    Map.put(log, :user, user)
   end
 
   @doc """
