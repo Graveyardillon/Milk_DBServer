@@ -33,7 +33,6 @@ defmodule MilkWeb.FreeForAllController do
     tournament_id
     |> Tools.to_integer_as_needed()
     |> FreeForAll.get_tables_by_tournament_id()
-    |> IO.inspect(label: :tables)
     |> get_tables_log_as_needed(tournament_id)
     ~> tables
 
@@ -131,7 +130,6 @@ defmodule MilkWeb.FreeForAllController do
     round_information_id
     |> Tools.to_integer_as_needed()
     |> FreeForAll.load_team_match_information()
-    |> IO.inspect(label: :teams)
     |> load_team_match_information_log_as_needed(round_information_id)
     ~> match_information_list
 

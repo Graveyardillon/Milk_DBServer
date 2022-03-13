@@ -2591,9 +2591,10 @@ defmodule Milk.Tournaments do
   def finish(tournament_id, winner_user_id) do
     tournament = __MODULE__.load_tournament(tournament_id)
 
-    with {:ok, _}          <- finish_participants(tournament),
+    with {:ok, _}          <- create_logs_on_finish(tournament, winner_user_id),
+         {:ok, _}          <- finish_participants(tournament),
          {:ok, _}          <- finish_topics(tournament_id),
-         {:ok, tournament} <- do_finish(tournament, winner_user_id) do
+         {:ok, tournament} <- do_finish(tournament) do
       {:ok, tournament}
     else
       error -> error
@@ -2646,20 +2647,15 @@ defmodule Milk.Tournaments do
     |> Log.create_tournament_chat_topic_log()
   end
 
-  defp do_finish(%Tournament{} = tournament, winner_user_id) do
-    with {:ok, _}          <- create_logs_on_finish(tournament, winner_user_id),
-         {:ok, tournament} <- __MODULE__.delete_tournament(tournament) do
-      {:ok, tournament}
-    else
-      error -> error
-    end
+  defp do_finish(%Tournament{} = tournament) do
+    __MODULE__.delete_tournament(tournament)
   end
 
   defp create_logs_on_finish(%Tournament{rule: "freeforall"} = tournament, winner_user_id) do
     with {:ok, tournament_log}      <- create_tournament_log_on_finish(tournament, winner_user_id),
-         {:ok, ffa_information_log} <- create_ffa_information_log(tournament_log),
+         {:ok, _ffa_information_log} <- create_ffa_information_log(tournament_log),
          {:ok, categories}          <- create_ffa_point_categories_log(tournament_log),
-         {:ok, tables}              <- create_ffa_tables_log(tournament_log, categories) do
+         {:ok, _tables}              <- create_ffa_tables_log(tournament_log, categories) do
       {:ok, nil}
     else
       {:error, error} -> {:error, error}
@@ -2825,9 +2821,6 @@ defmodule Milk.Tournaments do
   """
   @spec finish_with_team_result(integer(), [integer()]) :: {:ok, Tournament.t()} | {:error, Ecto.Changeset.t() | String.t() | nil}
   def finish_with_team_result(tournament_id, team_id_list) do
-    # NOTE: ソートされたteam_id_listに基づいてfinish
-    # NOTE: rankを編集、finish関数呼び出し
-
     with {:ok, _}                       <- edit_ranks_on_finish_with_team_result(team_id_list),
          leader when not is_nil(leader) <- __MODULE__.get_leader(hd(team_id_list)),
          {:ok, tournament}              <- __MODULE__.finish(tournament_id, leader.user_id) do

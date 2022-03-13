@@ -8,6 +8,7 @@ defmodule MilkWeb.FreeForAllControllerTest do
   use Common.Fixtures
 
   alias Milk.Tournaments
+  alias Milk.Tournaments.Rules.FreeForAll
 
   describe "get tables" do
     test "works", %{conn: conn} do
@@ -273,6 +274,7 @@ defmodule MilkWeb.FreeForAllControllerTest do
       |> Map.get("data")
       |> Enum.map(fn table ->
         conn = get(conn, Routes.free_for_all_path(conn, :get_round_team_information), table_id: table["id"])
+
         conn
         |> json_response(200)
         |> Map.get("data")
