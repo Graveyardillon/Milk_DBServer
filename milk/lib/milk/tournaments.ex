@@ -4651,7 +4651,7 @@ defmodule Milk.Tournaments do
   def delete_team(nil),            do: {:error, "team is nil"}
   def delete_team(%Team{} = team) do
     with leader      <- __MODULE__.get_leader(team.id),
-         {:ok, _}    <- delete_team_member_states(team.id, team.tournament_id),
+         {:ok, _}    <- delete_team_member_states(team),
          {:ok, team} <- Repo.delete(team),
          {:ok, _}    <- Entries.delete_entries_by_user_id(leader.user_id) do
       {:ok, team}
@@ -4672,7 +4672,7 @@ defmodule Milk.Tournaments do
     end
   end
 
-  defp delete_team_member_states(team_id, tournament_id) do
+  defp delete_team_member_states(%Team{is_confirmed: true, id: team_id, tournament_id: tournament_id}) do
     tournament = __MODULE__.get_tournament(tournament_id)
 
     team_id
@@ -4693,6 +4693,7 @@ defmodule Milk.Tournaments do
     |> Enum.all?(&match?({:ok, _}, &1))
     |> Tools.boolean_to_tuple()
   end
+  defp delete_team_member_states(_), do: {:ok, nil}
 
   @doc """
   Delete a team and store it.
