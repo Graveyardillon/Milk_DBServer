@@ -73,6 +73,11 @@ defmodule MilkWeb.UserControllerTest do
              } = json_response(conn, 200)["data"]
     end
 
+    test "create with short name", %{conn: conn} do
+      conn = post(conn, Routes.user_path(conn, :create), user: %{name: "a", password: "Password123!", email: "asdf@gmaail.com"})
+      assert json_response(conn, 200)["result"]
+    end
+
     test "renders errors when email has already been taken", %{conn: conn} do
       {:ok, user} =
         Accounts.create_user(%{

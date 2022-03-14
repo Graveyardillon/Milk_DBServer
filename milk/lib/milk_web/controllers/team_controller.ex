@@ -219,6 +219,7 @@ defmodule MilkWeb.TeamController do
     team_id
     |> Tools.to_integer_as_needed()
     |> Tournaments.delete_team()
+    |> IO.inspect()
     |> case do
       {:ok, team} ->
         Task.async(fn -> send_remove_team_discord_notification(team) end)

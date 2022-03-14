@@ -391,6 +391,12 @@ defmodule Milk.Tournaments do
     |> Repo.preload(:assistant)
   end
 
+  def get_finished_tournaments(user_id) do
+    TournamentLog
+    |> where([t], t.master_id == ^user_id)
+    |> Repo.all()
+  end
+
   @doc """
   Get a list of master users' information of a tournament
   """
@@ -1206,11 +1212,12 @@ defmodule Milk.Tournaments do
 
   """
   @spec delete_tournament(Tournament.t() | map() | integer()) :: {:ok, Tournament.t()} | {:error, Ecto.Changeset.t() | String.t()}
-  def delete_tournament(nil),                 do: {:error, "tournament is nil"}
-  def delete_tournament(%Tournament{id: id}), do: delete_tournament(id)
-  def delete_tournament(%{"id" => id}),       do: delete_tournament(id)
+  def delete_tournament(element, for_finish \\ false)
+  def delete_tournament(nil, _),                          do: {:error, "tournament is nil"}
+  def delete_tournament(%Tournament{id: id}, for_finish), do: delete_tournament(id, for_finish)
+  def delete_tournament(%{"id" => id}, for_finish),       do: delete_tournament(id, for_finish)
 
-  def delete_tournament(id) when is_integer(id) do
+  def delete_tournament(id, for_finish) when is_integer(id) do
     Tournament
     |> join(:left, [t], a in assoc(t, :assistant))
     |> join(:left, [t, a], e in assoc(t, :entrant))
@@ -1219,7 +1226,10 @@ defmodule Milk.Tournaments do
     |> Repo.one()
     ~> tournament
 
-    delete_thumbnail(tournament)
+    unless for_finish do
+      delete_thumbnail(tournament)
+    end
+
     if tournament.enabled_map do
       delete_maps(id)
     end
@@ -2649,7 +2659,7 @@ defmodule Milk.Tournaments do
   end
 
   defp do_finish(%Tournament{} = tournament) do
-    __MODULE__.delete_tournament(tournament)
+    __MODULE__.delete_tournament(tournament, true)
   end
 
   defp create_logs_on_finish(%Tournament{rule: "freeforall"} = tournament, winner_user_id) do
@@ -3590,14 +3600,12 @@ defmodule Milk.Tournaments do
     tournament_id
     |> __MODULE__.get_tournament()
     |> load_relevant_user_id_list(tournament_id)
-    |> Flow.from_enumerable(stages: 1)
-    |> Flow.map(fn user_id ->
+    |> Enum.map(fn user_id ->
       %InteractionMessage{
         state: __MODULE__.state!(tournament_id, user_id),
         user_id: user_id
       }
     end)
-    |> Enum.to_list()
   end
 
   defp load_relevant_user_id_list(nil, tournament_id) do
@@ -4643,7 +4651,7 @@ defmodule Milk.Tournaments do
   def delete_team(nil),            do: {:error, "team is nil"}
   def delete_team(%Team{} = team) do
     with leader      <- __MODULE__.get_leader(team.id),
-         {:ok, _}    <- delete_team_member_states(team.id, team.tournament_id),
+         {:ok, _}    <- delete_team_member_states(team),
          {:ok, team} <- Repo.delete(team),
          {:ok, _}    <- Entries.delete_entries_by_user_id(leader.user_id) do
       {:ok, team}
@@ -4664,7 +4672,7 @@ defmodule Milk.Tournaments do
     end
   end
 
-  defp delete_team_member_states(team_id, tournament_id) do
+  defp delete_team_member_states(%Team{id: team_id, tournament_id: tournament_id}) do
     tournament = __MODULE__.get_tournament(tournament_id)
 
     team_id
@@ -4684,7 +4692,10 @@ defmodule Milk.Tournaments do
     end)
     |> Enum.all?(&match?({:ok, _}, &1))
     |> Tools.boolean_to_tuple()
+
+    {:ok, nil}
   end
+  #defp delete_team_member_states(_), do: {:ok, nil}
 
   @doc """
   Delete a team and store it.

@@ -6,6 +6,8 @@ defmodule Milk.Log.TournamentLog do
 
   import Ecto.Changeset
 
+  alias Milk.Platforms.Platform
+
   @type t :: %__MODULE__{
           capacity: integer(),
           count: integer(),
@@ -22,6 +24,8 @@ defmodule Milk.Log.TournamentLog do
           is_team: boolean(),
           master_id: integer(),
           name: String.t(),
+          password: String.t(),
+          platform_id: :integer,
           rule: String.t() | nil,
           start_recruiting: any(),
           team_size: integer() | nil,
@@ -36,7 +40,6 @@ defmodule Milk.Log.TournamentLog do
           update_time: any()
         }
 
-  # FIXME: platform_idが足りない
   schema "tournaments_log" do
     field :capacity, :integer
     field :count, :integer
@@ -53,6 +56,7 @@ defmodule Milk.Log.TournamentLog do
     field :is_team, :boolean
     field :master_id, :integer
     field :name, :string
+    field :password, :string
     field :rule, :string
     field :start_recruiting, EctoDate
     field :team_size, :integer
@@ -62,6 +66,8 @@ defmodule Milk.Log.TournamentLog do
     field :url, :string
     field :url_token, :string
     field :winner_id, :integer
+
+    belongs_to :platform, Platform
 
     timestamps()
   end
@@ -85,6 +91,8 @@ defmodule Milk.Log.TournamentLog do
       :is_team,
       :master_id,
       :name,
+      :password,
+      :platform_id,
       :rule,
       :start_recruiting,
       :team_size,
@@ -96,5 +104,6 @@ defmodule Milk.Log.TournamentLog do
       :winner_id
     ])
     |> validate_required([:name])
+    |> foreign_key_constraint(:platform_id)
   end
 end
