@@ -4672,7 +4672,7 @@ defmodule Milk.Tournaments do
     end
   end
 
-  defp delete_team_member_states(%Team{is_confirmed: true, id: team_id, tournament_id: tournament_id}) do
+  defp delete_team_member_states(%Team{id: team_id, tournament_id: tournament_id}) do
     tournament = __MODULE__.get_tournament(tournament_id)
 
     team_id
@@ -4692,8 +4692,10 @@ defmodule Milk.Tournaments do
     end)
     |> Enum.all?(&match?({:ok, _}, &1))
     |> Tools.boolean_to_tuple()
+
+    {:ok, nil}
   end
-  defp delete_team_member_states(_), do: {:ok, nil}
+  #defp delete_team_member_states(_), do: {:ok, nil}
 
   @doc """
   Delete a team and store it.
