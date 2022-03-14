@@ -391,6 +391,12 @@ defmodule Milk.Tournaments do
     |> Repo.preload(:assistant)
   end
 
+  def get_finished_tournaments(user_id) do
+    TournamentLog
+    |> where([t], t.master_id == ^user_id)
+    |> Repo.all()
+  end
+
   @doc """
   Get a list of master users' information of a tournament
   """

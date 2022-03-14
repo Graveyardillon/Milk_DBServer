@@ -30,12 +30,14 @@ defmodule MilkWeb.ProfileController do
 
       external_services = Accounts.get_external_services(user_id)
       associated_with_discord? = Discord.associated?(user_id)
+      finished_tournaments = Tournaments.get_finished_tournaments(user_id)
 
       render(conn, "profile.json",
         user: user,
         records: records,
         external_services: external_services,
-        associated_with_discord: associated_with_discord?
+        associated_with_discord: associated_with_discord?,
+        finished_tournaments: finished_tournaments
       )
     else
       json(conn, %{result: false, error: "user not found"})
