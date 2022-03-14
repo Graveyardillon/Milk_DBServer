@@ -8,7 +8,6 @@ defmodule MilkWeb.FreeForAllControllerTest do
   use Common.Fixtures
 
   alias Milk.Tournaments
-  alias Milk.Tournaments.Rules.FreeForAll
 
   describe "get tables" do
     test "works", %{conn: conn} do

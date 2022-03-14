@@ -356,7 +356,6 @@ defmodule Milk.LogTest do
       |> Map.get(:id)
       ~> tournament_id
       |> fill_with_team()
-      ~> teams
       |> Enum.map(& &1.id)
       ~> team_id_list
       |> Enum.each(fn team_id ->
@@ -373,22 +372,6 @@ defmodule Milk.LogTest do
         assert length(log.team_member) == 5
         refute is_nil(log.rank)
       end)
-
-      teams
-      |> hd()
-      |> Map.get(:tournament_id)
-      ~> tournament_id
-
-      teams
-      |> hd()
-      |> Map.get(:team_member)
-      |> hd()
-      |> Map.get(:user_id)
-      ~> user_id
-
-      team_id = hd(teams).id
-
-      #assert Log.get_team_log_by_team_id(team_id) == Log.get_team_log_by_tournament_id_and_user_id(tournament_id, user_id)
     end
   end
 end

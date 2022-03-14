@@ -1206,11 +1206,12 @@ defmodule Milk.Tournaments do
 
   """
   @spec delete_tournament(Tournament.t() | map() | integer()) :: {:ok, Tournament.t()} | {:error, Ecto.Changeset.t() | String.t()}
-  def delete_tournament(nil),                 do: {:error, "tournament is nil"}
-  def delete_tournament(%Tournament{id: id}), do: delete_tournament(id)
-  def delete_tournament(%{"id" => id}),       do: delete_tournament(id)
+  def delete_tournament(element, for_finish \\ false)
+  def delete_tournament(nil, _),                          do: {:error, "tournament is nil"}
+  def delete_tournament(%Tournament{id: id}, for_finish), do: delete_tournament(id, for_finish)
+  def delete_tournament(%{"id" => id}, for_finish),       do: delete_tournament(id, for_finish)
 
-  def delete_tournament(id) when is_integer(id) do
+  def delete_tournament(id, for_finish) when is_integer(id) do
     Tournament
     |> join(:left, [t], a in assoc(t, :assistant))
     |> join(:left, [t, a], e in assoc(t, :entrant))
@@ -1219,7 +1220,10 @@ defmodule Milk.Tournaments do
     |> Repo.one()
     ~> tournament
 
-    delete_thumbnail(tournament)
+    unless for_finish do
+      delete_thumbnail(tournament)
+    end
+
     if tournament.enabled_map do
       delete_maps(id)
     end
@@ -2649,7 +2653,7 @@ defmodule Milk.Tournaments do
   end
 
   defp do_finish(%Tournament{} = tournament) do
-    __MODULE__.delete_tournament(tournament)
+    __MODULE__.delete_tournament(tournament, true)
   end
 
   defp create_logs_on_finish(%Tournament{rule: "freeforall"} = tournament, winner_user_id) do
@@ -3590,14 +3594,12 @@ defmodule Milk.Tournaments do
     tournament_id
     |> __MODULE__.get_tournament()
     |> load_relevant_user_id_list(tournament_id)
-    |> Flow.from_enumerable(stages: 1)
-    |> Flow.map(fn user_id ->
+    |> Enum.map(fn user_id ->
       %InteractionMessage{
         state: __MODULE__.state!(tournament_id, user_id),
         user_id: user_id
       }
     end)
-    |> Enum.to_list()
   end
 
   defp load_relevant_user_id_list(nil, tournament_id) do
