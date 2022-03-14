@@ -43,8 +43,13 @@ defmodule MilkWeb.FreeForAllController do
   defp get_categories_log_as_needed([], tournament_id) do
     tournament_id
     |> Log.get_tournament_log_by_tournament_id()
-    |> Map.get(:id)
-    |> FreeForAll.get_categories_log_by_tournament_log_id()
+    ~> log
+
+    if !is_nil(log) do
+      FreeForAll.get_categories_log_by_tournament_log_id(log.id)
+    else
+      []
+    end
   end
   defp get_categories_log_as_needed(categories, _), do: categories
 
