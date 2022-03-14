@@ -18,7 +18,7 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
     MemberMatchInformation
   }
   alias Milk.Tournaments.Rules.FreeForAll.Round.Information, as: RoundInformation
-  alias Milk.Tournaments.Rules.FreeForAll.Round.TeamInformation, as: RoundTeamInformation
+  alias Milk.Tournaments.Rules.FreeForAll.Round.TeamInformation, as: TeamRoundInformation
   alias Milk.Tournaments.Rules.FreeForAll.{
     PointMultiplierCategory,
     Status
@@ -31,6 +31,17 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
     Repo,
     Tournaments
   }
+  alias Milk.Tournaments.Rules.FreeForAllLog.Information, as: InformationLog
+  alias Milk.Tournaments.Rules.FreeForAllLog.Round.Table, as: TableLog
+  alias Milk.Tournaments.Rules.FreeForAllLog.PointMultiplierCategory, as: CategoryLog
+  alias Milk.Tournaments.Rules.FreeForAllLog.Round.Information, as: RoundInformationLog
+  alias Milk.Tournaments.Rules.FreeForAllLog.Round.TeamInformation, as: TeamRoundInformationLog
+  alias Milk.Tournaments.Rules.FreeForAllLog.Round.MatchInformation, as: MatchInformationLog
+  alias Milk.Tournaments.Rules.FreeForAllLog.Round.TeamMatchInformation, as: TeamMatchInformationLog
+  alias Milk.Tournaments.Rules.FreeForAllLog.Round.MemberMatchInformation, as: MemberMatchInformationLog
+  alias Milk.Tournaments.Rules.FreeForAllLog.Round.MemberPointMultiplier, as: MemberPointMultiplierLog
+  alias Milk.Tournaments.Rules.FreeForAllLog.Round.PointMultiplier, as: PointMultiplierLog
+  alias Milk.Tournaments.Rules.FreeForAllLog.Round.TeamPointMultiplier, as: TeamPointMultiplierLog
 
   @behaviour Milk.Tournaments.Rules.Rule
 
@@ -191,26 +202,6 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
   # 関数群
   # =========================================================
   #
-
-  @spec create_freeforall_information(map()) :: {:ok, Information.t()} | {:error, Ecto.Changeset.t()}
-  def create_freeforall_information(attrs \\ %{}) do
-    %Information{}
-    |> Information.changeset(attrs)
-    |> Repo.insert()
-  end
-
-  @spec get_freeforall_information_by_tournament_id(integer()) :: Information.t() | nil
-  def get_freeforall_information_by_tournament_id(tournament_id) do
-    Information
-    |> where([i], i.tournament_id == ^tournament_id)
-    |> Repo.one()
-  end
-
-  def update_freeforall_information(information, attrs \\ %{}) do
-    information
-    |> Information.changeset(attrs)
-    |> Repo.update()
-  end
 
   @doc """
   不要なメンバーを取り除くための関数
@@ -384,7 +375,6 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
         })
 
       member_scores
-      |> IO.inspect(label: :memscores)
       |> Enum.map(fn %{"user_id" => user_id, "score" => score} ->
         __MODULE__.create_member_match_information(%{user_id: user_id, score: score, team_match_information_id: team_match_information.id})
       end)
@@ -657,8 +647,8 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
 
     table = Enum.at(tables, rem(count, length(tables)))
 
-    %RoundTeamInformation{}
-    |> RoundTeamInformation.changeset(%{table_id: table.id, team_id: score_table.team_id})
+    %TeamRoundInformation{}
+    |> TeamRoundInformation.changeset(%{table_id: table.id, team_id: score_table.team_id})
     |> Repo.insert()
 
     extract_teams_from_score_tables(remaining_score_tables, tables, count + 1)
@@ -723,20 +713,19 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
     |> Map.get(:user_id)
   end
 
-  defp finish_tournament_as_needed(tables, tournament, %Information{round_number: round_number}, %Status{current_round_index: current_round_index}) do
-    if round_number <= current_round_index + 1 do
-      winner_id = extract_winner_id(tournament, tables)
-      # すべてのテーブルがfinishedで、すべてのテーブルのmatch_indexがmatch_numberになっていたらfinish
-      tournament.id
-      |> Tournaments.finish(winner_id)
-      |> case do
-        {:ok, tournament} -> {:ok, :finished, tournament}
-        {:error, error}   -> {:error, error}
-      end
-    else
-      {:ok, nil}
+  # FIXME: dialyzerの赤線が引かれるが、ifにするとネストが深くなってしまうのでこの書き方にした。
+  defp finish_tournament_as_needed(tables, tournament, %Information{round_number: round_number}, %Status{current_round_index: current_round_index}) when round_number <= current_round_index + 1 do
+    winner_id = extract_winner_id(tournament, tables)
+    # すべてのテーブルがfinishedで、すべてのテーブルのmatch_indexがmatch_numberになっていたらfinish
+
+    tournament.id
+    |> Tournaments.finish(winner_id)
+    |> case do
+      {:ok, _}        -> {:ok, :finished, tournament}
+      {:error, error} -> {:error, error}
     end
   end
+  defp finish_tournament_as_needed(_, _, _, _), do: {:ok, nil}
 
   def claim_member_scores(team_match_information_id, scores) do
     scores
@@ -751,6 +740,38 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
     |> Tools.boolean_to_tuple()
   end
 
+  @spec create_freeforall_information(map()) :: {:ok, Information.t()} | {:error, Ecto.Changeset.t()}
+  def create_freeforall_information(attrs \\ %{}) do
+    %Information{}
+    |> Information.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  @spec get_freeforall_information_by_tournament_id(integer()) :: Information.t() | nil
+  def get_freeforall_information_by_tournament_id(tournament_id) do
+    Information
+    |> where([i], i.tournament_id == ^tournament_id)
+    |> Repo.one()
+  end
+
+  def get_freeforall_information_log_by_tournament_log_id(tournament_log_id) do
+    InformationLog
+    |> where([i], i.tournament_id == ^tournament_log_id)
+    |> Repo.one()
+  end
+
+  def update_freeforall_information(information, attrs \\ %{}) do
+    information
+    |> Information.changeset(attrs)
+    |> Repo.update()
+  end
+
+  def create_freeforall_information_log(attrs \\ %{}) do
+    %InformationLog{}
+    |> InformationLog.changeset(attrs)
+    |> Repo.insert()
+  end
+
   def get_category(category_id) do
     PointMultiplierCategory
     |> where([c], c.id == ^category_id)
@@ -760,6 +781,12 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
   def get_categories(tournament_id) do
     PointMultiplierCategory
     |> where([c], c.tournament_id == ^tournament_id)
+    |> Repo.all()
+  end
+
+  def get_categories_log_by_tournament_log_id(tournament_log_id) do
+    CategoryLog
+    |> where([c], c.tournament_id == ^tournament_log_id)
     |> Repo.all()
   end
 
@@ -807,15 +834,54 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
     |> Repo.all()
   end
 
+  def get_table_logs_by_tournament_log_id(tournament_log_id) do
+    TableLog
+    |> where([t], t.tournament_id == ^tournament_log_id)
+    |> Repo.all()
+  end
+
+  def create_table_log(attrs \\ %{}) do
+    %TableLog{}
+    |> TableLog.changeset(attrs)
+    |> Repo.insert()
+  end
+
   def get_round_information(table_id) do
     RoundInformation
     |> where([t], t.table_id == ^table_id)
     |> Repo.all()
   end
 
+  def get_round_information_logs_by_table_log_id(table_log_id) do
+    RoundInformationLog
+    |> where([t], t.table_id == ^table_log_id)
+    |> Repo.all()
+  end
+
+  def create_round_information_log(attrs \\ %{}) do
+    %RoundInformationLog{}
+    |> RoundInformationLog.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  def create_team_round_information_log(attrs \\ %{}) do
+    %TeamRoundInformationLog{}
+    |> TeamRoundInformationLog.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  # debug
+  def all_round_team_information(), do: Repo.all(TeamInformation)
+
   def get_round_team_information(table_id) do
     TeamInformation
     |> where([t], t.table_id == ^table_id)
+    |> Repo.all()
+  end
+
+  def get_team_round_information_logs_by_table_log_id(table_log_id) do
+    TeamRoundInformationLog
+    |> where([t], t.table_id == ^table_log_id)
     |> Repo.all()
   end
 
@@ -837,9 +903,21 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
     |> Repo.all()
   end
 
+  def get_team_match_information_logs_by_round_information_log_id(round_information_log_id) do
+    TeamMatchInformationLog
+    |> where([t], t.round_id == ^round_information_log_id)
+    |> Repo.all()
+  end
+
   def load_team_match_information(round_team_information_id) do
     round_team_information_id
     |> __MODULE__.get_team_match_information()
+    |> Repo.preload(:point_multipliers)
+  end
+
+  def load_team_match_information_logs_by_round_information_log_id(round_information_log_id) do
+    round_information_log_id
+    |> __MODULE__.get_team_match_information_logs_by_round_information_log_id()
     |> Repo.preload(:point_multipliers)
   end
 
@@ -849,10 +927,34 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
     |> Repo.all()
   end
 
+  def get_match_information_logs_by_round_information_log_id(round_information_log_id) do
+    MatchInformationLog
+    |> where([t], t.round_id == ^round_information_log_id)
+    |> Repo.all()
+  end
+
+  def load_match_information_logs_by_round_information_log_id(round_information_log_id) do
+    round_information_log_id
+    |> __MODULE__.get_match_information_logs_by_round_information_log_id()
+    |> Repo.all()
+  end
+
   def load_match_information(round_information_id) do
     round_information_id
     |> __MODULE__.get_match_information()
     |> Repo.preload(:point_multipliers)
+  end
+
+  def create_match_information_log(attrs \\ %{}) do
+    %MatchInformationLog{}
+    |> MatchInformationLog.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  def create_team_match_information_log(attrs \\ %{}) do
+    %TeamMatchInformationLog{}
+    |> TeamMatchInformationLog.changeset(attrs)
+    |> Repo.insert()
   end
 
   def create_status(attrs \\ %{}) do
@@ -879,9 +981,21 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
     |> Repo.insert()
   end
 
+  def create_point_multiplier_category_log(attrs \\ %{}) do
+    %CategoryLog{}
+    |> CategoryLog.changeset(attrs)
+    |> Repo.insert()
+  end
+
   def create_point_multiplier(attrs \\ %{}) do
     %PointMultiplier{}
     |> PointMultiplier.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  def create_point_multiplier_log(attrs \\ %{}) do
+    %PointMultiplierLog{}
+    |> PointMultiplierLog.changeset(attrs)
     |> Repo.insert()
   end
 
@@ -891,9 +1005,21 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
     |> Repo.insert()
   end
 
+  def create_team_point_multiplier_log(attrs \\ %{}) do
+    %TeamPointMultiplierLog{}
+    |> TeamPointMultiplierLog.changeset(attrs)
+    |> Repo.insert()
+  end
+
   def create_member_point_multiplier(attrs \\ %{}) do
     %MemberPointMultiplier{}
     |> MemberPointMultiplier.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  def create_member_point_multiplier_log(attrs \\ %{}) do
+    %MemberPointMultiplierLog{}
+    |> MemberPointMultiplierLog.changeset(attrs)
     |> Repo.insert()
   end
 
@@ -907,15 +1033,33 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
     |> Repo.insert()
   end
 
+  def create_member_match_information_log(attrs \\ %{}) do
+    %MemberMatchInformationLog{}
+    |> MemberMatchInformationLog.changeset(attrs)
+    |> Repo.insert()
+  end
+
   def get_member_match_information_list(team_match_information_id) do
     MemberMatchInformation
     |> where([i], i.team_match_information_id == ^team_match_information_id)
     |> Repo.all()
   end
 
+  def get_member_match_information_logs_as_needed(team_match_information_log_id) do
+    MemberMatchInformationLog
+    |> where([i], i.team_match_information_id == ^team_match_information_log_id)
+    |> Repo.all()
+  end
+
   def load_member_match_information_list(team_match_information_id) do
     team_match_information_id
     |> __MODULE__.get_member_match_information_list()
+    |> Repo.preload(:point_multipliers)
+  end
+
+  def load_member_match_information_logs_as_needed(info_id) do
+    info_id
+    |> __MODULE__.get_member_match_information_logs_as_needed()
     |> Repo.preload(:point_multipliers)
   end
 end

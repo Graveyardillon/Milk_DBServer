@@ -43,6 +43,7 @@ defmodule Milk.Tournaments do
     AssistantLog,
     EntrantLog,
     TeamLog,
+    TeamMemberLog,
     TournamentChatTopicLog,
     TournamentLog
   }
@@ -2591,9 +2592,10 @@ defmodule Milk.Tournaments do
   def finish(tournament_id, winner_user_id) do
     tournament = __MODULE__.load_tournament(tournament_id)
 
-    with {:ok, _}          <- finish_participants(tournament),
+    with {:ok, _}          <- create_logs_on_finish(tournament, winner_user_id),
+         {:ok, _}          <- finish_participants(tournament),
          {:ok, _}          <- finish_topics(tournament_id),
-         {:ok, tournament} <- do_finish(tournament, winner_user_id) do
+         {:ok, tournament} <- do_finish(tournament) do
       {:ok, tournament}
     else
       error -> error
@@ -2646,13 +2648,24 @@ defmodule Milk.Tournaments do
     |> Log.create_tournament_chat_topic_log()
   end
 
-  defp do_finish(%Tournament{} = tournament, winner_user_id) do
-    with {:ok, _}          <- create_tournament_log_on_finish(tournament, winner_user_id),
-         {:ok, tournament} <- __MODULE__.delete_tournament(tournament) do
-      {:ok, tournament}
+  defp do_finish(%Tournament{} = tournament) do
+    __MODULE__.delete_tournament(tournament)
+  end
+
+  defp create_logs_on_finish(%Tournament{rule: "freeforall"} = tournament, winner_user_id) do
+    with {:ok, tournament_log}      <- create_tournament_log_on_finish(tournament, winner_user_id),
+         {:ok, _ffa_information_log} <- create_ffa_information_log(tournament_log),
+         {:ok, categories}          <- create_ffa_point_categories_log(tournament_log),
+         {:ok, _tables}              <- create_ffa_tables_log(tournament_log, categories) do
+      {:ok, nil}
     else
-      error -> error
+      {:error, error} -> {:error, error}
+      _               -> {:error, "unexpected error on create logs on finish"}
     end
+  end
+
+  defp create_logs_on_finish(tournament, winner_user_id) do
+    create_tournament_log_on_finish(tournament, winner_user_id)
   end
 
   defp create_tournament_log_on_finish(tournament, winner_user_id) do
@@ -2664,15 +2677,155 @@ defmodule Milk.Tournaments do
     |> Log.create_tournament_log()
   end
 
+  defp create_ffa_information_log(tournament_log) do
+    tournament_log.tournament_id
+    |> FreeForAll.get_freeforall_information_by_tournament_id()
+    |> Map.from_struct()
+    |> Map.put(:tournament_id, tournament_log.id)
+    |> FreeForAll.create_freeforall_information_log()
+  end
+
+  defp create_ffa_tables_log(tournament_log, categories) do
+    tournament_log.tournament_id
+    |> FreeForAll.get_tables_by_tournament_id()
+    |> Enum.map(fn table ->
+      table
+      |> Map.from_struct()
+      |> Map.put(:tournament_id, tournament_log.id)
+      |> FreeForAll.create_table_log()
+      ~> {:ok, table_log}
+
+      create_ffa_round_information_log(table, table_log, tournament_log, categories)
+    end)
+    |> Tools.reduce_ok_list("error on create ffa tables log")
+  end
+
+  defp create_ffa_round_information_log(table, table_log, %TournamentLog{is_team: true} = tournament_log, categories) do
+    table.id
+    |> FreeForAll.get_round_team_information()
+    |> Enum.map(fn round_team_info ->
+      round_team_info
+      |> Map.from_struct()
+      |> Map.put(:table_id, table_log.id)
+      |> FreeForAll.create_team_round_information_log()
+      ~> {:ok, team_round_information_log}
+
+      create_ffa_match_information_log(round_team_info, team_round_information_log, tournament_log, categories)
+    end)
+    |> Tools.reduce_ok_list("error on create ffa round information log")
+  end
+
+  defp create_ffa_round_information_log(table, table_log, %TournamentLog{is_team: false} = tournament_log, categories) do
+    table.id
+    |> FreeForAll.get_round_information()
+    |> Enum.map(fn round_info ->
+      round_info
+      |> Map.from_struct()
+      |> Map.put(:table_id, table_log.id)
+      |> FreeForAll.create_round_information_log()
+      ~> {:ok, round_information_log}
+
+      create_ffa_match_information_log(round_info, round_information_log, tournament_log, categories)
+    end)
+    |> Tools.reduce_ok_list("error on create ffa round information log")
+  end
+
+  defp create_ffa_match_information_log(round_info, round_info_log, %TournamentLog{is_team: true}, categories) do
+    round_info.id
+    |> FreeForAll.load_team_match_information()
+    |> Enum.map(fn team_match_info ->
+      team_match_info
+      |> Map.from_struct()
+      |> Map.put(:round_id, round_info_log.id)
+      |> FreeForAll.create_team_match_information_log()
+      ~> {:ok, team_match_info_log}
+
+      team_match_info.point_multipliers
+      |> Enum.each(fn point_multiplier ->
+        category = Enum.find(categories, fn category -> category.old_category_id == point_multiplier.category_id end)
+
+        point_multiplier
+        |> Map.from_struct()
+        |> Map.put(:team_match_information_id, team_match_info_log.id)
+        |> Map.put(:category_id, category.id)
+        |> FreeForAll.create_team_point_multiplier_log()
+      end)
+
+      team_match_info.id
+      |> FreeForAll.load_member_match_information_list()
+      |> Enum.map(fn member_match_info ->
+        member_match_info
+        |> Map.from_struct()
+        |> Map.put(:team_match_information_id, team_match_info_log.id)
+        |> FreeForAll.create_member_match_information_log()
+        ~> {:ok, member_match_info_log}
+
+        member_match_info.point_multipliers
+        |> Enum.map(fn point_multiplier ->
+          category = Enum.find(categories, fn category -> category.old_category_id == point_multiplier.category_id end)
+
+          point_multiplier
+          |> Map.from_struct()
+          |> Map.put(:member_match_information_id, member_match_info_log.id)
+          |> Map.put(:category_id, category.id)
+          |> FreeForAll.create_member_point_multiplier_log()
+        end)
+        |> Tools.reduce_ok_list("error on member ffa")
+      end)
+      |> Tools.reduce_ok_list("error on create match information log")
+    end)
+    |> Tools.reduce_ok_list("error on create match information log")
+  end
+
+  defp create_ffa_match_information_log(round_info, round_info_log, %TournamentLog{is_team: false}, categories) do
+    round_info.id
+    |> FreeForAll.load_match_information()
+    |> Enum.map(fn match_info ->
+      match_info
+      |> Map.from_struct()
+      |> Map.put(:round_id, round_info_log.id)
+      |> FreeForAll.create_match_information_log()
+      ~> {:ok, match_info_log}
+
+      match_info.point_multipliers
+      |> Enum.map(fn point_multiplier ->
+        category = Enum.find(categories, fn category -> category.old_category_id == point_multiplier.category_id end)
+
+        point_multiplier
+        |> Map.from_struct()
+        |> Map.put(:match_information_id, match_info_log.id)
+        |> Map.put(:category_id, category.id)
+        |> FreeForAll.create_point_multiplier_log()
+      end)
+      |> Tools.reduce_ok_list("error on create match information log")
+    end)
+    |> Tools.reduce_ok_list("error on create match information log")
+  end
+
+  defp create_ffa_point_categories_log(tournament_log) do
+    tournament_log.tournament_id
+    |> FreeForAll.get_categories()
+    |> Enum.map(fn category ->
+      category
+      |> Map.from_struct()
+      |> Map.put(:tournament_id, tournament_log.id)
+      |> FreeForAll.create_point_multiplier_category_log()
+      |> elem(1)
+      |> Map.put(:old_category_id, category.id)
+      ~> category
+
+      {:ok, category}
+    end)
+    |> Tools.reduce_ok_list("error on create point categories")
+  end
+
+
   @doc """
   結果を入力してfinish
   TODO: テストコード
   """
   @spec finish_with_team_result(integer(), [integer()]) :: {:ok, Tournament.t()} | {:error, Ecto.Changeset.t() | String.t() | nil}
   def finish_with_team_result(tournament_id, team_id_list) do
-    # NOTE: ソートされたteam_id_listに基づいてfinish
-    # NOTE: rankを編集、finish関数呼び出し
-
     with {:ok, _}                       <- edit_ranks_on_finish_with_team_result(team_id_list),
          leader when not is_nil(leader) <- __MODULE__.get_leader(hd(team_id_list)),
          {:ok, tournament}              <- __MODULE__.finish(tournament_id, leader.user_id) do
@@ -3963,6 +4116,22 @@ defmodule Milk.Tournaments do
     team_id
     |> __MODULE__.get_leader()
     |> Repo.preload(:user)
+  end
+
+  def get_leader_from_log(team_id) do
+    TeamMemberLog
+    |> where([tml], tml.team_id == ^team_id)
+    |> where([tml], tml.is_leader)
+    |> Repo.one()
+  end
+
+  def load_leader_from_log(team_id) do
+    team_id
+    |> __MODULE__.get_leader_from_log()
+    ~> log
+
+    user = Accounts.get_user(log.user_id)
+    Map.put(log, :user, user)
   end
 
   @doc """

@@ -9,6 +9,7 @@ defmodule Milk.Log do
   alias Common.Tools
 
   alias Milk.{
+    Accounts,
     Repo,
     Tournaments
   }
@@ -898,12 +899,20 @@ defmodule Milk.Log do
     TeamMemberLog
     |> where([t], t.team_id == ^team_id)
     |> Repo.all()
+    |> Enum.map(fn team_member_log ->
+      user = Accounts.get_user(team_member_log.user_id)
+      Map.put(team_member_log, :user, Repo.preload(user, :auth))
+    end)
     ~> team_member_logs
 
     TeamLog
     |> where([t], t.team_id == ^team_id)
     |> Repo.one()
-    |> Map.put(:team_member, team_member_logs)
+    ~> team_log
+
+    unless is_nil(team_log) do
+      Map.put(team_log, :team_member, team_member_logs)
+    end
   end
 
   @doc """
@@ -962,5 +971,15 @@ defmodule Milk.Log do
     TeamMemberLog
     |> where([tm], tm.team_id == ^team_id)
     |> Repo.all()
+  end
+
+  def load_team_member_logs(team_id) do
+    team_id
+    |> __MODULE__.get_team_member_logs()
+    |> Enum.map(fn member ->
+      user = Accounts.get_user(member.user_id)
+      Map.put(member, :user, Repo.preload(user, :auth))
+    end)
+    |> IO.inspect()
   end
 end

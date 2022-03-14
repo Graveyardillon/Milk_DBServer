@@ -62,6 +62,30 @@ defmodule Common.ToolsTest do
     end
   end
 
+  describe "reduce_ok_list/2" do
+    test "works" do
+      list = Enum.to_list(1..10)
+
+      list
+      |> Enum.map(&({:ok, &1}))
+      |> Tools.reduce_ok_list()
+      |> elem(1)
+      |> Kernel.==(list)
+      |> assert()
+    end
+
+    test "doesn't work" do
+      list = Enum.to_list(1..10)
+
+      list
+      |> Enum.map(&({:error, &1}))
+      |> Tools.reduce_ok_list("errmsg")
+      |> then(fn result ->
+        assert {:error, "errmsg"} = result
+      end)
+    end
+  end
+
   describe "to_integer_as_needed/1" do
     @valid_data "5"
     @invalid_data "Hello"

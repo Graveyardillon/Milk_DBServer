@@ -127,6 +127,17 @@ defmodule Common.Tools do
     end
   end
 
+  @spec reduce_ok_list([any()], String.t() | nil) :: {:ok, any()} | {:error, String.t() | nil}
+  def reduce_ok_list(list, error_message \\ nil)
+  def reduce_ok_list(list, error_message) when is_list(list) do
+    if Enum.all?(list, &match?({:ok, _}, &1)) do
+      {:ok, Enum.map(list, &elem(&1, 1))}
+    else
+      {:error, error_message}
+    end
+  end
+  def reduce_ok_list(_, _), do: {:error, "1st argument must be list in reduce_ok_list"}
+
   @doc """
   String to json map if possible.
   """
