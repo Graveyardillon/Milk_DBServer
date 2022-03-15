@@ -134,6 +134,7 @@ defmodule MilkWeb.FreeForAllController do
   defp load_match_information_log_as_needed([], round_information_log_id) do
     FreeForAll.load_match_information_logs_by_round_information_log_id(round_information_log_id)
   end
+  defp load_match_information_log_as_needed(info, _), do: info
 
   def get_team_match_information(conn, %{"round_information_id" => round_information_id}) do
     round_information_id
@@ -149,6 +150,7 @@ defmodule MilkWeb.FreeForAllController do
   defp get_team_match_information_log_as_needed([], round_information_id) do
     FreeForAll.get_team_match_information_logs_by_round_information_log_id(round_information_id)
   end
+  defp get_team_match_information_log_as_needed(info, _), do: info
 
   def load_team_match_information(conn, %{"round_information_id" => round_information_id}) do
     round_information_id

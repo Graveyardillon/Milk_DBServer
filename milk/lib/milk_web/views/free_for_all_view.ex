@@ -163,7 +163,8 @@ defmodule MilkWeb.FreeForAllView do
       data: %{
         current_round_index: status.current_round_index,
         tournament_id: status.tournament_id
-      }
+      },
+      result: true
     }
   end
 
