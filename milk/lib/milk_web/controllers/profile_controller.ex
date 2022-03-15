@@ -31,6 +31,7 @@ defmodule MilkWeb.ProfileController do
       external_services = Accounts.get_external_services(user_id)
       associated_with_discord? = Discord.associated?(user_id)
       finished_tournaments = Tournaments.get_finished_tournaments(user_id)
+        |> IO.inspect(label: :finished)
 
       render(conn, "profile.json",
         user: user,

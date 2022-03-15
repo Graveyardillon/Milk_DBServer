@@ -18,14 +18,21 @@ defmodule MilkWeb.FreeForAllController do
     |> get_freeforall_information_log_as_needed(tournament_id)
     ~> information
 
-    render(conn, "information.json", information: information)
+    if !is_nil(information) do
+      render(conn, "information.json", information: information)
+    else
+      json(conn, %{result: false})
+    end
   end
 
   defp get_freeforall_information_log_as_needed(nil, tournament_id) do
-    tournament_id
-    |> Log.get_tournament_log_by_tournament_id()
-    |> Map.get(:id)
-    |> FreeForAll.get_freeforall_information_log_by_tournament_log_id()
+    log = Log.get_tournament_log_by_tournament_id(tournament_id)
+
+    if !is_nil(log) do
+      FreeForAll.get_freeforall_information_log_by_tournament_log_id(log.id)
+    else
+      nil
+    end
   end
   defp get_freeforall_information_log_as_needed(tournament, _), do: tournament
 
