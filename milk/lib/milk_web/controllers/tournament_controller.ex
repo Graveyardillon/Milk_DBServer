@@ -411,7 +411,7 @@ defmodule MilkWeb.TournamentController do
 
     assistant_user_id_list
     |> Enum.map(&Tools.to_integer_as_needed(&1))
-    |> Enum.filter(&(&1 in obtained_assistant_id_list))
+    |> Enum.filter(&(&1 not in obtained_assistant_id_list))
     |> Enum.map(fn user_id ->
       Tournaments.create_assistant(%{tournament_id: tournament_id, user_id: user_id})
     end)
