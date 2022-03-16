@@ -398,6 +398,32 @@ defmodule MilkWeb.TournamentController do
   end
 
   @doc """
+  アシスタントの更新
+  TODO: テストまだ
+  """
+  def create_assistants(conn, %{"tournament_id" => tournament_id, "assistant_user_id_list" => assistant_user_id_list}) do
+    tournament_id
+    |> Tools.to_integer_as_needed()
+    ~> tournament_id
+    |> Tournaments.get_assistants()
+    |> Enum.map(&(&1.id))
+    ~> obtained_assistant_id_list
+
+    assistant_user_id_list
+    |> Enum.map(&Tools.to_integer_as_needed(&1))
+    |> Enum.filter(&(&1 in obtained_assistant_id_list))
+    |> Enum.map(fn user_id ->
+      Tournaments.create_assistant(%{tournament_id: tournament_id, user_id: user_id})
+    end)
+    |> Enum.all?(&match?({:ok, _}, &1))
+    |> Tools.boolean_to_tuple()
+    |> case do
+      {:ok, _}    -> json(conn, %{result: true})
+      {:error, _} -> json(conn, %{result: false})
+    end
+  end
+
+  @doc """
   Deletes a tournament.
   """
   def delete(conn, %{"tournament_id" => tournament_id}) do
@@ -420,6 +446,25 @@ defmodule MilkWeb.TournamentController do
     # NOTE: discordサーバーが起動していない場合はここがタイムアウトの原因となる
     Discord.send_tournament_delete_notification(discord_server_id)
     {:ok, nil}
+  end
+
+  @doc """
+  アシスタントの削除
+  """
+  def delete_assistant(conn, %{"tournament_id" => tournament_id, "user_id" => user_id}) do
+    tournament_id = Tools.to_integer_as_needed(tournament_id)
+
+    user_id
+    |> Tools.to_integer_as_needed()
+    |> Tournaments.get_assistants_by_user_id()
+    |> Enum.filter(&(&1.tournament_id == tournament_id))
+    |> Enum.map(&Tournaments.delete_assistant(&1))
+    |> Enum.all?(&match?({:ok, _}, &1))
+    |> Tools.boolean_to_tuple()
+    |> case do
+      {:ok, _}    -> json(conn, %{result: true})
+      {:error, _} -> json(conn, %{result: false})
+    end
   end
 
   @doc """

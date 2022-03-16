@@ -4192,6 +4192,8 @@ defmodule Milk.Tournaments do
     |> Repo.insert()
   end
 
+  def delete_assistant(assistant), do: Repo.delete(assistant)
+
   @doc """
   Get teams
   """

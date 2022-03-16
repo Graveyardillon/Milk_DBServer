@@ -36,10 +36,10 @@ defmodule MilkWeb.TeamControllerTest do
 
     tournament.id
     |> Tournaments.create_team(size, leader, members)
-    |> (fn {:ok, team} ->
-          assert team.tournament_id == tournament.id
-          assert team.size == size
-        end).()
+    |> then(fn {:ok, team} ->
+      assert team.tournament_id == tournament.id
+      assert team.size == size
+    end)
 
     {tournament, users}
   end
