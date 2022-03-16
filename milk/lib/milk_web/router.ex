@@ -188,6 +188,7 @@ defmodule MilkWeb.Router do
     put "/tournament/update", TournamentController, :update
     post "/tournament/regenerate_round_robin", TournamentController, :rematch_round_robin_as_needed
     post "/tournament/create_assistants", TournamentController, :create_assistants
+    post "/tournament/create_categories", FreeForAllController, :create_categories
     delete "/tournament/assistant", TournamentController, :delete_assistant
 
     get "/tournament_log/index", TournamentLogController, :index

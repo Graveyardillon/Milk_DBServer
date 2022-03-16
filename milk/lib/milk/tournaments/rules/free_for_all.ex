@@ -975,6 +975,19 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
     |> Repo.one()
   end
 
+  def create_point_multiplier_categories(categories, tournament_id) do
+    categories
+    |> Enum.map(fn category ->
+      category = Map.put(category, "tournament_id", tournament_id)
+
+      %PointMultiplierCategory{}
+      |> PointMultiplierCategory.changeset(category)
+      |> Repo.insert()
+    end)
+    |> Enum.all?(&match?({:ok, _}, &1))
+    |> Tools.boolean_to_tuple()
+  end
+
   def create_point_multiplier_category(attrs \\ %{}) do
     %PointMultiplierCategory{}
     |> PointMultiplierCategory.changeset(attrs)

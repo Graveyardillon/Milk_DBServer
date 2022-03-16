@@ -268,6 +268,23 @@ defmodule MilkWeb.FreeForAllController do
     end
   end
 
+  def create_categories(conn, %{"tournament_id" => tournament_id, "categories" => categories}) do
+    tournament_id = Tools.to_integer_as_needed(tournament_id)
+
+    if categories != [] do
+      tournament_id
+      |> FreeForAll.get_freeforall_information_by_tournament_id()
+      |> FreeForAll.update_freeforall_information(%{enable_point_multiplier: true})
+    end
+
+    categories
+    |> FreeForAll.create_point_multiplier_categories(tournament_id)
+    |> case do
+      {:ok, _}    -> json(conn, %{result: true})
+      {:error, _} -> json(conn, %{result: false})
+    end
+  end
+
   def update_categories(conn, %{"categories" => categories}) do
     categories
     |> FreeForAll.update_categories()
