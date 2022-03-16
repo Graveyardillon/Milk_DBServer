@@ -980,6 +980,5 @@ defmodule Milk.Log do
       user = Accounts.get_user(member.user_id)
       Map.put(member, :user, Repo.preload(user, :auth))
     end)
-    |> IO.inspect()
   end
 end

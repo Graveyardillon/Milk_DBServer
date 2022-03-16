@@ -39,7 +39,11 @@ defmodule MilkWeb.TeamController do
     do_show(conn, team)
   end
 
-  defp load_team_log_as_needed(nil, team_id), do: Log.get_team_log_by_team_id(team_id)
+  # NOTE: idをteam_idで置き換えてしまう
+  defp load_team_log_as_needed(nil, team_id) do
+    log = Log.get_team_log_by_team_id(team_id)
+    Map.put(log, :id, log.team_id)
+  end
   defp load_team_log_as_needed(team, _), do: team
 
   defp do_show(conn, nil),               do: render(conn, "error.json", error: nil)
@@ -219,7 +223,6 @@ defmodule MilkWeb.TeamController do
     team_id
     |> Tools.to_integer_as_needed()
     |> Tournaments.delete_team()
-    |> IO.inspect()
     |> case do
       {:ok, team} ->
         Task.async(fn -> send_remove_team_discord_notification(team) end)

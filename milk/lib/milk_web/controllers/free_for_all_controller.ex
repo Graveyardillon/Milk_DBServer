@@ -28,10 +28,10 @@ defmodule MilkWeb.FreeForAllController do
   defp get_freeforall_information_log_as_needed(nil, tournament_id) do
     log = Log.get_tournament_log_by_tournament_id(tournament_id)
 
-    if !is_nil(log) do
-      FreeForAll.get_freeforall_information_log_by_tournament_log_id(log.id)
-    else
+    if is_nil(log) do
       nil
+    else
+      FreeForAll.get_freeforall_information_log_by_tournament_log_id(log.id)
     end
   end
   defp get_freeforall_information_log_as_needed(tournament, _), do: tournament
@@ -52,10 +52,10 @@ defmodule MilkWeb.FreeForAllController do
     |> Log.get_tournament_log_by_tournament_id()
     ~> log
 
-    if !is_nil(log) do
-      FreeForAll.get_categories_log_by_tournament_log_id(log.id)
-    else
+    if is_nil(log) do
       []
+    else
+      FreeForAll.get_categories_log_by_tournament_log_id(log.id)
     end
   end
   defp get_categories_log_as_needed(categories, _), do: categories

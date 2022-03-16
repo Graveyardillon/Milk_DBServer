@@ -670,19 +670,27 @@ defmodule MilkWeb.TournamentController do
     tournament_id = Tools.to_integer_as_needed(tournament_id)
 
     with %Tournament{is_started: false} = tournament     <- Tournaments.load_tournament(tournament_id),
-         true                                            <- validate_master_id?(tournament, master_id),
+         {:ok, nil}                                      <- validate_master_id?(tournament, master_id),
          {:ok, match_list, match_list_with_fight_result} <- do_start(tournament),
          messages                                        <- Tournaments.all_states!(tournament.id) do
       Task.async(fn -> Discord.send_tournament_start_notification(tournament.discord_server_id) end)
       render(conn, "start.json", %{match_list: match_list, match_list_with_fight_result: match_list_with_fight_result, messages: messages, rule: tournament.rule})
     else
       %Tournament{is_started: true} -> render(conn, "error.json", error: "Tournament has already been started.")
-      false                         -> render(conn, "error.json", error: "invalid master id")
+      {:error, error}               -> render(conn, "error.json", error: Tools.create_error_message(error))
       {:error, error, nil}          -> render(conn, "error.json", error: Tools.create_error_message(error))
     end
   end
 
-  defp validate_master_id?(%Tournament{master_id: mid}, master_id), do: master_id == mid
+  defp validate_master_id?(%Tournament{master_id: master_id}, user_id) when master_id == user_id, do: {:ok, nil}
+  defp validate_master_id?(tournament, user_id) do
+    tournament.id
+    |> Tournaments.get_assistants()
+    |> Enum.any?(fn assistant ->
+      assistant.user_id == user_id
+    end)
+    |> Tools.boolean_to_tuple("invalid user id to start")
+  end
 
   defp do_start(%Tournament{is_team: true} = tournament),
     do: start_team_tournament(tournament)

@@ -936,7 +936,7 @@ defmodule Milk.Tournaments.Rules.FreeForAll do
   def load_match_information_logs_by_round_information_log_id(round_information_log_id) do
     round_information_log_id
     |> __MODULE__.get_match_information_logs_by_round_information_log_id()
-    |> Repo.all()
+    |> Repo.preload(:point_multipliers)
   end
 
   def load_match_information(round_information_id) do
