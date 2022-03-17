@@ -89,6 +89,7 @@ defmodule Milk.Tournaments.Rules do
   defp start_assistant_states!(%Tournament{id: tournament_id, rule: rule}) do
     tournament_id
     |> Tournaments.get_assistants()
+    |> Enum.reject(&Tournaments.is_participant?(tournament_id, &1.user_id))
     |> Enum.map(fn assistant ->
       keyname = __MODULE__.adapt_keyname(assistant.user_id, tournament_id)
 

@@ -28,6 +28,7 @@ defmodule MilkWeb.TournamentController do
   }
 
   alias Milk.Tournaments.{
+    Assistant,
     Claim,
     InteractionMessage,
     MatchInformation,
@@ -412,9 +413,7 @@ defmodule MilkWeb.TournamentController do
     assistant_user_id_list
     |> Enum.map(&Tools.to_integer_as_needed(&1))
     |> Enum.filter(&(&1 not in obtained_assistant_id_list))
-    |> Enum.map(fn user_id ->
-      Tournaments.create_assistant(%{tournament_id: tournament_id, user_id: user_id})
-    end)
+    |> Enum.map(&do_create_assistant(&1, tournament_id))
     |> Enum.all?(&match?({:ok, _}, &1))
     |> Tools.boolean_to_tuple()
     |> case do
@@ -422,6 +421,25 @@ defmodule MilkWeb.TournamentController do
       {:error, _} -> json(conn, %{result: false})
     end
   end
+
+  defp do_create_assistant(user_id, tournament_id) do
+    with {:ok, assistant} <- Tournaments.create_assistant(%{tournament_id: tournament_id, user_id: user_id}),
+         {:ok, _}         <- initialize_assistant_state_as_needed(assistant) do
+      {:ok, nil}
+    else
+      {:error, error} -> {:error, error}
+      _               -> {:error, "unexpected error on create assistant"}
+    end
+  end
+
+  defp initialize_assistant_state_as_needed(%Assistant{user_id: user_id, tournament_id: tournament_id} = assistant) do
+    if Tournaments.is_participant?(tournament_id, user_id) do
+      {:ok, nil}
+    else
+      Tournaments.initialize_assistant_state!(assistant)
+    end
+  end
+
 
   @doc """
   Deletes a tournament.
