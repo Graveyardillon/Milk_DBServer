@@ -7,7 +7,6 @@ defmodule Milk.Tournaments.Rules do
   alias Common.Tools
   alias Milk.Tournaments
   alias Milk.Tournaments.{
-    Assistant,
     Progress,
     Tournament
   }
@@ -94,8 +93,10 @@ defmodule Milk.Tournaments.Rules do
       keyname = __MODULE__.adapt_keyname(assistant.user_id, tournament_id)
 
       case rule do
-        "basic"   -> Basic.trigger!(keyname, Basic.assistant_trigger())
-        "flipban" -> FlipBan.trigger!(keyname, FlipBan.assistant_trigger())
+        "basic"              -> Basic.trigger!(keyname, Basic.assistant_trigger())
+        "flipban"            -> FlipBan.trigger!(keyname, FlipBan.assistant_trigger())
+        "flipban_roundrobin" -> FlipBanRoundRobin.trigger!(keyname, FlipBanRoundRobin.assistant_trigger())
+        "freeforall"         -> FreeForAll.trigger!(keyname, FreeForAll.assistant_trigger())
       end
     end)
     |> Enum.all?(&match?({:ok, _}, &1))
