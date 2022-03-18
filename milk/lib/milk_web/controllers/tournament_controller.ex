@@ -28,6 +28,7 @@ defmodule MilkWeb.TournamentController do
   }
 
   alias Milk.Tournaments.{
+    Assistant,
     Claim,
     InteractionMessage,
     MatchInformation,
@@ -398,6 +399,49 @@ defmodule MilkWeb.TournamentController do
   end
 
   @doc """
+  アシスタントの更新
+  TODO: テストまだ
+  """
+  def create_assistants(conn, %{"tournament_id" => tournament_id, "assistant_user_id_list" => assistant_user_id_list}) do
+    tournament_id
+    |> Tools.to_integer_as_needed()
+    ~> tournament_id
+    |> Tournaments.get_assistants()
+    |> Enum.map(&(&1.id))
+    ~> obtained_assistant_id_list
+
+    assistant_user_id_list
+    |> Enum.map(&Tools.to_integer_as_needed(&1))
+    |> Enum.filter(&(&1 not in obtained_assistant_id_list))
+    |> Enum.map(&do_create_assistant(&1, tournament_id))
+    |> Enum.all?(&match?({:ok, _}, &1))
+    |> Tools.boolean_to_tuple()
+    |> case do
+      {:ok, _}    -> json(conn, %{result: true})
+      {:error, _} -> json(conn, %{result: false})
+    end
+  end
+
+  defp do_create_assistant(user_id, tournament_id) do
+    with {:ok, assistant} <- Tournaments.create_assistant(%{tournament_id: tournament_id, user_id: user_id}),
+         {:ok, _}         <- initialize_assistant_state_as_needed(assistant) do
+      {:ok, nil}
+    else
+      {:error, error} -> {:error, error}
+      _               -> {:error, "unexpected error on create assistant"}
+    end
+  end
+
+  defp initialize_assistant_state_as_needed(%Assistant{user_id: user_id, tournament_id: tournament_id} = assistant) do
+    if Tournaments.is_participant?(tournament_id, user_id) do
+      {:ok, nil}
+    else
+      Tournaments.initialize_assistant_state!(assistant)
+    end
+  end
+
+
+  @doc """
   Deletes a tournament.
   """
   def delete(conn, %{"tournament_id" => tournament_id}) do
@@ -420,6 +464,25 @@ defmodule MilkWeb.TournamentController do
     # NOTE: discordサーバーが起動していない場合はここがタイムアウトの原因となる
     Discord.send_tournament_delete_notification(discord_server_id)
     {:ok, nil}
+  end
+
+  @doc """
+  アシスタントの削除
+  """
+  def delete_assistant(conn, %{"tournament_id" => tournament_id, "user_id" => user_id}) do
+    tournament_id = Tools.to_integer_as_needed(tournament_id)
+
+    user_id
+    |> Tools.to_integer_as_needed()
+    |> Tournaments.get_assistants_by_user_id()
+    |> Enum.filter(&(&1.tournament_id == tournament_id))
+    |> Enum.map(&Tournaments.delete_assistant(&1))
+    |> Enum.all?(&match?({:ok, _}, &1))
+    |> Tools.boolean_to_tuple()
+    |> case do
+      {:ok, _}    -> json(conn, %{result: true})
+      {:error, _} -> json(conn, %{result: false})
+    end
   end
 
   @doc """
@@ -670,19 +733,27 @@ defmodule MilkWeb.TournamentController do
     tournament_id = Tools.to_integer_as_needed(tournament_id)
 
     with %Tournament{is_started: false} = tournament     <- Tournaments.load_tournament(tournament_id),
-         true                                            <- validate_master_id?(tournament, master_id),
+         {:ok, nil}                                      <- validate_master_id?(tournament, master_id),
          {:ok, match_list, match_list_with_fight_result} <- do_start(tournament),
          messages                                        <- Tournaments.all_states!(tournament.id) do
       Task.async(fn -> Discord.send_tournament_start_notification(tournament.discord_server_id) end)
       render(conn, "start.json", %{match_list: match_list, match_list_with_fight_result: match_list_with_fight_result, messages: messages, rule: tournament.rule})
     else
       %Tournament{is_started: true} -> render(conn, "error.json", error: "Tournament has already been started.")
-      false                         -> render(conn, "error.json", error: "invalid master id")
+      {:error, error}               -> render(conn, "error.json", error: Tools.create_error_message(error))
       {:error, error, nil}          -> render(conn, "error.json", error: Tools.create_error_message(error))
     end
   end
 
-  defp validate_master_id?(%Tournament{master_id: mid}, master_id), do: master_id == mid
+  defp validate_master_id?(%Tournament{master_id: master_id}, user_id) when master_id == user_id, do: {:ok, nil}
+  defp validate_master_id?(tournament, user_id) do
+    tournament.id
+    |> Tournaments.get_assistants()
+    |> Enum.any?(fn assistant ->
+      assistant.user_id == user_id
+    end)
+    |> Tools.boolean_to_tuple("invalid user id to start")
+  end
 
   defp do_start(%Tournament{is_team: true} = tournament),
     do: start_team_tournament(tournament)

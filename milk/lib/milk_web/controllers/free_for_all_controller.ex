@@ -18,14 +18,21 @@ defmodule MilkWeb.FreeForAllController do
     |> get_freeforall_information_log_as_needed(tournament_id)
     ~> information
 
-    render(conn, "information.json", information: information)
+    if !is_nil(information) do
+      render(conn, "information.json", information: information)
+    else
+      json(conn, %{result: false})
+    end
   end
 
   defp get_freeforall_information_log_as_needed(nil, tournament_id) do
-    tournament_id
-    |> Log.get_tournament_log_by_tournament_id()
-    |> Map.get(:id)
-    |> FreeForAll.get_freeforall_information_log_by_tournament_log_id()
+    log = Log.get_tournament_log_by_tournament_id(tournament_id)
+
+    if is_nil(log) do
+      nil
+    else
+      FreeForAll.get_freeforall_information_log_by_tournament_log_id(log.id)
+    end
   end
   defp get_freeforall_information_log_as_needed(tournament, _), do: tournament
 
@@ -45,10 +52,10 @@ defmodule MilkWeb.FreeForAllController do
     |> Log.get_tournament_log_by_tournament_id()
     ~> log
 
-    if !is_nil(log) do
-      FreeForAll.get_categories_log_by_tournament_log_id(log.id)
-    else
+    if is_nil(log) do
       []
+    else
+      FreeForAll.get_categories_log_by_tournament_log_id(log.id)
     end
   end
   defp get_categories_log_as_needed(categories, _), do: categories
@@ -134,6 +141,7 @@ defmodule MilkWeb.FreeForAllController do
   defp load_match_information_log_as_needed([], round_information_log_id) do
     FreeForAll.load_match_information_logs_by_round_information_log_id(round_information_log_id)
   end
+  defp load_match_information_log_as_needed(info, _), do: info
 
   def get_team_match_information(conn, %{"round_information_id" => round_information_id}) do
     round_information_id
@@ -149,6 +157,7 @@ defmodule MilkWeb.FreeForAllController do
   defp get_team_match_information_log_as_needed([], round_information_id) do
     FreeForAll.get_team_match_information_logs_by_round_information_log_id(round_information_id)
   end
+  defp get_team_match_information_log_as_needed(info, _), do: info
 
   def load_team_match_information(conn, %{"round_information_id" => round_information_id}) do
     round_information_id
@@ -253,6 +262,23 @@ defmodule MilkWeb.FreeForAllController do
     |> Tools.to_integer_as_needed()
     |> FreeForAll.get_freeforall_information_by_tournament_id()
     |> FreeForAll.update_freeforall_information(information)
+    |> case do
+      {:ok, _}    -> json(conn, %{result: true})
+      {:error, _} -> json(conn, %{result: false})
+    end
+  end
+
+  def create_categories(conn, %{"tournament_id" => tournament_id, "categories" => categories}) do
+    tournament_id = Tools.to_integer_as_needed(tournament_id)
+
+    if categories != [] do
+      tournament_id
+      |> FreeForAll.get_freeforall_information_by_tournament_id()
+      |> FreeForAll.update_freeforall_information(%{enable_point_multiplier: true})
+    end
+
+    categories
+    |> FreeForAll.create_point_multiplier_categories(tournament_id)
     |> case do
       {:ok, _}    -> json(conn, %{result: true})
       {:error, _} -> json(conn, %{result: false})

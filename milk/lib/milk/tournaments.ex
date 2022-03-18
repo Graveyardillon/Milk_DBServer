@@ -3031,7 +3031,7 @@ defmodule Milk.Tournaments do
         |> Repo.exists?()
         |> if do
           {:ok, assistant} = Repo.insert(%Assistant{user_id: id, tournament_id: tournament_id})
-          initialize_assistant_state!(assistant)
+          __MODULE__.initialize_assistant_state!(assistant)
           true
         else
           false
@@ -3045,7 +3045,7 @@ defmodule Milk.Tournaments do
     end
   end
 
-  defp initialize_assistant_state!(%Assistant{user_id: user_id, tournament_id: tournament_id}) do
+  def initialize_assistant_state!(%Assistant{user_id: user_id, tournament_id: tournament_id}) do
     tournament = __MODULE__.get_tournament(tournament_id)
     keyname = Rules.adapt_keyname(user_id, tournament_id)
 
@@ -3056,6 +3056,9 @@ defmodule Milk.Tournaments do
       "freeforall"         -> FreeForAll.build_dfa_instance(keyname, is_team: tournament.is_team)
       _                    -> raise "Invalid tournament"
     end
+    |> IO.inspect()
+
+    {:ok, nil}
   end
 
   @doc """
@@ -4191,6 +4194,8 @@ defmodule Milk.Tournaments do
     |> Assistant.changeset(attrs)
     |> Repo.insert()
   end
+
+  def delete_assistant(assistant), do: Repo.delete(assistant)
 
   @doc """
   Get teams

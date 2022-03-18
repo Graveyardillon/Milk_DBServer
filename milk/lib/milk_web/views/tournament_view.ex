@@ -209,6 +209,7 @@ defmodule MilkWeb.TournamentView do
         tournament_id: tournament_log.tournament_id,
         winner_id: tournament_log.winner_id,
         master_id: tournament_log.master_id,
+        platform: tournament_log.platform_id,
         name: tournament_log.name,
         is_team: tournament_log.is_team,
         team_size: tournament_log.team_size,
@@ -216,12 +217,13 @@ defmodule MilkWeb.TournamentView do
         rule: tournament_log.rule,
         type: tournament_log.type,
         thumbnail_path: tournament_log.thumbnail_path,
-        entrants:
-          Enum.map(tournament_log.entrants, fn user ->
-            %{
-              user_id: user.user_id
-            }
-          end)
+        # entrants: unless is_nil(tournament_log.entrants) do
+        #     Enum.map(tournament_log.entrants, fn user ->
+        #       %{
+        #         user_id: user.user_id
+        #       }
+        #     end)
+        #   end
       },
       is_log: true,
       result: true

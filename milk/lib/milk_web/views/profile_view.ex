@@ -42,7 +42,7 @@ defmodule MilkWeb.ProfileView do
         records: render_many(records, ProfileView, "rank.json", as: :record),
         external_services: render_many(external_services, ProfileView, "external_service.json", as: :external_service),
         associated_with_discord: associated_with_discord,
-        finished_tournaments: render_many(finished_tournaments, TournamentView, "tournament.json", as: :tournament)
+        finished_tournaments: render_many(finished_tournaments, TournamentView, "tournament_log.json", as: :tournament_log)
       },
       result: true
     }
