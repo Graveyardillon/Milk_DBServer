@@ -584,7 +584,7 @@ defmodule MilkWeb.TournamentController do
 
     result
     |> is_valid_deadline?(tournament)
-    |> is_valid_start_recruitment_date?(tournament)
+    #|> is_valid_start_recruitment_date?(tournament)
     |> is_valid_capacity?(tournament, entrants)
     |> already_started?(tournament)
     |> already_participated?(entrants, user_id)
@@ -740,6 +740,7 @@ defmodule MilkWeb.TournamentController do
       render(conn, "start.json", %{match_list: match_list, match_list_with_fight_result: match_list_with_fight_result, messages: messages, rule: tournament.rule})
     else
       %Tournament{is_started: true} -> render(conn, "error.json", error: "Tournament has already been started.")
+      {:error, nil}                 -> render(conn, "error.json", error: nil)
       {:error, error}               -> render(conn, "error.json", error: Tools.create_error_message(error))
       {:error, error, nil}          -> render(conn, "error.json", error: Tools.create_error_message(error))
     end
