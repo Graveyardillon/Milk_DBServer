@@ -78,6 +78,29 @@ defmodule MilkWeb.TeamController do
   Create team.
   """
   @spec create(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def create(conn, %{"tournament_id" => tournament_id, "size" => size, "leader_id" => leader_id, "user_id_list" => user_id_list, "name" => name}) do
+    tournament_id = Tools.to_integer_as_needed(tournament_id)
+    size          = Tools.to_integer_as_needed(size)
+    leader_id     = Tools.to_integer_as_needed(leader_id)
+    user_id_list  = Enum.map(user_id_list, &Tools.to_integer_as_needed(&1))
+
+    confirmed_teams = Tournaments.get_confirmed_teams(tournament_id)
+
+    with tournament when not is_nil(tournament) <- Tournaments.get_tournament(tournament_id),
+         {:ok, nil}                             <- validate_capacity(tournament, confirmed_teams),
+         {:ok, nil}                             <- validate_duplicated_request(tournament.id, leader_id),
+         {:ok, nil}                             <- validate_associated_with_discord(tournament, leader_id),
+         {:ok, team}                            <- Tournaments.create_team(tournament.id, size, leader_id, user_id_list, name) do
+      render(conn, "show.json", team: team)
+    else
+      {:ok, :leader_only, team} ->
+        Task.async(fn -> send_add_team_discord_notification(team) end)
+        render(conn, "show.json", team: team)
+      nil             -> render(conn, "error.json", error: "tournament is nil")
+      {:error, error} -> render(conn, "error.json", error: error)
+    end
+  end
+
   def create(conn, %{"tournament_id" => tournament_id, "size" => size, "leader_id" => leader_id, "user_id_list" => user_id_list}) do
     tournament_id = Tools.to_integer_as_needed(tournament_id)
     size          = Tools.to_integer_as_needed(size)
