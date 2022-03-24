@@ -3855,6 +3855,7 @@ defmodule Milk.Tournaments do
   end
 
   @spec do_create_team(integer(), integer(), integer(), String.t()) :: {:ok, Team.t()} | {:error, Ecto.Changeset.t()}
+  defp do_create_team(tournament_id, size, leader_id, nil), do: do_create_team(tournament_id, size, leader_id, "")
   defp do_create_team(tournament_id, size, leader_id, "") do
     leader = Accounts.get_user(leader_id)
 
