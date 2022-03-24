@@ -219,6 +219,114 @@ defmodule MilkWeb.TeamControllerTest do
       end)
     end
 
+    test "works with name", %{conn: conn} do
+      tournament = fixture_tournament(is_team: true)
+      size = 5
+      leader_id = fixture_user(num: 1).id
+
+      2..5
+      |> Enum.to_list()
+      |> Enum.map(fn n ->
+        user = fixture_user(num: n)
+        user.id
+      end)
+      ~> user_id_list
+
+      conn =
+        post(
+          conn,
+          Routes.team_path(conn, :create),
+          tournament_id: tournament.id,
+          size: size,
+          leader_id: leader_id,
+          user_id_list: user_id_list,
+          name: "super team name"
+        )
+
+      conn
+      |> json_response(200)
+      |> Map.get("data")
+      |> then(fn data ->
+        assert data["tournament_id"] == tournament.id
+        assert data["size"] == size
+        assert data["name"] == "super team name"
+      end)
+
+      assert json_response(conn, 200)["result"]
+
+      # NOTE: 通知が作成されているかどうかの確認
+      user_id_list
+      |> Enum.each(fn user_id ->
+        conn
+        |> get(Routes.notif_path(conn, :get_list), %{"user_id" => user_id})
+        |> json_response(200)
+        |> Map.get("data")
+        |> Enum.map(fn notification ->
+          assert notification["user_id"] == user_id
+          #assert String.contains?(notification["title"], "からチーム招待されました")
+          assert notification["process_id"] == "TEAM_INVITE"
+        end)
+        |> length()
+        |> then(fn len ->
+          assert len != 0
+        end)
+      end)
+    end
+
+    test "works with nil name", %{conn: conn} do
+      tournament = fixture_tournament(is_team: true)
+      size = 5
+      leader_id = fixture_user(num: 1).id
+
+      2..5
+      |> Enum.to_list()
+      |> Enum.map(fn n ->
+        user = fixture_user(num: n)
+        user.id
+      end)
+      ~> user_id_list
+
+      conn =
+        post(
+          conn,
+          Routes.team_path(conn, :create),
+          tournament_id: tournament.id,
+          size: size,
+          leader_id: leader_id,
+          user_id_list: user_id_list,
+          name: nil
+        )
+
+      conn
+      |> json_response(200)
+      |> Map.get("data")
+      |> then(fn data ->
+        assert data["tournament_id"] == tournament.id
+        assert data["size"] == size
+        assert data["name"]
+      end)
+
+      assert json_response(conn, 200)["result"]
+
+      # NOTE: 通知が作成されているかどうかの確認
+      user_id_list
+      |> Enum.each(fn user_id ->
+        conn
+        |> get(Routes.notif_path(conn, :get_list), %{"user_id" => user_id})
+        |> json_response(200)
+        |> Map.get("data")
+        |> Enum.map(fn notification ->
+          assert notification["user_id"] == user_id
+          #assert String.contains?(notification["title"], "からチーム招待されました")
+          assert notification["process_id"] == "TEAM_INVITE"
+        end)
+        |> length()
+        |> then(fn len ->
+          assert len != 0
+        end)
+      end)
+    end
+
     test "over tournament size", %{conn: conn} do
       tournament = fixture_tournament(capacity: 1, is_team: true)
       leader_id = fixture_user(num: 1).id

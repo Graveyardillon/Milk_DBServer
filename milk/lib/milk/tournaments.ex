@@ -3804,12 +3804,13 @@ defmodule Milk.Tournaments do
   @doc """
   Create a team.
   """
-  @spec create_team(integer(), integer(), integer(), [integer()]) :: {:ok, Team.t()} | {:error, Ecto.Changeset.t()}
-  def create_team(_, _, _, user_id_list) when not is_list(user_id_list), do: {:error, "user id list should be list"}
+  @spec create_team(integer(), integer(), integer(), [integer()], String.t()) :: {:ok, Team.t()} | {:error, Ecto.Changeset.t()}
+  def create_team(tournament_id, size, leader_user_id, user_id_list, name \\ "")
+  def create_team(_, _, _, user_id_list, _) when not is_list(user_id_list), do: {:error, "user id list should be list"}
 
   # NOTE: リーダーのみで参加したとき
-  def create_team(tournament_id, size, leader_user_id, []) do
-    with {:ok, team}                            <- do_create_team(tournament_id, size, leader_user_id),
+  def create_team(tournament_id, size, leader_user_id, [], name) do
+    with {:ok, team}                            <- do_create_team(tournament_id, size, leader_user_id, name),
          {:ok, _}                               <- create_team_leader(team.id, leader_user_id),
          {:ok, _}                               <- verify_team_as_needed(team.id),
          tournament when not is_nil(tournament) <- __MODULE__.get_tournament(team.tournament_id),
@@ -3823,9 +3824,9 @@ defmodule Milk.Tournaments do
     end
   end
 
-  def create_team(tournament_id, size, leader_user_id, user_id_list) do
+  def create_team(tournament_id, size, leader_user_id, user_id_list, name) do
     with {:ok, nil}                             <- validate_user_is_not_member(tournament_id, user_id_list),
-         {:ok, team}                            <- do_create_team(tournament_id, size, leader_user_id),
+         {:ok, team}                            <- do_create_team(tournament_id, size, leader_user_id, name),
          {:ok, _}                               <- create_team_leader(team.id, leader_user_id),
          {:ok, members}                         <- __MODULE__.create_team_members(team.id, user_id_list),
          {:ok, invitations}                     <- __MODULE__.create_team_invitations(members, leader_user_id),
@@ -3853,8 +3854,9 @@ defmodule Milk.Tournaments do
     |> Tools.boolean_to_tuple("error on validate user is not a member")
   end
 
-  @spec do_create_team(integer(), integer(), integer()) :: {:ok, Team.t()} | {:error, Ecto.Changeset.t()}
-  defp do_create_team(tournament_id, size, leader_id) do
+  @spec do_create_team(integer(), integer(), integer(), String.t()) :: {:ok, Team.t()} | {:error, Ecto.Changeset.t()}
+  defp do_create_team(tournament_id, size, leader_id, nil), do: do_create_team(tournament_id, size, leader_id, "")
+  defp do_create_team(tournament_id, size, leader_id, "") do
     leader = Accounts.get_user(leader_id)
 
     %Team{}
@@ -3862,6 +3864,19 @@ defmodule Milk.Tournaments do
       "tournament_id" => tournament_id,
       "size" => size,
       "name" => "#{leader.name}のチーム",
+      "icon_path" => leader.icon_path
+    })
+    |> Repo.insert()
+  end
+
+  defp do_create_team(tournament_id, size, leader_id, name) do
+    leader = Accounts.get_user(leader_id)
+
+    %Team{}
+    |> Team.changeset(%{
+      "tournament_id" => tournament_id,
+      "size" => size,
+      "name" => name,
       "icon_path" => leader.icon_path
     })
     |> Repo.insert()
