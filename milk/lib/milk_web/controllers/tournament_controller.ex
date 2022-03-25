@@ -1406,29 +1406,58 @@ defmodule MilkWeb.TournamentController do
   defp do_claim_score(conn, user_id, tournament, score, match_index) do
     # NOTE: あとでtournament変数はシャドウイングするので必要な情報だけ退避しておく
     tournament_id = tournament.id
-    rule = tournament.rule
 
     with id when not is_nil(id)    <- Progress.get_necessary_id(tournament_id, user_id),
          {:ok, opponent}           <- Tournaments.get_opponent(tournament_id, user_id),
          {:ok, _}                  <- Progress.insert_score(tournament_id, id, score) do
-      Progress.get_score(tournament_id, opponent.id)
-      case Progress.get_score(tournament_id, opponent.id) do
-        nil ->
-          with  {:ok, _}   <- Tournaments.waiting_for_score_input_state(tournament, user_id),
-                tournament <- Tournaments.get_tournament(tournament_id) do
+      after_do_claim_score(conn, tournament, opponent, user_id, id, score, match_index)
+    else
+      nil           -> render(conn, "error.json", error: "Invalid state")
+      false         -> render(conn, "error.json", error: "Invalid state")
+      {:error, msg} -> render(conn, "error.json", error: msg)
+    end
+  end
+
+  defp after_do_claim_score(conn, tournament, opponent, user_id, id, score, match_index) do
+    case Progress.get_score(tournament.id, opponent.id) do
+      nil ->
+        with  {:ok, _}   <- Tournaments.waiting_for_score_input_state(tournament, user_id),
+              tournament <- Tournaments.get_tournament(tournament.id) do
+          claim = %Claim{
+            validated: true,
+            completed: false,
+            is_finished: is_nil(tournament),
+            interaction_messages: [],
+            rule: tournament.rule
+          }
+          render(conn, "claim.json", claim: claim)
+        end
+      opponent_score ->
+        tournament_id = tournament.id
+        rule =  tournament.rule
+        with  {:ok, winner_id, loser_id, winner_score, loser_score, _} <- calculate_winner(id, opponent.id, score, opponent_score),
+              {:ok, nil}                                               <- proceed_to_next_match(tournament, winner_id, loser_id, winner_score, loser_score, match_index),
+              tournament                                               <- Tournaments.get_tournament(tournament.id) do
+          claim = %Claim{
+            validated: true,
+            completed: true,
+            is_finished: is_nil(tournament),
+            interaction_messages: Tournaments.all_states!(tournament_id),
+            rule: rule
+          }
+          render(conn, "claim.json", claim: claim)
+        else
+          nil ->
             claim = %Claim{
-              validated: true,
-              completed: false,
-              is_finished: is_nil(tournament),
+              validated:   true,
+              completed:   false,
+              is_finished: false,
               interaction_messages: [],
               rule: rule
             }
             render(conn, "claim.json", claim: claim)
-          end
-        opponent_score ->
-          with  {:ok, winner_id, loser_id, winner_score, loser_score, _} <- calculate_winner(id, opponent.id, score, opponent_score),
-                {:ok, nil}                                               <- proceed_to_next_match(tournament, winner_id, loser_id, winner_score, loser_score, match_index),
-                tournament                                               <- Tournaments.get_tournament(tournament_id) do
+          {:ok, :regenerated} ->
+            tournament = Tournaments.get_tournament(tournament.id)
             claim = %Claim{
               validated: true,
               completed: true,
@@ -1437,53 +1466,28 @@ defmodule MilkWeb.TournamentController do
               rule: rule
             }
             render(conn, "claim.json", claim: claim)
-          else
-            nil ->
-              claim = %Claim{
-                validated:   true,
-                completed:   false,
-                is_finished: false,
-                interaction_messages: [],
-                rule: rule
-              }
-              render(conn, "claim.json", claim: claim)
-            {:ok, :regenerated} ->
-              tournament = Tournaments.get_tournament(tournament_id)
-              claim = %Claim{
-                validated: true,
-                completed: true,
-                is_finished: is_nil(tournament),
-                interaction_messages: Tournaments.all_states!(tournament_id),
-                rule: rule
-              }
-              render(conn, "claim.json", claim: claim)
-            # NOTE: 重複報告が起きたときの処理
-            {:error, id, opponent_id, _} ->
-              tournament.id
-              |> duplicated_claim_process(id, opponent_id, score)
-              |> case do
-                {:ok, messages, user_id, opponent_user_id} ->
-                  claim = %Claim{
-                    validated:            false,
-                    completed:            false,
-                    is_finished:          false,
-                    opponent_user_id:     opponent_user_id,
-                    interaction_messages: messages,
-                    rule:                 rule,
-                    user_id:              user_id
-                  }
-                  render(conn, "claim.json", claim: claim)
+          # NOTE: 重複報告が起きたときの処理
+          {:error, id, opponent_id, _} ->
+            tournament.id
+            |> duplicated_claim_process(id, opponent_id, score)
+            |> case do
+              {:ok, messages, user_id, opponent_user_id} ->
+                claim = %Claim{
+                  validated:            false,
+                  completed:            false,
+                  is_finished:          false,
+                  opponent_user_id:     opponent_user_id,
+                  interaction_messages: messages,
+                  rule:                 rule,
+                  user_id:              user_id
+                }
+                render(conn, "claim.json", claim: claim)
 
-                _ -> render(conn, "error.json", error: "error on duplicated claim process")
-              end
-
-              {:error, msg} -> render(conn, "error.json", error: msg)
+              _ -> render(conn, "error.json", error: "error on duplicated claim process")
             end
-          end
-    else
-      nil           -> render(conn, "error.json", error: "Invalid state")
-      false         -> render(conn, "error.json", error: "Invalid state")
-      {:error, msg} -> render(conn, "error.json", error: msg)
+
+            {:error, msg} -> render(conn, "error.json", error: msg)
+        end
     end
   end
 
@@ -1815,38 +1819,6 @@ defmodule MilkWeb.TournamentController do
         json(conn, %{result: false})
     end
   end
-
-  # def force_to_defeat(conn, %{"tournament_id" => tournament_id, "target_user_id" => target_user_id}) do
-  #   tournament_id = Tools.to_integer_as_needed(tournament_id)
-  #   target_user_id = Tools.to_integer_as_needed(target_user_id)
-
-  #   tournament_id
-  #   |> Tournaments.get_opponent(target_user_id)
-  #   |> case do
-  #     {:ok, winner} ->
-  #       Tournaments.promote_rank(%{"tournament_id" => tournament_id, "user_id" => winner.id})
-  #       Tournaments.store_score(tournament_id, winner.id, target_user_id, 0, -1, 0)
-  #       Tournaments.delete_loser_process(tournament_id, [target_user_id])
-  #       finish_as_needed(tournament_id, winner.id)
-
-  #     {:wait, nil} ->
-  #       tournament_id
-  #       |> Progress.get_match_list()
-  #       |> Tournaments.find_match(target_user_id)
-  #       |> Kernel.--([target_user_id])
-  #       |> hd()
-  #       |> Enum.each(fn user_id ->
-  #         Tournaments.force_to_promote_rank(%{
-  #           "tournament_id" => tournament_id,
-  #           "user_id" => user_id
-  #         })
-  #       end)
-
-  #       Tournaments.delete_loser_process(tournament_id, [target_user_id])
-  #   end
-
-  #   json(conn, %{result: true})
-  # end
 
   @doc """
   Get a tournament by url.
