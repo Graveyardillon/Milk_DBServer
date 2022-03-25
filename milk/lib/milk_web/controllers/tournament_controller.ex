@@ -1327,7 +1327,11 @@ defmodule MilkWeb.TournamentController do
     ~> tournament
 
     if claimable_state?(tournament_id, user_id) do
-      do_claim_score(conn, user_id, tournament, 1)
+      case do_claim_score(user_id, tournament, 1) do
+        {:ok, tournament, opponent, user_id, id, score, match_index} -> after_do_claim_score(conn, tournament, opponent, user_id, id, score, match_index)
+        nil           -> render(conn, "error.json", error: "Invalid state")
+        {:error, msg} -> render(conn, "error.json", error: msg)
+      end
     else
       json(conn, %{result: false, error: "Invalid state"})
     end
@@ -1341,7 +1345,11 @@ defmodule MilkWeb.TournamentController do
     tournament = Tournaments.get_tournament_by_discord_server_id(discord_server_id)
 
     if claimable_state?(tournament.id, user.id) do
-      do_claim_score(conn, user.id, tournament, 1)
+      case do_claim_score(user.id, tournament, 1) do
+        {:ok, tournament, opponent, user_id, id, score, match_index} -> after_do_claim_score(conn, tournament, opponent, user_id, id, score, match_index)
+        nil           -> render(conn, "error.json", error: "Invalid state")
+        {:error, msg} -> render(conn, "error.json", error: msg)
+      end
     else
       json(conn, %{result: false, error: "Invalid state"})
     end
@@ -1359,7 +1367,11 @@ defmodule MilkWeb.TournamentController do
     ~> tournament
 
     if claimable_state?(tournament_id, user_id) do
-      do_claim_score(conn, user_id, tournament, 0)
+      case do_claim_score(user_id, tournament, 0) do
+        {:ok, tournament, opponent, user_id, id, score, match_index} -> after_do_claim_score(conn, tournament, opponent, user_id, id, score, match_index)
+        nil           -> render(conn, "error.json", error: "Invalid state")
+        {:error, msg} -> render(conn, "error.json", error: msg)
+      end
     else
       json(conn, %{result: false, error: "Invalid state"})
     end
@@ -1372,7 +1384,11 @@ defmodule MilkWeb.TournamentController do
     tournament = Tournaments.get_tournament_by_discord_server_id(discord_server_id)
 
     if claimable_state?(tournament.id, user.id) do
-      do_claim_score(conn, user.id, tournament, 0)
+      case do_claim_score(user.id, tournament, 0) do
+        {:ok, tournament, opponent, user_id, id, score, match_index} -> after_do_claim_score(conn, tournament, opponent, user_id, id, score, match_index)
+        nil           -> render(conn, "error.json", error: "Invalid state")
+        {:error, msg} -> render(conn, "error.json", error: msg)
+      end
     else
       json(conn, %{result: false, error: "Invalid state"})
     end
@@ -1393,7 +1409,11 @@ defmodule MilkWeb.TournamentController do
 
     if claimable_state?(tournament_id, user_id) do
       tournament = Tournaments.get_tournament(tournament_id)
-      do_claim_score(conn, user_id, tournament, score, match_index)
+      case do_claim_score(user_id, tournament, score, match_index) do
+        {:ok, tournament, opponent, user_id, id, score, match_index} -> after_do_claim_score(conn, tournament, opponent, user_id, id, score, match_index)
+        nil           -> render(conn, "error.json", error: "Invalid state")
+        {:error, msg} -> render(conn, "error.json", error: msg)
+      end
     else
       json(conn, %{result: false, error: "Invalid state"})
     end
@@ -1401,20 +1421,18 @@ defmodule MilkWeb.TournamentController do
 
   # bodyless clause
   # HACK: 大きくなってしまったのでリファクタリングが必要
-  defp do_claim_score(conn, user_id, tournament, score, match_index \\ 0)
-  defp do_claim_score(conn, _,       nil,        _,     _),          do: render(conn, "error.json", error: "tournament is nil")
-  defp do_claim_score(conn, user_id, tournament, score, match_index) do
+  defp do_claim_score(user_id, tournament, score, match_index \\ 0)
+  defp do_claim_score(_,       nil,        _,     _), do: {:error, "tournament is nil"}
+  defp do_claim_score(user_id, tournament, score, match_index) do
     # NOTE: あとでtournament変数はシャドウイングするので必要な情報だけ退避しておく
     tournament_id = tournament.id
 
     with id when not is_nil(id)    <- Progress.get_necessary_id(tournament_id, user_id),
          {:ok, opponent}           <- Tournaments.get_opponent(tournament_id, user_id),
          {:ok, _}                  <- Progress.insert_score(tournament_id, id, score) do
-      after_do_claim_score(conn, tournament, opponent, user_id, id, score, match_index)
+      {:ok, tournament, opponent, user_id, id, score, match_index}
     else
-      nil           -> render(conn, "error.json", error: "Invalid state")
-      false         -> render(conn, "error.json", error: "Invalid state")
-      {:error, msg} -> render(conn, "error.json", error: msg)
+      error -> error
     end
   end
 
@@ -1809,12 +1827,20 @@ defmodule MilkWeb.TournamentController do
     |> Tournaments.get_opponent(user_id)
     |> case do
       {:ok, %User{} = winner} ->
-        do_claim_score(conn, user_id,   tournament, -1, 0)
-        do_claim_score(conn, winner.id, tournament, 1,  0)
+        do_claim_score(user_id,   tournament, -1, 0)
+        case do_claim_score(winner.id, tournament, 1,  0) do
+          {:ok, tournament, opponent, user_id, id, score, match_index} -> after_do_claim_score(conn, tournament, opponent, user_id, id, score, match_index)
+          nil           -> render(conn, "error.json", error: "Invalid state")
+          {:error, msg} -> render(conn, "error.json", error: msg)
+        end
       {:ok, %Team{} = winner_team} ->
         leader = Tournaments.get_leader(winner_team.id)
-        do_claim_score(conn, user_id,        tournament, -1, 0)
-        do_claim_score(conn, leader.user_id, tournament, 1,  0)
+        do_claim_score(user_id,        tournament, -1, 0)
+        case do_claim_score(leader.user_id, tournament, 1,  0) do
+          {:ok, tournament, opponent, user_id, id, score, match_index} -> after_do_claim_score(conn, tournament, opponent, user_id, id, score, match_index)
+          nil           -> render(conn, "error.json", error: "Invalid state")
+          {:error, msg} -> render(conn, "error.json", error: msg)
+        end
       _ ->
         json(conn, %{result: false})
     end
