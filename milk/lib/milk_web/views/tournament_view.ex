@@ -145,6 +145,7 @@ defmodule MilkWeb.TournamentView do
         update_time: tournament.update_time,
         is_started: tournament.is_started,
         is_team: tournament.is_team,
+        language: tournament.language,
         team_size: tournament.team_size,
         rule: tournament.rule,
         entrants:
@@ -213,6 +214,7 @@ defmodule MilkWeb.TournamentView do
         name: tournament_log.name,
         is_team: tournament_log.is_team,
         team_size: tournament_log.team_size,
+        language: tournament_log.language,
         url: tournament_log.url,
         rule: tournament_log.rule,
         type: tournament_log.type,
