@@ -22,6 +22,7 @@ defmodule Milk.Log.TournamentLog do
           is_deleted: boolean(),
           is_started: boolean(),
           is_team: boolean(),
+          language: String.t(),
           master_id: integer(),
           name: String.t(),
           password: String.t(),
@@ -54,6 +55,7 @@ defmodule Milk.Log.TournamentLog do
     field :is_deleted, :boolean
     field :is_started, :boolean
     field :is_team, :boolean
+    field :language, :string
     field :master_id, :integer
     field :name, :string
     field :password, :string
@@ -89,6 +91,7 @@ defmodule Milk.Log.TournamentLog do
       :is_deleted,
       :is_started,
       :is_team,
+      :language,
       :master_id,
       :name,
       :password,
