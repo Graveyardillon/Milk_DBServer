@@ -122,6 +122,7 @@ defmodule MilkWeb.TournamentView do
         thumbnail_path: tournament.thumbnail_path,
         game_id: tournament.game_id,
         game_name: tournament.game_name,
+        contact: tournament.contact,
         custom_detail:
           unless is_nil(tournament.custom_detail) do
             %{

@@ -47,6 +47,7 @@ defmodule Milk.Tournaments.Tournament do
   schema "tournaments" do
     field :capacity, :integer
     field :count, :integer, default: 0
+    field :contact, :string
     field :deadline, EctoDate
     field :description, :string
     field :discord_server_id, :string
@@ -85,8 +86,9 @@ defmodule Milk.Tournaments.Tournament do
     tournament
     |> cast(attrs, [
       :name,
-      :count,
       :capacity,
+      :contact,
+      :count,
       :description,
       :deadline,
       :discord_server_id,
@@ -119,6 +121,7 @@ defmodule Milk.Tournaments.Tournament do
   def changeset(tournament, attrs) do
     tournament
     |> cast(attrs, [
+      :contact,
       :name,
       :enabled_coin_toss,
       :enabled_map,
@@ -151,8 +154,8 @@ defmodule Milk.Tournaments.Tournament do
   defp generate_rule_if_empty(changeset) do
     case get_change(changeset, :rule) do
       nil -> put_change(changeset, :rule, "basic")
-      "" -> put_change(changeset, :rule, "basic")
-      _ -> changeset
+      ""  -> put_change(changeset, :rule, "basic")
+      _   -> changeset
     end
   end
 
