@@ -182,7 +182,10 @@ defmodule MilkWeb.TeamController do
          {:ok, nil}                             <- validate_discord_association_of_user(tournament, invitation_id),
          {:ok, team_member}                     <- Tournaments.confirm_team_invitation(invitation_id) do
       team = Tournaments.get_team(team_member.team_id)
-      Task.async(fn -> send_add_team_discord_notification(team) end)
+
+      if team.is_confirmed do
+        Task.async(fn -> send_add_team_discord_notification(team) end)
+      end
 
       json(conn, %{result: true, is_confirmed: team.is_confirmed, tournament_id: team.tournament_id})
     else
