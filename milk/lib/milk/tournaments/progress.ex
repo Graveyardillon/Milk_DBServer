@@ -954,13 +954,21 @@ defmodule Milk.Tournaments.Progress do
     tournament_id
     |> Tournaments.get_tournament_including_logs()
     |> case do
-      {:ok, %Tournament{} = tournament} -> do_get_necessary_id(tournament, user_id)
+      {:ok, %Tournament{} = tournament}    -> do_get_necessary_id(tournament, user_id)
       {:ok, %TournamentLog{} = tournament} -> do_get_necessary_log_id(tournament, user_id)
       _ -> nil
     end
   end
 
-  defp do_get_necessary_id(%Tournament{master_id: master_id}, user_id) when master_id == user_id, do: user_id
+  defp do_get_necessary_id(%Tournament{master_id: master_id, id: tournament_id, is_team: is_team}, user_id) when master_id == user_id do
+    if Tournaments.is_participant?(tournament_id, user_id) and is_team do
+      tournament_id
+      |> Tournaments.get_team_by_tournament_id_and_user_id(user_id)
+      |> get_team_id()
+    else
+      user_id
+    end
+  end
   defp do_get_necessary_id(%Tournament{id: id, is_team: true}, user_id) do
     id
     |> Tournaments.get_team_by_tournament_id_and_user_id(user_id)

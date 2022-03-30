@@ -46,7 +46,7 @@ const newmanJson: NewmanJson = {
     info: {
         name: 'Create Entrant Request',
     },
-    item: entrantItems(6)
+    item: entrantItems(9)
 }
 
 newman.run({
