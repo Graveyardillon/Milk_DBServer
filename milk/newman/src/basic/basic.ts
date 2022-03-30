@@ -9,7 +9,7 @@ const argv = yargs(process.argv.slice(2))
         enabled_discord_server: { type: 'boolean', default: false },
         enabled_coin_toss:      { type: 'boolean', default: false },
         enabled_map:            { type: 'boolean', default: false },
-        capacity:               { type: 'number',  default: 8 },
+        capacity:               { type: 'number',  default: 16 },
         game_name:              { type: 'string',  default: 'VALORANT' },
         is_team:                { type: 'boolean', default: false },
         team_size:              { type: 'number',  default: undefined},

@@ -9,7 +9,7 @@ const argv = yargs(process.argv.slice(2))
     })
     .argv
 
-const teamNum = 8
+const teamNum = 9
 
 function teamItems(teamCount: number): Item[] {
     let items: Item[] = []
