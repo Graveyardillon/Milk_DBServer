@@ -1049,15 +1049,22 @@ defmodule MilkWeb.TournamentController do
     tournament_id = Tools.to_integer_as_needed(tournament_id)
     tournament = Tournaments.get_tournament(tournament_id)
 
-    with {:ok, _}   <- Tournaments.start_match(tournament, user_id),
-         {:ok, _}   <- do_start_match(tournament, user_id),
-         {:ok, _}   <- Tournaments.break_waiting_state_as_needed(tournament, user_id),
-         {:ok, nil} <- notify_discord_on_start_match_as_needed(tournament, user_id),
-         messages   <- Tournaments.interaction_message_of_me_and_opponent(tournament, user_id) do
-      render(conn, "interaction_message.json", interaction_messages: messages, rule: tournament.rule)
-    else
-      _ -> render(conn, "error.json", error: nil)
-    end
+    # with {:ok, _}   <- Tournaments.start_match(tournament, user_id),
+    #      {:ok, _}   <- do_start_match(tournament, user_id),
+    #      {:ok, _}   <- Tournaments.break_waiting_state_as_needed(tournament, user_id),
+    #      {:ok, nil} <- notify_discord_on_start_match_as_needed(tournament, user_id),
+    #      messages   <- Tournaments.interaction_message_of_me_and_opponent(tournament, user_id) do
+    #   render(conn, "interaction_message.json", interaction_messages: messages, rule: tournament.rule)
+    # else
+    #   _ -> render(conn, "error.json", error: nil)
+    # end
+
+    Tournaments.start_match(tournament, user_id)
+    do_start_match(tournament, user_id)
+    Tournaments.break_waiting_state_as_needed(tournament, user_id)
+    notify_discord_on_start_match_as_needed(tournament, user_id)
+    messages = Tournaments.interaction_message_of_me_and_opponent(tournament, user_id)
+    render(conn, "interaction_message.json", interaction_messages: messages, rule: tournament.rule)
   end
 
   @spec do_start_match(Tournament.t() | nil, integer()) :: {:ok, nil} | {:error, String.t()}
