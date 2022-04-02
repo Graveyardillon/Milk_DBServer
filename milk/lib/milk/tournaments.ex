@@ -3979,8 +3979,7 @@ defmodule Milk.Tournaments do
   end
 
   @spec delete_team_invitation(TeamInvitation.t()) :: {:ok, TeamInvitation.t()} | {:error, Ecto.Changeset.t()}
-  def delete_team_invitation(invitation),
-    do: Repo.delete(invitation)
+  def delete_team_invitation(invitation), do: Repo.delete(invitation)
 
   @spec resend_team_invitations(integer()) :: {:ok, nil} | {:error, String.t()}
   def resend_team_invitations(team_id) do
@@ -4705,17 +4704,21 @@ defmodule Milk.Tournaments do
     team_id
     |> __MODULE__.get_team_members_by_team_id()
     |> Enum.map(fn member ->
-      keyname = Rules.adapt_keyname(member.user_id, tournament_id)
+      if tournament.master_id == member.user_id do
+        {:ok, nil}
+      else
+        keyname = Rules.adapt_keyname(member.user_id, tournament_id)
 
-      case tournament.rule do
-        "basic"              -> Basic.destroy_dfa_instance(keyname)
-        "flipban"            -> FlipBan.destroy_dfa_instance(keyname)
-        "flipban_roundrobin" -> FlipBanRoundRobin.destroy_dfa_instance(keyname)
-        "freeforall"         -> FreeForAll.destroy_dfa_instance(keyname)
+        case tournament.rule do
+          "basic"              -> Basic.destroy_dfa_instance(keyname)
+          "flipban"            -> FlipBan.destroy_dfa_instance(keyname)
+          "flipban_roundrobin" -> FlipBanRoundRobin.destroy_dfa_instance(keyname)
+          "freeforall"         -> FreeForAll.destroy_dfa_instance(keyname)
+        end
+        ~> result
+
+        if result == 1, do: {:ok, nil}, else: {:error, "failed to destroy instances"}
       end
-      ~> result
-
-      if result == 1, do: {:ok, nil}, else: {:error, "failed to destroy instances"}
     end)
     |> Enum.all?(&match?({:ok, _}, &1))
     |> Tools.boolean_to_tuple()

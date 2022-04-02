@@ -1126,8 +1126,8 @@ defmodule MilkWeb.TournamentController do
   end
 
   @spec load_necessary_tournament_info(Tournament.t() | nil, integer()) :: {:ok, integer(), String.t()} | {:error, String.t()}
-  defp load_necessary_tournament_info(%Tournament{id: id, is_team: is_team}, user_id) when is_team == true do
-    id
+  defp load_necessary_tournament_info(%Tournament{id: tournament_id, is_team: true}, user_id) do
+    tournament_id
     |> Tournaments.get_team_by_tournament_id_and_user_id(user_id)
     |> load_necessary_team_tournament_info()
   end
@@ -1136,7 +1136,7 @@ defmodule MilkWeb.TournamentController do
     {:ok, user.id, user.name}
   end
 
-  defp load_necessary_team_tournament_info(nil), do: {:error, "team is nil"}
+  defp load_necessary_team_tournament_info(nil),                       do: {:error, "team is nil"}
   defp load_necessary_team_tournament_info(%Team{id: id, name: name}), do: {:ok, id, name}
 
   @spec do_notify_discord_on_start_match_as_needed(Tournament.t(), integer(), integer(), String.t(), String.t()) :: {:ok, nil}
