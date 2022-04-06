@@ -313,7 +313,15 @@ defmodule MilkWeb.TournamentView do
               icon_path: team.icon_path,
               is_confirmed: team.is_confirmed,
               rank: team.rank,
-              tournament_id: team.tournament_id
+              tournament_id: team.tournament_id,
+              team_member: Enum.map(team.team_member, fn member ->
+                %{
+                  user_id: member.user_id,
+                  team_id: member.team_id,
+                  is_leader: member.is_leader,
+                  is_invitation_confirmed: member.is_invitation_confirmed
+                }
+              end)
             }
           end)
         else

@@ -131,6 +131,7 @@ defmodule Milk.Tournaments do
     |> Repo.all()
     |> Repo.preload(:entrant)
     |> Repo.preload(:team)
+    |> Repo.preload(team: :team_member)
     |> Repo.preload(:custom_detail)
   end
 
