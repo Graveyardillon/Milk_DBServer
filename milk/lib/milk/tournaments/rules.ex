@@ -58,11 +58,15 @@ defmodule Milk.Tournaments.Rules do
 
   @spec start_master_states!(Tournament.t()) :: {:ok, Tournament.t()} | {:error, String.t()}
   def start_master_states!(tournament) do
-    with {:ok, _}   <- start_master_state!(tournament),
-         {:ok, nil} <- start_assistant_states!(tournament) do
-      {:ok, tournament}
-    else
-      error -> error
+    try do
+      with {:ok, _}   <- start_master_state!(tournament),
+          {:ok, nil} <- start_assistant_states!(tournament) do
+        {:ok, tournament}
+      else
+        error -> error
+      end
+    rescue
+      _ -> {:ok, tournament}
     end
   end
 

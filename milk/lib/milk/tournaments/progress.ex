@@ -956,7 +956,7 @@ defmodule Milk.Tournaments.Progress do
     |> case do
       {:ok, %Tournament{} = tournament}    -> do_get_necessary_id(tournament, user_id)
       {:ok, %TournamentLog{} = tournament} -> do_get_necessary_log_id(tournament, user_id)
-      _ -> nil
+      _                                    -> nil
     end
   end
 

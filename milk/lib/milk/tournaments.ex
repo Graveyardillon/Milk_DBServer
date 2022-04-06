@@ -131,6 +131,7 @@ defmodule Milk.Tournaments do
     |> Repo.all()
     |> Repo.preload(:entrant)
     |> Repo.preload(:team)
+    |> Repo.preload(team: :team_member)
     |> Repo.preload(:custom_detail)
   end
 
@@ -2121,21 +2122,25 @@ defmodule Milk.Tournaments do
   end
 
   defp start_entrant_states!(%Tournament{id: id, rule: rule} = tournament) do
-    id
-    |> __MODULE__.get_entrants()
-    |> Enum.each(fn %Entrant{user_id: user_id, tournament_id: tournament_id} ->
-      keyname = Rules.adapt_keyname(user_id, tournament_id)
+    try do
+      id
+      |> __MODULE__.get_entrants()
+      |> Enum.each(fn %Entrant{user_id: user_id, tournament_id: tournament_id} ->
+        keyname = Rules.adapt_keyname(user_id, tournament_id)
 
-      case rule do
-        "basic"              -> Basic.trigger!(keyname, Basic.start_trigger())
-        "flipban"            -> FlipBan.trigger!(keyname, FlipBan.start_trigger())
-        "flipban_roundrobin" -> FlipBanRoundRobin.trigger!(keyname, FlipBanRoundRobin.start_trigger())
-        "freeforall"         -> FreeForAll.trigger!(keyname, FreeForAll.start_trigger())
-        _                    -> raise "Invalid tournament rule"
-      end
-    end)
+        case rule do
+          "basic"              -> Basic.trigger!(keyname, Basic.start_trigger())
+          "flipban"            -> FlipBan.trigger!(keyname, FlipBan.start_trigger())
+          "flipban_roundrobin" -> FlipBanRoundRobin.trigger!(keyname, FlipBanRoundRobin.start_trigger())
+          "freeforall"         -> FreeForAll.trigger!(keyname, FreeForAll.start_trigger())
+          _                    -> raise "Invalid tournament rule"
+        end
+      end)
 
-    {:ok, tournament}
+      {:ok, tournament}
+    rescue
+      _ -> {:ok, tournament}
+    end
   end
 
   defp validate_team_number(%Tournament{} = tournament) do
@@ -2148,31 +2153,35 @@ defmodule Milk.Tournaments do
   defp validate_team_number(teams), do: {:ok, teams}
 
   defp start_team_states!(%Tournament{id: tournament_id, rule: rule}) do
-    tournament_id
-    |> __MODULE__.get_confirmed_team_members_by_tournament_id()
-    |> Enum.map(fn member ->
-      keyname = Rules.adapt_keyname(member.user_id, tournament_id)
+    try do
+      tournament_id
+      |> __MODULE__.get_confirmed_team_members_by_tournament_id()
+      |> Enum.map(fn member ->
+        keyname = Rules.adapt_keyname(member.user_id, tournament_id)
 
-      if member.is_leader do
-        case rule do
-          "basic"              -> Basic.trigger!(keyname, Basic.start_trigger())
-          "flipban"            -> FlipBan.trigger!(keyname, FlipBan.start_trigger())
-          "flipban_roundrobin" -> FlipBanRoundRobin.trigger!(keyname, FlipBanRoundRobin.start_trigger())
-          "freeforall"         -> FreeForAll.trigger!(keyname, FreeForAll.start_trigger())
-          _                    -> raise "Invalid tournament rule"
+        if member.is_leader do
+          case rule do
+            "basic"              -> Basic.trigger!(keyname, Basic.start_trigger())
+            "flipban"            -> FlipBan.trigger!(keyname, FlipBan.start_trigger())
+            "flipban_roundrobin" -> FlipBanRoundRobin.trigger!(keyname, FlipBanRoundRobin.start_trigger())
+            "freeforall"         -> FreeForAll.trigger!(keyname, FreeForAll.start_trigger())
+            _                    -> raise "Invalid tournament rule"
+          end
+        else
+          case rule do
+            "basic"              -> Basic.trigger!(keyname, Basic.member_trigger())
+            "flipban"            -> FlipBan.trigger!(keyname, FlipBan.member_trigger())
+            "flipban_roundrobin" -> FlipBanRoundRobin.trigger!(keyname, FlipBanRoundRobin.member_trigger())
+            "freeforall"         -> FreeForAll.trigger!(keyname, FreeForAll.member_trigger())
+            _                    -> raise "Invalid tournament rule"
+          end
         end
-      else
-        case rule do
-          "basic"              -> Basic.trigger!(keyname, Basic.member_trigger())
-          "flipban"            -> FlipBan.trigger!(keyname, FlipBan.member_trigger())
-          "flipban_roundrobin" -> FlipBanRoundRobin.trigger!(keyname, FlipBanRoundRobin.member_trigger())
-          "freeforall"         -> FreeForAll.trigger!(keyname, FreeForAll.member_trigger())
-          _                    -> raise "Invalid tournament rule"
-        end
-      end
-    end)
-    |> Enum.all?(&match?({:ok, _}, &1))
-    |> Tools.boolean_to_tuple("error on start team states")
+      end)
+      |> Enum.all?(&match?({:ok, _}, &1))
+      |> Tools.boolean_to_tuple("error on start team states")
+    rescue
+      _ -> {:ok, nil}
+    end
   end
 
   defp initialize_team_win_counts(teams) do
@@ -3056,7 +3065,6 @@ defmodule Milk.Tournaments do
       "freeforall"         -> FreeForAll.build_dfa_instance(keyname, is_team: tournament.is_team)
       _                    -> raise "Invalid tournament"
     end
-    |> IO.inspect()
 
     {:ok, nil}
   end
@@ -3972,8 +3980,7 @@ defmodule Milk.Tournaments do
   end
 
   @spec delete_team_invitation(TeamInvitation.t()) :: {:ok, TeamInvitation.t()} | {:error, Ecto.Changeset.t()}
-  def delete_team_invitation(invitation),
-    do: Repo.delete(invitation)
+  def delete_team_invitation(invitation), do: Repo.delete(invitation)
 
   @spec resend_team_invitations(integer()) :: {:ok, nil} | {:error, String.t()}
   def resend_team_invitations(team_id) do
@@ -4698,17 +4705,21 @@ defmodule Milk.Tournaments do
     team_id
     |> __MODULE__.get_team_members_by_team_id()
     |> Enum.map(fn member ->
-      keyname = Rules.adapt_keyname(member.user_id, tournament_id)
+      if tournament.master_id == member.user_id do
+        {:ok, nil}
+      else
+        keyname = Rules.adapt_keyname(member.user_id, tournament_id)
 
-      case tournament.rule do
-        "basic"              -> Basic.destroy_dfa_instance(keyname)
-        "flipban"            -> FlipBan.destroy_dfa_instance(keyname)
-        "flipban_roundrobin" -> FlipBanRoundRobin.destroy_dfa_instance(keyname)
-        "freeforall"         -> FreeForAll.destroy_dfa_instance(keyname)
+        case tournament.rule do
+          "basic"              -> Basic.destroy_dfa_instance(keyname)
+          "flipban"            -> FlipBan.destroy_dfa_instance(keyname)
+          "flipban_roundrobin" -> FlipBanRoundRobin.destroy_dfa_instance(keyname)
+          "freeforall"         -> FreeForAll.destroy_dfa_instance(keyname)
+        end
+        ~> result
+
+        if result == 1, do: {:ok, nil}, else: {:error, "failed to destroy instances"}
       end
-      ~> result
-
-      if result == 1, do: {:ok, nil}, else: {:error, "failed to destroy instances"}
     end)
     |> Enum.all?(&match?({:ok, _}, &1))
     |> Tools.boolean_to_tuple()

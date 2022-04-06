@@ -3069,6 +3069,51 @@ defmodule MilkWeb.TournamentControllerTest do
       assert json_response(conn, 200)["state"] == "ShouldStartMatch"
     end
 
+    test "basic (team) (master belongs to a team) (master join and leave) (until the tournament starts)", %{conn: conn} do
+      user = fixture_user()
+      attrs = %{
+        "capacity" => 4,
+        "deadline" => "2010-04-17T14:00:00Z",
+        "description" => "some description",
+        "event_date" => "2010-04-17T14:00:00Z",
+        "master_id" => user.id,
+        "name" => "some name",
+        "type" => 1,
+        "url" => "some url",
+        "platform" => 1,
+        "is_team" => "true",
+        "team_size" => 5,
+        "rule" => "basic"
+      }
+
+      conn = post(conn, Routes.tournament_path(conn, :create), tournament: attrs, file: "")
+
+      assert json_response(conn, 200)["result"]
+      assert json_response(conn, 200)["data"]["rule"] === "basic"
+      assert json_response(conn, 200)["data"]["is_team"]
+
+      master_id = json_response(conn, 200)["data"]["master_id"]
+      tournament_id = json_response(conn, 200)["data"]["id"]
+      capacity = json_response(conn, 200)["data"]["capacity"]
+      team_size = json_response(conn, 200)["data"]["team_size"]
+
+      conn = get(conn, Routes.tournament_path(conn, :get_match_information), %{"tournament_id" => tournament_id, "user_id" => master_id})
+      assert json_response(conn, 200)["result"]
+      assert json_response(conn, 200)["state"] == "IsNotStarted"
+
+      conn = post(conn, Routes.team_path(conn, :create), %{"tournament_id" => tournament_id, "leader_id" => master_id, "user_id_list" => [], "size" => team_size})
+      assert json_response(conn, 200)["result"]
+      team_id = json_response(conn, 200)["data"]["id"]
+
+      conn = delete(conn, Routes.team_path(conn, :delete), team_id: team_id)
+      assert json_response(conn, 200)["result"]
+
+      setup_teams(conn, 10..10 + capacity * team_size - 1, master_id, tournament_id, team_size)
+
+      conn = post(conn, Routes.tournament_path(conn, :start), %{"tournament" => %{"master_id" => master_id, "tournament_id" => tournament_id}})
+      assert json_response(conn, 200)["result"]
+    end
+
     defp basic_fight(conn, user1_id, user2_id, tournament_id) do
       conn = get(conn, Routes.tournament_path(conn, :get_match_information), %{"tournament_id" => tournament_id, "user_id" => user1_id})
       assert json_response(conn, 200)["opponent"]["id"] == user2_id
