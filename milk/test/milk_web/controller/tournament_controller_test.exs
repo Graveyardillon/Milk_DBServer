@@ -31,20 +31,6 @@ defmodule MilkWeb.TournamentControllerTest do
     "tournament_id" => -1
   }
 
-  # @create_attrs %{
-  #   "capacity" => 42,
-  #   "deadline" => "2010-04-17T14:00:00Z",
-  #   "description" => "some description",
-  #   "event_date" => "2010-04-17T14:00:00Z",
-  #   "master_id" => 42,
-  #   "name" => "some name",
-  #   "game_name" => "gm nm",
-  #   "type" => 1,
-  #   "join" => "true",
-  #   "url" => "some url",
-  #   "password" => "Password123",
-  #   "platform" => 1
-  # }
   @create_attrs %{
     "capacity" => 42,
     "deadline" => nil,

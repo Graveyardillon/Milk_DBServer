@@ -123,7 +123,7 @@ defmodule Milk.Tournaments do
     |> Timex.to_datetime()
 
     Tournament
-    #|> where([t], t.deadline > ^date_offset and t.create_time < ^date_offset)
+    #ss|> where([t], t.deadline > ^date_offset and t.create_time < ^date_offset)
     |> where([t], not (t.master_id in ^blocked_user_id_list))
     |> order_by([t], asc: :event_date)
     |> offset(^offset)
