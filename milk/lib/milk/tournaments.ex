@@ -110,7 +110,7 @@ defmodule Milk.Tournaments do
   Returns the list of tournament for home screen.
   """
   @spec home_tournament(any(), integer(), integer() | nil) :: [Tournament.t()]
-  def home_tournament(_date_offset, offset, user_id \\ nil) do
+  def home_tournament(date_offset, offset, user_id \\ nil) do
     offset = Tools.to_integer_as_needed(offset)
 
     user_id
@@ -123,7 +123,7 @@ defmodule Milk.Tournaments do
     |> Timex.to_datetime()
 
     Tournament
-    #ss|> where([t], t.deadline > ^date_offset and t.create_time < ^date_offset)
+    |> where([t], t.deadline > ^date_offset and t.create_time < ^date_offset)
     |> where([t], not (t.master_id in ^blocked_user_id_list))
     |> order_by([t], asc: :event_date)
     |> offset(^offset)
