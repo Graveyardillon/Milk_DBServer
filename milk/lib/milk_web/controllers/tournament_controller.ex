@@ -584,7 +584,7 @@ defmodule MilkWeb.TournamentController do
 
     result
     |> is_valid_deadline?(tournament)
-    #|> is_valid_start_recruitment_date?(tournament)
+    |> is_valid_start_recruitment_date?(tournament)
     |> is_valid_capacity?(tournament, entrants)
     |> already_started?(tournament)
     |> already_participated?(entrants, user_id)

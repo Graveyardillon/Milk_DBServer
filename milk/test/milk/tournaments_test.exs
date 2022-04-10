@@ -38,20 +38,6 @@ defmodule Milk.TournamentsTest do
 
   @moduletag timeout: 300_000
 
-  # @valid_attrs %{
-  #   "capacity" => 42,
-  #   "deadline" => "2010-04-17T14:00:00Z",
-  #   "description" => "some description",
-  #   "event_date" => "2010-04-17T14:00:00Z",
-  #   "game_name" => "some game",
-  #   "name" => "some name",
-  #   "type" => 0,
-  #   "url" => "somesomeurl",
-  #   "password" => "passwd",
-  #   "master_id" => 1,
-  #   "platform_id" => 1,
-  #   "is_started" => true
-  # }
   @valid_attrs %{
     "capacity" => 42,
     "deadline" => nil,
