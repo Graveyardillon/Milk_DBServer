@@ -758,10 +758,16 @@ defmodule Milk.Tournaments.Progress do
   end
 
   defp make_basic_matches(tournament_id) do
-    tournament_id
-    |> Tournaments.get_entrants()
-    |> Enum.map(&Map.get(&1, :user_id))
-    |> Tournaments.generate_matchlist()
+    match_list = __MODULE__.get_match_list(tournament_id)
+
+    if is_nil(match_list) do
+      tournament_id
+      |> Tournaments.get_entrants()
+      |> Enum.map(&Map.get(&1, :user_id))
+      |> Tournaments.generate_matchlist()
+    else
+      {:ok, match_list}
+    end
     ~> {:ok, match_list}
 
     tournament = Tournaments.get_tournament(tournament_id)
