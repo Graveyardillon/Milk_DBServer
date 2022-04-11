@@ -2838,6 +2838,40 @@ defmodule Milk.Tournaments do
     |> Tools.reduce_ok_list("error on create point categories")
   end
 
+  def edit_tournament_brackets(team_or_user_id_list, tournament_id) do
+    match_list = Progress.get_match_list(tournament_id)
+
+    if is_nil(match_list) do
+      team_or_user_id_list
+    else
+      tournament_id
+      |> __MODULE__.get_confirmed_teams()
+      |> Enum.map(&(&1.id))
+    end
+    ~> team_or_user_id_list
+
+    tournament = __MODULE__.get_tournament(tournament_id)
+
+    if check_team_or_user_id_list_valid?(tournament, team_or_user_id_list) do
+      team_or_user_id_list
+      |> Tournamex.generate_matchlist_without_shuffle()
+      |> elem(1)
+      |> Progress.insert_match_list(tournament_id)
+    else
+      {:error, nil}
+    end
+  end
+
+  defp check_team_or_user_id_list_valid?(%Tournament{is_team: true, id: tournament_id}, team_or_user_id_list) do
+    tournament_id
+    |> __MODULE__.get_teams_by_tournament_id()
+    |> Enum.map(&Map.get(&1, :id))
+    ~> team_id_list
+
+    Enum.all?(team_or_user_id_list, fn id ->
+      id in team_id_list
+    end)
+  end
 
   @doc """
   結果を入力してfinish

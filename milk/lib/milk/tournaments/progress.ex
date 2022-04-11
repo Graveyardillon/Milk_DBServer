@@ -835,15 +835,23 @@ defmodule Milk.Tournaments.Progress do
   end
 
   defp generate_team_flipban_matches(tournament) do
-    tournament.id
-    |> Tournaments.get_confirmed_teams()
-    ~> teams
-    |> Enum.map(&Map.get(&1, :id))
-    |> Tournaments.generate_matchlist()
-    |> elem(1)
-    ~> match_list
-    |> __MODULE__.insert_match_list(tournament.id)
+    match_list = __MODULE__.get_match_list(tournament.id)
+    teams = Tournaments.get_confirmed_teams(tournament.id)
 
+    if is_nil(match_list) do
+      teams
+      |> Enum.map(&Map.get(&1, :id))
+      |> Tournaments.generate_matchlist()
+      |> elem(1)
+      ~> match_list
+
+      {:ok, teams, match_list}
+    else
+      {:ok, teams, match_list}
+    end
+    ~> {:ok, teams, match_list}
+
+    __MODULE__.insert_match_list(match_list, tournament.id)
     count = length(teams)
     Tournaments.initialize_team_rank(match_list, count)
 

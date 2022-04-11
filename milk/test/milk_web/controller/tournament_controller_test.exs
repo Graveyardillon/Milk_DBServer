@@ -2306,6 +2306,27 @@ defmodule MilkWeb.TournamentControllerTest do
     end
   end
 
+  describe "edit tournament brackets" do
+    test "works", %{conn: conn} do
+      tournament = fixture_tournament(is_team: true, capacity: 4)
+      teams = fill_with_team(tournament.id)
+
+      teams
+      |> Enum.map(&(&1.id))
+      |> Enum.reverse()
+      ~> team_id_list
+
+      conn = post(conn, Routes.tournament_path(conn, :edit_brackets), %{"team_or_user_id_list" => team_id_list, "tournament_id" => tournament.id})
+      assert json_response(conn, 200)["result"]
+      conn = post(conn, Routes.tournament_path(conn, :start), tournament: %{"master_id" => tournament.master_id, "tournament_id" => tournament.id})
+      assert json_response(conn, 200)["result"]
+
+      match_list = Progress.get_match_list(tournament.id)
+
+      assert List.flatten(match_list) == team_id_list
+    end
+  end
+
   describe "start match" do
     setup [:create_tournament]
 
@@ -2374,7 +2395,7 @@ defmodule MilkWeb.TournamentControllerTest do
     end
 
     test "get an opponent team", %{conn: conn} do
-      [is_team: true, capacity: 4, num: 900, type: 2]
+      [is_team: true, capacity: 4, num: 900]
       |> fixture_tournament()
       ~> tournament
       |> Map.get(:id)
