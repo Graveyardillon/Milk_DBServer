@@ -2,3 +2,7 @@
 milk/config/dev.exs
 
 .DS_Store
+
+milk/redis/data/redis/dump.rdb
+milk/priv/plts/*.plt
+milk/priv/plts/*.plt.hash

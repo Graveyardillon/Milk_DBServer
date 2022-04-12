@@ -37,7 +37,7 @@ defmodule Milk.Chat do
 
   require Logger
 
-  def get_all_chat(id) do
+  def get_chat_room(id) do
     Repo.one(
       from cr in ChatRoom,
         left_join: cm in assoc(cr, :chat_member),
@@ -46,22 +46,6 @@ defmodule Milk.Chat do
         preload: [chat_member: cm, chat: c]
     )
   end
-
-  @doc """
-  Gets a single chat_room.
-
-  Raises `Ecto.NoResultsError` if the Chat room does not exist.
-
-  ## Examples
-
-      iex> get_chat_room!(123)
-      %ChatRoom{}
-
-      iex> get_chat_room!(456)
-      ** (Ecto.NoResultsError)
-
-  """
-  def get_chat_room(id), do: Repo.one(from cr in ChatRoom, where: cr.id == ^id, preload: [:chat])
 
   @doc """
   Creates a chat_room.
@@ -80,14 +64,9 @@ defmodule Milk.Chat do
     |> ChatRoom.changeset(attrs)
     |> Repo.insert()
     |> case do
-      {:ok, chat} ->
-        {:ok, chat}
-
-      {:error, error} ->
-        {:error, error.errors}
-
-      _ ->
-        {:error, nil}
+      {:ok, chat}     -> {:ok, chat}
+      {:error, error} -> {:error, error.errors}
+      _               -> {:error, nil}
     end
   end
 
@@ -126,14 +105,14 @@ defmodule Milk.Chat do
       if is_list(chat_room.chat) do
         Enum.map(
           chat_room.chat,
-          &%{
+          &(%{
             chat_room_id: &1.chat_room_id,
             word: &1.word,
             user_id: &1.user_id,
             index: &1.index,
             create_time: &1.create_time,
             update_time: &1.update_time
-          }
+          })
         )
       else
         nil
@@ -159,7 +138,8 @@ defmodule Milk.Chat do
 
     if member, do: Repo.insert_all(ChatMemberLog, member)
 
-    ChatRoomLog.changeset(%ChatRoomLog{}, Map.from_struct(chat_room))
+    %ChatRoomLog{}
+    |> ChatRoomLog.changeset(Map.from_struct(chat_room))
     |> Repo.insert()
 
     Repo.delete(chat_room)
@@ -172,9 +152,7 @@ defmodule Milk.Chat do
     TournamentChatTopic
     |> where([t], t.tournament_id in ^[tournament_id])
     |> Repo.all()
-    |> Enum.map(fn topic ->
-      get_chat_room(topic.chat_room_id)
-    end)
+    |> Enum.map(&get_chat_room(&1.chat_room_id))
   end
 
   @doc """
@@ -203,28 +181,22 @@ defmodule Milk.Chat do
   def get_private_chat_room(my_id, partner_id) do
     my_id
     |> get_chat_rooms_by_user_id()
-    |> Enum.filter(fn room ->
-      room.is_private
-    end)
+    |> Enum.filter(&(&1.is_private))
     |> Enum.map(fn room ->
       room.id
       |> get_chat_members_of_room()
-      |> Enum.filter(fn member ->
-        member.user_id == partner_id
-      end)
+      |> Enum.filter(&(&1.user_id == partner_id))
     end)
-    |> Enum.filter(fn list ->
-      list != []
-    end)
-    |> Enum.map(fn member ->
-      m = hd(member)
+    |> Enum.reject(&Enum.empty?(&1))
+    |> Enum.map(fn members ->
+      member = hd(members)
 
       ChatRoom
-      |> where([cr], cr.id == ^m.chat_room_id)
+      |> where([cr], cr.id == ^member.chat_room_id)
       |> Repo.one()
     end)
     |> case do
-      [] -> {:error, :notfound}
+      []    -> {:error, :notfound}
       rooms -> {:ok, hd(rooms)}
     end
   end
@@ -232,27 +204,22 @@ defmodule Milk.Chat do
   def get_private_chat_rooms(user_id) do
     user_id
     |> get_chat_rooms_by_user_id()
-    |> Enum.filter(fn room ->
-      room.is_private
-    end)
+    |> Enum.filter(&(&1.is_private))
   end
 
   def get_user_in_private_room(room_id, user_id) do
     room_id
     |> get_chat_members_of_room()
-    |> Enum.filter(fn member ->
-      user_id != member.user_id
-    end)
-    |> Enum.map(fn member ->
-      Accounts.get_user(member.user_id)
-    end)
+    |> Enum.reject(&(&1.user_id == user_id))
+    |> Enum.map(&Accounts.load_user(&1.user_id))
     |> hd()
   end
 
   def get_member(chat_room_id, user_id) do
-    Repo.one(
-      from cm in ChatMember, where: cm.chat_room_id == ^chat_room_id and cm.user_id == ^user_id
-    )
+    ChatMember
+    |> where([cm], cm.chat_room_id == ^chat_room_id)
+    |> where([cm], cm.user_id == ^user_id)
+    |> Repo.one()
   end
 
   defp get_chat_member_by_user_id(user_id) do
@@ -272,9 +239,7 @@ defmodule Milk.Chat do
     |> join(:inner, [cm, cr, tct], t in Tournament, on: t.id == tct.tournament_id)
     |> where([cm, cr, tct, t], t.id == ^tournament_id)
     |> Repo.all()
-    |> Enum.uniq_by(fn member ->
-      member.user_id
-    end)
+    |> Enum.uniq_by(&(&1.user_id))
   end
 
   @doc """
@@ -290,30 +255,33 @@ defmodule Milk.Chat do
 
   """
   def create_chat_member(attrs \\ %{}) do
-    if Repo.exists?(from u in User, where: u.id == ^attrs["user_id"]) do
-      case Multi.new()
-           |> Multi.run(:chat_room, fn repo, _ ->
-             {:ok, repo.get(ChatRoom, attrs["chat_room_id"])}
-           end)
-           |> Multi.insert(:chat_member, fn %{chat_room: _chat_room} ->
-             %ChatMember{user_id: attrs["user_id"], chat_room_id: attrs["chat_room_id"]}
-             |> ChatMember.changeset(attrs)
-           end)
-           |> Multi.update(:update, fn %{chat_room: chat_room} ->
-             ChatRoom.changeset(chat_room, %{member_count: chat_room.member_count + 1})
-           end)
-           |> Repo.transaction() do
-        {:ok, chat_member} ->
-          {:ok, chat_member.chat_member}
-
-        {:error, _, error, _data} ->
-          {:error, error.errors}
-
-        _ ->
-          {:error, nil}
-      end
+    User
+    |> where([u], u.id == ^attrs["user_id"])
+    |> Repo.exists?()
+    |> if do
+      do_create_chat_member(attrs)
     else
       {:error, "User does not exist"}
+    end
+  end
+
+  defp do_create_chat_member(attrs) do
+    Multi.new()
+    |> Multi.run(:chat_room, fn repo, _ ->
+      {:ok, repo.get(ChatRoom, attrs["chat_room_id"])}
+    end)
+    |> Multi.insert(:chat_member, fn %{chat_room: _chat_room} ->
+      %ChatMember{user_id: attrs["user_id"], chat_room_id: attrs["chat_room_id"]}
+      |> ChatMember.changeset(attrs)
+    end)
+    |> Multi.update(:update, fn %{chat_room: chat_room} ->
+      ChatRoom.changeset(chat_room, %{member_count: chat_room.member_count + 1})
+    end)
+    |> Repo.transaction()
+    |> case do
+      {:ok, chat_member}        -> {:ok, chat_member.chat_member}
+      {:error, _, error, _data} -> {:error, error.errors}
+      _                         -> {:error, nil}
     end
   end
 
@@ -426,10 +394,7 @@ defmodule Milk.Chat do
     do: Repo.one(from c in Chats, where: c.chat_room_id == ^chat_room_id and c.index == ^index)
 
   def get_latest_chat(id),
-    do:
-      Repo.all(
-        from c in Chats, where: c.chat_room_id == ^id, order_by: [desc: c.index], limit: 20
-      )
+    do: Repo.all(from c in Chats, where: c.chat_room_id == ^id, order_by: [desc: c.index], limit: 20)
 
   @doc """
   Get all chat by room id.
@@ -564,7 +529,7 @@ defmodule Milk.Chat do
 
   # 個人チャット用の関数
   # TODO: 通知処理
-  def dialogue(attrs = %{"user_id" => user_id, "partner_id" => partner_id, "word" => word}) do
+  def dialogue(%{"user_id" => user_id, "partner_id" => partner_id, "word" => word} = attrs) do
     user_id = Tools.to_integer_as_needed(user_id)
     partner_id = Tools.to_integer_as_needed(partner_id)
 
@@ -609,10 +574,8 @@ defmodule Milk.Chat do
 
   # グループチャット用の関数
   # TODO: チャットメンバーのユーザーのidをすべて返すようにする
-  def dialogue(attrs = %{"user_id" => user_id, "chat_room_id" => chat_room_id}) do
-    user_id = Tools.to_integer_as_needed(user_id)
-    chat_room_id = Tools.to_integer_as_needed(chat_room_id)
-
+  # TODO: リファクタリング
+  def dialogue(%{"user_id" => user_id, "chat_room_id" => chat_room_id, "word" => message}) do
     if Repo.exists?(from u in User, where: u.id == ^user_id) and
          Repo.exists?(from cr in ChatRoom, where: cr.id == ^chat_room_id) do
       _ = Repo.one(from cr in ChatRoom, where: cr.id == ^chat_room_id)
@@ -632,33 +595,39 @@ defmodule Milk.Chat do
 
           %{
             "title" => "大会チャットに新着があります",
-            "body_text" => attrs["word"],
+            "body_text" => message,
             "process_id" => "RECEIVED_TOURNAMENT_CHAT",
             "user_id" => device.user_id,
             "data" =>
               Jason.encode!(%{
                 tournament_id: tournament.id,
-                chant_room_id: chat_room_id
+                chat_room_id: chat_room_id
               })
           }
           |> Notif.create_notification()
 
           title = "#{user.name} (in #{tournament.name})"
+
           %Maps.PushIos{
             user_id: device.user_id,
             device_token: device.token,
             process_id: "RECEIVED_TOURNAMENT_CHAT",
             title: title,
-            message: attrs["word"],
+            message: message
           }
           |> Notif.push_ios()
-          # Notif.push_ios_with_badge(attrs["word"], title, device.user_id, device.token)
 
+          # Notif.push_ios_with_badge(attrs["word"], title, device.user_id, device.token)
         end
       end)
 
-      create_chats(attrs)
+      %{"user_id" => user_id, "chat_room_id" => chat_room_id, "word" => message}
+      |> create_chats()
     end
+  end
+
+  def dialogue(user_id, chat_room_id, message) do
+    dialogue(%{"user_id" => user_id, "chat_room_id" => chat_room_id, "word" => message})
   end
 
   # user_idに関連するチャットを全て取り出す

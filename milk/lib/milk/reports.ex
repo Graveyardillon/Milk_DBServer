@@ -1,4 +1,7 @@
 defmodule Milk.Reports do
+  @moduledoc """
+  通報関連のモジュール
+  """
   import Ecto.Query, warn: false
 
   alias Common.Tools
@@ -14,26 +17,12 @@ defmodule Milk.Reports do
     UserReport
   }
 
-  def create_user_report(%{
-        "reporter" => reporter,
-        "reportee" => reportee,
-        "report_types" => report_types
-      }) do
+  def create_user_report(%{"reporter" => reporter, "reportee" => reportee, "report_types" => report_types}) do
     reporter = Tools.to_integer_as_needed(reporter)
     reportee = Tools.to_integer_as_needed(reportee)
 
     if Accounts.get_user(reporter) && Accounts.get_user(reportee) && reporter != reportee do
-      user_reports =
-        Enum.map(report_types, fn type ->
-          with {:ok, report} <-
-                 %UserReport{reporter_id: reporter, reportee_id: reportee}
-                 |> UserReport.changeset(%{report_type: type})
-                 |> Repo.insert() do
-            report
-          else
-            _ -> nil
-          end
-        end)
+      user_reports = insert_reports(report_types, reporter, reportee)
 
       {:ok, user_reports}
     else
@@ -41,10 +30,30 @@ defmodule Milk.Reports do
     end
   end
 
+  defp insert_reports(report_types, reporter_id, reportee_id) do
+    report_types
+    |> Enum.map(fn type ->
+      %UserReport{reporter_id: reporter_id, reportee_id: reportee_id}
+      |> UserReport.changeset(%{report_type: type})
+      |> Repo.insert()
+      |> case do
+        {:ok, report} -> report
+        _             -> nil
+      end
+    end)
+    |> Enum.reject(&is_nil(&1))
+  end
+
   @doc """
   Create tournament report
-  FIXME: report_type -> report_types
   """
+  def create_tournament_report(attrs = %{"report_types" => report_types}) when is_list(report_types) do
+    attrs
+    |> Map.put("report_type", report_types)
+    |> Map.delete("report_types")
+    |> __MODULE__.create_tournament_report()
+  end
+
   def create_tournament_report(%{
         "reporter_id" => reporter_id,
         "report_type" => report_type,
@@ -83,7 +92,7 @@ defmodule Milk.Reports do
     tournament_id = Tools.to_integer_as_needed(tournament_id)
 
     tournament_id
-    |> Tournaments.get_tournament()
+    |> Tournaments.load_tournament()
     |> case do
       nil ->
         {:error, nil}
@@ -102,7 +111,6 @@ defmodule Milk.Reports do
       |> Map.put("description", tournament.description)
       |> Map.put("event_date", tournament.event_date)
       |> Map.put("name", tournament.name)
-      |> Map.put("type", tournament.type)
       |> Map.put("url", tournament.url)
       |> Map.put("thumbnail_path", tournament.thumbnail_path)
       |> Map.put("count", tournament.count)

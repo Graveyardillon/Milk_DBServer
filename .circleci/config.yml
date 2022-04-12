@@ -7,7 +7,7 @@ jobs:
     parallelism: 1
     docker:
       # specify the version here
-      - image: circleci/elixir:1.9
+      - image: circleci/elixir:1.13
         environment:
           MIX_ENV: test
           GOOGLE_APPLICATION_CREDENTIALS: e-players6814-41b52d33988e.json
@@ -31,4 +31,7 @@ jobs:
       - run: mix local.rebar --force
       - run: mix do deps.get, compile
       - run: mix ecto.create
-      - run: mix test
+      - run: 
+          name: Run Tests
+          command: mix test
+          no_output_timeout: 30m

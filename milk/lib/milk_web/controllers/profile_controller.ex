@@ -1,14 +1,16 @@
 defmodule MilkWeb.ProfileController do
   use MilkWeb, :controller
 
-  alias Common.FileUtils
-
   import Common.Sperm
 
-  alias Common.Tools
+  alias Common.{
+    FileUtils,
+    Tools
+  }
 
   alias Milk.{
     Accounts,
+    Discord,
     Profiles,
     Tournaments
   }
@@ -24,16 +26,18 @@ defmodule MilkWeb.ProfileController do
     |> Accounts.get_user()
     ~> user
     |> if do
-      games = Profiles.get_game_list(user)
       records = Profiles.get_records(user)
 
       external_services = Accounts.get_external_services(user_id)
+      associated_with_discord? = Discord.associated?(user_id)
+      finished_tournaments = Tournaments.get_finished_tournaments(user_id)
 
       render(conn, "profile.json",
         user: user,
-        games: games,
         records: records,
-        external_services: external_services
+        external_services: external_services,
+        associated_with_discord: associated_with_discord?,
+        finished_tournaments: finished_tournaments
       )
     else
       json(conn, %{result: false, error: "user not found"})
@@ -43,21 +47,20 @@ defmodule MilkWeb.ProfileController do
   def update(conn, %{"profile" => profile_params}) do
     profile_params
     |> Map.get("user_id")
-    |> Accounts.get_user()
+    |> Accounts.load_user()
     ~> user
     |> is_nil()
     |> unless do
-      gamelist = Map.get(profile_params, "gameList")
-      records = Map.get(profile_params, "records")
+      records = Map.get(profile_params, "records") || []
 
-      Accounts.update_user(user, profile_params)
+      user
+      |> Accounts.update_user(profile_params)
       |> case do
         {:ok, user} ->
-          Profiles.update_gamelist(user, gamelist)
           Profiles.update_recordlist(user, records)
           json(conn, %{result: true, profile_result: true})
 
-        {:error, error} ->
+        {:error, _error} ->
           json(conn, %{result: false, error: "update failed"})
       end
     else
@@ -72,17 +75,17 @@ defmodule MilkWeb.ProfileController do
   def update_icon(conn, %{"user_id" => user_id, "image" => image}) do
     user = Accounts.get_user(user_id)
 
-    if user do
+    if !is_nil(user) do
       uuid = SecureRandom.uuid()
-
-      FileUtils.copy(image.path, "./static/image/profile_icon/#{uuid}.png")
+      new_path = "./static/image/profile_icon/#{uuid}.jpg"
+      FileUtils.copy(image.path, new_path)
 
       :milk
       |> Application.get_env(:environment)
       |> case do
-        :dev -> update_account(user, uuid)
-        :test -> update_account(user, uuid)
-        _ -> update_account_prod(user, uuid)
+        :dev -> update_account(user, new_path)
+        :test -> update_account(user, new_path)
+        _ -> update_account_prod(user, new_path)
       end
       ~> local_path
 
@@ -92,16 +95,16 @@ defmodule MilkWeb.ProfileController do
     end
   end
 
-  defp update_account(user, uuid) do
-    Accounts.update_icon_path(user, "./static/image/profile_icon/#{uuid}.png")
-    uuid
+  defp update_account(user, path) do
+    Accounts.update_icon_path(user.id, path)
+    path
   end
 
-  defp update_account_prod(user, uuid) do
-    object = Objects.upload("./static/image/profile_icon/#{uuid}.png")
-    File.rm("./static/image/profile_icon/#{uuid}.png")
-    Accounts.update_icon_path(user, object.name)
-    object.name
+  defp update_account_prod(user, path) do
+    {:ok, object} = Objects.upload(path)
+    File.rm(path)
+    Accounts.update_icon_path(user.id, object.name)
+    path
   end
 
   def get_icon(conn, %{"path" => path}) do
@@ -131,7 +134,7 @@ defmodule MilkWeb.ProfileController do
   end
 
   defp get_image_prod(name) do
-    object = Objects.get(name)
+    {:ok, object} = Objects.get(name)
     Image.get(object.mediaLink)
   end
 

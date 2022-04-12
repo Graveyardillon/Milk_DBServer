@@ -5,13 +5,26 @@ defmodule Milk.Notif.Notification do
 
   alias Milk.Accounts.User
 
+  @type t :: %__MODULE__{
+          body_text: String.t() | nil,
+          data: String.t() | nil,
+          icon_path: String.t() | nil,
+          is_checked: boolean(),
+          process_id: String.t() | nil,
+          title: String.t(),
+          user_id: integer(),
+          # NOTE: timestamps
+          create_time: any(),
+          update_time: any()
+        }
+
   schema "notifications" do
-    field :title, :string
     field :body_text, :string
-    field :process_id, :string
     field :data, :string
+    field :icon_path, :string
     field :is_checked, :boolean, default: false
-    field :icon_path, :string, default: nil
+    field :process_id, :string
+    field :title, :string
 
     belongs_to :user, User
 

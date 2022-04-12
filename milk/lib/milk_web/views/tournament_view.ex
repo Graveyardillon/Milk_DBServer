@@ -17,14 +17,14 @@ defmodule MilkWeb.TournamentView do
   def render("opponent.json", %{opponent: opponent}) do
     %{
       opponent: %{
-        id: opponent["id"],
-        name: opponent["name"],
-        icon_path: opponent["icon_path"],
-        point: opponent["point"],
-        notification_number: opponent["notification_number"],
-        language: opponent["language"],
-        email: opponent["auth"]["email"],
-        bio: opponent["bio"]
+        id: opponent.id,
+        name: opponent.name,
+        icon_path: opponent.icon_path,
+        point: opponent.point,
+        notification_number: opponent.notification_number,
+        language: opponent.language,
+        #email: opponent.auth.email,
+        bio: opponent.bio
       },
       result: !is_nil(opponent)
     }
@@ -33,12 +33,19 @@ defmodule MilkWeb.TournamentView do
   def render("opponent_team.json", %{opponent: opponent, leader: leader}) do
     %{
       opponent: %{
-        id: opponent["id"],
-        name: leader["name"],
-        icon_path: leader["icon_path"],
-        rank: opponent["rank"]
+        id: opponent.id,
+        name: leader.name,
+        icon_path: leader.icon_path,
+        rank: opponent.rank
       },
       result: !is_nil(opponent) && !is_nil(leader)
+    }
+  end
+
+  def render("leader.json", %{user: user}) do
+    %{
+      data: render_one(user, UserView, "user.json"),
+      result: true
     }
   end
 
@@ -51,8 +58,8 @@ defmodule MilkWeb.TournamentView do
 
   def render("show.json", %{tournament: tournament}) do
     %{
-      data:
-        render_one(tournament, TournamentView, "tournament.json", msg: "Tournament was created!")
+      data: render_one(tournament, TournamentView, "tournament.json", msg: "Tournament was created!"),
+      result: true
     }
   end
 
@@ -86,13 +93,13 @@ defmodule MilkWeb.TournamentView do
       id: tournament.id,
       name: tournament.name,
       thumbnail_path: tournament.thumbnail_path,
+      discord_server_id: tournament.discord_server_id,
       game_id: tournament.game_id,
       game_name: tournament.game_name,
       enabled_coin_toss: tournament.enabled_coin_toss,
       event_date: tournament.event_date,
       start_recruiting: tournament.start_recruiting,
       deadline: tournament.deadline,
-      type: tournament.type,
       platform: tournament.platform_id,
       capacity: tournament.capacity,
       has_password: !is_nil(tournament.password),
@@ -115,24 +122,22 @@ defmodule MilkWeb.TournamentView do
         thumbnail_path: tournament.thumbnail_path,
         game_id: tournament.game_id,
         game_name: tournament.game_name,
+        contact: tournament.contact,
         custom_detail:
           unless is_nil(tournament.custom_detail) do
             %{
               coin_head_field: tournament.custom_detail.coin_head_field,
-              coin_tail_field: tournament.custom_detail.coin_tail_field,
-              multiple_selection_type: tournament.custom_detail.multiple_selection_type,
-              multiple_selection_label: tournament.custom_detail.multiple_selection_label
+              coin_tail_field: tournament.custom_detail.coin_tail_field
             }
           end,
         event_date: tournament.event_date,
         enabled_coin_toss: tournament.enabled_coin_toss,
-        enabled_multiple_selection: tournament.enabled_multiple_selection,
+        enabled_map: tournament.enabled_map,
         start_recruiting: tournament.start_recruiting,
         deadline: tournament.deadline,
-        type: tournament.type,
+        discord_server_id: tournament.discord_server_id,
         platform: tournament.platform_id,
         capacity: tournament.capacity,
-        # password: tournament.password,
         has_password: !is_nil(tournament.password),
         description: tournament.description,
         master_id: tournament.master_id,
@@ -141,7 +146,9 @@ defmodule MilkWeb.TournamentView do
         update_time: tournament.update_time,
         is_started: tournament.is_started,
         is_team: tournament.is_team,
+        language: tournament.language,
         team_size: tournament.team_size,
+        rule: tournament.rule,
         entrants:
           Enum.map(tournament.entrant, fn entrant ->
             %{
@@ -165,14 +172,14 @@ defmodule MilkWeb.TournamentView do
               is_confirmed: team.is_confirmed
             }
           end),
-        multiple_selections:
-          Enum.map(tournament.multiple_selection, fn selection ->
+        maps:
+          Enum.map(tournament.map, fn map ->
             %{
-              id: selection.id,
-              name: selection.name,
-              state: selection.state,
-              icon_path: selection.icon_path,
-              tournament_id: selection.tournament_id
+              id: map.id,
+              name: map.name,
+              state: map.state,
+              icon_path: map.icon_path,
+              tournament_id: map.tournament_id
             }
           end)
       },
@@ -186,18 +193,15 @@ defmodule MilkWeb.TournamentView do
         tournament_log: tournament_log
       }) do
     %{
-      tournaments:
-        render_many(tournaments, TournamentView, "tournament_info_include_entrants.json",
-          as: :tournament_info
-        ),
-      tournament_logs:
-        render_many(tournament_log, TournamentView, "tournament_log.json", as: :tournament_log)
+      tournaments: render_many(tournaments, TournamentView, "tournament_info_include_entrants.json", as: :tournament_info),
+      tournament_logs: render_many(tournament_log, TournamentView, "tournament_log.json", as: :tournament_log)
     }
   end
 
   def render("tournament_log.json", %{tournament_log: tournament_log}) do
     %{
       data: %{
+        id: tournament_log.id,
         capacity: tournament_log.capacity,
         deadline: tournament_log.deadline,
         description: tournament_log.description,
@@ -207,16 +211,22 @@ defmodule MilkWeb.TournamentView do
         tournament_id: tournament_log.tournament_id,
         winner_id: tournament_log.winner_id,
         master_id: tournament_log.master_id,
+        platform: tournament_log.platform_id,
         name: tournament_log.name,
+        is_team: tournament_log.is_team,
+        team_size: tournament_log.team_size,
+        language: tournament_log.language,
         url: tournament_log.url,
+        rule: tournament_log.rule,
         type: tournament_log.type,
         thumbnail_path: tournament_log.thumbnail_path,
-        entrants:
-          Enum.map(tournament_log.entrants, fn user ->
-            %{
-              user_id: user.user_id
-            }
-          end)
+        # entrants: unless is_nil(tournament_log.entrants) do
+        #     Enum.map(tournament_log.entrants, fn user ->
+        #       %{
+        #         user_id: user.user_id
+        #       }
+        #     end)
+        #   end
       },
       is_log: true,
       result: true
@@ -244,10 +254,7 @@ defmodule MilkWeb.TournamentView do
     inspect(tournaments_info)
 
     %{
-      data:
-        render_many(tournaments_info, TournamentView, "tournament_info_include_entrants.json",
-          as: :tournament_info
-        ),
+      data: render_many(tournaments_info, TournamentView, "tournament_info_include_entrants.json", as: :tournament_info),
       result: true
     }
   end
@@ -259,21 +266,18 @@ defmodule MilkWeb.TournamentView do
       id: tournament.id,
       name: tournament.name,
       custom_detail:
-          unless is_nil(tournament.custom_detail) do
-            %{
-              coin_head_field: tournament.custom_detail.coin_head_field,
-              coin_tail_field: tournament.custom_detail.coin_tail_field,
-              multiple_selection_type: tournament.custom_detail.multiple_selection_type,
-              multiple_selection_label: tournament.custom_detail.multiple_selection_label
-            }
-          end,
+        unless is_nil(tournament.custom_detail) do
+          %{
+            coin_head_field: tournament.custom_detail.coin_head_field,
+            coin_tail_field: tournament.custom_detail.coin_tail_field
+          }
+        end,
       thumbnail_path: tournament.thumbnail_path,
       game_id: tournament.game_id,
       game_name: tournament.game_name,
       event_date: tournament.event_date,
       start_recruiting: tournament.start_recruiting,
       deadline: tournament.deadline,
-      type: tournament.type,
       platform: tournament.platform_id,
       capacity: tournament.capacity,
       # password: tournament.password,
@@ -285,6 +289,7 @@ defmodule MilkWeb.TournamentView do
       update_time: tournament.update_time,
       is_started: tournament.is_started,
       is_team: tournament.is_team,
+      rule: tournament.rule,
       entrants:
         Enum.map(tournament.entrants, fn user ->
           %{
@@ -294,7 +299,7 @@ defmodule MilkWeb.TournamentView do
             point: user.point,
             notification_number: user.notification_number,
             language: user.language,
-            email: user.auth.email,
+            #email: user.auth.email,
             bio: user.bio
           }
         end),
@@ -308,7 +313,15 @@ defmodule MilkWeb.TournamentView do
               icon_path: team.icon_path,
               is_confirmed: team.is_confirmed,
               rank: team.rank,
-              tournament_id: team.tournament_id
+              tournament_id: team.tournament_id,
+              team_member: Enum.map(team.team_member, fn member ->
+                %{
+                  user_id: member.user_id,
+                  team_id: member.team_id,
+                  is_leader: member.is_leader,
+                  is_invitation_confirmed: member.is_invitation_confirmed
+                }
+              end)
             }
           end)
         else
@@ -326,20 +339,21 @@ defmodule MilkWeb.TournamentView do
         game_id: tournament.game_id,
         game_name: tournament.game_name,
         enabled_coin_toss: tournament.enabled_coin_toss,
-        enabled_multiple_selection: tournament.enabled_multiple_selection,
+        enabled_map: tournament.enabled_map,
         event_date: tournament.event_date,
         start_recruiting: tournament.start_recruiting,
         deadline: tournament.deadline,
-        type: tournament.type,
         platform: tournament.platform_id,
         capacity: tournament.capacity,
         password: tournament.password,
         description: tournament.description,
         master_id: tournament.master_id,
         is_team: tournament.is_team,
+        team_size: tournament.team_size,
         url: tournament.url,
         create_time: tournament.create_time,
         update_time: tournament.update_time,
+        rule: tournament.rule,
         followers:
           Enum.map(tournament.followers, fn follower ->
             %{
@@ -352,18 +366,28 @@ defmodule MilkWeb.TournamentView do
     }
   end
 
-  def render("match.json", %{match_list: list, match_list_with_fight_result: list2}) do
+  def render("start.json", %{match_list: list, match_list_with_fight_result: list2, messages: messages, rule: rule}) do
     %{
       result: true,
       data: %{
         match_list: list,
-        match_list_with_fight_result: list2
+        match_list_with_fight_result: list2,
+        rule: rule,
+        messages: Enum.map(messages, fn message ->
+          %{
+            state: message.state,
+            user_id: message.user_id,
+          }
+        end)
       }
     }
   end
 
   def render("loser.json", %{list: list}) do
-    %{updated_match_list: list}
+    %{
+      result: true,
+      updated_match_list: list
+    }
   end
 
   def render("tournament_topics.json", %{topics: topics}) do
@@ -382,7 +406,6 @@ defmodule MilkWeb.TournamentView do
     %{result: true, data: map}
   end
 
-  # FIXME: Authは読み込んでないのでemailを返すようにしていない
   def render("masters.json", %{masters: masters}) do
     %{
       data:
@@ -395,7 +418,8 @@ defmodule MilkWeb.TournamentView do
             language: master.language,
             bio: master.bio
           }
-        end)
+        end),
+      result: true
     }
   end
 
@@ -423,88 +447,116 @@ defmodule MilkWeb.TournamentView do
     }
   end
 
-  def render("match_info.json", %{
-        opponent: opponent,
-        rank: rank,
-        is_team: is_team,
-        is_leader: is_leader,
-        is_attacker_side: is_attacker_side,
-        score: score,
-        state: state,
-        map: map,
-        is_coin_head: is_coin_head,
-        custom_detail: custom_detail
-      }) do
+  # NOTE: フロント側で型を固定してある
+  def render("match_info.json", %{match_info: match_info}) do
     %{
-      opponent:
-        cond do
-          is_binary(opponent) ->
-            nil
-
-          is_nil(opponent) ->
-            nil
-
-          state == "IsAlone" ->
-            nil
-
-          is_team ->
-            %{
-              name: opponent["name"],
-              icon_path: opponent["icon_path"],
-              id: opponent["id"]
-            }
-
-          true ->
-            %{
-              name: opponent["name"],
-              icon_path: opponent["icon_path"],
-              id: opponent["id"]
-            }
-        end,
-      rank: rank,
-      result: true,
-      is_leader:
-        if is_team do
-          is_leader
-        end,
-      is_attacker_side: is_attacker_side,
-      score: score,
-      state: state,
-      is_team: is_team,
-      is_coin_head: is_coin_head,
-      map: if map do
+      tournament: if !is_nil(match_info.tournament) do
+        # NOTE: IDはLogでも事前処理でちゃんとtournament固有のものが付けられている。
+        # XXX: フロントの処理を見てちょっとずつ置き換えていかなければならないので、idやnameといった少ない情報しかここには入れていない
         %{
-          state: map.state,
-          name: map.name,
-          icon_path: map.icon_path,
-          id: map.id
+          name: match_info.tournament.name,
+          id: match_info.tournament.id,
+          master_id: match_info.tournament.master_id,
         }
       end,
-      custom_detail:
-        if custom_detail do
+      opponent: if !is_nil(match_info.opponent) do
+        %{
+          name: match_info.opponent.name,
+          icon_path: match_info.opponent.icon_path,
+          id: match_info.opponent.id
+        }
+      end,
+      rank: match_info.rank,
+      result: true,
+      is_leader: match_info.is_leader,
+      is_attacker_side: match_info.is_attacker_side,
+      score: match_info.score,
+      state: match_info.state,
+      is_team: match_info.is_team,
+      is_coin_head: match_info.is_coin_head,
+      rule: match_info.rule,
+      map:
+        if match_info.map do
           %{
-            coin_head_field: custom_detail.coin_head_field,
-            coin_tail_field: custom_detail.coin_tail_field,
-            multiple_selection_type: custom_detail.multiple_selection_type
+            state: match_info.map.state,
+            name: match_info.map.name,
+            icon_path: match_info.map.icon_path,
+            id: match_info.map.id
+          }
+        end,
+      custom_detail:
+        if match_info.custom_detail do
+          %{
+            coin_head_field: match_info.custom_detail.coin_head_field,
+            coin_tail_field: match_info.custom_detail.coin_tail_field
           }
         end
     }
   end
 
-  def render("options.json", %{options: options}) do
+  def render("round_robin_match_list.json", %{match_list: %{"rematch_index" => rematch_index, "current_match_index" => current_match_index, "match_list" => match_list}}) do
     %{
-      data: Enum.map(options, fn option ->
-        %{
-          name: option.name,
-          id: option.id,
-          icon_path: option.icon_path,
-          state: option.state
-        }
+      result: true,
+      rematch_index: rematch_index,
+      current_match_index: current_match_index,
+      match_list: Enum.map(match_list, fn matches_in_round ->
+        Enum.map(matches_in_round, fn {match_str, winner_id} ->
+          %{
+            match: match_str,
+            winner_id: winner_id
+          }
+        end)
       end)
+    }
+  end
+
+  # NOTE: フロント側で型を固定してある
+  def render("maps.json", %{maps: maps}) do
+    %{
+      data:
+        Enum.map(maps, fn map ->
+          %{
+            name: map.name,
+            id: map.id,
+            icon_path: map.icon_path,
+            state: map.state
+          }
+        end)
     }
   end
 
   def render("error.json", %{error: error}) do
     %{result: false, error: error, data: nil}
+  end
+
+  def render("interaction_message.json", %{interaction_messages: messages, rule: rule}) do
+    %{
+      result: true,
+      rule: rule,
+      messages: Enum.map(messages, fn message ->
+        %{
+          state: message.state,
+          user_id: message.user_id,
+        }
+      end)
+    }
+  end
+
+  def render("claim.json", %{claim: claim}) do
+    %{
+      result: true,
+      validated: claim.validated,
+      completed: claim.completed,
+      is_finished: claim.is_finished,
+      opponent_user_id: claim.opponent_user_id,
+      rule: claim.rule,
+      messages: Enum.map(claim.interaction_messages, fn message ->
+        %{
+          state: message.state,
+          user_id: message.user_id
+        }
+      end),
+      user_id: claim.user_id
+    }
   end
 end

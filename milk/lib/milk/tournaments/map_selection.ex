@@ -1,8 +1,21 @@
 defmodule Milk.Tournaments.MapSelection do
+  @moduledoc """
+  対戦時に選択したマップについて記録しておくテーブルについてのスキーマ
+  """
+
   use Milk.Schema
 
   import Ecto.Changeset
-  import Common.Sperm
+
+  @type t :: %__MODULE__{
+          state: String.t(),
+          small_id: integer(),
+          large_id: integer(),
+          map_id: integer(),
+          # NOTE: timestamps
+          create_time: any(),
+          update_time: any()
+        }
 
   schema "map_selections" do
     field :state, :string, default: "not_selected"
@@ -13,6 +26,8 @@ defmodule Milk.Tournaments.MapSelection do
 
     timestamps()
   end
+
+  def changeset(attrs), do: __MODULE__.changeset(%__MODULE__{}, attrs)
 
   @doc false
   def changeset(map_selection, attrs) do

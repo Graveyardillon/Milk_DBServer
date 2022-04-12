@@ -40,7 +40,7 @@ defmodule MilkWeb.ChatMemberLogControllerTest do
       conn = get(conn, Routes.chat_member_log_path(conn, :show, id))
 
       assert %{
-               "id" => id,
+               "id" => _,
                "authority" => 42,
                "chat_room_id" => 42,
                "user_id" => 42
@@ -60,17 +60,14 @@ defmodule MilkWeb.ChatMemberLogControllerTest do
       conn: conn,
       chat_member_log: %ChatMemberLog{id: id} = chat_member_log
     } do
-      conn =
-        put(conn, Routes.chat_member_log_path(conn, :update, chat_member_log),
-          chat_member_log: @update_attrs
-        )
+      conn = put(conn, Routes.chat_member_log_path(conn, :update, chat_member_log), chat_member_log: @update_attrs)
 
       assert %{"id" => ^id} = json_response(conn, 200)["data"]
 
       conn = get(conn, Routes.chat_member_log_path(conn, :show, id))
 
       assert %{
-               "id" => id,
+               "id" => _,
                "authority" => 43,
                "chat_room_id" => 43,
                "user_id" => 43
@@ -78,10 +75,7 @@ defmodule MilkWeb.ChatMemberLogControllerTest do
     end
 
     test "renders errors when data is invalid", %{conn: conn, chat_member_log: chat_member_log} do
-      conn =
-        put(conn, Routes.chat_member_log_path(conn, :update, chat_member_log),
-          chat_member_log: @invalid_attrs
-        )
+      conn = put(conn, Routes.chat_member_log_path(conn, :update, chat_member_log), chat_member_log: @invalid_attrs)
 
       assert json_response(conn, 422)["errors"] != %{}
     end

@@ -57,7 +57,7 @@ defmodule Spare do
           |> Map.get("opponent")
 
         unless is_nil(opponent) do
-          opponent_id = opponent["id"]
+          opponent_id = opponent.id
           score = :rand.uniform(100000)
 
           dom_url <> "/api/tournament/claim_score"

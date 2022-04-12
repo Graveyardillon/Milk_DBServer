@@ -5,13 +5,13 @@ defmodule MilkWeb.EntrantControllerTest do
 
   alias Milk.{
     Accounts,
-    Repo,
-    TournamentProgress,
     Tournaments
   }
 
-  alias Milk.Accounts.ActionHistory
-  alias Milk.Tournaments.Entrant
+  alias Milk.Tournaments.{
+    Entrant,
+    Progress
+  }
 
   @entrant_create_attrs %{
     "rank" => 42,
@@ -70,13 +70,6 @@ defmodule MilkWeb.EntrantControllerTest do
     {:ok, conn: put_req_header(conn, "accept", "application/json")}
   end
 
-  describe "index" do
-    test "lists all entrant", %{conn: conn} do
-      conn = get(conn, Routes.entrant_path(conn, :index))
-      assert json_response(conn, 200)["data"] == []
-    end
-  end
-
   describe "create entrant" do
     test "renders entrant when data is valid", %{conn: conn} do
       {:ok, tournament} = fixture(:tournament)
@@ -95,25 +88,11 @@ defmodule MilkWeb.EntrantControllerTest do
       conn = get(conn, Routes.entrant_path(conn, :show, id))
 
       assert %{
-               "id" => id,
-               "rank" => rank,
-               "tournament_id" => tournament_id,
-               "user_id" => user_id
+               "id" => _id,
+               "rank" => _rank,
+               "tournament_id" => _tournament_id,
+               "user_id" => _
              } = json_response(conn, 200)["data"]
-
-      ActionHistory
-      |> where([ah], ah.user_id == ^user_id)
-      |> Repo.all()
-      |> Enum.map(fn action_history ->
-        # TODO: 記述
-        # assert action_history.game_name == tournament["game_name"]
-        assert action_history.user_id == user_id
-        assert action_history.gain == 5
-      end)
-      |> length()
-      |> (fn len ->
-            assert len == 1
-          end).()
     end
 
     test "renders errors when data is invalid", %{conn: conn} do
@@ -132,7 +111,7 @@ defmodule MilkWeb.EntrantControllerTest do
       conn = get(conn, Routes.entrant_path(conn, :show, id))
 
       assert %{
-               "id" => id,
+               "id" => _id,
                "rank" => 43
              } = json_response(conn, 200)["data"]
     end
@@ -155,9 +134,11 @@ defmodule MilkWeb.EntrantControllerTest do
 
       assert response(conn, 200)
 
-      assert_error_sent 404, fn ->
-        get(conn, Routes.entrant_path(conn, :show, entrant))
-      end
+      conn
+      |> get(Routes.entrant_path(conn, :show, entrant))
+      |> json_response(200)
+      |> Map.get("result")
+      |> refute()
     end
   end
 
@@ -165,15 +146,14 @@ defmodule MilkWeb.EntrantControllerTest do
     setup [:create_entrant]
 
     test "renders entrant's rank when data is valid", %{conn: conn, entrant: entrant} do
-      conn =
-        get(conn, Routes.entrant_path(conn, :show_rank, entrant.tournament_id, entrant.user_id))
+      conn = get(conn, Routes.entrant_path(conn, :show_rank, entrant.tournament_id, entrant.user_id))
 
       assert is_integer(json_response(conn, 200)["data"]["rank"])
     end
 
     test "renders error with invalid tournament_id", %{conn: conn, entrant: entrant} do
       conn = get(conn, Routes.entrant_path(conn, :show_rank, -1, entrant.user_id))
-      assert json_response(conn, 200)["error"] == "entrant is not found"
+      assert json_response(conn, 200)["error"] == "tournament is nil"
     end
 
     test "renders error with invalid user_id", %{conn: conn, entrant: entrant} do
@@ -183,7 +163,7 @@ defmodule MilkWeb.EntrantControllerTest do
 
     test "renders error when data is invalid", %{conn: conn} do
       conn = get(conn, Routes.entrant_path(conn, :show_rank, -1, -1))
-      assert json_response(conn, 200)["error"] == "entrant is not found"
+      assert json_response(conn, 200)["error"] == "tournament is nil"
     end
   end
 
@@ -193,7 +173,7 @@ defmodule MilkWeb.EntrantControllerTest do
     test "renders entrant's promoted rank with valid data", %{conn: conn, entrant: entrant} do
       # numは生成する参加者の数で後に一人追加するので8 - 1 = 7
       num = 7
-      # 参加者作成，マッチリストを生成してTournamentProgressに登録
+      # 参加者作成，マッチリストを生成してProgressに登録
 
       {:ok, matchlist} =
         create_entrants(num, entrant.tournament_id)
@@ -202,7 +182,7 @@ defmodule MilkWeb.EntrantControllerTest do
         |> Enum.map(fn entrant -> entrant.user_id end)
         |> Tournaments.generate_matchlist()
 
-      TournamentProgress.insert_match_list(matchlist, entrant.tournament_id)
+      Progress.insert_match_list(matchlist, entrant.tournament_id)
 
       conn =
         post(conn, Routes.entrant_path(conn, :promote),
@@ -216,12 +196,12 @@ defmodule MilkWeb.EntrantControllerTest do
     test "renders error with invalid data(tournament_id)", %{conn: conn, entrant: entrant} do
       # numは生成する参加者の数で後に一人追加するので8 - 1 = 7
       num = 7
-      # 参加者作成，マッチリストを生成してTournamentProgressに登録
+      # 参加者作成，マッチリストを生成してProgressに登録
       create_entrants(num, entrant.tournament_id)
       |> Enum.map(fn x -> %{x | rank: num + 1} end)
       |> Kernel.++([%{entrant | rank: num + 1}])
       |> Tournaments.generate_matchlist()
-      |> TournamentProgress.insert_match_list(entrant.tournament_id)
+      |> Progress.insert_match_list(entrant.tournament_id)
 
       conn =
         post(conn, Routes.entrant_path(conn, :promote),
@@ -235,12 +215,12 @@ defmodule MilkWeb.EntrantControllerTest do
     test "renders error with invalid data(user_id)", %{conn: conn, entrant: entrant} do
       # numは生成する参加者の数で後に一人追加するので8 - 1 = 7
       num = 7
-      # 参加者作成，マッチリストを生成してTournamentProgressに登録
+      # 参加者作成，マッチリストを生成してProgressに登録
       create_entrants(num, entrant.tournament_id)
       |> Enum.map(fn x -> %{x | rank: num + 1} end)
       |> Kernel.++([%{entrant | rank: num + 1}])
       |> Tournaments.generate_matchlist()
-      |> TournamentProgress.insert_match_list(entrant.tournament_id)
+      |> Progress.insert_match_list(entrant.tournament_id)
 
       conn =
         post(conn, Routes.entrant_path(conn, :promote),
@@ -254,15 +234,14 @@ defmodule MilkWeb.EntrantControllerTest do
     test "renders error with invalid data(all)", %{conn: conn, entrant: entrant} do
       # numは生成する参加者の数で後に一人追加するので8 - 1 = 7
       num = 7
-      # 参加者作成，マッチリストを生成してTournamentProgressに登録
+      # 参加者作成，マッチリストを生成してProgressに登録
       create_entrants(num, entrant.tournament_id)
       |> Enum.map(fn x -> %{x | rank: num + 1} end)
       |> Kernel.++([%{entrant | rank: num + 1}])
       |> Tournaments.generate_matchlist()
-      |> TournamentProgress.insert_match_list(entrant.tournament_id)
+      |> Progress.insert_match_list(entrant.tournament_id)
 
-      assert conn =
-               post(conn, Routes.entrant_path(conn, :promote), tournament_id: -1, user_id: -1)
+      assert conn = post(conn, Routes.entrant_path(conn, :promote), tournament_id: -1, user_id: -1)
 
       assert json_response(conn, 200)["error"] == "undefined user"
     end

@@ -1,14 +1,19 @@
 defmodule Common.Fixtures do
+  @moduledoc """
+  テストで使用するfixtureをまとめたモジュール
+  """
+
   alias Milk.{
     Accounts,
+    Discord,
     Platforms,
-    TournamentProgress,
     Tournaments
   }
 
   import Common.Sperm
 
   defmacro __using__(_opts) do
+    # credo:disable-for-next-line
     quote do
       def fixture_tournament(opts \\ []) do
         Platforms.create_basic_platforms()
@@ -16,6 +21,7 @@ defmodule Common.Fixtures do
         create_attrs = %{
           "capacity" => 8,
           "deadline" => "2010-04-17T14:00:00Z",
+          "start_recruiting" => "2010-04-17T14:00:00",
           "description" => "some description",
           "event_date" => "2010-04-17T14:00:00Z",
           "name" => "some name",
@@ -27,63 +33,24 @@ defmodule Common.Fixtures do
           "platform" => 1
         }
 
-        opts[:num]
-        |> is_nil()
-        |> unless do
-          opts[:num]
-        else
-          0
-        end
-        ~> num
-
-        opts[:capacity]
-        |> is_nil()
-        |> unless do
-          opts[:capacity]
-        else
-          create_attrs["capacity"]
-        end
-        ~> capacity
-
-        opts[:is_started]
-        |> is_nil()
-        |> unless do
-          opts[:is_started]
-        else
-          false
-        end
-        ~> is_started
-
-        opts[:is_team]
-        |> is_nil()
-        |> unless do
-          opts[:is_team]
-        else
-          false
-        end
-        ~> is_team
-
-        if is_team do
-          opts[:team_size]
-          |> is_nil()
-          |> unless do
-            opts[:team_size]
-          else
-            5
-          end
-        else
-          nil
-        end
-        ~> team_size
-
-        opts[:type]
-        |> is_nil()
-        |> unless do
-          opts[:type]
-        else
-          1
-        end
-        ~> type
+        num = Keyword.get(opts, :num, 0)
+        deadline = Keyword.get(opts, :deadline, create_attrs["deadline"])
+        start_recruiting = Keyword.get(opts, :start_recruiting, create_attrs["start_recruiting"])
+        capacity = Keyword.get(opts, :capacity, create_attrs["capacity"])
+        event_date = Keyword.get(opts, :event_date, create_attrs["event_date"])
+        is_started = Keyword.get(opts, :is_started, false)
+        is_team = Keyword.get(opts, :is_team, false)
+        team_size = if is_team, do: Keyword.get(opts, :team_size, 5)
+        type = Keyword.get(opts, :type, 1)
+        enabled_coin_toss = Keyword.get(opts, :enabled_coin_toss, false)
+        enabled_map = Keyword.get(opts, :enabled_map, false)
+        coin_head_field = Keyword.get(opts, :coin_head_field)
+        coin_tail_field = Keyword.get(opts, :coin_tail_field)
+        maps = Keyword.get(opts, :maps)
+        rule = Keyword.get(opts, :rule)
+        round_number = Keyword.get(opts, :round_number)
+        match_number = Keyword.get(opts, :match_number)
+        round_capacity = Keyword.get(opts, :round_capacity)
 
         opts[:master_id]
         |> is_nil()
@@ -101,51 +68,6 @@ defmodule Common.Fixtures do
         end
         ~> master_id
 
-        opts[:enabled_coin_toss]
-        |> is_nil()
-        |> unless do
-          opts[:enabled_coin_toss]
-        else
-          false
-        end
-        ~> enabled_coin_toss
-
-        opts[:enabled_multiple_selection]
-        |> is_nil()
-        |> unless do
-          opts[:enabled_coin_toss]
-        else
-          false
-        end
-        ~> enabled_multiple_selection
-
-        opts[:coin_head_field]
-        |> is_nil()
-        |> unless do
-          opts[:coin_head_field]
-        else
-          nil
-        end
-        ~> coin_head_field
-
-        opts[:coin_tail_field]
-        |> is_nil()
-        |> unless do
-          opts[:coin_tail_field]
-        else
-          nil
-        end
-        ~> coin_tail_field
-
-        opts[:maps]
-        |> is_nil()
-        |> unless do
-          opts[:maps]
-        else
-          nil
-        end
-        ~> maps
-
         create_attrs
         |> Map.put("is_started", is_started)
         |> Map.put("master_id", master_id)
@@ -153,11 +75,18 @@ defmodule Common.Fixtures do
         |> Map.put("capacity", capacity)
         |> Map.put("team_size", team_size)
         |> Map.put("type", type)
+        |> Map.put("deadline", deadline)
         |> Map.put("enabled_coin_toss", enabled_coin_toss)
-        |> Map.put("enabled_multiple_selection", enabled_multiple_selection)
+        |> Map.put("enabled_map", enabled_map)
         |> Map.put("coin_head_field", coin_head_field)
         |> Map.put("coin_tail_field", coin_tail_field)
-        |> Map.put("multiple_selections", maps)
+        |> Map.put("maps", maps)
+        |> Map.put("rule", rule)
+        |> Map.put("start_recruiting", start_recruiting)
+        |> Map.put("event_date", event_date)
+        |> Map.put("round_number", round_number)
+        |> Map.put("match_number", match_number)
+        |> Map.put("round_capacity", round_capacity)
         |> Tournaments.create_tournament()
         |> elem(1)
         ~> tournament
@@ -170,13 +99,9 @@ defmodule Common.Fixtures do
 
         101..(tournament.team_size * tournament.capacity + 100)
         |> Enum.to_list()
-        |> Enum.map(fn n ->
-          fixture_user(num: n)
-        end)
+        |> Enum.map(&fixture_user(num: &1))
         ~> users
-        |> Enum.map(fn user ->
-          user.id
-        end)
+        |> Enum.map(&Map.get(&1, :id))
         |> Enum.chunk_every(tournament.team_size)
         |> Enum.map(fn [leader | members] ->
           tournament.id
@@ -185,19 +110,14 @@ defmodule Common.Fixtures do
         end)
         |> Enum.map(fn team ->
           team.id
-          |> Tournaments.get_team_members_by_team_id()
+          |> Tournaments.load_team_members_by_team_id()
           |> Enum.each(fn member ->
-            leader = Tournaments.get_leader(member.team_id)
-
-            member.id
-            |> Tournaments.create_team_invitation(leader.user_id)
-            |> elem(1)
-            |> Map.get(:id)
-            |> Tournaments.confirm_team_invitation()
-            |> elem(1)
+            member.user_id
+            |> Tournaments.get_invitations()
+            |> Enum.each(&Tournaments.confirm_team_invitation(&1.id))
           end)
 
-          Tournaments.get_team(team.id)
+          Tournaments.load_team(team.id)
         end)
       end
 
@@ -212,7 +132,7 @@ defmodule Common.Fixtures do
           |> Map.get(:id)
         end)
         |> Enum.map(fn user_id ->
-          Map.new()
+          %{}
           |> Map.put("user_id", user_id)
           |> Map.put("tournament_id", tournament_id)
           |> Tournaments.create_entrant()
@@ -221,23 +141,29 @@ defmodule Common.Fixtures do
       end
 
       def fixture_user(opts \\ []) do
-        num_str =
-          opts[:num]
-          |> is_nil()
-          |> unless do
-            to_string(opts[:num])
-          else
-            "0"
-          end
+        num = Keyword.get(opts, :num, 0)
 
-        {:ok, user} =
-          Accounts.create_user(%{
-            "name" => "name" <> num_str,
-            "email" => "e1" <> num_str <> "mail.com",
-            "password" => "Password123"
-          })
+        Accounts.create_user(%{
+          "name" => "name#{num}",
+          "email" => "e1@#{num}mail.com",
+          "password" => "Password123"
+        })
+        ~> {:ok, user}
 
         user
+      end
+
+      def fixture_discord_user(opts \\ []) do
+        num = Keyword.get(opts, :num, 0)
+        user = fixture_user(num: num)
+
+        discord_id = to_string(num)
+
+        %{user_id: user.id, discord_id: discord_id}
+        |> Discord.create_discord_user()
+        ~> {:ok, discord_user}
+
+        discord_user
       end
     end
   end

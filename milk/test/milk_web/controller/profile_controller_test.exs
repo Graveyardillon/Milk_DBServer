@@ -4,92 +4,77 @@ defmodule MilkWeb.ProfileControllerTest do
 
   alias Milk.{
     Accounts,
-    Profiles,
     Tournaments
   }
-
-  alias Milk.Accounts.Profile
-
-  @create_attrs %{
-    "name" => "some name",
-    "content_id" => "42",
-    "content_type" => "42",
-    "bio" => "some bio",
-    "gameList" => [],
-    "records" => []
-  }
-  @update_attrs %{
-    "name" => "some name",
-    "content_id" => "42",
-    "content_type" => "42",
-    "bio" => "some bio",
-    "gameList" => [],
-    "records" => []
-  }
-  @tournament_attrs %{
-    "capacity" => 42,
-    "deadline" => "2010-04-17T14:00:00Z",
-    "description" => "some description",
-    "event_date" => "2010-04-17T14:00:00Z",
-    "name" => "some name",
-    "type" => 0,
-    "url" => "somesomeurl",
-    "master_id" => 1,
-    "platform" => 1,
-    "is_started" => true
-  }
-
-  def fixture(:profile) do
-    user = fixture_user()
-
-    {:ok, profile} =
-      @create_attrs
-      |> Map.put("user_id", user.id)
-      |> Profiles.create_profile()
-
-    profile
-  end
 
   setup %{conn: conn} do
     {:ok, conn: put_req_header(conn, "accept", "application/json")}
   end
 
-  describe "update profile" do
-    setup [:create_profile]
+  describe "profile" do
+    test "get profile", %{conn: conn} do
+      user = fixture_user()
 
-    test "renders profile when data is valid", %{conn: conn, profile: %Profile{id: _id} = profile} do
-      attrs = Map.put(@update_attrs, "user_id", profile.user_id)
-      conn = post(conn, Routes.profile_path(conn, :update), profile: attrs)
-      assert json_response(conn, 200)["result"]
+      profile =
+        conn
+        |> get(Routes.profile_path(conn, :get_profile), user_id: user.id)
+        |> json_response(200)
+        |> Map.get("data")
 
-      conn = post(conn, Routes.profile_path(conn, :get_profile), user_id: profile.user_id)
-
-      assert %{"id" => id} = json_response(conn, 200)["data"]
+      assert profile["name"] == "name0"
     end
-  end
 
-  describe "records of profile" do
-    setup [:create_profile]
+    test "update profile", %{conn: conn} do
+      user = fixture_user()
 
-    test "renders records when data is valid", %{conn: conn, profile: profile} do
-      user_id = profile.user_id
+      update_attrs = %{
+        "user_id" => user.id,
+        "name" => user.name <> "updated",
+        "bio" => "updated bio",
+        "birthday" => DateTime.utc_now(),
+        "is_birthday_private" => false,
+        "records" => []
+      }
 
-      tournament = fixture_tournament(master_id: user_id)
+      result =
+        conn
+        |> post(Routes.profile_path(conn, :update), profile: update_attrs)
+        |> json_response(200)
+        |> Map.get("result")
 
-      %{"tournament_id" => tournament.id, "user_id" => user_id, "rank" => 5}
+      assert result == true
+
+      updated_profile =
+        conn
+        |> get(Routes.profile_path(conn, :get_profile), user_id: user.id)
+        |> json_response(200)
+        |> Map.get("data")
+
+      assert updated_profile["name"] == update_attrs["name"]
+      assert updated_profile["bio"] == update_attrs["bio"]
+      assert updated_profile["records"] == update_attrs["records"]
+      assert updated_profile["is_birthday_private"] == update_attrs["is_birthday_private"]
+    end
+
+    test "records of profile", %{conn: conn} do
+      user = fixture_user()
+
+      tournament = fixture_tournament(master_id: user.id)
+
+      %{"tournament_id" => tournament.id, "user_id" => user.id, "rank" => 5}
       |> Tournaments.create_entrant()
 
       setup_tournament_having_participants(tournament.id)
-      Tournaments.start(user_id, tournament.id)
-      Tournaments.finish(tournament.id, user_id)
+      Tournaments.start(tournament)
+      Tournaments.finish(tournament.id, user.id)
 
-      get(conn, Routes.profile_path(conn, :records), %{"user_id" => user_id})
+      get(conn, Routes.profile_path(conn, :records), %{"user_id" => user.id})
       |> json_response(200)
       |> Map.get("data")
-      |> length()
-      |> (fn records_length ->
-            assert records_length == 1
-          end).()
+      |> Enum.map(fn record ->
+        assert record["rank"] == 5
+        assert record["tournament"]["master_id"] == user.id
+      end)
     end
 
     defp setup_tournament_having_participants(tournament_id) do
@@ -102,10 +87,8 @@ defmodule MilkWeb.ProfileControllerTest do
         |> Tournaments.create_entrant()
       end)
     end
-  end
 
-  describe "external service" do
-    test "work", %{conn: conn} do
+    test "external services", %{conn: conn} do
       user = fixture_user()
 
       name = "twitter"
@@ -130,10 +113,5 @@ defmodule MilkWeb.ProfileControllerTest do
       |> Kernel.==(1)
       |> assert()
     end
-  end
-
-  defp create_profile(_) do
-    profile = fixture(:profile)
-    %{profile: profile}
   end
 end

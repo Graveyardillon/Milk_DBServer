@@ -13,7 +13,7 @@ import Config
 
 config :milk, Milk.Repo,
   username: "postgres",
-  password: "postgres",
+  password: "jM3q86Yj8QYLwme6",
   database: "milkdb",
   socket_dir: "/tmp/cloudsql/" <> System.get_env("CLOUD_SQL_HOST"),
   pool_size: 10
@@ -35,7 +35,7 @@ config :milk, MilkWeb.Endpoint,
 
 config :pigeon, :apns,
   apns_default: %{
-    key: "lib/milk-0.1.3/priv/cert/AuthKey_MHN824H499.p8",
+    key: "lib/milk-#{Application.spec(:milk, :vsn)}/priv/cert/AuthKey_MHN824H499.p8",
     key_identifier: "MHN824H499",
     team_id: "6ZMC8WKZZQ",
     mode: :prod
@@ -56,3 +56,7 @@ config :milk, :redix_port, 6379
 config :milk, :environment, :prod
 
 config :milk, :domain, "https://e-players-web.web.app"
+
+config :milk, :discord_server, "https://discordserver-dot-e-players6814.an.r.appspot.com"
+config :dfa, :redis_host, "10.231.150.131"
+config :dfa, :redis_port, 6379

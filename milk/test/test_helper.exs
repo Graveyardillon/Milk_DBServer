@@ -1,3 +1,5 @@
-Milk.TournamentProgress.flushall()
 ExUnit.start()
 Ecto.Adapters.SQL.Sandbox.mode(Milk.Repo, {:shared, self()})
+Milk.Tournaments.Progress.flushall()
+Milk.Platforms.create_basic_platforms()
+IO.puts("Test Helper has been completed")

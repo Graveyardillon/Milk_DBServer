@@ -1,6 +1,8 @@
 defmodule MilkWeb.NotifController do
   use MilkWeb, :controller
 
+  import Common.Sperm
+
   alias Common.Tools
   alias Maps
 
@@ -9,105 +11,15 @@ defmodule MilkWeb.NotifController do
     Notif
   }
 
-  alias Milk.CloudStorage.Objects
-  alias Milk.Media.Image
   alias Milk.Notif.Notification
 
   def get_list(conn, %{"user_id" => user_id}) do
-    user_id = Tools.to_integer_as_needed(user_id)
-
-    notifs =
-      user_id
-      |> Notif.list_notification()
-      |> Enum.map(fn notification ->
-        if is_nil(notification.icon_path) do
-          Map.put(notification, :icon, nil)
-        else
-          require_thumbnail = [
-            "FOLLOWING_USER_PLANNED_TOURNAMENT",
-            "TOURNAMENT_START",
-            "REMIND_TO_START_TOURNAMENT",
-            "TOURNAMENT_END"
-          ]
-
-          icon =
-            if Enum.member?(require_thumbnail, notification.process_id) do
-              read_thumbnail(notification.icon_path)
-            else
-              read_icon(notification.icon_path)
-            end
-
-          Map.put(notification, :icon, icon)
-        end
-      end)
+    user_id
+    |> Tools.to_integer_as_needed()
+    |> Notif.list_notifications()
+    ~> notifs
 
     render(conn, "list.json", notif: notifs)
-  end
-
-  defp read_icon(path) do
-    :milk
-    |> Application.get_env(:environment)
-    |> case do
-      :dev -> read_icon_dev(path)
-      :test -> read_icon_dev(path)
-      _ -> read_icon_prod(path)
-    end
-    |> case do
-      {:ok, file} -> Base.encode64(file)
-      {:error, _} -> nil
-    end
-  end
-
-  defp read_icon_dev(path) do
-    File.read(path)
-  end
-
-  defp read_icon_prod(name) do
-    name
-    |> Objects.get()
-    |> Map.get(:mediaLink)
-    |> Image.get()
-  end
-
-  defp read_thumbnail(name) do
-    :milk
-    |> Application.get_env(:environment)
-    |> case do
-      :dev -> read_thumbnail_dev(name)
-      :test -> read_thumbnail_dev(name)
-      _ -> read_thumbnail_prod(name)
-    end
-    |> case do
-      %{b64: b64} -> b64
-      %{error: _} -> nil
-    end
-  end
-
-  defp read_thumbnail_dev(name) do
-    File.read("./static/image/tournament_thumbnail/#{name}.jpg")
-    |> case do
-      {:ok, file} ->
-        b64 = Base.encode64(file)
-        %{b64: b64}
-
-      {:error, _} ->
-        %{error: "image not found"}
-    end
-  end
-
-  defp read_thumbnail_prod(name) do
-    name
-    |> Objects.get()
-    |> Map.get(:mediaLink)
-    |> Image.get()
-    |> case do
-      {:ok, file} ->
-        b64 = Base.encode64(file)
-        %{b64: b64}
-
-      _ ->
-        %{error: "image not found"}
-    end
   end
 
   def create(conn, %{"notif" => notif}) do
@@ -118,18 +30,19 @@ defmodule MilkWeb.NotifController do
   end
 
   def delete(conn, %{"id" => id}) do
-    id = Tools.to_integer_as_needed(id)
-
-    notif = Notif.get_notification!(id)
-
-    with {:ok, %Notification{}} <- Notif.delete_notification(notif) do
-      json(conn, %{result: true})
-    else
-      _ -> json(conn, %{result: false})
+    id
+    |> Tools.to_integer_as_needed()
+    |> Notif.get_notification!()
+    |> Notif.delete_notification()
+    |> case do
+      {:ok, %Notification{}} -> true
+      _ -> false
     end
+    ~> result
+
+    json(conn, %{result: result})
   end
 
-  # FIXME: 権限の認証をつけるべき 引数にbody_textの追加
   def notify_all(conn, %{"text" => title}) do
     Accounts.list_user()
     |> Enum.each(fn user ->
@@ -149,11 +62,17 @@ defmodule MilkWeb.NotifController do
     user_id
     |> Tools.to_integer_as_needed()
     |> Notif.unchecked_notifications()
-    |> Enum.each(fn notification ->
-      Notif.update_notification(notification, %{is_checked: true})
+    |> Enum.all?(fn notification ->
+      notification
+      |> Notif.update_notification(%{is_checked: true})
+      |> case do
+        {:ok, _} -> true
+        _ -> false
+      end
     end)
+    ~> result
 
-    json(conn, %{result: true})
+    json(conn, %{result: result})
   end
 
   def test_push_notice(conn, %{"token" => token}) do
@@ -168,7 +87,6 @@ defmodule MilkWeb.NotifController do
       params: params
     }
     |> Milk.Notif.push_ios()
-    
 
     json(conn, %{result: "ok"})
   end

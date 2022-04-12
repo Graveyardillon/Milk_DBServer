@@ -20,7 +20,7 @@ defmodule MilkWeb.NotifView do
       process_id: notif.process_id,
       datetime: notif.update_time,
       is_checked: notif.is_checked,
-      icon: notif.icon,
+      # icon: notif.icon,
       icon_path: notif.icon_path
     }
   end

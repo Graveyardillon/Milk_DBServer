@@ -1,10 +1,22 @@
 defmodule Milk.Tournaments.Map do
+  @moduledoc """
+  Map
+  """
   use Milk.Schema
 
   import Ecto.Changeset
   import Common.Sperm
 
   alias Milk.Tournaments.Tournament
+
+  @type t :: %__MODULE__{
+          name: String.t(),
+          icon_path: String.t() | nil,
+          tournament_id: integer(),
+          # NOTE: timestamps
+          create_time: any(),
+          update_time: any()
+        }
 
   schema "maps" do
     field :name, :string
@@ -15,6 +27,8 @@ defmodule Milk.Tournaments.Map do
     timestamps()
   end
 
+  def changeset(attrs), do: __MODULE__.changeset(%__MODULE__{}, attrs)
+
   @doc false
   def changeset(map, attrs) do
     map
@@ -24,6 +38,7 @@ defmodule Milk.Tournaments.Map do
 
   @doc """
   All states of the selection.
+  HACK: 使われてないかも
   """
   def state(key \\ "not_selected") do
     %{

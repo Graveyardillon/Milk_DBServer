@@ -19,14 +19,13 @@ config :milk, MilkWeb.Endpoint,
 
 config :milk, Milk.Repo,
   username: "postgres",
-  password: "postgres",
+  password: "jM3q86Yj8QYLwme6",
   database: "milkdb-load-test",
   socket_dir: "/tmp/cloudsql/e-players6814:asia-northeast1:milkdb-load-test",
   show_sensitive_data_on_connection_error: true,
   pool_size: 10
 
-config :milk, Milk.Repo,
-  migration_timestamps: [type: :timestamptz, inserted_at: :create_time, updated_at: :update_time]
+config :milk, Milk.Repo, migration_timestamps: [type: :timestamptz, inserted_at: :create_time, updated_at: :update_time]
 
 # ## SSL Support
 #

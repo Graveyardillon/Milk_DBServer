@@ -17,7 +17,7 @@ defmodule MilkWeb.ChatRoomControllerTest do
     chat_room
   end
 
-  defp fixture_user(n \\ 0) do
+  defp fixture_user(n) do
     attrs = %{
       "icon_path" => "some icon_path",
       "language" => "some language",
@@ -45,7 +45,7 @@ defmodule MilkWeb.ChatRoomControllerTest do
       conn = get(conn, Routes.chat_room_path(conn, :show, %{"id" => id}))
 
       assert %{
-               "id" => id,
+               "id" => _,
                "count" => 42,
                "last_chat" => "some last_chat",
                "name" => "some name"
@@ -71,7 +71,7 @@ defmodule MilkWeb.ChatRoomControllerTest do
       conn = get(conn, Routes.chat_room_path(conn, :show, %{"id" => id}))
 
       assert %{
-               "id" => id,
+               "id" => _,
                "count" => 43,
                "last_chat" => "some updated last_chat",
                "name" => "some updated name"

@@ -4,13 +4,18 @@ defmodule Milk.MixProject do
   def project do
     [
       app: :milk,
-      version: "0.1.3",
+      version: "2.2.1",
       elixir: "~> 1.5",
       elixirc_paths: elixirc_paths(Mix.env()),
       compilers: [:phoenix, :gettext] ++ Mix.compilers(),
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
       deps: deps(),
+      dialyzer: [
+        plt_add_apps: [:mix, :ex_unit],
+        check_plt: true,
+        plt_file: {:no_warn, "priv/plts/dialyzer.plt"}
+      ],
       test_coverage: [tool: ExCoveralls],
       preferred_cli_env: [
         coveralls: :test,
@@ -64,7 +69,8 @@ defmodule Milk.MixProject do
       {:phoenix_html, "~> 2.11"},
       {:phoenix_live_reload, "~> 1.2", only: :dev},
       {:phoenix_live_dashboard, "~> 0.2.0"},
-      {:telemetry_metrics, "~> 0.4"},
+      #{:telemetry_metrics, "~> 0.4"},
+      {:telemetry_metrics, "~> 0.6"},
       {:telemetry_poller, "~> 0.4"},
       {:gettext, "~> 0.11"},
       {:jason, "~> 1.0"},
@@ -81,10 +87,10 @@ defmodule Milk.MixProject do
       {:bamboo_smtp, "~> 3.0.0"},
       {:argon2_elixir, "~> 2.3.0"},
       {:ex_crypto, "~> 0.10.0"},
-      {:tournamex, "~> 0.1.17"},
-      {:dialyxir, "~> 1.0", only: [:dev], runtime: false},
+      {:tournamex, "~> 0.6.4"},
+      {:dialyxir, "~> 1.0", only: [:dev, :test], runtime: false},
       {:excoveralls, "~> 0.10", only: :test},
-      {:redix, ">= 0.0.0"},
+      {:redix, "~> 1.1"},
       {:google_api_storage, "~> 0.29"},
       {:goth, "~> 1.3-rc"},
       {:hackney, "~> 1.17"},
@@ -92,7 +98,11 @@ defmodule Milk.MixProject do
       {:pigeon, "~> 1.5.1"},
       {:kadabra, "~> 0.4.4"},
       {:oban, "~> 2.7"},
-      {:typed_struct, "~> 0.2.1"}
+      {:typed_struct, "~> 0.2.1"},
+      {:ex_image_info, "~> 0.2.4"},
+      {:dfa, "~> 0.2.1"},
+      {:benchfella, "~> 0.3.0", only: :dev},
+      {:flow, "~> 1.1.0"}
     ]
   end
 
@@ -105,14 +115,19 @@ defmodule Milk.MixProject do
   defp aliases do
     [
       "ecto.setup": ["ecto.create", "ecto.migrate"],
-      "ecto.reset": ["ecto.drop", "ecto.setup", "run -e Milk.TournamentProgress.flushall"],
-      test: ["ecto.create --quiet", "ecto.migrate", "test"],
+      "ecto.reset": ["ecto.drop", "ecto.setup", "run -e Milk.Tournaments.Progress.flushall"],
+      test: [
+        "ecto.create --quiet",
+        "ecto.migrate",
+        #"dialyzer",
+        "test"
+      ],
       check: [
-        "compile --warnings-as-errors",
+        "compile",
         "format --check-formatted",
         "credo --strict",
         "coveralls.html",
-        "dialyzer --format short"
+        "dialyzer"
       ]
     ]
   end

@@ -51,16 +51,15 @@ defmodule Milk.Relations do
   @doc """
   Gets relation by followee_id and follower_id.
   """
-  def get_relation_by_ids(follower_id, followee_id) do
-    if !is_nil(followee_id) and !is_nil(follower_id) do
-      Relation
-      |> where([r], r.follower_id == ^follower_id)
-      |> where([r], r.followee_id == ^followee_id)
-      |> Repo.one()
-    else
-      false
-    end
+  @spec get_relation_by_ids(integer(), integer()) :: Relation.t() | nil
+  def get_relation_by_ids(follower_id, followee_id) when not is_nil(follower_id) and not is_nil(followee_id) do
+    Relation
+    |> where([r], r.follower_id == ^follower_id)
+    |> where([r], r.followee_id == ^followee_id)
+    |> Repo.one()
   end
+
+  def get_relation_by_ids(_, _), do: nil
 
   @doc """
   Get relation list of a specific user.
@@ -72,12 +71,11 @@ defmodule Milk.Relations do
     |> where([r], r.follower_id == ^user_id)
     |> Repo.all()
     |> Enum.map(fn relation ->
-      Repo.one(
-        from u in User,
-          join: a in assoc(u, :auth),
-          where: u.id == ^relation.followee_id,
-          preload: [auth: a]
-      )
+      User
+      |> join(:inner, [u], a in assoc(u, :auth))
+      |> where([u, a], u.id == ^relation.followee_id)
+      |> preload([u, a], auth: a)
+      |> Repo.one()
     end)
   end
 
@@ -98,9 +96,7 @@ defmodule Milk.Relations do
     Relation
     |> where([r], r.followee_id == ^user_id)
     |> Repo.all()
-    |> Enum.map(fn relation ->
-      Accounts.get_user(relation.follower_id)
-    end)
+    |> Enum.map(&Accounts.get_user(&1.follower_id))
   end
 
   @doc """
@@ -113,12 +109,11 @@ defmodule Milk.Relations do
     |> where([r], r.followee_id == ^user_id)
     |> Repo.all()
     |> Enum.map(fn relation ->
-      Repo.one(
-        from u in User,
-          join: a in assoc(u, :auth),
-          where: u.id == ^relation.follower_id,
-          preload: [auth: a]
-      )
+      User
+      |> join(:inner, [u], a in assoc(u, :auth))
+      |> where([u, a], u.id == ^relation.follower_id)
+      |> preload([u, a], auth: a)
+      |> Repo.one()
     end)
   end
 
@@ -143,20 +138,20 @@ defmodule Milk.Relations do
       {:error, %Ecto.Changeset{}}
 
   """
-  # TODO: エラーハンドリング
-  # TODO: Multiを使ったほうがいいかもしれない
   def create_relation(attrs \\ %{}) do
     follower_id = Tools.to_integer_as_needed(attrs["follower_id"])
     followee_id = Tools.to_integer_as_needed(attrs["followee_id"])
 
-    get_relation_by_ids(follower_id, followee_id)
-    |> unless do
-      %Relation{follower_id: follower_id, followee_id: followee_id}
-      |> Relation.changeset(attrs)
-      |> Repo.insert()
-    else
-      Logger.error("Bulk insertion error")
-      {:error, "Bulk inserion error"}
+    follower_id
+    |> __MODULE__.get_relation_by_ids(followee_id)
+    |> case do
+      nil ->
+        %Relation{follower_id: follower_id, followee_id: followee_id}
+        |> Relation.changeset(attrs)
+        |> Repo.insert()
+      _ ->
+        Logger.error("Bulk insertion error")
+        {:error, "Bulk inserion error"}
     end
   end
 
@@ -197,24 +192,13 @@ defmodule Milk.Relations do
   @doc """
   Deletes a relation by follower id and followee id.
   """
-  def delete_relation_by_ids(attrs) do
-    follower_id =
-      if is_binary(attrs["follower_id"]) do
-        String.to_integer(attrs["follower_id"])
-      else
-        attrs["follower_id"]
-      end
+  def delete_relation_by_ids(%{"follower_id" => follower_id, "followee_id" => followee_id}) do
+    follower_id = Tools.to_integer_as_needed(follower_id)
+    followee_id = Tools.to_integer_as_needed(followee_id)
 
-    followee_id =
-      if is_binary(attrs["followee_id"]) do
-        String.to_integer(attrs["followee_id"])
-      else
-        attrs["followee_id"]
-      end
+    relation = __MODULE__.get_relation_by_ids(follower_id, followee_id)
 
-    relation = get_relation_by_ids(follower_id, followee_id)
-
-    if relation != nil do
+    if !is_nil(relation) do
       delete_relation(relation)
     else
       Logger.error("Bulk insertion error")
@@ -257,6 +241,8 @@ defmodule Milk.Relations do
   @doc """
   Get blocked users.
   """
+  def blocked_users(nil), do: []
+
   def blocked_users(user_id) do
     BlockRelation
     |> where([br], br.block_user_id == ^user_id)

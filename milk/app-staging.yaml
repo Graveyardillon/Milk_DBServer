@@ -1,5 +1,5 @@
 env: flex
-service: dbserver-staging
+service: default
 runtime: custom
 runtime_config:
   release_app: milk

@@ -44,7 +44,7 @@ defmodule Milk.NotifTest do
         |> Notif.create_notification()
       end)
 
-      Notif.list_notification(user.id)
+      Notif.list_notifications(user.id)
       |> Enum.map(fn notif ->
         assert notif.user_id == user.id
       end)
@@ -173,36 +173,22 @@ defmodule Milk.NotifTest do
     test "update_notification/2 with valid data updates the notification" do
       notification = notification_fixture()
 
-      assert {:ok, %Notification{} = notification} =
-               Notif.update_notification(notification, @update_attrs)
+      assert {:ok, %Notification{} = notification} = Notif.update_notification(notification, @update_attrs)
 
       assert notification.title == "some updated title"
     end
-
-    # FIXME: 時間の型とアソシエーション
-    # test "update_notification/2 with invalid data returns error changeset" do
-    #   notification = notification_fixture()
-    #   assert {:error, %Ecto.Changeset{}} = Notif.update_notification(notification, @invalid_attrs)
-    #   assert notification == Notif.get_notification!(notification.id)
-    # end
 
     test "delete_notification/1 deletes the notification" do
       notification = notification_fixture()
       assert {:ok, %Notification{}} = Notif.delete_notification(notification)
       assert_raise Ecto.NoResultsError, fn -> Notif.get_notification!(notification.id) end
     end
-
-    test "change_notification/1 returns a notification changeset" do
-      notification = notification_fixture()
-      assert %Ecto.Changeset{} = Notif.change_notification(notification)
-    end
   end
 
   describe "push notification" do
     test "ios" do
-      # Device token of Papillon6814's iPhone 8
       hostname = Common.Tools.get_hostname()
-      token = "f580bda8dd8ddc0e6fc3fac8f94f069aa10736bebd80e97bf1088b63d7bb4a43"
+      token = "dummy"
 
       %Maps.PushIos{
         user_id: 1,
@@ -215,7 +201,7 @@ defmodule Milk.NotifTest do
       |> (fn notification ->
             assert notification.device_token == token
             assert notification.push_type == "alert"
-            assert notification.response == :success
+            refute is_nil(notification.response)
             assert notification.topic == Notif.topic()
           end).()
     end

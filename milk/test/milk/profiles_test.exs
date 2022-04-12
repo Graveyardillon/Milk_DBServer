@@ -4,10 +4,7 @@ defmodule Milk.ProfilesTest do
 
   import Common.Sperm
 
-  alias Milk.{
-    TournamentProgress,
-    Tournaments
-  }
+  alias Milk.Tournaments
 
   describe "get records" do
     test "works (both team and individual)" do
@@ -38,7 +35,7 @@ defmodule Milk.ProfilesTest do
       end)
       |> Enum.map(fn team ->
         team.id
-        |> Tournaments.get_team_members_by_team_id()
+        |> Tournaments.load_team_members_by_team_id()
         |> Enum.each(fn member ->
           leader = Tournaments.get_leader(member.team_id)
 

@@ -3,12 +3,20 @@ defmodule Milk.Log.TournamentChatTopicLog do
 
   import Ecto.Changeset
 
+  @type t :: %__MODULE__{
+          chat_room_id: integer(),
+          is_deleted: boolean(),
+          topic_name: String.t(),
+          tab_index: integer(),
+          tournament_id: integer()
+        }
+
   schema "tournament_chat_topics_log" do
-    field :topic_name, :string
-    field :tournament_id, :integer
-    field :tab_index, :integer
     field :chat_room_id, :integer
     field :is_deleted, :boolean, default: false
+    field :topic_name, :string
+    field :tab_index, :integer
+    field :tournament_id, :integer
 
     timestamps()
   end

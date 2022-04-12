@@ -5,9 +5,20 @@ defmodule Milk.Accounts.Auth do
 
   alias Milk.Accounts.User
 
+  @type t :: %__MODULE__{
+          email: String.t(),
+          password: String.t() | nil,
+          service_name: String.t() | nil,
+          # NOTE: timestamps
+          create_time: any(),
+          update_time: any()
+        }
+
   schema "auth" do
-    field :email, :string
+    field :email, :string, null: false
     field :password, :string
+    field :service_name, :string
+
     belongs_to :user, User
 
     timestamps()
@@ -36,15 +47,18 @@ defmodule Milk.Accounts.Auth do
     |> put_password_hash()
   end
 
-  defp put_password_hash(
-         %Ecto.Changeset{valid?: true, changes: %{password: password}} = changeset
-       ) do
+  @doc false
+  def changeset_oauth(auth, attrs) do
+    auth
+    |> cast(attrs, [:email, :service_name])
+    |> validate_required(:email)
+  end
+
+  defp put_password_hash(%Ecto.Changeset{valid?: true, changes: %{password: password}} = changeset) do
     change(changeset, password: create_pass(password))
   end
 
   defp put_password_hash(changeset), do: changeset
 
-  def create_pass(password) do
-    Argon2.hash_pwd_salt(password)
-  end
+  def create_pass(password), do: Argon2.hash_pwd_salt(password)
 end

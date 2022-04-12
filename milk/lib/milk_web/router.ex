@@ -27,10 +27,10 @@ defmodule MilkWeb.Router do
   scope "/api", MilkWeb do
     pipe_through :api
 
-    get "/check/connection", ConnectionCheckController, :connection_check
+    get "/check/connection", CheckController, :connection_check
+    post "/check/data_for_web", CheckController, :data_for_web
 
-    resources "/user", UserController,
-      except: [:new, :edit, :index, :show, :create, :update, :delete]
+    resources "/user", UserController, except: [:new, :edit, :index, :show, :create, :update, :delete]
 
     get "/user/num", UserController, :number
     get "/user/check_username_duplication", UserController, :check_username_duplication
@@ -42,13 +42,22 @@ defmodule MilkWeb.Router do
     post "/user/in_touch", UserController, :get_users_in_touch
     post "/user/signup", UserController, :create
     post "/user/signin", UserController, :login
+    post "/user/signin_with_discord", UserController, :signin_with_discord
+    post "/user/signin_with_apple", UserController, :signin_with_apple
     post "/user/login_forced", UserController, :login_forced
-    post "/user/logout", UserController, :logout
+    post "/user/signout", UserController, :logout
     post "/user/change_password", UserController, :change_password
+    post "/user/change_language", UserController, :change_language
     delete "/user/delete", UserController, :delete
 
     post "/user_report", ReportController, :create_user_report
     post "/tournament_report", ReportController, :create_tournament_report
+
+    get "/discord/team_name", DiscordController, :team_name
+    post "/discord/resend_invitation_links", DiscordController, :resend_invitation_links
+    post "/discord/associate", DiscordController, :associate
+    post "/discord/create_invitation_link", DiscordController, :create_invitation_link
+    delete "/discord/dissociate", DiscordController, :dissociate
 
     get "/profile", ProfileController, :get_profile
     get "/profile/get", ProfileController, :get_profile
@@ -61,9 +70,6 @@ defmodule MilkWeb.Router do
     get "/profile/external_services", ProfileController, :external_services
     post "/profile/external_service", ExternalServiceController, :create
     delete "/profile/external_service", ExternalServiceController, :delete
-
-    get "/game/list", GameController, :list
-    post "/game/add", GameController, :create
 
     resources "/relation", RelationController, except: [:new, :edit, :index, :show, :delete]
     get "/relation/following_list", RelationController, :following_list
@@ -107,7 +113,16 @@ defmodule MilkWeb.Router do
     get "/tournament/get_opponent", TournamentController, :get_opponent
     get "/tournament/fighting_users", TournamentController, :get_fighting_users
     get "/tournament/waiting_users", TournamentController, :get_waiting_users
+    get "/tournament/data_for_ios", TournamentController, :get_started_match_information
     get "/tournament/match_info", TournamentController, :get_match_information
+    get "/tournament/count_tournament_per_month", TournamentController, :count_tournament_per_month
+    get "/tournament/leader_info", TournamentController, :get_leader_info
+
+    get "/tournament/entry_template", EntryController, :get_template
+    get "/tournament/entry_info", EntryController, :get_entry_information
+    get "/tournament/has_entry_info", EntryController, :has_entry_info
+    post "/tournament/entry_info", EntryController, :create_entry_information
+    post "/tournament/entry_template", EntryController, :create_template
 
     get "/tournament/get_participating_tournaments",
         TournamentController,
@@ -117,8 +132,9 @@ defmodule MilkWeb.Router do
     get "/tournament/participating", TournamentController, :participating_tournaments
     get "/tournament/get_tabs", TournamentController, :tournament_topics
     get "/tournament/get_thumbnail", TournamentController, :get_thumbnail_image
-    get "/tournament/get_thumbnail_by_tournament_id", TournamentController, :get_thumbnail_by_tournament_id
+
     get "/tournament/get_match_list", TournamentController, :get_match_list
+    get "/tournament/get_round_robin_match_list", TournamentController, :get_round_robin_match_list
     get "/tournament/home", TournamentController, :home
     get "/tournament/home/search", TournamentController, :search
     get "/tournament/masters", TournamentController, :get_game_masters
@@ -143,8 +159,8 @@ defmodule MilkWeb.Router do
     get "/tournament/verify_password", TournamentController, :verify_password
     get "/tournament/pending", TournamentController, :pending
     get "/tournament/url/:url", TournamentController, :redirect_by_url
-    get "/tournament/options", TournamentController, :options
-    get "/tournament/option_icon", TournamentController, :get_option_icon
+    get "/tournament/maps", TournamentController, :maps
+    get "/tournament/map_icon", TournamentController, :get_map_icon
 
     post "/tournament/start", TournamentController, :start
     post "/tournament/register/pid", TournamentController, :register_pid_of_start_notification
@@ -165,10 +181,15 @@ defmodule MilkWeb.Router do
     post "/tournament/flip_coin", TournamentController, :flip_coin
     post "/tournament/defeat", TournamentController, :force_to_defeat
     post "/tournament/finish", TournamentController, :finish
+    post "/tournament/finish_with_result", TournamentController, :finish_with_result
     post "/tournament/ban_maps", TournamentController, :ban_maps
     post "/tournament/choose_map", TournamentController, :choose_map
     post "/tournament/choose_ad", TournamentController, :choose_ad
     put "/tournament/update", TournamentController, :update
+    post "/tournament/regenerate_round_robin", TournamentController, :rematch_round_robin_as_needed
+    post "/tournament/create_assistants", TournamentController, :create_assistants
+    post "/tournament/create_categories", FreeForAllController, :create_categories
+    delete "/tournament/assistant", TournamentController, :delete_assistant
 
     get "/tournament_log/index", TournamentLogController, :index
     post "/tournament_log/add", TournamentLogController, :create
@@ -182,20 +203,20 @@ defmodule MilkWeb.Router do
     post "/entrant/rank/promote", EntrantController, :promote
 
     get "/team", TeamController, :show
+    get "/team/teams", TeamController, :get_teams
     get "/team/mates", TeamController, :get_teammates
     get "/team/confirmed_teams", TeamController, :get_confirmed_teams
+    get "/team/confirmed_teams_without_members", TeamController, :get_confirmed_teams_without_members
     post "/team", TeamController, :create
+    post "/team/resend_invitations", TeamController, :resend_team_invitations
     post "/team/invitation_confirm", TeamController, :confirm_invitation
     post "/team/invitation_decline", TeamController, :decline_invitation
+    post "/team/add_members", TeamController, :add_members
     delete "/team", TeamController, :delete
 
-    resources "/assistant", AssistantController,
-      except: [:new, :edit, :index, :show, :delete, :update]
+    resources "/assistant", AssistantController, except: [:new, :edit, :index, :show, :delete, :update]
 
     post "/assistant/delete", AssistantController, :delete
-
-    get "/live/home", LiveController, :home
-    post "/live", LiveController, :create
 
     post "/sync", SyncController, :sync
 
@@ -215,6 +236,25 @@ defmodule MilkWeb.Router do
 
     post "/device/register", DeviceController, :register_token
     post "/device/unregister", DeviceController, :unregister_token
+
+    get "/image/path", ImageController, :get_by_path
+    get "/image/get_thumbnail_by_tournament_id", ImageController, :get_thumbnail_by_tournament_id
+
+    get "/tournament/ffa_categories", FreeForAllController, :get_categories
+    get "/tournament/ffa_information", FreeForAllController, :get_information
+    get "/tournament/ffa_current_status", FreeForAllController, :get_current_status
+    get "/tournament/ffa_tables", FreeForAllController, :get_tables
+    get "/tournament/ffa_round_information", FreeForAllController, :get_round_information
+    get "/tournament/ffa_round_team_information", FreeForAllController, :get_round_team_information
+    get "/tournament/ffa_match_information", FreeForAllController, :get_match_information
+    get "/tournament/ffa_load_match_information", FreeForAllController, :load_match_information
+    get "/tournament/ffa_team_match_information", FreeForAllController, :get_team_match_information
+    get "/tournament/ffa_load_team_match_information", FreeForAllController, :load_team_match_information
+    get "/tournament/ffa_get_member_match_information", FreeForAllController, :get_member_match_information
+    get "/tournament/ffa_load_member_match_information", FreeForAllController, :load_member_match_information
+    post "/tournament/ffa_update_information", FreeForAllController, :update_information
+    post "/tournament/ffa_update_categories", FreeForAllController, :update_categories
+    post "/tournament/ffa_claim_scores", FreeForAllController, :claim_scores
   end
 
   scope "/debug", MilkWeb do
@@ -222,9 +262,6 @@ defmodule MilkWeb.Router do
     get "/tournament/image", TournamentController, :image
     get "/tournament/debug_match_list", TournamentController, :debug_match_list
     post "/assistant/get", AssistantController, :show
-
-    # ETSのデバッグ用
-    post "/observe", DebugController, :observe
 
     post "/push_notice", NotifController, :test_push_notice
   end

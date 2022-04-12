@@ -6,6 +6,14 @@ defmodule Milk.Tournaments.Assistant do
   alias Milk.Tournaments.Tournament
   alias Milk.Accounts.User
 
+  @type t :: %__MODULE__{
+          tournament_id: integer(),
+          user_id: integer(),
+          # NOTE: timestamps
+          create_time: any(),
+          update_time: any()
+        }
+
   schema "assistants" do
     belongs_to :tournament, Tournament
     belongs_to :user, User
@@ -16,6 +24,6 @@ defmodule Milk.Tournaments.Assistant do
   @doc false
   def changeset(assistant, attrs) do
     assistant
-    |> cast(attrs, [])
+    |> cast(attrs, [:user_id, :tournament_id])
   end
 end

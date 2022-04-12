@@ -50,8 +50,7 @@ defmodule Milk.LogTest do
     test "update_chat_room_log/2 with valid data updates the chat_room_log" do
       chat_room_log = chat_room_log_fixture()
 
-      assert {:ok, %ChatRoomLog{} = chat_room_log} =
-               Log.update_chat_room_log(chat_room_log, @update_attrs)
+      assert {:ok, %ChatRoomLog{} = chat_room_log} = Log.update_chat_room_log(chat_room_log, @update_attrs)
 
       assert chat_room_log.count == 43
       assert chat_room_log.last_chat == "some updated last_chat"
@@ -116,8 +115,7 @@ defmodule Milk.LogTest do
     test "update_chat_member_log/2 with valid data updates the chat_member_log" do
       chat_member_log = chat_member_log_fixture()
 
-      assert {:ok, %ChatMemberLog{} = chat_member_log} =
-               Log.update_chat_member_log(chat_member_log, @update_attrs)
+      assert {:ok, %ChatMemberLog{} = chat_member_log} = Log.update_chat_member_log(chat_member_log, @update_attrs)
 
       assert chat_member_log.authority == 43
       assert chat_member_log.chat_room_id == 43
@@ -127,8 +125,7 @@ defmodule Milk.LogTest do
     test "update_chat_member_log/2 with invalid data returns error changeset" do
       chat_member_log = chat_member_log_fixture()
 
-      assert {:error, %Ecto.Changeset{}} =
-               Log.update_chat_member_log(chat_member_log, @invalid_attrs)
+      assert {:error, %Ecto.Changeset{}} = Log.update_chat_member_log(chat_member_log, @invalid_attrs)
 
       assert chat_member_log == Log.get_chat_member_log!(chat_member_log.id)
     end
@@ -263,8 +260,7 @@ defmodule Milk.LogTest do
     test "update_entrant_log/2 with valid data updates the entrant_log" do
       entrant_log = entrant_log_fixture()
 
-      assert {:ok, %EntrantLog{} = entrant_log} =
-               Log.update_entrant_log(entrant_log, @update_attrs)
+      assert {:ok, %EntrantLog{} = entrant_log} = Log.update_entrant_log(entrant_log, @update_attrs)
 
       assert entrant_log.rank == 43
       assert entrant_log.tournament_id == 43
@@ -333,8 +329,7 @@ defmodule Milk.LogTest do
     test "update_tournament_log/2 with valid data updates the tournament_log" do
       tournament_log = tournament_log_fixture()
 
-      assert {:ok, %TournamentLog{} = tournament_log} =
-               Log.update_tournament_log(tournament_log, @update_attrs)
+      assert {:ok, %TournamentLog{} = tournament_log} = Log.update_tournament_log(tournament_log, @update_attrs)
 
       assert tournament_log.name == "some updated name"
     end
@@ -342,8 +337,7 @@ defmodule Milk.LogTest do
     test "update_tournament_log/2 with invalid data returns error changeset" do
       tournament_log = tournament_log_fixture()
 
-      assert {:error, %Ecto.Changeset{}} =
-               Log.update_tournament_log(tournament_log, @invalid_attrs)
+      assert {:error, %Ecto.Changeset{}} = Log.update_tournament_log(tournament_log, @invalid_attrs)
 
       assert tournament_log.id == Log.get_tournament_log!(tournament_log.id).id
     end
@@ -356,15 +350,12 @@ defmodule Milk.LogTest do
   end
 
   describe "team_log" do
-    alias Milk.Log.TeamLog
-
     test "create team log (team_id)" do
       [is_team: true, capacity: 4, type: 2]
       |> fixture_tournament()
       |> Map.get(:id)
       ~> tournament_id
       |> fill_with_team()
-      ~> teams
       |> Enum.map(& &1.id)
       ~> team_id_list
       |> Enum.each(fn team_id ->
@@ -381,23 +372,6 @@ defmodule Milk.LogTest do
         assert length(log.team_member) == 5
         refute is_nil(log.rank)
       end)
-
-      teams
-      |> hd()
-      |> Map.get(:tournament_id)
-      ~> tournament_id
-
-      teams
-      |> hd()
-      |> Map.get(:team_member)
-      |> hd()
-      |> Map.get(:user_id)
-      ~> user_id
-
-      team_id = hd(teams).id
-
-      assert Log.get_team_log_by_team_id(team_id) ==
-               Log.get_team_log_by_tournament_id_and_user_id(tournament_id, user_id)
     end
   end
 end

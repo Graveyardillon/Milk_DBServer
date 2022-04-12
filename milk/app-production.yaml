@@ -1,14 +1,10 @@
 env: flex
-service: dbserver
+service: default
 runtime: custom
 runtime_config:
   release_app: milk
-resources:
-  cpu: 2
-  memory_gb: 2.3
-  disk_size_gb: 10
 
-instance_class: b1
+instance_class: b4
 manual_scaling:
   instances: 1
 beta_settings:

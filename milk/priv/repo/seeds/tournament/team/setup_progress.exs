@@ -7,6 +7,8 @@ alias Milk.{
   Tournaments
 }
 
+# XXX: DEPRECATED
+
 team_n = 4
 team_size = 5
 
@@ -15,6 +17,9 @@ Timex.now()
 |> Timex.add(Timex.Duration.from_days(2))
 |> Timex.to_datetime()
 ~> day_after_tomorrow
+
+# now = nil
+# day_after_tomorrow = nil
 
 1..team_n*team_size+1
 |> Enum.to_list()
@@ -38,12 +43,12 @@ organizer
     "deadline" => day_after_tomorrow,
     "description" => "test team tournament of size 4.",
     "enabled_coin_toss" => true,
-    "enabled_multiple_selection" => true,
+    "enabled_map" => true,
     "event_date" => day_after_tomorrow,
     "name" => "test team tournament of size 4.",
     "type" => 2,
     "url" => "test url",
-    "thumbnail_path" => "damn",
+    "thumbnail_path" => "./static/image/tournament_thumbnail/damn.jpg",
     "password" => nil,
     "game_name" => "my awesome name",
     "is_team" => true,
@@ -54,8 +59,9 @@ organizer
     "game_id" => nil,
     "coin_head_field" => "マップ選択",
     "coin_tail_field" => "A/D選択",
-    "multiple_selection_label" => "マップ",
-    "multiple_selections" => [
+    "rule" => "flipban",
+    #"multiple_selection_label" => "マップ",
+    "maps" => [
       %{
         "name" => "アセント",
         "icon_path" => "./static/image/options/ascent.png"
@@ -96,13 +102,16 @@ end)
   tournament.id
   |> Tournaments.create_team(team_size, leader, members)
   |> elem(1)
+  ~> team
+
+  {team, leader}
 end)
-|> Enum.map(fn team ->
+|> Enum.map(fn {team, leader} ->
   team.id
-  |> Tournaments.get_team_members_by_team_id()
+  |> Tournaments.load_team_members_by_team_id()
   |> Enum.map(fn member ->
     member.id
-    |> Tournaments.create_team_invitation(1)
+    |> Tournaments.create_team_invitation(leader)
     |> elem(1)
     |> Map.get(:id)
     |> Tournaments.confirm_team_invitation()

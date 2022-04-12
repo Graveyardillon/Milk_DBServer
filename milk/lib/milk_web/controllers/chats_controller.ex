@@ -14,13 +14,14 @@ defmodule MilkWeb.ChatsController do
   alias Milk.CloudStorage.Objects
 
   @doc """
-  TODO: 認証
+  チャットをすべて取得する
+  # TODO: getリクエストだけど認証があったほうが良さそう それかpostにしちゃうか
   """
   def get_all_chats(conn, %{"room_id" => room_id}) do
-    chat_list =
-      room_id
-      |> Tools.to_integer_as_needed()
-      |> Chat.get_all_chat_by_room_id_including_log()
+    room_id
+    |> Tools.to_integer_as_needed()
+    |> Chat.get_all_chat_by_room_id_including_log()
+    ~> chat_list
 
     render(conn, "index.json", chat: chat_list)
   end
@@ -86,14 +87,12 @@ defmodule MilkWeb.ChatsController do
 
   @doc """
   Upload a image.
-  FIXME: chatディレクトリがない場合は作成の処理入れたいな
   """
   def upload_image(conn, %{"file" => image}) do
     if image != "" do
       uuid = SecureRandom.uuid()
 
       FileUtils.copy(image.path, "./static/image/chat/#{uuid}.jpg")
-      |> IO.inspect(label: :file_utils)
 
       case Application.get_env(:milk, :environment) do
         :dev ->
@@ -103,9 +102,7 @@ defmodule MilkWeb.ChatsController do
           uuid
 
         _ ->
-          object =
-            Milk.CloudStorage.Objects.upload("./static/image/chat/#{uuid}.jpg")
-            |> IO.inspect(label: :object)
+          {:ok, object} = Milk.CloudStorage.Objects.upload("./static/image/chat/#{uuid}.jpg")
 
           File.rm("./static/image/chat/#{uuid}.jpg")
           object.name
@@ -114,7 +111,6 @@ defmodule MilkWeb.ChatsController do
       nil
     end
     ~> image_path
-    |> IO.inspect(label: :image_path)
 
     json(conn, %{local_path: image_path})
   end
@@ -150,16 +146,11 @@ defmodule MilkWeb.ChatsController do
   end
 
   defp loadimg_prod(name) do
-    object = Objects.get(name)
+    {:ok, object} = Objects.get(name)
 
-    case Image.get(object.mediaLink) do
-      {:ok, file} ->
-        b64 = Base.encode64(file)
-        %{b64: b64}
-
-      _ ->
-        %{error: "image not found"}
-    end
+    {:ok, file} = Image.get(object.mediaLink)
+    b64 = Base.encode64(file)
+    %{b64: b64}
   end
 
   @doc """
@@ -169,23 +160,20 @@ defmodule MilkWeb.ChatsController do
   If the user already have a room for him,
   it doesn't create a room but just send a chat.
   """
-  def create_dialogue(conn, %{"chat" => chats_params}) do
-    case Chat.dialogue(chats_params) do
-      {:ok, %Chats{} = chats} ->
-        conn
-        |> render("show.json", chats: chats)
+  def create_dialogue(conn, %{"chat" => %{"user_id" => user_id, "partner_id" => partner_id, "word" => message}}) do
+    user_id = Tools.to_integer_as_needed(user_id)
+    partner_id = Tools.to_integer_as_needed(partner_id)
 
-      {:error, error} ->
-        render(conn, "error.json", error: error)
-
-      _ ->
-        render(conn, "error.json", error: nil)
+    case Chat.dialogue(%{"user_id" => user_id, "partner_id" => partner_id, "word" => message}) do
+      {:ok, %Chats{} = chats} -> render(conn, "show.json",  chats: chats)
+      {:error, error}         -> render(conn, "error.json", error: error)
+      _                       -> render(conn, "error.json", error: nil)
     end
   end
 
-  def create_dialogue(conn, %{"chat_group" => chats_params}) do
-    chats_params
-    |> Chat.dialogue()
+  def create_dialogue(conn, %{"chat_group" => %{"user_id" => user_id, "chat_room_id" => chat_room_id, "word" => message}}) do
+    user_id
+    |> Chat.dialogue(chat_room_id, message)
     |> case do
       {:ok, %Chats{} = chats} ->
         members =

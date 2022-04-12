@@ -5,13 +5,18 @@ defmodule Milk.Notif do
 
   import Ecto.Query, warn: false
   import Pigeon.APNS.Notification
+  import Common.Sperm
 
   alias Maps
 
-  alias Milk.Accounts
+  alias Milk.{
+    Accounts,
+    Repo,
+    Tournaments
+  }
+
   alias Milk.Accounts.User
   alias Milk.Log.NotificationLog
-  alias Milk.Repo
   alias Milk.Notif.Notification
 
   def topic, do: "PapillonKK.e-players"
@@ -25,30 +30,29 @@ defmodule Milk.Notif do
       [%Notification{}, ...]
 
   """
-  def list_notification(user_id) do
-    Repo.all(
-      from n in Notification,
-        join: u in assoc(n, :user),
-        where: u.id == ^user_id,
-        order_by: n.create_time,
-        preload: [user: u]
-    )
+  @spec list_notifications(integer()) :: [Notification.t()]
+  def list_notifications(user_id) do
+    Notification
+    |> join(:inner, [n], u in User, on: n.user_id == u.id)
+    |> where([n, u], u.id == ^user_id)
+    |> order_by([n, u], asc: n.create_time)
+    |> Repo.all()
   end
 
   @doc """
   Get unchecked notifications.
   """
+  @spec unchecked_notifications(integer()) :: [Notification.t()]
   def unchecked_notifications(user_id) do
     user_id
-    |> list_notification()
-    |> Enum.filter(fn notification ->
-      !notification.is_checked
-    end)
+    |> __MODULE__.list_notifications()
+    |> Enum.reject(&Map.get(&1, :is_checked))
   end
 
   @doc """
   Count unchecked notifications.
   """
+  @spec count_unchecked_notifications(integer()) :: integer()
   def count_unchecked_notifications(user_id) do
     Notification
     |> where([n], not n.is_checked)
@@ -70,7 +74,24 @@ defmodule Milk.Notif do
       ** (Ecto.NoResultsError)
 
   """
+  @spec get_notification!(integer()) :: Notification.t()
   def get_notification!(id), do: Repo.get!(Notification, id)
+
+  @doc """
+  Get notifications relevant for tournament.
+  """
+  @spec get_notifications_relevant_for_tournament(integer()) :: [Notification.t()]
+  def get_notifications_relevant_for_tournament(tournament_id) do
+    tournament_id
+    |> Tournaments.get_invitations_by_tournament_id()
+    |> Enum.map(&Jason.encode!(%{invitation_id: &1.id}))
+    |> Enum.map(fn jason ->
+      Notification
+      |> where([n], n.data == ^jason)
+      |> Repo.all()
+    end)
+    |> List.flatten()
+  end
 
   @doc """
   Creates a notification.
@@ -84,17 +105,17 @@ defmodule Milk.Notif do
       {:error, %Ecto.Changeset{}}
 
   """
+  @spec create_notification(map()) :: {:ok, Notification.t()} | {:error, Ecto.Changeset.t()}
   def create_notification(attrs \\ %{}) do
-    data =
-      attrs["data"]
-      |> is_nil()
-      |> unless do
-        if is_integer(attrs["data"]) do
-          to_string(attrs["data"])
-        else
-          attrs["data"]
-        end
+    attrs["data"]
+    |> if do
+      if is_integer(attrs["data"]) do
+        to_string(attrs["data"])
+      else
+        attrs["data"]
       end
+    end
+    ~> data
 
     attrs = Map.put(attrs, "data", data)
 
@@ -102,16 +123,16 @@ defmodule Milk.Notif do
     |> Accounts.get_user()
     |> case do
       %User{} = user ->
-        Ecto.build_assoc(user, :notif)
+        user
+        |> Ecto.build_assoc(:notif)
         |> Notification.changeset(attrs)
         |> Repo.insert()
         |> case do
-          {:ok, notif} -> {:ok, Map.put(notif, :user, Accounts.get_user(attrs["user_id"]))}
+          {:ok, notif}    -> {:ok, Map.put(notif, :user, Accounts.get_user(attrs["user_id"]))}
           {:error, error} -> {:error, error}
         end
 
-      _ ->
-        {:error, %Ecto.Changeset{}}
+      _ -> {:error, %Ecto.Changeset{}}
     end
   end
 
@@ -127,9 +148,10 @@ defmodule Milk.Notif do
       {:error, %Ecto.Changeset{}}
 
   """
+  @spec update_notification(Notification.t(), map()) :: {:ok, Notification.t()} | {:error, Ecto.Changeset.t()}
   def update_notification(%Notification{} = notification, attrs) do
     notification
-    |> Notification.changeset(attrs)
+    |> Notification.update_changeset(attrs)
     |> Repo.update()
   end
 
@@ -145,6 +167,7 @@ defmodule Milk.Notif do
       {:error, %Ecto.Changeset{}}
 
   """
+  @spec delete_notification(Notification.t()) :: {:ok, Notification.t()} | {:error, Ecto.Changeset.t()}
   def delete_notification(%Notification{} = notification) do
     %NotificationLog{}
     |> NotificationLog.changeset(Map.from_struct(notification))
@@ -154,17 +177,18 @@ defmodule Milk.Notif do
   end
 
   @doc """
-  Returns an `%Ecto.Changeset{}` for tracking notification changes.
-
-  ## Examples
-
-      iex> change_notification(notification)
-      %Ecto.Changeset{data: %Notification{}}
-
+  Delete notifications relevant for the tournament.
   """
-  def change_notification(%Notification{} = notification, attrs \\ %{}) do
-    Notification.changeset(notification, attrs)
+  @spec delete_notifications_relevant_for_tournament(integer()) :: {:ok, nil} | {:error, Ecto.Changeset.t() | nil}
+  def delete_notifications_relevant_for_tournament(tournament_id) when is_integer(tournament_id) do
+    tournament_id
+    |> __MODULE__.get_notifications_relevant_for_tournament()
+    |> Enum.each(&__MODULE__.delete_notification(&1))
+
+    {:ok, nil}
   end
+
+  def delete_notifications_relevant_for_tournament(_), do: {:error, "should provide tournament_id in integer"}
 
   @doc """
   Creates a notification log.
@@ -180,7 +204,9 @@ defmodule Milk.Notif do
   """
   def push_ios(%Maps.PushIos{} = push_ios) do
     badge_num = count_unchecked_notifications(push_ios.user_id)
-    Pigeon.APNS.Notification.new("push_notice", push_ios.device_token, topic())
+
+    "push_notice"
+    |> Pigeon.APNS.Notification.new(push_ios.device_token, topic())
     |> put_sound("default")
     |> put_badge(badge_num)
     |> put_category(push_ios.process_id)

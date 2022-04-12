@@ -9,6 +9,7 @@ defmodule Milk.Log do
   alias Common.Tools
 
   alias Milk.{
+    Accounts,
     Repo,
     Tournaments
   }
@@ -19,6 +20,10 @@ defmodule Milk.Log do
     TournamentChatTopicLog,
     TeamLog,
     TeamMemberLog
+  }
+
+  alias Milk.Tournaments.{
+    Entrant
   }
 
   @doc """
@@ -341,9 +346,9 @@ defmodule Milk.Log do
   @doc """
   Gets a single tournament log by tournament id.
   """
-  def get_tournament_log_by_tournament_id(id) do
+  def get_tournament_log_by_tournament_id(tournament_id) do
     TournamentLog
-    |> where([t], t.tournament_id == ^id)
+    |> where([t], t.tournament_id == ^tournament_id)
     |> Repo.one()
   end
 
@@ -446,6 +451,7 @@ defmodule Milk.Log do
   @doc """
   Get a single entrant log by entrant id.
   """
+  @spec get_entrant_log_by_entrant_id(integer()) :: EntrantLog.t() | nil
   def get_entrant_log_by_entrant_id(id) do
     EntrantLog
     |> where([e], e.entrant_id == ^id)
@@ -483,7 +489,21 @@ defmodule Milk.Log do
       {:error, %Ecto.Changeset{}}
 
   """
-  def create_entrant_log(attrs \\ %{}) do
+  @spec create_entrant_log(Entrant.t() | integer() | map()) :: {:ok, EntrantLog.t()} | {:error, String.t() | nil}
+  def create_entrant_log(entrant_id) when is_integer(entrant_id) do
+    entrant_id
+    |> Tournaments.get_entrant()
+    |> __MODULE__.create_entrant_log()
+  end
+
+  def create_entrant_log(%Entrant{} = entrant) do
+    entrant
+    |> Map.from_struct()
+    |> Map.put(:entrant_id, entrant.id)
+    |> __MODULE__.create_entrant_log()
+  end
+
+  def create_entrant_log(attrs) do
     %EntrantLog{}
     |> EntrantLog.changeset(attrs)
     |> Repo.insert()
@@ -738,19 +758,6 @@ defmodule Milk.Log do
   end
 
   @doc """
-  Returns an `%Ecto.Changeset{}` for tracking notification_log changes.
-
-  ## Examples
-
-      iex> change_notification_log(notification_log)
-      %Ecto.Changeset{data: %NotificationLog{}}
-
-  """
-  def change_notification_log(%NotificationLog{} = notification_log, attrs \\ %{}) do
-    NotificationLog.changeset(notification_log, attrs)
-  end
-
-  @doc """
   Returns the list of tournament_chat_topic_log.
 
   ## Examples
@@ -855,7 +862,7 @@ defmodule Milk.Log do
   """
   def create_team_log(team_id) when is_integer(team_id) do
     team_id
-    |> Tournaments.get_team()
+    |> Tournaments.load_team()
     ~> team
     |> Map.get(:team_member)
     |> Enum.each(fn member ->
@@ -892,12 +899,20 @@ defmodule Milk.Log do
     TeamMemberLog
     |> where([t], t.team_id == ^team_id)
     |> Repo.all()
+    |> Enum.map(fn team_member_log ->
+      user = Accounts.get_user(team_member_log.user_id)
+      Map.put(team_member_log, :user, Repo.preload(user, :auth))
+    end)
     ~> team_member_logs
 
     TeamLog
     |> where([t], t.team_id == ^team_id)
     |> Repo.one()
-    |> Map.put(:team_member, team_member_logs)
+    ~> team_log
+
+    unless is_nil(team_log) do
+      Map.put(team_log, :team_member, team_member_logs)
+    end
   end
 
   @doc """
@@ -912,6 +927,7 @@ defmodule Milk.Log do
   @doc """
   Get team log by tournament id and user id.
   """
+  @spec get_team_log_by_tournament_id_and_user_id(integer(), integer()) :: TeamLog.t() | nil
   def get_team_log_by_tournament_id_and_user_id(tournament_id, user_id) do
     TeamLog
     |> where([t], t.tournament_id == ^tournament_id)
@@ -919,9 +935,7 @@ defmodule Milk.Log do
     |> Enum.filter(fn team_log ->
       TeamMemberLog
       |> where([t], t.team_id == ^team_log.team_id and t.user_id == ^user_id)
-      |> Repo.one()
-      |> is_nil()
-      |> Kernel.!()
+      |> Repo.exists?()
     end)
     |> Enum.map(fn team_log ->
       TeamMemberLog
@@ -931,7 +945,7 @@ defmodule Milk.Log do
 
       Map.put(team_log, :team_member, members)
     end)
-    |> hd()
+    |> Tools.hd_as_needed()
   end
 
   @doc """
@@ -948,5 +962,23 @@ defmodule Milk.Log do
   """
   def get_team_member_log(id) do
     Repo.get(TeamMemberLog, id)
+  end
+
+  @doc """
+  Get team member logs.
+  """
+  def get_team_member_logs(team_id) do
+    TeamMemberLog
+    |> where([tm], tm.team_id == ^team_id)
+    |> Repo.all()
+  end
+
+  def load_team_member_logs(team_id) do
+    team_id
+    |> __MODULE__.get_team_member_logs()
+    |> Enum.map(fn member ->
+      user = Accounts.get_user(member.user_id)
+      Map.put(member, :user, Repo.preload(user, :auth))
+    end)
   end
 end

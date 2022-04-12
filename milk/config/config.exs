@@ -23,15 +23,11 @@ config :logger, :console,
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
 
-# Import environment specific config. This must remain at the bottom
-# of this file so it overrides the configuration defined above.
-import_config "#{Mix.env()}.exs"
-
 config :milk, Milk.UserManager.Guardian,
   issuer: "milk",
   secret_key: "LqoR7+lZoQ0d7SFXzx2GJhzn8QrhoOn2tM43fL6i+2S0d//IjQ4+y+gOcSxsK+2f",
   serializer: Milk.UserManager.GuardianSerializer,
-  ttl: {24, :hour}
+  ttl: {4, :weeks}
 
 config :milk, Milk.UserManager.Pipeline,
   module: Milk.UserManager.Guardian,
@@ -62,6 +58,7 @@ config :milk, Milk.Mailer,
 config :milk, :json_file, "e-players6814-8e8eac82841c.json" |> File.read!()
 
 config :milk, :storage_bucket_id, "milk-image"
+config :milk, :discord_server_access_token, "I0ouXxHMW8OpMjhUNyVpf3Ga"
 
 config :milk, Oban,
   repo: Milk.Repo,
@@ -73,3 +70,10 @@ config :milk, Oban,
      ]}
   ],
   queues: [default: 10, event: 50]
+
+config :milk, :discord_server_access_token, "I0ouXxHMW8OpMjhUNyVpf3Ga"
+config :milk, :dfa_db_index, 10
+
+# Import environment specific config. This must remain at the bottom
+# of this file so it overrides the configuration defined above.
+import_config "#{Mix.env()}.exs"
