@@ -123,7 +123,7 @@ defmodule Milk.Tournaments do
     |> Timex.to_datetime()
 
     Tournament
-    |> where([t], t.deadline > ^date_offset and t.create_time < ^date_offset)
+    #|> where([t], t.deadline > ^date_offset and t.create_time < ^date_offset)
     |> where([t], not (t.master_id in ^blocked_user_id_list))
     |> order_by([t], asc: :event_date)
     |> offset(^offset)
@@ -3774,6 +3774,16 @@ defmodule Milk.Tournaments do
 
   defp put_values_on_bracket(nil,     _            ), do: nil
   defp put_values_on_bracket(bracket, tournament_id) do
+    # HACK: 本当はnameの部分はチーム名をそのまま入れてしまえば良いけど、旧来の実装では〇〇のチームだったのでその形にしておく
+    name = if is_nil(bracket["team_id"]) do
+        bracket["name"]
+      else
+        team = __MODULE__.get_team(bracket["team_id"])
+        team.name
+      end
+
+    bracket = Map.put(bracket, "name", name)
+
     id = bracket["user_id"] || bracket["team_id"]
 
     tournament_id

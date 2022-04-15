@@ -862,6 +862,7 @@ defmodule Milk.Tournaments.Progress do
     match_list_with_fight_result
     |> List.flatten()
     |> Enum.reduce(match_list_with_fight_result, fn x, acc ->
+      # HACK: 本当はnameの部分はチーム名をそのまま入れてしまえば良いけど、旧来の実装では〇〇のチームだったのでその形にしておく
       team = Tournaments.get_team(x["team_id"])
 
       # leaderの情報を記載したいため、そのデータを入れる
