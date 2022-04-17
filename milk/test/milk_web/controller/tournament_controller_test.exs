@@ -2313,17 +2313,37 @@ defmodule MilkWeb.TournamentControllerTest do
 
       teams
       |> Enum.map(&(&1.id))
-      |> Enum.reverse()
       ~> team_id_list
 
-      conn = post(conn, Routes.tournament_path(conn, :edit_brackets), %{"team_or_user_id_list" => team_id_list, "tournament_id" => tournament.id})
-      assert json_response(conn, 200)["result"]
       conn = post(conn, Routes.tournament_path(conn, :start), tournament: %{"master_id" => tournament.master_id, "tournament_id" => tournament.id})
+      assert json_response(conn, 200)["result"]
+      conn = post(conn, Routes.tournament_path(conn, :edit_brackets), %{"team_or_user_id_list" => team_id_list, "tournament_id" => tournament.id})
       assert json_response(conn, 200)["result"]
 
       match_list = Progress.get_match_list(tournament.id)
 
       assert List.flatten(match_list) == team_id_list
+    end
+  end
+
+  describe "edit tournament brackets individually" do
+    test "works individually", %{conn: conn} do
+      tournament = fixture_tournament(is_team: false, capacity: 4)
+      entrants = fill_with_entrant(tournament.id)
+
+      entrants
+      |> Enum.map(&(&1.user_id))
+      |> IO.inspect(label: :teams)
+      ~> user_id_list
+
+      conn = post(conn, Routes.tournament_path(conn, :start), tournament: %{"master_id" => tournament.master_id, "tournament_id" => tournament.id})
+      assert json_response(conn, 200)["result"]
+      conn = post(conn, Routes.tournament_path(conn, :edit_brackets), %{"team_or_user_id_list" => user_id_list, "tournament_id" => tournament.id})
+      assert json_response(conn, 200)["result"]
+
+      match_list = Progress.get_match_list(tournament.id)
+
+      assert List.flatten(match_list) == user_id_list
     end
   end
 
