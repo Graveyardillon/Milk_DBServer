@@ -2333,7 +2333,6 @@ defmodule MilkWeb.TournamentControllerTest do
 
       entrants
       |> Enum.map(&(&1.user_id))
-      |> IO.inspect(label: :teams)
       ~> user_id_list
 
       conn = post(conn, Routes.tournament_path(conn, :start), tournament: %{"master_id" => tournament.master_id, "tournament_id" => tournament.id})
