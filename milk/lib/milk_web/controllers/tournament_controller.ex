@@ -1047,6 +1047,7 @@ defmodule MilkWeb.TournamentController do
   def edit_brackets(conn, %{"team_or_user_id_list" => team_or_user_id_list, "tournament_id" => tournament_id}) when is_list(team_or_user_id_list) do
     tournament_id = Tools.to_integer_as_needed(tournament_id)
     team_or_user_id_list
+    |> IO.inspect(label: :asdfdsa)
     |> Enum.map(&Tools.to_integer_as_needed(&1))
     |> Tournaments.edit_tournament_brackets(tournament_id)
     |> case do

@@ -2842,24 +2842,74 @@ defmodule Milk.Tournaments do
     match_list = Progress.get_match_list(tournament_id)
 
     if is_nil(match_list) do
-      team_or_user_id_list
-    else
       tournament_id
       |> __MODULE__.get_confirmed_teams()
       |> Enum.map(&(&1.id))
+    else
+      team_or_user_id_list
     end
+    |> Enum.reverse()
     ~> team_or_user_id_list
 
     tournament = __MODULE__.get_tournament(tournament_id)
 
     if check_team_or_user_id_list_valid?(tournament, team_or_user_id_list) do
       team_or_user_id_list
-      |> Tournamex.generate_matchlist_without_shuffle()
+      |> IO.inspect(label: :before_generate_matchlist_without_shuffle)
+      |> __MODULE__.generate_matchlist_without_shuffle()
+      |> IO.inspect(label: :generate_matchlist_without_shuffle)
       |> elem(1)
+      ~> match_list
       |> Progress.insert_match_list(tournament_id)
+
+      edit_match_list_with_fight_result(tournament, match_list)
     else
       {:error, nil}
     end
+  end
+
+  @spec generate_matchlist_without_shuffle([integer()]) :: {:ok, match_list()}
+  def generate_matchlist_without_shuffle(list), do: Tournamex.generate_matchlist_without_shuffle(list)
+
+  defp edit_match_list_with_fight_result(%Tournament{is_team: true} = tournament, match_list) do
+    match_list_with_fight_result = Tournamex.initialize_match_list_of_team_with_fight_result(match_list)
+
+    match_list_with_fight_result
+    |> List.flatten()
+    |> Enum.reduce(match_list_with_fight_result, fn x, acc ->
+      # HACK: 本当はnameの部分はチーム名をそのまま入れてしまえば良いけど、旧来の実装では〇〇のチームだったのでその形にしておく
+      team = __MODULE__.get_team(x["team_id"])
+
+      # leaderの情報を記載したいため、そのデータを入れる
+      team.id
+      |> __MODULE__.load_leader()
+      |> Map.get(:user)
+      ~> user
+
+      acc
+      |> __MODULE__.put_value_on_brackets(team.id, %{"name" => user.name})
+      |> __MODULE__.put_value_on_brackets(team.id, %{"win_count" => 0})
+      |> __MODULE__.put_value_on_brackets(team.id, %{"icon_path" => user.icon_path})
+      |> __MODULE__.put_value_on_brackets(team.id, %{"round" => 0})
+    end)
+    |> Progress.insert_match_list_with_fight_result(tournament.id)
+  end
+
+  defp edit_match_list_with_fight_result(%Tournament{is_team: false} = tournament, match_list) do
+    match_list_with_fight_result = Tournamex.initialize_match_list_with_fight_result(match_list)
+
+    match_list_with_fight_result
+    |> List.flatten()
+    |> Enum.reduce(match_list_with_fight_result, fn x, acc ->
+      user = Accounts.get_user(x["user_id"])
+
+      acc
+      |> __MODULE__.put_value_on_brackets(user.id, %{"name" => user.name})
+      |> __MODULE__.put_value_on_brackets(user.id, %{"win_count" => 0})
+      |> __MODULE__.put_value_on_brackets(user.id, %{"icon_path" => user.icon_path})
+      |> __MODULE__.put_value_on_brackets(user.id, %{"round" => 0})
+    end)
+    |> Progress.insert_match_list_with_fight_result(tournament.id)
   end
 
   defp check_team_or_user_id_list_valid?(%Tournament{is_team: true, id: tournament_id}, team_or_user_id_list) do
@@ -2870,6 +2920,17 @@ defmodule Milk.Tournaments do
 
     Enum.all?(team_or_user_id_list, fn id ->
       id in team_id_list
+    end)
+  end
+
+  defp check_team_or_user_id_list_valid?(%Tournament{is_team: false, id: tournament_id}, team_or_user_id_list) do
+    tournament_id
+    |> __MODULE__.get_entrants()
+    |> Enum.map(&Map.get(&1, :user_id))
+    ~> user_id_list
+
+    Enum.all?(team_or_user_id_list, fn id ->
+      id in user_id_list
     end)
   end
 
