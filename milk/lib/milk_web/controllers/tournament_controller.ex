@@ -756,10 +756,8 @@ defmodule MilkWeb.TournamentController do
     |> Tools.boolean_to_tuple("invalid user id to start")
   end
 
-  defp do_start(%Tournament{is_team: true} = tournament),
-    do: start_team_tournament(tournament)
-  defp do_start(%Tournament{is_team: false, master_id: master_id} = tournament),
-    do: start_tournament(master_id, tournament)
+  defp do_start(%Tournament{is_team: true} = tournament),                        do: start_team_tournament(tournament)
+  defp do_start(%Tournament{is_team: false, master_id: master_id} = tournament), do: start_tournament(master_id, tournament)
 
   defp start_team_tournament(tournament) do
     case tournament.rule do
@@ -1039,6 +1037,20 @@ defmodule MilkWeb.TournamentController do
 
     Task.await_many(tasks, 10_000)
     {:ok, nil}
+  end
+
+  @doc """
+  Edit tournament brackets
+  """
+  def edit_brackets(conn, %{"team_or_user_id_list" => team_or_user_id_list, "tournament_id" => tournament_id}) when is_list(team_or_user_id_list) do
+    tournament_id = Tools.to_integer_as_needed(tournament_id)
+    team_or_user_id_list
+    |> Enum.map(&Tools.to_integer_as_needed(&1))
+    |> Tournaments.edit_tournament_brackets(tournament_id)
+    |> case do
+      {:ok, _}    -> json(conn, %{result: true})
+      {:error, _} -> json(conn, %{result: false})
+    end
   end
 
   @doc """

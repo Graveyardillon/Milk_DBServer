@@ -123,7 +123,7 @@ defmodule Milk.Tournaments do
     |> Timex.to_datetime()
 
     Tournament
-    |> where([t], t.deadline > ^date_offset and t.create_time < ^date_offset)
+    #|> where([t], t.deadline > ^date_offset and t.create_time < ^date_offset)
     |> where([t], not (t.master_id in ^blocked_user_id_list))
     |> order_by([t], asc: :event_date)
     |> offset(^offset)
@@ -2838,6 +2838,111 @@ defmodule Milk.Tournaments do
     |> Tools.reduce_ok_list("error on create point categories")
   end
 
+  def edit_tournament_brackets(team_or_user_id_list, tournament_id) do
+    match_list = Progress.get_match_list(tournament_id)
+    tournament = __MODULE__.get_tournament(tournament_id)
+
+    if is_nil(match_list) do
+      tournament
+      |> get_team_or_user_id_list()
+      |> Enum.shuffle()
+    else
+      team_or_user_id_list
+    end
+    |> IO.inspect(label: :team_or_user_id_list)
+    ~> team_or_user_id_list
+
+    if check_team_or_user_id_list_valid?(tournament, team_or_user_id_list) do
+      team_or_user_id_list
+      |> __MODULE__.generate_matchlist_without_shuffle()
+      |> IO.inspect(label: :generate_matchlist_without_shuffle_label, charlists: false)
+      |> elem(1)
+      ~> match_list
+      |> Progress.insert_match_list(tournament_id)
+
+      edit_match_list_with_fight_result(tournament, match_list)
+    else
+      {:error, nil}
+    end
+  end
+
+  defp get_team_or_user_id_list(%Tournament{is_team: true, id: tournament_id}) do
+    tournament_id
+    |> __MODULE__.get_confirmed_teams()
+    |> Enum.map(&(&1.id))
+  end
+
+  defp get_team_or_user_id_list(%Tournament{is_team: false, id: tournament_id}) do
+    tournament_id
+    |> __MODULE__.get_entrants()
+    |> Enum.map(&(&1.user_id))
+  end
+
+  @spec generate_matchlist_without_shuffle([integer()]) :: {:ok, match_list()}
+  def generate_matchlist_without_shuffle(list), do: Tournamex.generate_matchlist_without_shuffle(list)
+
+  defp edit_match_list_with_fight_result(%Tournament{is_team: true} = tournament, match_list) do
+    match_list_with_fight_result = Tournamex.initialize_match_list_of_team_with_fight_result(match_list)
+
+    match_list_with_fight_result
+    |> List.flatten()
+    |> Enum.reduce(match_list_with_fight_result, fn x, acc ->
+      # HACK: 本当はnameの部分はチーム名をそのまま入れてしまえば良いけど、旧来の実装では〇〇のチームだったのでその形にしておく
+      team = __MODULE__.get_team(x["team_id"])
+
+      # leaderの情報を記載したいため、そのデータを入れる
+      team.id
+      |> __MODULE__.load_leader()
+      |> Map.get(:user)
+      ~> user
+
+      acc
+      |> __MODULE__.put_value_on_brackets(team.id, %{"name" => user.name})
+      |> __MODULE__.put_value_on_brackets(team.id, %{"win_count" => 0})
+      |> __MODULE__.put_value_on_brackets(team.id, %{"icon_path" => user.icon_path})
+      |> __MODULE__.put_value_on_brackets(team.id, %{"round" => 0})
+    end)
+    |> Progress.insert_match_list_with_fight_result(tournament.id)
+  end
+
+  defp edit_match_list_with_fight_result(%Tournament{is_team: false} = tournament, match_list) do
+    match_list_with_fight_result = Tournamex.initialize_match_list_with_fight_result(match_list)
+
+    match_list_with_fight_result
+    |> List.flatten()
+    |> Enum.reduce(match_list_with_fight_result, fn x, acc ->
+      user = Accounts.get_user(x["user_id"])
+
+      acc
+      |> __MODULE__.put_value_on_brackets(user.id, %{"name" => user.name})
+      |> __MODULE__.put_value_on_brackets(user.id, %{"win_count" => 0})
+      |> __MODULE__.put_value_on_brackets(user.id, %{"icon_path" => user.icon_path})
+      |> __MODULE__.put_value_on_brackets(user.id, %{"round" => 0})
+    end)
+    |> Progress.insert_match_list_with_fight_result(tournament.id)
+  end
+
+  defp check_team_or_user_id_list_valid?(%Tournament{is_team: true, id: tournament_id}, team_or_user_id_list) do
+    tournament_id
+    |> __MODULE__.get_teams_by_tournament_id()
+    |> Enum.map(&Map.get(&1, :id))
+    ~> team_id_list
+
+    Enum.all?(team_or_user_id_list, fn id ->
+      id in team_id_list
+    end)
+  end
+
+  defp check_team_or_user_id_list_valid?(%Tournament{is_team: false, id: tournament_id}, team_or_user_id_list) do
+    tournament_id
+    |> __MODULE__.get_entrants()
+    |> Enum.map(&Map.get(&1, :user_id))
+    ~> user_id_list
+
+    Enum.all?(team_or_user_id_list, fn id ->
+      id in user_id_list
+    end)
+  end
 
   @doc """
   結果を入力してfinish
@@ -2877,22 +2982,19 @@ defmodule Milk.Tournaments do
   Generate a matchlist.
   """
   @spec generate_matchlist([integer()]) :: {:ok, match_list()} | {:error, String.t()}
-  def generate_matchlist(list),
-    do: Tournamex.generate_matchlist(list)
+  def generate_matchlist(list), do: Tournamex.generate_matchlist(list)
 
   @doc """
   Initialize fight result of match list.
   """
   @spec initialize_match_list_with_fight_result(match_list()) :: match_list_with_fight_result()
-  def initialize_match_list_with_fight_result(match_list),
-    do: Tournamex.initialize_match_list_with_fight_result(match_list)
+  def initialize_match_list_with_fight_result(match_list), do: Tournamex.initialize_match_list_with_fight_result(match_list)
 
   @doc """
   Initialize fight result of match list of teams.
   """
   @spec initialize_match_list_of_team_with_fight_result(match_list()) :: match_list_with_fight_result()
-  def initialize_match_list_of_team_with_fight_result(match_list),
-    do: Tournamex.initialize_match_list_of_team_with_fight_result(match_list)
+  def initialize_match_list_of_team_with_fight_result(match_list), do: Tournamex.initialize_match_list_of_team_with_fight_result(match_list)
 
   @doc """
   Put value on brackets.
@@ -3740,6 +3842,16 @@ defmodule Milk.Tournaments do
 
   defp put_values_on_bracket(nil,     _            ), do: nil
   defp put_values_on_bracket(bracket, tournament_id) do
+    # HACK: 本当はnameの部分はチーム名をそのまま入れてしまえば良いけど、旧来の実装では〇〇のチームだったのでその形にしておく
+    name = if is_nil(bracket["team_id"]) do
+        bracket["name"]
+      else
+        team = __MODULE__.get_team(bracket["team_id"])
+        team.name
+      end
+
+    bracket = Map.put(bracket, "name", name)
+
     id = bracket["user_id"] || bracket["team_id"]
 
     tournament_id

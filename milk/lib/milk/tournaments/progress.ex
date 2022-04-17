@@ -742,7 +742,7 @@ defmodule Milk.Tournaments.Progress do
   @spec start_basic(integer(), Tournament.t()) :: {:ok, match_list(), match_list_with_fight_result()} | {:error, any()}
   def start_basic(_master_id, tournament) do
     case Tournaments.start(tournament) do
-      {:ok, _}        -> make_basic_matches(tournament.id)
+      {:ok, _}        -> make_basic_matches(tournament)
       {:error, error} -> {:error, error}
     end
   end
@@ -757,11 +757,11 @@ defmodule Milk.Tournaments.Progress do
     end
   end
 
-  defp make_basic_matches(tournament_id) do
-    match_list = __MODULE__.get_match_list(tournament_id)
+  defp make_basic_matches(tournament) do
+    match_list = __MODULE__.get_match_list(tournament.id)
 
     if is_nil(match_list) do
-      tournament_id
+      tournament.id
       |> Tournaments.get_entrants()
       |> Enum.map(&Map.get(&1, :user_id))
       |> Tournaments.generate_matchlist()
@@ -770,11 +770,10 @@ defmodule Milk.Tournaments.Progress do
     end
     ~> {:ok, match_list}
 
-    tournament = Tournaments.get_tournament(tournament_id)
     count = tournament.count
 
-    Tournaments.initialize_rank(match_list, count, tournament_id)
-    insert_match_list(match_list, tournament_id)
+    Tournaments.initialize_rank(match_list, count, tournament.id)
+    insert_match_list(match_list, tournament.id)
     match_list_with_fight_result = Tournamex.initialize_match_list_with_fight_result(match_list)
 
     match_list_with_fight_result
@@ -787,19 +786,25 @@ defmodule Milk.Tournaments.Progress do
       |> Tournaments.put_value_on_brackets(user.id, %{"win_count" => 0})
       |> Tournaments.put_value_on_brackets(user.id, %{"icon_path" => user.icon_path})
     end)
-    |> insert_match_list_with_fight_result(tournament_id)
+    |> __MODULE__.insert_match_list_with_fight_result(tournament.id)
 
     {:ok, match_list, match_list_with_fight_result}
   end
 
   defp make_flipban_matches(tournament) do
-    tournament.id
-    |> Tournaments.get_entrants()
-    |> Enum.map(&(&1.user_id))
-    |> Tournaments.generate_matchlist()
+    match_list = __MODULE__.get_match_list(tournament.id)
+
+    if is_nil(match_list) do
+      tournament.id
+      |> Tournaments.get_entrants()
+      |> Enum.map(&(&1.user_id))
+      |> Tournaments.generate_matchlist()
+    else
+      {:ok, match_list}
+    end
     ~> {:ok, match_list}
-    |> elem(1)
-    |> insert_match_list(tournament.id)
+
+    insert_match_list(match_list, tournament.id)
 
     count = tournament.count
     Tournaments.initialize_rank(match_list, count, tournament.id)
@@ -817,7 +822,7 @@ defmodule Milk.Tournaments.Progress do
       |> Tournaments.put_value_on_brackets(user.id, %{"icon_path" => user.icon_path})
       |> Tournaments.put_value_on_brackets(user.id, %{"round" => 0})
     end)
-    |> insert_match_list_with_fight_result(tournament.id)
+    |> __MODULE__.insert_match_list_with_fight_result(tournament.id)
 
     {:ok, match_list}
   end
@@ -835,15 +840,23 @@ defmodule Milk.Tournaments.Progress do
   end
 
   defp generate_team_flipban_matches(tournament) do
-    tournament.id
-    |> Tournaments.get_confirmed_teams()
-    ~> teams
-    |> Enum.map(&Map.get(&1, :id))
-    |> Tournaments.generate_matchlist()
-    |> elem(1)
-    ~> match_list
-    |> __MODULE__.insert_match_list(tournament.id)
+    match_list = __MODULE__.get_match_list(tournament.id)
+    teams = Tournaments.get_confirmed_teams(tournament.id)
 
+    if is_nil(match_list) do
+      teams
+      |> Enum.map(&Map.get(&1, :id))
+      |> Tournaments.generate_matchlist()
+      |> elem(1)
+      ~> match_list
+
+      {:ok, teams, match_list}
+    else
+      {:ok, teams, match_list}
+    end
+    ~> {:ok, teams, match_list}
+
+    __MODULE__.insert_match_list(match_list, tournament.id)
     count = length(teams)
     Tournaments.initialize_team_rank(match_list, count)
 
@@ -854,6 +867,7 @@ defmodule Milk.Tournaments.Progress do
     match_list_with_fight_result
     |> List.flatten()
     |> Enum.reduce(match_list_with_fight_result, fn x, acc ->
+      # HACK: 本当はnameの部分はチーム名をそのまま入れてしまえば良いけど、旧来の実装では〇〇のチームだったのでその形にしておく
       team = Tournaments.get_team(x["team_id"])
 
       # leaderの情報を記載したいため、そのデータを入れる
