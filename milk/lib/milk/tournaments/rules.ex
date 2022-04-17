@@ -78,10 +78,9 @@ defmodule Milk.Tournaments.Rules do
       {:ok, nil}
     else
       keyname = __MODULE__.adapt_keyname(master_id, tournament_id)
-        |> IO.inspect(label: :manager)
 
       case rule do
-        "basic"              -> Basic.trigger!(keyname, Basic.manager_trigger()) |> IO.inspect(label: :here)
+        "basic"              -> Basic.trigger!(keyname, Basic.manager_trigger())
         "flipban"            -> FlipBan.trigger!(keyname, FlipBan.manager_trigger())
         "flipban_roundrobin" -> FlipBan.trigger!(keyname, FlipBan.manager_trigger())
         "freeforall"         -> FreeForAll.trigger!(keyname, FreeForAll.manager_trigger())

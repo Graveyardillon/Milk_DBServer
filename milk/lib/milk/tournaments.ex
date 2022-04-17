@@ -2849,13 +2849,11 @@ defmodule Milk.Tournaments do
     else
       team_or_user_id_list
     end
-    |> IO.inspect(label: :team_or_user_id_list)
     ~> team_or_user_id_list
 
     if check_team_or_user_id_list_valid?(tournament, team_or_user_id_list) do
       team_or_user_id_list
       |> __MODULE__.generate_matchlist_without_shuffle()
-      |> IO.inspect(label: :generate_matchlist_without_shuffle_label, charlists: false)
       |> elem(1)
       ~> match_list
       |> Progress.insert_match_list(tournament_id)
@@ -3846,7 +3844,7 @@ defmodule Milk.Tournaments do
     name = if is_nil(bracket["team_id"]) do
         bracket["name"]
       else
-        team = __MODULE__.get_team(bracket["team_id"])
+        team = __MODULE__.get_team_including_log(bracket["team_id"])
         team.name
       end
 
@@ -4128,6 +4126,22 @@ defmodule Milk.Tournaments do
     Team
     |> where([t], t.id == ^team_id)
     |> Repo.one()
+  end
+
+  @doc """
+  Get a team including log
+  """
+  @spec get_team_including_log(integer()) :: Team.t() | nil
+  def get_team_including_log(team_id) do
+    team = __MODULE__.get_team(team_id)
+
+    if is_nil(team) do
+      TeamLog
+      |> where([t], t.team_id == ^team_id)
+      |> Repo.one()
+    else
+      team
+    end
   end
 
   @doc """
