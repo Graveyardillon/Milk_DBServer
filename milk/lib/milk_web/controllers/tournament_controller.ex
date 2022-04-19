@@ -788,22 +788,23 @@ defmodule MilkWeb.TournamentController do
 
   def delete_loser(conn, %{"tournament" => %{"tournament_id" => tournament_id, "loser_list" => loser_list}}) do
     tournament_id = Tools.to_integer_as_needed(tournament_id)
-
-    loser_list = Enum.map(loser_list, &Tools.to_integer_as_needed(&1))
+    loser_user_id_list = Enum.map(loser_list, &Tools.to_integer_as_needed(&1))
 
     tournament_id
     |> Tournaments.get_tournament()
     |> then(fn tournament ->
       if tournament.rule == "basic" and !tournament.is_team do
-        store_single_tournament_match_log(tournament_id, hd(loser_list))
+        store_single_tournament_match_log(tournament_id, hd(loser_user_id_list))
       end
     end)
 
+    loser_entrant_list = Enum.map(loser_user_id_list, &Tournaments.get_entrant_by_user_id_and_tournament_id(&1, tournament_id).id)
+
     tournament_id
-    |> Tournaments.delete_loser_process(loser_list)
+    |> Tournaments.delete_loser_process(loser_entrant_list)
     |> case do
       {:ok, match_list} -> render(conn, "loser.json", list: match_list)
-      {:error, error} -> render(conn, "error.json", error: error)
+      {:error, error}   -> render(conn, "error.json", error: error)
     end
   end
 
@@ -835,8 +836,7 @@ defmodule MilkWeb.TournamentController do
     user_id = Tools.to_integer_as_needed(user_id)
 
     case Progress.get_match_list(tournament_id) do
-      [] ->
-        json(conn, %{result: false, match: nil})
+      [] -> json(conn, %{result: false, match: nil})
 
       match_list when is_list(match_list) ->
         match = Tournaments.find_match(match_list, user_id)
@@ -1897,13 +1897,18 @@ defmodule MilkWeb.TournamentController do
 
   @doc """
   Get a result of fight.
+  # FIXME: 個人戦でしか使えない？ もしくはこれって使われてない？
   """
   @spec is_user_win(Plug.Conn.t(), map) :: Plug.Conn.t()
   def is_user_win(conn, %{"user_id" => user_id, "tournament_id" => tournament_id}) do
-    user_id = Tools.to_integer_as_needed(user_id)
+    entrant_id =
+      user_id
+      |> Tools.to_integer_as_needed()
+      |> Tournaments.get_entrant_by_user_id_and_tournament_id(tournament_id)
+      |> Map.get(:id)
     tournament_id = Tools.to_integer_as_needed(tournament_id)
 
-    case Progress.get_score(tournament_id, user_id) do
+    case Progress.get_score(tournament_id, entrant_id) do
       nil -> json(conn, %{is_win: nil, is_claimed: false})
       0   -> json(conn, %{is_win: false, tournament_id: tournament_id, is_claimed: true})
       1   -> json(conn, %{is_win: true, tournament_id: tournament_id, is_claimed: true})

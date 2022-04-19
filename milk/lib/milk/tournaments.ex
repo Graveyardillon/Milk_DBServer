@@ -1162,21 +1162,13 @@ defmodule Milk.Tournaments do
 
   @spec load_score(String.t(), Tournament.t(), integer()) :: integer() | nil
   defp load_score("IsWaitingForScoreInput", tournament, user_id) do
-    if tournament.is_team do
-      team = __MODULE__.get_team_by_tournament_id_and_user_id(tournament.id, user_id)
-      Progress.get_score(tournament.id, team.id)
-    else
-      Progress.get_score(tournament.id, user_id)
-    end
+    id = Progress.get_necessary_id(tournament.id, user_id)
+    Progress.get_score(tournament.id, id)
   end
 
   defp load_score("IsPending", tournament, user_id) do
-    if tournament.is_team do
-      team = __MODULE__.get_team_by_tournament_id_and_user_id(tournament.id, user_id)
-      Progress.get_score(tournament.id, team.id)
-    else
-      Progress.get_score(tournament.id, user_id)
-    end
+    id = Progress.get_necessary_id(tournament.id, user_id)
+    Progress.get_score(tournament.id, id)
   end
 
   defp load_score(_, _, _), do: nil
@@ -1478,9 +1470,13 @@ defmodule Milk.Tournaments do
     user_id = Tools.to_integer_as_needed(user_id)
     tournament_id = Tools.to_integer_as_needed(tournament_id)
 
+    user = Accounts.get_user(user_id)
+
     entrant = %Entrant{
         user_id: user_id,
-        tournament_id: tournament_id
+        tournament_id: tournament_id,
+        name: user.name,
+        icon_path: user.icon_path
       }
 
     Multi.new()
@@ -3063,7 +3059,7 @@ defmodule Milk.Tournaments do
   @spec get_fighting_users(integer()) :: [User.t()] | [Team.t()]
   def get_fighting_users(tournament_id) do
     tournament_id
-    |> load_tournament()
+    |> get_tournament()
     |> Map.get(:is_team)
     |> if do
       tournament_id
@@ -3094,7 +3090,7 @@ defmodule Milk.Tournaments do
   @spec get_waiting_users(integer()) :: [User.t()] | [Team.t()]
   def get_waiting_users(tournament_id) do
     tournament_id
-    |> load_tournament()
+    |> get_tournament()
     |> Map.get(:is_team)
     |> if do
       fighting_users = get_fighting_users(tournament_id)
@@ -3117,7 +3113,7 @@ defmodule Milk.Tournaments do
       |> Enum.reject(fn entrant ->
         tournament_id
         |> Progress.get_match_list()
-        |> has_lost?(entrant.user_id)
+        |> has_lost?(entrant.id)
       end)
       |> Enum.map(&Accounts.get_user(&1.user_id))
       # match_pending_listに入っていないユーザー
