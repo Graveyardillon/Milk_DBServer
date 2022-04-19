@@ -1358,7 +1358,6 @@ defmodule MilkWeb.TournamentController do
         {:error, msg} -> render(conn, "error.json", error: msg)
       end
     else
-      IO.inspect("nil!!")
       json(conn, %{result: false, error: "Invalid state"})
     end
   end
@@ -1537,7 +1536,7 @@ defmodule MilkWeb.TournamentController do
 
   @spec claimable_state?(integer(), integer()) :: boolean()
   defp claimable_state?(tournament_id, user_id) do
-    Enum.member?(["IsPending", "IsWaitingForScoreInput", ""], Tournaments.state!(tournament_id, user_id) |> IO.inspect())
+    Enum.member?(["IsPending", "IsWaitingForScoreInput", ""], Tournaments.state!(tournament_id, user_id))
   end
 
   @spec duplicated_claim_process(integer(), integer(), integer(), integer()) :: {:ok, [InteractionMessage.t()], integer(), integer()} | {:error, String.t()}

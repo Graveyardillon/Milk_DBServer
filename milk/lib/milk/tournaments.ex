@@ -2268,7 +2268,7 @@ defmodule Milk.Tournaments do
     |> Progress.get_match_list()
     |> __MODULE__.find_match(id)
     ~> match
-    |> Enum.all?(&Progress.get_match_pending_list(&1, tournament.id) |> IO.inspect(label: :match_pending_list))
+    |> Enum.all?(&Progress.get_match_pending_list(&1, tournament.id))
     |> if do
       match
       |> Enum.map(&break_waiting(&1, tournament))
@@ -3411,42 +3411,46 @@ defmodule Milk.Tournaments do
   defp update_rank(_match_list, entrant_id, tournament_id) do
     entrant = __MODULE__.get_entrant(entrant_id)
 
-    tournament_id
-    |> __MODULE__.get_opponent(entrant.user_id)
-    |> case do
-      {:ok, opponent} ->
-        opponent.id
-        |> get_entrant()
-        ~> opponent
-        |> Map.get(:rank)
-        ~> opponents_rank
+    if is_nil(entrant) do
+      {:error, nil}
+    else
+      tournament_id
+      |> __MODULE__.get_opponent(entrant.user_id)
+      |> case do
+        {:ok, opponent} ->
+          opponent.id
+          |> get_entrant()
+          ~> opponent
+          |> Map.get(:rank)
+          ~> opponents_rank
 
-        entrant
-        |> Map.get(:rank)
-        |> case do
-          rank when rank > opponents_rank -> update_entrant(opponent, %{rank: rank})
-          rank when rank < opponents_rank -> update_entrant(entrant, %{rank: opponents_rank})
-          _                               -> nil
-        end
+          entrant
+          |> Map.get(:rank)
+          |> case do
+            rank when rank > opponents_rank -> update_entrant(opponent, %{rank: rank})
+            rank when rank < opponents_rank -> update_entrant(entrant, %{rank: opponents_rank})
+            _                               -> nil
+          end
 
-        opponent
-        |> Map.get(:rank)
-        |> check_exponentiation_of_two()
-        ~> {_bool, rank}
-        |> elem(0)
-        |> if do
-          div(rank, 2)
-        else
-          find_num_closest_exponentiation_of_two(rank)
-        end
-        ~> updated_rank
+          opponent
+          |> Map.get(:rank)
+          |> check_exponentiation_of_two()
+          ~> {_bool, rank}
+          |> elem(0)
+          |> if do
+            div(rank, 2)
+          else
+            find_num_closest_exponentiation_of_two(rank)
+          end
+          ~> updated_rank
 
-        entrant.user_id
-        |> get_entrant_by_user_id_and_tournament_id(tournament_id)
-        |> __MODULE__.update_entrant(%{rank: updated_rank})
+          entrant.user_id
+          |> get_entrant_by_user_id_and_tournament_id(tournament_id)
+          |> __MODULE__.update_entrant(%{rank: updated_rank})
 
-      {:wait, nil} -> {:wait, nil}
-      {:error, _}  -> {:error, nil}
+        {:wait, nil} -> {:wait, nil}
+        {:error, _}  -> {:error, nil}
+      end
     end
   end
 

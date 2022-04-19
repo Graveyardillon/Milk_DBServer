@@ -1228,7 +1228,7 @@ defmodule Milk.TournamentsTest do
     test "promote_rank/1 returns promoted rank with valid attrs", %{entrant: entrant} do
       attrs = %{
         "tournament_id" => entrant.tournament_id,
-        "user_id" => entrant.user_id
+        "user_id" => entrant.id
       }
 
       # numは生成する参加者の数で後に一人追加するので8 - 1 = 7
@@ -1238,7 +1238,7 @@ defmodule Milk.TournamentsTest do
       |> create_entrants(entrant.tournament_id)
       |> Enum.map(fn x -> %{x | rank: num + 1} end)
       |> Kernel.++([%{entrant | rank: num + 1}])
-      |> Enum.map(fn entrant -> entrant.user_id end)
+      |> Enum.map(fn entrant -> entrant.id end)
       |> Tournaments.generate_matchlist()
       ~> {_, match_list}
 
@@ -1251,7 +1251,7 @@ defmodule Milk.TournamentsTest do
       # promote_rankの引数となるattrs
       attrs = %{
         "tournament_id" => -1,
-        "user_id" => entrant.user_id
+        "user_id" => entrant.id
       }
 
       # numは生成する参加者の数で後に一人追加するので8 - 1 = 7
@@ -1260,6 +1260,7 @@ defmodule Milk.TournamentsTest do
       create_entrants(num, entrant.tournament_id)
       |> Enum.map(fn x -> %{x | rank: num + 1} end)
       |> Kernel.++([%{entrant | rank: num + 1}])
+      |> Enum.map(&(&1.id))
       |> Tournaments.generate_matchlist()
       |> Progress.insert_match_list(entrant.tournament_id)
 
@@ -1279,6 +1280,7 @@ defmodule Milk.TournamentsTest do
       create_entrants(num, entrant.tournament_id)
       |> Enum.map(fn x -> %{x | rank: num + 1} end)
       |> Kernel.++([%{entrant | rank: num + 1}])
+      |> Enum.map(&(&1.id))
       |> Tournaments.generate_matchlist()
       |> Progress.insert_match_list(entrant.tournament_id)
 
@@ -1301,7 +1303,7 @@ defmodule Milk.TournamentsTest do
       |> Tournaments.generate_matchlist()
       |> Progress.insert_match_list(entrant.tournament_id)
 
-      assert {:error, "undefined user"} = Tournaments.promote_rank(attrs)
+      assert {:error, "undefined tournament"} = Tournaments.promote_rank(attrs)
     end
 
     test "run promote_rank/1 in a row with 8 entrants", %{entrant: entrant} do
@@ -1338,7 +1340,7 @@ defmodule Milk.TournamentsTest do
     test "run promote_rank/1 in a row with 4 entrants", %{entrant: entrant} do
       attrs = %{
         "tournament_id" => entrant.tournament_id,
-        "user_id" => entrant.user_id
+        "user_id" => entrant.id
       }
 
       num = 3
@@ -1347,7 +1349,7 @@ defmodule Milk.TournamentsTest do
         create_entrants(num, entrant.tournament_id)
         |> Enum.map(fn x -> %{x | rank: num + 1} end)
         |> Kernel.++([%{entrant | rank: num + 1}])
-        |> Enum.map(fn entrant -> entrant.user_id end)
+        |> Enum.map(fn entrant -> entrant.id end)
         |> Tournaments.generate_matchlist()
 
       Progress.insert_match_list(match_list, entrant.tournament_id)
@@ -1368,7 +1370,7 @@ defmodule Milk.TournamentsTest do
     test "run promote_rank/1 in a row with 2 entrants", %{entrant: entrant} do
       attrs = %{
         "tournament_id" => entrant.tournament_id,
-        "user_id" => entrant.user_id
+        "user_id" => entrant.id
       }
 
       num = 1
@@ -1377,7 +1379,7 @@ defmodule Milk.TournamentsTest do
       |> create_entrants(entrant.tournament_id)
       |> Enum.map(fn x -> %{x | rank: num + 1} end)
       |> Kernel.++([%{entrant | rank: num + 1}])
-      |> Enum.map(fn entrant -> entrant.user_id end)
+      |> Enum.map(fn entrant -> entrant.id end)
       |> Tournaments.generate_matchlist()
       ~> {:ok, match_list}
 
@@ -2043,16 +2045,16 @@ defmodule Milk.TournamentsTest do
       tournament = fixture_tournament(is_started: false)
       create_entrants(7, tournament.id)
 
-      Tournaments.create_entrant(%{
-        "user_id" => tournament.master_id,
-        "tournament_id" => tournament.id
-      })
+      {:ok, master_entrant} = Tournaments.create_entrant(%{
+          "user_id" => tournament.master_id,
+          "tournament_id" => tournament.id
+        })
 
       start(tournament.master_id, tournament.id)
 
       assert Tournaments.get_fighting_users(tournament.id) == []
 
-      Progress.insert_match_pending_list_table(tournament.master_id, tournament.id)
+      Progress.insert_match_pending_list_table(master_entrant.id, tournament.id)
       users = Tournaments.get_fighting_users(tournament.id)
       assert length(users) == 1
 
