@@ -980,8 +980,8 @@ defmodule Milk.Tournaments.Progress do
     end
   end
 
-  defp do_get_necessary_id(%Tournament{master_id: master_id, id: tournament_id, is_team: is_team}, user_id) when master_id == user_id do
-    if Tournaments.is_participant?(tournament_id, user_id) and is_team do
+  defp do_get_necessary_id(%Tournament{master_id: master_id, id: tournament_id, is_team: true}, user_id) when master_id == user_id do
+    if Tournaments.is_participant?(tournament_id, user_id) do
       tournament_id
       |> Tournaments.get_team_by_tournament_id_and_user_id(user_id)
       |> get_team_id()
@@ -989,6 +989,16 @@ defmodule Milk.Tournaments.Progress do
       user_id
     end
   end
+  defp do_get_necessary_id(%Tournament{master_id: master_id, id: tournament_id, is_team: false}, user_id) when master_id == user_id do
+    if Tournaments.is_participant?(tournament_id, user_id) do
+      user_id
+      |> Tournaments.get_entrant_by_user_id_and_tournament_id(tournament_id)
+      |> Map.get(:id)
+    else
+      user_id
+    end
+  end
+
   defp do_get_necessary_id(%Tournament{id: id, is_team: true}, user_id) do
     id
     |> Tournaments.get_team_by_tournament_id_and_user_id(user_id)

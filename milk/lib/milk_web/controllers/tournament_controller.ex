@@ -30,6 +30,7 @@ defmodule MilkWeb.TournamentController do
   alias Milk.Tournaments.{
     Assistant,
     Claim,
+    Entrant,
     InteractionMessage,
     MatchInformation,
     Progress,
@@ -1291,7 +1292,9 @@ defmodule MilkWeb.TournamentController do
     user_id = Tools.to_integer_as_needed(user_id)
     tournament_id = Tools.to_integer_as_needed(tournament_id)
 
-    state = Progress.get_match_pending_list(user_id, tournament_id)
+    entrant_id = Tournaments.get_entrant_by_user_id_and_tournament_id(user_id, tournament_id).id
+
+    state = Progress.get_match_pending_list(entrant_id, tournament_id)
 
     if is_nil(state) do
       json(conn, %{result: false})
@@ -1355,6 +1358,7 @@ defmodule MilkWeb.TournamentController do
         {:error, msg} -> render(conn, "error.json", error: msg)
       end
     else
+      IO.inspect("nil!!")
       json(conn, %{result: false, error: "Invalid state"})
     end
   end
@@ -1533,7 +1537,7 @@ defmodule MilkWeb.TournamentController do
 
   @spec claimable_state?(integer(), integer()) :: boolean()
   defp claimable_state?(tournament_id, user_id) do
-    Enum.member?(["IsPending", "IsWaitingForScoreInput", ""], Tournaments.state!(tournament_id, user_id))
+    Enum.member?(["IsPending", "IsWaitingForScoreInput", ""], Tournaments.state!(tournament_id, user_id) |> IO.inspect())
   end
 
   @spec duplicated_claim_process(integer(), integer(), integer(), integer()) :: {:ok, [InteractionMessage.t()], integer(), integer()} | {:error, String.t()}
@@ -1849,16 +1853,16 @@ defmodule MilkWeb.TournamentController do
     tournament_id
     |> Tournaments.get_opponent(user_id)
     |> case do
-      {:ok, %User{} = winner} ->
-        do_claim_score(user_id,   tournament, -1, 0)
-        case do_claim_score(winner.id, tournament, 1,  0) do
+      {:ok, %Entrant{} = winner} ->
+        do_claim_score(user_id, tournament, -1, 0)
+        case do_claim_score(winner.user_id, tournament, 1,  0) do
           {:ok, tournament, opponent, user_id, id, score, match_index} -> after_do_claim_score(conn, tournament, opponent, user_id, id, score, match_index)
           nil           -> render(conn, "error.json", error: "Invalid state")
           {:error, msg} -> render(conn, "error.json", error: msg)
         end
       {:ok, %Team{} = winner_team} ->
         leader = Tournaments.get_leader(winner_team.id)
-        do_claim_score(user_id,        tournament, -1, 0)
+        do_claim_score(user_id, tournament, -1, 0)
         case do_claim_score(leader.user_id, tournament, 1,  0) do
           {:ok, tournament, opponent, user_id, id, score, match_index} -> after_do_claim_score(conn, tournament, opponent, user_id, id, score, match_index)
           nil           -> render(conn, "error.json", error: "Invalid state")
@@ -2041,6 +2045,7 @@ defmodule MilkWeb.TournamentController do
   def get_duplicate_claim_members(conn, %{"tournament_id" => tournament_id}) do
     tournament_id
     |> Progress.get_duplicate_users()
+    |> Enum.map(&Tournaments.get_entrant(&1).user_id)
     |> Enum.map(&Accounts.get_user(&1))
     ~> users
 

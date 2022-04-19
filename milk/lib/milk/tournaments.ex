@@ -2268,7 +2268,7 @@ defmodule Milk.Tournaments do
     |> Progress.get_match_list()
     |> __MODULE__.find_match(id)
     ~> match
-    |> Enum.all?(&Progress.get_match_pending_list(&1, tournament.id))
+    |> Enum.all?(&Progress.get_match_pending_list(&1, tournament.id) |> IO.inspect(label: :match_pending_list))
     |> if do
       match
       |> Enum.map(&break_waiting(&1, tournament))
