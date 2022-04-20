@@ -862,9 +862,10 @@ defmodule Milk.TournamentsTest do
   describe "create dummy entrant" do
     test "works" do
       tournament = fixture_tournament()
+      tournament_id = tournament.id
       name = "dumname"
 
-      assert {:ok, %Entrant{tournament_id: ^tournament.id, name: ^name}} = Tournaments.create_dummy_entrant(tournament.id, name)
+      assert {:ok, %Entrant{tournament_id: ^tournament_id, name: ^name}} = Tournaments.create_dummy_entrant(tournament.id, name)
     end
   end
 
@@ -2337,9 +2338,10 @@ defmodule Milk.TournamentsTest do
   describe "create dummy teams" do
     test "works" do
       tournament = fixture_tournament(is_team: true)
+      tournament_id = tournament.id
       name = "dumname"
 
-      assert {:ok, %Team{is_confirmed: true, is_dummy: true, tournament_id: ^tournament.id, name: ^name}} = Tournaments.create_dummy_team(tournament.id, name)
+      assert {:ok, %Team{is_confirmed: true, is_dummy: true, tournament_id: ^tournament_id, name: ^name}} = Tournaments.create_dummy_team(tournament.id, name)
     end
   end
 

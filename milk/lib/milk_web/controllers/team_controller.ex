@@ -124,6 +124,16 @@ defmodule MilkWeb.TeamController do
     end
   end
 
+  def create(conn, %{"tournament_id" => tournament_id, "name" => name}) do
+    tournament_id
+    |> Tools.to_integer_as_needed()
+    |> Tournaments.create_dummy_team(name)
+    |> case do
+      {:ok, %Team{}}  -> json(conn, %{result: true})
+      {:error, error} -> render(conn, "error.json", error: error)
+    end
+  end
+
   defp validate_capacity(nil, _), do: {:error, "tournament is nil"}
   defp validate_capacity(%Tournament{capacity: capacity}, teams) when capacity > length(teams), do: {:ok, nil}
   defp validate_capacity(%Tournament{capacity: capacity}, teams) when capacity <= length(teams), do: {:error, "over tournament size"}

@@ -1565,8 +1565,8 @@ defmodule Milk.Tournaments do
   ダミーのentrantを作成
   """
   def create_dummy_entrant(tournament_id, name) do
-    %Entrant{}
-    |> Entrant.changeset(%{tournament_id: tournament_id, name: name})
+    %Entrant{tournament_id: tournament_id}
+    |> Entrant.changeset(%{name: name})
     |> Repo.insert()
   end
 
@@ -4033,8 +4033,8 @@ defmodule Milk.Tournaments do
   ダミーのチームを作成する機能
   """
   def create_dummy_team(tournament_id, name) do
-    %Team{}
-    |> Team.changeset(%{tournament_id: tournament_id, name: name, is_dummy: true, is_confirmed: true})
+    %Team{tournament_id: tournament_id}
+    |> Team.changeset(%{name: name, is_dummy: true, is_confirmed: true})
     |> Repo.insert()
   end
 
@@ -4429,7 +4429,7 @@ defmodule Milk.Tournaments do
   @spec get_confirmed_teams(integer()) :: [Team.t()]
   def get_confirmed_teams(tournament_id) do
     Team
-    |> join(:inner, [t], tm in TeamMember, on: t.id == tm.team_id)
+    |> join(:left, [t], tm in TeamMember, on: t.id == tm.team_id)
     |> where([t, tm], t.tournament_id == ^tournament_id)
     |> where([t, tm], t.is_confirmed)
     |> preload([t, tm], :team_member)

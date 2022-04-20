@@ -866,19 +866,12 @@ defmodule Milk.Tournaments.Progress do
     match_list_with_fight_result
     |> List.flatten()
     |> Enum.reduce(match_list_with_fight_result, fn x, acc ->
-      # HACK: 本当はnameの部分はチーム名をそのまま入れてしまえば良いけど、旧来の実装では〇〇のチームだったのでその形にしておく
       team = Tournaments.get_team(x["team_id"])
 
-      # leaderの情報を記載したいため、そのデータを入れる
-      team.id
-      |> Tournaments.load_leader()
-      |> Map.get(:user)
-      ~> user
-
       acc
-      |> Tournaments.put_value_on_brackets(team.id, %{"name" => user.name})
+      |> Tournaments.put_value_on_brackets(team.id, %{"name" => team.name})
       |> Tournaments.put_value_on_brackets(team.id, %{"win_count" => 0})
-      |> Tournaments.put_value_on_brackets(team.id, %{"icon_path" => user.icon_path})
+      |> Tournaments.put_value_on_brackets(team.id, %{"icon_path" => team.icon_path})
       |> Tournaments.put_value_on_brackets(team.id, %{"round" => 0})
     end)
     |> insert_match_list_with_fight_result(tournament.id)
