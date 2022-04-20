@@ -1837,7 +1837,7 @@ defmodule Milk.Tournaments do
         [] -> {:error, nil}
 
         _match ->
-          tournament = __MODULE__.load_tournament(tournament_id)
+          tournament = __MODULE__.get_tournament(tournament_id)
 
           if tournament.is_team do
             loser
@@ -1850,30 +1850,25 @@ defmodule Milk.Tournaments do
           end
           ~> loser_id
 
-          tournament_id
-          |> __MODULE__.get_opponent(loser_id)
-          |> case do
-            {:ok, opponent} -> {:ok, opponent, tournament}
-            {:wait, nil} -> {:wait, nil, tournament}
-            _ -> {:error, nil}
-          end
-      end
-      |> case do
-        {:ok, opponent, tournament} ->
-          if tournament.is_team do
-            Map.new()
-            |> Map.put("tournament_id", tournament_id)
-            |> Map.put("team_id", opponent.id)
-            |> promote_rank()
-          else
-            Map.new()
-            |> Map.put("tournament_id", tournament_id)
-            |> Map.put("user_id", opponent.id)
-            |> promote_rank()
-          end
 
-        {:wait, nil, _} -> {:wait, nil, nil}
-        {:error, nil}   -> {:error, nil}
+          tournament_id
+          |> Progress.get_match_list()
+          |> __MODULE__.find_match(loser)
+          |> Enum.reject(&(&1 == loser))
+          |> hd()
+          |> then(fn opponent_id ->
+            if tournament.is_team do
+              Map.new()
+              |> Map.put("tournament_id", tournament_id)
+              |> Map.put("team_id", opponent_id)
+              |> promote_rank()
+            else
+              Map.new()
+              |> Map.put("tournament_id", tournament_id)
+              |> Map.put("user_id", opponent_id)
+              |> promote_rank()
+            end
+          end)
       end
     end)
   end
@@ -2378,7 +2373,17 @@ defmodule Milk.Tournaments do
   def change_winner_state(%Tournament{is_team: false} = tournament, winner_entrant_id) do
     winner_user_id = __MODULE__.get_entrant(winner_entrant_id).user_id
 
-    do_change_winner_state(tournament, winner_user_id)
+    tournament.id
+    |> Progress.get_match_list()
+    |> __MODULE__.find_match(winner_entrant_id)
+    |> Enum.filter(&is_integer(&1))
+    |> then(fn match ->
+      cond do
+        length(match) == 2 -> proceed_to_next_match(tournament, winner_user_id)
+        length(match) == 1 -> wait_for_next_match(tournament, winner_user_id)
+        :else              -> {:ok, nil}
+      end
+    end)
   end
 
   def change_winner_state(%Tournament{is_team: true} = tournament, winner_team_id) do
@@ -2402,6 +2407,7 @@ defmodule Milk.Tournaments do
     end
   end
 
+  def waiting_for_score_input_state(_, nil), do: {:ok, nil}
   def waiting_for_score_input_state(tournament, user_id) do
     keyname = Rules.adapt_keyname(user_id, tournament.id)
 
@@ -2415,6 +2421,7 @@ defmodule Milk.Tournaments do
   end
 
   @spec proceed_to_next_match(Tournament.t(), integer()) :: {:ok, any()} | {:error, String.t()}
+  defp proceed_to_next_match(_, nil), do: {:ok, nil}
   defp proceed_to_next_match(%Tournament{rule: rule, is_team: true, id: id}, winner_leader_id) do
     id
     |> __MODULE__.get_team_by_tournament_id_and_user_id(winner_leader_id)
@@ -2424,6 +2431,7 @@ defmodule Milk.Tournaments do
     id
     |> Progress.get_match_list()
     |> __MODULE__.find_match(winner_team_id)
+    |> Enum.filter(&is_integer(&1))
     |> Enum.map(fn team_id ->
       team_id
       |> __MODULE__.get_leader()
@@ -2604,21 +2612,20 @@ defmodule Milk.Tournaments do
   """
   def change_loser_state(%Tournament{rule: rule, is_team: true, id: id}, loser_team_id) do
     # NOTE: 敗者は確実にis_loserに変わる
-    loser_team_id
-    |> __MODULE__.get_leader()
-    |> Map.get(:user_id)
-    |> Rules.adapt_keyname(id)
-    |> do_change_loser_state(rule)
+    leader = __MODULE__.get_leader(loser_team_id)
+
+    do_change_loser_state(leader.user_id, id, rule)
   end
   def change_loser_state(%Tournament{rule: rule, is_team: false, id: id}, loser_entrant_id) do
-    loser_user_id = __MODULE__.get_entrant(loser_entrant_id).user_id
+    loser_entrant = __MODULE__.get_entrant(loser_entrant_id)
 
-    loser_user_id
-    |> Rules.adapt_keyname(id)
-    |> do_change_loser_state(rule)
+    do_change_loser_state(loser_entrant.user_id, id, rule)
   end
 
-  defp do_change_loser_state(keyname, rule) do
+  defp do_change_loser_state(nil, _, _), do: {:ok, nil}
+  defp do_change_loser_state(user_id, tournament_id, rule) do
+    keyname = Rules.adapt_keyname(user_id, tournament_id)
+
     case rule do
       "basic"              -> Basic.trigger!(keyname, Basic.lose_trigger())
       "flipban"            -> FlipBan.trigger!(keyname, FlipBan.lose_trigger())

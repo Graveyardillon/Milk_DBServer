@@ -1825,12 +1825,15 @@ defmodule MilkWeb.TournamentController do
 
   @doc """
   Force to defeat a user.
+  NOTE: entrant_idがくる
   """
-  def force_to_defeat(conn, %{"tournament_id" => tournament_id, "target_user_id" => target_user_id}) do
+  def force_to_defeat(conn, %{"tournament_id" => tournament_id, "target_user_id" => target_entrant_id}) do
     tournament_id = Tools.to_integer_as_needed(tournament_id)
-    target_user_id = Tools.to_integer_as_needed(target_user_id)
+    target_entrant_id = Tools.to_integer_as_needed(target_entrant_id)
 
-    do_force_to_defeat(conn, tournament_id, target_user_id)
+    target_entrant = Tournaments.get_entrant(target_entrant_id)
+
+    do_force_to_defeat(conn, tournament_id, target_entrant.user_id, target_entrant)
   end
 
   def force_to_defeat(conn, %{"tournament_id" => tournament_id, "target_team_id" => target_team_id}) do
@@ -1842,10 +1845,66 @@ defmodule MilkWeb.TournamentController do
     |> Map.get(:user_id)
     ~> leader_id
 
-    do_force_to_defeat(conn, tournament_id, leader_id)
+    target_team = Tournaments.get_team(target_team_id)
+
+    do_force_to_defeat(conn, tournament_id, leader_id, target_team)
   end
 
-  defp do_force_to_defeat(conn, tournament_id, user_id) do
+  # NOTE: dummyのとき
+  defp do_force_to_defeat(conn, tournament_id, nil, %Entrant{id: entrant_id, tournament_id: tournament_id}) do
+    # 対戦相手のランクを上げるのと、トーナメント表の更新を行う
+    tournament_id
+    |> Progress.get_match_list()
+    |> Tournaments.find_match(entrant_id)
+    |> Enum.reject(&(&1 == entrant_id))
+    |> hd()
+    ~> winner_entrant_id
+
+    tournament_id
+    |> Tournaments.get_tournament()
+    |> proceed_to_next_match(winner_entrant_id, entrant_id, 1, -1, 0)
+    |> case do
+      {:ok, nil} ->
+        tournament = Tournaments.get_tournament(tournament_id)
+        claim = %Claim{
+          validated: true,
+          completed: true,
+          is_finished: is_nil(tournament),
+          interaction_messages: Tournaments.all_states!(tournament_id),
+          rule: tournament.rule
+        }
+        render(conn, "claim.json", claim: claim)
+      {:error, msg} -> render(conn, "error.json", error: msg)
+    end
+  end
+
+  defp do_force_to_defeat(conn, tournament_id, nil, %Team{id: team_id}) do
+    tournament_id
+    |> Progress.get_match_list()
+    |> Tournaments.find_match(team_id)
+    |> Enum.reject(&(&1 == team_id))
+    |> hd()
+    ~> winner_team_id
+
+    tournament_id
+    |> Tournaments.get_tournament()
+    |> proceed_to_next_match(winner_team_id, team_id, 1, -1, 0)
+    |> case do
+      {:ok, nil} ->
+        tournament = Tournaments.get_tournament(tournament_id)
+        claim = %Claim{
+          validated: true,
+          completed: true,
+          is_finished: is_nil(tournament),
+          interaction_messages: Tournaments.all_states!(tournament_id),
+          rule: tournament.rule
+        }
+        render(conn, "claim.json", claim: claim)
+      {:error, msg} -> render(conn, "error.json", error: msg)
+    end
+  end
+
+  defp do_force_to_defeat(conn, tournament_id, user_id, _) do
     tournament = Tournaments.get_tournament(tournament_id)
 
     # XXX: 仮のmatch_indexを使ってdo_claim_scoreを書いている

@@ -4369,7 +4369,7 @@ defmodule MilkWeb.TournamentControllerTest do
       conn =
         post(conn, Routes.tournament_path(conn, :force_to_defeat),
           tournament_id: tournament.id,
-          target_user_id: entrant1.user_id
+          target_user_id: entrant1.id
         )
 
       conn =
@@ -4394,6 +4394,48 @@ defmodule MilkWeb.TournamentControllerTest do
       |> then(fn len ->
         assert len == length(entrants)
       end)
+    end
+
+    test "defeat dummy", %{conn: conn, tournament: tournament} do
+      entrants = create_entrants(3, tournament.id)
+      entrant1 = hd(entrants)
+      dummy_name = "dumname"
+
+      conn = post(conn, Routes.entrant_path(conn, :create), %{tournament_id: tournament.id, name: dummy_name})
+      assert json_response(conn, 200)["result"]
+      dummy_entrant_id = json_response(conn, 200)["data"]["id"]
+
+      conn = post(conn, Routes.tournament_path(conn, :start), tournament: %{"master_id" => tournament.master_id, "tournament_id" => tournament.id})
+      assert json_response(conn, 200)["result"]
+
+      conn =
+        post(conn, Routes.tournament_path(conn, :force_to_defeat),
+          tournament_id: tournament.id,
+          target_user_id: dummy_entrant_id
+        )
+
+      assert json_response(conn, 200)["result"]
+    end
+
+    test "defeat an opponent of dummy", %{conn: conn, tournament: tournament} do
+      entrants = create_entrants(1, tournament.id)
+      entrant1 = hd(entrants)
+      dummy_name = "dumname"
+
+      conn = post(conn, Routes.entrant_path(conn, :create), %{tournament_id: tournament.id, name: dummy_name})
+      assert json_response(conn, 200)["result"]
+      dummy_entrant_id = json_response(conn, 200)["data"]["id"]
+
+      conn = post(conn, Routes.tournament_path(conn, :start), tournament: %{"master_id" => tournament.master_id, "tournament_id" => tournament.id})
+      assert json_response(conn, 200)["result"]
+
+      conn =
+        post(conn, Routes.tournament_path(conn, :force_to_defeat),
+          tournament_id: tournament.id,
+          target_user_id: entrant1.id
+        )
+
+      assert json_response(conn, 200)["result"]
     end
   end
 
