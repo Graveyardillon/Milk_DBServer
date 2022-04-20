@@ -5848,7 +5848,7 @@ defmodule MilkWeb.TournamentControllerTest do
       conn =
         get(conn, Routes.tournament_path(conn, :score),
           tournament_id: tournament.id,
-          user_id: entrant1.user_id
+          user_id: entrant1.id
         )
 
       assert json_response(conn, 200)["score"] == my_score
@@ -5874,7 +5874,7 @@ defmodule MilkWeb.TournamentControllerTest do
       conn =
         get(conn, Routes.tournament_path(conn, :score),
           tournament_id: tournament.id,
-          user_id: entrant1.user_id
+          user_id: entrant1.id
         )
 
       assert json_response(conn, 200)["score"] == my_new_score
@@ -5906,7 +5906,7 @@ defmodule MilkWeb.TournamentControllerTest do
       conn =
         get(conn, Routes.tournament_path(conn, :score),
           tournament_id: tournament.id,
-          user_id: entrant1.user_id
+          user_id: entrant1.id
         )
 
       refute json_response(conn, 200)["result"]
