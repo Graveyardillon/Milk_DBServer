@@ -19,7 +19,7 @@ defmodule Milk.Tournaments.Team do
           is_confirmed: boolean(),
           name: String.t(),
           rank: integer(),
-          size: integer(),
+          size: integer() | nil,
           tournament_id: integer(),
           # NOTE: timestamps
           create_time: any(),
@@ -45,6 +45,6 @@ defmodule Milk.Tournaments.Team do
   def changeset(team, attrs) do
     team
     |> cast(attrs, [:confirmation_date, :name, :size, :tournament_id, :icon_path, :is_confirmed, :rank])
-    |> validate_required([:name, :size, :tournament_id])
+    |> validate_required([:name, :tournament_id])
   end
 end

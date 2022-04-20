@@ -1562,6 +1562,15 @@ defmodule Milk.Tournaments do
   end
 
   @doc """
+  ダミーのentrantを作成
+  """
+  def create_dummy_entrant(tournament_id, name) do
+    %Entrant{}
+    |> Entrant.changeset(%{tournament_id: tournament_id, name: name})
+    |> Repo.insert()
+  end
+
+  @doc """
   Updates a entrant.
 
   ## Examples
@@ -2687,9 +2696,9 @@ defmodule Milk.Tournaments do
   end
 
   defp create_logs_on_finish(%Tournament{rule: "freeforall"} = tournament, winner_user_id) do
-    with {:ok, tournament_log}      <- create_tournament_log_on_finish(tournament, winner_user_id),
+    with {:ok, tournament_log}       <- create_tournament_log_on_finish(tournament, winner_user_id),
          {:ok, _ffa_information_log} <- create_ffa_information_log(tournament_log),
-         {:ok, categories}          <- create_ffa_point_categories_log(tournament_log),
+         {:ok, categories}           <- create_ffa_point_categories_log(tournament_log),
          {:ok, _tables}              <- create_ffa_tables_log(tournament_log, categories) do
       {:ok, nil}
     else
@@ -4017,6 +4026,15 @@ defmodule Milk.Tournaments do
       "name" => name,
       "icon_path" => leader.icon_path
     })
+    |> Repo.insert()
+  end
+
+  @doc """
+  ダミーのチームを作成する機能
+  """
+  def create_dummy_team(tournament_id, name) do
+    %Team{}
+    |> Team.changeset(%{tournament_id: tournament_id, name: name, is_dummy: true, is_confirmed: true})
     |> Repo.insert()
   end
 

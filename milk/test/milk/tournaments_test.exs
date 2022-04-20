@@ -859,6 +859,15 @@ defmodule Milk.TournamentsTest do
     end
   end
 
+  describe "create dummy entrant" do
+    test "works" do
+      tournament = fixture_tournament()
+      name = "dumname"
+
+      assert {:ok, %Entrant{tournament_id: ^tournament.id, name: ^name}} = Tournaments.create_dummy_entrant(tournament.id, name)
+    end
+  end
+
   describe "update entrant" do
     setup [:create_entrant]
 
@@ -2322,6 +2331,15 @@ defmodule Milk.TournamentsTest do
       user = fixture_user()
 
       assert {:ok, :leader_only, %Team{is_confirmed: true}} = Tournaments.create_team(tournament.id, 1, user.id, [])
+    end
+  end
+
+  describe "create dummy teams" do
+    test "works" do
+      tournament = fixture_tournament(is_team: true)
+      name = "dumname"
+
+      assert {:ok, %Team{is_confirmed: true, is_dummy: true, tournament_id: ^tournament.id, name: ^name}} = Tournaments.create_dummy_team(tournament.id, name)
     end
   end
 
