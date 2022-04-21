@@ -15,7 +15,6 @@ defmodule Milk.Tournaments.Progress do
 
   alias Common.Tools
   alias Milk.{
-    Accounts,
     Log,
     Repo,
     Tournaments
@@ -763,7 +762,7 @@ defmodule Milk.Tournaments.Progress do
     if is_nil(match_list) do
       tournament.id
       |> Tournaments.get_entrants()
-      |> Enum.map(&Map.get(&1, :user_id))
+      |> Enum.map(&Map.get(&1, :id))
       |> Tournaments.generate_matchlist()
     else
       {:ok, match_list}
@@ -779,12 +778,12 @@ defmodule Milk.Tournaments.Progress do
     match_list_with_fight_result
     |> List.flatten()
     |> Enum.reduce(match_list_with_fight_result, fn x, acc ->
-      user = Accounts.get_user(x["user_id"])
+      entrant = Tournaments.get_entrant(x["user_id"])
 
       acc
-      |> Tournaments.put_value_on_brackets(user.id, %{"name" => user.name})
-      |> Tournaments.put_value_on_brackets(user.id, %{"win_count" => 0})
-      |> Tournaments.put_value_on_brackets(user.id, %{"icon_path" => user.icon_path})
+      |> Tournaments.put_value_on_brackets(entrant.id, %{"name" => entrant.name})
+      |> Tournaments.put_value_on_brackets(entrant.id, %{"win_count" => 0})
+      |> Tournaments.put_value_on_brackets(entrant.id, %{"icon_path" => entrant.icon_path})
     end)
     |> __MODULE__.insert_match_list_with_fight_result(tournament.id)
 
@@ -797,7 +796,7 @@ defmodule Milk.Tournaments.Progress do
     if is_nil(match_list) do
       tournament.id
       |> Tournaments.get_entrants()
-      |> Enum.map(&(&1.user_id))
+      |> Enum.map(&(&1.id))
       |> Tournaments.generate_matchlist()
     else
       {:ok, match_list}
@@ -814,13 +813,13 @@ defmodule Milk.Tournaments.Progress do
     match_list_with_fight_result
     |> List.flatten()
     |> Enum.reduce(match_list_with_fight_result, fn x, acc ->
-      user = Accounts.get_user(x["user_id"])
+      entrant = Tournaments.get_entrant(x["user_id"])
 
       acc
-      |> Tournaments.put_value_on_brackets(user.id, %{"name" => user.name})
-      |> Tournaments.put_value_on_brackets(user.id, %{"win_count" => 0})
-      |> Tournaments.put_value_on_brackets(user.id, %{"icon_path" => user.icon_path})
-      |> Tournaments.put_value_on_brackets(user.id, %{"round" => 0})
+      |> Tournaments.put_value_on_brackets(entrant.id, %{"name" => entrant.name})
+      |> Tournaments.put_value_on_brackets(entrant.id, %{"win_count" => 0})
+      |> Tournaments.put_value_on_brackets(entrant.id, %{"icon_path" => entrant.icon_path})
+      |> Tournaments.put_value_on_brackets(entrant.id, %{"round" => 0})
     end)
     |> __MODULE__.insert_match_list_with_fight_result(tournament.id)
 
@@ -867,19 +866,12 @@ defmodule Milk.Tournaments.Progress do
     match_list_with_fight_result
     |> List.flatten()
     |> Enum.reduce(match_list_with_fight_result, fn x, acc ->
-      # HACK: 本当はnameの部分はチーム名をそのまま入れてしまえば良いけど、旧来の実装では〇〇のチームだったのでその形にしておく
       team = Tournaments.get_team(x["team_id"])
 
-      # leaderの情報を記載したいため、そのデータを入れる
-      team.id
-      |> Tournaments.load_leader()
-      |> Map.get(:user)
-      ~> user
-
       acc
-      |> Tournaments.put_value_on_brackets(team.id, %{"name" => user.name})
+      |> Tournaments.put_value_on_brackets(team.id, %{"name" => team.name})
       |> Tournaments.put_value_on_brackets(team.id, %{"win_count" => 0})
-      |> Tournaments.put_value_on_brackets(team.id, %{"icon_path" => user.icon_path})
+      |> Tournaments.put_value_on_brackets(team.id, %{"icon_path" => team.icon_path})
       |> Tournaments.put_value_on_brackets(team.id, %{"round" => 0})
     end)
     |> insert_match_list_with_fight_result(tournament.id)
@@ -968,6 +960,7 @@ defmodule Milk.Tournaments.Progress do
 
   @doc """
   Get necessary id for tournament progress.
+  teamIdかEntrantIdを返す
   """
   @spec get_necessary_id(integer(), integer()) :: integer() | nil
   def get_necessary_id(tournament_id, user_id) do
@@ -980,8 +973,8 @@ defmodule Milk.Tournaments.Progress do
     end
   end
 
-  defp do_get_necessary_id(%Tournament{master_id: master_id, id: tournament_id, is_team: is_team}, user_id) when master_id == user_id do
-    if Tournaments.is_participant?(tournament_id, user_id) and is_team do
+  defp do_get_necessary_id(%Tournament{master_id: master_id, id: tournament_id, is_team: true}, user_id) when master_id == user_id do
+    if Tournaments.is_participant?(tournament_id, user_id) do
       tournament_id
       |> Tournaments.get_team_by_tournament_id_and_user_id(user_id)
       |> get_team_id()
@@ -989,12 +982,26 @@ defmodule Milk.Tournaments.Progress do
       user_id
     end
   end
+  defp do_get_necessary_id(%Tournament{master_id: master_id, id: tournament_id, is_team: false}, user_id) when master_id == user_id do
+    if Tournaments.is_participant?(tournament_id, user_id) do
+      user_id
+      |> Tournaments.get_entrant_by_user_id_and_tournament_id(tournament_id)
+      |> Map.get(:id)
+    else
+      user_id
+    end
+  end
+
   defp do_get_necessary_id(%Tournament{id: id, is_team: true}, user_id) do
     id
     |> Tournaments.get_team_by_tournament_id_and_user_id(user_id)
     |> get_team_id()
   end
-  defp do_get_necessary_id(_, user_id), do: user_id
+  defp do_get_necessary_id(%Tournament{id: tournament_id}, user_id) do
+    user_id
+    |> Tournaments.get_entrant_by_user_id_and_tournament_id(tournament_id)
+    |> Map.get(:id)
+  end
 
   defp get_team_id(%Team{id: id}), do: id
   defp get_team_id(_), do: nil
@@ -1005,11 +1012,18 @@ defmodule Milk.Tournaments.Progress do
     |> Log.get_team_log_by_tournament_id_and_user_id(user_id)
     |> get_team_log_id()
   end
-  defp do_get_necessary_log_id(_, user_id), do: user_id
+  defp do_get_necessary_log_id(%TournamentLog{tournament_id: tournament_id, is_team: false}, user_id) do
+    user_id
+    |> Log.get_entrant_log_by_user_id_and_tournament_id(tournament_id)
+    |> Map.get(:entrant_id)
+  end
 
   defp get_team_log_id(%TeamLog{team_id: id}), do: id
-  defp get_team_log_id(_), do: nil
+  defp get_team_log_id(_),                     do: nil
 
+  @doc """
+  TeamWinCount作成
+  """
   def create_team_win_count(attrs) do
     %TeamWinCount{}
     |> TeamWinCount.changeset(attrs)

@@ -23,6 +23,16 @@ defmodule MilkWeb.EntrantController do
     end
   end
 
+  def create(conn, %{"tournament_id" => tournament_id, "name" => name}) do
+    tournament_id
+    |> Tools.to_integer_as_needed()
+    |> Tournaments.create_dummy_entrant(name)
+    |> case do
+      {:ok, %Entrant{} = entrant} -> render(conn, "show.json", entrant: entrant)
+      {:error, error}             -> render(conn, "error.json", error: error)
+    end
+  end
+
   @doc """
   Shows an entrant.
   """
