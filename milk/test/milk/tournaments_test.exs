@@ -824,39 +824,6 @@ defmodule Milk.TournamentsTest do
 
       assert {:error, "requires team"} = Tournaments.create_entrant(entrant_params)
     end
-
-    test "create_entrant/1 returns a multi error when it runs with same parameter at one time." do
-      # tournament and user for entrant_param
-      user0 = fixture_user()
-      user1 = fixture_user(num: 2)
-      tournament0 = fixture_tournament()
-      tournament1 = fixture_tournament(master_id: user1.id)
-
-      entrant_param =
-        @entrant_create_attrs
-        |> Map.put("tournament_id", tournament0.id)
-        |> Map.put("user_id", user0.id)
-
-      # entrant作成の並行タスク生成
-      create_entrant_task0 = Task.async(fn -> Tournaments.create_entrant(entrant_param) end)
-
-      create_entrant_task1 =
-        Task.async(fn ->
-          Tournaments.create_entrant(%{entrant_param | "tournament_id" => tournament1.id})
-        end)
-
-      create_entrant_task2 = Task.async(fn -> Tournaments.create_entrant(entrant_param) end)
-
-      # 元のパラメータとそれぞれtournament_id, user_idのどちらかの重複，どちらも同じの合計4パターンのentrant作成結果の出力
-      # 元のentrant_param
-      assert {:ok, _} = Task.await(create_entrant_task0)
-      # user_idのみ書き換えたパラメータ
-      assert {:ok, _} = Tournaments.create_entrant(%{entrant_param | "user_id" => user1.id})
-      # tournament_idのみ書き換えたパラメータ
-      assert {:ok, _} = Task.await(create_entrant_task1)
-      # どちらも書き換えていないパラメータ
-      assert {:error, _} = Task.await(create_entrant_task2)
-    end
   end
 
   describe "create dummy entrant" do
@@ -1470,7 +1437,7 @@ defmodule Milk.TournamentsTest do
     end
 
     test "promote_rank/1 returns promoted rank with valid attrs" do
-      [is_team: true, capacity: 4, type: 2]
+      [is_team: true, capacity: 4]
       |> fixture_tournament()
       ~> tournament
       |> Map.get(:id)
@@ -1483,30 +1450,11 @@ defmodule Milk.TournamentsTest do
       end)
       ~> leaders
 
-      # assert用のidリスト作成
-      teams
-      |> Enum.map(fn team ->
-        team.id
-      end)
-      ~> team_id_list
+      team_id_list = Enum.map(teams, &(&1.id))
+      team_name_list = Enum.map(teams, &(&1.name))
+      team_icon_path_list = Enum.map(teams, &(&1.icon_path))
 
-      # assert用の名前リスト作成
-      leaders
-      |> Enum.map(fn leader ->
-        leader.name
-      end)
-      ~> leader_name_list
-
-      # assert用のアイコンパスリスト作成
-      leaders
-      |> Enum.map(fn leader ->
-        leader.icon_path
-      end)
-      ~> leader_icon_path_list
-
-      tournament
-      |> Progress.start_team_flipban()
-      ~> {:ok, match_list, _}
+      {:ok, match_list, _} = Progress.start_team_flipban(tournament)
 
       # match_listの初期状態確認
       tournament.id
@@ -1519,8 +1467,8 @@ defmodule Milk.TournamentsTest do
       |> Progress.get_match_list_with_fight_result()
       |> List.flatten()
       |> Enum.map(fn cell ->
-        assert cell["name"] in leader_name_list
-        assert cell["icon_path"] in leader_icon_path_list
+        assert cell["name"] in team_name_list
+        assert cell["icon_path"] in team_icon_path_list
         assert cell["win_count"] == 0
         assert cell["round"] == 0
         refute cell["is_loser"]
@@ -1571,8 +1519,8 @@ defmodule Milk.TournamentsTest do
       |> Progress.get_match_list_with_fight_result()
       |> List.flatten()
       |> Enum.map(fn cell ->
-        assert cell["name"] in leader_name_list
-        assert cell["icon_path"] in leader_icon_path_list
+        assert cell["name"] in team_name_list
+        assert cell["icon_path"] in team_icon_path_list
         # HACK: ここのroundはゼロでいいのかちょっとわからない
         assert cell["round"] == 0
 
@@ -1650,8 +1598,8 @@ defmodule Milk.TournamentsTest do
       |> Progress.get_match_list_with_fight_result()
       |> List.flatten()
       |> Enum.map(fn cell ->
-        assert cell["name"] in leader_name_list
-        assert cell["icon_path"] in leader_icon_path_list
+        assert cell["name"] in team_name_list
+        assert cell["icon_path"] in team_icon_path_list
         assert cell["round"] == 0
 
         cond do

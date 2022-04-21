@@ -1447,6 +1447,7 @@ defmodule MilkWeb.TournamentController do
   # bodyless clause
   defp do_claim_score(user_id, tournament, score, match_index \\ 0)
   defp do_claim_score(_,       nil,        _,     _), do: {:error, "tournament is nil"}
+
   defp do_claim_score(user_id, tournament, score, match_index) do
     # NOTE: あとでtournament変数はシャドウイングするので必要な情報だけ退避しておく
     tournament_id = tournament.id
@@ -1660,15 +1661,32 @@ defmodule MilkWeb.TournamentController do
 
   @spec load_names(Tournament.t(), integer(), integer()) :: {:ok, String.t(), String.t()} | {:error, String.t()}
   defp load_names(%Tournament{is_team: true, id: tournament_id}, id, _) do
-    with team   when not is_nil(team)   <- Tournaments.get_team(id),
-         leader when not is_nil(leader) <- Tournaments.get_leader(team.id),
-         {:ok, opponent}                <- Tournaments.get_opponent(tournament_id, leader.user_id) do
-      {:ok, opponent.name, team.name}
-    else
-      nil          -> {:error, "team or leader is nil"}
-      {:wait, nil} -> {:error, "opponent is nil"}
-      error        -> error
+    team = Tournaments.get_team(id)
+
+    tournament_id
+    |> Progress.get_match_list()
+    |> Tournaments.find_match(id)
+    |> Enum.reject(&(&1 == id))
+    |> List.first()
+    |> case do
+      opponent_id when is_integer(opponent_id) ->
+        opponent_team = Tournaments.get_team(opponent_id)
+        {:ok, opponent_team.name, team.name}
+      opponent_id when is_list(opponent_id) ->
+        {:error, "opponent is nil"}
+      _ -> {:error, nil}
     end
+
+
+    # with team   when not is_nil(team)   <- Tournaments.get_team(id),
+    #      leader when not is_nil(leader) <- Tournaments.get_leader(team.id),
+    #      {:ok, opponent}                <- Tournaments.get_opponent(tournament_id, leader.user_id) do
+    #   {:ok, opponent.name, team.name}
+    # else
+    #   nil          -> {:error, "team or leader is nil"}
+    #   {:wait, nil} -> {:error, "opponent is nil"}
+    #   error        -> error
+    # end
   end
   defp load_names(%Tournament{is_team: false}, entrant_id, opponent_id) do
     entrant = Tournaments.get_entrant(entrant_id)
@@ -1840,10 +1858,8 @@ defmodule MilkWeb.TournamentController do
     tournament_id = Tools.to_integer_as_needed(tournament_id)
     target_team_id = Tools.to_integer_as_needed(target_team_id)
 
-    target_team_id
-    |> Tournaments.get_leader()
-    |> Map.get(:user_id)
-    ~> leader_id
+    leader = Tournaments.get_leader(target_team_id)
+    leader_id = if is_nil(leader), do: nil, else: leader.user_id
 
     target_team = Tournaments.get_team(target_team_id)
 
@@ -1851,17 +1867,20 @@ defmodule MilkWeb.TournamentController do
   end
 
   # NOTE: dummyのとき
-  defp do_force_to_defeat(conn, tournament_id, nil, %Entrant{id: entrant_id, tournament_id: tournament_id}) do
+  defp do_force_to_defeat(conn, tournament_id, nil, %Entrant{id: entrant_id}) do
     # 対戦相手のランクを上げるのと、トーナメント表の更新を行う
     tournament_id
     |> Progress.get_match_list()
     |> Tournaments.find_match(entrant_id)
+    |> Enum.filter(&is_integer(&1))
     |> Enum.reject(&(&1 == entrant_id))
     |> hd()
     ~> winner_entrant_id
 
-    tournament_id
-    |> Tournaments.get_tournament()
+    tournament = Tournaments.get_tournament(tournament_id)
+    rule = tournament.rule
+
+    tournament
     |> proceed_to_next_match(winner_entrant_id, entrant_id, 1, -1, 0)
     |> case do
       {:ok, nil} ->
@@ -1871,7 +1890,7 @@ defmodule MilkWeb.TournamentController do
           completed: true,
           is_finished: is_nil(tournament),
           interaction_messages: Tournaments.all_states!(tournament_id),
-          rule: tournament.rule
+          rule: rule
         }
         render(conn, "claim.json", claim: claim)
       {:error, msg} -> render(conn, "error.json", error: msg)
@@ -1886,9 +1905,12 @@ defmodule MilkWeb.TournamentController do
     |> hd()
     ~> winner_team_id
 
-    tournament_id
-    |> Tournaments.get_tournament()
+    tournament = Tournaments.get_tournament(tournament_id)
+    rule = tournament.rule
+
+    tournament
     |> proceed_to_next_match(winner_team_id, team_id, 1, -1, 0)
+    |> IO.inspect()
     |> case do
       {:ok, nil} ->
         tournament = Tournaments.get_tournament(tournament_id)
@@ -1897,35 +1919,51 @@ defmodule MilkWeb.TournamentController do
           completed: true,
           is_finished: is_nil(tournament),
           interaction_messages: Tournaments.all_states!(tournament_id),
-          rule: tournament.rule
+          rule: rule
         }
         render(conn, "claim.json", claim: claim)
       {:error, msg} -> render(conn, "error.json", error: msg)
     end
   end
 
-  defp do_force_to_defeat(conn, tournament_id, user_id, _) do
+  defp do_force_to_defeat(conn, tournament_id, user_id, team_or_entrant) do
     tournament = Tournaments.get_tournament(tournament_id)
+    rule = tournament.rule
 
     # XXX: 仮のmatch_indexを使ってdo_claim_scoreを書いている
     tournament_id
     |> Tournaments.get_opponent(user_id)
     |> case do
-      {:ok, %Entrant{} = winner} ->
-        do_claim_score(user_id, tournament, -1, 0)
-        case do_claim_score(winner.user_id, tournament, 1,  0) do
-          {:ok, tournament, opponent, user_id, id, score, match_index} -> after_do_claim_score(conn, tournament, opponent, user_id, id, score, match_index)
-          nil           -> render(conn, "error.json", error: "Invalid state")
+      {:ok, winner} ->
+        # ランクを上げてトーナメント表の更新
+        case proceed_to_next_match(tournament, winner.id, team_or_entrant.id, 1, -1, 0) |> IO.inspect(label: :opp) do
+          {:ok, nil} ->
+            tournament = Tournaments.get_tournament(tournament_id)
+            claim = %Claim{
+              validated: true,
+              completed: true,
+              is_finished: is_nil(tournament),
+              interaction_messages: Tournaments.all_states!(tournament_id),
+              rule: rule
+            }
+            render(conn, "claim.json", claim: claim)
           {:error, msg} -> render(conn, "error.json", error: msg)
         end
-      {:ok, %Team{} = winner_team} ->
-        leader = Tournaments.get_leader(winner_team.id)
-        do_claim_score(user_id, tournament, -1, 0)
-        case do_claim_score(leader.user_id, tournament, 1,  0) do
-          {:ok, tournament, opponent, user_id, id, score, match_index} -> after_do_claim_score(conn, tournament, opponent, user_id, id, score, match_index)
-          nil           -> render(conn, "error.json", error: "Invalid state")
-          {:error, msg} -> render(conn, "error.json", error: msg)
-        end
+        # do_claim_score(user_id, tournament, -1, 0)
+        # case do_claim_score(winner.user_id, tournament, 1,  0) do
+        #   {:ok, tournament, opponent, user_id, id, score, match_index} -> after_do_claim_score(conn, tournament, opponent, user_id, id, score, match_index)
+        #   nil           -> render(conn, "error.json", error: "Invalid state")
+        #   {:error, msg} -> render(conn, "error.json", error: msg)
+        # end
+     # {:ok, %Team{} = winner_team} ->
+        # leader = Tournaments.get_leader(winner_team.id)
+        # do_claim_score(user_id, tournament, -1, 0)
+        # case do_claim_score(leader.user_id, tournament, 1,  0) do
+        #   {:ok, tournament, opponent, user_id, id, score, match_index} -> after_do_claim_score(conn, tournament, opponent, user_id, id, score, match_index)
+        #   nil           -> render(conn, "error.json", error: "Invalid state")
+        #   {:error, msg} -> render(conn, "error.json", error: msg)
+        # end
+
       _ ->
         json(conn, %{result: false})
     end

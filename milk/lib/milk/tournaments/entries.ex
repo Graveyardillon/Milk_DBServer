@@ -65,6 +65,7 @@ defmodule Milk.Tournaments.Entries do
   end
 
   @spec delete_entries_by_user_id(integer()) :: {:ok, nil} | {:error, String.t()}
+  def delete_entries_by_user_id(nil), do: {:ok, nil}
   def delete_entries_by_user_id(user_id) do
     user_id
     |> __MODULE__.get_entries_by_user_id()
