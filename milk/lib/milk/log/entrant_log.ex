@@ -36,6 +36,6 @@ defmodule Milk.Log.EntrantLog do
       :create_time,
       :update_time
     ])
-    |> validate_required([:entrant_id, :tournament_id, :user_id, :rank])
+    |> validate_required([:entrant_id, :tournament_id])
   end
 end

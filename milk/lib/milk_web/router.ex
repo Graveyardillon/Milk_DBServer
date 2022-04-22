@@ -123,6 +123,7 @@ defmodule MilkWeb.Router do
     get "/tournament/has_entry_info", EntryController, :has_entry_info
     post "/tournament/entry_info", EntryController, :create_entry_information
     post "/tournament/entry_template", EntryController, :create_template
+    post "/tournament/edit_brackets", TournamentController, :edit_brackets
 
     get "/tournament/get_participating_tournaments",
         TournamentController,

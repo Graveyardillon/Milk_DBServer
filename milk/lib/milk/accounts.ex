@@ -511,7 +511,7 @@ defmodule Milk.Accounts do
       nil ->
         case mode do
           :email -> get_valid_user(user, password, :username)
-          _ -> nil
+          _      -> nil
         end
     end
   end

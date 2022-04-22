@@ -193,12 +193,12 @@ defmodule MilkWeb.UserController do
     |> Accounts.login()
     |> case do
       {:ok, %User{} = user} -> generate_token(user)
-      x -> x
+      error_tup             -> error_tup
     end
     |> case do
       {:ok, token, %User{} = user} -> render(conn, "login.json", %{user: user, token: token})
-      {:error, nil} -> render(conn, "error.json", error_code: 104)
-      {:error, error} -> render(conn, "error.json", error: error)
+      {:error, nil}                -> render(conn, "error.json", error_code: 104)
+      {:error, error}              -> render(conn, "error.json", error: error)
     end
   end
 

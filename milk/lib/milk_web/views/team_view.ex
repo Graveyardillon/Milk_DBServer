@@ -25,22 +25,24 @@ defmodule MilkWeb.TeamView do
       size: team.size,
       tournament_id: team.tournament_id,
       team_member:
-        Enum.map(team.team_member, fn member ->
-          %{
-            id: member.id,
-            user_id: member.user_id,
-            user: %{
-              bio: member.user.bio,
-              email: member.user.auth.email,
-              icon_path: member.user.icon_path,
-              id: member.user.id,
-              name: member.user.name
-            },
-            team_id: member.team_id,
-            is_leader: member.is_leader,
-            is_invitation_confirmed: member.is_invitation_confirmed
-          }
-        end)
+        if !is_nil(team.team_member) do
+          Enum.map(team.team_member, fn member ->
+            %{
+              id: member.id,
+              user_id: member.user_id,
+              user: %{
+                bio: member.user.bio,
+                email: member.user.auth.email,
+                icon_path: member.user.icon_path,
+                id: member.user.id,
+                name: member.user.name
+              },
+              team_id: member.team_id,
+              is_leader: member.is_leader,
+              is_invitation_confirmed: member.is_invitation_confirmed
+            }
+          end)
+        end
     }
   end
 

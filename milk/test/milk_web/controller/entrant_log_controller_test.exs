@@ -73,12 +73,6 @@ defmodule MilkWeb.EntrantLogControllerTest do
                "user_id" => 43
              } = json_response(conn, 200)["data"]
     end
-
-    test "renders errors when data is invalid", %{conn: conn, entrant_log: entrant_log} do
-      conn = put(conn, Routes.entrant_log_path(conn, :update, entrant_log), entrant_log: @invalid_attrs)
-
-      assert json_response(conn, 422)["errors"] != %{}
-    end
   end
 
   describe "delete entrant_log" do

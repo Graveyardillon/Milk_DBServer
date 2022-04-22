@@ -60,7 +60,7 @@ defmodule Milk.Tournaments.Rules do
   def start_master_states!(tournament) do
     try do
       with {:ok, _}   <- start_master_state!(tournament),
-          {:ok, nil} <- start_assistant_states!(tournament) do
+           {:ok, nil} <- start_assistant_states!(tournament) do
         {:ok, tournament}
       else
         error -> error

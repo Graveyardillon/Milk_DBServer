@@ -57,7 +57,7 @@ defmodule Milk.Tournaments.ProgressTest do
 
     {:ok, match_list} =
       Tournaments.get_entrants(tournament_id)
-      |> Enum.map(fn x -> x.user_id end)
+      |> Enum.map(fn x -> x.id end)
       |> Tournaments.generate_matchlist()
 
     count =
@@ -79,7 +79,7 @@ defmodule Milk.Tournaments.ProgressTest do
       |> List.flatten()
 
     Enum.reduce(lis, list_with_fight_result, fn x, acc ->
-      user = Accounts.get_user(x["user_id"])
+      user = Tournaments.get_entrant(x["user_id"])
 
       acc
       |> Tournaments.put_value_on_brackets(user.id, %{"name" => user.name})
@@ -105,45 +105,6 @@ defmodule Milk.Tournaments.ProgressTest do
       match_list = Progress.get_match_list(2)
       assert match_list
       assert match_list == [[1, 2], 3]
-    end
-
-    test "get_match_list/1 returns data 1 size smaller than past one after deleting a user" do
-      tournament = fixture_tournament(is_started: true)
-      entrants = create_entrants(8, tournament.id)
-      entrant_id_list = Enum.map(entrants, fn entrant -> entrant.user_id end)
-      start(tournament.master_id, tournament.id)
-
-      tournament.id
-      |> Progress.get_match_list()
-      |> List.flatten()
-      |> Enum.map(fn user_id ->
-        assert user_id in entrant_id_list
-      end)
-      |> length()
-      |> then(fn len ->
-        assert len == length(entrants)
-      end)
-
-      entrants
-      |> hd()
-      |> Map.get(:user_id)
-      |> Accounts.get_user()
-      |> Accounts.delete()
-
-      tournament.id
-      |> Progress.get_match_list()
-      |> List.flatten()
-      |> Enum.map(fn user_id ->
-        if user_id == hd(entrants).user_id do
-          refute user_id in entrant_id_list
-        else
-          assert user_id in entrant_id_list
-        end
-      end)
-      |> length()
-      |> then(fn len ->
-        assert len == length(entrants) - 1
-      end)
     end
 
     test "delete_match_list/1 works fine" do
@@ -230,7 +191,7 @@ defmodule Milk.Tournaments.ProgressTest do
     test "get_match_list/1 returns data which is renewed after deleting a user" do
       tournament = fixture_tournament(is_started: true)
       entrants = create_entrants(8, tournament.id)
-      entrant_id_list = Enum.map(entrants, fn entrant -> entrant.user_id end)
+      entrant_id_list = Enum.map(entrants, fn entrant -> entrant.id end)
       start(tournament.master_id, tournament.id)
 
       tournament.id

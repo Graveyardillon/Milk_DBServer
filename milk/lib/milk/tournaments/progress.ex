@@ -15,7 +15,6 @@ defmodule Milk.Tournaments.Progress do
 
   alias Common.Tools
   alias Milk.{
-    Accounts,
     Log,
     Repo,
     Tournaments
@@ -742,7 +741,7 @@ defmodule Milk.Tournaments.Progress do
   @spec start_basic(integer(), Tournament.t()) :: {:ok, match_list(), match_list_with_fight_result()} | {:error, any()}
   def start_basic(_master_id, tournament) do
     case Tournaments.start(tournament) do
-      {:ok, _}        -> make_basic_matches(tournament.id)
+      {:ok, _}        -> make_basic_matches(tournament)
       {:error, error} -> {:error, error}
     end
   end
@@ -757,49 +756,54 @@ defmodule Milk.Tournaments.Progress do
     end
   end
 
-  defp make_basic_matches(tournament_id) do
-    match_list = __MODULE__.get_match_list(tournament_id)
+  defp make_basic_matches(tournament) do
+    match_list = __MODULE__.get_match_list(tournament.id)
 
     if is_nil(match_list) do
-      tournament_id
+      tournament.id
       |> Tournaments.get_entrants()
-      |> Enum.map(&Map.get(&1, :user_id))
+      |> Enum.map(&Map.get(&1, :id))
       |> Tournaments.generate_matchlist()
     else
       {:ok, match_list}
     end
     ~> {:ok, match_list}
 
-    tournament = Tournaments.get_tournament(tournament_id)
     count = tournament.count
 
-    Tournaments.initialize_rank(match_list, count, tournament_id)
-    insert_match_list(match_list, tournament_id)
+    Tournaments.initialize_rank(match_list, count, tournament.id)
+    insert_match_list(match_list, tournament.id)
     match_list_with_fight_result = Tournamex.initialize_match_list_with_fight_result(match_list)
 
     match_list_with_fight_result
     |> List.flatten()
     |> Enum.reduce(match_list_with_fight_result, fn x, acc ->
-      user = Accounts.get_user(x["user_id"])
+      entrant = Tournaments.get_entrant(x["user_id"])
 
       acc
-      |> Tournaments.put_value_on_brackets(user.id, %{"name" => user.name})
-      |> Tournaments.put_value_on_brackets(user.id, %{"win_count" => 0})
-      |> Tournaments.put_value_on_brackets(user.id, %{"icon_path" => user.icon_path})
+      |> Tournaments.put_value_on_brackets(entrant.id, %{"name" => entrant.name})
+      |> Tournaments.put_value_on_brackets(entrant.id, %{"win_count" => 0})
+      |> Tournaments.put_value_on_brackets(entrant.id, %{"icon_path" => entrant.icon_path})
     end)
-    |> insert_match_list_with_fight_result(tournament_id)
+    |> __MODULE__.insert_match_list_with_fight_result(tournament.id)
 
     {:ok, match_list, match_list_with_fight_result}
   end
 
   defp make_flipban_matches(tournament) do
-    tournament.id
-    |> Tournaments.get_entrants()
-    |> Enum.map(&(&1.user_id))
-    |> Tournaments.generate_matchlist()
+    match_list = __MODULE__.get_match_list(tournament.id)
+
+    if is_nil(match_list) do
+      tournament.id
+      |> Tournaments.get_entrants()
+      |> Enum.map(&(&1.id))
+      |> Tournaments.generate_matchlist()
+    else
+      {:ok, match_list}
+    end
     ~> {:ok, match_list}
-    |> elem(1)
-    |> insert_match_list(tournament.id)
+
+    insert_match_list(match_list, tournament.id)
 
     count = tournament.count
     Tournaments.initialize_rank(match_list, count, tournament.id)
@@ -809,15 +813,15 @@ defmodule Milk.Tournaments.Progress do
     match_list_with_fight_result
     |> List.flatten()
     |> Enum.reduce(match_list_with_fight_result, fn x, acc ->
-      user = Accounts.get_user(x["user_id"])
+      entrant = Tournaments.get_entrant(x["user_id"])
 
       acc
-      |> Tournaments.put_value_on_brackets(user.id, %{"name" => user.name})
-      |> Tournaments.put_value_on_brackets(user.id, %{"win_count" => 0})
-      |> Tournaments.put_value_on_brackets(user.id, %{"icon_path" => user.icon_path})
-      |> Tournaments.put_value_on_brackets(user.id, %{"round" => 0})
+      |> Tournaments.put_value_on_brackets(entrant.id, %{"name" => entrant.name})
+      |> Tournaments.put_value_on_brackets(entrant.id, %{"win_count" => 0})
+      |> Tournaments.put_value_on_brackets(entrant.id, %{"icon_path" => entrant.icon_path})
+      |> Tournaments.put_value_on_brackets(entrant.id, %{"round" => 0})
     end)
-    |> insert_match_list_with_fight_result(tournament.id)
+    |> __MODULE__.insert_match_list_with_fight_result(tournament.id)
 
     {:ok, match_list}
   end
@@ -835,15 +839,23 @@ defmodule Milk.Tournaments.Progress do
   end
 
   defp generate_team_flipban_matches(tournament) do
-    tournament.id
-    |> Tournaments.get_confirmed_teams()
-    ~> teams
-    |> Enum.map(&Map.get(&1, :id))
-    |> Tournaments.generate_matchlist()
-    |> elem(1)
-    ~> match_list
-    |> __MODULE__.insert_match_list(tournament.id)
+    match_list = __MODULE__.get_match_list(tournament.id)
+    teams = Tournaments.get_confirmed_teams(tournament.id)
 
+    if is_nil(match_list) do
+      teams
+      |> Enum.map(&Map.get(&1, :id))
+      |> Tournaments.generate_matchlist()
+      |> elem(1)
+      ~> match_list
+
+      {:ok, teams, match_list}
+    else
+      {:ok, teams, match_list}
+    end
+    ~> {:ok, teams, match_list}
+
+    __MODULE__.insert_match_list(match_list, tournament.id)
     count = length(teams)
     Tournaments.initialize_team_rank(match_list, count)
 
@@ -856,16 +868,10 @@ defmodule Milk.Tournaments.Progress do
     |> Enum.reduce(match_list_with_fight_result, fn x, acc ->
       team = Tournaments.get_team(x["team_id"])
 
-      # leaderの情報を記載したいため、そのデータを入れる
-      team.id
-      |> Tournaments.load_leader()
-      |> Map.get(:user)
-      ~> user
-
       acc
-      |> Tournaments.put_value_on_brackets(team.id, %{"name" => user.name})
+      |> Tournaments.put_value_on_brackets(team.id, %{"name" => team.name})
       |> Tournaments.put_value_on_brackets(team.id, %{"win_count" => 0})
-      |> Tournaments.put_value_on_brackets(team.id, %{"icon_path" => user.icon_path})
+      |> Tournaments.put_value_on_brackets(team.id, %{"icon_path" => team.icon_path})
       |> Tournaments.put_value_on_brackets(team.id, %{"round" => 0})
     end)
     |> insert_match_list_with_fight_result(tournament.id)
@@ -954,6 +960,7 @@ defmodule Milk.Tournaments.Progress do
 
   @doc """
   Get necessary id for tournament progress.
+  teamIdかEntrantIdを返す
   """
   @spec get_necessary_id(integer(), integer()) :: integer() | nil
   def get_necessary_id(tournament_id, user_id) do
@@ -966,8 +973,8 @@ defmodule Milk.Tournaments.Progress do
     end
   end
 
-  defp do_get_necessary_id(%Tournament{master_id: master_id, id: tournament_id, is_team: is_team}, user_id) when master_id == user_id do
-    if Tournaments.is_participant?(tournament_id, user_id) and is_team do
+  defp do_get_necessary_id(%Tournament{master_id: master_id, id: tournament_id, is_team: true}, user_id) when master_id == user_id do
+    if Tournaments.is_participant?(tournament_id, user_id) do
       tournament_id
       |> Tournaments.get_team_by_tournament_id_and_user_id(user_id)
       |> get_team_id()
@@ -975,12 +982,26 @@ defmodule Milk.Tournaments.Progress do
       user_id
     end
   end
+  defp do_get_necessary_id(%Tournament{master_id: master_id, id: tournament_id, is_team: false}, user_id) when master_id == user_id do
+    if Tournaments.is_participant?(tournament_id, user_id) do
+      user_id
+      |> Tournaments.get_entrant_by_user_id_and_tournament_id(tournament_id)
+      |> Map.get(:id)
+    else
+      user_id
+    end
+  end
+
   defp do_get_necessary_id(%Tournament{id: id, is_team: true}, user_id) do
     id
     |> Tournaments.get_team_by_tournament_id_and_user_id(user_id)
     |> get_team_id()
   end
-  defp do_get_necessary_id(_, user_id), do: user_id
+  defp do_get_necessary_id(%Tournament{id: tournament_id}, user_id) do
+    user_id
+    |> Tournaments.get_entrant_by_user_id_and_tournament_id(tournament_id)
+    |> Map.get(:id)
+  end
 
   defp get_team_id(%Team{id: id}), do: id
   defp get_team_id(_), do: nil
@@ -991,11 +1012,18 @@ defmodule Milk.Tournaments.Progress do
     |> Log.get_team_log_by_tournament_id_and_user_id(user_id)
     |> get_team_log_id()
   end
-  defp do_get_necessary_log_id(_, user_id), do: user_id
+  defp do_get_necessary_log_id(%TournamentLog{tournament_id: tournament_id, is_team: false}, user_id) do
+    user_id
+    |> Log.get_entrant_log_by_user_id_and_tournament_id(tournament_id)
+    |> Map.get(:entrant_id)
+  end
 
   defp get_team_log_id(%TeamLog{team_id: id}), do: id
-  defp get_team_log_id(_), do: nil
+  defp get_team_log_id(_),                     do: nil
 
+  @doc """
+  TeamWinCount作成
+  """
   def create_team_win_count(attrs) do
     %TeamWinCount{}
     |> TeamWinCount.changeset(attrs)

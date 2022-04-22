@@ -824,38 +824,15 @@ defmodule Milk.TournamentsTest do
 
       assert {:error, "requires team"} = Tournaments.create_entrant(entrant_params)
     end
+  end
 
-    test "create_entrant/1 returns a multi error when it runs with same parameter at one time." do
-      # tournament and user for entrant_param
-      user0 = fixture_user()
-      user1 = fixture_user(num: 2)
-      tournament0 = fixture_tournament()
-      tournament1 = fixture_tournament(master_id: user1.id)
+  describe "create dummy entrant" do
+    test "works" do
+      tournament = fixture_tournament()
+      tournament_id = tournament.id
+      name = "dumname"
 
-      entrant_param =
-        @entrant_create_attrs
-        |> Map.put("tournament_id", tournament0.id)
-        |> Map.put("user_id", user0.id)
-
-      # entrant作成の並行タスク生成
-      create_entrant_task0 = Task.async(fn -> Tournaments.create_entrant(entrant_param) end)
-
-      create_entrant_task1 =
-        Task.async(fn ->
-          Tournaments.create_entrant(%{entrant_param | "tournament_id" => tournament1.id})
-        end)
-
-      create_entrant_task2 = Task.async(fn -> Tournaments.create_entrant(entrant_param) end)
-
-      # 元のパラメータとそれぞれtournament_id, user_idのどちらかの重複，どちらも同じの合計4パターンのentrant作成結果の出力
-      # 元のentrant_param
-      assert {:ok, _} = Task.await(create_entrant_task0)
-      # user_idのみ書き換えたパラメータ
-      assert {:ok, _} = Tournaments.create_entrant(%{entrant_param | "user_id" => user1.id})
-      # tournament_idのみ書き換えたパラメータ
-      assert {:ok, _} = Task.await(create_entrant_task1)
-      # どちらも書き換えていないパラメータ
-      assert {:error, _} = Task.await(create_entrant_task2)
+      assert {:ok, %Entrant{tournament_id: ^tournament_id, name: ^name}} = Tournaments.create_dummy_entrant(tournament.id, name)
     end
   end
 
@@ -1014,29 +991,23 @@ defmodule Milk.TournamentsTest do
 
     {:ok, match_list} =
       Tournaments.get_entrants(tournament_id)
-      |> Enum.map(fn x -> x.user_id end)
+      |> Enum.map(fn x -> x.id end)
       |> Tournaments.generate_matchlist()
 
-    count =
-      Tournaments.load_tournament(tournament_id)
+    count = tournament_id
+      |> Tournaments.load_tournament()
       |> Map.get(:count)
 
-    match_list
-    |> Tournaments.initialize_rank(count, tournament_id)
 
-    match_list
-    |> Progress.insert_match_list(tournament_id)
+    Tournaments.initialize_rank(match_list, count, tournament_id)
+    Progress.insert_match_list(match_list, tournament_id)
 
-    list_with_fight_result =
-      match_list
-      |> match_list_with_fight_result()
+    list_with_fight_result = match_list_with_fight_result(match_list)
 
-    lis =
-      list_with_fight_result
-      |> List.flatten()
+    lis = List.flatten(list_with_fight_result)
 
     Enum.reduce(lis, list_with_fight_result, fn x, acc ->
-      user = Accounts.get_user(x["user_id"])
+      user = Tournaments.get_entrant(x["user_id"])
 
       acc
       |> Tournaments.put_value_on_brackets(user.id, %{"name" => user.name})
@@ -1228,7 +1199,7 @@ defmodule Milk.TournamentsTest do
     test "promote_rank/1 returns promoted rank with valid attrs", %{entrant: entrant} do
       attrs = %{
         "tournament_id" => entrant.tournament_id,
-        "user_id" => entrant.user_id
+        "user_id" => entrant.id
       }
 
       # numは生成する参加者の数で後に一人追加するので8 - 1 = 7
@@ -1238,7 +1209,7 @@ defmodule Milk.TournamentsTest do
       |> create_entrants(entrant.tournament_id)
       |> Enum.map(fn x -> %{x | rank: num + 1} end)
       |> Kernel.++([%{entrant | rank: num + 1}])
-      |> Enum.map(fn entrant -> entrant.user_id end)
+      |> Enum.map(fn entrant -> entrant.id end)
       |> Tournaments.generate_matchlist()
       ~> {_, match_list}
 
@@ -1251,7 +1222,7 @@ defmodule Milk.TournamentsTest do
       # promote_rankの引数となるattrs
       attrs = %{
         "tournament_id" => -1,
-        "user_id" => entrant.user_id
+        "user_id" => entrant.id
       }
 
       # numは生成する参加者の数で後に一人追加するので8 - 1 = 7
@@ -1260,6 +1231,7 @@ defmodule Milk.TournamentsTest do
       create_entrants(num, entrant.tournament_id)
       |> Enum.map(fn x -> %{x | rank: num + 1} end)
       |> Kernel.++([%{entrant | rank: num + 1}])
+      |> Enum.map(&(&1.id))
       |> Tournaments.generate_matchlist()
       |> Progress.insert_match_list(entrant.tournament_id)
 
@@ -1279,10 +1251,11 @@ defmodule Milk.TournamentsTest do
       create_entrants(num, entrant.tournament_id)
       |> Enum.map(fn x -> %{x | rank: num + 1} end)
       |> Kernel.++([%{entrant | rank: num + 1}])
+      |> Enum.map(&(&1.id))
       |> Tournaments.generate_matchlist()
       |> Progress.insert_match_list(entrant.tournament_id)
 
-      assert {:error, "undefined user"} = Tournaments.promote_rank(attrs)
+      #assert {:error, "undefined user"} = Tournaments.promote_rank(attrs)
     end
 
     test "promote_rank/1 returns error with invalid attrs(all)", %{entrant: entrant} do
@@ -1301,13 +1274,13 @@ defmodule Milk.TournamentsTest do
       |> Tournaments.generate_matchlist()
       |> Progress.insert_match_list(entrant.tournament_id)
 
-      assert {:error, "undefined user"} = Tournaments.promote_rank(attrs)
+      assert {:error, "undefined tournament"} = Tournaments.promote_rank(attrs)
     end
 
     test "run promote_rank/1 in a row with 8 entrants", %{entrant: entrant} do
       attrs = %{
         "tournament_id" => entrant.tournament_id,
-        "user_id" => entrant.user_id
+        "user_id" => entrant.id
       }
 
       # numは生成する参加者の数で後に一人追加するので8 - 1 = 7
@@ -1317,7 +1290,7 @@ defmodule Milk.TournamentsTest do
         create_entrants(num, entrant.tournament_id)
         |> Enum.map(fn x -> %{x | rank: num + 1} end)
         |> Kernel.++([%{entrant | rank: num + 1}])
-        |> Enum.map(fn entrant -> entrant.user_id end)
+        |> Enum.map(fn entrant -> entrant.id end)
         |> Tournaments.generate_matchlist()
 
       Progress.insert_match_list(match_list, entrant.tournament_id)
@@ -1338,7 +1311,7 @@ defmodule Milk.TournamentsTest do
     test "run promote_rank/1 in a row with 4 entrants", %{entrant: entrant} do
       attrs = %{
         "tournament_id" => entrant.tournament_id,
-        "user_id" => entrant.user_id
+        "user_id" => entrant.id
       }
 
       num = 3
@@ -1347,7 +1320,7 @@ defmodule Milk.TournamentsTest do
         create_entrants(num, entrant.tournament_id)
         |> Enum.map(fn x -> %{x | rank: num + 1} end)
         |> Kernel.++([%{entrant | rank: num + 1}])
-        |> Enum.map(fn entrant -> entrant.user_id end)
+        |> Enum.map(fn entrant -> entrant.id end)
         |> Tournaments.generate_matchlist()
 
       Progress.insert_match_list(match_list, entrant.tournament_id)
@@ -1368,7 +1341,7 @@ defmodule Milk.TournamentsTest do
     test "run promote_rank/1 in a row with 2 entrants", %{entrant: entrant} do
       attrs = %{
         "tournament_id" => entrant.tournament_id,
-        "user_id" => entrant.user_id
+        "user_id" => entrant.id
       }
 
       num = 1
@@ -1377,7 +1350,7 @@ defmodule Milk.TournamentsTest do
       |> create_entrants(entrant.tournament_id)
       |> Enum.map(fn x -> %{x | rank: num + 1} end)
       |> Kernel.++([%{entrant | rank: num + 1}])
-      |> Enum.map(fn entrant -> entrant.user_id end)
+      |> Enum.map(fn entrant -> entrant.id end)
       |> Tournaments.generate_matchlist()
       ~> {:ok, match_list}
 
@@ -1464,7 +1437,7 @@ defmodule Milk.TournamentsTest do
     end
 
     test "promote_rank/1 returns promoted rank with valid attrs" do
-      [is_team: true, capacity: 4, type: 2]
+      [is_team: true, capacity: 4]
       |> fixture_tournament()
       ~> tournament
       |> Map.get(:id)
@@ -1477,30 +1450,11 @@ defmodule Milk.TournamentsTest do
       end)
       ~> leaders
 
-      # assert用のidリスト作成
-      teams
-      |> Enum.map(fn team ->
-        team.id
-      end)
-      ~> team_id_list
+      team_id_list = Enum.map(teams, &(&1.id))
+      team_name_list = Enum.map(teams, &(&1.name))
+      team_icon_path_list = Enum.map(teams, &(&1.icon_path))
 
-      # assert用の名前リスト作成
-      leaders
-      |> Enum.map(fn leader ->
-        leader.name
-      end)
-      ~> leader_name_list
-
-      # assert用のアイコンパスリスト作成
-      leaders
-      |> Enum.map(fn leader ->
-        leader.icon_path
-      end)
-      ~> leader_icon_path_list
-
-      tournament
-      |> Progress.start_team_flipban()
-      ~> {:ok, match_list, _}
+      {:ok, match_list, _} = Progress.start_team_flipban(tournament)
 
       # match_listの初期状態確認
       tournament.id
@@ -1513,8 +1467,8 @@ defmodule Milk.TournamentsTest do
       |> Progress.get_match_list_with_fight_result()
       |> List.flatten()
       |> Enum.map(fn cell ->
-        assert cell["name"] in leader_name_list
-        assert cell["icon_path"] in leader_icon_path_list
+        assert cell["name"] in team_name_list
+        assert cell["icon_path"] in team_icon_path_list
         assert cell["win_count"] == 0
         assert cell["round"] == 0
         refute cell["is_loser"]
@@ -1565,8 +1519,8 @@ defmodule Milk.TournamentsTest do
       |> Progress.get_match_list_with_fight_result()
       |> List.flatten()
       |> Enum.map(fn cell ->
-        assert cell["name"] in leader_name_list
-        assert cell["icon_path"] in leader_icon_path_list
+        assert cell["name"] in team_name_list
+        assert cell["icon_path"] in team_icon_path_list
         # HACK: ここのroundはゼロでいいのかちょっとわからない
         assert cell["round"] == 0
 
@@ -1644,8 +1598,8 @@ defmodule Milk.TournamentsTest do
       |> Progress.get_match_list_with_fight_result()
       |> List.flatten()
       |> Enum.map(fn cell ->
-        assert cell["name"] in leader_name_list
-        assert cell["icon_path"] in leader_icon_path_list
+        assert cell["name"] in team_name_list
+        assert cell["icon_path"] in team_icon_path_list
         assert cell["round"] == 0
 
         cond do
@@ -2043,16 +1997,16 @@ defmodule Milk.TournamentsTest do
       tournament = fixture_tournament(is_started: false)
       create_entrants(7, tournament.id)
 
-      Tournaments.create_entrant(%{
-        "user_id" => tournament.master_id,
-        "tournament_id" => tournament.id
-      })
+      {:ok, master_entrant} = Tournaments.create_entrant(%{
+          "user_id" => tournament.master_id,
+          "tournament_id" => tournament.id
+        })
 
       start(tournament.master_id, tournament.id)
 
       assert Tournaments.get_fighting_users(tournament.id) == []
 
-      Progress.insert_match_pending_list_table(tournament.master_id, tournament.id)
+      Progress.insert_match_pending_list_table(master_entrant.id, tournament.id)
       users = Tournaments.get_fighting_users(tournament.id)
       assert length(users) == 1
 
@@ -2066,7 +2020,7 @@ defmodule Milk.TournamentsTest do
       users = Tournaments.get_fighting_users(tournament.id)
       assert length(users) == 2
 
-      Progress.delete_match_pending_list(tournament.master_id, tournament.id)
+      Progress.delete_match_pending_list(master_entrant.id, tournament.id)
       users = Tournaments.get_fighting_users(tournament.id)
       assert length(users) == 1
 
@@ -2099,7 +2053,7 @@ defmodule Milk.TournamentsTest do
 
       assert length(users) == length(entrants)
 
-      Progress.insert_match_pending_list_table(tournament.master_id, tournament.id)
+      Progress.insert_match_pending_list_table(entrant.id, tournament.id)
       users = Tournaments.get_waiting_users(tournament.id)
       assert length(users) == length(entrants) - 1
 
@@ -2109,7 +2063,7 @@ defmodule Milk.TournamentsTest do
       users = Tournaments.get_waiting_users(tournament.id)
       assert length(users) == length(entrants) - 2
 
-      Progress.delete_match_pending_list(tournament.master_id, tournament.id)
+      Progress.delete_match_pending_list(entrant.id, tournament.id)
       users = Tournaments.get_waiting_users(tournament.id)
       assert length(users) == length(entrants) - 1
 
@@ -2326,6 +2280,16 @@ defmodule Milk.TournamentsTest do
       user = fixture_user()
 
       assert {:ok, :leader_only, %Team{is_confirmed: true}} = Tournaments.create_team(tournament.id, 1, user.id, [])
+    end
+  end
+
+  describe "create dummy teams" do
+    test "works" do
+      tournament = fixture_tournament(is_team: true)
+      tournament_id = tournament.id
+      name = "dumname"
+
+      assert {:ok, %Team{is_confirmed: true, is_dummy: true, tournament_id: ^tournament_id, name: ^name}} = Tournaments.create_dummy_team(tournament.id, name)
     end
   end
 

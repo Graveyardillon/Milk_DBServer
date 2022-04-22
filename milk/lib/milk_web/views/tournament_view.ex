@@ -20,11 +20,6 @@ defmodule MilkWeb.TournamentView do
         id: opponent.id,
         name: opponent.name,
         icon_path: opponent.icon_path,
-        point: opponent.point,
-        notification_number: opponent.notification_number,
-        language: opponent.language,
-        #email: opponent.auth.email,
-        bio: opponent.bio
       },
       result: !is_nil(opponent)
     }
