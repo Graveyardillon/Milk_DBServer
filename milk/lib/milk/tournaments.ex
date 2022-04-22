@@ -1565,6 +1565,10 @@ defmodule Milk.Tournaments do
   ダミーのentrantを作成
   """
   def create_dummy_entrant(tournament_id, name) do
+    tournament_id
+    |> __MODULE__.get_tournament()
+    |> __MODULE__.update_tournament(%{enabled_dummy: true})
+
     %Entrant{tournament_id: tournament_id}
     |> Entrant.changeset(%{name: name})
     |> Repo.insert()
@@ -2119,7 +2123,7 @@ defmodule Milk.Tournaments do
     |> Repo.update()
   end
 
-  defp start_entrant_states!(%Tournament{id: id, rule: rule} = tournament) do
+  defp start_entrant_states!(%Tournament{id: id, rule: rule, enabled_dummy: false} = tournament) do
     try do
       id
       |> __MODULE__.get_entrants()
@@ -2140,6 +2144,7 @@ defmodule Milk.Tournaments do
       _ -> {:ok, tournament}
     end
   end
+  defp start_entrant_states!(tournament), do: {:ok, tournament}
 
   defp validate_team_number(%Tournament{} = tournament) do
     tournament.id
@@ -2148,9 +2153,9 @@ defmodule Milk.Tournaments do
   end
 
   defp validate_team_number(teams) when length(teams) <= 1, do: {:error, "short of teams"}
-  defp validate_team_number(teams), do: {:ok, teams}
+  defp validate_team_number(teams),                         do: {:ok, teams}
 
-  defp start_team_states!(%Tournament{id: tournament_id, rule: rule}) do
+  defp start_team_states!(%Tournament{id: tournament_id, rule: rule, enabled_dummy: false}) do
     try do
       tournament_id
       |> __MODULE__.get_confirmed_team_members_by_tournament_id()
@@ -2181,6 +2186,7 @@ defmodule Milk.Tournaments do
       _ -> {:ok, nil}
     end
   end
+  defp start_team_states!(_), do: {:ok, nil}
 
   defp initialize_team_win_counts(teams) do
     teams
@@ -4029,6 +4035,10 @@ defmodule Milk.Tournaments do
   ダミーのチームを作成する機能
   """
   def create_dummy_team(tournament_id, name) do
+    tournament_id
+    |> __MODULE__.get_tournament()
+    |> __MODULE__.update_tournament(%{enabled_dummy: true})
+
     %Team{tournament_id: tournament_id}
     |> Team.changeset(%{name: name, is_dummy: true, is_confirmed: true})
     |> Repo.insert()
