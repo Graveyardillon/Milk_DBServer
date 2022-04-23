@@ -135,6 +135,14 @@ defmodule Milk.Tournaments do
     |> Repo.preload(:custom_detail)
   end
 
+  defp get_tournament_by_master_ids_for_home(users) do
+    Tournament
+    |> where([t], t.master_id in ^users)
+    |> date_filter()
+    |> Repo.all()
+    |> Repo.preload(:entrant)
+    |> Repo.preload(:team)
+  end
   @doc """
   Returns the list of tournament which is filtered by "fav" for home screen.
   """

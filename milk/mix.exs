@@ -102,7 +102,8 @@ defmodule Milk.MixProject do
       {:ex_image_info, "~> 0.2.4"},
       {:dfa, "~> 0.2.1"},
       {:benchfella, "~> 0.3.0", only: :dev},
-      {:flow, "~> 1.1.0"}
+      {:flow, "~> 1.1.0"},
+      {:quantum, "~> 3.0"}
     ]
   end
 
