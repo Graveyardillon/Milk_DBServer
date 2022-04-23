@@ -24,7 +24,8 @@ defmodule Milk.Application do
       Milk.Email.Auth,
       # Common.KeyValueStore,
       {Goth, name: Milk.Goth, source: source},
-      {Oban, oban_config()}
+      {Oban, oban_config()},
+      Milk.Scheduler
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
