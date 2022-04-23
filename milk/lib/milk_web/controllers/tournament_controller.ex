@@ -1910,7 +1910,6 @@ defmodule MilkWeb.TournamentController do
 
     tournament
     |> proceed_to_next_match(winner_team_id, team_id, 1, -1, 0)
-    |> IO.inspect()
     |> case do
       {:ok, nil} ->
         tournament = Tournaments.get_tournament(tournament_id)
@@ -1936,7 +1935,7 @@ defmodule MilkWeb.TournamentController do
     |> case do
       {:ok, winner} ->
         # ランクを上げてトーナメント表の更新
-        case proceed_to_next_match(tournament, winner.id, team_or_entrant.id, 1, -1, 0) |> IO.inspect(label: :opp) do
+        case proceed_to_next_match(tournament, winner.id, team_or_entrant.id, 1, -1, 0) do
           {:ok, nil} ->
             tournament = Tournaments.get_tournament(tournament_id)
             claim = %Claim{

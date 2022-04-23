@@ -22,6 +22,7 @@ defmodule Milk.Tournaments.Tournament do
           description: String.t() | nil,
           discord_server_id: String.t() | nil,
           enabled_coin_toss: boolean(),
+          enabled_dummy: boolean(),
           enabled_map: boolean(),
           event_date: any(),
           game_id: integer() | nil,
@@ -52,6 +53,7 @@ defmodule Milk.Tournaments.Tournament do
     field :description, :string
     field :discord_server_id, :string
     field :enabled_coin_toss, :boolean, default: false
+    field :enabled_dummy, :boolean, default: false
     field :enabled_map, :boolean, default: false
     field :event_date, EctoDate
     field :game_name, :string
@@ -93,6 +95,7 @@ defmodule Milk.Tournaments.Tournament do
       :deadline,
       :discord_server_id,
       :enabled_coin_toss,
+      :enabled_dummy,
       :enabled_map,
       :event_date,
       :game_name,
@@ -124,6 +127,7 @@ defmodule Milk.Tournaments.Tournament do
       :contact,
       :name,
       :enabled_coin_toss,
+      :enabled_dummy,
       :enabled_map,
       :event_date,
       :capacity,
