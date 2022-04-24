@@ -1041,10 +1041,34 @@ defmodule MilkWeb.TournamentController do
   end
 
   @doc """
+  NOTE: tablesじゃなくてbrackets
+  """
+  def generate_brackets(conn, %{"tournament_id" => tournament_id}) do
+    tournament_id = Tools.to_integer_as_needed(tournament_id)
+
+    match_list = Progress.get_match_list(tournament_id)
+      |> IO.inspect(label: :ml)
+
+    if is_nil(match_list) do
+      tournament_id
+      |> Tournaments.get_tournament()
+      |> IO.inspect(label: :gen_bra)
+      |> case do
+        %Tournament{rule: "basic", is_team: false} = tournament -> Progress.make_basic_matches(tournament)
+        %Tournament{rule: "basic", is_team: true} = tournament  -> Progress.start_team_flipban(tournament)
+        %Tournament{rule: "flipban"} = tournament -> Progress.make_flipban_matches(tournament)
+      end
+    end
+
+    json(conn, %{result: true})
+  end
+
+  @doc """
   Edit tournament brackets
   """
   def edit_brackets(conn, %{"team_or_user_id_list" => team_or_user_id_list, "tournament_id" => tournament_id}) when is_list(team_or_user_id_list) do
     tournament_id = Tools.to_integer_as_needed(tournament_id)
+
     team_or_user_id_list
     |> Enum.map(&Tools.to_integer_as_needed(&1))
     |> Tournaments.edit_tournament_brackets(tournament_id)
@@ -2275,12 +2299,18 @@ defmodule MilkWeb.TournamentController do
     |> Tools.to_integer_as_needed()
     |> Tournaments.data_with_scores_for_flexible_brackets()
     ~> brackets
-    |> Enum.count()
-    |> Kernel.*(2)
-    |> Tournamex.Number.closest_number_to_power_of_two()
-    ~> count
 
-    json(conn, %{result: true, data: brackets, count: count})
+    if is_nil(brackets) do
+      json(conn, %{result: false})
+    else
+      brackets
+      |> Enum.count()
+      |> Kernel.*(2)
+      |> Tournamex.Number.closest_number_to_power_of_two()
+      ~> count
+
+      json(conn, %{result: true, data: brackets, count: count})
+    end
   end
 
   @doc """
