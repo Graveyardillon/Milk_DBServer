@@ -3860,21 +3860,26 @@ defmodule Milk.Tournaments do
   @doc """
   Construct data with game scores for brackets.
   """
-  @spec data_with_scores_for_flexible_brackets(integer()) :: [any()]
+  @spec data_with_scores_for_flexible_brackets(integer()) :: [any()] | nil
   def data_with_scores_for_flexible_brackets(tournament_id) do
     tournament_id
     |> Progress.get_match_list_with_fight_result_including_log()
-    |> Tournamex.brackets_with_fight_result()
-    |> elem(1)
-    ~> brackets
+    |> case do
+      nil      -> nil
+      brackets ->
+        brackets
+        |> Tournamex.brackets_with_fight_result()
+        |> elem(1)
+        ~> brackets
 
-    brackets
-    |> Enum.map(fn list ->
-      inspect(list, charlists: false)
+        brackets
+        |> Enum.map(fn list ->
+          inspect(list, charlists: false)
 
-      Enum.map(list, &put_values_on_bracket(&1, tournament_id))
-    end)
-    |> List.flatten()
+          Enum.map(list, &put_values_on_bracket(&1, tournament_id))
+        end)
+        |> List.flatten()
+    end
   end
 
   defp put_values_on_bracket(nil,     _            ), do: nil

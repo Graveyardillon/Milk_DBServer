@@ -19,7 +19,6 @@ defmodule Milk.SchedulerTest do
 
       Tournament
       |> Repo.all
-      |> IO.inspect()
 
       Scheduler.finish_tournaments_a_week_ago()
       Tournament
@@ -43,14 +42,9 @@ defmodule Milk.SchedulerTest do
       |> Timex.add(Timex.Duration.from_days(-6))
       |> Timex.to_datetime(),master_id: user.id])
 
-      # Tournament
-      # |> Repo.all
-      # |> IO.inspect()
-
       Scheduler.finish_tournaments_a_week_ago()
       Tournament
       |> Repo.all
-      |> IO.inspect(label: :pickup)
       |> Enum.map(fn x -> x.id end)
       |> Kernel.==([dont_deleted.id, six_from_now.id])
       |> assert

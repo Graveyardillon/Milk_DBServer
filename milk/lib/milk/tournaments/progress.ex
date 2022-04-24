@@ -187,7 +187,7 @@ defmodule Milk.Tournaments.Progress do
     end
   end
 
-  @spec get_match_list_with_fight_result_including_log(integer()) :: match_list()
+  @spec get_match_list_with_fight_result_including_log(integer()) :: match_list() | nil
   def get_match_list_with_fight_result_including_log(tournament_id) do
     tournament_id
     |> __MODULE__.get_match_list_with_fight_result()
@@ -195,10 +195,14 @@ defmodule Milk.Tournaments.Progress do
       nil ->
         tournament_id
         |> __MODULE__.get_match_list_with_fight_result_log()
-        # TODO: nilだったときのエラーハンドリング
-        |> Map.get(:match_list_with_fight_result_str)
-        |> Code.eval_string()
-        |> elem(0)
+        |> case do
+          nil        -> nil
+          match_list ->
+            match_list
+            |> Map.get(:match_list_with_fight_result_str)
+            |> Code.eval_string()
+            |> elem(0)
+        end
 
       match_list -> match_list
     end
@@ -741,7 +745,7 @@ defmodule Milk.Tournaments.Progress do
   @spec start_basic(integer(), Tournament.t()) :: {:ok, match_list(), match_list_with_fight_result()} | {:error, any()}
   def start_basic(_master_id, tournament) do
     case Tournaments.start(tournament) do
-      {:ok, _}        -> make_basic_matches(tournament)
+      {:ok, _}        -> __MODULE__.make_basic_matches(tournament)
       {:error, error} -> {:error, error}
     end
   end
@@ -749,14 +753,14 @@ defmodule Milk.Tournaments.Progress do
   @spec start_flipban(integer(), Tournament.t()) :: {:ok, match_list(), nil}
   def start_flipban(_master_id, tournament) do
     with {:ok, _} <- Tournaments.start(tournament),
-         {:ok, match_list} <- make_flipban_matches(tournament) do
+         {:ok, match_list} <- __MODULE__.make_flipban_matches(tournament) do
       {:ok, match_list, nil}
     else
       error -> error
     end
   end
 
-  defp make_basic_matches(tournament) do
+  def make_basic_matches(tournament) do
     match_list = __MODULE__.get_match_list(tournament.id)
 
     if is_nil(match_list) do
@@ -772,7 +776,7 @@ defmodule Milk.Tournaments.Progress do
     count = tournament.count
 
     Tournaments.initialize_rank(match_list, count, tournament.id)
-    insert_match_list(match_list, tournament.id)
+    __MODULE__.insert_match_list(match_list, tournament.id)
     match_list_with_fight_result = Tournamex.initialize_match_list_with_fight_result(match_list)
 
     match_list_with_fight_result
@@ -790,7 +794,7 @@ defmodule Milk.Tournaments.Progress do
     {:ok, match_list, match_list_with_fight_result}
   end
 
-  defp make_flipban_matches(tournament) do
+  def make_flipban_matches(tournament) do
     match_list = __MODULE__.get_match_list(tournament.id)
 
     if is_nil(match_list) do
