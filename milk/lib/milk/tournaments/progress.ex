@@ -761,7 +761,6 @@ defmodule Milk.Tournaments.Progress do
   end
 
   def make_basic_matches(tournament) do
-    IO.inspect("make basic matches!")
     match_list = __MODULE__.get_match_list(tournament.id)
 
     if is_nil(match_list) do

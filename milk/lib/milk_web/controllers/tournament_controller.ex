@@ -1047,12 +1047,10 @@ defmodule MilkWeb.TournamentController do
     tournament_id = Tools.to_integer_as_needed(tournament_id)
 
     match_list = Progress.get_match_list(tournament_id)
-      |> IO.inspect(label: :ml)
 
     if is_nil(match_list) do
       tournament_id
       |> Tournaments.get_tournament()
-      |> IO.inspect(label: :gen_bra)
       |> case do
         %Tournament{rule: "basic", is_team: false} = tournament -> Progress.make_basic_matches(tournament)
         %Tournament{rule: "basic", is_team: true} = tournament  -> Progress.start_team_flipban(tournament)
