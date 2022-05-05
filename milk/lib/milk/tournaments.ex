@@ -2927,16 +2927,10 @@ defmodule Milk.Tournaments do
       # HACK: 本当はnameの部分はチーム名をそのまま入れてしまえば良いけど、旧来の実装では〇〇のチームだったのでその形にしておく
       team = __MODULE__.get_team(x["team_id"])
 
-      # leaderの情報を記載したいため、そのデータを入れる
-      team.id
-      |> __MODULE__.load_leader()
-      |> Map.get(:user)
-      ~> user
-
       acc
-      |> __MODULE__.put_value_on_brackets(team.id, %{"name" => user.name})
+      |> __MODULE__.put_value_on_brackets(team.id, %{"name" => team.name})
       |> __MODULE__.put_value_on_brackets(team.id, %{"win_count" => 0})
-      |> __MODULE__.put_value_on_brackets(team.id, %{"icon_path" => user.icon_path})
+      |> __MODULE__.put_value_on_brackets(team.id, %{"icon_path" => team.icon_path})
       |> __MODULE__.put_value_on_brackets(team.id, %{"round" => 0})
     end)
     |> Progress.insert_match_list_with_fight_result(tournament.id)
