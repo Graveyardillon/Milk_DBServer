@@ -31,7 +31,7 @@ defmodule Milk.SchedulerTest do
       user = fixture_user()
 
       fixture_tournament()
-      dont_deleted = fixture_tournament([event_date: "2022-04-17T14:00:00Z",master_id: user.id])
+      dont_deleted = fixture_tournament([event_date: Timex.now(),master_id: user.id])
       fixture_tournament([event_date: Timex.now()
       |> Timex.add(Timex.Duration.from_days(-7))
       |> Timex.to_datetime(),master_id: user.id])
