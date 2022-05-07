@@ -80,7 +80,7 @@ import_config "#{Mix.env()}.exs"
 
 config :milk, Milk.Scheduler,
   jobs: [
-    # FIXME: テスト通らなかったので一時的にコメントアウト
-    # {"0 4 * * *", {Milk.Scheduler, :finish_tournaments_a_week_ago, []}}
-    # {"* * * * *", {Milk.Scheduler, :finish_tournaments_a_week_ago, []}}
+
+    {"0 4 * * *", {Milk.Scheduler, :finish_tournaments_a_week_ago, []}}
+    {"* * * * *", {Milk.Scheduler, :finish_tournaments_a_week_ago, []}}
   ]
