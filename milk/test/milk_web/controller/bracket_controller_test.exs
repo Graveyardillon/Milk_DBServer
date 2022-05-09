@@ -51,4 +51,17 @@ defmodule MilkWeb.BracketControllerTest do
       assert json_response(conn, 200)["result"]
     end
   end
+
+  describe "get bracket" do
+    test "works", %{conn: conn} do
+      bracket = fixture_bracket()
+
+      conn = get(conn, Routes.bracket_path(conn, :get_bracket), bracket_id: bracket.id)
+
+      assert json_response(conn, 200)["data"]["name"] === bracket.name
+      assert json_response(conn, 200)["data"]["owner_id"] === bracket.owner_id
+      assert json_response(conn, 200)["data"]["url"] === bracket.url
+      assert json_response(conn, 200)["data"]["enabled_bronze_medal_match"] === bracket.enabled_bronze_medal_match
+    end
+  end
 end

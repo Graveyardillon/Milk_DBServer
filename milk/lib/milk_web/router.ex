@@ -258,6 +258,7 @@ defmodule MilkWeb.Router do
     post "/tournament/ffa_update_categories", FreeForAllController, :update_categories
     post "/tournament/ffa_claim_scores", FreeForAllController, :claim_scores
 
+    get "/bracket", BracketController, :get_bracket
     get "/bracket/is_url_valid", BracketController, :is_url_valid
     post "/bracket", BracketController, :create_bracket
   end
