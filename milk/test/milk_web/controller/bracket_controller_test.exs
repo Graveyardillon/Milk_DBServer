@@ -26,6 +26,7 @@ defmodule MilkWeb.BracketControllerTest do
       params = %{
         "name" => "test brackets",
         "owner_id" => user.id,
+        "rule" => "basic",
         "url" => "test url",
         "enabled_bronze_medal_match" => false
       }

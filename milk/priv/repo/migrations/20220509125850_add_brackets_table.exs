@@ -7,6 +7,8 @@ defmodule Milk.Repo.Migrations.AddBracketsTable do
       add :owner_id, references(:users, on_delete: :nothing)
       add :url, :string
       add :enabled_bronze_medal_match, :boolean, default: false
+
+      add :rule, :string
       add :match_list_str, :text
       add :match_list_with_fight_result_str, :text
       add :last_match_list_str, :text

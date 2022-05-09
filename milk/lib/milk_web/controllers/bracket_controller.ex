@@ -7,17 +7,17 @@ defmodule MilkWeb.BracketController do
   alias Milk.Brackets
 
   # TODO: メンバー追加
-  def create_bracket(conn, %{"brackets" => %{"name" => name, "owner_id" => owner_id, "url" => url, "enabled_bronze_medal_match" => enabled_bronze_medal_match}}) do
+  def create_bracket(conn, %{"brackets" => %{"name" => name, "owner_id" => owner_id, "rule" => rule, "url" => url, "enabled_bronze_medal_match" => enabled_bronze_medal_match}}) do
     with false          <- Brackets.is_url_duplicated?(url),
-         {:ok, bracket} <- Brackets.create_bracket(%{name: name, owner_id: owner_id, url: url, enabled_bronze_medal_match: enabled_bronze_medal_match}) do
+         {:ok, bracket} <- Brackets.create_bracket(%{name: name, owner_id: owner_id, url: url, rule: rule, enabled_bronze_medal_match: enabled_bronze_medal_match}) do
       render(conn, "show.json", bracket: bracket)
     else
       true            -> json(conn, %{result: false, error: "Urls is duplicated"})
       {:error, error} -> render(conn, "error.json", %{error: error.errors})
     end
   end
-  def create_bracket(conn, %{"brackets" => %{"name" => name, "owner_id" => owner_id, "url" => url}}) do
-    __MODULE__.create_bracket(conn, %{"brackets" => %{"name" => name, "owner_id" => owner_id, "url" => url, "enabled_bronze_medal_match" => false}})
+  def create_bracket(conn, %{"brackets" => %{"name" => name, "owner_id" => owner_id, "rule" => rule, "url" => url}}) do
+    __MODULE__.create_bracket(conn, %{"brackets" => %{"name" => name, "owner_id" => owner_id, "rule" => rule, "url" => url, "enabled_bronze_medal_match" => false}})
   end
 
   # TODO: SQLインジェクションの確認
