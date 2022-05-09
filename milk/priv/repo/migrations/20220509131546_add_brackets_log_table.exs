@@ -8,6 +8,10 @@ defmodule Milk.Repo.Migrations.AddBracketsLogTable do
       add :bracket_id, :integer
       add :url, :string
       add :enabled_bronze_medal_match, :boolean, default: false
+      add :match_list_str, :text
+      add :match_list_with_fight_result_str, :text
+      add :last_match_list_str, :text
+      add :last_match_list_with_fight_result_str, :text
 
       timestamps()
     end

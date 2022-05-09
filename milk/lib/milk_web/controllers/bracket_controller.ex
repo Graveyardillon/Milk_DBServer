@@ -6,6 +6,7 @@ defmodule MilkWeb.BracketController do
 
   alias Milk.Brackets
 
+  # TODO: メンバー追加
   def create_bracket(conn, %{"brackets" => %{"name" => name, "owner_id" => owner_id, "url" => url, "enabled_bronze_medal_match" => enabled_bronze_medal_match}}) do
     with false          <- Brackets.is_url_duplicated?(url),
          {:ok, bracket} <- Brackets.create_bracket(%{name: name, owner_id: owner_id, url: url, enabled_bronze_medal_match: enabled_bronze_medal_match}) do
