@@ -16,6 +16,9 @@ defmodule MilkWeb.BracketController do
       {:error, error} -> render(conn, "error.json", %{error: error.errors})
     end
   end
+  def create_bracket(conn, %{"brackets" => %{"name" => name, "owner_id" => owner_id, "url" => url}}) do
+    __MODULE__.create_bracket(conn, %{"brackets" => %{"name" => name, "owner_id" => owner_id, "url" => url, "enabled_bronze_medal_match" => false}})
+  end
 
   # TODO: SQLインジェクションの確認
   def is_url_valid(conn, %{"url" => url}), do: json(conn, %{result: !Brackets.is_url_duplicated?(url)})
