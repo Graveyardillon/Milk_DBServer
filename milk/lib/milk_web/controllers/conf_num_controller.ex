@@ -17,8 +17,8 @@ defmodule MilkWeb.ConfNumController do
     exists? = Accounts.email_exists?(email)
 
     if exists? do
-      number =
-        :rand.uniform(9999)
+      number = 9999
+        |> :rand.uniform()
         |> Integer.to_string()
         |> String.pad_leading(4, "0")
 
@@ -26,7 +26,7 @@ defmodule MilkWeb.ConfNumController do
         new_email(
           to: email,
           from: "kunosoichiro@gmail.com",
-          subject: "confirmation number",
+          subject: "Confirmation Number of e-players",
           text_body: number
         )
         |> Milk.Mailer.deliver_now()
@@ -64,8 +64,8 @@ defmodule MilkWeb.ConfNumController do
   end
 
   defp publish_token_by_email(email) do
-    token =
-      :crypto.strong_rand_bytes(10)
+    token = 10
+      |> :crypto.strong_rand_bytes()
       |> Base.encode32()
       |> binary_part(0, 10)
 
