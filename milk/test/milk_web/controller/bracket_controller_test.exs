@@ -5,8 +5,18 @@ defmodule MilkWeb.BracketControllerTest do
   use MilkWeb.ConnCase
   use Common.Fixtures
 
+  alias Milk.Brackets
+
   setup %{conn: conn} do
     {:ok, conn: put_req_header(conn, "accept", "application/json")}
+  end
+
+  defp fixture_bracket() do
+    user = fixture_user()
+
+    %{name: "test", owner_id: user.id, url: "test"}
+    |> Brackets.create_bracket()
+    |> elem(1)
   end
 
   describe "create bracket" do
@@ -27,6 +37,18 @@ defmodule MilkWeb.BracketControllerTest do
       assert json_response(conn, 200)["data"]["owner_id"] === params["owner_id"]
       assert json_response(conn, 200)["data"]["url"] === params["url"]
       assert json_response(conn, 200)["data"]["enabled_bronze_medal_match"] === params["enabled_bronze_medal_match"]
+    end
+  end
+
+  describe "is url valid" do
+    test "works", %{conn: conn} do
+      bracket = fixture_bracket()
+
+      conn = get(conn, Routes.bracket_path(conn, :is_url_valid), %{url: bracket.url})
+      refute json_response(conn, 200)["result"]
+
+      conn = get(conn, Routes.bracket_path(conn, :is_url_valid), %{url: "WORKS"})
+      assert json_response(conn, 200)["result"]
     end
   end
 end

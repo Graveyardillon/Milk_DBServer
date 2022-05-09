@@ -16,8 +16,11 @@ defmodule MilkWeb.BracketController do
     end
   end
 
+  # TODO: SQLインジェクションの確認
   def is_url_valid(conn, %{"url" => url}), do: json(conn, %{result: !Brackets.is_url_duplicated?(url)})
 
   # TODO: bracket取得用の関数
+  def get_bracket() do
 
+  end
 end

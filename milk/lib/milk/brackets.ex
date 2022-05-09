@@ -9,6 +9,12 @@ defmodule Milk.Brackets do
     BracketLog
   }
 
+  def get_bracket(bracket_id) do
+    Bracket
+    |> where([b], b.id == ^bracket_id)
+    |> Repo.one()
+  end
+
   def create_bracket(attrs \\ %{}) do
     %Bracket{}
     |> Bracket.changeset(attrs)
