@@ -5,6 +5,7 @@ defmodule MilkWeb.BracketController do
   use MilkWeb, :controller
 
   alias Milk.Brackets
+  alias Common.Tools
 
   # TODO: メンバー追加
   def create_bracket(conn, %{"brackets" => %{"name" => name, "owner_id" => owner_id, "rule" => rule, "url" => url, "enabled_bronze_medal_match" => enabled_bronze_medal_match}}) do
@@ -31,5 +32,13 @@ defmodule MilkWeb.BracketController do
     else
       render(conn, "show.json", bracket: bracket)
     end
+  end
+
+  def get_brackets_by_owner_id(conn, %{"owner_id" => owner_id}) do
+    brackets = owner_id
+      |> Tools.to_integer_as_needed()
+      |> Brackets.get_brackets_by_owner_id()
+
+    render(conn, "index.json", brackets: brackets)
   end
 end

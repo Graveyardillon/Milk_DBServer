@@ -3,6 +3,13 @@ defmodule MilkWeb.BracketView do
 
   alias Common.Tools
 
+  def render("index.json", %{brackets: brackets}) do
+    %{
+      data: render_many(brackets, __MODULE__, "bracket.json"),
+      result: true
+    }
+  end
+
   def render("show.json", %{bracket: bracket}) do
     %{
       data: render_one(bracket, __MODULE__, "bracket.json"),
@@ -14,6 +21,7 @@ defmodule MilkWeb.BracketView do
     %{
       name: bracket.name,
       url: bracket.url,
+      rule: bracket.rule,
       enabled_bronze_medal_match: bracket.enabled_bronze_medal_match,
       id: bracket.id,
       owner_id: bracket.owner_id,
