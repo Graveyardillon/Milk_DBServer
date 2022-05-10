@@ -7,7 +7,7 @@ defmodule Milk.Brackets.Participant do
   alias Milk.Brackets.Bracket
 
   schema "bracket_participants" do
-    field :name
+    field :name, :string
 
     belongs_to :bracket, Bracket
 
