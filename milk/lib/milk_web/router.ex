@@ -259,7 +259,7 @@ defmodule MilkWeb.Router do
     post "/tournament/ffa_claim_scores", FreeForAllController, :claim_scores
 
     get "/bracket", BracketController, :get_bracket
-    get "/bracket/by_owber_id", BracketController, :get_brackets_by_owner_id
+    get "/bracket/by_owner_id", BracketController, :get_brackets_by_owner_id
     get "/bracket/is_url_valid", BracketController, :is_url_valid
     post "/bracket", BracketController, :create_bracket
   end
