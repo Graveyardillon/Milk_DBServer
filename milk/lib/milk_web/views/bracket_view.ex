@@ -10,6 +10,13 @@ defmodule MilkWeb.BracketView do
     }
   end
 
+  def render("index.json", %{participants: participants}) do
+    %{
+      data: render_many(participants, __MODULE__, "participant.json", as: :participant),
+      result: true
+    }
+  end
+
   def render("show.json", %{bracket: bracket}) do
     %{
       data: render_one(bracket, __MODULE__, "bracket.json"),
@@ -25,6 +32,14 @@ defmodule MilkWeb.BracketView do
       enabled_bronze_medal_match: bracket.enabled_bronze_medal_match,
       id: bracket.id,
       owner_id: bracket.owner_id,
+    }
+  end
+
+  def render("participant.json", %{participant: participant}) do
+    %{
+      name: participant.name,
+      id: participant.id,
+      bracket_id: participant.bracket_id
     }
   end
 

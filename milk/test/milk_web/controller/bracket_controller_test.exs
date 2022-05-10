@@ -108,6 +108,15 @@ defmodule MilkWeb.BracketControllerTest do
       conn = post(conn, Routes.bracket_path(conn, :create_participants), %{"names" => names, "bracket_id" => bracket.id})
 
       assert json_response(conn, 200)["result"]
+
+      conn = get(conn, Routes.bracket_path(conn, :get_participants), bracket_id: bracket.id)
+
+      conn
+      |> json_response(200)
+      |> Map.get("data")
+      |> length()
+      |> Kernel.==(4)
+      |> assert()
     end
   end
 end

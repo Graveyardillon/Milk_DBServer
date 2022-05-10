@@ -50,4 +50,12 @@ defmodule MilkWeb.BracketController do
       _        -> json(conn, %{result: false})
     end
   end
+
+  def get_participants(conn, %{"bracket_id" => bracket_id}) do
+    participants = bracket_id
+      |> Tools.to_integer_as_needed()
+      |> Brackets.get_participants()
+
+    render(conn, "index.json", participants: participants)
+  end
 end

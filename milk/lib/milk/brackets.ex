@@ -61,4 +61,10 @@ defmodule Milk.Brackets do
     |> Enum.map(&__MODULE__.create_participant(%{name: &1, bracket_id: bracket_id}))
     |> Tools.reduce_ok_list("error on create participants")
   end
+
+  def get_participants(bracket_id) do
+    Participant
+    |> where([p], p.bracket_id == ^bracket_id)
+    |> Repo.all()
+  end
 end
