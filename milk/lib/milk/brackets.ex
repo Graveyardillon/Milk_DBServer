@@ -1,12 +1,14 @@
 defmodule Milk.Brackets do
   import Ecto.Query, warn: false
 
+  alias Common.Tools
   alias Milk.{
     Repo
   }
   alias Milk.Brackets.{
     Bracket,
-    BracketLog
+    BracketLog,
+    Participant
   }
 
   def get_bracket(bracket_id) do
@@ -46,5 +48,17 @@ defmodule Milk.Brackets do
     BracketLog
     |> where([b], b.url == ^url)
     |> Repo.exists?()
+  end
+
+  def create_participant(attrs \\ %{}) do
+    %Participant{}
+    |> Participant.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  def create_participants(names, bracket_id) do
+    names
+    |> Enum.map(&__MODULE__.create_participant(%{name: &1, bracket_id: bracket_id}))
+    |> Tools.reduce_ok_list("error on create participants")
   end
 end

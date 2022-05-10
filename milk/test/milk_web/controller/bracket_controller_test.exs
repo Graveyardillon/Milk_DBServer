@@ -70,34 +70,44 @@ defmodule MilkWeb.BracketControllerTest do
     test "works", %{conn: conn} do
       user = fixture_user()
 
-      params = %{
-        "name" => "test brackets",
-        "owner_id" => user.id,
-        "rule" => "basic",
-        "url" => "test url",
-        "enabled_bronze_medal_match" => false
-      }
+      1..5
+      |> Enum.to_list()
+      |> Enum.each(fn n ->
+        params = %{
+          "name" => "test brackets",
+          "owner_id" => user.id,
+          "rule" => "basic",
+          "url" => "test url #{n}",
+          "enabled_bronze_medal_match" => false
+        }
 
-      conn = post(conn, Routes.bracket_path(conn, :create_bracket), %{"brackets" => params})
-      conn = post(conn, Routes.bracket_path(conn, :create_bracket), %{"brackets" => params})
-      conn = post(conn, Routes.bracket_path(conn, :create_bracket), %{"brackets" => params})
-      conn = post(conn, Routes.bracket_path(conn, :create_bracket), %{"brackets" => params})
-      conn = post(conn, Routes.bracket_path(conn, :create_bracket), %{"brackets" => params})
+        post(conn, Routes.bracket_path(conn, :create_bracket), %{"brackets" => params})
+      end)
 
       conn = get(conn, Routes.bracket_path(conn, :get_brackets_by_owner_id), %{"owner_id" => user.id})
 
       conn
       |> json_response(200)
       |> Map.get("data")
-      |> Enum.map(fn bracket ->
-        assert bracket["name"] === params["name"]
-        assert bracket["owner_id"] === params["owner_id"]
-        assert bracket["rule"] === params["rule"]
-        assert bracket["url"] === params["url"]
-        assert bracket["enabled_bronze_medal_match"] === params["enabled_bronze_medal_match"]
-      end)
       |> length()
       |> Kernel.==(5)
+      |> assert()
+    end
+  end
+
+  describe "create participants" do
+    test "works", %{conn: conn} do
+      bracket = fixture_bracket()
+
+      names = [
+        "test1user",
+        "test2user",
+        "test3user",
+        "test4user"
+      ]
+      conn = post(conn, Routes.bracket_path(conn, :create_participants), %{"names" => names, "bracket_id" => bracket.id})
+
+      assert json_response(conn, 200)["result"]
     end
   end
 end
