@@ -87,4 +87,13 @@ defmodule MilkWeb.BracketController do
       {:error, _} -> json(conn, %{result: false})
     end
   end
+
+  def start(conn, %{"bracket_id" => bracket_id}) do
+    bracket_id
+    |> Brackets.start()
+    |> case do
+      {:ok, _}    -> json(conn, %{result: true})
+      {:error, _} -> json(conn, %{result: false})
+    end
+  end
 end

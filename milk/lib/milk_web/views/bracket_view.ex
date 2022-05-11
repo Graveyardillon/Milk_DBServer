@@ -29,6 +29,7 @@ defmodule MilkWeb.BracketView do
       name: bracket.name,
       url: bracket.url,
       rule: bracket.rule,
+      is_started: bracket.is_started,
       enabled_bronze_medal_match: bracket.enabled_bronze_medal_match,
       id: bracket.id,
       owner_id: bracket.owner_id,

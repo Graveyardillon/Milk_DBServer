@@ -152,4 +152,14 @@ defmodule Milk.Brackets do
 
     __MODULE__.update_bracket(bracket, %{match_list_str: inspect(match_list), match_list_with_fight_result_str: inspect(match_list_with_fight_result)})
   end
+
+  def start(bracket_id) do
+    bracket = __MODULE__.get_bracket(bracket_id)
+
+    if bracket.is_started do
+      {:error, "Already started"}
+    else
+      __MODULE__.update_bracket(bracket, %{is_started: true})
+    end
+  end
 end
