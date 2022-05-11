@@ -103,6 +103,7 @@ defmodule Milk.Brackets do
         participant = __MODULE__.get_participant(participant_id)
 
         acc
+        |> Tournaments.put_value_on_brackets(participant_id, %{"id" => participant_id})
         |> Tournaments.put_value_on_brackets(participant_id, %{"name" => participant.name})
         |> Tournaments.put_value_on_brackets(participant_id, %{"win_count" => 0})
         |> Tournaments.put_value_on_brackets(participant_id, %{"icon_path" => nil})
