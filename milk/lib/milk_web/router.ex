@@ -265,6 +265,7 @@ defmodule MilkWeb.Router do
     get "/bracket/participants", BracketController, :get_participants
     post "/bracket", BracketController, :create_bracket
     post "/bracket/create_participants", BracketController, :create_participants
+    post "/bracket/edit_brackets", BracketController, :edit_brackets
   end
 
   scope "/debug", MilkWeb do

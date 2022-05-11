@@ -126,4 +126,30 @@ defmodule Milk.Brackets do
     |> where([p], p.id == ^participant_id)
     |> Repo.one()
   end
+
+  def edit_brackets(participant_id_list, bracket_id) do
+    bracket = __MODULE__.get_bracket(bracket_id)
+
+    match_list = participant_id_list
+      |> Tournaments.generate_matchlist_without_shuffle()
+      |> elem(1)
+
+    match_list_with_fight_result = Tournamex.initialize_match_list_with_fight_result(match_list)
+
+    match_list_with_fight_result =  match_list_with_fight_result
+      |> List.flatten()
+      |> Enum.reduce(match_list_with_fight_result, fn x, acc ->
+        participant_id = x["user_id"]
+        participant = __MODULE__.get_participant(participant_id)
+
+        acc
+        |> Tournaments.put_value_on_brackets(participant_id, %{"id" => participant_id})
+        |> Tournaments.put_value_on_brackets(participant_id, %{"name" => participant.name})
+        |> Tournaments.put_value_on_brackets(participant_id, %{"win_count" => 0})
+        |> Tournaments.put_value_on_brackets(participant_id, %{"icon_path" => nil})
+        |> Tournaments.put_value_on_brackets(participant_id, %{"round" => 0})
+      end)
+
+    __MODULE__.update_bracket(bracket, %{match_list_str: inspect(match_list), match_list_with_fight_result_str: inspect(match_list_with_fight_result)})
+  end
 end

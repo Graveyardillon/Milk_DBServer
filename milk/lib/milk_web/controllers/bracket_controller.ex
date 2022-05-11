@@ -78,4 +78,13 @@ defmodule MilkWeb.BracketController do
     |> elem(1)
     |> List.flatten()
   end
+
+  def edit_brackets(conn, %{"participant_id_list" => participant_id_list, "bracket_id" => bracket_id}) do
+    participant_id_list
+    |> Brackets.edit_brackets(bracket_id)
+    |> case do
+      {:ok, _}    -> json(conn, %{result: true})
+      {:error, _} -> json(conn, %{result: false})
+    end
+  end
 end
