@@ -117,6 +117,37 @@ defmodule MilkWeb.BracketControllerTest do
       |> length()
       |> Kernel.==(4)
       |> assert()
+
+      bracket = Brackets.get_bracket(bracket.id)
+
+      refute is_nil(bracket.match_list_str)
+      refute is_nil(bracket.match_list_with_fight_result_str)
+
+      match_list_str = bracket.match_list_str
+      match_list_with_fight_result_str = bracket.match_list_with_fight_result_str
+
+      new_names = [
+        "test5user",
+        "test6user"
+      ]
+
+      conn = post(conn, Routes.bracket_path(conn, :create_participants), %{"names" => new_names, "bracket_id" => bracket.id})
+
+      assert json_response(conn, 200)["result"]
+
+      conn = get(conn, Routes.bracket_path(conn, :get_participants), bracket_id: bracket.id)
+
+      conn
+      |> json_response(200)
+      |> Map.get("data")
+      |> length()
+      |> Kernel.==(6)
+      |> assert()
+
+      bracket = Brackets.get_bracket(bracket.id)
+
+      assert String.length(match_list_str) < String.length(bracket.match_list_str)
+      assert String.length(match_list_with_fight_result_str) < String.length(bracket.match_list_with_fight_result_str)
     end
   end
 end

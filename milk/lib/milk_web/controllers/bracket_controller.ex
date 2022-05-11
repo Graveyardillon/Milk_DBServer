@@ -43,11 +43,11 @@ defmodule MilkWeb.BracketController do
   end
 
   def create_participants(conn, %{"names" => names, "bracket_id" => bracket_id}) do
-    names
-    |> Brackets.create_participants(bracket_id)
-    |> case do
-      {:ok, _} -> json(conn, %{result: true})
-      _        -> json(conn, %{result: false})
+    with {:ok, _} <- Brackets.create_participants(names, bracket_id),
+         {:ok, _} <- Brackets.initialize_brackets(bracket_id) do
+      json(conn, %{result: true})
+    else
+      _ -> json(conn, %{result: false})
     end
   end
 

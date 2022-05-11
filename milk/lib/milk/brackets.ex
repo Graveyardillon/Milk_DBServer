@@ -3,7 +3,8 @@ defmodule Milk.Brackets do
 
   alias Common.Tools
   alias Milk.{
-    Repo
+    Repo,
+    Tournaments
   }
   alias Milk.Brackets.{
     Bracket,
@@ -27,6 +28,12 @@ defmodule Milk.Brackets do
     %Bracket{}
     |> Bracket.changeset(attrs)
     |> Repo.insert()
+  end
+
+  def update_bracket(%Bracket{} = bracket, attrs) do
+    bracket
+    |> Bracket.changeset(attrs)
+    |> Repo.update()
   end
 
   @spec is_url_duplicated?(String.t()) :: boolean()
@@ -62,9 +69,60 @@ defmodule Milk.Brackets do
     |> Tools.reduce_ok_list("error on create participants")
   end
 
+  def initialize_brackets(bracket_id) do
+    bracket = __MODULE__.get_bracket(bracket_id)
+
+    if is_nil(bracket.match_list_str) do
+      bracket_id
+      |> __MODULE__.get_participants()
+      |> Enum.map(&(&1.id))
+    else
+      match_list_id_list = bracket.match_list_str
+        |> Code.eval_string()
+        |> elem(0)
+        |> List.flatten()
+
+      participant_id_list = bracket_id
+        |> __MODULE__.get_participants()
+        |> Enum.map(&(&1.id))
+
+      Enum.uniq(match_list_id_list ++ participant_id_list)
+    end
+    |> do_generate_match_list(bracket_id)
+  end
+
+  defp do_generate_match_list(participant_id_list, bracket_id) do
+    {:ok, match_list} = Tournaments.generate_matchlist_without_shuffle(participant_id_list)
+
+    match_list_with_fight_result = Tournamex.initialize_match_list_with_fight_result(match_list)
+
+    match_list_with_fight_result = match_list_with_fight_result
+      |> List.flatten()
+      |> Enum.reduce(match_list_with_fight_result, fn x, acc ->
+        participant_id = x["user_id"]
+        participant = __MODULE__.get_participant(participant_id)
+
+        acc
+        |> Tournaments.put_value_on_brackets(participant_id, %{"name" => participant.name})
+        |> Tournaments.put_value_on_brackets(participant_id, %{"win_count" => 0})
+        |> Tournaments.put_value_on_brackets(participant_id, %{"icon_path" => nil})
+        |> Tournaments.put_value_on_brackets(participant_id, %{"round" => 0})
+      end)
+
+    bracket_id
+    |> __MODULE__.get_bracket()
+    |> __MODULE__.update_bracket(%{match_list_str: inspect(match_list), match_list_with_fight_result_str: inspect(match_list_with_fight_result)})
+  end
+
   def get_participants(bracket_id) do
     Participant
     |> where([p], p.bracket_id == ^bracket_id)
     |> Repo.all()
+  end
+
+  def get_participant(participant_id) do
+    Participant
+    |> where([p], p.id == ^participant_id)
+    |> Repo.one()
   end
 end
