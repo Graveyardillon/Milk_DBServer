@@ -58,4 +58,24 @@ defmodule MilkWeb.BracketController do
 
     render(conn, "index.json", participants: participants)
   end
+
+  def get_brackets_for_draw(conn, %{"bracket_id" => bracket_id}) do
+    brackets = bracket_id
+      |> Tools.to_integer_as_needed()
+      |> Brackets.get_bracket()
+      |> Map.get(:match_list_with_fight_result_str)
+      |> Code.eval_string()
+      |> elem(0)
+      |> generate_brackets()
+
+    json(conn, %{result: true, data: brackets})
+  end
+
+  defp generate_brackets(nil), do: nil
+  defp generate_brackets(brackets) do
+    brackets
+    |> Tournamex.brackets_with_fight_result()
+    |> elem(1)
+    |> List.flatten()
+  end
 end

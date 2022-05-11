@@ -150,4 +150,26 @@ defmodule MilkWeb.BracketControllerTest do
       assert String.length(match_list_with_fight_result_str) < String.length(bracket.match_list_with_fight_result_str)
     end
   end
+
+  describe "get brackets for draw" do
+    test "works", %{conn: conn} do
+      bracket = fixture_bracket()
+
+      names = [
+        "test1user",
+        "test2user",
+        "test3user",
+        "test4user"
+      ]
+      conn = post(conn, Routes.bracket_path(conn, :create_participants), %{"names" => names, "bracket_id" => bracket.id})
+
+      conn = get(conn, Routes.bracket_path(conn, :get_brackets_for_draw), %{"bracket_id" => bracket.id})
+
+      conn
+      |> json_response(200)
+      |> Map.get("data")
+      |> is_list()
+      |> assert()
+    end
+  end
 end
