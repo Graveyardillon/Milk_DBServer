@@ -185,7 +185,7 @@ defmodule Milk.Brackets do
       |> elem(0)
       |> Tournamex.delete_loser(loser_participant_id)
 
-    match_list_with_fight_result = bracket.match_list_with_fight_result
+    match_list_with_fight_result = bracket.match_list_with_fight_result_str
       |> Code.eval_string()
       |> elem(0)
       |> Tournamex.win_count_increment(winner_participant_id)
