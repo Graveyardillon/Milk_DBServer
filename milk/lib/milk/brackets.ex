@@ -69,7 +69,7 @@ defmodule Milk.Brackets do
     |> Tools.reduce_ok_list("error on create participants")
   end
 
-  def initialize_brackets(bracket_id) do
+  def initialize_brackets(bracket_id, deleted_participant_id_list \\ []) do
     bracket = __MODULE__.get_bracket(bracket_id)
 
     if is_nil(bracket.match_list_str) do
@@ -81,6 +81,7 @@ defmodule Milk.Brackets do
         |> Code.eval_string()
         |> elem(0)
         |> List.flatten()
+        |> Enum.reject(&(&1 in deleted_participant_id_list))
 
       participant_id_list = bracket_id
         |> __MODULE__.get_participants()
@@ -193,4 +194,6 @@ defmodule Milk.Brackets do
   end
 
   def delete(bracket), do: Repo.delete(bracket)
+
+  def delete_participant(participant), do: Repo.delete(participant)
 end

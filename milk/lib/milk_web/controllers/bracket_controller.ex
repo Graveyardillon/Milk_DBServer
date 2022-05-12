@@ -58,6 +58,18 @@ defmodule MilkWeb.BracketController do
     render(conn, "index.json", participants: participants)
   end
 
+  def delete_participant(conn, %{"bracket_id" => bracket_id, "participant_id" => participant_id}) do
+    participant_id = Tools.to_integer_as_needed(participant_id)
+
+    with participant when not is_nil(participant_id) <- Brackets.get_participant(participant_id),
+         {:ok, _} <- Brackets.delete_participant(participant),
+         {:ok, _} <- Brackets.initialize_brackets(bracket_id, [participant_id]) do
+      json(conn, %{result: true})
+    else
+      _ -> json(conn, %{result: false})
+    end
+  end
+
   def get_brackets_for_draw(conn, %{"bracket_id" => bracket_id}) do
     brackets = bracket_id
       |> Tools.to_integer_as_needed()
@@ -114,6 +126,7 @@ defmodule MilkWeb.BracketController do
 
   def delete(conn, %{"bracket_id" => bracket_id}) do
     bracket_id
+    |> Tools.to_integer_as_needed()
     |> Brackets.get_bracket()
     |> Brackets.delete()
     |> case do

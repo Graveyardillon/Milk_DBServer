@@ -270,6 +270,7 @@ defmodule MilkWeb.Router do
     post "/bracket/undo_start", BracketController, :undo_start
     post "/bracket/claim_lose", BracketController, :claim_lose
     delete "/bracket", BracketController, :delete
+    delete "/bracket/participant", BracketController, :delete_participant
   end
 
   scope "/debug", MilkWeb do
