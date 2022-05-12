@@ -162,4 +162,23 @@ defmodule Milk.Brackets do
       __MODULE__.update_bracket(bracket, %{is_started: true})
     end
   end
+
+  def defeat_loser_participant(winner_participant_id, loser_participant_id, bracket_id) do
+    # NOTE: last_match_listの保存
+    bracket = __MODULE__.get_bracket(bracket_id)
+
+    __MODULE__.update_bracket(bracket, %{last_match_list_str: bracket.match_list_str, last_match_list_with_fight_result_str: bracket.match_list_with_fight_result_str})
+
+    match_list = bracket.match_list_str
+      |> Code.eval_string()
+      |> elem(0)
+      |> Tournamex.delete_loser(loser_participant_id)
+
+    match_list_with_fight_result = bracket.match_list_with_fight_result
+      |> Code.eval_string()
+      |> elem(0)
+      |> Tournamex.win_count_increment(winner_participant_id)
+
+      __MODULE__.update_bracket(bracket, %{match_list_str: inspect(match_list), match_list_with_fight_result_str: inspect(match_list_with_fight_result)})
+  end
 end

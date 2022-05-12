@@ -7,7 +7,6 @@ defmodule MilkWeb.BracketController do
   alias Milk.Brackets
   alias Common.Tools
 
-  # TODO: メンバー追加
   def create_bracket(conn, %{"brackets" => %{"name" => name, "owner_id" => owner_id, "rule" => rule, "url" => url, "enabled_bronze_medal_match" => enabled_bronze_medal_match}}) do
     with false          <- Brackets.is_url_duplicated?(url),
          {:ok, bracket} <- Brackets.create_bracket(%{name: name, owner_id: owner_id, url: url, rule: rule, enabled_bronze_medal_match: enabled_bronze_medal_match}) do
@@ -92,6 +91,13 @@ defmodule MilkWeb.BracketController do
     bracket_id
     |> Brackets.start()
     |> case do
+      {:ok, _}    -> json(conn, %{result: true})
+      {:error, _} -> json(conn, %{result: false})
+    end
+  end
+
+  def claim_lose(conn, %{"bracket_id" => bracket_id, "loser_participant_id" => loser_participant_id, "winner_participant_id" => winner_participant_id}) do
+    case Brackets.defeat_loser_participant(winner_participant_id, loser_participant_id, bracket_id) do
       {:ok, _}    -> json(conn, %{result: true})
       {:error, _} -> json(conn, %{result: false})
     end

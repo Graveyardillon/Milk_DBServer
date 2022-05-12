@@ -127,7 +127,7 @@ defmodule Milk.Tournaments.Progress do
 
     with {:ok, _}                                    <- Redix.command(conn, ["SELECT", 1]),
          {:ok, value} when value == 1                <- Redix.command(conn, ["SETNX", -tournament_id, 1]),
-         {:ok, _}                                    <-  Redix.command(conn, ["EXPIRE", -tournament_id, 20]),
+         {:ok, _}                                    <- Redix.command(conn, ["EXPIRE", -tournament_id, 20]),
          {:ok, _}                                    <- Redix.command(conn, ["SELECT", 1]),
          {:ok, value}                                <- Redix.command(conn, ["GET", tournament_id]),
          {match_list, _} when not is_nil(match_list) <- Code.eval_string(value),
