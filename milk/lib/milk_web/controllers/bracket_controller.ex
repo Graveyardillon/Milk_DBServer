@@ -96,6 +96,15 @@ defmodule MilkWeb.BracketController do
     end
   end
 
+  def undo_start(conn, %{"bracket_id" => bracket_id}) do
+    bracket_id
+    |> Brackets.undo_start()
+    |> case do
+      {:ok, _}    -> json(conn, %{result: true})
+      {:error, _} -> json(conn, %{result: false})
+    end
+  end
+
   def claim_lose(conn, %{"bracket_id" => bracket_id, "loser_participant_id" => loser_participant_id, "winner_participant_id" => winner_participant_id}) do
     case Brackets.defeat_loser_participant(winner_participant_id, loser_participant_id, bracket_id) do
       {:ok, _}    -> json(conn, %{result: true})

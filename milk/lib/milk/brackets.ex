@@ -163,6 +163,16 @@ defmodule Milk.Brackets do
     end
   end
 
+  def undo_start(bracket_id) do
+    bracket = __MODULE__.get_bracket(bracket_id)
+
+    if bracket.is_started do
+      __MODULE__.update_bracket(bracket, %{is_started: false})
+    else
+      {:error, "Is not started"}
+    end
+  end
+
   def defeat_loser_participant(winner_participant_id, loser_participant_id, bracket_id) do
     # NOTE: last_match_listの保存
     bracket = __MODULE__.get_bracket(bracket_id)
