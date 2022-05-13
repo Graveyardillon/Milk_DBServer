@@ -24,7 +24,7 @@ defmodule MilkWeb.BracketController do
   def is_url_valid(conn, %{"url" => url}), do: json(conn, %{result: !Brackets.is_url_duplicated?(url)})
 
   def get_bracket(conn, %{"url" => url}) do
-    bracket = Brackets.get_bracket_by_url(url)
+    bracket = Brackets.get_bracket_including_logs_by_url(url)
 
     if is_nil(bracket) do
       render(conn, "error.json", error: "bracket is nil")
@@ -83,7 +83,7 @@ defmodule MilkWeb.BracketController do
   def get_brackets_for_draw(conn, %{"bracket_id" => bracket_id}) do
     brackets = bracket_id
       |> Tools.to_integer_as_needed()
-      |> Brackets.get_bracket()
+      |> Brackets.get_bracket_including_logs()
       |> Map.get(:match_list_with_fight_result_str)
       |> Code.eval_string()
       |> elem(0)

@@ -35,6 +35,7 @@ defmodule MilkWeb.BracketView do
       last_match_list_str: bracket.last_match_list_str,
       id: bracket.id,
       owner_id: bracket.owner_id,
+      is_finished: bracket.is_finished,
     }
   end
 
