@@ -30,6 +30,12 @@ defmodule Milk.Brackets do
     |> Repo.insert()
   end
 
+  def create_bracket_log(attrs \\ %{}) do
+    %BracketLog{}
+    |> BracketLog.changeset(attrs)
+    |> Repo.insert()
+  end
+
   def update_bracket(%Bracket{} = bracket, attrs) do
     bracket
     |> Bracket.changeset(attrs)
@@ -213,4 +219,21 @@ defmodule Milk.Brackets do
   end
 
   def disable_to_undo_start(bracket), do: __MODULE__.update_bracket(bracket, %{unable_to_undo_start: true})
+
+  def finish(bracket_id) do
+    with bracket when not is_nil(bracket) <- __MODULE__.get_bracket(bracket_id),
+         {:ok, _}                         <- create_bracket_log_on_finish(bracket) do
+      __MODULE__.delete(bracket)
+    else
+      nil             -> {:error, "Bracket is nil"}
+      {:error, error} -> {:error, error}
+    end
+  end
+
+  defp create_bracket_log_on_finish(bracket) do
+    bracket
+    |> Map.from_struct()
+    |> Map.put(:bracket_id, bracket.id)
+    |> __MODULE__.create_bracket_log()
+  end
 end

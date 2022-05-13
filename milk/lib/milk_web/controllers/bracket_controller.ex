@@ -148,4 +148,14 @@ defmodule MilkWeb.BracketController do
       {:error, _} -> json(conn, %{result: false})
     end
   end
+
+  def finish(conn, %{"bracket_id" => bracket_id}) do
+    bracket_id
+    |> Tools.to_integer_as_needed()
+    |> Brackets.finish()
+    |> case do
+      {:ok, _}    -> json(conn, %{result: true})
+      {:error, _} -> json(conn, %{result: false})
+    end
+  end
 end
