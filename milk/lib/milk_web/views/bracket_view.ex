@@ -35,7 +35,11 @@ defmodule MilkWeb.BracketView do
       last_match_list_str: bracket.last_match_list_str,
       id: bracket.id,
       owner_id: bracket.owner_id,
-      is_finished: bracket.is_finished,
+      is_finished: if Map.has_key?(bracket, :is_finished) do
+          bracket.is_finished
+        else
+          false
+        end
     }
   end
 

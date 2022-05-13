@@ -9,7 +9,8 @@ defmodule Milk.Brackets do
   alias Milk.Brackets.{
     Bracket,
     BracketLog,
-    Participant
+    Participant,
+    ParticipantLog
   }
 
   def get_bracket_including_logs(bracket_id) do
@@ -108,6 +109,12 @@ defmodule Milk.Brackets do
   def create_participant(attrs \\ %{}) do
     %Participant{}
     |> Participant.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  def create_participant_log(attrs \\ %{}) do
+    %ParticipantLog{}
+    |> ParticipantLog.changeset(attrs)
     |> Repo.insert()
   end
 
@@ -264,7 +271,8 @@ defmodule Milk.Brackets do
 
   def finish(bracket_id) do
     with bracket when not is_nil(bracket) <- __MODULE__.get_bracket(bracket_id),
-         {:ok, _}                         <- create_bracket_log_on_finish(bracket) do
+         {:ok, _}                         <- create_bracket_log_on_finish(bracket),
+         {:ok, _}                         <- create_participant_logs_on_finish(bracket) do
       __MODULE__.delete(bracket)
     else
       nil             -> {:error, "Bracket is nil"}
@@ -277,5 +285,18 @@ defmodule Milk.Brackets do
     |> Map.from_struct()
     |> Map.put(:bracket_id, bracket.id)
     |> __MODULE__.create_bracket_log()
+  end
+
+  defp create_participant_logs_on_finish(bracket) do
+    bracket.id
+    |> __MODULE__.get_participants()
+    |> Enum.map(fn participant ->
+      participant
+      |> Map.from_struct()
+      |> Map.put(:participant_id, participant.id)
+      |> __MODULE__.create_participant_log()
+    end)
+    |> Enum.all?(&match?({:ok, _}, &1))
+    |> Tools.boolean_to_tuple()
   end
 end
