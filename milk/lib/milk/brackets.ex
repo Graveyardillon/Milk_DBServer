@@ -196,4 +196,19 @@ defmodule Milk.Brackets do
   def delete(bracket), do: Repo.delete(bracket)
 
   def delete_participant(participant), do: Repo.delete(participant)
+
+  def undo_progress(bracket) do
+    if is_nil(bracket.last_match_list_str) do
+      {:error, "Unable to undo anymore"}
+    else
+      attrs = %{
+        match_list_str: bracket.last_match_list_str,
+        match_list_with_fight_result_str: bracket.last_match_list_with_fight_result_str,
+        last_match_list_str: nil,
+        last_match_list_with_fight_result_str: nil
+      }
+
+      __MODULE__.update_bracket(bracket, attrs)
+    end
+  end
 end
