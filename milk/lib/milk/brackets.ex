@@ -18,6 +18,12 @@ defmodule Milk.Brackets do
     |> Repo.one()
   end
 
+  def get_bracket_by_url(url) do
+    Bracket
+    |> where([b], b.url == ^url)
+    |> Repo.one()
+  end
+
   def get_brackets_by_owner_id(owner_id) do
     Bracket
     |> where([b], b.owner_id == ^owner_id)
