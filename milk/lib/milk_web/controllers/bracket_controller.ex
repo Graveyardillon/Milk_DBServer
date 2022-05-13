@@ -51,6 +51,14 @@ defmodule MilkWeb.BracketController do
     render(conn, "index.json", brackets: brackets)
   end
 
+  def get_bracket_logs_by_owner_id(conn, %{"owner_id" => owner_id}) do
+    brackets = owner_id
+      |> Tools.to_integer_as_needed()
+      |> Brackets.get_bracket_logs_by_owner_id()
+
+    render(conn, "index.json", brackets: brackets)
+  end
+
   def create_participants(conn, %{"names" => names, "bracket_id" => bracket_id}) do
     with {:ok, _} <- Brackets.create_participants(names, bracket_id),
          {:ok, _} <- Brackets.initialize_brackets(bracket_id) do

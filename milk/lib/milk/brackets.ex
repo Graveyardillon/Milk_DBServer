@@ -67,6 +67,12 @@ defmodule Milk.Brackets do
     |> Repo.all()
   end
 
+  def get_bracket_logs_by_owner_id(owner_id) do
+    BracketLog
+    |> where([b], b.owner_id == ^owner_id)
+    |> Repo.all()
+  end
+
   def create_bracket(attrs \\ %{}) do
     %Bracket{}
     |> Bracket.changeset(attrs)
