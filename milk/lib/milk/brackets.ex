@@ -211,4 +211,6 @@ defmodule Milk.Brackets do
       __MODULE__.update_bracket(bracket, attrs)
     end
   end
+
+  def disable_to_undo_start(bracket), do: __MODULE__.update_bracket(bracket, %{unable_to_undo_start: true})
 end

@@ -11,7 +11,7 @@ defmodule Milk.Brackets.Bracket do
     field :url, :string
     field :enabled_bronze_medal_match, :boolean, default: false
     field :is_started, :boolean, default: false
-    field :unable_to_undo_progress, :boolean, default: false
+    field :unable_to_undo_start, :boolean, default: false
 
     field :rule, :string
     field :match_list_str, :string
@@ -32,7 +32,7 @@ defmodule Milk.Brackets.Bracket do
         :url,
         :enabled_bronze_medal_match,
         :is_started,
-        :unable_to_undo_progress,
+        :unable_to_undo_start,
         :owner_id,
         :rule,
         :match_list_str,
