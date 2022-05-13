@@ -63,7 +63,7 @@ defmodule MilkWeb.BracketController do
   def get_participants(conn, %{"bracket_id" => bracket_id}) do
     participants = bracket_id
       |> Tools.to_integer_as_needed()
-      |> Brackets.get_participants()
+      |> Brackets.get_participants_including_log()
 
     render(conn, "index.json", participants: participants)
   end

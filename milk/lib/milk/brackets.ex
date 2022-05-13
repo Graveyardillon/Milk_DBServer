@@ -171,8 +171,24 @@ defmodule Milk.Brackets do
     |> __MODULE__.update_bracket(%{match_list_str: inspect(match_list), match_list_with_fight_result_str: inspect(match_list_with_fight_result)})
   end
 
+  def get_participants_including_log(bracket_id) do
+    with bracket when is_nil(bracket)             <- __MODULE__.get_bracket(bracket_id),
+         bracket_log when not is_nil(bracket_log) <- __MODULE__.get_bracket_log_by_bracket_id(bracket_id) do
+      __MODULE__.get_participant_logs(bracket_log.id)
+    else
+      %Bracket{id: bracket_id} -> __MODULE__.get_participants(bracket_id)
+      _                        -> []
+    end
+  end
+
   def get_participants(bracket_id) do
     Participant
+    |> where([p], p.bracket_id == ^bracket_id)
+    |> Repo.all()
+  end
+
+  def get_participant_logs(bracket_id) do
+    ParticipantLog
     |> where([p], p.bracket_id == ^bracket_id)
     |> Repo.all()
   end
@@ -271,8 +287,8 @@ defmodule Milk.Brackets do
 
   def finish(bracket_id) do
     with bracket when not is_nil(bracket) <- __MODULE__.get_bracket(bracket_id),
-         {:ok, _}                         <- create_bracket_log_on_finish(bracket),
-         {:ok, _}                         <- create_participant_logs_on_finish(bracket) do
+         {:ok, log}                       <- create_bracket_log_on_finish(bracket),
+         {:ok, _}                         <- create_participant_logs_on_finish(bracket, log.id) do
       __MODULE__.delete(bracket)
     else
       nil             -> {:error, "Bracket is nil"}
@@ -287,13 +303,14 @@ defmodule Milk.Brackets do
     |> __MODULE__.create_bracket_log()
   end
 
-  defp create_participant_logs_on_finish(bracket) do
+  defp create_participant_logs_on_finish(bracket, bracket_log_id) do
     bracket.id
     |> __MODULE__.get_participants()
     |> Enum.map(fn participant ->
       participant
       |> Map.from_struct()
       |> Map.put(:participant_id, participant.id)
+      |> Map.put(:bracket_id, bracket_log_id)
       |> __MODULE__.create_participant_log()
     end)
     |> Enum.all?(&match?({:ok, _}, &1))
