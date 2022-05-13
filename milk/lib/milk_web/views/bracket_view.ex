@@ -31,6 +31,8 @@ defmodule MilkWeb.BracketView do
       rule: bracket.rule,
       is_started: bracket.is_started,
       enabled_bronze_medal_match: bracket.enabled_bronze_medal_match,
+      unable_to_undo_progress: bracket.unable_to_undo_progress,
+      last_match_list_str: bracket.last_match_list_str,
       id: bracket.id,
       owner_id: bracket.owner_id,
     }
