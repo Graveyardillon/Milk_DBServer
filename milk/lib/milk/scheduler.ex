@@ -1,6 +1,5 @@
 defmodule Milk.Scheduler do
-  use Quantum,
-    otp_app: :milk
+  use Quantum, otp_app: :milk
   use Timex
   import Ecto.Query, warn: false
 

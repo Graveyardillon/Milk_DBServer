@@ -258,6 +258,24 @@ defmodule MilkWeb.Router do
     post "/tournament/ffa_update_information", FreeForAllController, :update_information
     post "/tournament/ffa_update_categories", FreeForAllController, :update_categories
     post "/tournament/ffa_claim_scores", FreeForAllController, :claim_scores
+
+    get "/bracket", BracketController, :get_bracket
+    get "/bracket/num", BracketController, :get_number
+    get "/bracket/draw", BracketController, :get_brackets_for_draw
+    get "/bracket/by_owner_id", BracketController, :get_brackets_by_owner_id
+    get "/bracket/logs_by_owner_id", BracketController, :get_bracket_logs_by_owner_id
+    get "/bracket/is_url_valid", BracketController, :is_url_valid
+    get "/bracket/participants", BracketController, :get_participants
+    post "/bracket", BracketController, :create_bracket
+    post "/bracket/create_participants", BracketController, :create_participants
+    post "/bracket/edit_brackets", BracketController, :edit_brackets
+    post "/bracket/start", BracketController, :start
+    post "/bracket/undo_start", BracketController, :undo_start
+    post "/bracket/claim_lose", BracketController, :claim_lose
+    post "/bracket/undo_progress", BracketController, :undo_progress
+    post "/bracket/finish", BracketController, :finish
+    delete "/bracket", BracketController, :delete
+    delete "/bracket/participant", BracketController, :delete_participant
   end
 
   scope "/debug", MilkWeb do
