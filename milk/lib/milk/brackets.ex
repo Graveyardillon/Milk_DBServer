@@ -9,6 +9,7 @@ defmodule Milk.Brackets do
   alias Milk.Brackets.{
     Bracket,
     BracketLog,
+    BracketArchive,
     Participant,
     ParticipantLog
   }
@@ -121,6 +122,12 @@ defmodule Milk.Brackets do
   def create_participant_log(attrs \\ %{}) do
     %ParticipantLog{}
     |> ParticipantLog.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  def create_bracket_archive(attrs \\ %{}) do
+    %BracketArchive{}
+    |> BracketArchive.changeset(attrs)
     |> Repo.insert()
   end
 
@@ -268,6 +275,15 @@ defmodule Milk.Brackets do
       |> Tournamex.win_count_increment(winner_participant_id)
 
       __MODULE__.update_bracket(bracket, %{match_list_str: inspect(match_list), match_list_with_fight_result_str: inspect(match_list_with_fight_result)})
+  end
+
+  def archive_and_delete(bracket) do
+    bracket
+    |> Map.from_struct()
+    |> __MODULE__.create_bracket_archive()
+    |> IO.inspect()
+
+    __MODULE__.delete(bracket)
   end
 
   def delete(bracket), do: Repo.delete(bracket)

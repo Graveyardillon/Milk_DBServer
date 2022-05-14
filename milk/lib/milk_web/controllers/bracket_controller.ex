@@ -149,7 +149,8 @@ defmodule MilkWeb.BracketController do
     bracket_id
     |> Tools.to_integer_as_needed()
     |> Brackets.get_bracket()
-    |> Brackets.delete()
+    #|> Brackets.delete()
+    |> Brackets.archive_and_delete()
     |> case do
       {:ok, _}    -> json(conn, %{result: true})
       {:error, _} -> json(conn, %{result: false})
