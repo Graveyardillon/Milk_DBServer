@@ -177,4 +177,8 @@ defmodule MilkWeb.BracketController do
       {:error, _} -> json(conn, %{result: false})
     end
   end
+
+  def get_number(conn, _) do
+    json(conn, %{num: Brackets.get_number()})
+  end
 end

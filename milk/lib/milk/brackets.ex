@@ -1,4 +1,6 @@
 defmodule Milk.Brackets do
+  use Timex
+
   import Ecto.Query, warn: false
 
   alias Common.Tools
@@ -13,6 +15,31 @@ defmodule Milk.Brackets do
     Participant,
     ParticipantLog
   }
+
+  def get_number() do
+    beginning_of_month = Timex.now()
+      |> Timex.beginning_of_month()
+
+    end_of_month = Timex.now()
+      |> Timex.end_of_month()
+
+    bracket_count = Bracket
+      |> where([b], ^beginning_of_month < b.create_time and b.create_time < ^end_of_month)
+      |> select([t], count(t.id))
+      |> Repo.one()
+
+    bracket_log_count = BracketLog
+      |> where([b], ^beginning_of_month < b.create_time and b.create_time < ^end_of_month)
+      |> select([t], count(t.id))
+      |> Repo.one()
+
+    bracket_archive_count = BracketArchive
+      |> where([b], ^beginning_of_month < b.create_time and b.create_time < ^end_of_month)
+      |> select([t], count(t.id))
+      |> Repo.one()
+
+    bracket_count + bracket_log_count + bracket_archive_count
+  end
 
   def get_bracket_including_logs(bracket_id) do
     with nil                         <- __MODULE__.get_bracket(bracket_id),
@@ -281,7 +308,6 @@ defmodule Milk.Brackets do
     bracket
     |> Map.from_struct()
     |> __MODULE__.create_bracket_archive()
-    |> IO.inspect()
 
     __MODULE__.delete(bracket)
   end
