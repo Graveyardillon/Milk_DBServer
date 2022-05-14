@@ -11,6 +11,7 @@ defmodule MilkWeb.TournamentController do
 
   alias Milk.{
     Accounts,
+    Brackets,
     Chat,
     Discord,
     Log,
@@ -116,7 +117,9 @@ defmodule MilkWeb.TournamentController do
   その月に開催された大会数を取得
   """
   def count_tournament_per_month(conn, _params) do
-    json(conn, %{tournament_counnt_per_month: Tournaments.count_tournament_per_month()})
+    tournament_count_per_month = Tournaments.count_tournament_per_month()
+    bracket_count_per_month = Brackets.get_number()
+    json(conn, %{tournament_counnt_per_month: tournament_count_per_month, brackets: bracket_count_per_month, sum: tournament_count_per_month + bracket_count_per_month})
   end
 
   @doc """
