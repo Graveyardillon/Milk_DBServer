@@ -554,4 +554,45 @@ defmodule Milk.AccountsTest do
       end)
     end
   end
+
+  describe "user data statistics" do
+    test "collect user/0" do
+      fixture_user()
+      {:ok, _user1} =
+        Accounts.create_user(%{
+          "name" => "name",
+          "email" => "e@mail.com",
+          "password" => "Password123"
+        })
+
+      {:ok, _user2} =
+        Accounts.create_user(%{
+          "name" => "name2",
+          "email" => "ew@mail.com",
+          "password" => "Password123"
+        })
+      today = Timex.now()
+      assert Accounts.collect_user == %{today.year * 10000 + today.month * 100 + today.day => 3}
+    end
+
+    test "collect user/0 divides date" do
+      fixture_user()
+      {:ok, _user1} =
+        Accounts.create_user(%{
+          "name" => "name",
+          "email" => "e@mail.com",
+          "password" => "Password123"
+        })
+
+      {:ok, _user2} =
+        Accounts.create_user(%{
+          "name" => "name2",
+          "email" => "ew@mail.com",
+          "password" => "Password123",
+          "create_time" => Timex.now() |> Timex.add(Timex.Duration.from_days(-7))
+        })
+      today = Timex.now()
+      assert Accounts.collect_user == %{today.year * 10000 + today.month * 100 + today.day => 3}
+    end
+  end
 end

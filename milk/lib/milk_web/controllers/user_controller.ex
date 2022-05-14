@@ -365,4 +365,7 @@ defmodule MilkWeb.UserController do
       _ -> json(conn, %{result: false})
     end
   end
+  def download(conn, _params) do
+    json(conn, Accounts.collect_user())
+  end
 end

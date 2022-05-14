@@ -508,6 +508,22 @@ defmodule MilkWeb.UserControllerTest do
     end
   end
 
+  describe "download/2" do
+    test "download/2 gets statistics data", %{conn: conn} do
+      1..10
+      |> Enum.to_list()
+      |> Enum.each(fn n ->
+        fixture_user(num: n)
+        conn = get(conn, Routes.user_path(conn, :number))
+      end)
+
+      conn = get(conn, Routes.user_path(conn, :download))
+      today = Timex.now()
+      key = Integer.to_string(today.year * 10000 + today.month * 100 + today.day)
+      assert json_response(conn, 200) == %{key => 10}
+    end
+  end
+
   # defp create_user(_) do
   #   user = fixture(:user)
   #   {:ok, user: user}
