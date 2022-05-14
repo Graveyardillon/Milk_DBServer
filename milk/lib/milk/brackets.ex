@@ -14,7 +14,7 @@ defmodule Milk.Brackets do
   }
 
   def get_bracket_including_logs(bracket_id) do
-    with nil <- __MODULE__.get_bracket(bracket_id),
+    with nil                         <- __MODULE__.get_bracket(bracket_id),
          %BracketLog{} = bracket_log <- __MODULE__.get_bracket_log_by_bracket_id(bracket_id) do
       bracket_log
       |> Map.put(:id, bracket_log.bracket_id)
@@ -33,7 +33,7 @@ defmodule Milk.Brackets do
 
   def get_bracket_log_by_bracket_id(bracket_id) do
     BracketLog
-    |> where([b], b.id == ^bracket_id)
+    |> where([b], b.bracket_id == ^bracket_id)
     |> Repo.one()
   end
 
