@@ -24,6 +24,13 @@ defmodule MilkWeb.BracketView do
     }
   end
 
+  def render("show.json", %{participant: participant}) do
+    %{
+      data: render_one(participant, __MODULE__, "participant.json", as: :participant),
+      result: true
+    }
+  end
+
   def render("bracket.json", %{bracket: bracket}) do
     %{
       name: bracket.name,
