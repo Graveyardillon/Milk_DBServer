@@ -364,4 +364,18 @@ defmodule Milk.Brackets do
     |> Enum.all?(&match?({:ok, _}, &1))
     |> Tools.boolean_to_tuple()
   end
+
+  def is_bronze_match?(nil), do: false
+  def is_bronze_match?(bracket) do
+    bracket.match_list_str
+    |> Code.eval_string()
+    |> elem(0)
+    |> do_is_bronze_match?()
+  end
+
+  defp do_is_bronze_match?([n1]) when is_integer(n1), do: true
+  defp do_is_bronze_match?([n1, n2]) when is_integer(n1) and is_integer(n2), do: true
+  # defp do_is_bronze_match?([n1, [n2, n3]]) when is_integer(n1) and is_integer(n2) and is_integer(n3), do: true
+  # defp do_is_bronze_match?([[n1, n2], n3]) when is_integer(n1) and is_integer(n2) and is_integer(n3), do: true
+  defp do_is_bronze_match?(_), do: false
 end

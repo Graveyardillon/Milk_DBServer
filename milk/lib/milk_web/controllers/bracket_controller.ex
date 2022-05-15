@@ -181,4 +181,13 @@ defmodule MilkWeb.BracketController do
   def get_number(conn, _) do
     json(conn, %{num: Brackets.get_number()})
   end
+
+  def is_bronze_match?(conn, %{"bracket_id" => bracket_id}) do
+    is_bronze_match = bracket_id
+      |> Tools.to_integer_as_needed()
+      |> Brackets.get_bracket_including_logs()
+      |> Brackets.is_bronze_match?()
+
+    json(conn, %{result: is_bronze_match})
+  end
 end

@@ -266,6 +266,7 @@ defmodule MilkWeb.Router do
     get "/bracket/logs_by_owner_id", BracketController, :get_bracket_logs_by_owner_id
     get "/bracket/is_url_valid", BracketController, :is_url_valid
     get "/bracket/participants", BracketController, :get_participants
+    get "/bracket/is_bronze_match", BracketController, :is_bronze_match?
     post "/bracket", BracketController, :create_bracket
     post "/bracket/create_participants", BracketController, :create_participants
     post "/bracket/edit_brackets", BracketController, :edit_brackets
