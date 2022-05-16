@@ -145,6 +145,17 @@ defmodule MilkWeb.BracketController do
     end
   end
 
+  def claim_bronze_lose(conn,  %{"bracket_id" => bracket_id, "winner_participant_id" => winner_participant_id}) do
+    bracket_id = Tools.to_integer_as_needed(bracket_id)
+
+    with bracket when not is_nil(bracket) <- Brackets.get_bracket(bracket_id),
+         {:ok, _}                         <- Brackets.claim_bronze_match_winner(bracket, winner_participant_id) do
+      json(conn, %{result: true})
+    else
+      _ -> json(conn, %{result: false})
+    end
+  end
+
   def delete(conn, %{"bracket_id" => bracket_id}) do
     bracket_id
     |> Tools.to_integer_as_needed()
@@ -180,5 +191,32 @@ defmodule MilkWeb.BracketController do
 
   def get_number(conn, _) do
     json(conn, %{num: Brackets.get_number()})
+  end
+
+  def is_bronze_match?(conn, %{"bracket_id" => bracket_id}) do
+    is_bronze_match = bracket_id
+      |> Tools.to_integer_as_needed()
+      |> Brackets.get_bracket_including_logs()
+      |> Brackets.is_bronze_match?()
+
+    json(conn, %{result: is_bronze_match})
+  end
+
+  def get_bronze_match_winner(conn, %{"bracket_id" => bracket_id}) do
+    participant = bracket_id
+      |> Tools.to_integer_as_needed()
+      |> Brackets.get_bracket_including_logs()
+      |> do_get_bronze_match_winner()
+
+    render(conn, "show.json", participant: participant)
+  end
+
+  defp do_get_bronze_match_winner(nil),     do: nil
+  defp do_get_bronze_match_winner(bracket) do
+    if is_nil(bracket.bronze_match_winner_participant_id) do
+      nil
+    else
+      Brackets.get_participant_including_logs(bracket.bronze_match_winner_participant_id)
+    end
   end
 end

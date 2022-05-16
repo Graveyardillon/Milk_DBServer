@@ -233,9 +233,26 @@ defmodule Milk.Brackets do
     |> Repo.all()
   end
 
+  def get_participant_including_logs(participant_id) do
+    with nil                                 <- __MODULE__.get_participant(participant_id),
+         %ParticipantLog{} = participant_log <- __MODULE__.get_participant_log_by_participant_id(participant_id) do
+      participant_log
+      |> Map.put(:id, participant_log.participant_id)
+    else
+      %Participant{} = participant -> participant
+      _                            -> nil
+    end
+  end
+
   def get_participant(participant_id) do
     Participant
     |> where([p], p.id == ^participant_id)
+    |> Repo.one()
+  end
+
+  def get_participant_log_by_participant_id(participant_id) do
+    ParticipantLog
+    |> where([p], p.participant_id == ^participant_id)
     |> Repo.one()
   end
 
@@ -364,4 +381,20 @@ defmodule Milk.Brackets do
     |> Enum.all?(&match?({:ok, _}, &1))
     |> Tools.boolean_to_tuple()
   end
+
+  def is_bronze_match?(nil), do: false
+  def is_bronze_match?(bracket) do
+    bracket.match_list_str
+    |> Code.eval_string()
+    |> elem(0)
+    |> do_is_bronze_match?()
+  end
+
+  defp do_is_bronze_match?(n1) when is_integer(n1), do: true
+  defp do_is_bronze_match?([n1, n2]) when is_integer(n1) and is_integer(n2), do: true
+  # defp do_is_bronze_match?([n1, [n2, n3]]) when is_integer(n1) and is_integer(n2) and is_integer(n3), do: true
+  # defp do_is_bronze_match?([[n1, n2], n3]) when is_integer(n1) and is_integer(n2) and is_integer(n3), do: true
+  defp do_is_bronze_match?(_), do: false
+
+  def claim_bronze_match_winner(bracket, winner_participant_id), do: __MODULE__.update_bracket(bracket, %{bronze_match_winner_participant_id: winner_participant_id})
 end

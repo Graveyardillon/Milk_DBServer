@@ -6,6 +6,7 @@ defmodule Milk.Brackets.ParticipantLog do
   schema "bracket_participants_log" do
     field :name, :string
     field :rank, :integer
+    field :participant_id, :integer
 
     belongs_to :bracket, BracketLog
 
@@ -14,6 +15,6 @@ defmodule Milk.Brackets.ParticipantLog do
 
   def changeset(participant_log, attrs) do
     participant_log
-    |> cast(attrs, [:name, :rank, :bracket_id])
+    |> cast(attrs, [:name, :rank, :bracket_id, :participant_id])
   end
 end
