@@ -172,4 +172,70 @@ defmodule MilkWeb.BracketControllerTest do
       |> assert()
     end
   end
+
+  describe "edit brackets" do
+    test "works", %{conn: conn} do
+      bracket = fixture_bracket()
+
+      names = [
+        "test1user",
+        "test2user",
+        "test3user",
+        "test4user"
+      ]
+      conn = post(conn, Routes.bracket_path(conn, :create_participants), %{"names" => names, "bracket_id" => bracket.id})
+
+      conn = get(conn, Routes.bracket_path(conn, :get_brackets_for_draw), %{"bracket_id" => bracket.id})
+
+      conn
+      |> json_response(200)
+      |> Map.get("data")
+      |> List.flatten()
+      |> Enum.map(&(&1["name"]))
+      |> then(fn list ->
+        assert list == Enum.reverse(names)
+      end)
+    end
+  end
+
+  describe "start" do
+    test "works", %{conn: conn} do
+      bracket = fixture_bracket()
+
+      names = [
+        "test1user",
+        "test2user",
+        "test3user",
+        "test4user"
+      ]
+      conn = post(conn, Routes.bracket_path(conn, :create_participants), %{"names" => names, "bracket_id" => bracket.id})
+
+      conn = post(conn, Routes.bracket_path(conn, :start), bracket_id: bracket.id)
+
+      bracket = Brackets.get_bracket(bracket.id)
+
+      assert bracket.is_started
+    end
+  end
+
+  describe "undo start" do
+    test "works", %{conn: conn} do
+      bracket = fixture_bracket()
+
+      names = [
+        "test1user",
+        "test2user",
+        "test3user",
+        "test4user"
+      ]
+      conn = post(conn, Routes.bracket_path(conn, :create_participants), %{"names" => names, "bracket_id" => bracket.id})
+
+      conn = post(conn, Routes.bracket_path(conn, :start), bracket_id: bracket.id)
+      conn = post(conn, Routes.bracket_path(conn, :undo_start), bracket_id: bracket.id)
+
+      bracket = Brackets.get_bracket(bracket.id)
+
+      refute bracket.is_started
+    end
+  end
 end
