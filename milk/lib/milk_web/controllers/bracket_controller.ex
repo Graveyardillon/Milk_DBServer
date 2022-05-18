@@ -230,4 +230,13 @@ defmodule MilkWeb.BracketController do
       Brackets.get_participant_including_logs(bracket.bronze_match_winner_participant_id)
     end
   end
+
+  # NOTE: Free For All用
+  def get_tables(conn, %{"bracket_id" => bracket_id}) do
+    tables = bracket_id
+      |> Tools.to_integer_as_needed()
+      |> FreeForAll.get_tables()
+
+    render(conn, "index.json", tables: tables)
+  end
 end

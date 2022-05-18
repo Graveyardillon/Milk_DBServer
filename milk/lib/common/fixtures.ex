@@ -5,6 +5,7 @@ defmodule Common.Fixtures do
 
   alias Milk.{
     Accounts,
+    Brackets,
     Discord,
     Platforms,
     Tournaments
@@ -164,6 +165,15 @@ defmodule Common.Fixtures do
         ~> {:ok, discord_user}
 
         discord_user
+      end
+
+      def fixture_bracket(opts \\ []) do
+        rule = Keyword.get(opts, :rule, "basic")
+        user = fixture_user()
+
+        %{name: "test", owner_id: user.id, url: "test", rule: rule}
+        |> Brackets.create_bracket()
+        |> elem(1)
       end
     end
   end

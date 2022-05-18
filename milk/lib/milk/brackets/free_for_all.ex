@@ -8,6 +8,12 @@ defmodule Milk.Brackets.FreeForAll do
   alias Milk.Brackets.FreeForAll.Round.Table
   alias Milk.Brackets.FreeForAll.Round.Information, as: RoundInformation
 
+  def get_tables(bracket_id) do
+    Table
+    |> where([t], t.bracket_id == ^bracket_id)
+    |> Repo.all()
+  end
+
   def create_freeforall_information(attrs \\ %{}) do
     %Information{}
     |> Information.changeset(attrs)

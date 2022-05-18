@@ -11,14 +11,6 @@ defmodule MilkWeb.BracketControllerTest do
     {:ok, conn: put_req_header(conn, "accept", "application/json")}
   end
 
-  defp fixture_bracket() do
-    user = fixture_user()
-
-    %{name: "test", owner_id: user.id, url: "test"}
-    |> Brackets.create_bracket()
-    |> elem(1)
-  end
-
   describe "create bracket" do
     test "works", %{conn: conn} do
       user = fixture_user()
@@ -236,6 +228,12 @@ defmodule MilkWeb.BracketControllerTest do
       bracket = Brackets.get_bracket(bracket.id)
 
       refute bracket.is_started
+    end
+  end
+
+  describe "get tables" do
+    test "works", %{conn: conn} do
+
     end
   end
 end

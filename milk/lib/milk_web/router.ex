@@ -279,6 +279,8 @@ defmodule MilkWeb.Router do
     post "/bracket/finish", BracketController, :finish
     delete "/bracket", BracketController, :delete
     delete "/bracket/participant", BracketController, :delete_participant
+
+    get "/bracket/tables", BracketController, :get_tables
   end
 
   scope "/debug", MilkWeb do
