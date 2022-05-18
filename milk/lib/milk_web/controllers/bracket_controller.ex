@@ -5,6 +5,7 @@ defmodule MilkWeb.BracketController do
   use MilkWeb, :controller
 
   alias Milk.Brackets
+  alias Milk.Brackets.FreeForAll
   alias Common.Tools
 
   def create_bracket(conn, %{"brackets" => %{"name" => name, "owner_id" => owner_id, "rule" => rule, "url" => url, "enabled_bronze_medal_match" => enabled_bronze_medal_match}}) do
@@ -61,10 +62,20 @@ defmodule MilkWeb.BracketController do
 
   def create_participants(conn, %{"names" => names, "bracket_id" => bracket_id}) do
     with {:ok, _} <- Brackets.create_participants(names, bracket_id),
-         {:ok, _} <- Brackets.initialize_brackets(bracket_id) do
+         {:ok, _} <- initialize_brackets_or_tables(bracket_id) do
       json(conn, %{result: true})
     else
       _ -> json(conn, %{result: false})
+    end
+  end
+
+  defp initialize_brackets_or_tables(bracket_id) do
+    bracket = Brackets.get_bracket(bracket_id)
+
+    if bracket.rule == "basic" || is_nil(bracket.rule) do
+      Brackets.initialize_brackets(bracket_id)
+    else
+      FreeForAll.initialize_round_tables(bracket, 0)
     end
   end
 
