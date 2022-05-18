@@ -27,6 +27,7 @@ defmodule Milk.Brackets.FreeForAll do
   end
 
   def initialize_round_tables(%Bracket{id: bracket_id}, round_index) do
+    # TODO: すでに順序を決めているなら、それに基づいてデータを取得するための処理が必要
     participants = Brackets.get_participants(bracket_id)
     information = __MODULE__.get_freeforall_information_by_bracket_id(bracket_id)
 
