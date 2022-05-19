@@ -59,7 +59,7 @@ defmodule Milk.Brackets.FreeForAll do
   defp do_assign_participants([], _, _), do: {:ok, nil}
   defp do_assign_participants(participants, tables, count) do
     [participant | remaining_participants] = participants
-    table = Enum.at(participants, rem(count, length(tables)))
+    table = Enum.at(tables, rem(count, length(tables)))
 
     %RoundInformation{}
     |> RoundInformation.changeset(%{table_id: table.id, participant_id: participant.id})

@@ -70,7 +70,7 @@ defmodule MilkWeb.BracketView do
       id: table.id,
       name: table.name,
       round_index: table.round_index,
-      tournament_id: table.tournament_id,
+      bracket_id: table.bracket_id,
       is_finished: table.is_finished,
       current_match_index: table.current_match_index
     }

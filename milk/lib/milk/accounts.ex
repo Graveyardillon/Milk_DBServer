@@ -655,7 +655,7 @@ defmodule Milk.Accounts do
   end
 
   defp create_statistics(create_times) do
-    case length(create_times)|>IO.inspect() do
+    case length(create_times) do
       0 -> %{}
       1 -> [head] = create_times
       create_statistics(%{head => 1}, [])

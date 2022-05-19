@@ -283,8 +283,12 @@ defmodule MilkWeb.BracketControllerTest do
 
       conn = get(conn, Routes.bracket_path(conn, :get_tables), bracket_id: id)
 
-      json_response(conn, 200)
-      |> IO.inspect()
+      conn
+      |> json_response(200)
+      |> Map.get("data")
+      |> length()
+      |> Kernel.==(4)
+      |> assert()
     end
   end
 end

@@ -5,14 +5,18 @@ defmodule MilkWeb.BracketController do
   use MilkWeb, :controller
 
   alias Milk.Brackets
-  alias Milk.Brackets.FreeForAll
+  alias Milk.Brackets.{
+    Bracket,
+    FreeForAll
+  }
   alias Common.Tools
 
   # TODO: freeforallのときのvalidationとか
-  def create_bracket(conn, %{"brackets" => bracket}) do
-    with {:ok, _}       <- validate_on_create_bracket(bracket),
-         false          <- Brackets.is_url_duplicated?(bracket["url"]),
-         {:ok, bracket} <- Brackets.create_bracket(bracket) do
+  def create_bracket(conn, %{"brackets" => attrs}) do
+    with {:ok, _}       <- validate_on_create_bracket(attrs),
+         false          <- Brackets.is_url_duplicated?(attrs["url"]),
+         {:ok, bracket} <- Brackets.create_bracket(attrs),
+         {:ok, _}       <- create_other_information_on_create_bracket(bracket, attrs) do
       render(conn, "show.json", bracket: bracket)
     else
       true                                      -> json(conn, %{result: false, error: "Urls is duplicated"})
@@ -25,6 +29,14 @@ defmodule MilkWeb.BracketController do
   defp validate_on_create_bracket(%{"rule" => "basic"}),                                                                       do: {:ok, nil}
   defp validate_on_create_bracket(%{"rule" => "freeforall", "round_capacity" => _, "match_number" => _, "round_number" => _}), do: {:ok, nil}
   defp validate_on_create_bracket(_),                                                                                          do: {:error, "invalid parameters on create bracket"}
+
+  defp create_other_information_on_create_bracket(_, %{"rule" => "basic"}), do: {:ok, nil}
+  defp create_other_information_on_create_bracket(%Bracket{id: bracket_id}, %{"rule" => "freeforall"} = attrs) do
+    attrs
+    |> Map.put("bracket_id", bracket_id)
+    |> FreeForAll.create_freeforall_information()
+  end
+  defp create_other_information_on_create_bracket(_, _), do: {:ok, nil}
 
   # TODO: SQLインジェクションの確認
   def is_url_valid(conn, %{"url" => url}), do: json(conn, %{result: !Brackets.is_url_duplicated?(url)})
