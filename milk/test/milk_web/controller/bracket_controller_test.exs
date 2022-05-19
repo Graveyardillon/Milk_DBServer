@@ -12,7 +12,7 @@ defmodule MilkWeb.BracketControllerTest do
   end
 
   describe "create bracket" do
-    test "works", %{conn: conn} do
+    test "basic works", %{conn: conn} do
       user = fixture_user()
 
       params = %{
@@ -21,6 +21,29 @@ defmodule MilkWeb.BracketControllerTest do
         "rule" => "basic",
         "url" => "test url",
         "enabled_bronze_medal_match" => false
+      }
+
+      conn = post(conn, Routes.bracket_path(conn, :create_bracket), %{"brackets" => params})
+      assert json_response(conn, 200)["result"]
+
+      assert json_response(conn, 200)["data"]["name"] === params["name"]
+      assert json_response(conn, 200)["data"]["owner_id"] === params["owner_id"]
+      assert json_response(conn, 200)["data"]["url"] === params["url"]
+      assert json_response(conn, 200)["data"]["enabled_bronze_medal_match"] === params["enabled_bronze_medal_match"]
+    end
+
+    test "freeforall works", %{conn: conn} do
+      user = fixture_user()
+
+      params = %{
+        "name" => "test brackets",
+        "owner_id" => user.id,
+        "rule" => "freeforall",
+        "url" => "test url",
+        "enabled_bronze_medal_match" => false,
+        "round_number" => 2,
+        "match_number" => 1,
+        "round_capacity" => 1
       }
 
       conn = post(conn, Routes.bracket_path(conn, :create_bracket), %{"brackets" => params})
@@ -233,7 +256,21 @@ defmodule MilkWeb.BracketControllerTest do
 
   describe "get tables" do
     test "works", %{conn: conn} do
-      bracket = fixture_bracket(rule: "freeforall")
+      user = fixture_user()
+
+      params = %{
+        "name" => "test brackets",
+        "owner_id" => user.id,
+        "rule" => "freeforall",
+        "url" => "test url",
+        "enabled_bronze_medal_match" => false,
+        "round_number" => 2,
+        "match_number" => 1,
+        "round_capacity" => 1
+      }
+
+      conn = post(conn, Routes.bracket_path(conn, :create_bracket), %{"brackets" => params})
+      assert json_response(conn, 200)["result"]
 
       names = [
         "test1user",
@@ -241,9 +278,10 @@ defmodule MilkWeb.BracketControllerTest do
         "test3user",
         "test4user"
       ]
-      conn = post(conn, Routes.bracket_path(conn, :create_participants), %{"names" => names, "bracket_id" => bracket.id})
+      id = json_response(conn, 200)["data"]["id"]
+      conn = post(conn, Routes.bracket_path(conn, :create_participants), %{"names" => names, "bracket_id" => id})
 
-      conn = get(conn, Routes.bracket_path(conn, :get_tables), bracket_id: bracket.id)
+      conn = get(conn, Routes.bracket_path(conn, :get_tables), bracket_id: id)
 
       json_response(conn, 200)
       |> IO.inspect()

@@ -9,18 +9,22 @@ defmodule MilkWeb.BracketController do
   alias Common.Tools
 
   # TODO: freeforallのときのvalidationとか
-  def create_bracket(conn, %{"brackets" => %{"name" => name, "owner_id" => owner_id, "rule" => rule, "url" => url, "enabled_bronze_medal_match" => enabled_bronze_medal_match}}) do
-    with false          <- Brackets.is_url_duplicated?(url),
-         {:ok, bracket} <- Brackets.create_bracket(%{name: name, owner_id: owner_id, url: url, rule: rule, enabled_bronze_medal_match: enabled_bronze_medal_match}) do
+  def create_bracket(conn, %{"brackets" => bracket}) do
+    with {:ok, _}       <- validate_on_create_bracket(bracket),
+         false          <- Brackets.is_url_duplicated?(bracket["url"]),
+         {:ok, bracket} <- Brackets.create_bracket(bracket) do
       render(conn, "show.json", bracket: bracket)
     else
-      true            -> json(conn, %{result: false, error: "Urls is duplicated"})
-      {:error, error} -> render(conn, "error.json", %{error: error.errors})
+      true                                      -> json(conn, %{result: false, error: "Urls is duplicated"})
+      {:error, %Ecto.Changeset{errors: errors}} -> render(conn, "error.json", %{error: errors})
+      {:error, error} when is_binary(error)     -> render(conn, "error.json", error: error)
     end
   end
-  def create_bracket(conn, %{"brackets" => %{"name" => name, "owner_id" => owner_id, "rule" => rule, "url" => url}}) do
-    __MODULE__.create_bracket(conn, %{"brackets" => %{"name" => name, "owner_id" => owner_id, "rule" => rule, "url" => url, "enabled_bronze_medal_match" => false}})
-  end
+
+  defp validate_on_create_bracket(%{"rule" => nil}),                                                                           do: {:error, "rule is nil on create bracket"}
+  defp validate_on_create_bracket(%{"rule" => "basic"}),                                                                       do: {:ok, nil}
+  defp validate_on_create_bracket(%{"rule" => "freeforall", "round_capacity" => _, "match_number" => _, "round_number" => _}), do: {:ok, nil}
+  defp validate_on_create_bracket(_),                                                                                          do: {:error, "invalid parameters on create bracket"}
 
   # TODO: SQLインジェクションの確認
   def is_url_valid(conn, %{"url" => url}), do: json(conn, %{result: !Brackets.is_url_duplicated?(url)})
