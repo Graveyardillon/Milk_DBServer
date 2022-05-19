@@ -233,7 +233,20 @@ defmodule MilkWeb.BracketControllerTest do
 
   describe "get tables" do
     test "works", %{conn: conn} do
+      bracket = fixture_bracket(rule: "freeforall")
 
+      names = [
+        "test1user",
+        "test2user",
+        "test3user",
+        "test4user"
+      ]
+      conn = post(conn, Routes.bracket_path(conn, :create_participants), %{"names" => names, "bracket_id" => bracket.id})
+
+      conn = get(conn, Routes.bracket_path(conn, :get_tables), bracket_id: bracket.id)
+
+      json_response(conn, 200)
+      |> IO.inspect()
     end
   end
 end
