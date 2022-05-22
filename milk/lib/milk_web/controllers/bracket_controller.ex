@@ -11,7 +11,6 @@ defmodule MilkWeb.BracketController do
   }
   alias Common.Tools
 
-  # TODO: freeforallのときのvalidationとか
   def create_bracket(conn, %{"brackets" => attrs}) do
     with {:ok, _}       <- validate_on_create_bracket(attrs),
          false          <- Brackets.is_url_duplicated?(attrs["url"]),
