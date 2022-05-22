@@ -20,7 +20,8 @@ defmodule MilkWeb.BracketControllerTest do
         "owner_id" => user.id,
         "rule" => "basic",
         "url" => "test url",
-        "enabled_bronze_medal_match" => false
+        "enabled_bronze_medal_match" => false,
+        "enabled_score" => true
       }
 
       conn = post(conn, Routes.bracket_path(conn, :create_bracket), %{"brackets" => params})
@@ -30,6 +31,7 @@ defmodule MilkWeb.BracketControllerTest do
       assert json_response(conn, 200)["data"]["owner_id"] === params["owner_id"]
       assert json_response(conn, 200)["data"]["url"] === params["url"]
       assert json_response(conn, 200)["data"]["enabled_bronze_medal_match"] === params["enabled_bronze_medal_match"]
+      assert json_response(conn, 200)["data"]["enabled_score"] === params["enabled_score"]
     end
 
     test "freeforall works", %{conn: conn} do

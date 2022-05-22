@@ -10,6 +10,7 @@ defmodule Milk.Brackets.Bracket do
     field :name, :string
     field :url, :string
     field :enabled_bronze_medal_match, :boolean, default: false
+    field :enabled_score, :boolean, default: false
     field :is_started, :boolean, default: false
     field :unable_to_undo_start, :boolean, default: false
 
@@ -32,6 +33,7 @@ defmodule Milk.Brackets.Bracket do
         :name,
         :url,
         :enabled_bronze_medal_match,
+        :enabled_score,
         :is_started,
         :unable_to_undo_start,
         :owner_id,
