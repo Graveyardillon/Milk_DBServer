@@ -191,6 +191,7 @@ defmodule Milk.Brackets do
     {:ok, match_list} = Tournaments.generate_matchlist_without_shuffle(participant_id_list)
 
     match_list_with_fight_result = Tournamex.initialize_match_list_with_fight_result(match_list)
+    bracket = __MODULE__.get_bracket(bracket_id)
 
     match_list_with_fight_result = match_list_with_fight_result
       |> List.flatten()
@@ -198,17 +199,21 @@ defmodule Milk.Brackets do
         participant_id = x["user_id"]
         participant = __MODULE__.get_participant(participant_id)
 
-        acc
-        |> Tournaments.put_value_on_brackets(participant_id, %{"id" => participant_id})
-        |> Tournaments.put_value_on_brackets(participant_id, %{"name" => participant.name})
-        |> Tournaments.put_value_on_brackets(participant_id, %{"win_count" => 0})
-        |> Tournaments.put_value_on_brackets(participant_id, %{"icon_path" => nil})
-        |> Tournaments.put_value_on_brackets(participant_id, %{"round" => 0})
+        acc = acc
+          |> Tournaments.put_value_on_brackets(participant_id, %{"id" => participant_id})
+          |> Tournaments.put_value_on_brackets(participant_id, %{"name" => participant.name})
+          |> Tournaments.put_value_on_brackets(participant_id, %{"win_count" => 0})
+          |> Tournaments.put_value_on_brackets(participant_id, %{"icon_path" => nil})
+          |> Tournaments.put_value_on_brackets(participant_id, %{"round" => 0})
+
+        if bracket.enabled_score do
+          Tournaments.put_value_on_brackets(acc, participant_id, %{"game_scores" => []})
+        else
+          acc
+        end
       end)
 
-    bracket_id
-    |> __MODULE__.get_bracket()
-    |> __MODULE__.update_bracket(%{match_list_str: inspect(match_list), match_list_with_fight_result_str: inspect(match_list_with_fight_result)})
+    __MODULE__.update_bracket(bracket, %{match_list_str: inspect(match_list), match_list_with_fight_result_str: inspect(match_list_with_fight_result)})
   end
 
   def get_participants_including_log(bracket_id) do
@@ -271,12 +276,18 @@ defmodule Milk.Brackets do
         participant_id = x["user_id"]
         participant = __MODULE__.get_participant(participant_id)
 
-        acc
-        |> Tournaments.put_value_on_brackets(participant_id, %{"id" => participant_id})
-        |> Tournaments.put_value_on_brackets(participant_id, %{"name" => participant.name})
-        |> Tournaments.put_value_on_brackets(participant_id, %{"win_count" => 0})
-        |> Tournaments.put_value_on_brackets(participant_id, %{"icon_path" => nil})
-        |> Tournaments.put_value_on_brackets(participant_id, %{"round" => 0})
+        acc = acc
+          |> Tournaments.put_value_on_brackets(participant_id, %{"id" => participant_id})
+          |> Tournaments.put_value_on_brackets(participant_id, %{"name" => participant.name})
+          |> Tournaments.put_value_on_brackets(participant_id, %{"win_count" => 0})
+          |> Tournaments.put_value_on_brackets(participant_id, %{"icon_path" => nil})
+          |> Tournaments.put_value_on_brackets(participant_id, %{"round" => 0})
+
+        if bracket.enabled_score do
+          Tournaments.put_value_on_brackets(acc, participant_id, %{"game_scores" => []})
+        else
+          acc
+        end
       end)
 
     __MODULE__.update_bracket(bracket, %{match_list_str: inspect(match_list), match_list_with_fight_result_str: inspect(match_list_with_fight_result)})
