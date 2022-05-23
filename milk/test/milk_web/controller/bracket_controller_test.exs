@@ -256,6 +256,30 @@ defmodule MilkWeb.BracketControllerTest do
     end
   end
 
+  describe "claim scores" do
+    test "works", %{conn: conn} do
+      bracket = fixture_bracket(enabled_score: true)
+
+      names = [
+        "test1user",
+        "test2user",
+        "test3user",
+        "test4user"
+      ]
+      conn = post(conn, Routes.bracket_path(conn, :create_participants), %{"names" => names, "bracket_id" => bracket.id})
+
+      conn = post(conn, Routes.bracket_path(conn, :start), bracket_id: bracket.id)
+      conn = get(conn, Routes.bracket_path(conn, :get_brackets_for_draw), bracket_id: bracket.id)
+
+      [cell1, cell2, _, _] = json_response(conn, 200)["data"]
+
+      conn = post(conn, Routes.bracket_path(conn, :claim_scores), bracket_id: bracket.id, winner_participant_id: cell1["id"], winner_score: 13, loser_participant_id: cell2["id"], loser_score: 2)
+      assert json_response(conn, 200)["result"]
+    end
+  end
+
+  # NOTE: Free For All
+
   describe "get tables" do
     test "works", %{conn: conn} do
       user = fixture_user()

@@ -313,8 +313,44 @@ defmodule Milk.Brackets do
     end
   end
 
+  def defeat_loser_participant_by_scores(winner_participant_id, winner_score, loser_participant_id, loser_score, bracket) do
+    __MODULE__.update_bracket(bracket, %{last_match_list_str: bracket.match_list_str, last_match_list_with_fight_result_str: bracket.match_list_with_fight_result_str})
+
+    match_list = bracket.match_list_str
+      |> Code.eval_string()
+      |> elem(0)
+      |> Tournamex.delete_loser(loser_participant_id)
+
+    match_list_with_fight_result = bracket.match_list_with_fight_result_str
+      |> Code.eval_string()
+      |> elem(0)
+      |> Tournamex.win_count_increment(winner_participant_id)
+      |> put_scores(winner_participant_id, winner_score, loser_participant_id, loser_score)
+
+    __MODULE__.update_bracket(bracket, %{match_list_str: inspect(match_list), match_list_with_fight_result_str: inspect(match_list_with_fight_result)})
+    |> IO.inspect()
+  end
+
+  defp put_scores(match_list_with_fight_result, winner_participant_id, winner_score, loser_participant_id, loser_score) do
+    match_list_with_fight_result
+    |> List.flatten()
+    |> Enum.reduce(match_list_with_fight_result, fn x, acc ->
+      case x["user_id"] do
+        ^winner_participant_id ->
+          game_scores = [winner_score | x["game_scores"]] |> Enum.reverse()
+          Tournaments.put_value_on_brackets(acc, winner_participant_id, %{"game_scores" => game_scores})
+
+        ^loser_participant_id ->
+          game_scores = [loser_score | x["game_scores"]] |> Enum.reverse()
+          Tournaments.put_value_on_brackets(acc, loser_participant_id, %{"game_scores" => game_scores})
+
+        _ -> acc
+      end
+    end)
+  end
+
+  # NOTE: スコアなしで動く敗北処理
   def defeat_loser_participant(winner_participant_id, loser_participant_id, bracket_id) do
-    # NOTE: last_match_listの保存
     bracket = __MODULE__.get_bracket(bracket_id)
 
     __MODULE__.update_bracket(bracket, %{last_match_list_str: bracket.match_list_str, last_match_list_with_fight_result_str: bracket.match_list_with_fight_result_str})
@@ -329,7 +365,7 @@ defmodule Milk.Brackets do
       |> elem(0)
       |> Tournamex.win_count_increment(winner_participant_id)
 
-      __MODULE__.update_bracket(bracket, %{match_list_str: inspect(match_list), match_list_with_fight_result_str: inspect(match_list_with_fight_result)})
+    __MODULE__.update_bracket(bracket, %{match_list_str: inspect(match_list), match_list_with_fight_result_str: inspect(match_list_with_fight_result)})
   end
 
   def archive_and_delete(bracket) do
