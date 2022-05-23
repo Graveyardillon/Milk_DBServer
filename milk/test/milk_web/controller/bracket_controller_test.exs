@@ -272,9 +272,18 @@ defmodule MilkWeb.BracketControllerTest do
       conn = get(conn, Routes.bracket_path(conn, :get_brackets_for_draw), bracket_id: bracket.id)
 
       [cell1, cell2, _, _] = json_response(conn, 200)["data"]
+      cell1_score = 13
+      cell2_score = 4
 
-      conn = post(conn, Routes.bracket_path(conn, :claim_scores), bracket_id: bracket.id, winner_participant_id: cell1["id"], winner_score: 13, loser_participant_id: cell2["id"], loser_score: 2)
+      conn = post(conn, Routes.bracket_path(conn, :claim_scores), bracket_id: bracket.id, winner_participant_id: cell1["id"], winner_score: cell1_score, loser_participant_id: cell2["id"], loser_score: cell2_score)
       assert json_response(conn, 200)["result"]
+
+      conn = get(conn, Routes.bracket_path(conn, :get_brackets_for_draw), bracket_id: bracket.id)
+
+      [cell1, cell2, _, _] = json_response(conn, 200)["data"]
+
+      assert cell1["game_scores"] == [cell1_score]
+      assert cell2["game_scores"] == [cell2_score]
     end
   end
 

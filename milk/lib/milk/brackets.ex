@@ -328,7 +328,6 @@ defmodule Milk.Brackets do
       |> put_scores(winner_participant_id, winner_score, loser_participant_id, loser_score)
 
     __MODULE__.update_bracket(bracket, %{match_list_str: inspect(match_list), match_list_with_fight_result_str: inspect(match_list_with_fight_result)})
-    |> IO.inspect()
   end
 
   defp put_scores(match_list_with_fight_result, winner_participant_id, winner_score, loser_participant_id, loser_score) do
