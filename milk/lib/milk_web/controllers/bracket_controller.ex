@@ -5,20 +5,37 @@ defmodule MilkWeb.BracketController do
   use MilkWeb, :controller
 
   alias Milk.Brackets
+  alias Milk.Brackets.{
+    Bracket,
+    FreeForAll
+  }
   alias Common.Tools
 
-  def create_bracket(conn, %{"brackets" => %{"name" => name, "owner_id" => owner_id, "rule" => rule, "url" => url, "enabled_bronze_medal_match" => enabled_bronze_medal_match}}) do
-    with false          <- Brackets.is_url_duplicated?(url),
-         {:ok, bracket} <- Brackets.create_bracket(%{name: name, owner_id: owner_id, url: url, rule: rule, enabled_bronze_medal_match: enabled_bronze_medal_match}) do
+  def create_bracket(conn, %{"brackets" => attrs}) do
+    with {:ok, _}       <- validate_on_create_bracket(attrs),
+         false          <- Brackets.is_url_duplicated?(attrs["url"]),
+         {:ok, bracket} <- Brackets.create_bracket(attrs),
+         {:ok, _}       <- create_other_information_on_create_bracket(bracket, attrs) do
       render(conn, "show.json", bracket: bracket)
     else
-      true            -> json(conn, %{result: false, error: "Urls is duplicated"})
-      {:error, error} -> render(conn, "error.json", %{error: error.errors})
+      true                                      -> json(conn, %{result: false, error: "Urls is duplicated"})
+      {:error, %Ecto.Changeset{errors: errors}} -> render(conn, "error.json", %{error: errors})
+      {:error, error} when is_binary(error)     -> render(conn, "error.json", error: error)
     end
   end
-  def create_bracket(conn, %{"brackets" => %{"name" => name, "owner_id" => owner_id, "rule" => rule, "url" => url}}) do
-    __MODULE__.create_bracket(conn, %{"brackets" => %{"name" => name, "owner_id" => owner_id, "rule" => rule, "url" => url, "enabled_bronze_medal_match" => false}})
+
+  defp validate_on_create_bracket(%{"rule" => nil}),                                                                           do: {:error, "rule is nil on create bracket"}
+  defp validate_on_create_bracket(%{"rule" => "basic"}),                                                                       do: {:ok, nil}
+  defp validate_on_create_bracket(%{"rule" => "freeforall", "round_capacity" => _, "match_number" => _, "round_number" => _}), do: {:ok, nil}
+  defp validate_on_create_bracket(_),                                                                                          do: {:error, "invalid parameters on create bracket"}
+
+  defp create_other_information_on_create_bracket(_, %{"rule" => "basic"}), do: {:ok, nil}
+  defp create_other_information_on_create_bracket(%Bracket{id: bracket_id}, %{"rule" => "freeforall"} = attrs) do
+    attrs
+    |> Map.put("bracket_id", bracket_id)
+    |> FreeForAll.create_freeforall_information()
   end
+  defp create_other_information_on_create_bracket(_, _), do: {:ok, nil}
 
   # TODO: SQLインジェクションの確認
   def is_url_valid(conn, %{"url" => url}), do: json(conn, %{result: !Brackets.is_url_duplicated?(url)})
@@ -61,10 +78,20 @@ defmodule MilkWeb.BracketController do
 
   def create_participants(conn, %{"names" => names, "bracket_id" => bracket_id}) do
     with {:ok, _} <- Brackets.create_participants(names, bracket_id),
-         {:ok, _} <- Brackets.initialize_brackets(bracket_id) do
+         {:ok, _} <- initialize_brackets_or_tables(bracket_id) do
       json(conn, %{result: true})
     else
       _ -> json(conn, %{result: false})
+    end
+  end
+
+  defp initialize_brackets_or_tables(bracket_id) do
+    bracket = Brackets.get_bracket(bracket_id)
+
+    if bracket.rule == "basic" || is_nil(bracket.rule) do
+      Brackets.initialize_brackets(bracket_id)
+    else
+      FreeForAll.initialize_round_tables(bracket, 0)
     end
   end
 
@@ -135,6 +162,18 @@ defmodule MilkWeb.BracketController do
     end
   end
 
+  def claim_scores(conn, %{"bracket_id" => bracket_id, "winner_participant_id" => winner_participant_id, "winner_score" => winner_score, "loser_participant_id" => loser_participant_id, "loser_score" => loser_score}) do
+    with %Bracket{enabled_score: true} = bracket <- Brackets.get_bracket(bracket_id),
+         {:ok, _}                                <- Brackets.defeat_loser_participant_by_scores(winner_participant_id, winner_score, loser_participant_id, loser_score, bracket),
+         bracket when not is_nil(bracket)        <- Brackets.get_bracket(bracket_id),
+         {:ok, _}                                <- Brackets.disable_to_undo_start(bracket) do
+      json(conn, %{result: true})
+    else
+      nil -> json(conn, %{result: false, error: "Bracket is nil"})
+      _   -> json(conn, %{result: false})
+    end
+  end
+
   def claim_lose(conn, %{"bracket_id" => bracket_id, "loser_participant_id" => loser_participant_id, "winner_participant_id" => winner_participant_id}) do
     with {:ok, _}                         <- Brackets.defeat_loser_participant(winner_participant_id, loser_participant_id, bracket_id),
          bracket when not is_nil(bracket) <- Brackets.get_bracket(bracket_id),
@@ -156,11 +195,21 @@ defmodule MilkWeb.BracketController do
     end
   end
 
+  def claim_bronze_scores(conn, %{"bracket_id" => bracket_id, "winner_participant_id" => winner_participant_id, "winner_score" => winner_score, "loser_score" => loser_score}) do
+    bracket_id = Tools.to_integer_as_needed(bracket_id)
+
+    with bracket when not is_nil(bracket) <- Brackets.get_bracket(bracket_id),
+         {:ok, _}                         <- Brackets.claim_bronze_scores(bracket, winner_participant_id, winner_score, loser_score) do
+      json(conn, %{result: true})
+    else
+      _ -> json(conn, %{result: false})
+    end
+  end
+
   def delete(conn, %{"bracket_id" => bracket_id}) do
     bracket_id
     |> Tools.to_integer_as_needed()
     |> Brackets.get_bracket()
-    #|> Brackets.delete()
     |> Brackets.archive_and_delete()
     |> case do
       {:ok, _}    -> json(conn, %{result: true})
@@ -218,5 +267,14 @@ defmodule MilkWeb.BracketController do
     else
       Brackets.get_participant_including_logs(bracket.bronze_match_winner_participant_id)
     end
+  end
+
+  # NOTE: Free For All用
+  def get_tables(conn, %{"bracket_id" => bracket_id}) do
+    tables = bracket_id
+      |> Tools.to_integer_as_needed()
+      |> FreeForAll.get_tables()
+
+    render(conn, "index.json", tables: tables)
   end
 end

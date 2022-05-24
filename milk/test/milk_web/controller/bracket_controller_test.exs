@@ -11,16 +11,8 @@ defmodule MilkWeb.BracketControllerTest do
     {:ok, conn: put_req_header(conn, "accept", "application/json")}
   end
 
-  defp fixture_bracket() do
-    user = fixture_user()
-
-    %{name: "test", owner_id: user.id, url: "test"}
-    |> Brackets.create_bracket()
-    |> elem(1)
-  end
-
   describe "create bracket" do
-    test "works", %{conn: conn} do
+    test "basic works", %{conn: conn} do
       user = fixture_user()
 
       params = %{
@@ -28,7 +20,32 @@ defmodule MilkWeb.BracketControllerTest do
         "owner_id" => user.id,
         "rule" => "basic",
         "url" => "test url",
-        "enabled_bronze_medal_match" => false
+        "enabled_bronze_medal_match" => false,
+        "enabled_score" => true
+      }
+
+      conn = post(conn, Routes.bracket_path(conn, :create_bracket), %{"brackets" => params})
+      assert json_response(conn, 200)["result"]
+
+      assert json_response(conn, 200)["data"]["name"] === params["name"]
+      assert json_response(conn, 200)["data"]["owner_id"] === params["owner_id"]
+      assert json_response(conn, 200)["data"]["url"] === params["url"]
+      assert json_response(conn, 200)["data"]["enabled_bronze_medal_match"] === params["enabled_bronze_medal_match"]
+      assert json_response(conn, 200)["data"]["enabled_score"] === params["enabled_score"]
+    end
+
+    test "freeforall works", %{conn: conn} do
+      user = fixture_user()
+
+      params = %{
+        "name" => "test brackets",
+        "owner_id" => user.id,
+        "rule" => "freeforall",
+        "url" => "test url",
+        "enabled_bronze_medal_match" => false,
+        "round_number" => 2,
+        "match_number" => 1,
+        "round_capacity" => 1
       }
 
       conn = post(conn, Routes.bracket_path(conn, :create_bracket), %{"brackets" => params})
@@ -236,6 +253,77 @@ defmodule MilkWeb.BracketControllerTest do
       bracket = Brackets.get_bracket(bracket.id)
 
       refute bracket.is_started
+    end
+  end
+
+  describe "claim scores" do
+    test "works", %{conn: conn} do
+      bracket = fixture_bracket(enabled_score: true)
+
+      names = [
+        "test1user",
+        "test2user",
+        "test3user",
+        "test4user"
+      ]
+      conn = post(conn, Routes.bracket_path(conn, :create_participants), %{"names" => names, "bracket_id" => bracket.id})
+
+      conn = post(conn, Routes.bracket_path(conn, :start), bracket_id: bracket.id)
+      conn = get(conn, Routes.bracket_path(conn, :get_brackets_for_draw), bracket_id: bracket.id)
+
+      [cell1, cell2, _, _] = json_response(conn, 200)["data"]
+      cell1_score = 13
+      cell2_score = 4
+
+      conn = post(conn, Routes.bracket_path(conn, :claim_scores), bracket_id: bracket.id, winner_participant_id: cell1["id"], winner_score: cell1_score, loser_participant_id: cell2["id"], loser_score: cell2_score)
+      assert json_response(conn, 200)["result"]
+
+      conn = get(conn, Routes.bracket_path(conn, :get_brackets_for_draw), bracket_id: bracket.id)
+
+      [cell1, cell2, _, _] = json_response(conn, 200)["data"]
+
+      assert cell1["game_scores"] == [cell1_score]
+      assert cell2["game_scores"] == [cell2_score]
+    end
+  end
+
+  # NOTE: Free For All
+
+  describe "get tables" do
+    test "works", %{conn: conn} do
+      user = fixture_user()
+
+      params = %{
+        "name" => "test brackets",
+        "owner_id" => user.id,
+        "rule" => "freeforall",
+        "url" => "test url",
+        "enabled_bronze_medal_match" => false,
+        "round_number" => 2,
+        "match_number" => 1,
+        "round_capacity" => 1
+      }
+
+      conn = post(conn, Routes.bracket_path(conn, :create_bracket), %{"brackets" => params})
+      assert json_response(conn, 200)["result"]
+
+      names = [
+        "test1user",
+        "test2user",
+        "test3user",
+        "test4user"
+      ]
+      id = json_response(conn, 200)["data"]["id"]
+      conn = post(conn, Routes.bracket_path(conn, :create_participants), %{"names" => names, "bracket_id" => id})
+
+      conn = get(conn, Routes.bracket_path(conn, :get_tables), bracket_id: id)
+
+      conn
+      |> json_response(200)
+      |> Map.get("data")
+      |> length()
+      |> Kernel.==(4)
+      |> assert()
     end
   end
 end

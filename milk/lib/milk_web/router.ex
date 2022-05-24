@@ -275,10 +275,14 @@ defmodule MilkWeb.Router do
     post "/bracket/undo_start", BracketController, :undo_start
     post "/bracket/claim_lose", BracketController, :claim_lose
     post "/bracket/claim_bronze_lose", BracketController, :claim_bronze_lose
+    post "/bracket/claim_scores", BracketController, :claim_scores
+    post "/bracket/claim_bronze_scores", BracketController, :claim_bronze_scores
     post "/bracket/undo_progress", BracketController, :undo_progress
     post "/bracket/finish", BracketController, :finish
     delete "/bracket", BracketController, :delete
     delete "/bracket/participant", BracketController, :delete_participant
+
+    get "/bracket/tables", BracketController, :get_tables
   end
 
   scope "/debug", MilkWeb do
