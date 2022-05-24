@@ -387,7 +387,10 @@ defmodule Milk.Brackets do
         match_list_str: bracket.last_match_list_str,
         match_list_with_fight_result_str: bracket.last_match_list_with_fight_result_str,
         last_match_list_str: nil,
-        last_match_list_with_fight_result_str: nil
+        last_match_list_with_fight_result_str: nil,
+        bronze_match_winner_participant_id: nil,
+        bronze_match_winner_score: nil,
+        bronze_match_loser_score: nil
       }
 
       __MODULE__.update_bracket(bracket, attrs)
@@ -443,4 +446,11 @@ defmodule Milk.Brackets do
   defp do_is_bronze_match?(_), do: false
 
   def claim_bronze_match_winner(bracket, winner_participant_id), do: __MODULE__.update_bracket(bracket, %{bronze_match_winner_participant_id: winner_participant_id})
+
+  def claim_bronze_scores(bracket, winner_participant_id, winner_score, loser_score),
+    do: __MODULE__.update_bracket(bracket, %{
+        bronze_match_winner_participant_id: winner_participant_id,
+        bronze_match_winner_score: winner_score,
+        bronze_match_loser_score: loser_score
+      })
 end

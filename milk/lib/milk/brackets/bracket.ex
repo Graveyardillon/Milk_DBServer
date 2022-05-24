@@ -20,6 +20,8 @@ defmodule Milk.Brackets.Bracket do
     field :last_match_list_str, :string
     field :last_match_list_with_fight_result_str, :string
     field :bronze_match_winner_participant_id, :integer
+    field :bronze_match_winner_score, :integer
+    field :bronze_match_loser_score, :integer
 
     belongs_to :owner, User
 
@@ -42,7 +44,9 @@ defmodule Milk.Brackets.Bracket do
         :match_list_with_fight_result_str,
         :last_match_list_str,
         :last_match_list_with_fight_result_str,
-        :bronze_match_winner_participant_id
+        :bronze_match_winner_participant_id,
+        :bronze_match_winner_score,
+        :bronze_match_loser_score
       ]
     )
     |> unique_constraint(:url)

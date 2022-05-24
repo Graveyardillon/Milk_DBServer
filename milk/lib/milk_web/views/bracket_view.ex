@@ -54,7 +54,9 @@ defmodule MilkWeb.BracketView do
           bracket.is_finished
         else
           false
-        end
+        end,
+      bronze_match_winner_score: bracket.bronze_match_winner_score,
+      bronze_match_loser_score: bracket.bronze_match_loser_score
     }
   end
 

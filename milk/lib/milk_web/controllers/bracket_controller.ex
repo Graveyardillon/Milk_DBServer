@@ -195,11 +195,21 @@ defmodule MilkWeb.BracketController do
     end
   end
 
+  def claim_bronze_scores(conn, %{"bracket_id" => bracket_id, "winner_participant_id" => winner_participant_id, "winner_score" => winner_score, "loser_score" => loser_score}) do
+    bracket_id = Tools.to_integer_as_needed(bracket_id)
+
+    with bracket when not is_nil(bracket) <- Brackets.get_bracket(bracket_id),
+         {:ok, _}                         <- Brackets.claim_bronze_scores(bracket, winner_participant_id, winner_score, loser_score) do
+      json(conn, %{result: true})
+    else
+      _ -> json(conn, %{result: false})
+    end
+  end
+
   def delete(conn, %{"bracket_id" => bracket_id}) do
     bracket_id
     |> Tools.to_integer_as_needed()
     |> Brackets.get_bracket()
-    #|> Brackets.delete()
     |> Brackets.archive_and_delete()
     |> case do
       {:ok, _}    -> json(conn, %{result: true})
