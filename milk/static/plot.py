@@ -3,8 +3,12 @@ import requests
 import matplotlib.pylab as plt
 
 mode = 0
-min = 0
-max = 22000000
+print("Please enter the start date of the data")
+print("yyyymmdd = ", end="")
+min = int(input())
+print("Please enter the end date of the data")
+print("yyyymmdd = ", end="")
+max = int(input())
 url = "https://e-players6814.an.r.appspot.com//api/user/download"
 response = requests.get(url)
 d = response.json()
@@ -35,4 +39,6 @@ else:
 print(myList)
 x, y = zip(*myList)
 plt.plot(x, y)
+plt.xticks(rotation=90)
+plt.tight_layout()
 plt.show()
