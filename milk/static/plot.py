@@ -38,7 +38,9 @@ else:
       deleted = deleted + 1
 print(myList)
 x, y = zip(*myList)
+
 plt.plot(x, y)
 plt.xticks(rotation=90)
+plt.title("Duration : " + str(min) + " - " + str(max))
 plt.tight_layout()
 plt.show()
