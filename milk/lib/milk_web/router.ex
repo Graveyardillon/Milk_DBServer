@@ -268,19 +268,27 @@ defmodule MilkWeb.Router do
     get "/bracket/logs_by_owner_id", BracketController, :get_bracket_logs_by_owner_id
     get "/bracket/is_url_valid", BracketController, :is_url_valid
     get "/bracket/participants", BracketController, :get_participants
+
     get "/bracket/download", BracketController, :download
     get "/bracket_log/download", BracketController, :download_log
     get "/bracket_archive/download", BracketController, :download_archive
+    get "/bracket/is_bronze_match", BracketController, :is_bronze_match?
+    get "/bracket/bronze_match_winner", BracketController, :get_bronze_match_winner
     post "/bracket", BracketController, :create_bracket
     post "/bracket/create_participants", BracketController, :create_participants
     post "/bracket/edit_brackets", BracketController, :edit_brackets
     post "/bracket/start", BracketController, :start
     post "/bracket/undo_start", BracketController, :undo_start
     post "/bracket/claim_lose", BracketController, :claim_lose
+    post "/bracket/claim_bronze_lose", BracketController, :claim_bronze_lose
+    post "/bracket/claim_scores", BracketController, :claim_scores
+    post "/bracket/claim_bronze_scores", BracketController, :claim_bronze_scores
     post "/bracket/undo_progress", BracketController, :undo_progress
     post "/bracket/finish", BracketController, :finish
     delete "/bracket", BracketController, :delete
     delete "/bracket/participant", BracketController, :delete_participant
+
+    get "/bracket/tables", BracketController, :get_tables
   end
 
   scope "/debug", MilkWeb do

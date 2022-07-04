@@ -119,7 +119,7 @@ defmodule MilkWeb.TournamentController do
   def count_tournament_per_month(conn, _params) do
     tournament_count_per_month = Tournaments.count_tournament_per_month()
     bracket_count_per_month = Brackets.get_number()
-    json(conn, %{tournament_counnt_per_month: tournament_count_per_month, brackets: bracket_count_per_month, sum: tournament_count_per_month + bracket_count_per_month})
+    json(conn, %{tournament_count_per_month: tournament_count_per_month, brackets: bracket_count_per_month, sum: tournament_count_per_month + bracket_count_per_month})
   end
 
   @doc """
