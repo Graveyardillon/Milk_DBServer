@@ -252,6 +252,7 @@ defmodule MilkWeb.BracketController do
 
   def download_archive(conn, _params) do
     json(conn, Brackets.collect_bracket_archive())
+  end
 
   def is_bronze_match?(conn, %{"bracket_id" => bracket_id}) do
     is_bronze_match = bracket_id
