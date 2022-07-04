@@ -242,7 +242,6 @@ defmodule MilkWeb.BracketController do
     json(conn, %{num: Brackets.get_number()})
   end
 
-<<<<<<< HEAD
   def download(conn, _params) do
     json(conn, Brackets.collect_bracket())
   end
@@ -253,7 +252,7 @@ defmodule MilkWeb.BracketController do
 
   def download_archive(conn, _params) do
     json(conn, Brackets.collect_bracket_archive())
-=======
+
   def is_bronze_match?(conn, %{"bracket_id" => bracket_id}) do
     is_bronze_match = bracket_id
       |> Tools.to_integer_as_needed()
@@ -288,6 +287,5 @@ defmodule MilkWeb.BracketController do
       |> FreeForAll.get_tables()
 
     render(conn, "index.json", tables: tables)
->>>>>>> master
   end
 end
