@@ -11,6 +11,7 @@ print("Please enter the end date of the data")
 print("yyyymmdd = ", end="")
 max = int(input())
 url = "https://e-players6814.an.r.appspot.com//api/user/download"
+# url = "http://localhost:4000/api/user/download"
 response = requests.get(url)
 d = response.json()
 

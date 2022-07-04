@@ -181,4 +181,16 @@ defmodule MilkWeb.BracketController do
   def get_number(conn, _) do
     json(conn, %{num: Brackets.get_number()})
   end
+
+  def download(conn, _params) do
+    json(conn, Brackets.collect_bracket())
+  end
+
+  def download_log(conn, _params) do
+    json(conn, Brackets.collect_bracket_log())
+  end
+
+  def download_archive(conn, _params) do
+    json(conn, Brackets.collect_bracket_archive())
+  end
 end

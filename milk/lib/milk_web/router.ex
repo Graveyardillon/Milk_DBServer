@@ -118,6 +118,7 @@ defmodule MilkWeb.Router do
     get "/tournament/match_info", TournamentController, :get_match_information
     get "/tournament/count_tournament_per_month", TournamentController, :count_tournament_per_month
     get "/tournament/leader_info", TournamentController, :get_leader_info
+    get "/tournament/download", TournamentController, :download
 
     get "/tournament/entry_template", EntryController, :get_template
     get "/tournament/entry_info", EntryController, :get_entry_information
@@ -195,6 +196,7 @@ defmodule MilkWeb.Router do
     delete "/tournament/assistant", TournamentController, :delete_assistant
 
     get "/tournament_log/index", TournamentLogController, :index
+    get "/tournament_log/download", TournamentLogController, :download
     post "/tournament_log/add", TournamentLogController, :create
 
     get "/entrant/rank", EntrantController, :show_rank
@@ -266,6 +268,9 @@ defmodule MilkWeb.Router do
     get "/bracket/logs_by_owner_id", BracketController, :get_bracket_logs_by_owner_id
     get "/bracket/is_url_valid", BracketController, :is_url_valid
     get "/bracket/participants", BracketController, :get_participants
+    get "/bracket/download", BracketController, :download
+    get "/bracket_log/download", BracketController, :download_log
+    get "/bracket_archive/download", BracketController, :download_archive
     post "/bracket", BracketController, :create_bracket
     post "/bracket/create_participants", BracketController, :create_participants
     post "/bracket/edit_brackets", BracketController, :edit_brackets

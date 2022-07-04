@@ -2386,4 +2386,8 @@ defmodule MilkWeb.TournamentController do
 
     json(conn, %{result: true, url: redirect_url})
   end
+
+  def download(conn, _params) do
+    json(conn, Tournaments.collect_tournament())
+  end
 end

@@ -3,6 +3,7 @@ defmodule Milk.Tournaments do
   トーナメントのコンテキストについて記述したファイル。
   """
   use Timex
+  use Common.Stats
 
   import Ecto.Query, warn: false
   import Common.{
@@ -5179,5 +5180,16 @@ defmodule Milk.Tournaments do
     |> :crypto.hash(str)
     |> Base.encode16()
     |> String.downcase()
+  end
+
+  @doc """
+  Lists all tournaments.
+  """
+  @spec list_tournament() :: [Tournament.t()]
+  def list_tournament(), do: Repo.all(Tournament)
+  def collect_tournament do
+    list_tournament()
+    |> Enum.map(fn t -> t.create_time.year * 10000 + t.create_time.month * 100 + t.create_time.day end)
+    |> create_statistics()
   end
 end

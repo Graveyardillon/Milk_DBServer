@@ -6,6 +6,7 @@ defmodule Milk.Accounts do
   import Ecto.Query, warn: false
   import Common.Sperm
 
+  use Common.Stats
   require Logger
 
   alias Common.Tools
@@ -652,27 +653,5 @@ defmodule Milk.Accounts do
     list_user()
     |> Enum.map(fn u -> u.create_time.year * 10000 + u.create_time.month * 100 + u.create_time.day end)
     |> create_statistics()
-  end
-
-  defp create_statistics(create_times) do
-    case length(create_times)|>IO.inspect() do
-      0 -> %{}
-      1 -> [head] = create_times
-      create_statistics(%{head => 1}, [])
-      _ -> [head|tail] = create_times
-      create_statistics(%{head => 1}, tail)
-    end
-
-  end
- defp create_statistics(result, []) do
-    result
- end
-  defp create_statistics(result, remain) do
-    [head|tail] = remain
-    case Map.get(result, head) do
-      nil -> Map.put(result, head, 1)
-      _   -> Map.update!(result, head, fn v -> v + 1 end)
-    end
-    |> create_statistics(tail)
   end
 end

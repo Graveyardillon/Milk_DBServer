@@ -2671,4 +2671,24 @@ defmodule Milk.TournamentsTest do
       |> assert()
     end
   end
+
+  describe "tournament data statistics" do
+    test "collect tournaments/0" do
+      fixture_tournament()
+      user = fixture_user()
+      user1 = fixture_user(num: 1)
+
+      {:ok, _tournament1} =
+        @valid_attrs
+        |> Map.put("master_id", user.id)
+        |> Tournaments.create_tournament()
+
+        {:ok, _tournament2} =
+          @valid_attrs
+          |> Map.put("master_id", user1.id)
+          |> Tournaments.create_tournament()
+      today = Timex.now()
+      assert Tournaments.collect_tournament == %{today.year * 10000 + today.month * 100 + today.day => 3}
+    end
+  end
 end

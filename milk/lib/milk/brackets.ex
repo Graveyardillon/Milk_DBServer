@@ -1,5 +1,6 @@
 defmodule Milk.Brackets do
   use Timex
+  use Common.Stats
 
   import Ecto.Query, warn: false
 
@@ -363,5 +364,38 @@ defmodule Milk.Brackets do
     end)
     |> Enum.all?(&match?({:ok, _}, &1))
     |> Tools.boolean_to_tuple()
+  end
+
+    @doc """
+  Lists all brackets.
+  """
+  @spec list_bracket() :: [Bracket.t()]
+  def list_bracket(), do: Repo.all(Bracket)
+  def collect_bracket do
+    list_bracket()
+    |> Enum.map(fn t -> t.create_time.year * 10000 + t.create_time.month * 100 + t.create_time.day end)
+    |> create_statistics()
+  end
+
+    @doc """
+  Lists all brackets_log.
+  """
+  @spec list_bracket_log() :: [BracketLog.b()]
+  def list_bracket_log(), do: Repo.all(BracketLog)
+  def collect_bracket_log do
+    list_bracket_log()
+    |> Enum.map(fn t -> t.create_time.year * 10000 + t.create_time.month * 100 + t.create_time.day end)
+    |> create_statistics()
+  end
+
+      @doc """
+  Lists all brackets_archive.
+  """
+  @spec list_bracket_archive() :: [BracketArchive.b()]
+  def list_bracket_archive(), do: Repo.all(BracketArchive)
+  def collect_bracket_archive do
+    list_bracket_archive()
+    |> Enum.map(fn t -> t.create_time.year * 10000 + t.create_time.month * 100 + t.create_time.day end)
+    |> create_statistics()
   end
 end

@@ -40,4 +40,8 @@ defmodule MilkWeb.TournamentLogController do
       send_resp(conn, :no_content, "")
     end
   end
+
+  def download(conn, _params) do
+    json(conn, Log.collect_tournament_log())
+  end
 end

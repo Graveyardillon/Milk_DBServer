@@ -6,6 +6,8 @@ defmodule Milk.Log do
   import Ecto.Query, warn: false
   import Common.Sperm
 
+  use Common.Stats
+
   alias Common.Tools
 
   alias Milk.{
@@ -980,5 +982,11 @@ defmodule Milk.Log do
       user = Accounts.get_user(member.user_id)
       Map.put(member, :user, Repo.preload(user, :auth))
     end)
+  end
+
+  def collect_tournament_log do
+    list_tournament_log()
+    |> Enum.map(fn t -> t.create_time.year * 10000 + t.create_time.month * 100 + t.create_time.day end)
+    |> create_statistics()
   end
 end
